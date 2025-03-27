@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private MediaPlayer mediaPlayer;
         private Music currentPlayingMusic;
+        private bool isPlaying;
 
         public MusicBrowsePage()
         {
@@ -73,9 +74,27 @@ namespace WinUIMusicPlayer.View
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            if (currentPlayingMusic != null)
+            if (isPlaying)
             {
-                await PlayMusic(currentPlayingMusic);
+                mediaPlayer.Pause();
+                isPlaying = false;
+            }
+            else {
+                mediaPlayer.Play();
+                isPlaying = true;
+            }
+            UpdatePlayPauseButtonIcon();
+        }
+
+        private void UpdatePlayPauseButtonIcon()
+        {
+            if (isPlaying)
+            {
+                ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769"; // ‘›Õ£Õº±Í
+            }
+            else
+            {
+                ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // ≤•∑≈Õº±Í
             }
         }
 
@@ -104,6 +123,8 @@ namespace WinUIMusicPlayer.View
             var stream = await file.OpenAsync(FileAccessMode.Read);
             mediaPlayer.Source = MediaSource.CreateFromStream(stream, file.ContentType);
             mediaPlayer.Play();
+            ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
+            isPlaying = true;
         }
 
         private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)

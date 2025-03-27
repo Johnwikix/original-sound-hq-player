@@ -9,25 +9,64 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
+        <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter"/>
+        <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
+    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <ListView x:Name="MusicListView" DoubleTapped="MusicListView_DoubleTapped">
+            <ListView.HeaderTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="封面" Grid.Column="0" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="标题" Grid.Column="1" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="作者" Grid.Column="2" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="专辑" Grid.Column="3" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="时长" Grid.Column="4" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="操作" Grid.Column="5" FontWeight="Bold" Margin="10"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.HeaderTemplate>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{x:Bind Title}" Margin="10" />
-                        <TextBlock Text="{x:Bind Author}" Margin="10" />
-                        <Button Content="移除" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}"/>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Image Source="{x:Bind Cover, Converter={StaticResource ByteArrayToImageConverter}}" Width="50" Height="50" Grid.Column="0" Margin="5"/>
+                        <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="10" />
+                        <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="10" />
+                        <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="10" />
+                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="4" Margin="10" />
+                        <Button Content="移除" Grid.Column="5" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10"/>
+                    </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10">
-            <Button Content="播放" Click="PlayButton_Click"/>
+            <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                <FontIcon Glyph="&#xE768;"/>
+                <!-- 播放图标 -->
+            </Button>
             <Image x:Name="AlbumCoverImage" Width="50" Height="50" Margin="10"/>
             <StackPanel Orientation="Vertical">
                 <TextBlock x:Name="MusicTitleTextBlock" FontSize="16" Margin="10"/>

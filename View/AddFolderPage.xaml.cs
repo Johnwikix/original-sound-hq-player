@@ -89,7 +89,9 @@ namespace WinUIMusicPlayer.View
                         Path = file.Path,
                         Title = title,
                         Cover = coverBytes,
-                        Author = musicProperties.Artist
+                        Author = musicProperties.Artist,
+                        Duration = musicProperties.Duration,
+                        Album = musicProperties.Album
                     };
                     musicFiles.Add(music);
                 }
