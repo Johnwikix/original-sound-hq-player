@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WinUIMusicPlayer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WinUIMusicPlayer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
