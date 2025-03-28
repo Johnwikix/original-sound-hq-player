@@ -35,7 +35,7 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private MediaPlayer mediaPlayer;
         private Music currentPlayingMusic;
-        private IWavePlayer waveOut;
+        private WaveOutEvent waveOut;
         private AudioFileReader audioFileReader;
         private float volume = 1f;
         private bool isPlaying;
@@ -70,6 +70,19 @@ namespace WinUIMusicPlayer.View
             currentPlayMode = playState.PlayMode;
             lastPlayedMusicId = playState.LastPlayedMusicId;
             currentPlayingMusic = await dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
+            if (currentPlayingMusic != null)
+            {
+                MusicTitleTextBlock.Text = currentPlayingMusic.Title;
+                MusicAuthorTextBlock.Text = currentPlayingMusic.Author;
+                if (currentPlayingMusic.Cover != null) {
+                    using (var ms = new MemoryStream(currentPlayingMusic.Cover))
+                    {
+                        var bitmapImage = new BitmapImage();
+                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                        AlbumCoverImage.Source = bitmapImage;
+                    }
+                }                
+            }
             UpdatePlayModeIcon();
         }
 
@@ -163,8 +176,10 @@ namespace WinUIMusicPlayer.View
         {
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null)
-            {                
-                await PlayMusic(selectedMusic,true);
+            {
+                isManualSelect = true;
+                await PlayMusic(selectedMusic);
+                isManualSelect = false;
             }
         }
 
@@ -186,7 +201,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         var musicList = await dbConnection.Table<Music>().ToListAsync();
-                        await PlayMusic(musicList[0], true);
+                        await PlayMusic(musicList[0]);
                     }                        
                 }
                 else {
@@ -209,15 +224,36 @@ namespace WinUIMusicPlayer.View
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
             }
         }
-
-        private async Task PlayMusic(Music music,bool isManual = false)
+        private async Task InitializeAudioResources(Music music)
         {
+            // 停止并释放旧的音频资源
             if (waveOut != null)
             {
                 waveOut.Stop();
                 waveOut.Dispose();
-                audioFileReader.Dispose();
+                waveOut = null;
             }
+
+            if (audioFileReader != null)
+            {
+                audioFileReader.Dispose();
+                audioFileReader = null;
+            }
+
+            // 加载新音频
+            audioFileReader = new AudioFileReader(music.Path);
+            audioFileReader.Volume = volume;
+
+            waveOut = new WaveOutEvent();
+            waveOut.DesiredLatency = 1000;
+            waveOut.NumberOfBuffers = 5;
+
+            waveOut.Init(audioFileReader);
+        }
+
+        private async Task PlayMusic(Music music)
+        {
+            await InitializeAudioResources(music);
 
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
@@ -235,41 +271,33 @@ namespace WinUIMusicPlayer.View
                 }
             }
 
-            waveOut = new WaveOutEvent();
-            audioFileReader = new AudioFileReader(music.Path);
-            audioFileReader.Volume = volume;
-            waveOut.Init(audioFileReader);
             waveOut.Play();
-            if (isManual)
-            {
-                waveOut.PlaybackStopped += ManualPlaybackStopped; // 手动切歌时的事件
-            }
-            else
-            {
-                waveOut.PlaybackStopped += WaveOut_PlaybackStopped; // 自动播放时的事件
-            }
+            waveOut.PlaybackStopped += WaveOut_PlaybackStopped; 
             ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
             isPlaying = true;
 
             // 初始化进度条
-            ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
+            if (audioFileReader.TotalTime != null)
+            {
+                ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
+            }
             ProgressSlider.Value = 0;
             progressTimer.Start();
 
             await SavePlayState();
         }
 
-        private async void ManualPlaybackStopped(object sender, StoppedEventArgs e)
-        {
-            // 手动切歌后不自动播放下一首
-            isPlaying = false;
-            progressTimer.Stop();
-            UpdatePlayPauseButtonIcon();
-        }
-
         private async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
-        {           
-            await OnMusicEnded();           
+        {
+            if (isManualSelect)
+            {
+                isManualSelect = false;
+                return;
+            }
+            else
+            {
+                await OnMusicEnded();
+            }         
         }
 
         private async Task OnMusicEnded()
@@ -381,10 +409,13 @@ namespace WinUIMusicPlayer.View
                 this.DispatcherQueue.TryEnqueue(() =>
                 {
                     try {
-                        ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
-                        string currentTime = audioFileReader.CurrentTime.ToString(@"mm\:ss");
-                        string totalTime = audioFileReader.TotalTime.ToString(@"mm\:ss");
-                        PlayTimeTextBlock.Text = $"{currentTime}/{totalTime}";
+                        if (audioFileReader.CurrentTime != null)
+                        {
+                            ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
+                            string currentTime = audioFileReader.CurrentTime.ToString(@"mm\:ss");
+                            string totalTime = audioFileReader.TotalTime.ToString(@"mm\:ss");
+                            PlayTimeTextBlock.Text = $"{currentTime}/{totalTime}";
+                        }
                     }
                     catch (Exception ex)
                     {

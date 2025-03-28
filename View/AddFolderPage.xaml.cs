@@ -88,29 +88,86 @@ namespace WinUIMusicPlayer.View
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
             var folder = await folderPicker.PickSingleFolderAsync();
+
             if (folder != null)
             {
-                // 存储文件夹信息到数据库
-                var newFolder = new Folder
+                // 检查是否已存在包含或被包含的文件夹
+                var existingFolders = await dbConnection.Table<Folder>().ToListAsync();
+
+                // 检查新添加的文件夹是否已经在已存在的文件夹中
+                bool folderAlreadyExists = existingFolders.Any(f =>
+                    folder.Path.StartsWith(f.Path) || f.Path.StartsWith(folder.Path));
+
+                if (!folderAlreadyExists)
                 {
-                    Name = folder.Name,
-                    Path = folder.Path,
-                    Type = "本地"
-                };
-                await dbConnection.InsertAsync(newFolder);
+                    // 移除被新文件夹包含的旧文件夹
+                    var foldersToRemove = existingFolders
+                        .Where(f => folder.Path.StartsWith(f.Path))
+                        .ToList();
 
-                // 扫描文件夹中的音乐文件
-                await ScanFolderAsync(folder);
+                    foreach (var folderToRemove in foldersToRemove)
+                    {
+                        // 删除该文件夹及其音乐文件
+                        var musicFilesToRemove = await dbConnection.Table<Music>()
+                            .Where(m => m.FolderPath.StartsWith(folderToRemove.Path))
+                            .ToListAsync();
 
-                // 重新加载文件夹列表
-                await LoadFoldersAsync();
+                        foreach (var musicFile in musicFilesToRemove)
+                        {
+                            await dbConnection.DeleteAsync(musicFile);
+                        }
+
+                        await dbConnection.DeleteAsync(folderToRemove);
+                    }
+
+                    // 存储新文件夹信息到数据库
+                    var newFolder = new Folder
+                    {
+                        Name = folder.Name,
+                        Path = folder.Path,
+                        Type = "本地"
+                    };
+                    await dbConnection.InsertAsync(newFolder);
+
+                    // 扫描文件夹中的音乐文件
+                    await ScanFolderAsync(folder);
+
+                    // 重新加载文件夹列表
+                    await LoadFoldersAsync();
+                }
+                else
+                {
+                    // 可以添加一个提示，告诉用户文件夹已经存在或被包含
+                }
             }
         }
 
         private async Task ScanFolderAsync(StorageFolder folder)
         {
-            var files = await folder.GetFilesAsync();
             var musicFiles = new List<Music>();
+            // 递归获取所有音乐文件
+            await GetMusicFilesRecursive(folder, musicFiles);
+
+            // 获取已存在的音乐文件路径
+            var existingMusicPaths = await dbConnection.Table<Music>()
+                .ToListAsync()
+                .ContinueWith(t => t.Result.Select(m => m.Path).ToList());
+
+            // 过滤掉已存在的音乐文件
+            var newMusicFiles = musicFiles
+                .Where(m => !existingMusicPaths.Contains(m.Path))
+                .ToList();
+
+            // 只插入新的音乐文件
+            if (newMusicFiles.Any())
+            {
+                await dbConnection.InsertAllAsync(newMusicFiles);
+            }
+        }
+
+        private async Task GetMusicFilesRecursive(StorageFolder folder, List<Music> musicFiles)
+        {
+            var files = await folder.GetFilesAsync();
 
             foreach (var file in files)
             {
@@ -144,7 +201,12 @@ namespace WinUIMusicPlayer.View
                 }
             }
 
-            await dbConnection.InsertAllAsync(musicFiles);
+            // 递归扫描子文件夹
+            var subfolders = await folder.GetFoldersAsync();
+            foreach (var subfolder in subfolders)
+            {
+                await GetMusicFilesRecursive(subfolder, musicFiles);
+            }
         }
 
         private bool IsMusicFile(string fileType)
@@ -162,12 +224,16 @@ namespace WinUIMusicPlayer.View
                 var folderToRemove = await dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
                 if (folderToRemove != null)
                 {
-                    // 移除该文件夹下的所有音乐文件
-                    var musicFilesToRemove = await dbConnection.Table<Music>().Where(m => m.FolderPath == folderToRemove.Path).ToListAsync();
+                    // 删除该文件夹及其所有子文件夹下的音乐文件
+                    var musicFilesToRemove = await dbConnection.Table<Music>()
+                        .Where(m => m.FolderPath.StartsWith(folderToRemove.Path))
+                        .ToListAsync();
+
                     foreach (var musicFile in musicFilesToRemove)
                     {
                         await dbConnection.DeleteAsync(musicFile);
                     }
+
                     // 移除文件夹信息
                     await dbConnection.DeleteAsync(folderToRemove);
 
