@@ -19,6 +19,8 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage;
+using NAudio.Wave;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -33,13 +35,104 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private MediaPlayer mediaPlayer;
         private Music currentPlayingMusic;
+        private IWavePlayer waveOut;
+        private AudioFileReader audioFileReader;
+        private float volume = 1f;
         private bool isPlaying;
+        private System.Timers.Timer progressTimer;
+        private bool isUserDraggingProgressSlider = false;
+        private PlayMode currentPlayMode = PlayMode.ListLoop;
+        private int? lastPlayedMusicId;
+        private bool isManualSelect = false;
 
         public MusicBrowsePage()
         {
             this.InitializeComponent();
             InitializeDatabase();
-            mediaPlayer = new MediaPlayer();
+            progressTimer = new System.Timers.Timer(1000);
+            progressTimer.Elapsed += ProgressTimer_Elapsed;
+            ProgressSlider.Loaded += ProgressSlider_Loaded;            
+        }
+
+        private async Task LoadPlayState()
+        {
+            var playState = await dbConnection.Table<PlayState>().FirstOrDefaultAsync();
+            if (playState == null)
+            {
+                // 如果没有记录，默认设置为列表循环
+                playState = new PlayState
+                {
+                    PlayMode = PlayMode.ListLoop,
+                    LastPlayedMusicId = null
+                };
+                await dbConnection.InsertAsync(playState);
+            }
+            currentPlayMode = playState.PlayMode;
+            lastPlayedMusicId = playState.LastPlayedMusicId;
+            currentPlayingMusic = await dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
+            UpdatePlayModeIcon();
+        }
+
+        private async Task SavePlayState()
+        {
+            var playState = await dbConnection.Table<PlayState>().FirstOrDefaultAsync();
+            if (playState == null)
+            {
+                playState = new PlayState
+                {
+                    Id = 1
+                };
+            }
+            playState.PlayMode = currentPlayMode;
+            playState.LastPlayedMusicId = currentPlayingMusic?.Id;
+            if (playState.Id == 0)
+            {
+                await dbConnection.InsertAsync(playState);
+            }
+            else
+            {
+                await dbConnection.UpdateAsync(playState);
+            }
+        }
+
+        private async void PlayModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            switch (currentPlayMode)
+            {
+                case PlayMode.SingleLoop:
+                    currentPlayMode = PlayMode.ListLoop;
+                    break;
+                case PlayMode.ListLoop:
+                    currentPlayMode = PlayMode.RandomLoop;
+                    break;
+                case PlayMode.RandomLoop:
+                    currentPlayMode = PlayMode.SingleLoop;
+                    break;
+            }
+            await SavePlayState();
+            UpdatePlayModeIcon();
+        }
+
+        private void UpdatePlayModeIcon()
+        {
+            switch (currentPlayMode)
+            {
+                case PlayMode.SingleLoop:
+                    PlayModeIcon.Glyph = "\ue8ed"; // 单曲循环图标
+                    break;
+                case PlayMode.ListLoop:
+                    PlayModeIcon.Glyph = "\ue8ee"; // 列表循环图标
+                    break;
+                case PlayMode.RandomLoop:
+                    PlayModeIcon.Glyph = "\ue8b1"; // 随机循环图标
+                    break;
+            }
+        }
+
+        protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            await LoadMusicAsync();
         }
 
         private async void InitializeDatabase()
@@ -47,7 +140,10 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
+            await dbConnection.CreateTableAsync<PlayState>();
             await LoadMusicAsync();
+            await LoadPlayState();
+            PlayTimeTextBlock.Text = "00:00/00:00";
         }
 
         private async Task LoadMusicAsync()
@@ -67,21 +163,37 @@ namespace WinUIMusicPlayer.View
         {
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null)
-            {
-                await PlayMusic(selectedMusic);
+            {                
+                await PlayMusic(selectedMusic,true);
             }
         }
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
-        {
+        {            
             if (isPlaying)
             {
-                mediaPlayer.Pause();
+                waveOut.Pause();
                 isPlaying = false;
+                progressTimer.Stop();
             }
             else {
-                mediaPlayer.Play();
-                isPlaying = true;
+                if (waveOut == null)
+                {
+                    if (currentPlayingMusic != null)
+                    {
+                        await PlayMusic(currentPlayingMusic);
+                    }
+                    else
+                    {
+                        var musicList = await dbConnection.Table<Music>().ToListAsync();
+                        await PlayMusic(musicList[0], true);
+                    }                        
+                }
+                else {
+                    waveOut.Play();
+                    isPlaying = true;
+                    progressTimer.Start();
+                }                
             }
             UpdatePlayPauseButtonIcon();
         }
@@ -98,16 +210,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task PlayMusic(Music music)
+        private async Task PlayMusic(Music music,bool isManual = false)
         {
-            if (mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+            if (waveOut != null)
             {
-                mediaPlayer.Pause();
+                waveOut.Stop();
+                waveOut.Dispose();
+                audioFileReader.Dispose();
             }
 
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
+            MusicListView.SelectedItem = music;
+            MusicListView.ScrollIntoView(music);
 
             if (music.Cover != null)
             {
@@ -119,12 +235,63 @@ namespace WinUIMusicPlayer.View
                 }
             }
 
-            var file = await StorageFile.GetFileFromPathAsync(music.Path);
-            var stream = await file.OpenAsync(FileAccessMode.Read);
-            mediaPlayer.Source = MediaSource.CreateFromStream(stream, file.ContentType);
-            mediaPlayer.Play();
+            waveOut = new WaveOutEvent();
+            audioFileReader = new AudioFileReader(music.Path);
+            audioFileReader.Volume = volume;
+            waveOut.Init(audioFileReader);
+            waveOut.Play();
+            if (isManual)
+            {
+                waveOut.PlaybackStopped += ManualPlaybackStopped; // 手动切歌时的事件
+            }
+            else
+            {
+                waveOut.PlaybackStopped += WaveOut_PlaybackStopped; // 自动播放时的事件
+            }
             ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
             isPlaying = true;
+
+            // 初始化进度条
+            ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
+            ProgressSlider.Value = 0;
+            progressTimer.Start();
+
+            await SavePlayState();
+        }
+
+        private async void ManualPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            // 手动切歌后不自动播放下一首
+            isPlaying = false;
+            progressTimer.Stop();
+            UpdatePlayPauseButtonIcon();
+        }
+
+        private async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
+        {           
+            await OnMusicEnded();           
+        }
+
+        private async Task OnMusicEnded()
+        {
+            switch (currentPlayMode)
+            {
+                case PlayMode.SingleLoop:
+                    await PlayMusic(currentPlayingMusic);
+                    break;
+                case PlayMode.ListLoop:
+                    var musicList = await dbConnection.Table<Music>().ToListAsync();
+                    int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % musicList.Count;
+                    await PlayMusic(musicList[nextIndex]);
+                    break;
+                case PlayMode.RandomLoop:
+                    var allMusic = await dbConnection.Table<Music>().ToListAsync();
+                    Random random = new Random();
+                    int randomIndex = random.Next(allMusic.Count);
+                    await PlayMusic(allMusic[randomIndex]);
+                    break;
+            }
         }
 
         private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)
@@ -134,6 +301,104 @@ namespace WinUIMusicPlayer.View
             {
                 await dbConnection.DeleteAsync<Music>(musicId);
                 await LoadMusicAsync();
+            }
+        }
+
+        private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            volume = (float)e.NewValue / 100;
+            if (audioFileReader != null)
+            {                
+                audioFileReader.Volume = volume;
+                if (e.NewValue > 66)
+                {
+                    VolumeSliderIcon.Glyph = "\ue995";
+                }
+                else if (e.NewValue > 33)
+                {
+                    VolumeSliderIcon.Glyph = "\ue994";
+                }
+                else if (e.NewValue > 0)
+                {
+                    VolumeSliderIcon.Glyph = "\uE993";
+                }
+                else
+                {
+                    VolumeSliderIcon.Glyph = "\uE992";
+                }
+            }
+        }
+        private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
+        {
+            var thumb = FindVisualChild<Thumb>(ProgressSlider);
+            if (thumb != null)
+            {
+                thumb.DragStarted += Thumb_DragStarted;
+                thumb.DragCompleted += Thumb_DragCompleted;
+            }
+        }
+
+        private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
+        {
+            isUserDraggingProgressSlider = true;
+        }
+
+        private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            isUserDraggingProgressSlider = false;
+            if (audioFileReader != null && isPlaying)
+            {
+                double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, audioFileReader.TotalTime.TotalSeconds));
+                audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
+            }
+        }
+
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+                else
+                {
+                    var foundChild = FindVisualChild<T>(child);
+                    if (foundChild != null)
+                    {
+                        return foundChild;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void ProgressTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (audioFileReader != null && isPlaying && !isUserDraggingProgressSlider)
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try {
+                        ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
+                        string currentTime = audioFileReader.CurrentTime.ToString(@"mm\:ss");
+                        string totalTime = audioFileReader.TotalTime.ToString(@"mm\:ss");
+                        PlayTimeTextBlock.Text = $"{currentTime}/{totalTime}";
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                    }                    
+                });
+            }
+        }
+
+        private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (!isUserDraggingProgressSlider && audioFileReader != null && isPlaying)
+            {
+                ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
             }
         }
     }

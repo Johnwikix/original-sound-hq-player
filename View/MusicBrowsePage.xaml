@@ -56,22 +56,75 @@
                         <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="10" />
                         <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="10" />
                         <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="10" />
-                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="4" Margin="10" />
-                        <Button Content="移除" Grid.Column="5" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10"/>
+                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="4" Margin="10"  />
+                        <Button x:Name="RemoveMusicButton"  Grid.Column="5" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                            <FontIcon Glyph="&#xecc9;"/>
+                        </Button>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10">
-            <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
-                <FontIcon Glyph="&#xE768;"/>
-                <!-- 播放图标 -->
-            </Button>
-            <Image x:Name="AlbumCoverImage" Width="50" Height="50" Margin="10"/>
-            <StackPanel Orientation="Vertical">
-                <TextBlock x:Name="MusicTitleTextBlock" FontSize="16" Margin="10"/>
-                <TextBlock x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10"/>
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <!-- 固定宽度用于专辑封面、歌名、作者 -->
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- 专辑封面、歌名、作者组件 -->
+            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.RowSpan="2" VerticalAlignment="Center">
+                <Image x:Name="AlbumCoverImage" Width="80" Height="80" Margin="10"/>
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Width="180" TextTrimming="None" x:Name="MusicTitleTextBlock" FontSize="16" Margin="10" TextWrapping="Wrap"/>
+                    <TextBlock VerticalAlignment="Bottom" Width="180" TextTrimming="None" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10" TextWrapping="Wrap"/>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+            <!-- 播放进度条 -->
+            <Grid Grid.Column="1" Grid.Row="0" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Slider x:Name="ProgressSlider"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="0"
+                        Margin="0"
+                        ValueChanged="ProgressSlider_ValueChanged"
+                        Grid.Column="0"
+                        VerticalAlignment="Center"/>
+                <TextBlock x:Name="PlayTimeTextBlock" Grid.Column="1" Margin="10 0 0 0" VerticalAlignment="Center"/>
+            </Grid>
+            <Button x:Name="PlayModeButton" Click="PlayModeButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
+            </Button>
+            <!-- 播放按钮 -->
+            <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+            Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                <FontIcon Glyph="&#xE768;"/>
+            </Button>
+            <!-- 音量组件 -->
+            <Grid Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="VolumeSliderIcon" VerticalAlignment="Center" Glyph="&#xe995;" Margin="0,0,10,0" Grid.Column="0"/>
+                <Slider
+                    x:Name="VolumeSlider"
+                    Minimum="0"
+                    Maximum="100"
+                    Value="100"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Width="100"
+                    ValueChanged="VolumeSlider_ValueChanged"
+                    HorizontalAlignment="Right"/>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

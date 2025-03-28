@@ -17,5 +17,20 @@ namespace WinUIMusicPlayer.Model
         public string Author { get; set; }
         public TimeSpan Duration { get; set; }
         public string Album { get; set; }
+        public string FolderPath { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            Music other = (Music)obj;
+            return Id == other.Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
     }
 }
