@@ -10,7 +10,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
     <Page.Resources>
         <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter"/>
         <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
