@@ -74,7 +74,7 @@
             </Grid.RowDefinitions>
 
             <!-- 进度条和播放时间 -->
-            <Grid Grid.Row="0" Margin="0 0 0 10">
+            <Grid Grid.Row="0" Margin="0 0 0 0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -91,7 +91,7 @@
             </Grid>
 
             <!-- 封面、标题、作者组件 -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0 10 0 10">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
                 <Image x:Name="AlbumCoverImage" Width="80" Height="80" Margin="10"/>
                 <StackPanel Orientation="Vertical">
                     <TextBlock TextTrimming="None" x:Name="MusicTitleTextBlock" FontSize="16" Margin="10" TextWrapping="Wrap"/>
@@ -100,7 +100,7 @@
             </StackPanel>
 
             <!-- 播放模式、播放按钮 -->
-            <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 10 0 0">
+            <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 0 0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -130,8 +130,7 @@
 
                 
             </Grid>
-            <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 10 0 10">
-                <!-- 音量组件 -->
+            <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
                 <!-- 播放模式按钮 -->
                 <Button x:Name="PlayModeButton" Click="PlayModeButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
