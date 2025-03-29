@@ -15,7 +15,7 @@
         <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter"/>
         <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
     </Page.Resources>
-    <Grid>
+    <Grid Margin="0 32 0 0">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -52,7 +52,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Image Source="{x:Bind Cover, Converter={StaticResource ByteArrayToImageConverter}}" Width="50" Height="50" Grid.Column="0" Margin="5"/>
+                        <Image Source="{x:Bind Cover, Converter={StaticResource ByteArrayToImageConverter}}" HorizontalAlignment="Left" Width="32" Height="32" Grid.Column="0" Margin="5"/>
                         <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="10" />
                         <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="10" />
                         <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="10" />

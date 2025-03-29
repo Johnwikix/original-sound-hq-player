@@ -21,6 +21,10 @@ using Windows.Media.Playback;
 using Windows.Storage;
 using NAudio.Wave;
 using static WinUIMusicPlayer.Utils.ToolUtils;
+using Windows.UI.Popups;
+using WinRT.Interop;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -52,6 +56,18 @@ namespace WinUIMusicPlayer.View
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             ProgressSlider.Loaded += ProgressSlider_Loaded;            
+        }
+
+        private async void ShowMessage(string message)
+        {
+            ContentDialog contentDialog = new ContentDialog
+            {
+                Title = "错误",
+                Content = message,
+                CloseButtonText = "确定",
+                XamlRoot = this.XamlRoot
+            };
+            await contentDialog.ShowAsync();
         }
 
         private async Task LoadPlayState()
@@ -163,7 +179,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                var musicList = await dbConnection.Table<Music>().ToListAsync();
+                var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m=> m.Title).ToList();
                 MusicListView.ItemsSource = musicList;
             }
             catch (SQLiteException ex)
@@ -200,7 +216,7 @@ namespace WinUIMusicPlayer.View
                     }
                     else
                     {
-                        var musicList = await dbConnection.Table<Music>().ToListAsync();
+                        var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList(); ;
                         await PlayMusic(musicList[0]);
                     }                        
                 }
@@ -224,37 +240,42 @@ namespace WinUIMusicPlayer.View
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
             }
         }
-        private async Task InitializeAudioResources(Music music)
+        private async Task<bool> InitializeAudioResources(Music music)
         {
-            // 停止并释放旧的音频资源
-            if (waveOut != null)
-            {
-                waveOut.Stop();
-                waveOut.Dispose();
-                waveOut = null;
+            try {
+                if (waveOut != null)
+                {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
+
+                if (audioFileReader != null)
+                {
+                    audioFileReader.Dispose();
+                    audioFileReader = null;
+                }
+
+                // 加载新音频
+                audioFileReader = new AudioFileReader(music.Path);
+                audioFileReader.Volume = volume;
+
+                waveOut = new WaveOutEvent();
+                waveOut.DesiredLatency = 1000;
+                waveOut.NumberOfBuffers = 5;
+                waveOut.Init(audioFileReader);
+                return true;
             }
-
-            if (audioFileReader != null)
+            catch (Exception ex)
             {
-                audioFileReader.Dispose();
-                audioFileReader = null;
+                ShowMessage($"播放失败{ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                return false;
             }
-
-            // 加载新音频
-            audioFileReader = new AudioFileReader(music.Path);
-            audioFileReader.Volume = volume;
-
-            waveOut = new WaveOutEvent();
-            waveOut.DesiredLatency = 1000;
-            waveOut.NumberOfBuffers = 5;
-
-            waveOut.Init(audioFileReader);
         }
 
         private async Task PlayMusic(Music music)
         {
-            await InitializeAudioResources(music);
-
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
@@ -270,21 +291,31 @@ namespace WinUIMusicPlayer.View
                     AlbumCoverImage.Source = bitmapImage;
                 }
             }
-
-            waveOut.Play();
-            waveOut.PlaybackStopped += WaveOut_PlaybackStopped; 
-            ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
-            isPlaying = true;
-
-            // 初始化进度条
-            if (audioFileReader.TotalTime != null)
+            if (await InitializeAudioResources(music))
             {
-                ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
-            }
-            ProgressSlider.Value = 0;
-            progressTimer.Start();
+                try {                
 
-            await SavePlayState();
+                    waveOut.Play();
+                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
+                    isPlaying = true;
+
+                    // 初始化进度条
+                    if (audioFileReader.TotalTime != null)
+                    {
+                        ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
+                    }
+                    ProgressSlider.Value = 0;
+                    progressTimer.Start();
+
+                    await SavePlayState();
+                }
+                catch (Exception ex)
+                {
+                    ShowMessage($"播放失败{ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                }                
+            }            
         }
 
         private async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
@@ -302,19 +333,23 @@ namespace WinUIMusicPlayer.View
 
         private async Task OnMusicEnded()
         {
+            AutoPlay();
+        }
+
+        private async void AutoPlay() {
             switch (currentPlayMode)
             {
                 case PlayMode.SingleLoop:
                     await PlayMusic(currentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    var musicList = await dbConnection.Table<Music>().ToListAsync();
+                    var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % musicList.Count;
                     await PlayMusic(musicList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
-                    var allMusic = await dbConnection.Table<Music>().ToListAsync();
+                    var allMusic = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     Random random = new Random();
                     int randomIndex = random.Next(allMusic.Count);
                     await PlayMusic(allMusic[randomIndex]);

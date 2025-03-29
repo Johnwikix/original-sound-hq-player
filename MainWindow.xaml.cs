@@ -19,6 +19,7 @@ using Windows.UI;
 using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Utils;
 using Windows.ApplicationModel;
+using Microsoft.UI.Composition.SystemBackdrops;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -35,50 +36,11 @@ namespace WinUIMusicPlayer
         {
             InitializeComponent();
             this.Activated += MainWindow_Activated;
-            m_AppWindow = GetAppWindowForCurrentWindow(this);
-            string iconPath = Path.Combine(Package.Current.InstalledLocation.Path, "Assets/icon.ico");
-            m_AppWindow.SetIcon(iconPath);
-            SetTitleBarColors();
-            SystemBackdrop = new DesktopAcrylicBackdrop();
-        }
-
-        private AppWindow GetAppWindowForCurrentWindow(Window window)
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            return AppWindow.GetFromWindowId(windowId);
-        }
-
-        private bool SetTitleBarColors()
-        {
-            if (AppWindowTitleBar.IsCustomizationSupported())
-            {
-                AppWindowTitleBar m_TitleBar = m_AppWindow.TitleBar;
-
-                UISettings settings = new UISettings();
-                var color = settings.GetColorValue(UIColorType.Background);
-                // Set active window colors.
-                // Note: No effect when app is running on Windows 10
-                // because color customization is not supported.
-                m_TitleBar.ForegroundColor = ToolUtils.InvertColor(color);
-                m_TitleBar.BackgroundColor = color;
-                m_TitleBar.ButtonForegroundColor = ToolUtils.InvertColor(color);
-                m_TitleBar.ButtonBackgroundColor = color;
-                m_TitleBar.ButtonHoverForegroundColor = ToolUtils.ConvertToColorOffset(color, (byte)20);
-                m_TitleBar.ButtonHoverBackgroundColor = ToolUtils.ConvertToColorOffset(ToolUtils.InvertColor(color), (byte)20);
-                m_TitleBar.ButtonPressedForegroundColor = ToolUtils.ConvertToColorOffset(color, (byte)40);
-                m_TitleBar.ButtonPressedBackgroundColor = ToolUtils.ConvertToColorOffset(ToolUtils.InvertColor(color), (byte)40);
-                // Set inactive window colors.
-                // Note: No effect when app is running on Windows 10
-                // because color customization is not supported.
-                m_TitleBar.InactiveForegroundColor = ToolUtils.ConvertToColorOffset(ToolUtils.InvertColor(color), (byte)30);
-                m_TitleBar.InactiveBackgroundColor = ToolUtils.ConvertToColorOffset(color, (byte)30);
-                m_TitleBar.ButtonInactiveForegroundColor = ToolUtils.ConvertToColorOffset(ToolUtils.InvertColor(color), (byte)30);
-                m_TitleBar.ButtonInactiveBackgroundColor = ToolUtils.ConvertToColorOffset(color, (byte)30); 
-                return true;
-            }
-            return false;
-        }
+            SystemBackdrop = SystemBackdrop = new MicaBackdrop()
+            { Kind = MicaKind.Base };
+            ExtendsContentIntoTitleBar = true; // 将页面扩展到标题栏中（隐藏了传统的标题栏）
+            SetTitleBar(AppTitleBar);
+        }        
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
