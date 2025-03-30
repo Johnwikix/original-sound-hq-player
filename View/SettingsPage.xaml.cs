@@ -16,6 +16,9 @@ using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using WinUIMusicPlayer.Model;
 using NAudio.CoreAudioApi;
+using SQLite;
+using static SQLite.TableMapping;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -27,14 +30,41 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
+        private SQLiteAsyncConnection dbConnection;
         public SettingsPage()
         {
             this.InitializeComponent();
+            InitializeDatabase();
             LoadOutputDevices();
             InitializeSettings();
         }
 
-        private async void LoadOutputDevices()
+        private async void InitializeDatabase()
+        {
+            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            dbConnection = new SQLiteAsyncConnection(dbPath);
+            await dbConnection.CreateTableAsync<SaveSettings>();
+        }
+
+        private async Task SaveSetting()
+        {
+            var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            SaveSettings newSettings = new SaveSettings();            
+            newSettings.OutputMode = AppSettings.OutputMode;
+            newSettings.Latency = AppSettings.Latency;   
+            newSettings.DeviceFriendlyName = AppSettings.OutputDevice.mMDevice.FriendlyName;
+            newSettings.DeviceId = AppSettings.OutputDevice.mMDevice.ID;
+            if (settings == null)
+            {
+                await dbConnection.InsertAsync(newSettings);
+            }
+            else
+            {
+                await dbConnection.UpdateAsync(newSettings);
+            }
+        }
+
+        private void LoadOutputDevices()
         {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
@@ -42,7 +72,6 @@ namespace WinUIMusicPlayer.View
             {
                 OutputDeviceComboBox.Items.Add(new ComboBoxItem { Content = device.FriendlyName, Tag = device });
             }
-            OutputDeviceComboBox.SelectedIndex = 0;
         }
 
         private void InitializeSettings()
@@ -60,7 +89,8 @@ namespace WinUIMusicPlayer.View
             // 设置初始的输出设备
             foreach (ComboBoxItem item in OutputDeviceComboBox.Items)
             {
-                if (item.Tag == AppSettings.OutputDevice.mMDevice)
+                MMDevice itemDevice = (MMDevice)item.Tag;
+                if (itemDevice.FriendlyName == AppSettings.OutputDevice.mMDevice.FriendlyName)
                 {
                     OutputDeviceComboBox.SelectedItem = item;
                     break;
@@ -78,6 +108,7 @@ namespace WinUIMusicPlayer.View
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                 AppSettings.OutputMode = selectedItem.Content.ToString();
                 AppSettings.OnOutputSettingsChanged();
+                SaveSetting();
             }
         }
 
@@ -88,6 +119,7 @@ namespace WinUIMusicPlayer.View
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                 AppSettings.OutputDevice.mMDevice = (MMDevice)selectedItem.Tag;
                 AppSettings.OnOutputSettingsChanged();
+                SaveSetting();
             }
         }
 
@@ -97,6 +129,7 @@ namespace WinUIMusicPlayer.View
             {
                 AppSettings.Latency = latency;
                 AppSettings.OnOutputSettingsChanged();
+                SaveSetting();
             }
         }
     }

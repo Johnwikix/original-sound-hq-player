@@ -20,6 +20,15 @@ using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Utils;
 using Windows.ApplicationModel;
 using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.UI.Xaml.Media.Imaging;
+using NAudio.Gui;
+using static SQLite.TableMapping;
+using static WinUIMusicPlayer.Utils.ToolUtils;
+using System.Data.Common;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
+using SQLite;
+using NAudio.CoreAudioApi;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -32,6 +41,7 @@ namespace WinUIMusicPlayer
     public sealed partial class MainWindow : Window
     {
         private AppWindow m_AppWindow;
+        private SQLiteAsyncConnection dbConnection;
         public MainWindow()
         {
             InitializeComponent();
@@ -39,7 +49,58 @@ namespace WinUIMusicPlayer
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
-        }        
+            InitializeDatabase();
+        }
+
+        private async void InitializeDatabase()
+        {
+            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            dbConnection = new SQLiteAsyncConnection(dbPath);
+            await dbConnection.CreateTableAsync<Music>();
+            await dbConnection.CreateTableAsync<SavePlayState>();
+            await dbConnection.CreateTableAsync<SaveSettings>();
+            await LoadState();
+        }
+
+
+
+        private async Task LoadState()
+        {
+            var playState = await dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
+            if (playState == null)
+            {
+                // 如果没有记录，默认设置为列表循环
+                playState = new SavePlayState
+                {
+                    PlayMode = PlayMode.ListLoop,
+                    Volume = 0.5f,
+                    LastPlayedMusicId = null
+                };
+                await dbConnection.InsertAsync(playState);
+            }
+            AppData.PlayMode = playState.PlayMode;
+            AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
+            AppData.Volume = playState.Volume;
+            var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
+            AppData.MusicList = musicList;
+            var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            if (settings != null)
+            {
+                AppSettings.OutputMode = settings.OutputMode;
+                AppSettings.Latency = settings.Latency;
+                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                MMDevice mMDevice = null;
+                foreach (var device in devices)
+                {
+                    if (device.FriendlyName == settings.DeviceFriendlyName)
+                    {
+                        AppSettings.OutputDevice.mMDevice = device;
+                        break;
+                    }
+                }
+            }
+        }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {

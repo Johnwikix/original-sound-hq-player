@@ -8,7 +8,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class PlayState
+    public class SavePlayState
     {
         [PrimaryKey]
         public int Id { get; set; } = 1; // 固定 ID 为 1，方便管理

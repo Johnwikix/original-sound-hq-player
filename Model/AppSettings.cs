@@ -10,9 +10,7 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
-        public static OutputDevice OutputDevice { get; set; } = new OutputDevice(
-            "Defualt",
-            "0", 
+        public static OutputDevice OutputDevice { get; set; } = new OutputDevice(           
             (new MMDeviceEnumerator()).EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)[0]);
         public static string OutputMode { get; set; } = "WasapiExclusive";
         public static int Latency { get; set; } = 200;

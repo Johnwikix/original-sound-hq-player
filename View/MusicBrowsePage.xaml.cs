@@ -53,6 +53,7 @@ namespace WinUIMusicPlayer.View
         private bool isPausing = false;
         private bool isSettingsChangeStop = false;
         private TimeSpan currentPosition;
+        private List<Music> musicList;
 
         public MusicBrowsePage()
         {
@@ -68,7 +69,7 @@ namespace WinUIMusicPlayer.View
             {
                 window.Closed += Window_Closed;
             }
-            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+            //AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
         }
 
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
@@ -77,7 +78,6 @@ namespace WinUIMusicPlayer.View
             if (isPlaying)
             {
                 isManualSelect = true;
-                currentPosition = audioFileReader.CurrentTime;
                 if (progressTimer != null)
                 {
                     progressTimer.Stop();
@@ -147,22 +147,10 @@ namespace WinUIMusicPlayer.View
         }
 
         private async Task LoadPlayState()
-        {
-            var playState = await dbConnection.Table<PlayState>().FirstOrDefaultAsync();
-            if (playState == null)
-            {
-                // 如果没有记录，默认设置为列表循环
-                playState = new PlayState
-                {
-                    PlayMode = PlayMode.ListLoop,
-                    Volume = 0.5f,
-                    LastPlayedMusicId = null
-                };
-                await dbConnection.InsertAsync(playState);
-            }
-            currentPlayMode = playState.PlayMode;
-            lastPlayedMusicId = playState.LastPlayedMusicId;
-            volume = playState.Volume;
+        {           
+            currentPlayMode = AppData.PlayMode;
+            lastPlayedMusicId = AppData.LastPlayedMusicId;
+            volume = AppData.Volume;
             VolumeSlider.Value = volume * 100;
             currentPlayingMusic = await dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
             if (currentPlayingMusic != null)
@@ -183,10 +171,10 @@ namespace WinUIMusicPlayer.View
 
         private async Task SavePlayState()
         {
-            var playState = await dbConnection.Table<PlayState>().FirstOrDefaultAsync();
+            var playState = await dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
             if (playState == null)
             {
-                playState = new PlayState
+                playState = new SavePlayState
                 {
                     Id = 1
                 };
@@ -249,7 +237,7 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
-            await dbConnection.CreateTableAsync<PlayState>();
+            await dbConnection.CreateTableAsync<SavePlayState>();
             await LoadMusicAsync();
             await LoadPlayState();
             PlayTimeTextBlock.Text = "00:00/00:00";
@@ -259,7 +247,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m=> m.Title).ToList();
+                musicList = AppData.MusicList;
                 MusicListView.ItemsSource = musicList;
             }
             catch (SQLiteException ex)
@@ -307,7 +295,7 @@ namespace WinUIMusicPlayer.View
                     }
                     else
                     {
-                        var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList(); ;
+                        //var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                         await PlayMusic(musicList[0]);
                     }                        
                 }
@@ -479,16 +467,16 @@ namespace WinUIMusicPlayer.View
                     await PlayMusic(currentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
+                    //var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % musicList.Count;
                     await PlayMusic(musicList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
-                    var allMusic = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
+                    //var allMusic = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     Random random = new Random();
-                    int randomIndex = random.Next(allMusic.Count);
-                    await PlayMusic(allMusic[randomIndex]);
+                    int randomIndex = random.Next(musicList.Count);
+                    await PlayMusic(musicList[randomIndex]);
                     break;
             }
         }
