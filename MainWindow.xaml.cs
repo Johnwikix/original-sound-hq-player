@@ -36,9 +36,8 @@ namespace WinUIMusicPlayer
         {
             InitializeComponent();
             this.Activated += MainWindow_Activated;
-            SystemBackdrop = SystemBackdrop = new MicaBackdrop()
-            { Kind = MicaKind.Base };
-            ExtendsContentIntoTitleBar = true; // 将页面扩展到标题栏中（隐藏了传统的标题栏）
+            SystemBackdrop = new DesktopAcrylicBackdrop();
+            ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
         }        
 

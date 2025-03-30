@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.CoreAudioApi;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,12 +10,15 @@ namespace WinUIMusicPlayer.Model
     public class OutputDevice
     {
         public string name { get; set; }
-        public int ID { get; set; }
+        public string id { get; set; }
 
-        public OutputDevice(string name, int id)
+        public MMDevice mMDevice { get; set; }
+
+        public OutputDevice(string name, string id, MMDevice mMDevice)
         {
             this.name = name;
-            this.ID = id;
+            this.id = id;
+            this.mMDevice = mMDevice;
         }
     }
 }

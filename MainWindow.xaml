@@ -11,7 +11,7 @@
     >
 
     <Window.SystemBackdrop>
-        <MicaBackdrop Kind="Base"/>
+        <DesktopAcrylicBackdrop/>
     </Window.SystemBackdrop>
     <Grid>
         <Grid

@@ -51,6 +51,7 @@ namespace WinUIMusicPlayer.View
         private int? lastPlayedMusicId;
         private bool isManualSelect = false;
         private bool isPausing = false;
+        private bool isSettingsChangeStop = false;
         private TimeSpan currentPosition;
 
         public MusicBrowsePage()
@@ -66,6 +67,37 @@ namespace WinUIMusicPlayer.View
             if (window != null)
             {
                 window.Closed += Window_Closed;
+            }
+            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+        }
+
+        private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
+        {
+            // 如果当前正在播放，停止播放并重新初始化音频资源
+            if (isPlaying)
+            {
+                isManualSelect = true;
+                currentPosition = audioFileReader.CurrentTime;
+                if (progressTimer != null)
+                {
+                    progressTimer.Stop();
+                    ProgressSlider.Value = 0;
+                }
+                if (waveOut != null)
+                {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
+                if (audioFileReader != null)
+                {
+                    audioFileReader.Dispose();
+                    audioFileReader = null;
+                }
+                if (currentPlayingMusic != null)
+                {
+                    _ = PlayMusic(currentPlayingMusic);
+                }
             }
         }
         private void Window_Closed(object sender, WindowEventArgs args)
@@ -328,26 +360,24 @@ namespace WinUIMusicPlayer.View
                 // 加载新音频
                 audioFileReader = new AudioFileReader(music.Path);
                 audioFileReader.Volume = volume;
+                MMDevice selectedDevice = null;
+                if (AppSettings.OutputDevice.mMDevice != null)
+                {
+                    selectedDevice = AppSettings.OutputDevice.mMDevice;
+                }
                 switch (AppSettings.OutputMode)
                 {
                     case "WaveOut":
                         waveOut = new WaveOutEvent();  
                         break;
-                    case "Wasapi":
-                        waveOut = new WasapiOut(AudioClientShareMode.Shared, AppSettings.latency);  
+                    case "WasapiShared":
+                        waveOut = new WasapiOut(selectedDevice,AudioClientShareMode.Shared,false,AppSettings.Latency);  
                         break;       
-                    case "WasapiExclusive":
-                        MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                        foreach (var de in devices)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"设备: {de.FriendlyName}");
-                        }
-                        MMDevice selectedDevice = devices[5];
-                        waveOut = new WasapiOut(selectedDevice,AudioClientShareMode.Exclusive,true, AppSettings.latency);
+                    case "WasapiExclusive":                             
+                        waveOut = new WasapiOut(selectedDevice,AudioClientShareMode.Exclusive,true, AppSettings.Latency);
                         break;
                     case "DirectSound":
-                        waveOut = new DirectSoundOut(AppSettings.latency);
+                        waveOut = new DirectSoundOut(AppSettings.Latency);
                         break;
                     default:
                         waveOut = new WaveOutEvent();                        
@@ -355,7 +385,7 @@ namespace WinUIMusicPlayer.View
                 }
                 if (waveOut is WaveOutEvent defaultWaveOutEvent)
                 {
-                    defaultWaveOutEvent.DesiredLatency = AppSettings.latency;
+                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
                     defaultWaveOutEvent.NumberOfBuffers = 3;
                 }
                 waveOut.Init(audioFileReader);
@@ -425,10 +455,16 @@ namespace WinUIMusicPlayer.View
                 isManualSelect = false;
                 return;
             }
+            // 判断是否是设置更改导致的播放停止，如果是则不执行自动联播
+            else if (isSettingsChangeStop)
+            {
+                isSettingsChangeStop = false;
+                return;
+            }
             else
             {
                 await OnMusicEnded();
-            }         
+            }
         }
 
         private async Task OnMusicEnded()
