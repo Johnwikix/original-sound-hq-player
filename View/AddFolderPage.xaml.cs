@@ -36,6 +36,25 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             InitializeDatabase();
+            // 订阅 MainWindow 的 FoldersLoaded 事件
+            var mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.FoldersLoaded += MainWindow_FoldersLoaded;
+            }
+        }
+
+        private void MainWindow_FoldersLoaded(object sender, IEnumerable<Folder> folderList)
+        {
+            try
+            {
+                // 直接使用传递过来的文件夹列表更新 UI
+                FolderListView.ItemsSource = folderList;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"更新文件夹列表时出错: {ex.Message}");
+            }
         }
 
         private async void InitializeDatabase()
@@ -44,7 +63,6 @@ namespace WinUIMusicPlayer.View
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Folder>();
             await dbConnection.CreateTableAsync<Music>();
-            await LoadFoldersAsync();
         }
 
         private async Task LoadFoldersAsync()

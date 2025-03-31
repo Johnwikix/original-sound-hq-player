@@ -42,6 +42,7 @@ namespace WinUIMusicPlayer
     {
         private AppWindow m_AppWindow;
         private SQLiteAsyncConnection dbConnection;
+        public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public MainWindow()
         {
             InitializeComponent();
@@ -57,11 +58,25 @@ namespace WinUIMusicPlayer
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
+            await dbConnection.CreateTableAsync<Folder>();
             await dbConnection.CreateTableAsync<SavePlayState>();
             await dbConnection.CreateTableAsync<SaveSettings>();
-            await LoadState();
+            LoadState();
+            LoadFoldersAsync();
         }
-
+        private async Task LoadFoldersAsync()
+        {
+            try
+            {
+                var folderList = await dbConnection.Table<Folder>().ToListAsync();
+                // 触发事件通知子页面更新
+                FoldersLoaded?.Invoke(this, folderList);
+            }
+            catch (SQLiteException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+            }
+        }
 
 
         private async Task LoadState()
@@ -90,14 +105,18 @@ namespace WinUIMusicPlayer
                 AppSettings.Latency = settings.Latency;
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                MMDevice mMDevice = null;
                 foreach (var device in devices)
                 {
                     if (device.FriendlyName == settings.DeviceFriendlyName)
                     {
                         AppSettings.OutputDevice.mMDevice = device;
+                        AppSettings.DeviceName = device.FriendlyName;
                         break;
                     }
+                }
+                foreach (var device in devices)
+                {
+                    AppSettings.outputDeviceList.Add(device.FriendlyName);
                 }
             }
         }

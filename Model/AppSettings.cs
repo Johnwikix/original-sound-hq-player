@@ -16,6 +16,10 @@ namespace WinUIMusicPlayer.Model
         public static int Latency { get; set; } = 200;
 
         public static event EventHandler OutputSettingsChanged;
+
+        public static List<string> outputDeviceList = new List<string>();
+
+        public static string DeviceName = "Default";
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

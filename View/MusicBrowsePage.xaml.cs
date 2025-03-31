@@ -27,6 +27,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using NAudio.CoreAudioApi;
 using NAudio.Gui;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -69,7 +70,7 @@ namespace WinUIMusicPlayer.View
             {
                 window.Closed += Window_Closed;
             }
-            //AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
         }
 
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
@@ -77,26 +78,43 @@ namespace WinUIMusicPlayer.View
             // 如果当前正在播放，停止播放并重新初始化音频资源
             if (isPlaying)
             {
-                isManualSelect = true;
+                isSettingsChangeStop = true; // 添加标记，表明是设置更改导致的停止
+                TimeSpan currentPos = audioFileReader.CurrentTime; // 保存当前播放位置
+
                 if (progressTimer != null)
                 {
                     progressTimer.Stop();
-                    ProgressSlider.Value = 0;
                 }
+
                 if (waveOut != null)
                 {
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
                 }
+
                 if (audioFileReader != null)
                 {
                     audioFileReader.Dispose();
                     audioFileReader = null;
                 }
+
                 if (currentPlayingMusic != null)
                 {
-                    _ = PlayMusic(currentPlayingMusic);
+                    // 创建一个异步任务来重新播放音乐，但从保存的位置开始
+                    _ = Task.Run(async () =>
+                    {
+                        await this.DispatcherQueue.EnqueueAsync(async () =>
+                        {
+                            await PlayMusic(currentPlayingMusic);
+                            // 设置到之前保存的位置
+                            if (audioFileReader != null)
+                            {
+                                audioFileReader.CurrentTime = currentPos;
+                            }
+                            isSettingsChangeStop = false;
+                        });
+                    });
                 }
             }
         }
@@ -268,55 +286,65 @@ namespace WinUIMusicPlayer.View
         }
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
-        {            
+        {
             if (isPlaying)
             {
                 if (AppSettings.OutputMode == "WasapiExclusive")
                 {
-                    // 设置暂停标志
+                    // Set pause flag
                     isPausing = true;
                     currentPosition = audioFileReader.CurrentTime;
                     waveOut.Stop();
                     isPlaying = false;
                     progressTimer.Stop();
                 }
-                else {
+                else
+                {
+                    isPausing = true; // Add this flag for consistent behavior
                     waveOut.Pause();
                     isPlaying = false;
                     progressTimer.Stop();
-                }               
+                }
+                UpdatePlayPauseButtonIcon();
             }
-            else {
+            else
+            {
                 if (waveOut == null)
                 {
                     if (currentPlayingMusic != null)
                     {
                         await PlayMusic(currentPlayingMusic);
                     }
+                    else if (musicList != null && musicList.Count > 0)
+                    {
+                        await PlayMusic(musicList[0]);
+                    }
                     else
                     {
-                        //var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
-                        await PlayMusic(musicList[0]);
-                    }                        
+                        ShowMessage("没有可播放的音乐");
+                        return;
+                    }
                 }
-                else {
-                    if (AppSettings.OutputMode == "WasapiExclusive" && isPausing)
+                else
+                {
+                    isPausing = false; // Reset pause flag
+                    if (AppSettings.OutputMode == "WasapiExclusive")
                     {
-                        isPausing = false;
-                        // 不重新初始化 waveOut
+                        // Resume from saved position
                         audioFileReader.CurrentTime = currentPosition;
                         waveOut.Play();
                         isPlaying = true;
                         progressTimer.Start();
                     }
-                    else {
+                    else
+                    {
                         waveOut.Play();
                         isPlaying = true;
                         progressTimer.Start();
-                    }                    
-                }                
+                    }
+                }
+                UpdatePlayPauseButtonIcon();
             }
-            UpdatePlayPauseButtonIcon();
         }
 
         private void UpdatePlayPauseButtonIcon()
@@ -406,14 +434,14 @@ namespace WinUIMusicPlayer.View
             }
             if (await InitializeAudioResources(music))
             {
-                try {                
-
-                    waveOut.Play();
+                try
+                {
                     waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    waveOut.Play();
                     ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
                     isPlaying = true;
 
-                    // 初始化进度条
+                    // Initialize progress bar
                     if (audioFileReader.TotalTime != null)
                     {
                         ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
@@ -427,31 +455,66 @@ namespace WinUIMusicPlayer.View
                 {
                     ShowMessage($"播放失败{ex.Message}");
                     System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-                }                
-            }            
+                }
+            }           
         }
 
         private async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
         {
+            bool isNaturalEnd = false;
+
+            if (audioFileReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            {
+                // Check if we're at the end of the file (with small tolerance for timing issues)
+                double currentPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
+                double totalDurationSeconds = audioFileReader.TotalTime.TotalSeconds;
+
+                // Consider it a natural end if we're within 0.5 seconds of the total duration
+                isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
+            }
+
+            // Reset flags
             if (isPausing)
             {
-                // 如果是暂停，不执行自动播放
+                // Do nothing as this is a pause operation
                 return;
             }
+
             if (isManualSelect)
             {
                 isManualSelect = false;
                 return;
             }
-            // 判断是否是设置更改导致的播放停止，如果是则不执行自动联播
-            else if (isSettingsChangeStop)
+
+            if (isSettingsChangeStop)
             {
                 isSettingsChangeStop = false;
                 return;
             }
-            else
+
+            if (isNaturalEnd)
             {
-                await OnMusicEnded();
+                await AutoPlayNextTrack();
+            }
+        }
+
+        private async Task AutoPlayNextTrack()
+        {
+            switch (currentPlayMode)
+            {
+                case PlayMode.SingleLoop:
+                    await PlayMusic(currentPlayingMusic);
+                    break;
+                case PlayMode.ListLoop:
+                    int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % musicList.Count;
+                    await PlayMusic(musicList[nextIndex]);
+                    break;
+                case PlayMode.RandomLoop:
+                    Random random = new Random();
+                    int randomIndex = random.Next(musicList.Count);
+                    await PlayMusic(musicList[randomIndex]);
+                    break;
             }
         }
 
