@@ -40,7 +40,6 @@ namespace WinUIMusicPlayer
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        private AppWindow m_AppWindow;
         private SQLiteAsyncConnection dbConnection;
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public MainWindow()

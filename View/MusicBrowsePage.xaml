@@ -109,9 +109,9 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>                
+                </Grid.RowDefinitions>
 
-                <Button x:Name="LastMusicButton" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="LastMusicButton" Click="LastMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe892;"/>
                 </Button>
@@ -122,7 +122,7 @@
                     <FontIcon Glyph="&#xE768;" Width="50" Height="50" FontSize="36"/>
                 </Button>
 
-                <Button x:Name="NextMusicButton" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="NextMusicButton" Click="NextMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe893;"/>
                 </Button>

@@ -28,6 +28,7 @@ using Microsoft.UI.Windowing;
 using NAudio.CoreAudioApi;
 using NAudio.Gui;
 using WinUIMusicPlayer.Utils;
+using Windows.Media;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,8 +41,8 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {
         private SQLiteAsyncConnection dbConnection;
-        private MediaPlayer mediaPlayer;
         private Music currentPlayingMusic;
+        private List<Music> lastPlayingMusic = new List<Music>();
         private IWavePlayer waveOut;
         private AudioFileReader audioFileReader;
         private float volume = 0.5f;
@@ -54,7 +55,7 @@ namespace WinUIMusicPlayer.View
         private bool isPausing = false;
         private bool isSettingsChangeStop = false;
         private TimeSpan currentPosition;
-        private List<Music> musicList;
+        private List<Music> musicList;        
 
         public MusicBrowsePage()
         {
@@ -71,7 +72,8 @@ namespace WinUIMusicPlayer.View
                 window.Closed += Window_Closed;
             }
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-        }
+            
+        }       
 
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
@@ -228,6 +230,29 @@ namespace WinUIMusicPlayer.View
             UpdatePlayModeIcon();
         }
 
+        private async void NextMusicButton_Click(object sender, RoutedEventArgs e) {
+            isManualSelect = true;            
+            await AutoPlayNextTrack();
+            isManualSelect = false;
+        }
+
+        private async void LastMusicButton_Click(object sender, RoutedEventArgs e)
+        {
+            isManualSelect = true;
+            await PlayLastTrack();
+            isManualSelect = false;
+        }
+
+        private async Task PlayLastTrack()
+        {
+            if (lastPlayingMusic.Count > 0)
+            {
+                var lastMusic = lastPlayingMusic.Last();
+                lastPlayingMusic.RemoveAt(lastPlayingMusic.Count - 1);
+                await PlayMusic(lastMusic);
+            }
+        }
+
         private void UpdatePlayModeIcon()
         {
             switch (currentPlayMode)
@@ -280,6 +305,10 @@ namespace WinUIMusicPlayer.View
             if (selectedMusic != null)
             {
                 isManualSelect = true;
+                if (currentPlayingMusic != null)
+                {
+                    lastPlayingMusic.Add(currentPlayingMusic);
+                }
                 await PlayMusic(selectedMusic);
                 isManualSelect = false;
             }
@@ -416,7 +445,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private async Task PlayMusic(Music music)
-        {
+        {            
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
@@ -500,43 +529,21 @@ namespace WinUIMusicPlayer.View
 
         private async Task AutoPlayNextTrack()
         {
-            switch (currentPlayMode)
+            if (currentPlayingMusic != null)
             {
-                case PlayMode.SingleLoop:
-                    await PlayMusic(currentPlayingMusic);
-                    break;
-                case PlayMode.ListLoop:
-                    int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
-                    int nextIndex = (currentIndex + 1) % musicList.Count;
-                    await PlayMusic(musicList[nextIndex]);
-                    break;
-                case PlayMode.RandomLoop:
-                    Random random = new Random();
-                    int randomIndex = random.Next(musicList.Count);
-                    await PlayMusic(musicList[randomIndex]);
-                    break;
+                lastPlayingMusic.Add(currentPlayingMusic);
             }
-        }
-
-        private async Task OnMusicEnded()
-        {
-            AutoPlay();
-        }
-
-        private async void AutoPlay() {
             switch (currentPlayMode)
             {
                 case PlayMode.SingleLoop:
                     await PlayMusic(currentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    //var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % musicList.Count;
                     await PlayMusic(musicList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
-                    //var allMusic = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
                     Random random = new Random();
                     int randomIndex = random.Next(musicList.Count);
                     await PlayMusic(musicList[randomIndex]);
