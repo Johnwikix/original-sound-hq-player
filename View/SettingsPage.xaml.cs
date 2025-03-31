@@ -1,24 +1,11 @@
+using Microsoft.UI.Xaml.Controls;
+using NAudio.CoreAudioApi;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Windows.Devices.Enumeration;
-using Windows.Media.Devices;
-using WinUIMusicPlayer.Model;
-using NAudio.CoreAudioApi;
-using SQLite;
-using static SQLite.TableMapping;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,7 +25,7 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             DateTime dateTime = DateTime.Now;
             InitializeDatabase();
-            LoadOutputDevices();            
+            LoadOutputDevices();
             InitializeSettings();
             InitializeOutputDevices();
         }
@@ -52,22 +39,23 @@ namespace WinUIMusicPlayer.View
 
         private void InitializeOutputDevices()
         {
-            Task.Run(() => {
+            Task.Run(() =>
+            {
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
                 foreach (var device in devices)
                 {
                     outputDeviceList.Add(device);
                 }
-            });            
+            });
         }
 
         private async Task SaveSetting()
         {
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
-            SaveSettings newSettings = new SaveSettings();            
+            SaveSettings newSettings = new SaveSettings();
             newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppSettings.Latency;   
+            newSettings.Latency = AppSettings.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             if (settings == null)
             {
@@ -84,7 +72,7 @@ namespace WinUIMusicPlayer.View
             List<string> outputDeviceList = AppSettings.outputDeviceList;
             foreach (var device in outputDeviceList)
             {
-                OutputDeviceComboBox.Items.Add(new ComboBoxItem { Content = device});
+                OutputDeviceComboBox.Items.Add(new ComboBoxItem { Content = device });
             }
         }
 
@@ -125,9 +113,10 @@ namespace WinUIMusicPlayer.View
             {
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                 AppSettings.OutputMode = selectedItem.Content.ToString();
-                if (!isInitializing) {
+                if (!isInitializing)
+                {
                     AppSettings.OnOutputSettingsChanged();
-                }                
+                }
                 SaveSetting();
             }
         }
@@ -143,10 +132,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void OutputDeviceChanged() {
+        private void OutputDeviceChanged()
+        {
             Task.Run(() =>
             {
-                if (outputDeviceList.Count > 0) {
+                if (outputDeviceList.Count > 0)
+                {
                     foreach (var device in outputDeviceList)
                     {
                         if (device.FriendlyName == AppSettings.DeviceName)

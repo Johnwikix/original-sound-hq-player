@@ -1,34 +1,19 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using SQLite;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Windows.Media.Core;
-using Windows.Media.Playback;
-using Windows.Storage;
-using NAudio.Wave;
-using static WinUIMusicPlayer.Utils.ToolUtils;
-using Windows.UI.Popups;
-using WinRT.Interop;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
-using NAudio.CoreAudioApi;
-using NAudio.Gui;
 using WinUIMusicPlayer.Utils;
-using Windows.Media;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -55,7 +40,7 @@ namespace WinUIMusicPlayer.View
         private bool isPausing = false;
         private bool isSettingsChangeStop = false;
         private TimeSpan currentPosition;
-        private List<Music> musicList;        
+        private List<Music> musicList;
 
         public MusicBrowsePage()
         {
@@ -72,8 +57,8 @@ namespace WinUIMusicPlayer.View
                 window.Closed += Window_Closed;
             }
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-            
-        }       
+
+        }
 
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
@@ -163,11 +148,11 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"´íÎó: {ex.Message}");
-            }            
+            }
         }
 
         private async Task LoadPlayState()
-        {           
+        {
             currentPlayMode = AppData.PlayMode;
             lastPlayedMusicId = AppData.LastPlayedMusicId;
             volume = AppData.Volume;
@@ -177,14 +162,15 @@ namespace WinUIMusicPlayer.View
             {
                 MusicTitleTextBlock.Text = currentPlayingMusic.Title;
                 MusicAuthorTextBlock.Text = currentPlayingMusic.Author;
-                if (currentPlayingMusic.Cover != null) {
+                if (currentPlayingMusic.Cover != null)
+                {
                     using (var ms = new MemoryStream(currentPlayingMusic.Cover))
                     {
                         var bitmapImage = new BitmapImage();
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                         AlbumCoverImage.Source = bitmapImage;
                     }
-                }                
+                }
             }
             UpdatePlayModeIcon();
         }
@@ -230,8 +216,9 @@ namespace WinUIMusicPlayer.View
             UpdatePlayModeIcon();
         }
 
-        private async void NextMusicButton_Click(object sender, RoutedEventArgs e) {
-            isManualSelect = true;            
+        private async void NextMusicButton_Click(object sender, RoutedEventArgs e)
+        {
+            isManualSelect = true;
             await AutoPlayNextTrack();
             isManualSelect = false;
         }
@@ -389,7 +376,8 @@ namespace WinUIMusicPlayer.View
         }
         private async Task<bool> InitializeAudioResources(Music music)
         {
-            try {
+            try
+            {
                 if (waveOut != null)
                 {
                     waveOut.Stop();
@@ -401,7 +389,7 @@ namespace WinUIMusicPlayer.View
                 {
                     audioFileReader.Dispose();
                     audioFileReader = null;
-                }                
+                }
                 // ¼ÓÔØÐÂÒôÆµ
                 audioFileReader = new AudioFileReader(music.Path);
                 audioFileReader.Volume = volume;
@@ -413,19 +401,19 @@ namespace WinUIMusicPlayer.View
                 switch (AppSettings.OutputMode)
                 {
                     case "WaveOut":
-                        waveOut = new WaveOutEvent();  
+                        waveOut = new WaveOutEvent();
                         break;
                     case "WasapiShared":
-                        waveOut = new WasapiOut(selectedDevice,AudioClientShareMode.Shared,false,AppSettings.Latency);  
-                        break;       
-                    case "WasapiExclusive":                             
-                        waveOut = new WasapiOut(selectedDevice,AudioClientShareMode.Exclusive,true, AppSettings.Latency);
+                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
+                        break;
+                    case "WasapiExclusive":
+                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                         break;
                     case "DirectSound":
                         waveOut = new DirectSoundOut(AppSettings.Latency);
                         break;
                     default:
-                        waveOut = new WaveOutEvent();                        
+                        waveOut = new WaveOutEvent();
                         break;
                 }
                 if (waveOut is WaveOutEvent defaultWaveOutEvent)
@@ -445,7 +433,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private async Task PlayMusic(Music music)
-        {            
+        {
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
@@ -485,7 +473,7 @@ namespace WinUIMusicPlayer.View
                     ShowMessage($"²¥·ÅÊ§°Ü{ex.Message}");
                     System.Diagnostics.Debug.WriteLine($"´íÎó: {ex.Message}");
                 }
-            }           
+            }
         }
 
         private async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
@@ -565,7 +553,7 @@ namespace WinUIMusicPlayer.View
         {
             volume = (float)e.NewValue / 100;
             if (audioFileReader != null)
-            {                
+            {
                 audioFileReader.Volume = volume;
                 if (e.NewValue > 66)
                 {
@@ -637,7 +625,8 @@ namespace WinUIMusicPlayer.View
             {
                 this.DispatcherQueue.TryEnqueue(() =>
                 {
-                    try {
+                    try
+                    {
                         if (audioFileReader.CurrentTime != null)
                         {
                             ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
@@ -649,7 +638,7 @@ namespace WinUIMusicPlayer.View
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"´íÎó: {ex.Message}");
-                    }                    
+                    }
                 });
             }
         }
