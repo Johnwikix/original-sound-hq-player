@@ -6,7 +6,6 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
@@ -46,7 +45,7 @@ namespace WinUIMusicPlayer
             LoadState();
             LoadMusicList();
             LoadFoldersAsync();
-           
+
         }
         public async Task LoadFoldersAsync()
         {
@@ -62,7 +61,8 @@ namespace WinUIMusicPlayer
             }
         }
 
-        public async Task LoadMusicList(string search=null) {
+        public async Task LoadMusicList(string search = null)
+        {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(search))
             {
@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer
             }
             AppData.PlayMode = playState.PlayMode;
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
-            AppData.Volume = playState.Volume;            
+            AppData.Volume = playState.Volume;
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {

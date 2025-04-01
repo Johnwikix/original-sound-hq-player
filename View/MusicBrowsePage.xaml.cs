@@ -9,7 +9,6 @@ using NAudio.Wave;
 using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -179,7 +178,7 @@ namespace WinUIMusicPlayer.View
                     {
                         await this.DispatcherQueue.EnqueueAsync(async () =>
                         {
-                            await PlayMusic(currentPlayingMusic,currentPos,true);    
+                            await PlayMusic(currentPlayingMusic, currentPos, true);
                         });
                     });
                 }
@@ -349,7 +348,7 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
-            await dbConnection.CreateTableAsync<SavePlayState>();         
+            await dbConnection.CreateTableAsync<SavePlayState>();
             if (mainWindow != null)
             {
                 await mainWindow.LoadMusicList();
@@ -459,7 +458,7 @@ namespace WinUIMusicPlayer.View
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
             }
         }
-        private async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos= new TimeSpan())
+        private async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
         {
             try
             {
@@ -518,7 +517,8 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task LoadCover(Music music) {
+        private async Task LoadCover(Music music)
+        {
             // 从文件路径读取嵌入封面
             try
             {
@@ -542,7 +542,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false) 
+        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
@@ -554,8 +554,8 @@ namespace WinUIMusicPlayer.View
             {
                 try
                 {
-                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;                    
-                    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";                    
+                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
                     if (audioFileReader.TotalTime != null)
                     {
                         ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
@@ -752,7 +752,7 @@ namespace WinUIMusicPlayer.View
             {
                 // 检查新值是否与当前播放位置相差较大
                 double currentPosition = audioFileReader.CurrentTime.TotalSeconds;
-                if (Math.Abs(e.NewValue - currentPosition) > 1.0) 
+                if (Math.Abs(e.NewValue - currentPosition) > 1.0)
                 {
                     audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                 }
