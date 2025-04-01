@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.CoreAudioApi;
@@ -8,6 +9,7 @@ using NAudio.Wave;
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,6 +52,9 @@ namespace WinUIMusicPlayer.View
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             ProgressSlider.Loaded += ProgressSlider_Loaded;
 
+            // 添加键盘事件处理
+            this.KeyDown += MusicBrowsePage_KeyDown;
+
             // 订阅窗口关闭事件
             var window = Window.Current;
             if (window != null)
@@ -60,13 +65,54 @@ namespace WinUIMusicPlayer.View
 
         }
 
+        private void MusicBrowsePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Windows.System.VirtualKey.Left:
+                    AdjustPlaybackPosition(-5);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Right:
+                    AdjustPlaybackPosition(5);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Up:
+                    AdjustVolume(1);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Down:
+                    AdjustVolume(-1);
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void AdjustPlaybackPosition(int seconds)
+        {
+            if (audioFileReader != null && isPlaying)
+            {
+                double newPosition = audioFileReader.CurrentTime.TotalSeconds + seconds;
+                newPosition = Math.Max(0, Math.Min(newPosition, audioFileReader.TotalTime.TotalSeconds));
+                audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                ProgressSlider.Value = newPosition;
+            }
+        }
+
+        private void AdjustVolume(int delta)
+        {
+            double newVolume = VolumeSlider.Value + delta;
+            newVolume = Math.Max(0, Math.Min(newVolume, 100));
+            VolumeSlider.Value = newVolume;
+        }
+
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
             // 如果当前正在播放，停止播放并重新初始化音频资源
             if (isPlaying)
             {
-                isSettingsChangeStop = true; // 添加标记，表明是设置更改导致的停止
-                TimeSpan currentPos = audioFileReader.CurrentTime; // 保存当前播放位置
+                isSettingsChangeStop = true;
+                TimeSpan currentPos = audioFileReader.CurrentTime;
 
                 if (progressTimer != null)
                 {
@@ -93,13 +139,7 @@ namespace WinUIMusicPlayer.View
                     {
                         await this.DispatcherQueue.EnqueueAsync(async () =>
                         {
-                            await PlayMusic(currentPlayingMusic);
-                            // 设置到之前保存的位置
-                            if (audioFileReader != null)
-                            {
-                                audioFileReader.CurrentTime = currentPos;
-                            }
-                            isSettingsChangeStop = false;
+                            await PlayMusic(currentPlayingMusic,currentPos,true);    
                         });
                     });
                 }
@@ -228,6 +268,16 @@ namespace WinUIMusicPlayer.View
             isManualSelect = true;
             await PlayLastTrack();
             isManualSelect = false;
+        }
+
+        private void FastForwardButton_Click(object sender, RoutedEventArgs e)
+        {
+            AdjustPlaybackPosition(5);
+        }
+
+        private void FastBackwardButton_Click(object sender, RoutedEventArgs e)
+        {
+            AdjustPlaybackPosition(-5);
         }
 
         private async Task PlayLastTrack()
@@ -374,7 +424,7 @@ namespace WinUIMusicPlayer.View
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
             }
         }
-        private async Task<bool> InitializeAudioResources(Music music)
+        private async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos= new TimeSpan())
         {
             try
             {
@@ -393,6 +443,7 @@ namespace WinUIMusicPlayer.View
                 // 加载新音频
                 audioFileReader = new AudioFileReader(music.Path);
                 audioFileReader.Volume = volume;
+                audioFileReader.CurrentTime = currentPos;
                 MMDevice selectedDevice = null;
                 if (AppSettings.OutputDevice.mMDevice != null)
                 {
@@ -432,7 +483,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task PlayMusic(Music music)
+        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false) 
         {
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
@@ -440,16 +491,28 @@ namespace WinUIMusicPlayer.View
             MusicListView.SelectedItem = music;
             MusicListView.ScrollIntoView(music);
 
-            if (music.Cover != null)
+            // 从文件路径读取嵌入封面
+            try
             {
-                using (var ms = new MemoryStream(music.Cover))
+                using (var file = TagLib.File.Create(music.Path))
                 {
-                    var bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                    AlbumCoverImage.Source = bitmapImage;
+                    if (file.Tag.Pictures.Length > 0)
+                    {
+                        var picture = file.Tag.Pictures[0];
+                        using (var ms = new MemoryStream(picture.Data.Data))
+                        {
+                            var bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                            AlbumCoverImage.Source = bitmapImage;
+                        }
+                    }
                 }
             }
-            if (await InitializeAudioResources(music))
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
+            }
+            if (await InitializeAudioResources(music, currentPos))
             {
                 try
                 {
@@ -463,7 +526,14 @@ namespace WinUIMusicPlayer.View
                     {
                         ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
                     }
-                    ProgressSlider.Value = 0;
+                    if (isSettingChanged)
+                    {
+                        ProgressSlider.Value = currentPos.TotalSeconds;
+                    }
+                    else
+                    {
+                        ProgressSlider.Value = 0;
+                    }
                     progressTimer.Start();
 
                     await SavePlayState();
@@ -647,7 +717,16 @@ namespace WinUIMusicPlayer.View
         {
             if (!isUserDraggingProgressSlider && audioFileReader != null && isPlaying)
             {
-                ProgressSlider.Value = audioFileReader.CurrentTime.TotalSeconds;
+                // 检查新值是否与当前播放位置相差较大
+                double currentPosition = audioFileReader.CurrentTime.TotalSeconds;
+                if (Math.Abs(e.NewValue - currentPosition) > 1.0) 
+                {
+                    audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                }
+                else
+                {
+                    ProgressSlider.Value = currentPosition;
+                }
             }
         }
     }

@@ -184,16 +184,16 @@ namespace WinUIMusicPlayer.View
                 if (IsMusicFile(file.FileType))
                 {
                     var musicProperties = await file.Properties.GetMusicPropertiesAsync();
-                    var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.MusicView);
-                    byte[] coverBytes = null;
-                    if (thumbnail != null)
-                    {
-                        using (var stream = thumbnail.AsStream())
-                        {
-                            coverBytes = new byte[stream.Length];
-                            await stream.ReadAsync(coverBytes, 0, (int)stream.Length);
-                        }
-                    }
+                    //var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.MusicView);
+                    //byte[] coverBytes = null;
+                    //if (thumbnail != null)
+                    //{
+                    //    using (var stream = thumbnail.AsStream())
+                    //    {
+                    //        coverBytes = new byte[stream.Length];
+                    //        await stream.ReadAsync(coverBytes, 0, (int)stream.Length);
+                    //    }
+                    //}
 
                     string title = string.IsNullOrEmpty(musicProperties.Title) ? Path.GetFileNameWithoutExtension(file.Name) : musicProperties.Title;
 
@@ -201,7 +201,6 @@ namespace WinUIMusicPlayer.View
                     {
                         Path = file.Path,
                         Title = title,
-                        Cover = coverBytes,
                         Author = musicProperties.Artist,
                         Duration = musicProperties.Duration,
                         Album = musicProperties.Album,

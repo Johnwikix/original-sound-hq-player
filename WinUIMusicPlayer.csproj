@@ -45,6 +45,7 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    <PackageReference Include="TagLibSharp" Version="2.3.0" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\SettingsPage.xaml">

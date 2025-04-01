@@ -9,6 +9,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    IsTabStop="True"
+    TabIndex="0"
     xmlns:converters="using:WinUIMusicPlayer.Converters">
     <Page.Resources>
         <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter"/>
@@ -24,19 +26,17 @@
                 <DataTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="60"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="封面" Grid.Column="0" FontWeight="Bold" Margin="10"/>
-                        <TextBlock Text="标题" Grid.Column="1" FontWeight="Bold" Margin="10"/>
-                        <TextBlock Text="作者" Grid.Column="2" FontWeight="Bold" Margin="10"/>
-                        <TextBlock Text="专辑" Grid.Column="3" FontWeight="Bold" Margin="10"/>
-                        <TextBlock Text="时长" Grid.Column="4" FontWeight="Bold" Margin="10"/>
-                        <TextBlock Text="操作" Grid.Column="5" FontWeight="Bold" Margin="10"/>
+                        </Grid.ColumnDefinitions>                        
+                        <TextBlock Text="标题" Grid.Column="0" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="作者" Grid.Column="1" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="专辑" Grid.Column="2" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="时长" Grid.Column="3" FontWeight="Bold" Margin="10"/>
+                        <TextBlock Text="操作" Grid.Column="4" FontWeight="Bold" Margin="10"/>
                     </Grid>
                 </DataTemplate>
             </ListView.HeaderTemplate>
@@ -44,19 +44,17 @@
                 <DataTemplate x:DataType="model:Music">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="60"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Image Source="{x:Bind Cover, Converter={StaticResource ByteArrayToImageConverter}}" HorizontalAlignment="Left" Width="32" Height="32" Grid.Column="0" Margin="5"/>
-                        <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="10" />
-                        <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="10" />
-                        <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="10" />
-                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="4" Margin="10"  />
-                        <Button x:Name="RemoveMusicButton"  Grid.Column="5" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                        <TextBlock Text="{x:Bind Title}" Grid.Column="0" Margin="10" />
+                        <TextBlock Text="{x:Bind Author}" Grid.Column="1" Margin="10" />
+                        <TextBlock Text="{x:Bind Album}" Grid.Column="2" Margin="10" />
+                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="3" Margin="10"  />
+                        <Button x:Name="RemoveMusicButton"  Grid.Column="4" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
                             <FontIcon Glyph="&#xecc9;"/>
                         </Button>
                     </Grid>
@@ -111,23 +109,33 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+                <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                    Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xeb9e;" FontSize="18"/>
+                </Button>                
+                
                 <Button x:Name="LastMusicButton" Click="LastMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xe892;"/>
+                        Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xe892;" FontSize="26"/>
                 </Button>
 
                 <!-- 播放按钮 -->
                 <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE768;" Width="50" Height="50" FontSize="36"/>
                 </Button>
 
                 <Button x:Name="NextMusicButton" Click="NextMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xe893;"/>
+                        Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xe893;" FontSize="26"/>
                 </Button>
 
-                
+                <Button x:Name="FastForwardButton" Click="FastForwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                    Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xeb9d;" FontSize="18"/>
+                </Button>
+
+
             </Grid>
             <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
                 <!-- 播放模式按钮 -->
