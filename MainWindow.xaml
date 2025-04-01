@@ -16,7 +16,7 @@
     <Grid>
         <Grid
         x:Name="AppTitleBar"
-        Height="32"
+        Height="48"
         Margin="48,0,0,0"
         VerticalAlignment="Top"
         Padding="0">
@@ -31,7 +31,7 @@
             Style="{StaticResource CaptionTextBlockStyle}"
             Text="Music Player"/>
         </Grid>
-        <NavigationView x:Name="NavigationViewControl" PaneDisplayMode="LeftCompact"  IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
+        <NavigationView x:Name="NavigationViewControl" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="添加文件夹" Tag="AddFolder" Icon="NewFolder" />
                 <NavigationViewItem Content="音乐浏览" Tag="MusicBrowse" Icon="MusicInfo" />

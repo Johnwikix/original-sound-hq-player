@@ -43,6 +43,7 @@ namespace WinUIMusicPlayer.View
         private bool isSettingsChangeStop = false;
         private TimeSpan currentPosition;
         private List<Music> musicList;
+        public MainWindow mainWindow;
 
         public MusicBrowsePage()
         {
@@ -63,6 +64,45 @@ namespace WinUIMusicPlayer.View
             }
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
 
+            mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
+            }
+
+        }
+
+        private void MainWindow_MusicListLoaded(object sender, List<Music> musics)
+        {
+            try
+            {
+                LoadMusicAsync(musics);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"更新文件夹列表时出错: {ex.Message}");
+            }
+        }
+
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string searchText = SearchTextBox.Text;
+            if (mainWindow != null)
+            {
+                await mainWindow.LoadMusicList(searchText);
+            }
+        }
+
+        private async void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                string searchText = SearchTextBox.Text;
+                if (mainWindow != null)
+                {
+                    await mainWindow.LoadMusicList(searchText);
+                }
+            }
         }
 
         private void MusicBrowsePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
@@ -301,7 +341,7 @@ namespace WinUIMusicPlayer.View
         protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await LoadMusicAsync();
+            //await LoadMusicAsync();
         }
 
         private async void InitializeDatabase()
@@ -309,17 +349,20 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
-            await dbConnection.CreateTableAsync<SavePlayState>();
-            await LoadMusicAsync();
+            await dbConnection.CreateTableAsync<SavePlayState>();         
+            if (mainWindow != null)
+            {
+                await mainWindow.LoadMusicList();
+            }
             await LoadPlayState();
             PlayTimeTextBlock.Text = "00:00/00:00";
         }
 
-        private async Task LoadMusicAsync()
+        private async Task LoadMusicAsync(List<Music> musics)
         {
             try
             {
-                musicList = AppData.MusicList;
+                musicList = musics;
                 MusicListView.ItemsSource = musicList;
             }
             catch (SQLiteException ex)
@@ -602,12 +645,10 @@ namespace WinUIMusicPlayer.View
             if (button != null && button.Tag is int musicId)
             {
                 await dbConnection.DeleteAsync<Music>(musicId);
-                var mainWindow = (App.MainWindow as MainWindow);
                 if (mainWindow != null)
                 {
                     await mainWindow.LoadMusicList();
                 }
-                await LoadMusicAsync();
             }
         }
 

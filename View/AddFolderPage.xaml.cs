@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             InitializeDatabase();
-            // 订阅 MainWindow 的 FoldersLoaded 事件
+
             var mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
@@ -38,7 +38,6 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                // 直接使用传递过来的文件夹列表更新 UI
                 FolderListView.ItemsSource = folderList;
             }
             catch (Exception ex)

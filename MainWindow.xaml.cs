@@ -24,6 +24,7 @@ namespace WinUIMusicPlayer
     {
         private SQLiteAsyncConnection dbConnection;
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
+        public event EventHandler<List<Music>> MusicListLoaded;
         public MainWindow()
         {
             InitializeComponent();
@@ -61,9 +62,19 @@ namespace WinUIMusicPlayer
             }
         }
 
-        public async Task LoadMusicList() {
-            var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
-            AppData.MusicList = musicList;
+        public async Task LoadMusicList(string search=null) {
+            var query = dbConnection.Table<Music>();
+            if (!string.IsNullOrEmpty(search))
+            {
+                string searchPattern = $"%{search}%";
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                );
+            }
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            MusicListLoaded?.Invoke(this, musicList);
         }
 
 
