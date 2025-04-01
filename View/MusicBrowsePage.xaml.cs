@@ -202,15 +202,7 @@ namespace WinUIMusicPlayer.View
             {
                 MusicTitleTextBlock.Text = currentPlayingMusic.Title;
                 MusicAuthorTextBlock.Text = currentPlayingMusic.Author;
-                if (currentPlayingMusic.Cover != null)
-                {
-                    using (var ms = new MemoryStream(currentPlayingMusic.Cover))
-                    {
-                        var bitmapImage = new BitmapImage();
-                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                        AlbumCoverImage.Source = bitmapImage;
-                    }
-                }
+                await LoadCover(currentPlayingMusic);
             }
             UpdatePlayModeIcon();
         }
@@ -483,14 +475,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false) 
-        {
-            currentPlayingMusic = music;
-            MusicTitleTextBlock.Text = music.Title;
-            MusicAuthorTextBlock.Text = music.Author;
-            MusicListView.SelectedItem = music;
-            MusicListView.ScrollIntoView(music);
-
+        private async Task LoadCover(Music music) {
             // 从文件路径读取嵌入封面
             try
             {
@@ -512,16 +497,22 @@ namespace WinUIMusicPlayer.View
             {
                 System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
             }
+        }
+
+        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false) 
+        {
+            currentPlayingMusic = music;
+            MusicTitleTextBlock.Text = music.Title;
+            MusicAuthorTextBlock.Text = music.Author;
+            MusicListView.SelectedItem = music;
+            MusicListView.ScrollIntoView(music);
+            await LoadCover(music);
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
                 {
-                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
-                    waveOut.Play();
-                    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
-                    isPlaying = true;
-
-                    // Initialize progress bar
+                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;                    
+                    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";                    
                     if (audioFileReader.TotalTime != null)
                     {
                         ProgressSlider.Maximum = audioFileReader.TotalTime.TotalSeconds;
@@ -534,8 +525,9 @@ namespace WinUIMusicPlayer.View
                     {
                         ProgressSlider.Value = 0;
                     }
+                    waveOut.Play();
+                    isPlaying = true;
                     progressTimer.Start();
-
                     await SavePlayState();
                 }
                 catch (Exception ex)
@@ -552,18 +544,13 @@ namespace WinUIMusicPlayer.View
 
             if (audioFileReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
             {
-                // Check if we're at the end of the file (with small tolerance for timing issues)
                 double currentPositionSeconds = audioFileReader.CurrentTime.TotalSeconds;
                 double totalDurationSeconds = audioFileReader.TotalTime.TotalSeconds;
-
-                // Consider it a natural end if we're within 0.5 seconds of the total duration
                 isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
             }
 
-            // Reset flags
             if (isPausing)
             {
-                // Do nothing as this is a pause operation
                 return;
             }
 
@@ -615,6 +602,11 @@ namespace WinUIMusicPlayer.View
             if (button != null && button.Tag is int musicId)
             {
                 await dbConnection.DeleteAsync<Music>(musicId);
+                var mainWindow = (App.MainWindow as MainWindow);
+                if (mainWindow != null)
+                {
+                    await mainWindow.LoadMusicList();
+                }
                 await LoadMusicAsync();
             }
         }

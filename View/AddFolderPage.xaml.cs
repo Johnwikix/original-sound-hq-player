@@ -22,7 +22,6 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AddFolderPage : Page
     {
         private SQLiteAsyncConnection dbConnection;
-
         public AddFolderPage()
         {
             this.InitializeComponent();
@@ -144,6 +143,11 @@ namespace WinUIMusicPlayer.View
 
                     // 重新加载文件夹列表
                     await LoadFoldersAsync();
+                    var mainWindow = (App.MainWindow as MainWindow);
+                    if (mainWindow != null)
+                    {
+                        await mainWindow.LoadMusicList();
+                    }
                 }
                 else
                 {
@@ -248,6 +252,11 @@ namespace WinUIMusicPlayer.View
 
                     // 重新加载文件夹列表
                     await LoadFoldersAsync();
+                    var mainWindow = (App.MainWindow as MainWindow);
+                    if (mainWindow != null)
+                    {
+                        await mainWindow.LoadMusicList();
+                    }
                 }
             }
         }

@@ -43,9 +43,11 @@ namespace WinUIMusicPlayer
             await dbConnection.CreateTableAsync<SavePlayState>();
             await dbConnection.CreateTableAsync<SaveSettings>();
             LoadState();
+            LoadMusicList();
             LoadFoldersAsync();
+           
         }
-        private async Task LoadFoldersAsync()
+        public async Task LoadFoldersAsync()
         {
             try
             {
@@ -57,6 +59,11 @@ namespace WinUIMusicPlayer
             {
                 System.Diagnostics.Debug.WriteLine($"SQLite ´íÎó: {ex.Message}");
             }
+        }
+
+        public async Task LoadMusicList() {
+            var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
+            AppData.MusicList = musicList;
         }
 
 
@@ -76,9 +83,7 @@ namespace WinUIMusicPlayer
             }
             AppData.PlayMode = playState.PlayMode;
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
-            AppData.Volume = playState.Volume;
-            var musicList = (await dbConnection.Table<Music>().ToListAsync()).OrderBy(m => m.Title).ToList();
-            AppData.MusicList = musicList;
+            AppData.Volume = playState.Volume;            
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {
