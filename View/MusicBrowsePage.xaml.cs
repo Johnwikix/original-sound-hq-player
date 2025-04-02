@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.View
             VolumeSlider.Value = newVolume;
         }
 
-        private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
+        private async void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
             // 如果当前正在播放，停止播放并重新初始化音频资源
             if (isPlaying)
@@ -167,21 +167,53 @@ namespace WinUIMusicPlayer.View
 
                 if (audioFileReader != null)
                 {
-                    audioFileReader.Dispose();
-                    audioFileReader = null;
-                }
-
-                if (currentPlayingMusic != null)
+                    ResumeMusic();
+                }              
+            }
+        }
+        //出于某些原因audioFileReader不能被销毁
+        private void ResumeMusic()
+        {
+            try
+            {               
+                MMDevice selectedDevice = null;
+                if (AppSettings.OutputDevice.mMDevice != null)
                 {
-                    // 创建一个异步任务来重新播放音乐，但从保存的位置开始
-                    _ = Task.Run(async () =>
-                    {
-                        await this.DispatcherQueue.EnqueueAsync(async () =>
-                        {
-                            await PlayMusic(currentPlayingMusic, currentPos, true);
-                        });
-                    });
+                    selectedDevice = AppSettings.OutputDevice.mMDevice;
                 }
+                switch (AppSettings.OutputMode)
+                {
+                    case "WaveOut":
+                        waveOut = new WaveOutEvent();
+                        break;
+                    case "WasapiShared":
+                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
+                        break;
+                    case "WasapiExclusive":
+                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
+                        break;
+                    case "DirectSound":
+                        waveOut = new DirectSoundOut(AppSettings.Latency);
+                        break;
+                    default:
+                        waveOut = new WaveOutEvent();
+                        break;
+                }
+                if (waveOut is WaveOutEvent defaultWaveOutEvent)
+                {
+                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+                    defaultWaveOutEvent.NumberOfBuffers = 3;
+                }
+                waveOut.Init(audioFileReader);
+                waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                waveOut.Play();
+                isPlaying = true;
+                progressTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"播放失败{ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");               
             }
         }
         private void Window_Closed(object sender, WindowEventArgs args)
@@ -393,7 +425,7 @@ namespace WinUIMusicPlayer.View
                 {
                     // Set pause flag
                     isPausing = true;
-                    currentPosition = audioFileReader.CurrentTime;
+                    //currentPosition = audioFileReader.CurrentTime;
                     waveOut.Stop();
                     isPlaying = false;
                     progressTimer.Stop();
@@ -431,7 +463,7 @@ namespace WinUIMusicPlayer.View
                     if (AppSettings.OutputMode == "WasapiExclusive")
                     {
                         // Resume from saved position
-                        audioFileReader.CurrentTime = currentPosition;
+                        //audioFileReader.CurrentTime = currentPosition;
                         waveOut.Play();
                         isPlaying = true;
                         progressTimer.Start();
@@ -750,15 +782,14 @@ namespace WinUIMusicPlayer.View
         {
             if (!isUserDraggingProgressSlider && audioFileReader != null && isPlaying)
             {
-                // 检查新值是否与当前播放位置相差较大
-                double currentPosition = audioFileReader.CurrentTime.TotalSeconds;
-                if (Math.Abs(e.NewValue - currentPosition) > 1.0)
+                double currentPlayPosition = audioFileReader.CurrentTime.TotalSeconds;
+                if (Math.Abs(e.NewValue - currentPlayPosition) > 1.0)
                 {
                     audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                 }
                 else
                 {
-                    ProgressSlider.Value = currentPosition;
+                    ProgressSlider.Value = currentPlayPosition;
                 }
             }
         }
