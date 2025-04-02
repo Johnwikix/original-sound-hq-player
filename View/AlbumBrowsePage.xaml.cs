@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.View
     {
         private SQLiteAsyncConnection dbConnection;
         private List<Music> musicList;
+        private readonly object _updateLock = new object();
 
         public AlbumBrowsePage()
         {
@@ -114,6 +115,7 @@ namespace WinUIMusicPlayer.View
                 {
                     var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();
                     bool hasCover = false;
+                    BitmapImage newCover = null;
                     foreach (var song in albumSongs)
                     {
                         try
@@ -130,9 +132,8 @@ namespace WinUIMusicPlayer.View
                                         bitmapImage.DecodePixelHeight = 125;
                                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                                         album.Cover = bitmapImage;
+                                        newCover = bitmapImage;
                                         hasCover = true;
-                                        AlbumItemsControl.ItemsSource = null;
-                                        AlbumItemsControl.ItemsSource = albums;
                                         break;
                                     }
                                 }
@@ -152,14 +153,15 @@ namespace WinUIMusicPlayer.View
                             bitmapImage.DecodePixelWidth = 125;
                             bitmapImage.DecodePixelHeight = 125;
                             album.Cover = bitmapImage;
-                            AlbumItemsControl.ItemsSource = null;
-                            AlbumItemsControl.ItemsSource = albums;
+                            newCover = bitmapImage;
                         }
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"º”‘ÿƒ¨»œ∑‚√Ê ß∞‹: {ex.Message}");
                         }
                     }
+                    AlbumItemsControl.ItemsSource = null;
+                    AlbumItemsControl.ItemsSource = albums;
                 }
             }
         }
