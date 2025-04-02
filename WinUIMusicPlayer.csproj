@@ -14,8 +14,10 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="View\AddFolderPage.xaml" />
+    <None Remove="View\AlbumBrowsePage.xaml" />
     <None Remove="View\MusicBrowsePage.xaml" />
     <None Remove="View\SettingsPage.xaml" />
+    <None Remove="View\SongListPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,6 +76,16 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Language\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="View\AlbumBrowsePage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="View\SongListPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <!--

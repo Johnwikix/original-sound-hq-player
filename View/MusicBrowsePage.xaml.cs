@@ -9,6 +9,7 @@ using NAudio.Wave;
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,7 +41,6 @@ namespace WinUIMusicPlayer.View
         private bool isManualSelect = false;
         private bool isPausing = false;
         private bool isSettingsChangeStop = false;
-        private TimeSpan currentPosition;
         private List<Music> musicList;
         public MainWindow mainWindow;
 
@@ -61,12 +61,20 @@ namespace WinUIMusicPlayer.View
             {
                 window.Closed += Window_Closed;
             }
-            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;            
 
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
                 mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
+            }
+            if (ContentFrame != null)
+            {
+                ContentFrame.Navigate(typeof(SongListPage), this);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("ContentFrame 未初始化");
             }
 
         }
@@ -75,13 +83,40 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                LoadMusicAsync(musics);
+                musicList = musics;
+                var songListPage = ContentFrame.Content as SongListPage;
+                if (songListPage != null)
+                {
+                    songListPage.LoadMusicAsync(musics);
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"更新文件夹列表时出错: {ex.Message}");
+                Debug.WriteLine($"加载歌曲列表失败: {ex.Message}");
+            }
+        } 
+
+        public async Task RemoveMusic(int musicId)
+        {
+            await dbConnection.DeleteAsync<Music>(musicId);
+            if (mainWindow != null)
+            {
+                await mainWindow.LoadMusicList();
             }
         }
+
+        //private async Task LoadMusicAsync(List<Music> musics)
+        //{
+        //    try
+        //    {
+        //        musicList = musics;
+        //        //MusicListView.ItemsSource = musicList;
+        //    }
+        //    catch (SQLiteException ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+        //    }
+        //}
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
@@ -145,7 +180,7 @@ namespace WinUIMusicPlayer.View
             VolumeSlider.Value = newVolume;
         }
 
-        private async void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
+        private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
             // 如果当前正在播放，停止播放并重新初始化音频资源
             if (isPlaying)
@@ -168,42 +203,42 @@ namespace WinUIMusicPlayer.View
                 if (audioFileReader != null)
                 {
                     ResumeMusic();
-                }              
+                }
+            }
+        }
+
+        private async void NavigationButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                switch (button.Tag.ToString())
+                {
+                    case "Song":
+                        ContentFrame.Navigate(typeof(SongListPage));
+                        break;
+                    case "Album":
+                        try
+                        {
+                            ContentFrame.Navigate(typeof(AlbumBrowsePage));
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"导航到专辑页面时出错: {ex.Message}");
+                        }
+                        break;
+                    case "Artist":
+                        //ContentFrame.Navigate(typeof(ArtistBrowsePage));
+                        break;
+                }
             }
         }
         //出于某些原因audioFileReader不能被销毁
         private void ResumeMusic()
         {
             try
-            {               
-                MMDevice selectedDevice = null;
-                if (AppSettings.OutputDevice.mMDevice != null)
-                {
-                    selectedDevice = AppSettings.OutputDevice.mMDevice;
-                }
-                switch (AppSettings.OutputMode)
-                {
-                    case "WaveOut":
-                        waveOut = new WaveOutEvent();
-                        break;
-                    case "WasapiShared":
-                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
-                        break;
-                    case "WasapiExclusive":
-                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
-                        break;
-                    case "DirectSound":
-                        waveOut = new DirectSoundOut(AppSettings.Latency);
-                        break;
-                    default:
-                        waveOut = new WaveOutEvent();
-                        break;
-                }
-                if (waveOut is WaveOutEvent defaultWaveOutEvent)
-                {
-                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-                    defaultWaveOutEvent.NumberOfBuffers = 3;
-                }
+            {
+                SelectOutputDevice();
                 waveOut.Init(audioFileReader);
                 waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
                 waveOut.Play();
@@ -214,6 +249,37 @@ namespace WinUIMusicPlayer.View
             {
                 ShowMessage($"播放失败{ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");               
+            }
+        }
+
+        private void SelectOutputDevice() {
+            MMDevice selectedDevice = null;
+            if (AppSettings.OutputDevice.mMDevice != null)
+            {
+                selectedDevice = AppSettings.OutputDevice.mMDevice;
+            }
+            switch (AppSettings.OutputMode)
+            {
+                case "WaveOut":
+                    waveOut = new WaveOutEvent();
+                    break;
+                case "WasapiShared":
+                    waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
+                    break;
+                case "WasapiExclusive":
+                    waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
+                    break;
+                case "DirectSound":
+                    waveOut = new DirectSoundOut(AppSettings.Latency);
+                    break;
+                default:
+                    waveOut = new WaveOutEvent();
+                    break;
+            }
+            if (waveOut is WaveOutEvent defaultWaveOutEvent)
+            {
+                defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+                defaultWaveOutEvent.NumberOfBuffers = 3;
             }
         }
         private void Window_Closed(object sender, WindowEventArgs args)
@@ -387,35 +453,22 @@ namespace WinUIMusicPlayer.View
             }
             await LoadPlayState();
             PlayTimeTextBlock.Text = "00:00/00:00";
-        }
+        }        
 
-        private async Task LoadMusicAsync(List<Music> musics)
-        {
-            try
-            {
-                musicList = musics;
-                MusicListView.ItemsSource = musicList;
-            }
-            catch (SQLiteException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
-            }
-        }
-
-        private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
-        {
-            var selectedMusic = MusicListView.SelectedItem as Music;
-            if (selectedMusic != null)
-            {
-                isManualSelect = true;
-                if (currentPlayingMusic != null)
-                {
-                    lastPlayingMusic.Add(currentPlayingMusic);
-                }
-                await PlayMusic(selectedMusic);
-                isManualSelect = false;
-            }
-        }
+        //private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        //{
+        //    var selectedMusic = MusicListView.SelectedItem as Music;
+        //    if (selectedMusic != null)
+        //    {
+        //        isManualSelect = true;
+        //        if (currentPlayingMusic != null)
+        //        {
+        //            lastPlayingMusic.Add(currentPlayingMusic);
+        //        }
+        //        await PlayMusic(selectedMusic);
+        //        isManualSelect = false;
+        //    }
+        //}
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
@@ -510,34 +563,7 @@ namespace WinUIMusicPlayer.View
                 audioFileReader = new AudioFileReader(music.Path);
                 audioFileReader.Volume = volume;
                 audioFileReader.CurrentTime = currentPos;
-                MMDevice selectedDevice = null;
-                if (AppSettings.OutputDevice.mMDevice != null)
-                {
-                    selectedDevice = AppSettings.OutputDevice.mMDevice;
-                }
-                switch (AppSettings.OutputMode)
-                {
-                    case "WaveOut":
-                        waveOut = new WaveOutEvent();
-                        break;
-                    case "WasapiShared":
-                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
-                        break;
-                    case "WasapiExclusive":
-                        waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
-                        break;
-                    case "DirectSound":
-                        waveOut = new DirectSoundOut(AppSettings.Latency);
-                        break;
-                    default:
-                        waveOut = new WaveOutEvent();
-                        break;
-                }
-                if (waveOut is WaveOutEvent defaultWaveOutEvent)
-                {
-                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-                    defaultWaveOutEvent.NumberOfBuffers = 3;
-                }
+                SelectOutputDevice();
                 waveOut.Init(audioFileReader);
                 return true;
             }
@@ -566,6 +592,11 @@ namespace WinUIMusicPlayer.View
                             AlbumCoverImage.Source = bitmapImage;
                         }
                     }
+                    else {
+                        var uri = new Uri("ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-256.png");
+                        var bitmapImage = new BitmapImage(uri);
+                        AlbumCoverImage.Source = bitmapImage;
+                    }
                 }
             }
             catch (Exception ex)
@@ -574,13 +605,16 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
+        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
             currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
-            MusicListView.SelectedItem = music;
-            MusicListView.ScrollIntoView(music);
+            var songListPage = ContentFrame.Content as SongListPage;
+            if (songListPage != null)
+            {
+                songListPage.UpdateMusicListView(music);
+            }
             await LoadCover(music);
             if (await InitializeAudioResources(music, currentPos))
             {
@@ -669,20 +703,7 @@ namespace WinUIMusicPlayer.View
                     await PlayMusic(musicList[randomIndex]);
                     break;
             }
-        }
-
-        private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null && button.Tag is int musicId)
-            {
-                await dbConnection.DeleteAsync<Music>(musicId);
-                if (mainWindow != null)
-                {
-                    await mainWindow.LoadMusicList();
-                }
-            }
-        }
+        }        
 
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
