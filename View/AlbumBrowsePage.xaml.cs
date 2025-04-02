@@ -19,6 +19,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Shapes;
 using Path = System.IO.Path;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -72,6 +73,7 @@ namespace WinUIMusicPlayer.View
                                              .ToList();
                 musicList = groupedAlbums;
                 PopulateAlbumGrid();
+                await LoadAlbumCoversGraduallyAsync();
             }
             catch (Exception ex)
             {
@@ -101,6 +103,64 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 Debug.WriteLine($"ÃÓ≥‰◊®º≠Õ¯∏Ò ß∞‹: {ex.Message}");
+            }
+        }
+
+        private async Task LoadAlbumCoversGraduallyAsync()
+        {
+            if (AlbumItemsControl.ItemsSource is List<Music> albums)
+            {
+                foreach (var album in albums)
+                {
+                    var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();
+                    bool hasCover = false;
+                    foreach (var song in albumSongs)
+                    {
+                        try
+                        {
+                            using (var file = TagLib.File.Create(song.Path))
+                            {
+                                if (file.Tag.Pictures.Length > 0)
+                                {
+                                    var picture = file.Tag.Pictures[0];
+                                    using (var ms = new MemoryStream(picture.Data.Data))
+                                    {
+                                        var bitmapImage = new BitmapImage();
+                                        bitmapImage.DecodePixelWidth = 125;
+                                        bitmapImage.DecodePixelHeight = 125;
+                                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                        album.Cover = bitmapImage;
+                                        hasCover = true;
+                                        AlbumItemsControl.ItemsSource = null;
+                                        AlbumItemsControl.ItemsSource = albums;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"∂¡»°◊®º≠ {album.Album} ∑‚√Ê ß∞‹: {ex.Message}");
+                        }
+                    }
+                    if (!hasCover)
+                    {
+                        try
+                        {
+                            var uri = new Uri("ms-appx:///Assets/Album.png");
+                            var bitmapImage = new BitmapImage(uri);
+                            bitmapImage.DecodePixelWidth = 125;
+                            bitmapImage.DecodePixelHeight = 125;
+                            album.Cover = bitmapImage;
+                            AlbumItemsControl.ItemsSource = null;
+                            AlbumItemsControl.ItemsSource = albums;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"º”‘ÿƒ¨»œ∑‚√Ê ß∞‹: {ex.Message}");
+                        }
+                    }
+                }
             }
         }
 

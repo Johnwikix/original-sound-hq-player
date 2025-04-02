@@ -9,27 +9,25 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Grid Margin="10">
-        <ItemsControl x:Name="AlbumItemsControl">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <ItemsWrapGrid Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Button Width="200" Height="200" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
-                            Click="Album_Click" Tag="{Binding}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <Image Width="150" Height="150" Stretch="Fill">
-                                <Image.Source>
-                                    <BitmapImage UriSource="ms-appx:///Assets/Album.png"/>
-                                </Image.Source>
-                            </Image>
-                            <TextBlock Text="{Binding Album}" TextAlignment="Center" Margin="0,10,0,0"/>
-                        </StackPanel>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="AlbumItemsControl">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="200" Height="200" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
+                    Click="Album_Click" Tag="{Binding}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Image Width="125" Height="125" Stretch="Fill" Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}"/>
+                                <TextBlock Height="60" Width="180" TextWrapping="Wrap" Text="{Binding Album}" TextAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>        
     </Grid>
 </Page>

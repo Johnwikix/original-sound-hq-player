@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Microsoft.UI.Xaml.Media.Imaging;
+using SQLite;
 using System;
 
 namespace WinUIMusicPlayer.Model
@@ -9,7 +10,7 @@ namespace WinUIMusicPlayer.Model
         public int Id { get; set; }
         public string Path { get; set; }
         public string Title { get; set; }
-        public byte[] Cover { get; set; }
+        public BitmapImage Cover { get; set; } = null;
         public string Author { get; set; }
         public TimeSpan Duration { get; set; }
         public string Album { get; set; }
