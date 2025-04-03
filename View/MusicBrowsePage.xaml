@@ -85,10 +85,17 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" TextTrimming="None" x:Name="MusicTitleTextBlock" FontSize="18" Margin="10,0,10,0" TextWrapping="Wrap"/>
-                    <TextBlock Grid.Row="1" TextTrimming="None" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Row="2" TextTrimming="None" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Bottom"/>
+                    </Grid.RowDefinitions>                    
+                    <TextBlock Grid.Row="0" x:Name="MusicTitleTextBlock" FontSize="18" Margin="10,0,10,0"/>
+                    <TextBlock Grid.Row="1" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10,0,10,0" VerticalAlignment="Center"/>
+                    <Grid Grid.Row="2" VerticalAlignment="Bottom">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock  Grid.Column="0" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0"/>
+                        <Image x:Name="HRImage" Height="10" Grid.Column="1" ></Image>
+                    </Grid>                    
                 </Grid>
             </StackPanel>
 

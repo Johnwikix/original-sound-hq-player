@@ -13,6 +13,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Storage.Streams;
+using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -356,6 +358,12 @@ namespace WinUIMusicPlayer.View
                 MusicTitleTextBlock.Text = currentPlayingMusic.Title;
                 MusicAuthorTextBlock.Text = currentPlayingMusic.Author;
                 MusicInfoTextBlock.Text = $"{currentPlayingMusic.Extension} {currentPlayingMusic.SampleRate}Hz {currentPlayingMusic.BitDepth}bit {currentPlayingMusic.BitRate}kbps";
+                HRImage.Source = null;
+                if (currentPlayingMusic.SampleRate >= 48000 && currentPlayingMusic.BitDepth >= 24)
+                {
+                    var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
+                    HRImage.Source = bitmapImage;
+                }
                 await LoadCover(currentPlayingMusic);
             }
             UpdatePlayModeIcon();
@@ -560,9 +568,6 @@ namespace WinUIMusicPlayer.View
             if (progressTimer != null)
             {
                 progressTimer.Stop();
-                progressTimer.Elapsed -= ProgressTimer_Elapsed;
-                progressTimer.Dispose();
-                progressTimer = null;
             }           
             
             ProgressSlider.Value = 0;
@@ -638,6 +643,11 @@ namespace WinUIMusicPlayer.View
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
             MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+            HRImage.Source = null;
+            if (music.SampleRate >= 48000 && music.BitDepth >= 24) {
+                var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
+                HRImage.Source = bitmapImage;
+            }
             var songListPage = ContentFrame.Content as SongListPage;
             if (songListPage != null)
             {
@@ -833,7 +843,7 @@ namespace WinUIMusicPlayer.View
             if (!isUserDraggingProgressSlider && audioFileReader != null && isPlaying)
             {
                 double currentPlayPosition = audioFileReader.CurrentTime.TotalSeconds;
-                if (Math.Abs(e.NewValue - currentPlayPosition) > 1.0)
+                if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                 {
                     audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                 }
