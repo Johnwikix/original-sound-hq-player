@@ -41,6 +41,7 @@ namespace WinUIMusicPlayer.View
         {
             Task.Run(() =>
             {
+                outputDeviceList.Clear();
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
                 foreach (var device in devices)
@@ -127,32 +128,10 @@ namespace WinUIMusicPlayer.View
             {
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                 AppSettings.DeviceName = selectedItem.Content.ToString();
-                OutputDeviceChanged();
+                //OutputDeviceChanged();
                 SaveSetting();
             }
-        }
-
-        private void OutputDeviceChanged()
-        {
-            Task.Run(() =>
-            {
-                if (outputDeviceList.Count > 0)
-                {
-                    foreach (var device in outputDeviceList)
-                    {
-                        if (device.FriendlyName == AppSettings.DeviceName)
-                        {
-                            AppSettings.OutputDevice.mMDevice = device;
-                            if (!isInitializing)
-                            {
-                                AppSettings.OnOutputSettingsChanged();
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
-        }
+        }        
 
         private void LatencyTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {

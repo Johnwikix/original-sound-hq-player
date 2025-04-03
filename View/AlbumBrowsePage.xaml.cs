@@ -34,18 +34,27 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private List<Music> musicList;
         private readonly object _updateLock = new object();
+        private MusicBrowsePage parentPage;
 
         public AlbumBrowsePage()
         {
             try
             {
-                this.InitializeComponent();
-                InitializeDatabase();
-                LoadAlbumsAsync();               
+                this.InitializeComponent();                
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"初始化专辑页面时出错: {ex.Message}");
+            }
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (e.Parameter is MusicBrowsePage parentPage)
+            {
+                this.parentPage = parentPage;
+                InitializeDatabase();
             }
         }
 
@@ -54,21 +63,16 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
+            if (parentPage != null)
+            {
+                await parentPage.LoadMusic();
+            }
         }
 
-        private async void LoadAlbumsAsync()
+        public async void LoadAlbumsAsync(List<Music> musics)
         {
             try
             {
-                var musics = await dbConnection.Table<Music>().ToListAsync();
-                // 处理没有专辑信息的音乐
-                foreach (var music in musics)
-                {
-                    if (string.IsNullOrEmpty(music.Album))
-                    {
-                        music.Album = "未知专辑";
-                    }
-                }
                 var groupedAlbums = musics.GroupBy(m => m.Album)
                                              .Select(g => g.First())
                                              .ToList();
@@ -171,7 +175,10 @@ namespace WinUIMusicPlayer.View
             if (sender is Button button && button.Tag is Music music)
             {
                 Debug.WriteLine($"Clicked on album: {music.Album}");
-                // 在这里处理专辑点击后的导航或其他操作
+                if (parentPage != null)
+                {
+                    parentPage.LoadAlbumMusic(music.Album);
+                }
             }
         }
 

@@ -185,28 +185,76 @@ namespace WinUIMusicPlayer.View
             {
                 if (IsMusicFile(file.FileType))
                 {
+                    // 获取基本音乐属性
                     var musicProperties = await file.Properties.GetMusicPropertiesAsync();
-                    //var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.MusicView);
-                    //byte[] coverBytes = null;
-                    //if (thumbnail != null)
-                    //{
-                    //    using (var stream = thumbnail.AsStream())
-                    //    {
-                    //        coverBytes = new byte[stream.Length];
-                    //        await stream.ReadAsync(coverBytes, 0, (int)stream.Length);
-                    //    }
-                    //}
 
-                    string title = string.IsNullOrEmpty(musicProperties.Title) ? Path.GetFileNameWithoutExtension(file.Name) : musicProperties.Title;
+                    string title = string.IsNullOrEmpty(musicProperties.Title) ?
+                        Path.GetFileNameWithoutExtension(file.Name) : musicProperties.Title;
+
+                    // 获取最后一级目录名
+                    string lastLevelFolderPath = Path.GetFileName(folder.Path);
+
+                    // 默认值
+                    int sampleRate = 0;
+                    int channelCount = 0;
+                    int bitDepth = 0;
+                    int bitRate = 0;
+
+                    // 尝试获取详细的音频属性
+                    try
+                    {
+                        // 使用RetrievePropertiesAsync获取详细音频信息
+                        var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
+                            "System.Audio.SampleRate",
+                            "System.Audio.ChannelCount",
+                            "System.Audio.EncodingBitrate",
+                            "System.Audio.SampleSize"
+                        });
+                        // 处理采样率
+                        if (audioProps.ContainsKey("System.Audio.SampleRate") && audioProps["System.Audio.SampleRate"] != null)
+                        {
+                            sampleRate = Convert.ToInt32(audioProps["System.Audio.SampleRate"]);
+                        }
+
+                        // 处理声道数
+                        if (audioProps.ContainsKey("System.Audio.ChannelCount") && audioProps["System.Audio.ChannelCount"] != null)
+                        {
+                            channelCount = Convert.ToInt32(audioProps["System.Audio.ChannelCount"]);
+                        }
+
+                        // 处理比特率
+                        if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] != null)
+                        {
+                            int rawBitrate = Convert.ToInt32(audioProps["System.Audio.EncodingBitrate"]);
+                            bitRate = rawBitrate > 0 ? rawBitrate/1000 : 0;
+                        }
+
+                        // 处理位深度
+                        if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] != null)
+                        {
+                            var sampleSize = Convert.ToInt32(audioProps["System.Audio.SampleSize"]);
+                            bitDepth = sampleSize;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+                    }
 
                     var music = new Music
                     {
                         Path = file.Path,
                         Title = title,
-                        Author = musicProperties.Artist,
+                        Author = string.IsNullOrEmpty(musicProperties.Artist)? "未知艺术家": musicProperties.Artist,
                         Duration = musicProperties.Duration,
-                        Album = musicProperties.Album,
-                        FolderPath = folder.Path
+                        Album =  string.IsNullOrEmpty(musicProperties.Album) ? "未知专辑": musicProperties.Album,
+                        FolderPath = folder.Path,
+                        LastLevelFolderPath = lastLevelFolderPath,
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        BitDepth = bitDepth,
+                        BitRate = bitRate,
+                        SampleRate = sampleRate,
+                        Channel = channelCount
                     };
                     musicFiles.Add(music);
                 }

@@ -15,6 +15,12 @@ namespace WinUIMusicPlayer.Model
         public TimeSpan Duration { get; set; }
         public string Album { get; set; }
         public string FolderPath { get; set; }
+        public string LastLevelFolderPath { get; set; }
+        public string Extension { get; set; }
+        public int BitDepth { get; set; }
+        public int BitRate { get; set; }
+        public int SampleRate { get; set; }
+        public int Channel { get; set; }
 
         public override bool Equals(object obj)
         {

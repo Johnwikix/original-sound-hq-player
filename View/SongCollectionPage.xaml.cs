@@ -13,9 +13,10 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using SQLite;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -25,15 +26,14 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SongListPage : Page
+    public sealed partial class SongCollectionPage : Page
     {
         private SQLiteAsyncConnection dbConnection;
         private List<Music> musicList;
         private MusicBrowsePage parentPage;
-
-        public SongListPage()
+        public SongCollectionPage()
         {
-            InitializeComponent();
+            this.InitializeComponent();
             InitializeDatabase();
         }
 
@@ -85,15 +85,6 @@ namespace WinUIMusicPlayer.View
             if (selectedMusic != null && parentPage != null)
             {
                 await parentPage.PlayMusic(selectedMusic);
-            }
-        }
-
-        private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null && button.Tag is int musicId)
-            {
-                await parentPage.RemoveMusic(musicId);
             }
         }
 

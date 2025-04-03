@@ -77,6 +77,33 @@ namespace WinUIMusicPlayer
             MusicListLoaded?.Invoke(this, musicList);
         }
 
+        public async Task LoadArtistMusic(string search = null)
+        {
+            var query = dbConnection.Table<Music>();
+            if (!string.IsNullOrEmpty(search))
+            {
+                string searchPattern = $"%{search}%";
+                query = query.Where(m =>
+                   m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                );
+            }
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            MusicListLoaded?.Invoke(this, musicList);
+        }
+
+        public async Task LoadAlbumMusic(string search = null) {
+            var query = dbConnection.Table<Music>();
+            if (!string.IsNullOrEmpty(search))
+            {
+                string searchPattern = $"%{search}%";
+                query = query.Where(m =>
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                );
+            }
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            MusicListLoaded?.Invoke(this, musicList);
+        }
+
 
         private async Task LoadState()
         {

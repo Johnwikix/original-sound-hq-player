@@ -28,48 +28,29 @@
                     Tag="Song" 
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
+                    FontSize="20"
                     Background="Transparent" >歌曲</Button>
             <Button x:Name="AlbumButton" 
                     Click="NavigationButton_Click" 
                     Tag="Album" BorderThickness="0" 
                     BorderBrush="Transparent" 
+                    FontSize="20"
                     Background="Transparent" >专辑</Button>
             <Button x:Name="ArtistButton" 
                     Click="NavigationButton_Click" 
                     Tag="Artist" 
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
+                    FontSize="20"
                     Background="Transparent" >艺术家</Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Margin="10">
-            <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="300" Margin="0 0 10 0" KeyDown="SearchTextBox_KeyDown"/>
+            <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" KeyDown="SearchTextBox_KeyDown"/>
             <Button Click="SearchButton_Click" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
                 <FontIcon Glyph="&#xe721;"/>
             </Button>
         </StackPanel>
         <Frame x:Name="ContentFrame" Grid.Row="1" Margin="10"/>
-        <!--<ListView x:Name="MusicListView" DoubleTapped="MusicListView_DoubleTapped"  Grid.Row="1">            
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="model:Music">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind Title}" Grid.Column="0" Margin="10" />
-                        <TextBlock Text="{x:Bind Author}" Grid.Column="1" Margin="10" />
-                        <TextBlock Text="{x:Bind Album}" Grid.Column="2" Margin="10" />
-                        <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="3" Margin="10"  />
-                        <Button x:Name="RemoveMusicButton"  Grid.Column="4" Click="RemoveMusicButton_Click" Tag="{x:Bind Id}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
-                            <FontIcon Glyph="&#xecc9;"/>
-                        </Button>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>-->
         <!-- 底部控制区域 -->
         <Grid Grid.Row="2" Margin="10">
             <Grid.RowDefinitions>
@@ -97,12 +78,18 @@
             </Grid>
 
             <!-- 封面、标题、作者组件 -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0">
                 <Image x:Name="AlbumCoverImage" Width="80" Height="80" Margin="10"/>
-                <StackPanel Orientation="Vertical">
-                    <TextBlock TextTrimming="None" x:Name="MusicTitleTextBlock" FontSize="16" Margin="10" TextWrapping="Wrap"/>
-                    <TextBlock VerticalAlignment="Bottom" TextTrimming="None" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10" TextWrapping="Wrap"/>
-                </StackPanel>
+                <Grid Width="Auto" Height="80">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" TextTrimming="None" x:Name="MusicTitleTextBlock" FontSize="18" Margin="10,0,10,0" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="1" TextTrimming="None" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="2" TextTrimming="None" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0" TextWrapping="Wrap" VerticalAlignment="Bottom"/>
+                </Grid>
             </StackPanel>
 
             <!-- 播放模式、播放按钮 -->
