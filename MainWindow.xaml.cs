@@ -1,11 +1,14 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.CoreAudioApi;
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
@@ -24,6 +27,7 @@ namespace WinUIMusicPlayer
         private SQLiteAsyncConnection dbConnection;
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler<List<Music>> MusicListLoaded;
+        public event EventHandler<List<Music>> SongCollecionLoaded;
         public MainWindow()
         {
             InitializeComponent();
@@ -61,6 +65,85 @@ namespace WinUIMusicPlayer
             }
         }
 
+        private async Task LoadAlbumCover(List<Music> musics) {
+            try
+            {
+                var groupedAlbums = musics.GroupBy(m => m.Album)
+                                             .Select(g => g.First())
+                                             .ToList();
+                foreach (var album in groupedAlbums)
+                {
+                    if (AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
+                    {
+                        album.Cover = cachedCover;
+                    }
+                    else
+                    {
+                        BitmapImage cover = await GetAlbumCover(album);
+                        album.Cover = cover;
+                        AppData.albumCoverCache[album.Album] = cover;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+            }
+        }
+
+        private async Task<BitmapImage> GetAlbumCover(Music album)
+        {
+            BitmapImage newCover = album.Cover;
+            bool isCoverFound = false;
+            if (album.Album != "未知专辑")
+            {
+                var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();
+                foreach (var song in albumSongs)
+                {
+                    try
+                    {
+                        using (var file = TagLib.File.Create(song.Path))
+                        {
+                            if (file.Tag.Pictures.Length > 0)
+                            {
+                                var picture = file.Tag.Pictures[0];
+                                using (var ms = new MemoryStream(picture.Data.Data))
+                                {
+                                    var bitmapImage = new BitmapImage();
+                                    bitmapImage.DecodePixelWidth = 125;
+                                    bitmapImage.DecodePixelHeight = 125;
+                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                    newCover = bitmapImage;
+                                    isCoverFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+                    }
+                    if (!isCoverFound)
+                    {
+                        var uri = new Uri("ms-appx:///Assets/Album.png");
+                        var bitmapImage = new BitmapImage(uri);
+                        bitmapImage.DecodePixelWidth = 125;
+                        bitmapImage.DecodePixelHeight = 125;
+                        newCover = bitmapImage;
+                    }
+                }
+            }
+            else {
+                var uri = new Uri("ms-appx:///Assets/Album.png");
+                var bitmapImage = new BitmapImage(uri);
+                bitmapImage.DecodePixelWidth = 125;
+                bitmapImage.DecodePixelHeight = 125;
+                newCover = bitmapImage;
+            }
+            return newCover;
+        }
+
         public async Task LoadMusicList(string search = null)
         {
             var query = dbConnection.Table<Music>();
@@ -73,35 +156,40 @@ namespace WinUIMusicPlayer
                     m.Album != null && m.Album.ToLower().Contains(search.ToLower())
                 );
             }
-            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();            
             MusicListLoaded?.Invoke(this, musicList);
+            await LoadAlbumCover(musicList);
         }
 
-        public async Task LoadArtistMusic(string search = null)
+        public async Task LoadArtistMusic(string artist, string search = null)
         {
             var query = dbConnection.Table<Music>();
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrEmpty(artist))
             {
-                string searchPattern = $"%{search}%";
+                string searchPattern = $"%{artist}%";
                 query = query.Where(m =>
-                   m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                   (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                   m.Album != null && m.Author.ToLower().Contains(search.ToLower())) &&
+                   m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
                 );
             }
-            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
-            MusicListLoaded?.Invoke(this, musicList);
+            var musicList = await query.OrderBy(m => m.Album).ToListAsync();
+            SongCollecionLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadAlbumMusic(string search = null) {
+        public async Task LoadAlbumMusic(string album,string search = null) {
             var query = dbConnection.Table<Music>();
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrEmpty(album))
             {
-                string searchPattern = $"%{search}%";
+                string searchPattern = $"%{album}%";
                 query = query.Where(m =>
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                    (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())) &&
+                    m.Album != null && m.Album.ToLower().Equals(album.ToLower())
                 );
             }
             var musicList = await query.OrderBy(m => m.Title).ToListAsync();
-            MusicListLoaded?.Invoke(this, musicList);
+            SongCollecionLoaded?.Invoke(this, musicList);
         }
 
 

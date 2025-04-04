@@ -58,7 +58,9 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                musicList = musics;
                 MusicListView.ItemsSource = musics;
+                UpdateMusicListView();
             }
             catch (Exception ex)
             {
@@ -66,12 +68,18 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void UpdateMusicListView(Music music)
+        public void UpdateMusicListView()
         {
             try
             {
-                MusicListView.SelectedItem = music;
-                MusicListView.ScrollIntoView(music);
+                if (parentPage != null)
+                {
+                    if (musicList.Contains(parentPage.currentPlayingMusic))
+                    {
+                        MusicListView.SelectedItem = parentPage.currentPlayingMusic;
+                        MusicListView.ScrollIntoView(parentPage.currentPlayingMusic);
+                    }
+                }
             }
             catch (Exception ex)
             {

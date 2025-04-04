@@ -33,8 +33,7 @@ namespace WinUIMusicPlayer.View
 
         public SongListPage()
         {
-            InitializeComponent();
-            InitializeDatabase();
+            InitializeComponent();            
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
@@ -44,6 +43,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
+                InitializeDatabase();
             }
         }
 
@@ -52,13 +52,19 @@ namespace WinUIMusicPlayer.View
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
+            if (parentPage != null)
+            {
+                await parentPage.LoadMusic();               
+            }
         }
 
-        public async Task LoadMusicAsync(List<Music> musics)
+        public void LoadMusicAsync(List<Music> musics)
         {
             try
             {
-                MusicListView.ItemsSource = musics;
+                musicList = musics;
+                MusicListView.ItemsSource = musicList;
+                UpdateMusicListView();
             }
             catch (Exception ex)
             {
@@ -66,12 +72,16 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void UpdateMusicListView(Music music)
+        public void UpdateMusicListView()
         {
             try
             {
-                MusicListView.SelectedItem = music;
-                MusicListView.ScrollIntoView(music);
+                if (parentPage != null) {
+                    if (musicList.Contains(parentPage.currentPlayingMusic)) {
+                        MusicListView.SelectedItem = parentPage.currentPlayingMusic;
+                        MusicListView.ScrollIntoView(parentPage.currentPlayingMusic);
+                    }                    
+                }
             }
             catch (Exception ex)
             {
@@ -126,6 +136,30 @@ namespace WinUIMusicPlayer.View
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
                 // 处理设为最爱的逻辑
+            }
+        }
+
+        private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
+        {
+            if (MusicListView.SelectedItem is Music selectedMusic)
+            {
+                // 处理在资源管理器中打开的逻辑
+                var filePath = selectedMusic.Path;
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"文件不存在: {filePath}");
+                }
             }
         }
     }

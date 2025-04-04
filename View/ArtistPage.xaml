@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="WinUIMusicPlayer.View.ArtistPage"
+    NavigationCacheMode="Enabled"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:WinUIMusicPlayer.View"
@@ -8,7 +9,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     >
-
     <Grid Margin="10">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="ArtistsItemsControl">

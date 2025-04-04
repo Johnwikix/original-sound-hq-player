@@ -4,7 +4,7 @@ using System;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class Music
+    public class Music 
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -21,7 +21,9 @@ namespace WinUIMusicPlayer.Model
         public int BitRate { get; set; }
         public int SampleRate { get; set; }
         public int Channel { get; set; }
-
+        public bool isFavorite { get; set; } = false;        
+        public int TrackNumber { get; set; }
+        public string Lyrics { get; set; }
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())

@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class ArtistPage : Page
     {
         private MusicBrowsePage parentPage;
-        private List<Music> musicList;
+        private List<Music> musicList;        
         public ArtistPage()
         {
             this.InitializeComponent();            

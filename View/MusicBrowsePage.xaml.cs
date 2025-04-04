@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {
         private SQLiteAsyncConnection dbConnection;
-        private Music currentPlayingMusic;
+        public Music currentPlayingMusic;
         private List<Music> lastPlayingMusic = new List<Music>();
         private IWavePlayer waveOut;
         private AudioFileReader audioFileReader;
@@ -46,6 +46,8 @@ namespace WinUIMusicPlayer.View
         private List<Music> musicList;
         public MainWindow mainWindow;
         private MMDevice selectedDevice = null;
+        private string paramName = "defualt";
+        private string pageType = "MusicBrowsePage";
 
         public MusicBrowsePage()
         {
@@ -64,16 +66,27 @@ namespace WinUIMusicPlayer.View
             {
                 window.Closed += Window_Closed;
             }
-            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;            
+            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;
 
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
                 mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
+                mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
             }
             if (ContentFrame != null)
             {
                 ContentFrame.Navigate(typeof(SongListPage), this);
+            }
+        }
+
+        private async void MainWindow_SongCollecionLoaded(object sender, List<Music> musics)
+        {
+            musicList = musics;
+            var songCollectionPage = ContentFrame.Content as SongCollectionPage;
+            if (songCollectionPage != null)
+            {
+                await songCollectionPage.LoadMusicAsync(musics);
             }
         }
 
@@ -93,12 +106,9 @@ namespace WinUIMusicPlayer.View
                     albumBrowsePage.LoadAlbumsAsync(musics);
                 }
                 var artistPage = ContentFrame.Content as ArtistPage;
-                if (artistPage != null) {
+                if (artistPage != null)
+                {
                     artistPage.LoadArtists(musics);
-                }
-                var songCollectionPage = ContentFrame.Content as SongCollectionPage;
-                if (songCollectionPage != null) {
-                    songCollectionPage.LoadMusicAsync(musics);
                 }
             }
             catch (Exception ex)
@@ -106,29 +116,34 @@ namespace WinUIMusicPlayer.View
                 Debug.WriteLine($"º”‘ÿ∏Ë«˙¡–±Ì ß∞‹: {ex.Message}");
             }
         }
-        public async Task LoadMusic(string searchText = null)
+        public async Task LoadMusic()
         {
+
             if (mainWindow != null)
             {
-                await mainWindow.LoadMusicList(searchText);
+                await mainWindow.LoadMusicList(SearchTextBox.Text);
             }
         }
 
-        public void LoadAlbumMusic(string searchText = null)
+        public async void LoadAlbumMusic(string Album)
         {
+            pageType = "Album";
+            paramName = Album;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
-                mainWindow.LoadAlbumMusic(searchText);
-            }           
+                await mainWindow.LoadAlbumMusic(Album, SearchTextBox.Text);
+            }
         }
 
-        public void LoadArtistMusic(string searchText = null)
+        public async void LoadArtistMusic(string artist)
         {
+            pageType = "Artist";
+            paramName = artist;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
-                mainWindow.LoadArtistMusic(searchText);
+                await mainWindow.LoadArtistMusic(artist, SearchTextBox.Text);
             }
         }
 
@@ -139,18 +154,50 @@ namespace WinUIMusicPlayer.View
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            string searchText = SearchTextBox.Text;
-            await LoadMusic(searchText);
+        {            
+            if (ContentFrame != null && ContentFrame.Content != null)
+            {
+                if (ContentFrame.Content is SongCollectionPage)
+                {
+                    var page = ContentFrame.Content as SongCollectionPage;
+                    if (pageType == "Album") {
+                        LoadAlbumMusic(paramName);
+                    }
+                    else if (pageType == "Artist")
+                    {
+                        LoadArtistMusic(paramName);
+                    }
+                }
+                else
+                {
+                    await LoadMusic();
+                }
+            }            
         }
 
         private async void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                string searchText = SearchTextBox.Text;
-                if (mainWindow != null)
-                await LoadMusic(searchText);
+                if (ContentFrame != null && ContentFrame.Content != null)
+                {
+                    if (ContentFrame.Content is SongCollectionPage)
+                    {
+                        var page = ContentFrame.Content as SongCollectionPage;
+                        if (pageType == "Album")
+                        {
+                            LoadAlbumMusic(paramName);
+                        }
+                        else if (pageType == "Artist")
+                        {
+                            LoadArtistMusic(paramName);
+                        }
+                    }
+                    else
+                    {
+                        await LoadMusic();
+                    }
+                }
             }
         }
 
@@ -233,7 +280,7 @@ namespace WinUIMusicPlayer.View
                         ContentFrame.Navigate(typeof(SongListPage), this);
                         break;
                     case "Album":
-                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);                 
+                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
                         break;
                     case "Artist":
                         ContentFrame.Navigate(typeof(ArtistPage), this);
@@ -256,14 +303,16 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 ShowMessage($"≤•∑≈ ß∞‹{ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"¥ÌŒÛ: {ex.Message}");               
+                System.Diagnostics.Debug.WriteLine($"¥ÌŒÛ: {ex.Message}");
             }
         }
 
-        private void SelectOutputDevice() {
+        private void SelectOutputDevice()
+        {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-            if (selectedDevice == null) {
+            if (selectedDevice == null)
+            {
                 if (AppSettings.DeviceName != null)
                 {
                     foreach (var device in devices)
@@ -275,7 +324,7 @@ namespace WinUIMusicPlayer.View
                         }
                     }
                 }
-            }            
+            }
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
@@ -474,7 +523,7 @@ namespace WinUIMusicPlayer.View
             await LoadMusic();
             await LoadPlayState();
             PlayTimeTextBlock.Text = "00:00/00:00";
-        }        
+        }
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
@@ -568,8 +617,8 @@ namespace WinUIMusicPlayer.View
             if (progressTimer != null)
             {
                 progressTimer.Stop();
-            }           
-            
+            }
+
             ProgressSlider.Value = 0;
         }
         private async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
@@ -624,7 +673,8 @@ namespace WinUIMusicPlayer.View
                             AlbumCoverImage.Source = bitmapImage;
                         }
                     }
-                    else {
+                    else
+                    {
                         var uri = new Uri("ms-appx:///Assets/Music.png");
                         var bitmapImage = new BitmapImage(uri);
                         AlbumCoverImage.Source = bitmapImage;
@@ -644,14 +694,20 @@ namespace WinUIMusicPlayer.View
             MusicAuthorTextBlock.Text = music.Author;
             MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
             HRImage.Source = null;
-            if (music.SampleRate >= 48000 && music.BitDepth >= 24) {
+            if (music.SampleRate >= 48000 && music.BitDepth >= 24)
+            {
                 var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                 HRImage.Source = bitmapImage;
             }
             var songListPage = ContentFrame.Content as SongListPage;
+            var songCollectionPage = ContentFrame.Content as SongCollectionPage;
             if (songListPage != null)
             {
-                songListPage.UpdateMusicListView(music);
+                songListPage.UpdateMusicListView();               
+            }
+            if(songCollectionPage != null)
+            {
+                songCollectionPage.UpdateMusicListView();
             }
             await LoadCover(music);
             if (await InitializeAudioResources(music, currentPos))
@@ -742,7 +798,7 @@ namespace WinUIMusicPlayer.View
                     await PlayMusic(musicList[randomIndex]);
                     break;
             }
-        }        
+        }
 
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
@@ -766,7 +822,7 @@ namespace WinUIMusicPlayer.View
                 {
                     VolumeSliderIcon.Glyph = "\uE992";
                 }
-            }
+            }            
         }
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {

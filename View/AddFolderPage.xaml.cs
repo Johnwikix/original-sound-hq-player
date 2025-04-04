@@ -187,7 +187,7 @@ namespace WinUIMusicPlayer.View
                 {
                     // 获取基本音乐属性
                     var musicProperties = await file.Properties.GetMusicPropertiesAsync();
-
+                    int trackNumber = (int)musicProperties.TrackNumber;
                     string title = string.IsNullOrEmpty(musicProperties.Title) ?
                         Path.GetFileNameWithoutExtension(file.Name) : musicProperties.Title;
 
@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.View
                     int sampleRate = 0;
                     int channelCount = 0;
                     int bitDepth = 0;
-                    int bitRate = 0;
+                    int bitRate = 0;                    
 
                     // 尝试获取详细的音频属性
                     try
@@ -254,7 +254,8 @@ namespace WinUIMusicPlayer.View
                         BitDepth = bitDepth,
                         BitRate = bitRate,
                         SampleRate = sampleRate,
-                        Channel = channelCount
+                        Channel = channelCount,
+                        TrackNumber = trackNumber,
                     };
                     musicFiles.Add(music);
                 }
