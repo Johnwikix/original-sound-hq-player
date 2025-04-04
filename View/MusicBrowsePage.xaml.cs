@@ -520,8 +520,9 @@ namespace WinUIMusicPlayer.View
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
             await dbConnection.CreateTableAsync<SavePlayState>();
-            await LoadMusic();
-            await LoadPlayState();
+            _ = LoadPlayState();
+            _ = LoadMusic();
+            
             PlayTimeTextBlock.Text = "00:00/00:00";
         }
 
@@ -667,8 +668,26 @@ namespace WinUIMusicPlayer.View
                         using (var ms = new MemoryStream(picture.Data.Data))
                         {
                             var bitmapImage = new BitmapImage();
-                            bitmapImage.DecodePixelWidth = 80;
-                            bitmapImage.DecodePixelHeight = 80;
+                            bitmapImage.ImageOpened += (sender, args) =>
+                            {
+                                double originalWidth = bitmapImage.PixelWidth;
+                                double originalHeight = bitmapImage.PixelHeight;
+                                double aspectRatio = originalWidth / originalHeight;
+                                int maxSize = 80;
+                                int newWidth, newHeight;
+                                if (originalWidth > originalHeight)
+                                {
+                                    newWidth = maxSize;
+                                    newHeight = (int)(maxSize / aspectRatio);
+                                }
+                                else
+                                {
+                                    newHeight = maxSize;
+                                    newWidth = (int)(maxSize * aspectRatio);
+                                }
+                                bitmapImage.DecodePixelWidth = newWidth;
+                                bitmapImage.DecodePixelHeight = newHeight;
+                            };
                             await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                             AlbumCoverImage.Source = bitmapImage;
                         }
@@ -872,11 +891,10 @@ namespace WinUIMusicPlayer.View
 
         private void ProgressTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            if (audioFileReader != null && isPlaying && !isUserDraggingProgressSlider)
-            {
-                this.DispatcherQueue.TryEnqueue(() =>
+            try {
+                if (audioFileReader != null && isPlaying && !isUserDraggingProgressSlider)
                 {
-                    try
+                    this.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (audioFileReader.CurrentTime != null)
                         {
@@ -885,12 +903,12 @@ namespace WinUIMusicPlayer.View
                             string totalTime = audioFileReader.TotalTime.ToString(@"mm\:ss");
                             PlayTimeTextBlock.Text = $"{currentTime}/{totalTime}";
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-                    }
-                });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
         }
 

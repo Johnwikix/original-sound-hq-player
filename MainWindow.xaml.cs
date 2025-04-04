@@ -46,9 +46,10 @@ namespace WinUIMusicPlayer
             await dbConnection.CreateTableAsync<Folder>();
             await dbConnection.CreateTableAsync<SavePlayState>();
             await dbConnection.CreateTableAsync<SaveSettings>();
-            LoadState();
-            LoadMusicList();
-            LoadFoldersAsync();
+            await LoadState();
+            await LoadFoldersAsync();
+            await LoadMusicList();
+            await LoadDeviceState();
 
         }
         public async Task LoadFoldersAsync()
@@ -110,8 +111,26 @@ namespace WinUIMusicPlayer
                                 using (var ms = new MemoryStream(picture.Data.Data))
                                 {
                                     var bitmapImage = new BitmapImage();
-                                    bitmapImage.DecodePixelWidth = 125;
-                                    bitmapImage.DecodePixelHeight = 125;
+                                    bitmapImage.ImageOpened += (sender, args) =>
+                                    {
+                                        double originalWidth = bitmapImage.PixelWidth;
+                                        double originalHeight = bitmapImage.PixelHeight;
+                                        double aspectRatio = originalWidth / originalHeight;
+                                        int maxSize = 125;
+                                        int newWidth, newHeight;
+                                        if (originalWidth > originalHeight)
+                                        {
+                                            newWidth = maxSize;
+                                            newHeight = (int)(maxSize / aspectRatio);
+                                        }
+                                        else
+                                        {
+                                            newHeight = maxSize;
+                                            newWidth = (int)(maxSize * aspectRatio);
+                                        }
+                                        bitmapImage.DecodePixelWidth = newWidth;
+                                        bitmapImage.DecodePixelHeight = newHeight;
+                                    };
                                     await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                                     newCover = bitmapImage;
                                     isCoverFound = true;
@@ -158,7 +177,7 @@ namespace WinUIMusicPlayer
             }
             var musicList = await query.OrderBy(m => m.Title).ToListAsync();            
             MusicListLoaded?.Invoke(this, musicList);
-            await LoadAlbumCover(musicList);
+            _ = LoadAlbumCover(musicList);
         }
 
         public async Task LoadArtistMusic(string artist, string search = null)
@@ -188,13 +207,14 @@ namespace WinUIMusicPlayer
                     m.Album != null && m.Album.ToLower().Equals(album.ToLower())
                 );
             }
-            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            var musicList = await query.OrderBy(m => m.TrackNumber).ToListAsync();
             SongCollecionLoaded?.Invoke(this, musicList);
         }
 
 
         private async Task LoadState()
         {
+            DateTime dateTime = DateTime.Now;
             var playState = await dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
             if (playState == null)
             {
@@ -210,6 +230,9 @@ namespace WinUIMusicPlayer
             AppData.PlayMode = playState.PlayMode;
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
             AppData.Volume = playState.Volume;
+            System.Diagnostics.Debug.WriteLine($"LoadState ºÄÊ±: {(DateTime.Now - dateTime).TotalMilliseconds}ms");
+        }
+        private async Task LoadDeviceState() {
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {
@@ -217,20 +240,22 @@ namespace WinUIMusicPlayer
                 AppSettings.Latency = settings.Latency;
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                foreach (var device in devices)
-                {
-                    if (device.FriendlyName == settings.DeviceFriendlyName)
-                    {
-                        AppSettings.OutputDevice.mMDevice = device;
-                        AppSettings.DeviceName = device.FriendlyName;
-                        break;
-                    }
-                }
+                AppSettings.DeviceName = settings.DeviceFriendlyName;
+                //foreach (var device in devices)
+                //{
+                //    if (device.FriendlyName == settings.DeviceFriendlyName)
+                //    {
+                //        AppSettings.OutputDevice.mMDevice = device;
+                //        AppSettings.DeviceName = device.FriendlyName;
+                //        break;
+                //    }
+                //}
                 foreach (var device in devices)
                 {
                     AppSettings.outputDeviceList.Add(device.FriendlyName);
                 }
             }
+
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)

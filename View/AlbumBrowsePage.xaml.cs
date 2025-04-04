@@ -136,8 +136,26 @@ namespace WinUIMusicPlayer.View
                                 using (var ms = new MemoryStream(picture.Data.Data))
                                 {
                                     var bitmapImage = new BitmapImage();
-                                    bitmapImage.DecodePixelWidth = 125;
-                                    bitmapImage.DecodePixelHeight = 125;
+                                    bitmapImage.ImageOpened += (sender, args) =>
+                                    {
+                                        double originalWidth = bitmapImage.PixelWidth;
+                                        double originalHeight = bitmapImage.PixelHeight;
+                                        double aspectRatio = originalWidth / originalHeight;
+                                        int maxSize = 125;
+                                        int newWidth, newHeight;
+                                        if (originalWidth > originalHeight)
+                                        {
+                                            newWidth = maxSize;
+                                            newHeight = (int)(maxSize / aspectRatio);
+                                        }
+                                        else
+                                        {
+                                            newHeight = maxSize;
+                                            newWidth = (int)(maxSize * aspectRatio);
+                                        }
+                                        bitmapImage.DecodePixelWidth = newWidth;
+                                        bitmapImage.DecodePixelHeight = newHeight;
+                                    };
                                     await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                                     newCover = bitmapImage;                                    
                                     break;

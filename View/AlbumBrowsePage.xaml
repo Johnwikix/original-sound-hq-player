@@ -21,7 +21,7 @@
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
                                     Click="Album_Click" Tag="{Binding}">
-                                <Image  x:Name="AlbumCoverImage" Width="130" Height="130" Stretch="Fill" Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}"/>
+                                <Image  x:Name="AlbumCoverImage" Width="130" Height="130" Stretch="Uniform" Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}"/>
                             </Button>
                             <TextBlock 
                                 Height="60" 
