@@ -16,6 +16,7 @@
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumBrowsePage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
+    <None Remove="View\FolderBrowsePage.xaml" />
     <None Remove="View\MusicBrowsePage.xaml" />
     <None Remove="View\SettingsPage.xaml" />
     <None Remove="View\SongCollectionPage.xaml" />
@@ -79,6 +80,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Language\" />
+    <Folder Include="View\SubView\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="View\FolderBrowsePage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\SongCollectionPage.xaml">
@@ -117,5 +124,6 @@
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefaultLanguage>zh-cn</DefaultLanguage>
   </PropertyGroup>
 </Project>

@@ -15,7 +15,7 @@
   <mp:PhoneIdentity PhoneProductId="d985a645-0da3-4bd7-a698-1935a854c968" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>WinUIMusicPlayer</DisplayName>
+    <DisplayName>Music Player</DisplayName>
     <PublisherDisplayName>90684</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,7 +35,7 @@
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="Music Player"
-        Description="WinUIMusicPlayer"
+        Description="Music Player"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

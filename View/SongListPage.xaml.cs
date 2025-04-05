@@ -132,11 +132,11 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
+        private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                // 处理设为最爱的逻辑
+                await parentPage.AddToFavourite(selectedMusic);
             }
         }
 

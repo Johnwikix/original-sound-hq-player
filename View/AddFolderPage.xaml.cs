@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -272,11 +273,11 @@ namespace WinUIMusicPlayer.View
                         {
                             // 其余代码保持不变...
                             var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
-                        "System.Audio.SampleRate",
-                        "System.Audio.ChannelCount",
-                        "System.Audio.EncodingBitrate",
-                        "System.Audio.SampleSize"
-                    });
+                                "System.Audio.SampleRate",
+                                "System.Audio.ChannelCount",
+                                "System.Audio.EncodingBitrate",
+                                "System.Audio.SampleSize"
+                             });
 
                             // 处理采样率
                             if (audioProps.ContainsKey("System.Audio.SampleRate") && audioProps["System.Audio.SampleRate"] != null)
@@ -330,7 +331,15 @@ namespace WinUIMusicPlayer.View
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"处理音乐文件时出错: {file.Path}, 错误: {ex.Message}");
-
+                        AudioFileInfo wavFileInfo = new AudioFileInfo();
+                        try
+                        {
+                            wavFileInfo = ToolUtils.GetAudioFileInfo(file.Path);
+                        }
+                        catch (Exception exception)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"获取WAV文件属性时出错: {exception.Message}");                        
+                        }
                         // 即使提取元数据失败，也尝试添加基本信息
                         try
                         {
@@ -339,10 +348,15 @@ namespace WinUIMusicPlayer.View
                                 Path = file.Path,
                                 Title = Path.GetFileNameWithoutExtension(file.Name),
                                 Author = "未知艺术家",
+                                Duration = wavFileInfo.Duration,
                                 Album = "未知专辑",
                                 FolderPath = folder.Path,
                                 LastLevelFolderPath = Path.GetFileName(folder.Path),
-                                Extension = file.FileType.TrimStart('.').ToUpper()
+                                Extension = file.FileType.TrimStart('.').ToUpper(),
+                                BitDepth = wavFileInfo.BitDepth,
+                                BitRate = wavFileInfo.BitRate,
+                                SampleRate = wavFileInfo.SampleRate,
+                                Channel = wavFileInfo.ChannelCount,
                             };
                             musicFiles.Add(music);
                         }

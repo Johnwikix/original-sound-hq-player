@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer.View
         private MMDevice selectedDevice = null;
         private string paramName = "defualt";
         private string pageType = "MusicBrowsePage";
+        private bool isMouseOverVolumeSlider = false;
 
         public MusicBrowsePage()
         {
@@ -110,6 +111,11 @@ namespace WinUIMusicPlayer.View
                 {
                     artistPage.LoadArtists(musics);
                 }
+                var folderBrowsePage = ContentFrame.Content as FolderBrowsePage;
+                if (folderBrowsePage != null)
+                {
+                    folderBrowsePage.LoadFolder(musics);
+                }
             }
             catch (Exception ex)
             {
@@ -147,9 +153,27 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public async void LoadFolderMusic(string folder)
+        {
+            pageType = "Folder";
+            paramName = folder;
+            ContentFrame.Navigate(typeof(SongCollectionPage), this);
+            if (mainWindow != null)
+            {
+                await mainWindow.LoadFolderMusic(folder, SearchTextBox.Text);
+            }
+        }
+
         public async Task RemoveMusic(int musicId)
         {
             await dbConnection.DeleteAsync<Music>(musicId);
+            await LoadMusic();
+        }
+
+        public async Task AddToFavourite(Music music)
+        {
+            music.isFavorite = true;
+            await dbConnection.UpdateAsync(music);
             await LoadMusic();
         }
 
@@ -210,14 +234,6 @@ namespace WinUIMusicPlayer.View
                     AdjustPlaybackPosition(5);
                     e.Handled = true;
                     break;
-                case Windows.System.VirtualKey.Up:
-                    AdjustVolume(1);
-                    e.Handled = true;
-                    break;
-                case Windows.System.VirtualKey.Down:
-                    AdjustVolume(-1);
-                    e.Handled = true;
-                    break;
             }
         }
 
@@ -230,14 +246,7 @@ namespace WinUIMusicPlayer.View
                 audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 ProgressSlider.Value = newPosition;
             }
-        }
-
-        private void AdjustVolume(int delta)
-        {
-            double newVolume = VolumeSlider.Value + delta;
-            newVolume = Math.Max(0, Math.Min(newVolume, 100));
-            VolumeSlider.Value = newVolume;
-        }
+        }        
 
         private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
         {
@@ -282,6 +291,9 @@ namespace WinUIMusicPlayer.View
                     case "Artist":
                         ContentFrame.Navigate(typeof(ArtistPage), this);
                         break;
+                    case "Folder":
+                        ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        break;
                 }
             }
         }
@@ -308,17 +320,15 @@ namespace WinUIMusicPlayer.View
         {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-            if (selectedDevice == null)
+            //selectedDevice = null;
+            if (AppSettings.DeviceName != null)
             {
-                if (AppSettings.DeviceName != null)
+                foreach (var device in devices)
                 {
-                    foreach (var device in devices)
+                    if (device.FriendlyName == AppSettings.DeviceName)
                     {
-                        if (device.FriendlyName == AppSettings.DeviceName)
-                        {
-                            selectedDevice = device;
-                            break;
-                        }
+                        selectedDevice = device;
+                        break;
                     }
                 }
             }
@@ -798,7 +808,17 @@ namespace WinUIMusicPlayer.View
                 {
                     VolumeSliderIcon.Glyph = "\uE992";
                 }
-            }            
+            }
+        }
+
+        private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            isMouseOverVolumeSlider = true;
+        }
+
+        private void VolumeSlider_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            isMouseOverVolumeSlider = false;
         }
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
@@ -808,6 +828,30 @@ namespace WinUIMusicPlayer.View
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
             }
+        }
+
+        private void VolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (isMouseOverVolumeSlider)
+            {
+                var delta = e.GetCurrentPoint(VolumeSlider).Properties.MouseWheelDelta;
+                if (delta > 0)
+                {
+                    AdjustVolume(1);
+                }
+                else if (delta < 0)
+                {
+                    AdjustVolume(-1);
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void AdjustVolume(int delta)
+        {
+            double newVolume = VolumeSlider.Value + delta;
+            newVolume = Math.Max(0, Math.Min(newVolume, 100));
+            VolumeSlider.Value = newVolume;
         }
 
         private void Thumb_DragStarted(object sender, DragStartedEventArgs e)

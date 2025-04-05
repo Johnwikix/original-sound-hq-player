@@ -176,7 +176,6 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Button button && button.Tag is Music music)
             {
-                Debug.WriteLine($"Clicked on album: {music.Album}");
                 if (parentPage != null)
                 {
                     parentPage.LoadAlbumMusic(music.Album);

@@ -43,6 +43,20 @@
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >艺术家</Button>
+            <Button x:Name="FolderButton" 
+                    Click="NavigationButton_Click" 
+                    Tag="Folder" 
+                    BorderThickness="0" 
+                    BorderBrush="Transparent" 
+                    FontSize="20"
+                    Background="Transparent" >文件夹</Button>
+            <Button x:Name="FavouriteButton" 
+                    Click="NavigationButton_Click" 
+                    Tag="Favourite"
+                    BorderThickness="0" 
+                    BorderBrush="Transparent" 
+                    FontSize="20"
+                    Background="Transparent" >最爱</Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Margin="10">
             <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
@@ -156,6 +170,9 @@
                     VerticalAlignment="Center"
                     Width="100"
                     ValueChanged="VolumeSlider_ValueChanged"
+                    PointerEntered="VolumeSlider_PointerEntered"
+                    PointerExited="VolumeSlider_PointerExited"
+                    PointerWheelChanged="VolumeSlider_PointerWheelChanged"
                     HorizontalAlignment="Right"/>                
             </StackPanel>
         </Grid>

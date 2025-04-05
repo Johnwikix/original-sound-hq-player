@@ -99,7 +99,6 @@ namespace WinUIMusicPlayer
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(search))
             {
-                string searchPattern = $"%{search}%";
                 query = query.Where(m =>
                     m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                     m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
@@ -116,7 +115,6 @@ namespace WinUIMusicPlayer
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(artist))
             {
-                string searchPattern = $"%{artist}%";
                 query = query.Where(m =>
                    (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                    m.Album != null && m.Author.ToLower().Contains(search.ToLower())) &&
@@ -127,11 +125,26 @@ namespace WinUIMusicPlayer
             SongCollecionLoaded?.Invoke(this, musicList);
         }
 
+        public async Task LoadFolderMusic(string folder, string search = null)
+        {
+            var query = dbConnection.Table<Music>();
+            if (!string.IsNullOrEmpty(folder))
+            {
+                query = query.Where(m =>
+                   (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                   m.Album != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                   m.Author != null && m.Author.ToLower().Contains(search.ToLower())) &&
+                   m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower())
+                );
+            }
+            var musicList = await query.OrderBy(m => m.LastLevelFolderPath).ToListAsync();
+            SongCollecionLoaded?.Invoke(this, musicList);
+        }
+
         public async Task LoadAlbumMusic(string album,string search = null) {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(album))
             {
-                string searchPattern = $"%{album}%";
                 query = query.Where(m =>
                     (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                     m.Author != null && m.Author.ToLower().Contains(search.ToLower())) &&

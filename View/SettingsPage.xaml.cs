@@ -98,7 +98,6 @@ namespace WinUIMusicPlayer.View
         private void InitializeSettings()
         {
             isInitializing = true;
-            DateTime dateTime = DateTime.Now;
             // 设置初始的输出模式
             foreach (ComboBoxItem item in OutputModeComboBox.Items)
             {
@@ -108,7 +107,6 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-            System.Diagnostics.Debug.WriteLine($"OutputModeComboBox 初始化完成，耗时：{(DateTime.Now - dateTime).TotalMilliseconds}ms");
 
             // 设置初始的输出设备
             foreach (ComboBoxItem item in OutputDeviceComboBox.Items)
@@ -120,7 +118,6 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-            System.Diagnostics.Debug.WriteLine($"OutputDeviceComboBox 初始化完成，耗时：{(DateTime.Now - dateTime).TotalMilliseconds}ms");
             // 设置初始的缓冲区大小
             LatencyTextBox.Text = AppSettings.Latency.ToString();
             isInitializing = false;
@@ -146,7 +143,10 @@ namespace WinUIMusicPlayer.View
             {
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                 AppSettings.DeviceName = selectedItem.Content.ToString();
-                //OutputDeviceChanged();
+                if (!isInitializing)
+                {
+                    AppSettings.OnOutputSettingsChanged();
+                }
                 SaveSetting();
             }
         }        

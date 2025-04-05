@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using TagLib;
+using NAudio.Wave;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -133,6 +134,34 @@ namespace WinUIMusicPlayer.Utils
                 var uri = new Uri("ms-appx:///Assets/Music.png");
                 var bitmapImage = new BitmapImage(uri);
                 return bitmapImage;
+            }
+        }
+
+        public static AudioFileInfo GetAudioFileInfo(string filePath)
+        {
+            try
+            {
+                using (var reader = new MediaFoundationReader(filePath))
+                {
+                    int sampleRate = reader.WaveFormat.SampleRate;
+                    int channelCount = reader.WaveFormat.Channels;
+                    int bitDepth = reader.WaveFormat.BitsPerSample;
+                    TimeSpan duration = reader.TotalTime;
+                    int bitRate = (int)(reader.Length * 8 / duration.TotalSeconds / 1000);
+                    return new AudioFileInfo
+                    {
+                        SampleRate = sampleRate,
+                        ChannelCount = channelCount,
+                        BitRate = bitRate,
+                        BitDepth = bitDepth,
+                        Duration = duration
+                    };
+                }               
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"读取 WAV 文件时出错: {ex.Message}");
+                return new AudioFileInfo();
             }
         }
     }
