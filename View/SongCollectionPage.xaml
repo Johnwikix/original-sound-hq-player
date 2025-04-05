@@ -22,26 +22,31 @@
                             <MenuFlyoutItem Text="添加到播放列表" Click="AddToPlaylistMenuItem_Click"/>
                             <MenuFlyoutItem Text="设为最爱" Click="SetAsFavoriteMenuItem_Click"/>
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
                         <MenuFlyoutItem Text="删除" Click="DeleteMenuItem_Click"/>
                     </MenuFlyout>
                 </Setter.Value>
             </Setter>
         </Style>
     </Page.Resources>
-    <ListView x:Name="MusicListView" DoubleTapped="MusicListView_DoubleTapped" ItemContainerStyle="{StaticResource ListViewItemStyle}">
+    <ListView x:Name="MusicListView" 
+              DoubleTapped="MusicListView_DoubleTapped" 
+              ItemContainerStyle="{StaticResource ListViewItemStyle}"
+              RightTapped="MusicListView_RightTapped"
+              >
         <ListView.ItemTemplate>
             <DataTemplate x:DataType="model:Music">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="0.5*"/>
+                        <ColumnDefinition Width="0.5*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="{x:Bind Title}" Grid.Column="0" Margin="5" VerticalAlignment="Center" />
-                    <TextBlock Text="{x:Bind Author}" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
-                    <TextBlock Text="{x:Bind Album}" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
+                    <TextBlock Text="{x:Bind Title}" Grid.Column="0" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{x:Bind Author}" Grid.Column="1" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{x:Bind Album}" Grid.Column="2" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Text="{x:Bind TrackNumber}" Grid.Column="3" Margin="5" VerticalAlignment="Center"/>
                     <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="4" Margin="5" VerticalAlignment="Center"  />
                 </Grid>

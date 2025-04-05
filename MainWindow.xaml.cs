@@ -29,12 +29,13 @@ namespace WinUIMusicPlayer
         public event EventHandler<List<Music>> MusicListLoaded;
         public event EventHandler<List<Music>> SongCollecionLoaded;
         public MainWindow()
-        {
+        {            
             InitializeComponent();
             this.Activated += MainWindow_Activated;
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
+            // 显示 Loading 界面
             InitializeDatabase();
         }
 
@@ -50,7 +51,8 @@ namespace WinUIMusicPlayer
             await LoadFoldersAsync();
             await LoadMusicList();
             await LoadDeviceState();
-
+            LoadingGrid.Visibility = Visibility.Collapsed;
+            NavigationViewControl.Visibility = Visibility.Visible;
         }
         public async Task LoadFoldersAsync()
         {
@@ -80,7 +82,7 @@ namespace WinUIMusicPlayer
                     }
                     else
                     {
-                        BitmapImage cover = await GetAlbumCover(album);
+                        BitmapImage cover = await GetAlbumCover(album,musics);
                         album.Cover = cover;
                         AppData.albumCoverCache[album.Album] = cover;
                     }
@@ -90,78 +92,7 @@ namespace WinUIMusicPlayer
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-        }
-
-        private async Task<BitmapImage> GetAlbumCover(Music album)
-        {
-            BitmapImage newCover = album.Cover;
-            bool isCoverFound = false;
-            if (album.Album != "未知专辑")
-            {
-                var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();
-                foreach (var song in albumSongs)
-                {
-                    try
-                    {
-                        using (var file = TagLib.File.Create(song.Path))
-                        {
-                            if (file.Tag.Pictures.Length > 0)
-                            {
-                                var picture = file.Tag.Pictures[0];
-                                using (var ms = new MemoryStream(picture.Data.Data))
-                                {
-                                    var bitmapImage = new BitmapImage();
-                                    bitmapImage.ImageOpened += (sender, args) =>
-                                    {
-                                        double originalWidth = bitmapImage.PixelWidth;
-                                        double originalHeight = bitmapImage.PixelHeight;
-                                        double aspectRatio = originalWidth / originalHeight;
-                                        int maxSize = 125;
-                                        int newWidth, newHeight;
-                                        if (originalWidth > originalHeight)
-                                        {
-                                            newWidth = maxSize;
-                                            newHeight = (int)(maxSize / aspectRatio);
-                                        }
-                                        else
-                                        {
-                                            newHeight = maxSize;
-                                            newWidth = (int)(maxSize * aspectRatio);
-                                        }
-                                        bitmapImage.DecodePixelWidth = newWidth;
-                                        bitmapImage.DecodePixelHeight = newHeight;
-                                    };
-                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                                    newCover = bitmapImage;
-                                    isCoverFound = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-                    }
-                    if (!isCoverFound)
-                    {
-                        var uri = new Uri("ms-appx:///Assets/Album.png");
-                        var bitmapImage = new BitmapImage(uri);
-                        bitmapImage.DecodePixelWidth = 125;
-                        bitmapImage.DecodePixelHeight = 125;
-                        newCover = bitmapImage;
-                    }
-                }
-            }
-            else {
-                var uri = new Uri("ms-appx:///Assets/Album.png");
-                var bitmapImage = new BitmapImage(uri);
-                bitmapImage.DecodePixelWidth = 125;
-                bitmapImage.DecodePixelHeight = 125;
-                newCover = bitmapImage;
-            }
-            return newCover;
-        }
+        }        
 
         public async Task LoadMusicList(string search = null)
         {
@@ -175,9 +106,9 @@ namespace WinUIMusicPlayer
                     m.Album != null && m.Album.ToLower().Contains(search.ToLower())
                 );
             }
-            var musicList = await query.OrderBy(m => m.Title).ToListAsync();            
-            MusicListLoaded?.Invoke(this, musicList);
-            _ = LoadAlbumCover(musicList);
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            await LoadAlbumCover(musicList);
+            MusicListLoaded?.Invoke(this, musicList);           
         }
 
         public async Task LoadArtistMusic(string artist, string search = null)
@@ -232,7 +163,7 @@ namespace WinUIMusicPlayer
             AppData.Volume = playState.Volume;
             System.Diagnostics.Debug.WriteLine($"LoadState 耗时: {(DateTime.Now - dateTime).TotalMilliseconds}ms");
         }
-        private async Task LoadDeviceState() {
+        public async Task LoadDeviceState() {
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {
@@ -240,16 +171,8 @@ namespace WinUIMusicPlayer
                 AppSettings.Latency = settings.Latency;
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
                 var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                AppSettings.DeviceName = settings.DeviceFriendlyName;
-                //foreach (var device in devices)
-                //{
-                //    if (device.FriendlyName == settings.DeviceFriendlyName)
-                //    {
-                //        AppSettings.OutputDevice.mMDevice = device;
-                //        AppSettings.DeviceName = device.FriendlyName;
-                //        break;
-                //    }
-                //}
+                AppSettings.DeviceName = settings.DeviceFriendlyName;   
+                AppSettings.outputDeviceList.Clear();
                 foreach (var device in devices)
                 {
                     AppSettings.outputDeviceList.Add(device.FriendlyName);
@@ -263,19 +186,14 @@ namespace WinUIMusicPlayer
             // 移除事件处理程序，避免重复触发
             this.Activated -= MainWindow_Activated;
             // 初始导航到 AddFolder 页面
-            NavigateToPage(typeof(AddFolderPage));
+            ContentFrame.Navigate(typeof(AddFolderPage));
         }
-        private void NavigateToPage(Type pageType)
-        {
-            ContentFrame.Navigate(pageType);
-        }
-
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.IsSettingsInvoked)
             {
-                NavigateToPage(typeof(SettingsPage));
+                ContentFrame.Navigate(typeof(SettingsPage),this);
             }
             else
             {
@@ -283,10 +201,10 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        NavigateToPage(typeof(AddFolderPage));
+                        ContentFrame.Navigate(typeof(AddFolderPage));
                         break;
                     case "MusicBrowse":
-                        NavigateToPage(typeof(MusicBrowsePage));
+                        ContentFrame.Navigate(typeof(MusicBrowsePage));
                         break;
                 }
             }

@@ -45,7 +45,7 @@
                     Background="Transparent" >艺术家</Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Margin="10">
-            <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" KeyDown="SearchTextBox_KeyDown"/>
+            <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
             <Button Click="SearchButton_Click" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
                 <FontIcon Glyph="&#xe721;"/>
             </Button>

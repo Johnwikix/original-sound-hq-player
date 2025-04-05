@@ -16,6 +16,7 @@ using SQLite;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using System.Diagnostics;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -143,7 +144,6 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                // 处理在资源管理器中打开的逻辑
                 var filePath = selectedMusic.Path;
                 if (File.Exists(filePath))
                 {
@@ -162,5 +162,16 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
+
+        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var targetElement = e.OriginalSource as FrameworkElement;
+            ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
+            if (listViewItem != null)
+            {
+                listViewItem.IsSelected = true;
+                MusicListView.SelectedItem = listViewItem.Content;
+            }
+        }        
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using NAudio.CoreAudioApi;
 using SQLite;
 using System;
@@ -20,6 +21,7 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private List<MMDevice> outputDeviceList = new List<MMDevice>();
         private bool isInitializing = true;
+        private MainWindow mainWindow;
         public SettingsPage()
         {
             this.InitializeComponent();
@@ -29,6 +31,21 @@ namespace WinUIMusicPlayer.View
             InitializeSettings();
             InitializeOutputDevices();
         }
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (e.Parameter is MainWindow _mainWindow)
+            {
+                this.mainWindow = _mainWindow;
+                if (mainWindow != null)
+                {
+                    await mainWindow.LoadDeviceState();
+                    InitializeOutputDevices();
+                    LoadOutputDevices();
+                    InitializeSettings();
+                }                
+            }
+        }        
 
         private async void InitializeDatabase()
         {
@@ -70,6 +87,7 @@ namespace WinUIMusicPlayer.View
 
         private void LoadOutputDevices()
         {
+            OutputDeviceComboBox.Items.Clear();
             List<string> outputDeviceList = AppSettings.outputDeviceList;
             foreach (var device in outputDeviceList)
             {

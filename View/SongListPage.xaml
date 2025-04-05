@@ -31,15 +31,18 @@
             </Setter>
         </Style>
     </Page.Resources>
-    <ListView x:Name="MusicListView" DoubleTapped="MusicListView_DoubleTapped" ItemContainerStyle="{StaticResource ListViewItemStyle}">
+    <ListView x:Name="MusicListView" 
+              DoubleTapped="MusicListView_DoubleTapped" 
+              ItemContainerStyle="{StaticResource ListViewItemStyle}" 
+              RightTapped="MusicListView_RightTapped">
         <ListView.ItemTemplate>
             <DataTemplate x:DataType="model:Music">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="0.5*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{x:Bind Title}" Grid.Column="0" Margin="5" VerticalAlignment="Center" />

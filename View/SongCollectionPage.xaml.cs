@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -125,6 +126,40 @@ namespace WinUIMusicPlayer.View
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
                 // 处理设为最爱的逻辑
+            }
+        }
+
+        private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
+        {
+            if (MusicListView.SelectedItem is Music selectedMusic)
+            {
+                var filePath = selectedMusic.Path;
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"文件不存在: {filePath}");
+                }
+            }
+        }
+
+        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var targetElement = e.OriginalSource as FrameworkElement;
+            ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
+            if (listViewItem != null)
+            {
+                listViewItem.IsSelected = true;
+                MusicListView.SelectedItem = listViewItem.Content;
             }
         }
     }

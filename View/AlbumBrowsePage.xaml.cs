@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.View
                                              .ToList();
                 musicList = groupedAlbums.OrderBy(m => m.Album).ToList();
                 PopulateAlbumGrid();
-                await UpdateAlbumCoversAsync(musicList);
+                //await UpdateAlbumCoversAsync(musicList);
             }
             catch (Exception ex)
             {
@@ -98,79 +98,79 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task UpdateAlbumCoversAsync(List<Music> albums)
-        {
-            foreach (var album in albums)
-            {
-                if (AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
-                {
-                    album.Cover = cachedCover;
-                }
-                else
-                {
-                    BitmapImage cover = await GetAlbumCover(album);
-                    album.Cover = cover;
-                    AppData.albumCoverCache[album.Album] = cover;
-                }                
-            }
-            AlbumItemsControl.ItemsSource = null;
-            AlbumItemsControl.ItemsSource = albums;
-        }
+        //private async Task UpdateAlbumCoversAsync(List<Music> albums)
+        //{
+        //    foreach (var album in albums)
+        //    {
+        //        if (AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
+        //        {
+        //            album.Cover = cachedCover;
+        //        }
+        //        else
+        //        {
+        //            BitmapImage cover = await GetAlbumCover(album);
+        //            album.Cover = cover;
+        //            AppData.albumCoverCache[album.Album] = cover;
+        //        }                
+        //    }
+        //    AlbumItemsControl.ItemsSource = null;
+        //    AlbumItemsControl.ItemsSource = albums;
+        //}
 
-        private async Task<BitmapImage> GetAlbumCover(Music album)
-        {
-            BitmapImage newCover = album.Cover;
-            if (album.Album != "未知专辑")
+        //private async Task<BitmapImage> GetAlbumCover(Music album)
+        //{
+        //    BitmapImage newCover = album.Cover;
+        //    if (album.Album != "未知专辑")
             
-            {
-                var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();  
-                foreach (var song in albumSongs)
-                {
-                    try
-                    {
-                        using (var file = TagLib.File.Create(song.Path))
-                        {
-                            if (file.Tag.Pictures.Length > 0)
-                            {
-                                var picture = file.Tag.Pictures[0];
-                                using (var ms = new MemoryStream(picture.Data.Data))
-                                {
-                                    var bitmapImage = new BitmapImage();
-                                    bitmapImage.ImageOpened += (sender, args) =>
-                                    {
-                                        double originalWidth = bitmapImage.PixelWidth;
-                                        double originalHeight = bitmapImage.PixelHeight;
-                                        double aspectRatio = originalWidth / originalHeight;
-                                        int maxSize = 125;
-                                        int newWidth, newHeight;
-                                        if (originalWidth > originalHeight)
-                                        {
-                                            newWidth = maxSize;
-                                            newHeight = (int)(maxSize / aspectRatio);
-                                        }
-                                        else
-                                        {
-                                            newHeight = maxSize;
-                                            newWidth = (int)(maxSize * aspectRatio);
-                                        }
-                                        bitmapImage.DecodePixelWidth = newWidth;
-                                        bitmapImage.DecodePixelHeight = newHeight;
-                                    };
-                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                                    newCover = bitmapImage;                                    
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-                    }
-                }                
-            }
-            return newCover;
-        } 
+        //    {
+        //        var albumSongs = await dbConnection.Table<Music>().Where(m => m.Album == album.Album).ToListAsync();  
+        //        foreach (var song in albumSongs)
+        //        {
+        //            try
+        //            {
+        //                using (var file = TagLib.File.Create(song.Path))
+        //                {
+        //                    if (file.Tag.Pictures.Length > 0)
+        //                    {
+        //                        var picture = file.Tag.Pictures[0];
+        //                        using (var ms = new MemoryStream(picture.Data.Data))
+        //                        {
+        //                            var bitmapImage = new BitmapImage();
+        //                            bitmapImage.ImageOpened += (sender, args) =>
+        //                            {
+        //                                double originalWidth = bitmapImage.PixelWidth;
+        //                                double originalHeight = bitmapImage.PixelHeight;
+        //                                double aspectRatio = originalWidth / originalHeight;
+        //                                int maxSize = 125;
+        //                                int newWidth, newHeight;
+        //                                if (originalWidth > originalHeight)
+        //                                {
+        //                                    newWidth = maxSize;
+        //                                    newHeight = (int)(maxSize / aspectRatio);
+        //                                }
+        //                                else
+        //                                {
+        //                                    newHeight = maxSize;
+        //                                    newWidth = (int)(maxSize * aspectRatio);
+        //                                }
+        //                                bitmapImage.DecodePixelWidth = newWidth;
+        //                                bitmapImage.DecodePixelHeight = newHeight;
+        //                            };
+        //                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+        //                            newCover = bitmapImage;                                    
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+        //            }
+        //        }                
+        //    }
+        //    return newCover;
+        //} 
 
         private void Album_Click(object sender, RoutedEventArgs e)
         {

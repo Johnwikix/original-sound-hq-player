@@ -1,4 +1,18 @@
-﻿using Windows.UI;
+﻿using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml;
+using Windows.UI;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.IO;
+using WinUIMusicPlayer.Model;
+using System;
+using System.Threading.Tasks;
+using System.Data.Common;
+using System.Diagnostics;
+using TagLib.Riff;
+using System.Collections.Generic;
+using System.Linq;
+using System.Drawing;
+using TagLib;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -9,58 +23,117 @@ namespace WinUIMusicPlayer.Utils
             SingleLoop,
             ListLoop,
             RandomLoop
-        }
-        public static Color InvertColor(Color color)
+        }      
+
+        public static T FindParent<T>(DependencyObject child) where T : DependencyObject
         {
-            byte invertedR = (byte)(255 - color.R);
-            byte invertedG = (byte)(255 - color.G);
-            byte invertedB = (byte)(255 - color.B);
-            // 保持透明度不变
-            byte alpha = color.A;
-
-            return Color.FromArgb(alpha, invertedR, invertedG, invertedB);
-        }
-
-        public static Color MakeColorTransparent(Color originalColor, byte alphaValue)
-        {
-            // 确保透明度值在 0-255 范围内
-            alphaValue = alphaValue > 255 ? (byte)255 : (byte)alphaValue;
-            alphaValue = alphaValue < 0 ? (byte)0 : alphaValue;
-
-            return Color.FromArgb(alphaValue, originalColor.R, originalColor.G, originalColor.B);
+            DependencyObject parent = VisualTreeHelper.GetParent(child);
+            if (parent == null)
+                return null;
+            T parentAsT = parent as T;
+            return parentAsT ?? FindParent<T>(parent);
         }
 
-        public static Color ConvertToColorOffset(Color color, int offSet)
+        public static async Task<BitmapImage> GetAlbumCover(Music album, List<Music> musics)
         {
-            byte invertedR = 0;
-            byte invertedG = 0;
-            byte invertedB = 0;
-            if (color.G < 128)
+            BitmapImage newCover = album.Cover;
+            if (album.Album != "未知专辑")
             {
-                invertedG = (byte)(color.G + offSet);
+                var albumSongs = musics.Where(m => m.Album == album.Album);
+                foreach (var song in albumSongs)
+                {
+                    try
+                    {
+                        using (var file = TagLib.File.Create(song.Path))
+                        {
+                            if (file.Tag.Pictures.Length > 0)
+                            {
+                                var picture = file.Tag.Pictures[0];
+                                newCover = await ReadBitmapImageAsync(picture, 125);
+                                break;                               
+                            }
+                            else
+                            {
+                                var uri = new Uri("ms-appx:///Assets/Album.png");
+                                var bitmapImage = new BitmapImage(uri);
+                                bitmapImage.DecodePixelWidth = 125;
+                                bitmapImage.DecodePixelHeight = 125;
+                                newCover = bitmapImage;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+                    }
+                }
             }
             else
             {
-                invertedG = (byte)(color.G - offSet);
+                var uri = new Uri("ms-appx:///Assets/Album.png");
+                var bitmapImage = new BitmapImage(uri);
+                bitmapImage.DecodePixelWidth = 125;
+                bitmapImage.DecodePixelHeight = 125;
+                newCover = bitmapImage;
             }
-            if (color.B < 128)
+            return newCover;
+        }
+
+        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture,int maxSize) {
+            using (var ms = new MemoryStream(picture.Data.Data))
             {
-                invertedB = (byte)(color.B + offSet);
+                var bitmapImage = new BitmapImage();
+                bitmapImage.ImageOpened += (sender, args) =>
+                {
+                    double originalWidth = bitmapImage.PixelWidth;
+                    double originalHeight = bitmapImage.PixelHeight;
+                    double aspectRatio = originalWidth / originalHeight;
+                    int newWidth, newHeight;
+                    if (originalWidth > originalHeight)
+                    {
+                        newWidth = maxSize;
+                        newHeight = (int)(maxSize / aspectRatio);
+                    }
+                    else
+                    {
+                        newHeight = maxSize;
+                        newWidth = (int)(maxSize * aspectRatio);
+                    }
+                    bitmapImage.DecodePixelWidth = newWidth;
+                    bitmapImage.DecodePixelHeight = newHeight;
+                };
+                await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                return bitmapImage;
             }
-            else
+        }
+
+
+        public static async Task<BitmapImage> GetImageFromMusic(Music music)
+        {
+            try
             {
-                invertedB = (byte)(color.B - offSet);
+                using (var file = TagLib.File.Create(music.Path))
+                {
+                    if (file.Tag.Pictures.Length > 0)
+                    {
+                        IPicture picture = file.Tag.Pictures[0];
+                        return await ReadBitmapImageAsync(picture,80);
+                    }
+                    else
+                    {
+                        var uri = new Uri("ms-appx:///Assets/Music.png");
+                        var bitmapImage = new BitmapImage(uri);
+                        return bitmapImage;
+                    }
+                }
             }
-            if (color.R < 128)
+            catch (Exception ex)
             {
-                invertedR = (byte)(color.R + offSet);
+                System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
+                var uri = new Uri("ms-appx:///Assets/Music.png");
+                var bitmapImage = new BitmapImage(uri);
+                return bitmapImage;
             }
-            else
-            {
-                invertedR = (byte)(color.R - offSet);
-            }
-            System.Diagnostics.Debug.WriteLine("R:" + invertedR + "G:" + invertedG + "B:" + invertedB);
-            return Color.FromArgb(color.A, invertedR, invertedG, invertedB);
         }
     }
 }

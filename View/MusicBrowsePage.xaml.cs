@@ -175,28 +175,25 @@ namespace WinUIMusicPlayer.View
             }            
         }
 
-        private async void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (ContentFrame != null && ContentFrame.Content != null)
             {
-                if (ContentFrame != null && ContentFrame.Content != null)
+                if (ContentFrame.Content is SongCollectionPage)
                 {
-                    if (ContentFrame.Content is SongCollectionPage)
+                    var page = ContentFrame.Content as SongCollectionPage;
+                    if (pageType == "Album")
                     {
-                        var page = ContentFrame.Content as SongCollectionPage;
-                        if (pageType == "Album")
-                        {
-                            LoadAlbumMusic(paramName);
-                        }
-                        else if (pageType == "Artist")
-                        {
-                            LoadArtistMusic(paramName);
-                        }
+                        LoadAlbumMusic(paramName);
                     }
-                    else
+                    else if (pageType == "Artist")
                     {
-                        await LoadMusic();
+                        LoadArtistMusic(paramName);
                     }
+                }
+                else
+                {
+                    await LoadMusic();
                 }
             }
         }
@@ -657,53 +654,13 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadCover(Music music)
         {
-            // 从文件路径读取嵌入封面
-            try
+            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
             {
-                using (var file = TagLib.File.Create(music.Path))
-                {
-                    if (file.Tag.Pictures.Length > 0)
-                    {
-                        var picture = file.Tag.Pictures[0];
-                        using (var ms = new MemoryStream(picture.Data.Data))
-                        {
-                            var bitmapImage = new BitmapImage();
-                            bitmapImage.ImageOpened += (sender, args) =>
-                            {
-                                double originalWidth = bitmapImage.PixelWidth;
-                                double originalHeight = bitmapImage.PixelHeight;
-                                double aspectRatio = originalWidth / originalHeight;
-                                int maxSize = 80;
-                                int newWidth, newHeight;
-                                if (originalWidth > originalHeight)
-                                {
-                                    newWidth = maxSize;
-                                    newHeight = (int)(maxSize / aspectRatio);
-                                }
-                                else
-                                {
-                                    newHeight = maxSize;
-                                    newWidth = (int)(maxSize * aspectRatio);
-                                }
-                                bitmapImage.DecodePixelWidth = newWidth;
-                                bitmapImage.DecodePixelHeight = newHeight;
-                            };
-                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                            AlbumCoverImage.Source = bitmapImage;
-                        }
-                    }
-                    else
-                    {
-                        var uri = new Uri("ms-appx:///Assets/Music.png");
-                        var bitmapImage = new BitmapImage(uri);
-                        AlbumCoverImage.Source = bitmapImage;
-                    }
-                }
+                AlbumCoverImage.Source = cachedCover;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
-            }
+            else {
+                AlbumCoverImage.Source = await GetImageFromMusic(music);
+            }            
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
