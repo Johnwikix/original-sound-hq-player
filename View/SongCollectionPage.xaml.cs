@@ -152,6 +152,19 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button != null && button.Tag is Music music)
+            {
+                if (music != null)
+                {
+                    ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
+                    await parentPage.AddToFavourite(music);
+                }
+            }
+        }
+
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;

@@ -16,6 +16,7 @@
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumBrowsePage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
+    <None Remove="View\FavouritePlayListPage.xaml" />
     <None Remove="View\FolderBrowsePage.xaml" />
     <None Remove="View\MusicBrowsePage.xaml" />
     <None Remove="View\SettingsPage.xaml" />
@@ -81,6 +82,11 @@
   <ItemGroup>
     <Folder Include="Language\" />
     <Folder Include="View\SubView\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="View\FavouritePlayListPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\FolderBrowsePage.xaml">

@@ -17,6 +17,7 @@ namespace WinUIMusicPlayer.Model
         public string FolderPath { get; set; }
         public string LastLevelFolderPath { get; set; }
         public string Extension { get; set; }
+        public int Order { get; set; }
         public int BitDepth { get; set; }
         public int BitRate { get; set; }
         public int SampleRate { get; set; }

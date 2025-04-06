@@ -28,6 +28,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler<List<Music>> MusicListLoaded;
         public event EventHandler<List<Music>> SongCollecionLoaded;
+        public event EventHandler<List<Music>> FavourListLoaded;
         public MainWindow()
         {            
             InitializeComponent();
@@ -108,6 +109,19 @@ namespace WinUIMusicPlayer
             var musicList = await query.OrderBy(m => m.Title).ToListAsync();
             await LoadAlbumCover(musicList);
             MusicListLoaded?.Invoke(this, musicList);           
+        }
+
+        public async Task LoadFavourMusicList(string search = null)
+        {
+            var query = dbConnection.Table<Music>();
+            query = query.Where(m =>
+                     m.isFavorite == true &&
+                     (m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                     m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                     m.Album != null && m.Album.ToLower().Contains(search.ToLower()))
+                 );
+            var musicList = await query.OrderByDescending(m => m.Order).ToListAsync();
+            FavourListLoaded?.Invoke(this, musicList);
         }
 
         public async Task LoadArtistMusic(string artist, string search = null)

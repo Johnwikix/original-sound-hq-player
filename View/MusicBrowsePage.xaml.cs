@@ -74,10 +74,21 @@ namespace WinUIMusicPlayer.View
             {
                 mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
                 mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
+                mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
             }
             if (ContentFrame != null)
             {
                 ContentFrame.Navigate(typeof(SongListPage), this);
+            }
+        }
+
+        private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
+        {
+            musicList = musics;
+            var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
+            if (favouritePlayListPage != null)
+            {
+                favouritePlayListPage.LoadMusicAsync(musics);
             }
         }
 
@@ -131,6 +142,14 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public async Task LoadFavouriteMusic()
+        {
+            if (mainWindow != null)
+            {
+                await mainWindow.LoadFavourMusicList(SearchTextBox.Text);
+            }
+        }
+
         public async void LoadAlbumMusic(string Album)
         {
             pageType = "Album";
@@ -172,9 +191,17 @@ namespace WinUIMusicPlayer.View
 
         public async Task AddToFavourite(Music music)
         {
-            music.isFavorite = true;
+            var favoriteMusics = await dbConnection.Table<Music>().Where(m => m.isFavorite).ToListAsync();
+            // 新音乐的 Order 为当前收藏列表长度
+            music.Order = favoriteMusics.Count;
+            music.isFavorite = !music.isFavorite;
+            music.Cover = null;
             await dbConnection.UpdateAsync(music);
-            await LoadMusic();
+        }
+
+        public void UpdateFavourtPlaylist(List<Music> newMusicList)
+        {
+            musicList = newMusicList;
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -213,7 +240,11 @@ namespace WinUIMusicPlayer.View
                     else if (pageType == "Artist")
                     {
                         LoadArtistMusic(paramName);
-                    }
+                    }                    
+                }
+                else if (ContentFrame.Content is FavouritePlayListPage)
+                {
+                    await LoadFavouriteMusic();
                 }
                 else
                 {
@@ -293,6 +324,9 @@ namespace WinUIMusicPlayer.View
                         break;
                     case "Folder":
                         ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        break;
+                    case "Favourite":
+                        ContentFrame.Navigate(typeof(FavouritePlayListPage), this);
                         break;
                 }
             }
@@ -687,6 +721,7 @@ namespace WinUIMusicPlayer.View
             }
             var songListPage = ContentFrame.Content as SongListPage;
             var songCollectionPage = ContentFrame.Content as SongCollectionPage;
+            var FavouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
             if (songListPage != null)
             {
                 songListPage.UpdateMusicListView();               
@@ -694,6 +729,10 @@ namespace WinUIMusicPlayer.View
             if(songCollectionPage != null)
             {
                 songCollectionPage.UpdateMusicListView();
+            }
+            if (FavouritePlayListPage != null)
+            {
+                FavouritePlayListPage.UpdateMusicListView();
             }
             await LoadCover(music);
             if (await InitializeAudioResources(music, currentPos))
