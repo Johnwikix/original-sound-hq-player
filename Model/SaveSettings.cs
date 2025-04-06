@@ -10,5 +10,7 @@ namespace WinUIMusicPlayer.Model
         public int Latency { get; set; } = 200;
         public string Name { get; set; }
         public string DeviceFriendlyName { get; set; }
+        public string DefualtEntry { get; set; }
+        public string DefualtPlayList { get; set; }
     }
 }

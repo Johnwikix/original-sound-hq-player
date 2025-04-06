@@ -43,9 +43,9 @@ namespace WinUIMusicPlayer.View
                     InitializeOutputDevices();
                     LoadOutputDevices();
                     InitializeSettings();
-                }                
+                }
             }
-        }        
+        }
 
         private async void InitializeDatabase()
         {
@@ -75,6 +75,8 @@ namespace WinUIMusicPlayer.View
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+            newSettings.DefualtEntry = AppSettings.DefualtEntry;
+            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
             if (settings == null)
             {
                 await dbConnection.InsertAsync(newSettings);
@@ -120,6 +122,24 @@ namespace WinUIMusicPlayer.View
             }
             // 设置初始的缓冲区大小
             LatencyTextBox.Text = AppSettings.Latency.ToString();
+            // 设置初始的默认播放列表
+            foreach (ComboBoxItem item in DefualtPlayListComboBox.Items)
+            {
+                if (item.Content.ToString() == AppSettings.DefualtPlayList)
+                {
+                    DefualtPlayListComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+            // 设置初始的默认条目
+            foreach (ComboBoxItem item in DefualtEntryComboBox.Items)
+            {
+                if (item.Content.ToString() == AppSettings.DefualtEntry)
+                {
+                    DefualtEntryComboBox.SelectedItem = item;
+                    break;
+                }
+            }
             isInitializing = false;
         }
 
@@ -149,7 +169,7 @@ namespace WinUIMusicPlayer.View
                 }
                 SaveSetting();
             }
-        }        
+        }
 
         private void LatencyTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -160,6 +180,26 @@ namespace WinUIMusicPlayer.View
                 {
                     AppSettings.OnOutputSettingsChanged();
                 }
+                SaveSetting();
+            }
+        }
+
+        private void DefualtPlayListComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+            {
+                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                AppSettings.DefualtPlayList = selectedItem.Content.ToString();
+                SaveSetting();
+            }
+        }
+
+        private void DefualtEntryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+            {
+                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                AppSettings.DefualtEntry = selectedItem.Content.ToString();
                 SaveSetting();
             }
         }

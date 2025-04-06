@@ -10,6 +10,7 @@ namespace WinUIMusicPlayer.Model
         public int Id { get; set; }
         public string Path { get; set; }
         public string Title { get; set; }
+        [Ignore]
         public BitmapImage Cover { get; set; } = null;
         public string Author { get; set; }
         public TimeSpan Duration { get; set; }

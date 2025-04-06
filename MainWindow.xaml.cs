@@ -51,9 +51,21 @@ namespace WinUIMusicPlayer
             await LoadState();
             await LoadFoldersAsync();
             await LoadMusicList();
-            await LoadDeviceState();
+            await LoadDeviceState();            
             LoadingGrid.Visibility = Visibility.Collapsed;
             NavigationViewControl.Visibility = Visibility.Visible;
+            switch (AppSettings.DefualtEntry)
+            {
+                case "文件夹选择":
+                    ContentFrame.Navigate(typeof(AddFolderPage));
+                    break;
+                case "音乐列表":
+                    ContentFrame.Navigate(typeof(MusicBrowsePage));
+                    break;
+                default:
+                    ContentFrame.Navigate(typeof(AddFolderPage));
+                    break;
+            }
         }
         public async Task LoadFoldersAsync()
         {
@@ -194,6 +206,8 @@ namespace WinUIMusicPlayer
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {
+                AppSettings.DefualtEntry = settings.DefualtEntry;
+                AppSettings.DefualtPlayList = settings.DefualtPlayList;
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
@@ -203,7 +217,7 @@ namespace WinUIMusicPlayer
                 foreach (var device in devices)
                 {
                     AppSettings.outputDeviceList.Add(device.FriendlyName);
-                }
+                }                
             }
 
         }
@@ -211,9 +225,7 @@ namespace WinUIMusicPlayer
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
             // 移除事件处理程序，避免重复触发
-            this.Activated -= MainWindow_Activated;
-            // 初始导航到 AddFolder 页面
-            ContentFrame.Navigate(typeof(AddFolderPage));
+            this.Activated -= MainWindow_Activated;        
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

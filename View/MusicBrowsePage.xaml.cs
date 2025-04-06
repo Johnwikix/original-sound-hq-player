@@ -31,7 +31,6 @@ namespace WinUIMusicPlayer.View
     {
         private SQLiteAsyncConnection dbConnection;
         public Music currentPlayingMusic;
-        private List<Music> lastPlayingMusic = new List<Music>();
         private IWavePlayer waveOut;
         private AudioFileReader audioFileReader;
         private float volume = 0.5f;
@@ -78,7 +77,36 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame != null)
             {
-                ContentFrame.Navigate(typeof(SongListPage), this);
+                switch (AppSettings.DefualtPlayList)
+                {
+                    case "歌曲":
+                        ContentFrame.Navigate(typeof(SongListPage), this);
+                        SongButton.FontSize = 26;
+                        break;
+                    case "专辑":
+                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        AlbumButton.FontSize = 26;
+                        break;
+                    case "艺术家":
+                        ContentFrame.Navigate(typeof(ArtistPage), this);
+                        ArtistButton.FontSize = 26;
+                        break;
+                    case "文件夹":
+                        ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        FolderButton.FontSize = 26;
+                        break;
+                    case "最爱":
+                        ContentFrame.Navigate(typeof(FavouritePlayListPage), this);
+                        FavouriteButton.FontSize = 26;
+                        break;
+                    default:
+                        ContentFrame.Navigate(typeof(SongListPage), this);
+                        SongButton.FontSize = 26;
+                        break;
+
+                }
+
+
             }
         }
 
@@ -309,8 +337,15 @@ namespace WinUIMusicPlayer.View
         private async void NavigationButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
+            SongButton.FontSize = 20;
+            AlbumButton.FontSize = 20;
+            ArtistButton.FontSize = 20;
+            FolderButton.FontSize = 20;
+            FavouriteButton.FontSize = 20;
+            
             if (button != null)
             {
+                button.FontSize = 26;
                 switch (button.Tag.ToString())
                 {
                     case "Song":
@@ -526,11 +561,15 @@ namespace WinUIMusicPlayer.View
 
         private async Task PlayLastTrack()
         {
-            if (lastPlayingMusic.Count > 0)
+            int index = musicList.IndexOf(currentPlayingMusic);
+            if (index > 0)
             {
-                var lastMusic = lastPlayingMusic.Last();
-                lastPlayingMusic.RemoveAt(lastPlayingMusic.Count - 1);
-                await PlayMusic(lastMusic);
+                await PlayMusic(musicList[index - 1]);
+            }
+            else if (index == 0 && musicList.Count > 1)
+            {
+                await PlayMusic(musicList[musicList.Count - 1]);
+
             }
         }
 
@@ -803,10 +842,6 @@ namespace WinUIMusicPlayer.View
 
         private async Task AutoPlayNextTrack()
         {
-            if (currentPlayingMusic != null)
-            {
-                lastPlayingMusic.Add(currentPlayingMusic);
-            }
             switch (currentPlayMode)
             {
                 case PlayMode.SingleLoop:

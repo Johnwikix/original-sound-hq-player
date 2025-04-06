@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.View
             if (mainWindow != null)
             {
                 mainWindow.FoldersLoaded += MainWindow_FoldersLoaded;
+                mainWindow.LoadFoldersAsync();
             }
         }
 

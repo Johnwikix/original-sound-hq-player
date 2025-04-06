@@ -14,6 +14,8 @@ namespace WinUIMusicPlayer.Model
         public static List<string> outputDeviceList = new List<string>();
 
         public static string DeviceName = "Default";
+        public static string DefualtEntry { get; set; }
+        public static string DefualtPlayList { get; set; }
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
