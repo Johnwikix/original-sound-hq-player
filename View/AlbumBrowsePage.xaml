@@ -28,6 +28,7 @@
                                 HorizontalAlignment="Center" 
                                 Width="150" 
                                 TextWrapping="Wrap" 
+                                TextTrimming="CharacterEllipsis"
                                 Text="{Binding Album}" 
                                 TextAlignment="Center" 
                                 Margin="0"
