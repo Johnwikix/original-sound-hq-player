@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -42,30 +43,37 @@ namespace WinUIMusicPlayer
 
         private async void InitializeDatabase()
         {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<Music>();
-            await dbConnection.CreateTableAsync<Folder>();
-            await dbConnection.CreateTableAsync<SavePlayState>();
-            await dbConnection.CreateTableAsync<SaveSettings>();
-            await LoadState();
-            await LoadFoldersAsync();
-            await LoadMusicList();
-            await LoadDeviceState();            
-            LoadingGrid.Visibility = Visibility.Collapsed;
-            NavigationViewControl.Visibility = Visibility.Visible;
-            switch (AppSettings.DefualtEntry)
-            {
-                case "文件夹选择":
-                    ContentFrame.Navigate(typeof(AddFolderPage));
-                    break;
-                case "音乐列表":
-                    ContentFrame.Navigate(typeof(MusicBrowsePage));
-                    break;
-                default:
-                    ContentFrame.Navigate(typeof(AddFolderPage));
-                    break;
+            try {
+                var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+                dbConnection = new SQLiteAsyncConnection(dbPath);
+                await dbConnection.CreateTableAsync<Music>();
+                await dbConnection.CreateTableAsync<Folder>();
+                await dbConnection.CreateTableAsync<SavePlayState>();
+                await dbConnection.CreateTableAsync<SaveSettings>();
+                await LoadState();
+                await LoadFoldersAsync();
+                await LoadMusicList();
+                await LoadDeviceState();
+                LoadingGrid.Visibility = Visibility.Collapsed;
+                NavigationViewControl.Visibility = Visibility.Visible;
+                switch (AppSettings.DefualtEntry)
+                {
+                    case "文件夹选择":
+                        ContentFrame.Navigate(typeof(AddFolderPage));
+                        break;
+                    case "音乐列表":
+                        ContentFrame.Navigate(typeof(MusicBrowsePage));
+                        break;
+                    default:
+                        ContentFrame.Navigate(typeof(AddFolderPage));
+                        break;
+                }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+            }
+            
         }
         public async Task LoadFoldersAsync()
         {
