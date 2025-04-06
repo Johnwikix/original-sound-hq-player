@@ -60,7 +60,12 @@
                         <FontIcon x:Name="IsFavouriteIcon" Glyph="{x:Bind isFavorite, Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
                     </Button>
                     <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{x:Bind Author}" 
+                               Grid.Column="2" Margin="5" 
+                               VerticalAlignment="Center" 
+                               TextTrimming="CharacterEllipsis"
+                               Tapped="AuthorTextBlock_Tapped"
+                               />
                     <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="5" VerticalAlignment="Center" 
                                TextTrimming="CharacterEllipsis"
                                Tapped="AlbumTextBlock_Tapped" />

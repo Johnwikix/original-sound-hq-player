@@ -103,10 +103,7 @@ namespace WinUIMusicPlayer.View
                         ContentFrame.Navigate(typeof(SongListPage), this);
                         SongButton.FontSize = 26;
                         break;
-
                 }
-
-
             }
         }
 
@@ -182,6 +179,8 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "Album";
             paramName = Album;
+            ResetNavigationButtons();
+            AlbumButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
@@ -193,6 +192,8 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "Artist";
             paramName = artist;
+            ResetNavigationButtons();
+            ArtistButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
@@ -334,15 +335,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void NavigationButton_Click(object sender, RoutedEventArgs e)
+        private void ResetNavigationButtons()
         {
-            var button = sender as Button;
             SongButton.FontSize = 20;
             AlbumButton.FontSize = 20;
             ArtistButton.FontSize = 20;
             FolderButton.FontSize = 20;
             FavouriteButton.FontSize = 20;
-            
+        }
+
+        private async void NavigationButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            ResetNavigationButtons();
+
             if (button != null)
             {
                 button.FontSize = 26;
@@ -651,8 +657,6 @@ namespace WinUIMusicPlayer.View
                     isPausing = false; // Reset pause flag
                     if (AppSettings.OutputMode == "WasapiExclusive")
                     {
-                        // Resume from saved position
-                        //audioFileReader.CurrentTime = currentPosition;
                         waveOut.Play();
                         isPlaying = true;
                         progressTimer.Start();

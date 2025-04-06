@@ -203,21 +203,21 @@ namespace WinUIMusicPlayer
             System.Diagnostics.Debug.WriteLine($"LoadState ºÄÊ±: {(DateTime.Now - dateTime).TotalMilliseconds}ms");
         }
         public async Task LoadDeviceState() {
+            AppSettings.outputDeviceList.Clear();
             var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            foreach (var device in devices)
+            {
+                AppSettings.outputDeviceList.Add(device.FriendlyName);
+            }
             if (settings != null)
             {
                 AppSettings.DefualtEntry = settings.DefualtEntry;
                 AppSettings.DefualtPlayList = settings.DefualtPlayList;
                 AppSettings.OutputMode = settings.OutputMode;
-                AppSettings.Latency = settings.Latency;
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                AppSettings.DeviceName = settings.DeviceFriendlyName;   
-                AppSettings.outputDeviceList.Clear();
-                foreach (var device in devices)
-                {
-                    AppSettings.outputDeviceList.Add(device.FriendlyName);
-                }                
+                AppSettings.Latency = settings.Latency;                        
+                AppSettings.DeviceName = settings.DeviceFriendlyName;                        
             }
 
         }

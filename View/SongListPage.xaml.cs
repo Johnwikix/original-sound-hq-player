@@ -188,12 +188,23 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string artist = textBlock.Text;
+                if (parentPage != null)
+                {
+                    parentPage.LoadArtistMusic(artist);
+                }
+            }
+        }
+
         private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)
             {
                 string albumName = textBlock.Text;
-                // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
                 if (parentPage != null)
                 {
                     parentPage.LoadAlbumMusic(albumName);

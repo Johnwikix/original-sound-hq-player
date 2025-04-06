@@ -209,6 +209,18 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string artist = textBlock.Text;
+                if (parentPage != null)
+                {
+                    parentPage.LoadArtistMusic(artist);
+                }
+            }
+        }
+
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;

@@ -63,7 +63,7 @@
                     <TextBlock Text="{x:Bind Author}" Grid.Column="2" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Text="{x:Bind Album}" Grid.Column="3" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Text="{x:Bind TrackNumber}" Grid.Column="4" Margin="5" VerticalAlignment="Center"/>
-                    <Image Source="ms-appx:///Assets/hr.png" Height="10" Grid.Column="4" Margin="5" VerticalAlignment="Center">
+                    <Image Source="ms-appx:///Assets/hr.png" Height="10" Grid.Column="5" Margin="5" VerticalAlignment="Center">
                         <attached:MultiValueBindingHelper.Bindings>
                             <attached:MultiBindingInfo>
                                 <attached:MultiBindingInfo.Binding1>

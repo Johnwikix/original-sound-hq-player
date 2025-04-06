@@ -21,6 +21,7 @@ namespace WinUIMusicPlayer.View
         private SQLiteAsyncConnection dbConnection;
         private List<MMDevice> outputDeviceList = new List<MMDevice>();
         private bool isInitializing = true;
+        private bool isDefaultComplete = true;
         private MainWindow mainWindow;
         public SettingsPage()
         {
@@ -29,7 +30,7 @@ namespace WinUIMusicPlayer.View
             InitializeDatabase();
             LoadOutputDevices();
             InitializeSettings();
-            InitializeOutputDevices();
+            //InitializeOutputDevices();
         }
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -40,7 +41,7 @@ namespace WinUIMusicPlayer.View
                 if (mainWindow != null)
                 {
                     await mainWindow.LoadDeviceState();
-                    InitializeOutputDevices();
+                    //InitializeOutputDevices();
                     LoadOutputDevices();
                     InitializeSettings();
                 }
@@ -54,19 +55,19 @@ namespace WinUIMusicPlayer.View
             await dbConnection.CreateTableAsync<SaveSettings>();
         }
 
-        private void InitializeOutputDevices()
-        {
-            Task.Run(() =>
-            {
-                outputDeviceList.Clear();
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                foreach (var device in devices)
-                {
-                    outputDeviceList.Add(device);
-                }
-            });
-        }
+        //private void InitializeOutputDevices()
+        //{
+        //    Task.Run(() =>
+        //    {
+        //        outputDeviceList.Clear();
+        //        MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+        //        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+        //        foreach (var device in devices)
+        //        {
+        //            outputDeviceList.Add(device);
+        //        }
+        //    });
+        //}
 
         private async Task SaveSetting()
         {
@@ -100,9 +101,15 @@ namespace WinUIMusicPlayer.View
         private void InitializeSettings()
         {
             isInitializing = true;
+            isDefaultComplete = false;
+            OutputModeComboBox.SelectedIndex = 3;
+            OutputDeviceComboBox.SelectedIndex = 0;
+            DefualtPlayListComboBox.SelectedIndex = 0;
+            DefualtEntryComboBox.SelectedIndex = 0;
+            isDefaultComplete = true;
             // 设置初始的输出模式
             foreach (ComboBoxItem item in OutputModeComboBox.Items)
-            {
+            {               
                 if (item.Content.ToString() == AppSettings.OutputMode)
                 {
                     OutputModeComboBox.SelectedItem = item;
@@ -112,8 +119,7 @@ namespace WinUIMusicPlayer.View
 
             // 设置初始的输出设备
             foreach (ComboBoxItem item in OutputDeviceComboBox.Items)
-            {
-                //MMDevice itemDevice = (MMDevice)item.Tag;
+            {                
                 if (item.Content.ToString() == AppSettings.DeviceName)
                 {
                     OutputDeviceComboBox.SelectedItem = item;
@@ -125,15 +131,17 @@ namespace WinUIMusicPlayer.View
             // 设置初始的默认播放列表
             foreach (ComboBoxItem item in DefualtPlayListComboBox.Items)
             {
+                DefualtPlayListComboBox.SelectedIndex = 0;
                 if (item.Content.ToString() == AppSettings.DefualtPlayList)
                 {
                     DefualtPlayListComboBox.SelectedItem = item;
                     break;
                 }
             }
+            
             // 设置初始的默认条目
             foreach (ComboBoxItem item in DefualtEntryComboBox.Items)
-            {
+            {                
                 if (item.Content.ToString() == AppSettings.DefualtEntry)
                 {
                     DefualtEntryComboBox.SelectedItem = item;
@@ -147,13 +155,17 @@ namespace WinUIMusicPlayer.View
         {
             if (e.AddedItems.Count > 0)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                AppSettings.OutputMode = selectedItem.Content.ToString();
+                if (isDefaultComplete)
+                {
+                    ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                    AppSettings.OutputMode = selectedItem.Content.ToString();
+                }                
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
+                    SaveSetting();
                 }
-                SaveSetting();
+                
             }
         }
 
@@ -161,13 +173,17 @@ namespace WinUIMusicPlayer.View
         {
             if (e.AddedItems.Count > 0)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                AppSettings.DeviceName = selectedItem.Content.ToString();
+                if (isDefaultComplete)
+                {
+                    ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                    AppSettings.DeviceName = selectedItem.Content.ToString();
+                }                
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
+                    SaveSetting();
                 }
-                SaveSetting();
+                
             }
         }
 
@@ -175,12 +191,13 @@ namespace WinUIMusicPlayer.View
         {
             if (int.TryParse(LatencyTextBox.Text, out int latency))
             {
-                AppSettings.Latency = latency;
+                AppSettings.Latency = latency;         
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
+                    SaveSetting();
                 }
-                SaveSetting();
+                
             }
         }
 
@@ -188,9 +205,15 @@ namespace WinUIMusicPlayer.View
         {
             if (e.AddedItems.Count > 0)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                AppSettings.DefualtPlayList = selectedItem.Content.ToString();
-                SaveSetting();
+                if (isDefaultComplete)
+                {
+                    ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                    AppSettings.DefualtPlayList = selectedItem.Content.ToString();
+                }                
+                if (!isInitializing)
+                {
+                    SaveSetting();
+                }
             }
         }
 
@@ -198,9 +221,15 @@ namespace WinUIMusicPlayer.View
         {
             if (e.AddedItems.Count > 0)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                AppSettings.DefualtEntry = selectedItem.Content.ToString();
-                SaveSetting();
+                if (isDefaultComplete)
+                {
+                    ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                    AppSettings.DefualtEntry = selectedItem.Content.ToString();
+                }                
+                if (!isInitializing)
+                {
+                    SaveSetting();
+                }
             }
         }
     }
