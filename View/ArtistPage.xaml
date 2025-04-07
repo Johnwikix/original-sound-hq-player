@@ -22,7 +22,7 @@
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
                                 Click="Artist_Click" Tag="{Binding}">
-                                <Image Width="130" Height="130" Stretch="Fill" Source="ms-appx:///Assets/Artist.png"/>
+                                <FontIcon Glyph="&#xe77b;" FontSize="80" Width="130" Height="130"/>                     
                             </Button>
                             <TextBlock 
                             Height="60" 
