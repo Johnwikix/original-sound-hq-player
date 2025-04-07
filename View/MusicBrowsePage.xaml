@@ -65,16 +65,14 @@
                         FontSize="12"
                         VerticalAlignment="Center"
                         SelectedIndex="0"
+                        SelectionChanged="SortByComboBox_SelectionChanged"
                         Width="120" Margin="0 0 20 0">
+                    <ComboBoxItem FontSize="12" Content="默认排序" Tag="DefaultOrder"/>
                     <ComboBoxItem FontSize="12" Content="A-Z" Tag="A-Z"/>
                     <ComboBoxItem FontSize="12" Content="歌手" Tag="Artist"/>
-                    <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>
-                    <ComboBoxItem FontSize="12" Content="默认排序" Tag="DefaultOrder"/>
+                    <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>                    
                 </ComboBox>
                 <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
-                <Button Click="SearchButton_Click" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
-                    <FontIcon Glyph="&#xe721;"/>
-                </Button>
             </StackPanel>
         </Grid>
         <Frame x:Name="ContentFrame" Grid.Row="1" Margin="10"/>

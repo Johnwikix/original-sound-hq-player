@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.View
             await dbConnection.CreateTableAsync<Music>();
             if (parentPage != null)
             {
-                await parentPage.LoadFavouriteMusic();
+                await parentPage.LoadFavouriteMusic("DefaultOrder");
             }
         }
 

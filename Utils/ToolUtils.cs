@@ -14,6 +14,7 @@ using System.Linq;
 using System.Drawing;
 using TagLib;
 using NAudio.Wave;
+using SQLite;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -134,6 +135,66 @@ namespace WinUIMusicPlayer.Utils
                 var uri = new Uri("ms-appx:///Assets/Music.png");
                 var bitmapImage = new BitmapImage(uri);
                 return bitmapImage;
+            }
+        }
+
+        public static async Task<List<Music>> SortMusicList(string type, string sortOrder, AsyncTableQuery<Music> musicList)
+        {
+            if (sortOrder == "A-Z") {
+                return await musicList.OrderBy(m => m.Title).ToListAsync();
+            }
+            if (sortOrder == "Artist")
+            {
+                return await musicList.OrderBy(m => m.Author).ToListAsync();
+            }
+            if (sortOrder == "Album")
+            {
+                return await musicList.OrderBy(m => m.Album).ToListAsync();
+            }
+            switch (type)
+            {
+                case "song":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return await musicList.OrderBy(m => m.Title).ToListAsync();
+                        default:
+                            return await musicList.ToListAsync();
+                    }
+                case "folder":
+                    switch (sortOrder)
+                    {                       
+                        case "DefaultOrder":
+                            return await musicList.OrderBy(m => m.LastLevelFolderPath).ToListAsync(); ;
+                        default:
+                            return await musicList.ToListAsync();
+                    }
+                case "artist":
+                    switch (sortOrder)
+                    {                       
+                        case "DefaultOrder":
+                            return await musicList.OrderBy(m => m.Album).ToListAsync();
+                        default:
+                            return await musicList.ToListAsync();
+                    }
+                case "album":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return await musicList.OrderBy(m => m.TrackNumber).ToListAsync();
+                        default:
+                            return await musicList.ToListAsync();
+                    }
+                case "favour":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return await musicList.OrderByDescending(m => m.Order).ToListAsync();
+                        default:
+                            return await musicList.ToListAsync();
+                    }
+                default:
+                    return await musicList.ToListAsync();
             }
         }
 

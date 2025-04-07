@@ -138,7 +138,7 @@
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefaultLanguage>zh-cn</DefaultLanguage>
-    <PackageCertificateThumbprint>776E36AB6ADE2FAF644B72BCA8D3F13539FF0E78</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>6AF5D71FF9EFBF30CF16640B1DF2C069319EAA4C</PackageCertificateThumbprint>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
