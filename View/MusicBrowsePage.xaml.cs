@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer.View
         private string paramName = "defualt";
         private string pageType = "MusicBrowsePage";
         private bool isMouseOverVolumeSlider = false;
+        private bool isInitializing = true;
 
         public MusicBrowsePage()
         {
@@ -220,11 +221,24 @@ namespace WinUIMusicPlayer.View
 
         public async Task AddToFavourite(Music music)
         {
-            var favoriteMusics = await dbConnection.Table<Music>().Where(m => m.isFavorite).ToListAsync();
-            // 新音乐的 Order 为当前收藏列表长度
-            music.Order = favoriteMusics.Count;
+            Music lastFavouriteMusic = await dbConnection.Table<Music>()
+                                          .Where(m => m.isFavorite)
+                                          .OrderByDescending(m => m.Order)
+                                          .FirstOrDefaultAsync();
+            if (lastFavouriteMusic != null)
+            {
+                if (music.isFavorite) {
+                    music.Order = 0;
+                }
+                else
+                {
+                    music.Order = lastFavouriteMusic.Order + 1;
+                }   
+            }
+            else {
+                music.Order = 1;
+            }
             music.isFavorite = !music.isFavorite;
-            music.Cover = null;
             await dbConnection.UpdateAsync(music);
         }
 
@@ -377,6 +391,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                OutputDeviceChange();
                 SelectOutputDevice();
                 waveOut.Init(audioFileReader);
                 waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
@@ -391,8 +406,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void SelectOutputDevice()
-        {
+        private void OutputDeviceChange() {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
             //selectedDevice = null;
@@ -407,6 +421,14 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
+            else {
+                selectedDevice = devices[0];
+            }
+        }
+
+        private void SelectOutputDevice()
+        {
+            
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
@@ -477,8 +499,8 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async Task LoadPlayState()
-        {
+        private async Task LoadPlayState()        {
+            
             currentPlayMode = AppData.PlayMode;
             lastPlayedMusicId = AppData.LastPlayedMusicId;
             volume = AppData.Volume;
@@ -498,29 +520,32 @@ namespace WinUIMusicPlayer.View
                 await LoadCover(currentPlayingMusic);
             }
             UpdatePlayModeIcon();
+            isInitializing = false;
         }
 
         private async Task SavePlayState()
         {
-            var playState = await dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
-            if (playState == null)
-            {
-                playState = new SavePlayState
+            if (!isInitializing) {
+                var playState = await dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
+                if (playState == null)
                 {
-                    Id = 1
-                };
-            }
-            playState.PlayMode = currentPlayMode;
-            playState.LastPlayedMusicId = currentPlayingMusic?.Id;
-            playState.Volume = volume;
-            if (playState.Id == 0)
-            {
-                await dbConnection.InsertAsync(playState);
-            }
-            else
-            {
-                await dbConnection.UpdateAsync(playState);
-            }
+                    playState = new SavePlayState
+                    {
+                        Id = 1
+                    };
+                }
+                playState.PlayMode = currentPlayMode;
+                playState.LastPlayedMusicId = currentPlayingMusic?.Id;
+                playState.Volume = volume;
+                if (playState.Id == 0)
+                {
+                    await dbConnection.InsertAsync(playState);
+                }
+                else
+                {
+                    await dbConnection.UpdateAsync(playState);
+                }
+            }            
         }
 
         private async void PlayModeButton_Click(object sender, RoutedEventArgs e)
@@ -602,13 +627,14 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
+            isInitializing = true;
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<Music>();
             await dbConnection.CreateTableAsync<SavePlayState>();
             _ = LoadPlayState();
             _ = LoadMusic();
-            
+            OutputDeviceChange();
             PlayTimeTextBlock.Text = "00:00/00:00";
         }
 
@@ -885,8 +911,9 @@ namespace WinUIMusicPlayer.View
                 else
                 {
                     VolumeSliderIcon.Glyph = "\uE992";
-                }
+                }                
             }
+            SavePlayState();
         }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

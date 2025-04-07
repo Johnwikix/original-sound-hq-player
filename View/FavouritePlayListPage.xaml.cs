@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.View
             musicList.Insert(newIndex, draggedItem);
             for (int i = 0; i < musicList.Count; i++)
             {
-                musicList[i].Order = i;
+                musicList[i].Order = musicList.Count - i;
                 await dbConnection.UpdateAsync(musicList[i]);
             }
             if (parentPage != null)

@@ -22,48 +22,61 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="10 0 0 0">
-            <Button x:Name="SongButton" 
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                <Button x:Name="SongButton" 
                     Click="NavigationButton_Click" 
                     Tag="Song" 
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >歌曲</Button>
-            <Button x:Name="AlbumButton" 
+                <Button x:Name="AlbumButton" 
                     Click="NavigationButton_Click" 
                     Tag="Album" BorderThickness="0" 
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >专辑</Button>
-            <Button x:Name="ArtistButton" 
+                <Button x:Name="ArtistButton" 
                     Click="NavigationButton_Click" 
                     Tag="Artist" 
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >艺术家</Button>
-            <Button x:Name="FolderButton" 
+                <Button x:Name="FolderButton" 
                     Click="NavigationButton_Click" 
                     Tag="Folder" 
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >文件夹</Button>
-            <Button x:Name="FavouriteButton" 
+                <Button x:Name="FavouriteButton" 
                     Click="NavigationButton_Click" 
                     Tag="Favourite"
                     BorderThickness="0" 
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >最爱</Button>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Margin="10">
-            <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
-            <Button Click="SearchButton_Click" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
-                <FontIcon Glyph="&#xe721;"/>
-            </Button>
-        </StackPanel>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10">
+                <TextBlock Text="排序方式" FontSize="14" Margin="10 0 10 0" VerticalAlignment="Center"/>
+                <ComboBox x:Name="SortByComboBox"  
+                        FontSize="12"
+                        VerticalAlignment="Center"
+                        SelectedIndex="0"
+                        Width="120" Margin="0 0 20 0">
+                    <ComboBoxItem FontSize="12" Content="A-Z" Tag="A-Z"/>
+                    <ComboBoxItem FontSize="12" Content="歌手" Tag="Artist"/>
+                    <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>
+                    <ComboBoxItem FontSize="12" Content="默认排序" Tag="DefaultOrder"/>
+                </ComboBox>
+                <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
+                <Button Click="SearchButton_Click" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
+                    <FontIcon Glyph="&#xe721;"/>
+                </Button>
+            </StackPanel>
+        </Grid>
         <Frame x:Name="ContentFrame" Grid.Row="1" Margin="10"/>
         <!-- 底部控制区域 -->
         <Grid Grid.Row="2" Margin="10">
@@ -99,7 +112,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>                    
+                    </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" x:Name="MusicTitleTextBlock" FontSize="18" Margin="10,0,10,0"/>
                     <TextBlock Grid.Row="1" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10,0,10,0" VerticalAlignment="Center"/>
                     <Grid Grid.Row="2" VerticalAlignment="Bottom">
@@ -109,7 +122,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock  Grid.Column="0" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0"/>
                         <Image x:Name="HRImage" Height="10" Grid.Column="1" ></Image>
-                    </Grid>                    
+                    </Grid>
                 </Grid>
             </StackPanel>
 
@@ -129,8 +142,8 @@
                 <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xeb9e;" FontSize="18"/>
-                </Button>                
-                
+                </Button>
+
                 <Button x:Name="LastMusicButton" Click="LastMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe892;" FontSize="26"/>
@@ -161,7 +174,7 @@
                     <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
                 </Button>
                 <FontIcon x:Name="VolumeSliderIcon" VerticalAlignment="Center" Glyph="&#xe995;" Margin="0,0,10,0" Grid.Column="0"/>
-                    <Slider
+                <Slider
                     x:Name="VolumeSlider"
                     Minimum="0"
                     Maximum="100"
@@ -173,7 +186,7 @@
                     PointerEntered="VolumeSlider_PointerEntered"
                     PointerExited="VolumeSlider_PointerExited"
                     PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                    HorizontalAlignment="Right"/>                
+                    HorizontalAlignment="Right"/>
             </StackPanel>
         </Grid>
     </Grid>

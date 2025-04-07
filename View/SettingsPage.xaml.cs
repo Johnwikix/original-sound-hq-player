@@ -28,10 +28,19 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             DateTime dateTime = DateTime.Now;
             InitializeDatabase();
-            LoadOutputDevices();
             InitializeSettings();
-            //InitializeOutputDevices();
+            mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.SettingLoaded += MainWindow_SettingLoaded;
+            }
         }
+
+        private void MainWindow_SettingLoaded(object? sender, MMDeviceCollection devices)
+        {
+            LoadOutputDevices();           
+        }
+
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
@@ -40,10 +49,8 @@ namespace WinUIMusicPlayer.View
                 this.mainWindow = _mainWindow;
                 if (mainWindow != null)
                 {
-                    await mainWindow.LoadDeviceState();
-                    //InitializeOutputDevices();
-                    LoadOutputDevices();
-                    InitializeSettings();
+                    DateTime dateTime = DateTime.Now;
+                    await mainWindow.RefreshDevice();
                 }
             }
         }
@@ -54,20 +61,6 @@ namespace WinUIMusicPlayer.View
             dbConnection = new SQLiteAsyncConnection(dbPath);
             await dbConnection.CreateTableAsync<SaveSettings>();
         }
-
-        //private void InitializeOutputDevices()
-        //{
-        //    Task.Run(() =>
-        //    {
-        //        outputDeviceList.Clear();
-        //        MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-        //        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-        //        foreach (var device in devices)
-        //        {
-        //            outputDeviceList.Add(device);
-        //        }
-        //    });
-        //}
 
         private async Task SaveSetting()
         {
@@ -90,12 +83,28 @@ namespace WinUIMusicPlayer.View
 
         private void LoadOutputDevices()
         {
+            isInitializing = true;
             OutputDeviceComboBox.Items.Clear();
             List<string> outputDeviceList = AppSettings.outputDeviceList;
             foreach (var device in outputDeviceList)
             {
                 OutputDeviceComboBox.Items.Add(new ComboBoxItem { Content = device });
             }
+            // 设置初始的输出设备
+            bool isDeviceSelected = false;
+            foreach (ComboBoxItem item in OutputDeviceComboBox.Items)
+            {
+                if (item.Content.ToString() == AppSettings.DeviceName)
+                {
+                    OutputDeviceComboBox.SelectedItem = item;
+                    isDeviceSelected = true;
+                    break;
+                }
+            }
+            isInitializing = false;
+            if (!isDeviceSelected) {
+                OutputDeviceComboBox.SelectedIndex = 0;
+            }            
         }
 
         private void InitializeSettings()
@@ -103,7 +112,6 @@ namespace WinUIMusicPlayer.View
             isInitializing = true;
             isDefaultComplete = false;
             OutputModeComboBox.SelectedIndex = 3;
-            OutputDeviceComboBox.SelectedIndex = 0;
             DefualtPlayListComboBox.SelectedIndex = 0;
             DefualtEntryComboBox.SelectedIndex = 0;
             isDefaultComplete = true;
@@ -115,17 +123,7 @@ namespace WinUIMusicPlayer.View
                     OutputModeComboBox.SelectedItem = item;
                     break;
                 }
-            }
-
-            // 设置初始的输出设备
-            foreach (ComboBoxItem item in OutputDeviceComboBox.Items)
-            {                
-                if (item.Content.ToString() == AppSettings.DeviceName)
-                {
-                    OutputDeviceComboBox.SelectedItem = item;
-                    break;
-                }
-            }
+            }            
             // 设置初始的缓冲区大小
             LatencyTextBox.Text = AppSettings.Latency.ToString();
             // 设置初始的默认播放列表
@@ -182,8 +180,7 @@ namespace WinUIMusicPlayer.View
                 {
                     AppSettings.OnOutputSettingsChanged();
                     SaveSetting();
-                }
-                
+                }                
             }
         }
 

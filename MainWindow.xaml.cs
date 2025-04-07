@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<List<Music>> MusicListLoaded;
         public event EventHandler<List<Music>> SongCollecionLoaded;
         public event EventHandler<List<Music>> FavourListLoaded;
+        public event EventHandler<MMDeviceCollection> SettingLoaded;
         public MainWindow()
         {            
             InitializeComponent();
@@ -53,6 +54,7 @@ namespace WinUIMusicPlayer
                 await LoadState();
                 await LoadFoldersAsync();
                 await LoadMusicList();
+                await RefreshDevice();
                 await LoadDeviceState();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
@@ -210,15 +212,29 @@ namespace WinUIMusicPlayer
             AppData.Volume = playState.Volume;
             System.Diagnostics.Debug.WriteLine($"LoadState 耗时: {(DateTime.Now - dateTime).TotalMilliseconds}ms");
         }
+        public async Task RefreshDevice() {
+            await Task.Run(() =>
+            {
+                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                AppSettings.outputDeviceList.Clear();
+                foreach (var device in devices)
+                {
+                    AppSettings.outputDeviceList.Add(device.FriendlyName);
+                }
+                // 回到 UI 线程触发事件
+                if (SettingLoaded != null)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        SettingLoaded?.Invoke(this, devices);
+                    });
+                }
+            });
+        }
         public async Task LoadDeviceState() {
             AppSettings.outputDeviceList.Clear();
-            var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
-            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-            foreach (var device in devices)
-            {
-                AppSettings.outputDeviceList.Add(device.FriendlyName);
-            }
+            var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();            
             if (settings != null)
             {
                 AppSettings.DefualtEntry = settings.DefualtEntry;
@@ -226,8 +242,7 @@ namespace WinUIMusicPlayer
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;                        
                 AppSettings.DeviceName = settings.DeviceFriendlyName;                        
-            }
-
+            }            
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)

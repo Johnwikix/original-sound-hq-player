@@ -6,6 +6,7 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
+        public static MMDeviceCollection OutputDevices { get; set; }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int Latency { get; set; } = 400;
 
