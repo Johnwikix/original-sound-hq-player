@@ -55,12 +55,32 @@ namespace WinUIMusicPlayer.View
             await dbConnection.CreateTableAsync<Music>();
         }
 
-        public async Task LoadMusicAsync(List<Music> musics)
+        public void SortMusicList(string sortOrder,string type)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = ToolUtils.SortMusicList(type, order, musicList.ToList());
+            }
+            MusicListView.ItemsSource = musicList;
+        }
+
+        public async Task LoadMusicAsync(List<Music> musics, string type = null)
         {
             try
             {
                 musicList = musics;
-                MusicListView.ItemsSource = musics;
+                if (type != null) {
+                    SortMusicList("DefaultOrder", type);
+                }
+                else
+                {
+                    MusicListView.ItemsSource = musicList;
+                }                
                 UpdateMusicListView();
             }
             catch (Exception ex)

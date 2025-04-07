@@ -20,6 +20,8 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml.Shapes;
 using Path = System.IO.Path;
 using System.Threading.Tasks;
+using System.Collections.ObjectModel;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -58,6 +60,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = ToolUtils.SortMusicList("albumCover", order, musicList.ToList());
+            }
+            AlbumItemsControl.ItemsSource = musicList;
+        }
+
         private async void InitializeDatabase()
         {
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
@@ -69,7 +85,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async void LoadAlbumsAsync(List<Music> musics)
+        public void LoadAlbumsAsync(List<Music> musics)
         {
             try
             {
@@ -77,26 +93,13 @@ namespace WinUIMusicPlayer.View
                                              .Select(g => g.First())
                                              .ToList();
                 musicList = groupedAlbums.OrderBy(m => m.Album).ToList();
-                PopulateAlbumGrid();
-                //await UpdateAlbumCoversAsync(musicList);
+                SortMusicList("DefaultOrder");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"¼ÓÔØ×¨¼­Êý¾ÝÊ§°Ü: {ex.Message}");
             }
-        }        
-
-        private void PopulateAlbumGrid()
-        {
-            try
-            {
-                AlbumItemsControl.ItemsSource = musicList;                
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Ìî³ä×¨¼­Íø¸ñÊ§°Ü: {ex.Message}");
-            }
-        }        
+        }           
 
         private void Album_Click(object sender, RoutedEventArgs e)
         {

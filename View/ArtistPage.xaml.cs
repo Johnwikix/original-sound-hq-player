@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System.Diagnostics;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -41,6 +42,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = ToolUtils.SortMusicList("artistCover", order, musicList.ToList());
+            }
+            ArtistsItemsControl.ItemsSource = musicList;
+        }
+
         private async void InitializeData()
         {
             try
@@ -64,7 +79,7 @@ namespace WinUIMusicPlayer.View
                                              .Select(g => g.First())
                                              .ToList();
                 musicList = groupArtists;
-                ArtistsItemsControl.ItemsSource = musicList;
+                SortMusicList("DefaultOrder");
             }
             catch (Exception ex)
             {

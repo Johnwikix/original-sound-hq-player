@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -41,6 +43,19 @@ namespace WinUIMusicPlayer.View
                 InitializeData();
             }
         }
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = ToolUtils.SortMusicList("folderCover", order, musicList.ToList());
+            }
+            FolderItemsControl.ItemsSource = musicList;
+        }
 
         private async void InitializeData()
         {
@@ -65,7 +80,7 @@ namespace WinUIMusicPlayer.View
                                              .Select(g => g.First())
                                              .ToList();
                 musicList = groupArtists;
-                FolderItemsControl.ItemsSource = musicList;
+                SortMusicList("DefaultOrder");
             }
             catch (Exception ex)
             {

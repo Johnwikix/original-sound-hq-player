@@ -138,7 +138,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static  List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
+        public static List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
         {
             if (sortOrder == "A-Z") {
                 return musicList.OrderBy(m => m.Title).ToList();
@@ -161,7 +161,7 @@ namespace WinUIMusicPlayer.Utils
                         default:
                             return musicList.ToList();
                     }
-                case "folder":
+                case "folderCover":
                     switch (sortOrder)
                     {                       
                         case "DefaultOrder":
@@ -169,9 +169,33 @@ namespace WinUIMusicPlayer.Utils
                         default:
                             return musicList.ToList();
                     }
-                case "artist":
+                case "folder":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return musicList.OrderBy(m => m.Album).ToList(); ;
+                        default:
+                            return musicList.ToList();
+                    }
+                case "artistCover":
                     switch (sortOrder)
                     {                       
+                        case "DefaultOrder":
+                            return musicList.OrderBy(m => m.Author).ToList();
+                        default:
+                            return musicList.ToList();
+                    }
+                case "artist":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return musicList.OrderBy(m => m.Album).ToList();
+                        default:
+                            return musicList.ToList();
+                    }
+                case "albumCover":
+                    switch (sortOrder)
+                    {
                         case "DefaultOrder":
                             return musicList.OrderBy(m => m.Album).ToList();
                         default:

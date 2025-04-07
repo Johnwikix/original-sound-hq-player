@@ -133,14 +133,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null && button.Tag is int musicId)
-            {
-                await parentPage.RemoveMusic(musicId);
-            }
-        }
 
         private async void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {

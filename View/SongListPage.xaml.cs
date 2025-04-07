@@ -49,6 +49,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("song", order, musicList.ToList()));
+            }
+            MusicListView.ItemsSource = musicList;
+        }
+
         private async void InitializeDatabase()
         {
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");

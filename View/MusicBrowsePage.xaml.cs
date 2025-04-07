@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.View
             var songCollectionPage = ContentFrame.Content as SongCollectionPage;
             if (songCollectionPage != null)
             {
-                await songCollectionPage.LoadMusicAsync(musics);
+                await songCollectionPage.LoadMusicAsync(musics,pageType);
             }
         }
 
@@ -178,7 +178,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadAlbumMusic(string Album)
         {
-            pageType = "Album";
+            pageType = "album";
             paramName = Album;
             ResetNavigationButtons();
             AlbumButton.FontSize = 26;
@@ -191,7 +191,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadArtistMusic(string artist)
         {
-            pageType = "Artist";
+            pageType = "artist";
             paramName = artist;
             ResetNavigationButtons();
             ArtistButton.FontSize = 26;
@@ -204,7 +204,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadFolderMusic(string folder)
         {
-            pageType = "Folder";
+            pageType = "folder";
             paramName = folder;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
@@ -247,28 +247,6 @@ namespace WinUIMusicPlayer.View
             musicList = newMusicList;
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {            
-            if (ContentFrame != null && ContentFrame.Content != null)
-            {
-                if (ContentFrame.Content is SongCollectionPage)
-                {
-                    var page = ContentFrame.Content as SongCollectionPage;
-                    if (pageType == "Album") {
-                        LoadAlbumMusic(paramName);
-                    }
-                    else if (pageType == "Artist")
-                    {
-                        LoadArtistMusic(paramName);
-                    }
-                }
-                else
-                {
-                    await LoadMusic();
-                }
-            }            
-        }
-
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (ContentFrame != null && ContentFrame.Content != null)
@@ -276,11 +254,11 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is SongCollectionPage)
                 {
                     var page = ContentFrame.Content as SongCollectionPage;
-                    if (pageType == "Album")
+                    if (pageType == "album")
                     {
                         LoadAlbumMusic(paramName);
                     }
-                    else if (pageType == "Artist")
+                    else if (pageType == "artist")
                     {
                         LoadArtistMusic(paramName);
                     }                    
@@ -620,11 +598,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-        //{
-        //    base.OnNavigatedTo(e);
-        //}
-
         private async void InitializeDatabase()
         {
             isInitializing = true;
@@ -644,16 +617,14 @@ namespace WinUIMusicPlayer.View
             {
                 if (AppSettings.OutputMode == "WasapiExclusive")
                 {
-                    // Set pause flag
                     isPausing = true;
-                    //currentPosition = audioFileReader.CurrentTime;
                     waveOut.Stop();
                     isPlaying = false;
                     progressTimer.Stop();
                 }
                 else
                 {
-                    isPausing = true; // Add this flag for consistent behavior
+                    isPausing = true;
                     waveOut.Pause();
                     isPlaying = false;
                     progressTimer.Stop();
@@ -900,25 +871,43 @@ namespace WinUIMusicPlayer.View
                 {
                     if (ContentFrame.Content is SongCollectionPage)
                     {
-                        if (pageType == "Album")
-                        {
-
-                        }
-                        if (pageType == "Artist")
-                        {
-
-                        }
-                        if (pageType == "Folder")
-                        {
-
-                        }
+                        var page = ContentFrame.Content as SongCollectionPage;
+                        page.SortMusicList(sortOrder, pageType);
                     }
                     if (ContentFrame.Content is SongListPage)
                     {
+                        var page = ContentFrame.Content as SongListPage;
+                        if (page != null)
+                        {
+                            page.SortMusicList(sortOrder);
+                        }
                     }
                     if (ContentFrame.Content is FavouritePlayListPage)
                     {
                         var page = ContentFrame.Content as FavouritePlayListPage;
+                        if (page != null)
+                        {
+                            page.SortMusicList(sortOrder);
+                        }
+                    }
+                    if (ContentFrame.Content is AlbumBrowsePage) {
+                        var page = ContentFrame.Content as AlbumBrowsePage;
+                        if (page != null)
+                        {
+                            page.SortMusicList(sortOrder);
+                        }
+                    }
+                    if (ContentFrame.Content is ArtistPage)
+                    {
+                        var page = ContentFrame.Content as ArtistPage;
+                        if (page != null)
+                        {
+                            page.SortMusicList(sortOrder);
+                        }
+                    }
+                    if (ContentFrame.Content is FolderBrowsePage)
+                    {
+                        var page = ContentFrame.Content as FolderBrowsePage;
                         if (page != null)
                         {
                             page.SortMusicList(sortOrder);
