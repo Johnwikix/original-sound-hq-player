@@ -68,6 +68,18 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder)) {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0) {
+                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("favour", order, musicList.ToList()));
+            }
+            MusicListView.ItemsSource = musicList;
+        }
+
         private async void InitializeDatabase()
         {
             var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
@@ -75,7 +87,7 @@ namespace WinUIMusicPlayer.View
             await dbConnection.CreateTableAsync<Music>();
             if (parentPage != null)
             {
-                await parentPage.LoadFavouriteMusic("DefaultOrder");
+                await parentPage.LoadFavouriteMusic();
             }
         }
 

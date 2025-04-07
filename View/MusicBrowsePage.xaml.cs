@@ -49,7 +49,6 @@ namespace WinUIMusicPlayer.View
         private string pageType = "MusicBrowsePage";
         private bool isMouseOverVolumeSlider = false;
         private bool isInitializing = true;
-        private string sortOrder = "DefaultOrder";
 
         public MusicBrowsePage()
         {
@@ -160,24 +159,24 @@ namespace WinUIMusicPlayer.View
                 Debug.WriteLine($"¼ÓÔØ¸èÇúÁÐ±íÊ§°Ü: {ex.Message}");
             }
         }
-        public async Task LoadMusic(string sortOrder = null)
+        public async Task LoadMusic()
         {
 
             if (mainWindow != null)
             {
-                await mainWindow.LoadMusicList(SearchTextBox.Text, sortOrder);
+                await mainWindow.LoadMusicList(SearchTextBox.Text);
             }
         }
 
-        public async Task LoadFavouriteMusic(string sortOrder = null)
+        public async Task LoadFavouriteMusic()
         {
             if (mainWindow != null)
             {
-                await mainWindow.LoadFavourMusicList(SearchTextBox.Text, sortOrder);
+                await mainWindow.LoadFavourMusicList(SearchTextBox.Text);
             }
         }
 
-        public async void LoadAlbumMusic(string Album,string sortOrder = null)
+        public async void LoadAlbumMusic(string Album)
         {
             pageType = "Album";
             paramName = Album;
@@ -186,11 +185,11 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
-                await mainWindow.LoadAlbumMusic(Album, SearchTextBox.Text, sortOrder);
+                await mainWindow.LoadAlbumMusic(Album, SearchTextBox.Text);
             }
         }
 
-        public async void LoadArtistMusic(string artist, string sortOrder = null)
+        public async void LoadArtistMusic(string artist)
         {
             pageType = "Artist";
             paramName = artist;
@@ -199,18 +198,18 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
-                await mainWindow.LoadArtistMusic(artist, SearchTextBox.Text, sortOrder);
+                await mainWindow.LoadArtistMusic(artist, SearchTextBox.Text);
             }
         }
 
-        public async void LoadFolderMusic(string folder, string sortOrder = null)
+        public async void LoadFolderMusic(string folder)
         {
             pageType = "Folder";
             paramName = folder;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
-                await mainWindow.LoadFolderMusic(folder, SearchTextBox.Text,sortOrder);
+                await mainWindow.LoadFolderMusic(folder, SearchTextBox.Text);
             }
         }
 
@@ -248,50 +247,51 @@ namespace WinUIMusicPlayer.View
             musicList = newMusicList;
         }
 
-        //private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        //{            
-        //    if (ContentFrame != null && ContentFrame.Content != null)
-        //    {
-        //        if (ContentFrame.Content is SongCollectionPage)
-        //        {
-        //            var page = ContentFrame.Content as SongCollectionPage;
-        //            if (pageType == "Album") {
-        //                LoadAlbumMusic(paramName, sortOrder);
-        //            }
-        //            else if (pageType == "Artist")
-        //            {
-        //                LoadArtistMusic(paramName, sortOrder);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            await LoadMusic(sortOrder);
-        //        }
-        //    }            
-        //}
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {            
+            if (ContentFrame != null && ContentFrame.Content != null)
+            {
+                if (ContentFrame.Content is SongCollectionPage)
+                {
+                    var page = ContentFrame.Content as SongCollectionPage;
+                    if (pageType == "Album") {
+                        LoadAlbumMusic(paramName);
+                    }
+                    else if (pageType == "Artist")
+                    {
+                        LoadArtistMusic(paramName);
+                    }
+                }
+                else
+                {
+                    await LoadMusic();
+                }
+            }            
+        }
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 if (ContentFrame.Content is SongCollectionPage)
-                {                   
+                {
+                    var page = ContentFrame.Content as SongCollectionPage;
                     if (pageType == "Album")
                     {
-                        LoadAlbumMusic(paramName,sortOrder);
+                        LoadAlbumMusic(paramName);
                     }
                     else if (pageType == "Artist")
                     {
-                        LoadArtistMusic(paramName,sortOrder);
+                        LoadArtistMusic(paramName);
                     }                    
                 }
                 else if (ContentFrame.Content is FavouritePlayListPage)
                 {
-                    await LoadFavouriteMusic(sortOrder);
+                    await LoadFavouriteMusic();
                 }
                 else
                 {
-                    await LoadMusic(sortOrder);
+                    await LoadMusic();
                 }
             }
         }
@@ -890,43 +890,42 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];                
-                if (!string.IsNullOrEmpty(selectedItem.Tag.ToString())) {
-                    sortOrder = selectedItem.Tag.ToString();
-                }
+                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+                var sortOrder = selectedItem.Tag.ToString();
                 if (ContentFrame != null && ContentFrame.Content != null)
                 {
                     if (ContentFrame.Content is SongCollectionPage)
                     {
                         if (pageType == "Album")
                         {
-                            LoadAlbumMusic(paramName, sortOrder);
+
                         }
                         if (pageType == "Artist")
                         {
-                            LoadArtistMusic(paramName, sortOrder);
+
                         }
                         if (pageType == "Folder")
                         {
-                            LoadFolderMusic(paramName, sortOrder);
+
                         }
-                    }
-                    if (ContentFrame.Content is FavouritePlayListPage)
-                    {
-                        await LoadFavouriteMusic(sortOrder);
                     }
                     if (ContentFrame.Content is SongListPage)
                     {
-                        await LoadMusic(sortOrder);
                     }
-
+                    if (ContentFrame.Content is FavouritePlayListPage)
+                    {
+                        var page = ContentFrame.Content as FavouritePlayListPage;
+                        if (page != null)
+                        {
+                            page.SortMusicList(sortOrder);
+                        }
+                    }
                 }
-
-            }
+            }            
         }
 
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)

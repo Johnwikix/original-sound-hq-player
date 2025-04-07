@@ -12,7 +12,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -118,7 +117,7 @@ namespace WinUIMusicPlayer
             }
         }        
 
-        public async Task LoadMusicList(string search = null, string sortOrder = null)
+        public async Task LoadMusicList(string search = null)
         {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(search))
@@ -129,12 +128,12 @@ namespace WinUIMusicPlayer
                     m.Album != null && m.Album.ToLower().Contains(search.ToLower())
                 );
             }
-            var musicList = await SortMusicList("song", sortOrder, query);
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
             await LoadAlbumCover(musicList);
             MusicListLoaded?.Invoke(this, musicList);           
         }
 
-        public async Task LoadFavourMusicList(string search = null,string sortOrder = null)
+        public async Task LoadFavourMusicList(string search = null)
         {
             var query = dbConnection.Table<Music>();
             query = query.Where(m =>
@@ -143,11 +142,11 @@ namespace WinUIMusicPlayer
                      m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
                      m.Album != null && m.Album.ToLower().Contains(search.ToLower()))
                  );
-            var musicList = await SortMusicList("favour", sortOrder, query);
+            var musicList = await query.OrderByDescending(m => m.Order).ToListAsync();
             FavourListLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadArtistMusic(string artist, string search = null, string sortOrder = null)
+        public async Task LoadArtistMusic(string artist, string search = null)
         {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(artist))
@@ -158,11 +157,11 @@ namespace WinUIMusicPlayer
                    m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
                 );
             }
-            var musicList = await SortMusicList("artist", sortOrder, query);
+            var musicList = await query.OrderBy(m => m.Album).ToListAsync();
             SongCollecionLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadFolderMusic(string folder, string search = null, string sortOrder = null)
+        public async Task LoadFolderMusic(string folder, string search = null)
         {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(folder))
@@ -174,11 +173,11 @@ namespace WinUIMusicPlayer
                    m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower())
                 );
             }
-            var musicList = await SortMusicList("folder", sortOrder, query);
+            var musicList = await query.OrderBy(m => m.LastLevelFolderPath).ToListAsync();
             SongCollecionLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadAlbumMusic(string album,string search = null, string sortOrder = null) {
+        public async Task LoadAlbumMusic(string album,string search = null) {
             var query = dbConnection.Table<Music>();
             if (!string.IsNullOrEmpty(album))
             {
@@ -188,9 +187,10 @@ namespace WinUIMusicPlayer
                     m.Album != null && m.Album.ToLower().Equals(album.ToLower())
                 );
             }
-            var musicList = await SortMusicList("album", sortOrder, query);
+            var musicList = await query.OrderBy(m => m.TrackNumber).ToListAsync();
             SongCollecionLoaded?.Invoke(this, musicList);
-        }        
+        }
+
 
         private async Task LoadState()
         {

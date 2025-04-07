@@ -138,18 +138,18 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<List<Music>> SortMusicList(string type, string sortOrder, AsyncTableQuery<Music> musicList)
+        public static  List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
         {
             if (sortOrder == "A-Z") {
-                return await musicList.OrderBy(m => m.Title).ToListAsync();
+                return musicList.OrderBy(m => m.Title).ToList();
             }
             if (sortOrder == "Artist")
             {
-                return await musicList.OrderBy(m => m.Author).ToListAsync();
+                return musicList.OrderBy(m => m.Author).ToList();
             }
             if (sortOrder == "Album")
             {
-                return await musicList.OrderBy(m => m.Album).ToListAsync();
+                return musicList.OrderBy(m => m.Album).ToList();
             }
             switch (type)
             {
@@ -157,44 +157,44 @@ namespace WinUIMusicPlayer.Utils
                     switch (sortOrder)
                     {
                         case "DefaultOrder":
-                            return await musicList.OrderBy(m => m.Title).ToListAsync();
+                            return musicList.OrderBy(m => m.Title).ToList();
                         default:
-                            return await musicList.ToListAsync();
+                            return musicList.ToList();
                     }
                 case "folder":
                     switch (sortOrder)
                     {                       
                         case "DefaultOrder":
-                            return await musicList.OrderBy(m => m.LastLevelFolderPath).ToListAsync(); ;
+                            return musicList.OrderBy(m => m.LastLevelFolderPath).ToList(); ;
                         default:
-                            return await musicList.ToListAsync();
+                            return musicList.ToList();
                     }
                 case "artist":
                     switch (sortOrder)
                     {                       
                         case "DefaultOrder":
-                            return await musicList.OrderBy(m => m.Album).ToListAsync();
+                            return musicList.OrderBy(m => m.Album).ToList();
                         default:
-                            return await musicList.ToListAsync();
+                            return musicList.ToList();
                     }
                 case "album":
                     switch (sortOrder)
                     {
                         case "DefaultOrder":
-                            return await musicList.OrderBy(m => m.TrackNumber).ToListAsync();
+                            return musicList.OrderBy(m => m.TrackNumber).ToList();
                         default:
-                            return await musicList.ToListAsync();
+                            return musicList.ToList();
                     }
                 case "favour":
                     switch (sortOrder)
                     {
                         case "DefaultOrder":
-                            return await musicList.OrderByDescending(m => m.Order).ToListAsync();
+                            return musicList.OrderByDescending(m => m.Order).ToList();
                         default:
-                            return await musicList.ToListAsync();
+                            return musicList.ToList();
                     }
                 default:
-                    return await musicList.ToListAsync();
+                    return musicList.ToList();
             }
         }
 

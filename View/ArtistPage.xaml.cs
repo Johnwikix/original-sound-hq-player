@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    await parentPage.LoadMusic("DefaultOrder");
+                    await parentPage.LoadMusic();
                 }
             }
             catch (Exception ex)
