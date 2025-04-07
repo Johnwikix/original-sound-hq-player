@@ -15,6 +15,7 @@ using System.Drawing;
 using TagLib;
 using NAudio.Wave;
 using SQLite;
+using Windows.Foundation.Metadata;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -34,6 +35,15 @@ namespace WinUIMusicPlayer.Utils
                 return null;
             T parentAsT = parent as T;
             return parentAsT ?? FindParent<T>(parent);
+        }
+
+        private static BitmapImage DefaultAlbumCover()
+        {
+            var uri = new Uri("ms-appx:///Assets/Album.png");
+            var bitmapImage = new BitmapImage(uri);
+            bitmapImage.DecodePixelWidth = 125;
+            bitmapImage.DecodePixelHeight = 125;
+            return bitmapImage;
         }
 
         public static async Task<BitmapImage> GetAlbumCover(Music album, List<Music> musics)
@@ -56,27 +66,20 @@ namespace WinUIMusicPlayer.Utils
                             }
                             else
                             {
-                                var uri = new Uri("ms-appx:///Assets/Album.png");
-                                var bitmapImage = new BitmapImage(uri);
-                                bitmapImage.DecodePixelWidth = 125;
-                                bitmapImage.DecodePixelHeight = 125;
-                                newCover = bitmapImage;
+                                newCover = DefaultAlbumCover();
                             }
                         }
                     }
                     catch (Exception ex)
-                    {
+                    {                        
+                        newCover = DefaultAlbumCover();
                         Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
                     }
                 }
             }
             else
-            {
-                var uri = new Uri("ms-appx:///Assets/Album.png");
-                var bitmapImage = new BitmapImage(uri);
-                bitmapImage.DecodePixelWidth = 125;
-                bitmapImage.DecodePixelHeight = 125;
-                newCover = bitmapImage;
+            {               
+                newCover = DefaultAlbumCover();
             }
             return newCover;
         }
