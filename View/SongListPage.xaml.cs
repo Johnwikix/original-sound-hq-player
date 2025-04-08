@@ -110,16 +110,20 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null && parentPage != null)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }
 
-        private async void RemoveMusicButton_Click(object sender, RoutedEventArgs e)
+        public void UpdateFavouriteMusic(Music music)
         {
-            var button = sender as Button;
-            if (button != null && button.Tag is int musicId)
+            if (musicList != null && musicList.Count > 0)
             {
-                await parentPage.RemoveMusic(musicId);
+                var index = musicList.IndexOf(musicList.FirstOrDefault(m => m.Id == music.Id));
+                if (index != -1)
+                {
+                    musicList[index].isFavorite = music.isFavorite;
+                }
             }
         }
 
@@ -127,6 +131,7 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }

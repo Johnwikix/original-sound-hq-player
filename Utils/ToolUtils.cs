@@ -141,6 +141,19 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
+        public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
+        {
+            if (musicList != null && musicList.Count > 0)
+            {
+                var index = musicList.FindIndex(m => m.Id == music.Id);
+                if (index != -1)
+                {
+                    musicList[index].isFavorite = music.isFavorite;                    
+                }
+            }
+            return musicList;
+        }
+
         public static List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
         {
             if (sortOrder == "A-Z") {

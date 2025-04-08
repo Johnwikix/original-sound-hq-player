@@ -58,7 +58,7 @@
                         Margin="5" BorderThickness="0" 
                         BorderBrush="Transparent" 
                         Background="Transparent" >
-                            <FontIcon x:Name="IsFavouriteIcon" Glyph="{x:Bind isFavorite, Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
+                            <FontIcon x:Name="IsFavouriteIcon" Glyph="{x:Bind isFavorite,Mode=OneWay,Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
                         </Button>
                         <TextBlock Text="{x:Bind Title}" Grid.Column="1" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{x:Bind Author}" 

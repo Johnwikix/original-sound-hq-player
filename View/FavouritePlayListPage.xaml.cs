@@ -105,6 +105,36 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void UpdateFavouriteMusic(Music music)
+        {
+            if (music.isFavorite)
+            {
+                AddMusicToTop(music);
+            }
+            else
+            {
+                RemoveMusic(music);
+            }
+        }
+
+        private void AddMusicToTop(Music newMusic)
+        {
+            int maxOrder = musicList.Any() ? musicList.Max(m => m.Order) : 0;
+            newMusic.Order = maxOrder + 1;
+            musicList.Insert(0, newMusic);
+            MusicListView.ItemsSource = musicList;
+        }
+
+        private void RemoveMusic(Music musicToRemove)
+        {
+            var music = musicList.FirstOrDefault(m => m.Id == musicToRemove.Id);
+            if (music != null)
+            {
+                musicList.Remove(music);
+                MusicListView.ItemsSource = musicList;
+            }
+        }
+
         public void UpdateMusicListView()
         {
             try
@@ -129,6 +159,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null && parentPage != null)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }
@@ -138,6 +169,7 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }

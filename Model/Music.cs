@@ -1,10 +1,12 @@
 ﻿using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class Music 
+    public class Music : INotifyPropertyChanged
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -23,7 +25,20 @@ namespace WinUIMusicPlayer.Model
         public int BitRate { get; set; }
         public int SampleRate { get; set; }
         public int Channel { get; set; }
-        public bool isFavorite { get; set; } = false;        
+        private bool _isFavorite = false;
+        public bool isFavorite
+        {
+            get { return _isFavorite; }
+            set
+            {
+                if (_isFavorite != value)
+                {
+                    _isFavorite = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public int TrackNumber { get; set; }
         public string Lyrics { get; set; }
         public override bool Equals(object obj)
@@ -38,6 +53,13 @@ namespace WinUIMusicPlayer.Model
         public override int GetHashCode()
         {
             return Id.GetHashCode();
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

@@ -24,6 +24,17 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                <Button x:Name="BackButton" 
+                    Tag="Back" 
+                    BorderThickness="0" 
+                    BorderBrush="Transparent" 
+                    FontSize="14"
+                    Margin="0 0 20 0"
+                    Background="Transparent" 
+                    Click="BackButton_Click"
+                    >
+                    <FontIcon Glyph="&#xe830;" FontSize="14"/>
+                </Button>
                 <Button x:Name="SongButton" 
                     Click="NavigationButton_Click" 
                     Tag="Song" 
@@ -104,8 +115,8 @@
 
             <!-- 封面、标题、作者组件 -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0">
-                <Image x:Name="AlbumCoverImage" Width="80" Height="80" Margin="10"/>
-                <Grid Width="Auto" Height="80">
+                <Image x:Name="AlbumCoverImage" Width="100" Height="100" Margin="10"/>
+                <Grid Width="Auto" Height="100">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -132,35 +143,47 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="PlayBarFavouriteButton" Click="PlayBarFavouriteButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xeb51;" Foreground="Red"/>
+                </Button>
+
+                <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                    Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xeb9e;" FontSize="18"/>
                 </Button>
 
                 <Button x:Name="LastMusicButton" Click="LastMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe892;" FontSize="26"/>
                 </Button>
 
                 <!-- 播放按钮 -->
                 <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE768;" Width="50" Height="50" FontSize="36"/>
                 </Button>
 
                 <Button x:Name="NextMusicButton" Click="NextMusicButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe893;" FontSize="26"/>
                 </Button>
 
                 <Button x:Name="FastForwardButton" Click="FastForwardButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                    Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xeb9d;" FontSize="18"/>
+                </Button>
+
+                <Button x:Name="StopButton" Click="StopButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                        Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xe71a;" FontSize="18"/>
                 </Button>
 
 

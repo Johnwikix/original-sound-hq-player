@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using System.Collections.ObjectModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -30,7 +31,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class SongCollectionPage : Page
     {
         private SQLiteAsyncConnection dbConnection;
-        private List<Music> musicList;
+        private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         public SongCollectionPage()
         {
@@ -64,7 +65,7 @@ namespace WinUIMusicPlayer.View
             }
             if (musicList.Count > 0)
             {
-                musicList = ToolUtils.SortMusicList(type, order, musicList.ToList());
+                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList(type, order, musicList.ToList()));
             }
             MusicListView.ItemsSource = musicList;
         }
@@ -73,7 +74,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                musicList = musics;
+                musicList = new ObservableCollection<Music>(musics);
                 if (type != null) {
                     SortMusicList("DefaultOrder", type);
                 }
@@ -86,6 +87,18 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 Debug.WriteLine($"¼ÓÔØÒôÀÖÁÐ±íÊ§°Ü: {ex.Message}");
+            }
+        }
+
+        public void UpdateFavouriteMusic(Music music)
+        {
+            if (musicList != null && musicList.Count > 0)
+            {
+                var index = musicList.IndexOf(musicList.FirstOrDefault(m => m.Id == music.Id));
+                if (index != -1)
+                {
+                    musicList[index].isFavorite = music.isFavorite;
+                }
             }
         }
 
@@ -113,6 +126,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null && parentPage != null)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }
@@ -121,6 +135,7 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
+                parentPage.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }

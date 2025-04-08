@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.View
     {
         private SQLiteAsyncConnection dbConnection;
         public Music currentPlayingMusic;
+        public List<Music> currentPlayingList;
         private IWavePlayer waveOut;
         private AudioFileReader audioFileReader;
         private float volume = 0.5f;
@@ -111,6 +112,9 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
         {
             musicList = musics;
+            if (currentPlayingList.Count == 0) {
+                currentPlayingList = musics;
+            }
             var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
             if (favouritePlayListPage != null)
             {
@@ -121,6 +125,10 @@ namespace WinUIMusicPlayer.View
         private async void MainWindow_SongCollecionLoaded(object sender, List<Music> musics)
         {
             musicList = musics;
+            if (currentPlayingList.Count == 0)
+            {
+                currentPlayingList = musics;
+            }
             var songCollectionPage = ContentFrame.Content as SongCollectionPage;
             if (songCollectionPage != null)
             {
@@ -133,6 +141,10 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicList = musics;
+                if (currentPlayingList ==null || currentPlayingList.Count == 0)
+                {
+                    currentPlayingList = musics;
+                }
                 var songListPage = ContentFrame.Content as SongListPage;
                 if (songListPage != null)
                 {
@@ -238,7 +250,13 @@ namespace WinUIMusicPlayer.View
             else {
                 music.Order = 1;
             }
-            music.isFavorite = !music.isFavorite;
+            bool isFavourite = !music.isFavorite;
+            if (currentPlayingMusic.Id == music.Id)
+            {
+                currentPlayingMusic.isFavorite = isFavourite;
+                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = isFavourite ? "\ueb52" : "\ueb51";
+            }
+            music.isFavorite = isFavourite;
             await dbConnection.UpdateAsync(music);
         }
 
@@ -327,6 +345,18 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentFrame.CanGoBack)
+            {
+                ContentFrame.GoBack();
+                // 重置导航按钮字体大小
+                ResetNavigationButtons();
+                // 根据返回后的页面更新当前选中按钮的字体大小
+                UpdateCurrentNavigationButtonFontSize();
+            }
+        }
+
         private void ResetNavigationButtons()
         {
             SongButton.FontSize = 20;
@@ -334,6 +364,30 @@ namespace WinUIMusicPlayer.View
             ArtistButton.FontSize = 20;
             FolderButton.FontSize = 20;
             FavouriteButton.FontSize = 20;
+        }
+
+        private void UpdateCurrentNavigationButtonFontSize()
+        {
+            if (ContentFrame.Content is SongListPage)
+            {
+                SongButton.FontSize = 26;
+            }
+            else if (ContentFrame.Content is AlbumBrowsePage)
+            {
+                AlbumButton.FontSize = 26;
+            }
+            else if (ContentFrame.Content is ArtistPage)
+            {
+                ArtistButton.FontSize = 26;
+            }
+            else if (ContentFrame.Content is FolderBrowsePage)
+            {
+                FolderButton.FontSize = 26;
+            }
+            else if (ContentFrame.Content is FavouritePlayListPage)
+            {
+                FavouriteButton.FontSize = 26;
+            }
         }
 
         private async void NavigationButton_Click(object sender, RoutedEventArgs e)
@@ -489,6 +543,7 @@ namespace WinUIMusicPlayer.View
                 MusicTitleTextBlock.Text = currentPlayingMusic.Title;
                 MusicAuthorTextBlock.Text = currentPlayingMusic.Author;
                 MusicInfoTextBlock.Text = $"{currentPlayingMusic.Extension} {currentPlayingMusic.SampleRate}Hz {currentPlayingMusic.BitDepth}bit {currentPlayingMusic.BitRate}kbps";
+                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
                 HRImage.Source = null;
                 if (currentPlayingMusic.SampleRate >= 48000 && currentPlayingMusic.BitDepth >= 24)
                 {
@@ -570,14 +625,14 @@ namespace WinUIMusicPlayer.View
 
         private async Task PlayLastTrack()
         {
-            int index = musicList.IndexOf(currentPlayingMusic);
+            int index = currentPlayingList.IndexOf(currentPlayingMusic);
             if (index > 0)
             {
-                await PlayMusic(musicList[index - 1]);
+                await PlayMusic(currentPlayingList[index - 1]);
             }
-            else if (index == 0 && musicList.Count > 1)
+            else if (index == 0 && currentPlayingList.Count > 1)
             {
-                await PlayMusic(musicList[musicList.Count - 1]);
+                await PlayMusic(currentPlayingList[musicList.Count - 1]);
 
             }
         }
@@ -681,6 +736,47 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (waveOut != null)
+            {
+                waveOut.Stop();
+                isPlaying = false;
+                progressTimer.Stop();
+                UpdatePlayPauseButtonIcon();
+            }
+            Reset();
+        }
+
+        private async void PlayBarFavouriteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentPlayingMusic != null)
+            {
+                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = !currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
+                await AddToFavourite(currentPlayingMusic);
+                NotifySubPageUpdateFavouriteState();
+            }
+        }
+
+        private void NotifySubPageUpdateFavouriteState()
+        {
+            if (ContentFrame.Content is SongCollectionPage)
+            {
+                var songCollectionPage = ContentFrame.Content as SongCollectionPage;
+                songCollectionPage.UpdateFavouriteMusic(currentPlayingMusic);
+            }
+            if (ContentFrame.Content is SongListPage)
+            {
+                var songListPage = ContentFrame.Content as SongListPage;
+                songListPage.UpdateFavouriteMusic(currentPlayingMusic);
+            }
+            if (ContentFrame.Content is FavouritePlayListPage)
+            {
+                var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
+                favouritePlayListPage.UpdateFavouriteMusic(currentPlayingMusic);
+            }
+        }
+
         private void Reset()
         {
             if (waveOut != null)
@@ -753,6 +849,7 @@ namespace WinUIMusicPlayer.View
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
             MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+            ((FontIcon)PlayBarFavouriteButton.Content).Glyph = currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
             HRImage.Source = null;
             if (music.SampleRate >= 48000 && music.BitDepth >= 24)
             {
@@ -849,14 +946,14 @@ namespace WinUIMusicPlayer.View
                     await PlayMusic(currentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    int currentIndex = musicList.FindIndex(m => m.Id == currentPlayingMusic.Id);
-                    int nextIndex = (currentIndex + 1) % musicList.Count;
-                    await PlayMusic(musicList[nextIndex]);
+                    int currentIndex = currentPlayingList.FindIndex(m => m.Id == currentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % currentPlayingList.Count;
+                    await PlayMusic(currentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
                     Random random = new Random();
-                    int randomIndex = random.Next(musicList.Count);
-                    await PlayMusic(musicList[randomIndex]);
+                    int randomIndex = random.Next(currentPlayingList.Count);
+                    await PlayMusic(currentPlayingList[randomIndex]);
                     break;
             }
         }
