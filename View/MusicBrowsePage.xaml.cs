@@ -115,7 +115,7 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
         {
             musicList = musics;
-            if (currentPlayingList.Count == 0) {
+            if (currentPlayingList == null || currentPlayingList.Count == 0) {
                 currentPlayingList = musics;
             }
             var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
