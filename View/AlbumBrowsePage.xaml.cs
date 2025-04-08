@@ -56,6 +56,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
+                parentPage.currentAlbumName = null;
                 InitializeDatabase();
             }
         }

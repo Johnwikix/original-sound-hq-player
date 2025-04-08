@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
+                parentPage.currentFolderName = null;
                 InitializeData();
             }
         }

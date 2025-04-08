@@ -50,6 +50,9 @@ namespace WinUIMusicPlayer.View
         private string pageType = "MusicBrowsePage";
         private bool isMouseOverVolumeSlider = false;
         private bool isInitializing = true;
+        public string currentAlbumName;
+        public string currentArtistName;
+        public string currentFolderName;
 
         public MusicBrowsePage()
         {
@@ -192,6 +195,7 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "album";
             paramName = Album;
+            currentAlbumName = Album;
             ResetNavigationButtons();
             AlbumButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
@@ -205,6 +209,7 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "artist";
             paramName = artist;
+            currentArtistName = artist;
             ResetNavigationButtons();
             ArtistButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
@@ -218,6 +223,7 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "folder";
             paramName = folder;
+            currentFolderName = folder;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
             if (mainWindow != null)
             {
@@ -347,13 +353,20 @@ namespace WinUIMusicPlayer.View
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ContentFrame.CanGoBack)
-            {
-                ContentFrame.GoBack();
-                // 重置导航按钮字体大小
-                ResetNavigationButtons();
-                // 根据返回后的页面更新当前选中按钮的字体大小
-                UpdateCurrentNavigationButtonFontSize();
+            if (ContentFrame.Content is SongCollectionPage) {
+                switch (pageType) {
+                    case "album":
+                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        break;
+                    case "artist":
+                        ContentFrame.Navigate(typeof(ArtistPage), this);
+                        break;
+                    case "folder":
+                        ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -364,30 +377,6 @@ namespace WinUIMusicPlayer.View
             ArtistButton.FontSize = 20;
             FolderButton.FontSize = 20;
             FavouriteButton.FontSize = 20;
-        }
-
-        private void UpdateCurrentNavigationButtonFontSize()
-        {
-            if (ContentFrame.Content is SongListPage)
-            {
-                SongButton.FontSize = 26;
-            }
-            else if (ContentFrame.Content is AlbumBrowsePage)
-            {
-                AlbumButton.FontSize = 26;
-            }
-            else if (ContentFrame.Content is ArtistPage)
-            {
-                ArtistButton.FontSize = 26;
-            }
-            else if (ContentFrame.Content is FolderBrowsePage)
-            {
-                FolderButton.FontSize = 26;
-            }
-            else if (ContentFrame.Content is FavouritePlayListPage)
-            {
-                FavouriteButton.FontSize = 26;
-            }
         }
 
         private async void NavigationButton_Click(object sender, RoutedEventArgs e)
@@ -401,19 +390,39 @@ namespace WinUIMusicPlayer.View
                 switch (button.Tag.ToString())
                 {
                     case "Song":
-                        ContentFrame.Navigate(typeof(SongListPage), this);
+                        ContentFrame.Navigate(typeof(SongListPage), this);                        
                         break;
                     case "Album":
-                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        if (!string.IsNullOrEmpty(currentAlbumName))
+                        {
+                            LoadAlbumMusic(currentAlbumName);
+                        }
+                        else
+                        {
+                            ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        }
                         break;
                     case "Artist":
-                        ContentFrame.Navigate(typeof(ArtistPage), this);
+                        if (!string.IsNullOrEmpty(currentArtistName)) {
+                            LoadArtistMusic(currentArtistName);
+                        }
+                        else
+                        {
+                            ContentFrame.Navigate(typeof(ArtistPage), this);
+                        }                                        
                         break;
                     case "Folder":
-                        ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        if (!string.IsNullOrEmpty(currentFolderName))
+                        {
+                            LoadFolderMusic(currentFolderName);
+                        }
+                        else
+                        {
+                            ContentFrame.Navigate(typeof(FolderBrowsePage), this);
+                        }                      
                         break;
                     case "Favourite":
-                        ContentFrame.Navigate(typeof(FavouritePlayListPage), this);
+                        ContentFrame.Navigate(typeof(FavouritePlayListPage), this);                        
                         break;
                 }
             }
