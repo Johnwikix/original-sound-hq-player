@@ -61,25 +61,27 @@ namespace WinUIMusicPlayer.Utils
                             if (file.Tag.Pictures.Length > 0)
                             {
                                 var picture = file.Tag.Pictures[0];
-                                newCover = await ReadBitmapImageAsync(picture, 125);
-                                break;                               
+                                newCover = await ReadBitmapImageAsync(picture, 125);                              
                             }
                             else
                             {
                                 newCover = DefaultAlbumCover();
                             }
+                            return newCover;
                         }
                     }
                     catch (Exception ex)
                     {                        
                         newCover = DefaultAlbumCover();
                         Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+                        return newCover;
                     }
                 }
             }
             else
             {               
                 newCover = DefaultAlbumCover();
+                return newCover;
             }
             return newCover;
         }
