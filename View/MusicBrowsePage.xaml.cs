@@ -637,7 +637,7 @@ namespace WinUIMusicPlayer.View
         {
             UpdatePlayBar(music);
             UpdateViewList(music);
-            musicPlaybackService.PlayMusic(music,currentPos,isSettingChanged);
+            await musicPlaybackService.PlayMusic(music,currentPos,isSettingChanged);
         }       
 
         private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

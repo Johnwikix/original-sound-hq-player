@@ -200,6 +200,7 @@ namespace WinUIMusicPlayer.Services
 
             if (isNaturalEnd)
             {
+                await Task.Delay(100);
                 await AutoPlayNextTrack();
             }
         }
@@ -258,12 +259,17 @@ namespace WinUIMusicPlayer.Services
             }           
         }
 
-        public async void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
+        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
+            if (progressTimer != null)
+            {
+                progressTimer.Stop();
+            }
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
                 {
+                    waveOut.Play();
                     waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                     updateProgressMax?.Invoke(this, audioFileReader.TotalTime.TotalSeconds);                  
@@ -274,8 +280,7 @@ namespace WinUIMusicPlayer.Services
                     else
                     {
                         updateProgressSliders?.Invoke(this, 0);
-                    }
-                    waveOut.Play();
+                    }                    
                     isPlaying = true;
                     progressTimer.Start();
                     await SavePlayState();
