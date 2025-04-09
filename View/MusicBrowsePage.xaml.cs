@@ -684,8 +684,8 @@ namespace WinUIMusicPlayer.View
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             musicPlaybackService.volume = (float)e.NewValue / 100;
-            if (musicPlaybackService.audioFileReader != null)
-            {
+            //if (musicPlaybackService.audioFileReader != null)
+            //{
                 musicPlaybackService.audioFileReader.Volume = musicPlaybackService.volume;
                 if (e.NewValue > 66)
                 {
@@ -703,7 +703,7 @@ namespace WinUIMusicPlayer.View
                 {
                     VolumeSliderIcon.Glyph = "\uE992";
                 }                
-            }
+            //}
             _=musicPlaybackService.SavePlayState();
         }
 
