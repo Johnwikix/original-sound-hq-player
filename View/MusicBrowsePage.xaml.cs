@@ -136,22 +136,37 @@ namespace WinUIMusicPlayer.View
 
         private void MusicPlaybackService_updateProgressSliders(object? sender, double value)
         {
-            this.DispatcherQueue.TryEnqueue(() =>
+            try {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (ProgressSlider != null)
+                    {
+                        ProgressSlider.Value = value;
+                    }
+                });
+            }
+            catch (NullReferenceException ex)
             {
-                if (ProgressSlider != null) {
-                    ProgressSlider.Value = value;
-                }                
-            });
+                Debug.WriteLine($"更新进度条失败: {ex.Message}");
+            }           
         }
 
         private void MusicPlaybackService_updatePlayTimeText(object? sender, string time)
         {
-            this.DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                if (PlayTimeTextBlock != null) {
-                    PlayTimeTextBlock.Text = time;
-                }                
-            });
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (PlayTimeTextBlock != null)
+                    {
+                        PlayTimeTextBlock.Text = time;
+                    }
+                });
+            }
+            catch (NullReferenceException ex)
+            {
+                Debug.WriteLine($"更新进度条失败: {ex.Message}");
+            }            
         }
 
         private async void MusicPlaybackService_playingMusic(object? sender, Music music)
