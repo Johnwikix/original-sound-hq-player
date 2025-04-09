@@ -114,6 +114,27 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
+        public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+                else
+                {
+                    var foundChild = FindVisualChild<T>(child);
+                    if (foundChild != null)
+                    {
+                        return foundChild;
+                    }
+                }
+            }
+            return null;
+        }
+
 
         public static async Task<BitmapImage> GetImageFromMusic(Music music)
         {

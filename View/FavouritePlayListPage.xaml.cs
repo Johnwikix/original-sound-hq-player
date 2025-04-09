@@ -141,10 +141,10 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    if (musicList.Contains(parentPage.currentPlayingMusic))
+                    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
                     {
-                        MusicListView.SelectedItem = parentPage.currentPlayingMusic;
-                        MusicListView.ScrollIntoView(parentPage.currentPlayingMusic);
+                        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
+                        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
                     }
                 }
             }
@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = MusicListView.SelectedItem as Music;
             if (selectedMusic != null && parentPage != null)
             {
-                parentPage.currentPlayingList = musicList.ToList();
+                parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }
@@ -169,7 +169,7 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                parentPage.currentPlayingList = musicList.ToList();
+                parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
                 await parentPage.PlayMusic(selectedMusic);
             }
         }

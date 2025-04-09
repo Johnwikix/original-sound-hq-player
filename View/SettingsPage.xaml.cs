@@ -156,7 +156,7 @@ namespace WinUIMusicPlayer.View
                 if (isDefaultComplete)
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                    AppSettings.OutputMode = selectedItem.Content.ToString();
+                    AppSettings.OutputMode = selectedItem.Tag.ToString();
                 }                
                 if (!isInitializing)
                 {
@@ -205,7 +205,7 @@ namespace WinUIMusicPlayer.View
                 if (isDefaultComplete)
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                    AppSettings.DefualtPlayList = selectedItem.Content.ToString();
+                    AppSettings.DefualtPlayList = selectedItem.Tag.ToString();
                 }                
                 if (!isInitializing)
                 {
@@ -221,7 +221,7 @@ namespace WinUIMusicPlayer.View
                 if (isDefaultComplete)
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                    AppSettings.DefualtEntry = selectedItem.Content.ToString();
+                    AppSettings.DefualtEntry = selectedItem.Tag.ToString();
                 }                
                 if (!isInitializing)
                 {

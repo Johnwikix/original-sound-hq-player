@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using WinUIMusicPlayer.Model;
 using System.IO;
+using System.Data.Common;
+using static SQLite.TableMapping;
+using System.Data;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -25,6 +28,11 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<SavePlayState>();
                 await _dbConnection.CreateTableAsync<SaveSettings>();
             }
+        }
+
+        public static SQLiteAsyncConnection GetDbConnection()
+        {
+            return _dbConnection;
         }
 
         public static async Task<List<Folder>> GetFoldersAsync()
@@ -125,9 +133,18 @@ namespace WinUIMusicPlayer.Services
             return playState;
         }
 
-        public static async Task<SaveSettings> GetSettingsAsync()
+        public static async Task GetSettingsAsync()
         {
-            return await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            AppSettings.outputDeviceList.Clear();
+            var settings = await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            if (settings != null)
+            {
+                AppSettings.DefualtEntry = settings.DefualtEntry;
+                AppSettings.DefualtPlayList = settings.DefualtPlayList;
+                AppSettings.OutputMode = settings.OutputMode;
+                AppSettings.Latency = settings.Latency;
+                AppSettings.DeviceName = settings.DeviceFriendlyName;
+            }
         }
 
         public static async Task SavePlayStateAsync(SavePlayState playState)
@@ -138,6 +155,62 @@ namespace WinUIMusicPlayer.Services
         public static async Task SaveSettingsAsync(SaveSettings settings)
         {
             await _dbConnection.InsertOrReplaceAsync(settings);
+        }
+
+        public static async Task RemoveMusic(int musicId)
+        {
+            await _dbConnection.DeleteAsync<Music>(musicId);
+        }
+        public static async Task AddToFavourite(Music music,Music currentPlayingMusic)
+        {
+            Music lastFavouriteMusic = await _dbConnection.Table<Music>()
+                                          .Where(m => m.isFavorite)
+                                          .OrderByDescending(m => m.Order)
+                                          .FirstOrDefaultAsync();
+            if (lastFavouriteMusic != null)
+            {
+                if (music.isFavorite)
+                {
+                    music.Order = lastFavouriteMusic.Order + 1;
+                }
+                else
+                {
+                    music.Order = 0;
+                }
+            }
+            else
+            {
+                music.Order = 1;
+            }
+            await _dbConnection.UpdateAsync(music);
+        }
+
+        public static async Task<Music> LoadCurrentPlayingMusic(int? lastPlayedMusicId)
+        {
+            return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
+        }
+
+        public static async Task SavePlayState(PlayMode currentPlayMode,int? currentPlayingMusicId,float volume)
+        {
+            var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
+            if (playState == null)
+            {
+                playState = new SavePlayState
+                {
+                    Id = 1
+                };
+            }
+            playState.PlayMode = currentPlayMode;
+            playState.LastPlayedMusicId = currentPlayingMusicId;
+            playState.Volume = volume;
+            if (playState.Id == 0)
+            {
+                await _dbConnection.InsertAsync(playState);
+            }
+            else
+            {
+                await _dbConnection.UpdateAsync(playState);
+            }
         }
     }
 }
