@@ -684,27 +684,27 @@ namespace WinUIMusicPlayer.View
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             musicPlaybackService.volume = (float)e.NewValue / 100;
-            //if (musicPlaybackService.audioFileReader != null)
-            //{
-                musicPlaybackService.audioFileReader.Volume = musicPlaybackService.volume;
-                if (e.NewValue > 66)
-                {
-                    VolumeSliderIcon.Glyph = "\ue995";
-                }
-                else if (e.NewValue > 33)
-                {
-                    VolumeSliderIcon.Glyph = "\ue994";
-                }
-                else if (e.NewValue > 0)
-                {
-                    VolumeSliderIcon.Glyph = "\uE993";
-                }
-                else
-                {
-                    VolumeSliderIcon.Glyph = "\uE992";
-                }                
-            //}
-            _=musicPlaybackService.SavePlayState();
+            if (musicPlaybackService.audioFileReader != null)
+            {
+                musicPlaybackService.audioFileReader.Volume = musicPlaybackService.volume;                     
+            }
+            if (e.NewValue > 66)
+            {
+                VolumeSliderIcon.Glyph = "\ue995";
+            }
+            else if (e.NewValue > 33)
+            {
+                VolumeSliderIcon.Glyph = "\ue994";
+            }
+            else if (e.NewValue > 0)
+            {
+                VolumeSliderIcon.Glyph = "\uE993";
+            }
+            else
+            {
+                VolumeSliderIcon.Glyph = "\uE992";
+            }
+            _ =musicPlaybackService.SavePlayState();
         }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

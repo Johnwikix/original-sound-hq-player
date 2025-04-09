@@ -118,7 +118,7 @@ namespace WinUIMusicPlayer.View
             // 设置初始的输出模式
             foreach (ComboBoxItem item in OutputModeComboBox.Items)
             {               
-                if (item.Content.ToString() == AppSettings.OutputMode)
+                if (item.Tag.ToString() == AppSettings.OutputMode)
                 {
                     OutputModeComboBox.SelectedItem = item;
                     break;
