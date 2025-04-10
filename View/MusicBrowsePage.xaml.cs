@@ -302,12 +302,14 @@ namespace WinUIMusicPlayer.View
         public async Task AddToFavourite(Music music)
         {
             music.isFavorite = !music.isFavorite;
-            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);            
-            if (musicPlaybackService.currentPlayingMusic.Id == music.Id)
-            {
-                musicPlaybackService.currentPlayingMusic.isFavorite = music.isFavorite;
-                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.isFavorite ? "\ueb52" : "\ueb51";
-            } 
+            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);
+            if (musicPlaybackService.currentPlayingMusic != null) {
+                if (musicPlaybackService.currentPlayingMusic.Id == music.Id)
+                {
+                    musicPlaybackService.currentPlayingMusic.isFavorite = music.isFavorite;
+                    ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.isFavorite ? "\ueb52" : "\ueb51";
+                }
+            }            
         }
 
         public void UpdateFavourtPlaylist(List<Music> newMusicList)

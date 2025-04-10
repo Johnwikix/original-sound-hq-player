@@ -29,7 +29,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SongListPage : Page
     {
-        private SQLiteAsyncConnection dbConnection;
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
 
@@ -65,9 +64,6 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<Music>();
             if (parentPage != null)
             {
                 await parentPage.LoadMusic();               

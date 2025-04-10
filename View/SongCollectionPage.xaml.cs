@@ -30,13 +30,11 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SongCollectionPage : Page
     {
-        private SQLiteAsyncConnection dbConnection;
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         public SongCollectionPage()
         {
             this.InitializeComponent();
-            InitializeDatabase();
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
@@ -47,13 +45,6 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
             }
-        }
-
-        private async void InitializeDatabase()
-        {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<Music>();
         }
 
         public void SortMusicList(string sortOrder,string type)

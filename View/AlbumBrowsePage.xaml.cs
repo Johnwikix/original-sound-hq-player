@@ -33,7 +33,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class AlbumBrowsePage : Page
     {
-        private SQLiteAsyncConnection dbConnection;
         private List<Music> musicList;
         private readonly object _updateLock = new object();
         private MusicBrowsePage parentPage;        
@@ -77,9 +76,6 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<Music>();
             if (parentPage != null)
             {
                 await parentPage.LoadMusic();

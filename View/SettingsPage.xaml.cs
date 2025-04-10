@@ -5,8 +5,10 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -18,7 +20,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
-        private SQLiteAsyncConnection dbConnection;
+        //private SQLiteAsyncConnection dbConnection;
         private List<MMDevice> outputDeviceList = new List<MMDevice>();
         private bool isInitializing = true;
         private bool isDefaultComplete = true;
@@ -57,14 +59,14 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<SaveSettings>();
+            //var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            //dbConnection = new SQLiteAsyncConnection(dbPath);
+            //await dbConnection.CreateTableAsync<SaveSettings>();
         }
 
         private async Task SaveSetting()
         {
-            var settings = await dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            var settings = await MusicDatabaseService.GetSettings();
             SaveSettings newSettings = new SaveSettings();
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
@@ -73,11 +75,11 @@ namespace WinUIMusicPlayer.View
             newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
             if (settings == null)
             {
-                await dbConnection.InsertAsync(newSettings);
+                await MusicDatabaseService.InsertSettings(newSettings);
             }
             else
             {
-                await dbConnection.UpdateAsync(newSettings);
+                await MusicDatabaseService.UpdateSettings(newSettings);
             }
         }
 

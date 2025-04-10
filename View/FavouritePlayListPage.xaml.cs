@@ -18,6 +18,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,7 +30,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class FavouritePlayListPage : Page
     {
-        private SQLiteAsyncConnection dbConnection;
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         public FavouritePlayListPage()
@@ -50,7 +50,7 @@ namespace WinUIMusicPlayer.View
             for (int i = 0; i < musicList.Count; i++)
             {
                 musicList[i].Order = musicList.Count - i;
-                await dbConnection.UpdateAsync(musicList[i]);
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);
             }
             if (parentPage != null)
             {
@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                InitializeDatabase();
+                InitializeData();
             }
         }
 
@@ -80,11 +80,8 @@ namespace WinUIMusicPlayer.View
             MusicListView.ItemsSource = musicList;
         }
 
-        private async void InitializeDatabase()
+        private async void InitializeData()
         {
-            var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            dbConnection = new SQLiteAsyncConnection(dbPath);
-            await dbConnection.CreateTableAsync<Music>();
             if (parentPage != null)
             {
                 await parentPage.LoadFavouriteMusic();
