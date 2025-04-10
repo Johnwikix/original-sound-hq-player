@@ -11,6 +11,7 @@ using System.Data.Common;
 using static SQLite.TableMapping;
 using System.Data;
 using Windows.Storage;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -375,7 +376,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         try
                         {
-                            filePaths.Add(file.Path);
+                            if (ToolUtils.IsMusicFile(file.FileType)) {
+                                filePaths.Add(file.Path);
+                            }                            
                         }
                         catch (Exception ex)
                         {
