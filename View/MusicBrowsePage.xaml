@@ -194,7 +194,10 @@
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
                 </Button>
-                <FontIcon x:Name="VolumeSliderIcon" VerticalAlignment="Center" Glyph="&#xe995;" Margin="0,0,10,0" Grid.Column="0"/>
+                <Button Click="VolumeSliderIconButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <FontIcon x:Name="VolumeSliderIcon"  VerticalAlignment="Center" Glyph="&#xe995;" Margin="0" Grid.Column="0"/>
+                </Button>                
                 <Slider
                     x:Name="VolumeSlider"
                     Minimum="0"

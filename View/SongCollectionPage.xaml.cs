@@ -147,11 +147,11 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
+        private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                // 处理设为最爱的逻辑
+                await parentPage.AddToFavourite(selectedMusic);
             }
         }
 
@@ -199,6 +199,19 @@ namespace WinUIMusicPlayer.View
             {
                 listViewItem.IsSelected = true;
                 MusicListView.SelectedItem = listViewItem.Content;
+
+                // 获取音乐对象
+                var musicItem = listViewItem.Content as Model.Music;
+
+                // 获取右键菜单
+                if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
+                {
+                    // 为菜单项设置DataContext
+                    foreach (var menuItem in flyout.Items)
+                    {
+                        menuItem.DataContext = musicItem;
+                    }
+                }
             }
         }
     }

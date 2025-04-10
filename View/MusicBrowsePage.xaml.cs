@@ -41,6 +41,7 @@ namespace WinUIMusicPlayer.View
         public string currentAlbumName;
         public string currentArtistName;
         public string currentFolderName;
+        private bool isMuted = false;
 
         public MusicBrowsePage()
         {
@@ -698,6 +699,20 @@ namespace WinUIMusicPlayer.View
             }            
         }
 
+        private void VolumeSliderIconButton_Click(object sender, RoutedEventArgs e)
+        {
+            isMuted = !isMuted;
+            if (isMuted)
+            {
+                VolumeSliderIcon.Glyph = "\ue74f";
+                musicPlaybackService.audioFileReader.Volume = 0;
+            }
+            else {
+                VolumeIconChange((int)VolumeSlider.Value);
+                musicPlaybackService.audioFileReader.Volume = (float)VolumeSlider.Value / 100;
+            }
+        }
+
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             musicPlaybackService.volume = (float)e.NewValue / 100;
@@ -705,15 +720,20 @@ namespace WinUIMusicPlayer.View
             {
                 musicPlaybackService.audioFileReader.Volume = musicPlaybackService.volume;                     
             }
-            if (e.NewValue > 66)
+            VolumeIconChange((int)e.NewValue);
+            _ =musicPlaybackService.SavePlayState();
+        }
+
+        private void VolumeIconChange(int volume) {
+            if (volume > 66)
             {
                 VolumeSliderIcon.Glyph = "\ue995";
             }
-            else if (e.NewValue > 33)
+            else if (volume > 33)
             {
                 VolumeSliderIcon.Glyph = "\ue994";
             }
-            else if (e.NewValue > 0)
+            else if (volume > 0)
             {
                 VolumeSliderIcon.Glyph = "\uE993";
             }
@@ -721,7 +741,6 @@ namespace WinUIMusicPlayer.View
             {
                 VolumeSliderIcon.Glyph = "\uE992";
             }
-            _ =musicPlaybackService.SavePlayState();
         }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

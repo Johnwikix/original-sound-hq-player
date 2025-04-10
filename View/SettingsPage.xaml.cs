@@ -20,8 +20,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
-        //private SQLiteAsyncConnection dbConnection;
-        private List<MMDevice> outputDeviceList = new List<MMDevice>();
+        //private List<MMDevice> outputDeviceList = new List<MMDevice>();
         private bool isInitializing = true;
         private bool isDefaultComplete = true;
         private MainWindow mainWindow;
@@ -29,7 +28,6 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             DateTime dateTime = DateTime.Now;
-            InitializeDatabase();
             InitializeSettings();
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
@@ -55,13 +53,6 @@ namespace WinUIMusicPlayer.View
                     await mainWindow.RefreshDevice();
                 }
             }
-        }
-
-        private async void InitializeDatabase()
-        {
-            //var dbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            //dbConnection = new SQLiteAsyncConnection(dbPath);
-            //await dbConnection.CreateTableAsync<SaveSettings>();
         }
 
         private async Task SaveSetting()
@@ -163,7 +154,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    SaveSetting();
+                    _ = SaveSetting();
                 }
                 
             }
@@ -181,7 +172,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    SaveSetting();
+                    _ = SaveSetting();
                 }                
             }
         }
@@ -194,7 +185,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    SaveSetting();
+                    _ = SaveSetting();
                 }
                 
             }
@@ -211,7 +202,7 @@ namespace WinUIMusicPlayer.View
                 }                
                 if (!isInitializing)
                 {
-                    SaveSetting();
+                    _ = SaveSetting();
                 }
             }
         }
@@ -227,7 +218,7 @@ namespace WinUIMusicPlayer.View
                 }                
                 if (!isInitializing)
                 {
-                    SaveSetting();
+                    _ = SaveSetting();
                 }
             }
         }

@@ -18,13 +18,14 @@
         <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
         <converters:SampleRateBitDepthConverter x:Key="SampleRateBitDepthConverter"/>
         <converters:FavouriteIconConverter x:Key="FavouriteIconConverter"/>
+        <converters:FavouriteTextConverter x:Key="FavouriteTextConverter"/>
         <Style x:Key="ListViewItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout>
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
-                        <MenuFlyoutItem Text="设为最爱" Click="SetAsFavoriteMenuItem_Click"/>
-                        <MenuFlyoutSubItem Text="更多操作">
+                        <MenuFlyoutItem Text="{Binding isFavorite, Converter={StaticResource FavouriteTextConverter}}" Click="SetAsFavoriteMenuItem_Click"/>
+                        <MenuFlyoutSubItem Text="添加到播放列表">
                             <MenuFlyoutItem Text="添加到播放列表" Click="AddToPlaylistMenuItem_Click"/>                            
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
