@@ -1,18 +1,10 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static WinUIMusicPlayer.Utils.ToolUtils;
 using WinUIMusicPlayer.Model;
-using Windows.Devices.Geolocation;
-using static SQLite.TableMapping;
-using Microsoft.UI.Xaml.Controls;
-using System.Timers;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -106,7 +98,7 @@ namespace WinUIMusicPlayer.Services
                 showMessage?.Invoke(this, $"播放失败{ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
             }
-            
+
         }
 
         public void ResumeMusic()
@@ -254,9 +246,9 @@ namespace WinUIMusicPlayer.Services
                 showMessage?.Invoke(this, $"播放失败{ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                 Reset();
-                updateProgressSliders?.Invoke(this,0);
+                updateProgressSliders?.Invoke(this, 0);
                 return false;
-            }           
+            }
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
@@ -272,7 +264,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Play();
                     waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
                     updatePlayPauseButton?.Invoke(this, "\uE769");
-                    updateProgressMax?.Invoke(this, audioFileReader.TotalTime.TotalSeconds);                  
+                    updateProgressMax?.Invoke(this, audioFileReader.TotalTime.TotalSeconds);
                     if (isSettingChanged)
                     {
                         updateProgressSliders?.Invoke(this, currentPos.TotalSeconds);
@@ -280,7 +272,7 @@ namespace WinUIMusicPlayer.Services
                     else
                     {
                         updateProgressSliders?.Invoke(this, 0);
-                    }                    
+                    }
                     isPlaying = true;
                     progressTimer.Start();
                     await SavePlayState();
@@ -314,7 +306,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void DisposeAudio() {
+        public void DisposeAudio()
+        {
             if (progressTimer != null)
             {
                 progressTimer.Stop();
@@ -338,7 +331,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void SwitchPlayMode() {
+        public void SwitchPlayMode()
+        {
             switch (currentPlayMode)
             {
                 case PlayMode.SingleLoop:
@@ -353,7 +347,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void StopPlaying() {
+        public void StopPlaying()
+        {
             if (waveOut != null)
             {
                 waveOut.Stop();
@@ -362,7 +357,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void PlayButton() {
+        public void PlayButton()
+        {
             if (isPlaying)
             {
                 if (AppSettings.OutputMode == "WasapiExclusive")
@@ -415,7 +411,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-        }        
+        }
 
         public async Task SavePlayState()
         {

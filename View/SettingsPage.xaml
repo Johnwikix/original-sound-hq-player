@@ -11,11 +11,11 @@
     >
 
     <Grid Margin="32 32 32 32">
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Spacing="20">
-            <TextBlock Text="设置页面" FontSize="24" />
+        <StackPanel Orientation="Vertical" Margin="0 20 0 0" HorizontalAlignment="Left" VerticalAlignment="Top" Spacing="20">
+            <TextBlock Text="设置页面" FontSize="20" />
 
             <!-- 输出模式选择 -->
-            <TextBlock Text="输出模式" FontSize="18" />
+            <TextBlock Text="输出模式" FontSize="16" />
             <ComboBox x:Name="OutputModeComboBox" SelectionChanged="OutputModeComboBox_SelectionChanged" Width="200">
                 <ComboBoxItem Content="Wasapi独占" Tag="WasapiExclusive"/>
                 <ComboBoxItem Content="Wasapi共享" Tag="WasapiShared"/>
@@ -24,24 +24,25 @@
             </ComboBox>
 
             <!-- 输出设备选择 -->
-            <TextBlock Text="输出设备" FontSize="18" />
+            <TextBlock Text="输出设备" FontSize="16" />
             <ComboBox x:Name="OutputDeviceComboBox" SelectionChanged="OutputDeviceComboBox_SelectionChanged" Width="200" />
 
             <!-- 缓冲区大小输入 -->
-            <TextBlock Text="缓冲区大小 (毫秒)" FontSize="18" />
+            <TextBlock Text="缓冲区大小 (毫秒)" FontSize="16" />
             <TextBox x:Name="LatencyTextBox" TextChanged="LatencyTextBox_TextChanged" Width="200" />
-            <TextBlock Text="默认音乐进入界面" FontSize="18" />
+            <TextBlock Text="默认音乐进入界面" FontSize="16" />
             <ComboBox x:Name="DefualtEntryComboBox" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="200">
-                <ComboBoxItem Content="文件夹选择" Tag="folderPicker"/>
-                <ComboBoxItem Content="音乐列表" Tag="musicList"/>               
+                <ComboBoxItem Content="添加文件夹" Tag="folderPicker"/>
+                <ComboBoxItem Content="音乐浏览" Tag="musicList"/>               
             </ComboBox>
-            <TextBlock Text="默认音乐播放界面" FontSize="18" />
+            <TextBlock Text="默认音乐播放界面" FontSize="16" />
             <ComboBox x:Name="DefualtPlayListComboBox" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="200">
                 <ComboBoxItem Content="歌曲" Tag="song"/>
                 <ComboBoxItem Content="专辑" Tag="album"/>
                 <ComboBoxItem Content="艺术家" Tag="artist"/>
                 <ComboBoxItem Content="文件夹" Tag="folder"/>
                 <ComboBoxItem Content="最爱" Tag="favourite"/>
+                <ComboBoxItem Content="播放列表" Tag="playList"/>
             </ComboBox>
         </StackPanel>
     </Grid>

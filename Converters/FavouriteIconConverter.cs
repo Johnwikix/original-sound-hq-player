@@ -1,10 +1,5 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Converters
 {
@@ -14,9 +9,10 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is bool isFavourite)
             {
-                if (isFavourite) {
+                if (isFavourite)
+                {
                     return "\ueb52";
-                }                
+                }
             }
             return "\ueb51";
         }

@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
@@ -14,9 +10,11 @@ namespace WinUIMusicPlayer.Services
 {
     public class AddFolderService
     {
-        public AddFolderService() {
+        public AddFolderService()
+        {
         }
-        public async Task<Music> getMusicInfo(StorageFile file, string folderPath) {
+        public async Task<Music> getMusicInfo(StorageFile file, string folderPath)
+        {
             try
             {
                 // 获取音乐属性 - 使用多种方式提取元数据
@@ -210,7 +208,8 @@ namespace WinUIMusicPlayer.Services
                 if (ToolUtils.IsMusicFile(file.FileType))
                 {
                     Music music = await getMusicInfo(file, folder.Path);
-                    if (music != null) {
+                    if (music != null)
+                    {
                         musicFiles.Add(music);
                     }
                 }

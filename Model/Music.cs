@@ -24,6 +24,8 @@ namespace WinUIMusicPlayer.Model
         public int BitDepth { get; set; }
         public int BitRate { get; set; }
         public int SampleRate { get; set; }
+        [Ignore]
+        public int PlayListOrder { get; set; }
         public int Channel { get; set; }
         private bool _isFavorite = false;
         public bool isFavorite

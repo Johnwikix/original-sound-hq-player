@@ -69,6 +69,25 @@
                     BorderBrush="Transparent" 
                     FontSize="20"
                     Background="Transparent" >最爱</Button>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="PlayListButton" 
+                        Click="NavigationButton_Click" 
+                        Tag="PlayList"
+                        BorderThickness="0" 
+                        BorderBrush="Transparent" 
+                        FontSize="20"
+                        Background="Transparent" >播放列表</Button>
+                    <Button x:Name="PlayListAddButton" 
+                         Click="AddPlayList_Click" 
+                            Tag="PlayListAdd"
+                            BorderThickness="0" 
+                            BorderBrush="Transparent" 
+                            FontSize="20"
+                            Background="Transparent" >
+                        <FontIcon Glyph="&#xe948;"></FontIcon>
+                    </Button>
+                </StackPanel>
+                
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10">
                 <TextBlock Text="排序方式" FontSize="14" Margin="10 0 10 0" VerticalAlignment="Center"/>

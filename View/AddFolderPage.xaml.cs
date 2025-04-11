@@ -1,18 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Shapes;
 using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -81,7 +76,8 @@ namespace WinUIMusicPlayer.View
         }
 
 
-        private async void AddFolderButton_Click(object sender, RoutedEventArgs e)        {           
+        private async void AddFolderButton_Click(object sender, RoutedEventArgs e)
+        {
 
             var folderPicker = new Windows.Storage.Pickers.FolderPicker();
             folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
@@ -92,7 +88,7 @@ namespace WinUIMusicPlayer.View
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
             if (folder != null)
-            {                
+            {
                 await MusicDatabaseService.CheckFolderBeforeAdd(folder);
                 await LoadFoldersAsync();
                 var mainWindow = (App.MainWindow as MainWindow);
@@ -105,7 +101,7 @@ namespace WinUIMusicPlayer.View
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
         }
-        
+
 
         private async void RescanFolderButton_Click(object sender, RoutedEventArgs e)
         {
@@ -114,7 +110,7 @@ namespace WinUIMusicPlayer.View
             var button = sender as Button;
             if (button != null && button.Tag is int folderId)
             {
-                await MusicDatabaseService.RescanFolder(folderId);                
+                await MusicDatabaseService.RescanFolder(folderId);
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;

@@ -1,24 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using SQLite;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Data.Common;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -71,10 +63,12 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
-            if (!string.IsNullOrEmpty(sortOrder)) {
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
                 order = sortOrder;
             }
-            if (musicList.Count > 0) {
+            if (musicList.Count > 0)
+            {
                 musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("favour", order, musicList.ToList()));
             }
             MusicListView.ItemsSource = musicList;
@@ -222,7 +216,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
@@ -241,6 +235,32 @@ namespace WinUIMusicPlayer.View
                     foreach (var menuItem in flyout.Items)
                     {
                         menuItem.DataContext = musicItem;
+                    }
+
+                    // 找到“添加到播放列表”子菜单
+                    var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
+
+                    // 清空之前的菜单项
+                    addToPlaylistSubItem.Items.Clear();
+
+                    // 从数据库获取播放列表
+                    var playlists = await MusicDatabaseService.GetPlayListAsync();
+
+                    // 为每个播放列表添加菜单项
+                    foreach (var playlist in playlists)
+                    {
+                        var menuItem = new MenuFlyoutItem
+                        {
+                            Text = playlist.Name
+                        };
+                        menuItem.Click += async (s, args) =>
+                        {
+                            if (musicItem != null)
+                            {
+                                await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
+                            }
+                        };
+                        addToPlaylistSubItem.Items.Add(menuItem);
                     }
                 }
             }
@@ -279,7 +299,8 @@ namespace WinUIMusicPlayer.View
                 if (music != null)
                 {
                     ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
-                    if (music.isFavorite) {
+                    if (music.isFavorite)
+                    {
                         musicList.Remove(music);
                     }
                     await parentPage.AddToFavourite(music);

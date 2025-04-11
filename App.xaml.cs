@@ -1,9 +1,6 @@
 ﻿using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using System;
-using System.Drawing;
-using System.IO;
 using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,

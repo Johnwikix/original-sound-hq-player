@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinUIMusicPlayer.View.PlayListPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUIMusicPlayer.View"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+   >
+
+    <Page.Resources>
+        <!-- 定义 ListViewItem 的样式 -->
+        <Style x:Key="CustomListViewItemStyle" TargetType="ListViewItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Grid>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal">
+                                        <!-- 正常状态下的样式设置，这里保持默认 -->
+                                    </VisualState>
+                                    <VisualState x:Name="PointerOver">
+                                        <Storyboard>
+                                            <!-- 将鼠标悬停时的背景设置为与正常状态相同（透明） -->
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="ContentPresenter">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="Transparent"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <!-- 按下状态的样式设置，可根据需要自定义 -->
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <!-- 禁用状态的样式设置，可根据需要自定义 -->
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter 
+                                x:Name="ContentPresenter" 
+                                Content="{TemplateBinding Content}" 
+                                ContentTemplate="{TemplateBinding ContentTemplate}"                                
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="Stretch">
+                                <!-- 添加水平对齐方式 -->
+                            </ContentPresenter>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+    <Grid>
+        <Grid Margin="0" x:Name="PlayList">
+            <ListView x:Name="PlayListView" ItemContainerStyle="{StaticResource CustomListViewItemStyle}">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="model:PlayList">
+                        <Grid>
+                            <Grid.ColumnDefinitions> 
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="OpenPlayListButton" Tag="{Binding}" Click="OpenPlayListButton_Click" Grid.Column="0" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xe90b;" Margin="0 0 10 0"/>
+                                    <TextBlock Text="{x:Bind Name}" FontSize="18"/>
+                                </StackPanel>                                
+                            </Button>
+                            <Button x:Name="EditPlayListNameButton" Click="EditPlayListNameButton_Click" Grid.Column="1" Tag="{Binding}" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                                <FontIcon Glyph="&#xeb7e;"/>
+                            </Button>
+                            <Button x:Name="RemovePlayListButton" Grid.Column="2" Click="RemovePlayListButton_Click" Tag="{Binding}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
+                                <FontIcon Glyph="&#xecc9;"/>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
+</Page>

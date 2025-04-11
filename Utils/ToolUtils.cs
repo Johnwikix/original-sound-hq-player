@@ -1,21 +1,15 @@
-﻿using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml;
-using Windows.UI;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System.IO;
-using WinUIMusicPlayer.Model;
-using System;
-using System.Threading.Tasks;
-using System.Data.Common;
-using System.Diagnostics;
-using TagLib.Riff;
-using System.Collections.Generic;
-using System.Linq;
-using System.Drawing;
-using TagLib;
 using NAudio.Wave;
-using SQLite;
-using Windows.Foundation.Metadata;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using TagLib;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -26,7 +20,7 @@ namespace WinUIMusicPlayer.Utils
             SingleLoop,
             ListLoop,
             RandomLoop
-        }      
+        }
 
         public static T FindParent<T>(DependencyObject child) where T : DependencyObject
         {
@@ -61,7 +55,7 @@ namespace WinUIMusicPlayer.Utils
                             if (file.Tag.Pictures.Length > 0)
                             {
                                 var picture = file.Tag.Pictures[0];
-                                newCover = await ReadBitmapImageAsync(picture, 125);                              
+                                newCover = await ReadBitmapImageAsync(picture, 125);
                             }
                             else
                             {
@@ -71,7 +65,7 @@ namespace WinUIMusicPlayer.Utils
                         }
                     }
                     catch (Exception ex)
-                    {                        
+                    {
                         newCover = DefaultAlbumCover();
                         Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
                         return newCover;
@@ -79,14 +73,15 @@ namespace WinUIMusicPlayer.Utils
                 }
             }
             else
-            {               
+            {
                 newCover = DefaultAlbumCover();
                 return newCover;
             }
             return newCover;
         }
 
-        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture,int maxSize) {
+        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize)
+        {
             using (var ms = new MemoryStream(picture.Data.Data))
             {
                 var bitmapImage = new BitmapImage();
@@ -145,7 +140,7 @@ namespace WinUIMusicPlayer.Utils
                     if (file.Tag.Pictures.Length > 0)
                     {
                         IPicture picture = file.Tag.Pictures[0];
-                        return await ReadBitmapImageAsync(picture,80);
+                        return await ReadBitmapImageAsync(picture, 80);
                     }
                     else
                     {
@@ -171,7 +166,7 @@ namespace WinUIMusicPlayer.Utils
                 var index = musicList.FindIndex(m => m.Id == music.Id);
                 if (index != -1)
                 {
-                    musicList[index].isFavorite = music.isFavorite;                    
+                    musicList[index].isFavorite = music.isFavorite;
                 }
             }
             return musicList;
@@ -179,7 +174,8 @@ namespace WinUIMusicPlayer.Utils
 
         public static List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
         {
-            if (sortOrder == "A-Z") {
+            if (sortOrder == "A-Z")
+            {
                 return musicList.OrderBy(m => m.Title).ToList();
             }
             if (sortOrder == "Artist")
@@ -202,7 +198,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                 case "folderCover":
                     switch (sortOrder)
-                    {                       
+                    {
                         case "DefaultOrder":
                             return musicList.OrderBy(m => m.LastLevelFolderPath).ToList(); ;
                         default:
@@ -218,7 +214,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                 case "artistCover":
                     switch (sortOrder)
-                    {                       
+                    {
                         case "DefaultOrder":
                             return musicList.OrderBy(m => m.Author).ToList();
                         default:
@@ -256,6 +252,14 @@ namespace WinUIMusicPlayer.Utils
                         default:
                             return musicList.ToList();
                     }
+                case "playList":
+                    switch (sortOrder)
+                    {
+                        case "DefaultOrder":
+                            return musicList.OrderByDescending(m => m.PlayListOrder).ToList();
+                        default:
+                            return musicList.ToList();
+                    }
                 default:
                     return musicList.ToList();
             }
@@ -280,7 +284,7 @@ namespace WinUIMusicPlayer.Utils
                         BitDepth = bitDepth,
                         Duration = duration
                     };
-                }               
+                }
             }
             catch (Exception ex)
             {

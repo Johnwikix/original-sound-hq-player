@@ -1,26 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using SQLite;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using WinUIMusicPlayer.Model;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.UI;
-using Microsoft.UI.Xaml.Shapes;
-using Path = System.IO.Path;
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
 using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -35,13 +20,13 @@ namespace WinUIMusicPlayer.View
     {
         private List<Music> musicList;
         private readonly object _updateLock = new object();
-        private MusicBrowsePage parentPage;        
+        private MusicBrowsePage parentPage;
 
         public AlbumBrowsePage()
         {
             try
             {
-                this.InitializeComponent();                
+                this.InitializeComponent();
             }
             catch (Exception ex)
             {
@@ -56,6 +41,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.currentAlbumName = null;
+                parentPage.DisableBackButton();
                 InitializeDatabase();
             }
         }
@@ -96,7 +82,7 @@ namespace WinUIMusicPlayer.View
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-        }           
+        }
 
         private void Album_Click(object sender, RoutedEventArgs e)
         {

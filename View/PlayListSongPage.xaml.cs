@@ -20,46 +20,43 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SongListPage : Page
+    public sealed partial class PlayListSongPage : Page
     {
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
-
-        public SongListPage()
+        public PlayListSongPage()
         {
-            InitializeComponent();
+            this.InitializeComponent();
+            MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
         }
 
-        // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                InitializeDatabase();
+                PlayListName.Text = parentPage.currentPlayList.Name;
+                parentPage.DisableBackButton();
             }
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            var order = "DefaultOrder";
-            if (!string.IsNullOrEmpty(sortOrder))
-            {
-                order = sortOrder;
-            }
-            if (musicList.Count > 0)
-            {
-                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("song", order, musicList.ToList()));
-            }
-            MusicListView.ItemsSource = musicList;
-        }
-
-        private async void InitializeDatabase()
+        private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             if (parentPage != null)
             {
-                await parentPage.LoadMusic();
+                var draggedItem = args.Items[0] as Music;
+                // 获取拖拽后的新索引
+                var newIndex = sender.Items.IndexOf(draggedItem);
+                // 从数据源中移除该项
+                musicList.Remove(draggedItem);
+                // 将该项插入到新的位置
+                musicList.Insert(newIndex, draggedItem);
+                for (int i = 0; i < musicList.Count; i++)
+                {
+                    musicList[i].PlayListOrder = musicList.Count - i;
+                    await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);
+                }
             }
         }
 
@@ -75,6 +72,20 @@ namespace WinUIMusicPlayer.View
             {
                 Debug.WriteLine($"加载音乐列表失败: {ex.Message}");
             }
+        }
+
+        public void SortMusicList(string sortOrder)
+        {
+            var order = "DefaultOrder";
+            if (!string.IsNullOrEmpty(sortOrder))
+            {
+                order = sortOrder;
+            }
+            if (musicList.Count > 0)
+            {
+                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("playList", order, musicList.ToList()));
+            }
+            MusicListView.ItemsSource = musicList;
         }
 
         public void UpdateMusicListView()
@@ -106,17 +117,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void UpdateFavouriteMusic(Music music)
-        {
-            if (musicList != null && musicList.Count > 0)
-            {
-                var index = musicList.IndexOf(musicList.FirstOrDefault(m => m.Id == music.Id));
-                if (index != -1)
-                {
-                    musicList[index].isFavorite = music.isFavorite;
-                }
-            }
-        }
 
         private async void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -131,7 +131,8 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                await parentPage.RemoveMusic(selectedMusic.Id);
+                await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, selectedMusic.Id);
+                musicList.Remove(selectedMusic);
             }
         }
 
@@ -166,7 +167,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
@@ -186,65 +187,19 @@ namespace WinUIMusicPlayer.View
                     {
                         menuItem.DataContext = musicItem;
                     }
-
-                    // 找到“添加到播放列表”子菜单
-                    var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
-
-                    // 清空之前的菜单项
-                    addToPlaylistSubItem.Items.Clear();
-
-                    // 从数据库获取播放列表
-                    var playlists = await MusicDatabaseService.GetPlayListAsync();
-
-                    // 为每个播放列表添加菜单项
-                    foreach (var playlist in playlists)
-                    {
-                        var menuItem = new MenuFlyoutItem
-                        {
-                            Text = playlist.Name
-                        };
-                        menuItem.Click += async (s, args) =>
-                        {
-                            if (musicItem != null)
-                            {
-                                await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
-                            }
-                        };
-                        addToPlaylistSubItem.Items.Add(menuItem);
-                    }
                 }
             }
-            //var targetElement = e.OriginalSource as FrameworkElement;
-            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            //if (listViewItem != null)
-            //{
-            //    listViewItem.IsSelected = true;
-            //    MusicListView.SelectedItem = listViewItem.Content;
-
-            //    // 获取音乐对象
-            //    var musicItem = listViewItem.Content as Model.Music;
-
-            //    // 获取右键菜单
-            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
-            //    {
-            //        // 为菜单项设置DataContext
-            //        foreach (var menuItem in flyout.Items)
-            //        {
-            //            menuItem.DataContext = musicItem;
-            //        }
-            //    }
-            //}
         }
 
-        private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
+        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            var button = sender as Button;
-            if (button != null && button.Tag is Music music)
+            if (sender is TextBlock textBlock)
             {
-                if (music != null)
+                string albumName = textBlock.Text;
+                // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
+                if (parentPage != null)
                 {
-                    ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
-                    await parentPage.AddToFavourite(music);
+                    parentPage.LoadAlbumMusic(albumName);
                 }
             }
         }
@@ -261,14 +216,15 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock)
+            var button = sender as Button;
+            if (button != null && button.Tag is Music music)
             {
-                string albumName = textBlock.Text;
-                if (parentPage != null)
+                if (music != null)
                 {
-                    parentPage.LoadAlbumMusic(albumName);
+                    ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
+                    await parentPage.AddToFavourite(music);
                 }
             }
         }

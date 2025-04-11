@@ -1,11 +1,8 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using NAudio.CoreAudioApi;
-using SQLite;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -38,7 +35,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainWindow_SettingLoaded(object? sender, MMDeviceCollection devices)
         {
-            LoadOutputDevices();           
+            LoadOutputDevices();
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
@@ -95,9 +92,10 @@ namespace WinUIMusicPlayer.View
                 }
             }
             isInitializing = false;
-            if (!isDeviceSelected) {
+            if (!isDeviceSelected)
+            {
                 OutputDeviceComboBox.SelectedIndex = 0;
-            }            
+            }
         }
 
         private void InitializeSettings()
@@ -110,13 +108,13 @@ namespace WinUIMusicPlayer.View
             isDefaultComplete = true;
             // 设置初始的输出模式
             foreach (ComboBoxItem item in OutputModeComboBox.Items)
-            {               
+            {
                 if (item.Tag.ToString() == AppSettings.OutputMode)
                 {
                     OutputModeComboBox.SelectedItem = item;
                     break;
                 }
-            }            
+            }
             // 设置初始的缓冲区大小
             LatencyTextBox.Text = AppSettings.Latency.ToString();
             // 设置初始的默认播放列表
@@ -129,10 +127,10 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-            
+
             // 设置初始的默认条目
             foreach (ComboBoxItem item in DefualtEntryComboBox.Items)
-            {                
+            {
                 if (item.Content.ToString() == AppSettings.DefualtEntry)
                 {
                     DefualtEntryComboBox.SelectedItem = item;
@@ -150,13 +148,13 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.OutputMode = selectedItem.Tag.ToString();
-                }                
+                }
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
                     _ = SaveSetting();
                 }
-                
+
             }
         }
 
@@ -168,12 +166,12 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.DeviceName = selectedItem.Content.ToString();
-                }                
+                }
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
                     _ = SaveSetting();
-                }                
+                }
             }
         }
 
@@ -181,13 +179,13 @@ namespace WinUIMusicPlayer.View
         {
             if (int.TryParse(LatencyTextBox.Text, out int latency))
             {
-                AppSettings.Latency = latency;         
+                AppSettings.Latency = latency;
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
                     _ = SaveSetting();
                 }
-                
+
             }
         }
 
@@ -199,7 +197,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.DefualtPlayList = selectedItem.Tag.ToString();
-                }                
+                }
                 if (!isInitializing)
                 {
                     _ = SaveSetting();
@@ -215,7 +213,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.DefualtEntry = selectedItem.Tag.ToString();
-                }                
+                }
                 if (!isInitializing)
                 {
                     _ = SaveSetting();

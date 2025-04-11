@@ -1,17 +1,14 @@
 ﻿using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static WinUIMusicPlayer.Utils.ToolUtils;
-using WinUIMusicPlayer.Model;
-using System.IO;
-using System.Data.Common;
-using static SQLite.TableMapping;
 using System.Data;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Windows.Storage;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -30,6 +27,8 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SavePlayState>();
                 await _dbConnection.CreateTableAsync<SaveSettings>();
+                await _dbConnection.CreateTableAsync<PlayList>();
+                await _dbConnection.CreateTableAsync<PlayListMusic>();
             }
         }
 
@@ -51,15 +50,145 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task UpdateMuisc(Music music) {
+        public static async Task<List<PlayList>> GetPlayListAsync()
+        {
+            try
+            {
+                return await _dbConnection.Table<PlayList>().ToListAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+                return new List<PlayList>();
+            }
+        }
+
+        public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
+        {
+            var query = from plm in await _dbConnection.Table<PlayListMusic>().ToListAsync()
+                        join m in await _dbConnection.Table<Music>().ToListAsync() on plm.MusicId equals m.Id
+                        where plm.PlayListId == playListId
+                        orderby plm.Order descending
+                        select new Music
+                        {
+                            Id = m.Id,
+                            Path = m.Path,
+                            Title = m.Title,
+                            Cover = m.Cover,
+                            Author = m.Author,
+                            Duration = m.Duration,
+                            Album = m.Album,
+                            FolderPath = m.FolderPath,
+                            LastLevelFolderPath = m.LastLevelFolderPath,
+                            Extension = m.Extension,
+                            Order = m.Order,
+                            BitDepth = m.BitDepth,
+                            BitRate = m.BitRate,
+                            SampleRate = m.SampleRate,
+                            Channel = m.Channel,
+                            isFavorite = m.isFavorite,
+                            TrackNumber = m.TrackNumber,
+                            Lyrics = m.Lyrics,
+                            PlayListOrder = plm.Order
+                        };
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.ToList();
+        }
+
+        public static async Task UpdatePlayListMusicOrder(int playListId, Music music)
+        {
+            var playListMusic = await _dbConnection.Table<PlayListMusic>()
+                   .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
+                   .FirstOrDefaultAsync();
+
+            if (playListMusic != null)
+            {
+                playListMusic.Order = music.PlayListOrder;
+                await _dbConnection.UpdateAsync(playListMusic);
+            }
+        }
+
+        public static async Task AddMusicToPlayList(int playListId, int musicId)
+        {
+            var existingRecord = await _dbConnection.Table<PlayListMusic>()
+               .Where(plm => plm.PlayListId == playListId && plm.MusicId == musicId)
+               .FirstOrDefaultAsync();
+            if (existingRecord == null)
+            {
+                PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
+                                          .Where(m => m.PlayListId == playListId)
+                                          .OrderByDescending(m => m.Order)
+                                          .FirstOrDefaultAsync();
+                var maxOrder = 0;
+                if (lastplayListMusic != null)
+                {
+                    maxOrder = lastplayListMusic.Order + 1;
+                }
+                int newOrder = maxOrder + 1;
+                var playListMusic = new PlayListMusic
+                {
+                    PlayListId = playListId,
+                    MusicId = musicId,
+                    Order = newOrder
+                };
+                await _dbConnection.InsertAsync(playListMusic);
+            }
+        }
+
+
+        public static async Task RemoveMusicFromPlayList(int playListId, int musicId)
+        {
+            var playListMusic = await _dbConnection.Table<PlayListMusic>()
+                .Where(plm => plm.PlayListId == playListId && plm.MusicId == musicId)
+                .FirstOrDefaultAsync();
+
+            if (playListMusic != null)
+            {
+                await _dbConnection.DeleteAsync(playListMusic);
+            }
+        }
+        public static async Task InsertPlayList(PlayList playList)
+        {
+            await _dbConnection.InsertAsync(playList);
+        }
+
+        public static async Task UpdatePlayList(PlayList playList)
+        {
+            await _dbConnection.UpdateAsync(playList);
+        }
+
+        public static async Task RemovePlayList(PlayList playList)
+        {
+            var playListMusics = await _dbConnection.Table<PlayListMusic>()
+               .Where(plm => plm.PlayListId == playList.Id)
+               .ToListAsync();
+            foreach (var playListMusic in playListMusics)
+            {
+                await _dbConnection.DeleteAsync(playListMusic);
+            }
+            await _dbConnection.DeleteAsync(playList);
+        }
+
+        public static async Task UpdateMuisc(Music music)
+        {
             await _dbConnection.UpdateAsync(music);
         }
 
-        public static async Task<SaveSettings> GetSettings() {
+        public static async Task<SaveSettings> GetSettings()
+        {
             return await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
         }
 
-        public static async Task InsertSettings(SaveSettings settings) {
+        public static async Task InsertSettings(SaveSettings settings)
+        {
             await _dbConnection.InsertAsync(settings);
         }
 
@@ -181,7 +310,7 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.DeleteAsync<Music>(musicId);
         }
-        public static async Task AddToFavourite(Music music,Music currentPlayingMusic)
+        public static async Task AddToFavourite(Music music, Music currentPlayingMusic)
         {
             Music lastFavouriteMusic = await _dbConnection.Table<Music>()
                                           .Where(m => m.isFavorite)
@@ -210,7 +339,7 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(PlayMode currentPlayMode,int? currentPlayingMusicId,float volume)
+        public static async Task SavePlayState(PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
         {
             var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
             if (playState == null)
@@ -235,7 +364,7 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task ScanFolderAsync(StorageFolder folder)
         {
-            var musicFiles = new List<Music>();            
+            var musicFiles = new List<Music>();
             // 递归获取所有音乐文件
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
 
@@ -354,7 +483,8 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        public static async Task RescanFolder(int folderId) {
+        public static async Task RescanFolder(int folderId)
+        {
             var folderToRescan = await _dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
             if (folderToRescan != null)
             {
@@ -376,9 +506,10 @@ namespace WinUIMusicPlayer.Services
                     {
                         try
                         {
-                            if (ToolUtils.IsMusicFile(file.FileType)) {
+                            if (ToolUtils.IsMusicFile(file.FileType))
+                            {
                                 filePaths.Add(file.Path);
-                            }                            
+                            }
                         }
                         catch (Exception ex)
                         {

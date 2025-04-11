@@ -36,7 +36,7 @@
             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
             <TextBlock Text="正在加载数据，请稍候..." HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
         </Grid>
-        <NavigationView Visibility="Collapsed" x:Name="NavigationViewControl" IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
+        <NavigationView Visibility="Collapsed" PaneDisplayMode="LeftCompact" x:Name="NavigationViewControl" IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="添加文件夹" Tag="AddFolder" Icon="NewFolder" />
                 <NavigationViewItem Content="音乐浏览" Tag="MusicBrowse" Icon="MusicInfo" />

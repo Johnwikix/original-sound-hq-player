@@ -19,6 +19,8 @@
     <None Remove="View\FavouritePlayListPage.xaml" />
     <None Remove="View\FolderBrowsePage.xaml" />
     <None Remove="View\MusicBrowsePage.xaml" />
+    <None Remove="View\PlayListPage.xaml" />
+    <None Remove="View\PlayListSongPage.xaml" />
     <None Remove="View\SettingsPage.xaml" />
     <None Remove="View\SongCollectionPage.xaml" />
     <None Remove="View\SongListPage.xaml" />
@@ -47,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpeg.AutoGen" Version="7.0.0" />
+    <PackageReference Include="H.NotifyIcon" Version="2.3.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250310001" />
     <PackageReference Include="NAudio" Version="2.2.1" />
@@ -88,6 +91,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\PlayListSongPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\PlayListPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\FavouritePlayListPage.xaml">

@@ -25,8 +25,7 @@
                     <MenuFlyout>
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
                         <MenuFlyoutItem Text="{Binding isFavorite, Converter={StaticResource FavouriteTextConverter}}" Click="SetAsFavoriteMenuItem_Click"/>
-                        <MenuFlyoutSubItem Text="添加到播放列表">
-                            <MenuFlyoutItem Text="添加到播放列表" Click="AddToPlaylistMenuItem_Click"/>                            
+                        <MenuFlyoutSubItem Text="添加到播放列表">                                                   
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
                         <MenuFlyoutItem Text="删除" Click="DeleteMenuItem_Click"/>

@@ -1,24 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using SQLite;
-using System.Data.Common;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using System.Collections.ObjectModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -44,10 +37,11 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
+                parentPage.DisableBackButton();
             }
         }
 
-        public void SortMusicList(string sortOrder,string type)
+        public void SortMusicList(string sortOrder, string type)
         {
             var order = "DefaultOrder";
             if (!string.IsNullOrEmpty(sortOrder))
@@ -66,13 +60,14 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicList = new ObservableCollection<Music>(musics);
-                if (type != null) {
+                if (type != null)
+                {
                     SortMusicList("DefaultOrder", type);
                 }
                 else
                 {
                     MusicListView.ItemsSource = musicList;
-                }                
+                }
                 UpdateMusicListView();
             }
             catch (Exception ex)
@@ -191,7 +186,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
@@ -210,6 +205,32 @@ namespace WinUIMusicPlayer.View
                     foreach (var menuItem in flyout.Items)
                     {
                         menuItem.DataContext = musicItem;
+                    }
+
+                    // 找到“添加到播放列表”子菜单
+                    var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
+
+                    // 清空之前的菜单项
+                    addToPlaylistSubItem.Items.Clear();
+
+                    // 从数据库获取播放列表
+                    var playlists = await MusicDatabaseService.GetPlayListAsync();
+
+                    // 为每个播放列表添加菜单项
+                    foreach (var playlist in playlists)
+                    {
+                        var menuItem = new MenuFlyoutItem
+                        {
+                            Text = playlist.Name
+                        };
+                        menuItem.Click += async (s, args) =>
+                        {
+                            if (musicItem != null)
+                            {
+                                await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
+                            }
+                        };
+                        addToPlaylistSubItem.Items.Add(menuItem);
                     }
                 }
             }
