@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<MMDeviceCollection> SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
+        public event EventHandler<string> PlayMusicEvent;
         private SystemMediaTransportControls systemMediaControls;
         private MusicPlaybackService playbackService = new MusicPlaybackService();
         private MediaPlayer mediaPlayer;
@@ -87,7 +88,7 @@ namespace WinUIMusicPlayer
             switch (args.Button)
             {
                 case SystemMediaTransportControlsButton.Play:
-                    playbackService.PlayButton();
+                    PlayMusicEvent?.Invoke(this, "play");
                     break;
                 case SystemMediaTransportControlsButton.Pause:
                     //playbackService.PlayButton();

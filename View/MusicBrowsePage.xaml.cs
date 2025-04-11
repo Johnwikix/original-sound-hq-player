@@ -53,6 +53,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
                 mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
+                mainWindow.PlayMusicEvent += MainWindow_PlayMusicEvent;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -95,6 +96,12 @@ namespace WinUIMusicPlayer.View
                 }
             }
             DisableBackButton();
+        }
+
+        private void MainWindow_PlayMusicEvent(object? sender, string e)
+        {
+            musicPlaybackService.PlayButton();
+            //UpdatePlayPauseButtonIcon();
         }
 
         public void DisableBackButton()
