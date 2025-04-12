@@ -8,25 +8,28 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="d985a645-0da3-4bd7-a698-1935a854c968"
-    Publisher="CN=90684"
-    Version="1.0.7.0" />
+    Name="SennpaiStudio.528762A6196EF"
+    Publisher="CN=Sennpei Studio"
+    Version="1.0.10.0" />
 
-  <mp:PhoneIdentity PhoneProductId="d985a645-0da3-4bd7-a698-1935a854c968" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="4acbd93b-89da-420d-8e0b-8588586c1cc2"
+    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
-    <DisplayName>Music Player</DisplayName>
-    <PublisherDisplayName>90684</PublisherDisplayName>
+    <DisplayName>原声听域播放器</DisplayName>
+    <PublisherDisplayName>Sennpai Studio</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0"
+      MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0"
+      MaxVersionTested="10.0.19041.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="x-generate" />
   </Resources>
 
   <Applications>
@@ -34,12 +37,13 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Music Player"
-        Description="Music Player"
+        DisplayName="Original Soundscape Player"
+        Description="Original Soundscape Player"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"  Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png"/>
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
@@ -47,6 +51,6 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
-    <uap:Capability Name="musicLibrary"/>
+    <uap:Capability Name="musicLibrary" />
   </Capabilities>
 </Package>
