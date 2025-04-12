@@ -1,14 +1,10 @@
-﻿using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml;
-using System;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.UI.Xaml.Input;
-using WinUIMusicPlayer.Model;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.Foundation;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -69,7 +65,7 @@ namespace WinUIMusicPlayer.Services
             // 显示菜单
             flyout.ShowAt(targetElement, position);
         }
-        private async void AddToFavourite_Click(object sender, RoutedEventArgs e,string type)
+        private async void AddToFavourite_Click(object sender, RoutedEventArgs e, string type)
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
@@ -77,7 +73,8 @@ namespace WinUIMusicPlayer.Services
             if (music != null)
             {
                 List<Music> musicList = new List<Music>();
-                if (type == "album") {
+                if (type == "album")
+                {
                     musicList = await MusicDatabaseService.FindMusicListByAlbum(music.Album);
                 }
                 if (type == "artist")
@@ -109,7 +106,8 @@ namespace WinUIMusicPlayer.Services
             Music item = data.Item as Music;
             PlayList playlist = data.Playlist;
 
-            if (item != null) {
+            if (item != null)
+            {
                 List<Music> musicList = new List<Music>();
                 if (type == "album")
                 {

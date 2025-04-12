@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -770,7 +769,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
-            MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";            
+            MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
             ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
             HRImage.Source = null;
             if (music.SampleRate >= 48000 && music.BitDepth >= 24)
@@ -803,7 +802,7 @@ namespace WinUIMusicPlayer.View
                 playListSongPage.UpdateMusicListView();
             }
             await LoadCover(music);
-            systemMediaControlsService.UpdateSystemMediaControlsState();           
+            systemMediaControlsService.UpdateSystemMediaControlsState();
             _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
         }
 
@@ -811,7 +810,7 @@ namespace WinUIMusicPlayer.View
         {
             UpdatePlayBar(music);
             UpdateViewList(music);
-            await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);           
+            await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
         }
 
         private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -116,7 +116,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task<List<Music>> FindMusicListByArtist(string artist) {
+        public static async Task<List<Music>> FindMusicListByArtist(string artist)
+        {
             var query = from m in await _dbConnection.Table<Music>().ToListAsync()
                         where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
                         select m;
@@ -139,7 +140,8 @@ namespace WinUIMusicPlayer.Services
             return query.ToList();
         }
 
-        public static async Task AddMusicListToFavour(List<Music> musics) {
+        public static async Task AddMusicListToFavour(List<Music> musics)
+        {
             var maxOrder = await GetMaxOrder();
             foreach (var music in musics)
             {
@@ -150,7 +152,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 music.isFavorite = true;
                 music.Order = maxOrder + 1;
-                await _dbConnection.UpdateAsync(music);                
+                await _dbConnection.UpdateAsync(music);
             }
         }
 
@@ -165,7 +167,8 @@ namespace WinUIMusicPlayer.Services
             {
                 maxOrder = lastplayListMusic.Order;
             }
-            foreach (var music in musics) {
+            foreach (var music in musics)
+            {
                 var existingRecord = await _dbConnection.Table<PlayListMusic>()
                    .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
                    .FirstOrDefaultAsync();

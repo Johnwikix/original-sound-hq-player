@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.Media.Playback;
-using Windows.Media;
-using WinUIMusicPlayer.Model;
-using Windows.Media.Core;
-using Windows.Storage.Streams;
+﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System;
+using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
-using Windows.Storage;
-using System.IO;
-using Microsoft.UI.Xaml.Controls;
-using Windows.Storage.Pickers;
+using Windows.Media;
+using Windows.Media.Playback;
+using Windows.Storage.Streams;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -99,7 +91,8 @@ namespace WinUIMusicPlayer.Services
                     System.Diagnostics.Debug.WriteLine($"设置专辑封面失败: {ex.Message}");
                 }
             }
-            else {
+            else
+            {
                 updater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Music.png"));
             }
             updater.Update();

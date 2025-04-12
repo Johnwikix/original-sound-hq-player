@@ -4,10 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Windows.Media;
-using Windows.Media.Playback;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
@@ -29,7 +26,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<MMDeviceCollection> SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
-        public event EventHandler<string> PlayMusicEvent;        
+        public event EventHandler<string> PlayMusicEvent;
         //private bool isPlaying;
         internal interface IWindowNative
         {
@@ -42,8 +39,8 @@ namespace WinUIMusicPlayer
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
-            InitializeApp();            
-        }        
+            InitializeApp();
+        }
         private async void InitializeApp()
         {
             try
@@ -103,7 +100,7 @@ namespace WinUIMusicPlayer
         public async Task LoadMusicList(string search = null)
         {
             var musicList = await MusicDatabaseService.GetMusicListAsync(search);
-            _= AlbumCoverService.LoadAlbumCoversAsync(musicList);
+            _ = AlbumCoverService.LoadAlbumCoversAsync(musicList);
             MusicListLoaded?.Invoke(this, musicList);
         }
 

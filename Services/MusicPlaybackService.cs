@@ -90,7 +90,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                }                
+                }
             }
             catch (Exception ex)
             {

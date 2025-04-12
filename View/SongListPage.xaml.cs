@@ -213,7 +213,7 @@ namespace WinUIMusicPlayer.View
                         addToPlaylistSubItem.Items.Add(menuItem);
                     }
                 }
-            }            
+            }
         }
 
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
