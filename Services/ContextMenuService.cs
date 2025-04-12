@@ -40,16 +40,16 @@ namespace WinUIMusicPlayer.Services
             {
                 Text = "添加到播放列表"
             };
-            if (type == "folder") {
+            //if (type == "folder") {
 
-                MenuFlyoutItem rescanItem = new MenuFlyoutItem
-                {
-                    Text = "重新扫描",
-                    DataContext = item
-                };
-                rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
-                flyout.Items.Add(rescanItem);
-            }
+            //    MenuFlyoutItem rescanItem = new MenuFlyoutItem
+            //    {
+            //        Text = "重新扫描",
+            //        DataContext = item
+            //    };
+            //    rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
+            //    flyout.Items.Add(rescanItem);
+            //}
 
             // 获取所有播放列表
             List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
@@ -97,7 +97,8 @@ namespace WinUIMusicPlayer.Services
 
         private async void RescanFolder_Click(object sender, RoutedEventArgs e, string type)
         {
-            
+            var menuItem = sender as MenuFlyoutItem;
+            var music = menuItem?.DataContext as Music;
         }
 
         private async void AddToPlaylistMenuItem_Click(object sender, RoutedEventArgs e, string type)

@@ -109,76 +109,7 @@ namespace WinUIMusicPlayer.View
             );
 
             e.Handled = true;
-        }
-
-        //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var menuItem = sender as MenuFlyoutItem;
-        //    var music = menuItem?.DataContext as Music;
-        //    if (music != null)
-        //    {
-        //        List<Music> musicList = await MusicDatabaseService.FindMusicListByAlbum(music.Album);
-        //        if (musicList != null)
-        //        {
-        //            _ = MusicDatabaseService.AddMusicListToFavour(musicList);
-        //        }
-        //    }
-        //}
-
-        //private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        //{
-        //    Button button = sender as Button;
-        //    var albumItem = button.DataContext;
-
-        //    // 创建菜单
-        //    MenuFlyout flyout = new MenuFlyout();
-
-        //    // 添加"添加到最爱"菜单项
-        //    MenuFlyoutItem favoriteItem = new MenuFlyoutItem
-        //    {
-        //        Text = "添加到最爱",
-        //        DataContext = albumItem
-        //    };
-        //    favoriteItem.Click += AddToFavourite_Click;
-        //    flyout.Items.Add(favoriteItem);
-
-        //    // 创建"添加到播放列表"子菜单
-        //    MenuFlyoutSubItem playlistSubItem = new MenuFlyoutSubItem
-        //    {
-        //        Text = "添加到播放列表"
-        //    };
-
-        //    // 获取所有播放列表
-        //    List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
-        //    foreach (PlayList playlist in playlists)
-        //    {
-        //        MenuFlyoutItem menuItem = new MenuFlyoutItem
-        //        {
-        //            Text = playlist.Name,
-        //            DataContext = new { Album = albumItem, Playlist = playlist }
-        //        };
-        //        menuItem.Click += AddToPlaylistMenuItem_Click;
-        //        playlistSubItem.Items.Add(menuItem);
-        //    }
-
-        //    flyout.Items.Add(playlistSubItem);
-
-        //    // 显示菜单
-        //    flyout.ShowAt(button, e.GetPosition(button));
-        //    e.Handled = true;
-        //}
-
-        //private void AddToPlaylistMenuItem_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var menuItem = sender as MenuFlyoutItem;
-        //    var data = menuItem.DataContext as dynamic;
-
-        //    // 现在你可以访问数据中的Album和Playlist属性
-        //    var album = data.Album;
-        //    var playlist = data.Playlist;
-
-        //    // 处理添加到播放列表的逻辑
-        //}
+        }       
 
     }
 }
