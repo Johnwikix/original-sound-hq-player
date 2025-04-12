@@ -1,11 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -91,5 +93,35 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
+
+        private async void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var album = button.DataContext;
+
+            // ÏÔÊ¾×¨¼­ÓÒ¼ü²Ëµ¥
+            await ContextMenuService.Instance.ShowAlbumContextMenu(
+                album,
+                button,
+                e.GetPosition(button),
+                "folder"
+            );
+
+            e.Handled = true;
+        }
+
+        //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var menuItem = sender as MenuFlyoutItem;
+        //    var music = menuItem?.DataContext as Music;
+        //    if (music != null)
+        //    {
+        //        List<Music> musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
+        //        if (musicList != null)
+        //        {
+        //            _ = MusicDatabaseService.AddMusicListToFavour(musicList);
+        //        }
+        //    }
+        //}
     }
 }

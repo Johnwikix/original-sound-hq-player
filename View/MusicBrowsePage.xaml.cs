@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -33,7 +34,8 @@ namespace WinUIMusicPlayer.View
         public PlayList currentPlayList;
         public int currentPlayListId;
         private bool isMuted = false;
-
+        private DispatcherTimer typingTimer;
+        private SystemMediaControlsService systemMediaControlsService;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -53,7 +55,6 @@ namespace WinUIMusicPlayer.View
                 mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
                 mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
-                mainWindow.PlayMusicEvent += MainWindow_PlayMusicEvent;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -70,7 +71,7 @@ namespace WinUIMusicPlayer.View
                         SongButton.FontSize = 26;
                         break;
                     case "album":
-                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        ContentFrame.Navigate(typeof(AlbumPage), this);
                         AlbumButton.FontSize = 26;
                         break;
                     case "artist":
@@ -96,12 +97,53 @@ namespace WinUIMusicPlayer.View
                 }
             }
             DisableBackButton();
+            initializeTimer();
+            InitializeSystemMediaControls();
         }
 
-        private void MainWindow_PlayMusicEvent(object? sender, string e)
+        private void initializeTimer()
         {
-            musicPlaybackService.PlayButton();
-            //UpdatePlayPauseButtonIcon();
+            typingTimer = new DispatcherTimer();
+            typingTimer.Interval = TimeSpan.FromMilliseconds(400);
+            typingTimer.Tick += TypingTimer_Tick;
+        }
+
+        private void InitializeSystemMediaControls()
+        {
+            systemMediaControlsService = new SystemMediaControlsService();
+
+            // 订阅事件
+            systemMediaControlsService.PlayRequested += (s, e) =>
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    PlayButton_Click(null, null);
+                });
+            };
+
+            systemMediaControlsService.PauseRequested += (s, e) =>
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    PlayButton_Click(null, null);
+                });
+            };
+
+            systemMediaControlsService.NextTrackRequested += (s, e) =>
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    NextMusicButton_Click(null, null);
+                });
+            };
+
+            systemMediaControlsService.PreviousTrackRequested += (s, e) =>
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    LastMusicButton_Click(null, null);
+                });
+            };
         }
 
         public void DisableBackButton()
@@ -252,7 +294,7 @@ namespace WinUIMusicPlayer.View
                 {
                     songListPage.LoadMusicAsync(musics);
                 }
-                var albumBrowsePage = ContentFrame.Content as AlbumBrowsePage;
+                var albumBrowsePage = ContentFrame.Content as AlbumPage;
                 if (albumBrowsePage != null)
                 {
                     albumBrowsePage.LoadAlbumsAsync(musics);
@@ -380,6 +422,13 @@ namespace WinUIMusicPlayer.View
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            typingTimer.Stop();
+            typingTimer.Start();
+        }
+
+        private async void TypingTimer_Tick(object sender, object e)
+        {
+            typingTimer.Stop(); // 定时器触发时停止定时器
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 if (ContentFrame.Content is SongCollectionPage)
@@ -445,7 +494,7 @@ namespace WinUIMusicPlayer.View
                 switch (pageType)
                 {
                     case "album":
-                        ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                        ContentFrame.Navigate(typeof(AlbumPage), this);
                         break;
                     case "artist":
                         ContentFrame.Navigate(typeof(ArtistPage), this);
@@ -492,7 +541,7 @@ namespace WinUIMusicPlayer.View
                         }
                         else
                         {
-                            ContentFrame.Navigate(typeof(AlbumBrowsePage), this);
+                            ContentFrame.Navigate(typeof(AlbumPage), this);
                         }
                         break;
                     case "Artist":
@@ -652,11 +701,12 @@ namespace WinUIMusicPlayer.View
         {
             musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
+            systemMediaControlsService.UpdateSystemMediaControlsState();
         }
 
         private void UpdatePlayPauseButtonIcon()
         {
-            if (musicPlaybackService.isPlaying)
+            if (AppSettings.isPlaying)
             {
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769"; // 暂停图标
             }
@@ -720,7 +770,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
             MusicAuthorTextBlock.Text = music.Author;
-            MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+            MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";            
             ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
             HRImage.Source = null;
             if (music.SampleRate >= 48000 && music.BitDepth >= 24)
@@ -753,13 +803,15 @@ namespace WinUIMusicPlayer.View
                 playListSongPage.UpdateMusicListView();
             }
             await LoadCover(music);
+            systemMediaControlsService.UpdateSystemMediaControlsState();           
+            _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
             UpdatePlayBar(music);
             UpdateViewList(music);
-            await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+            await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);           
         }
 
         private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -791,9 +843,9 @@ namespace WinUIMusicPlayer.View
                             page.SortMusicList(sortOrder);
                         }
                     }
-                    if (ContentFrame.Content is AlbumBrowsePage)
+                    if (ContentFrame.Content is AlbumPage)
                     {
-                        var page = ContentFrame.Content as AlbumBrowsePage;
+                        var page = ContentFrame.Content as AlbumPage;
                         if (page != null)
                         {
                             page.SortMusicList(sortOrder);
@@ -926,7 +978,7 @@ namespace WinUIMusicPlayer.View
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             musicPlaybackService.isUserDraggingProgressSlider = false;
-            if (musicPlaybackService.audioFileReader != null && musicPlaybackService.isPlaying)
+            if (musicPlaybackService.audioFileReader != null && AppSettings.isPlaying)
             {
                 double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.audioFileReader.TotalTime.TotalSeconds));
                 musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
@@ -935,7 +987,7 @@ namespace WinUIMusicPlayer.View
 
         private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            if (!musicPlaybackService.isUserDraggingProgressSlider && musicPlaybackService.audioFileReader != null && musicPlaybackService.isPlaying)
+            if (!musicPlaybackService.isUserDraggingProgressSlider && musicPlaybackService.audioFileReader != null && AppSettings.isPlaying)
             {
                 double currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
                 if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)

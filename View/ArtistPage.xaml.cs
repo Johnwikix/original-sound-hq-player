@@ -1,11 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -93,6 +95,36 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private async void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var album = button.DataContext;
+
+            // 显示专辑右键菜单
+            await ContextMenuService.Instance.ShowAlbumContextMenu(
+                album,
+                button,
+                e.GetPosition(button),
+                "artist"
+            );
+
+            e.Handled = true;
+        }
+
+        //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var menuItem = sender as MenuFlyoutItem;
+        //    var music = menuItem?.DataContext as Music;
+        //    Debug.WriteLine($"专辑名称: {music.Album}, 艺术家: {music.Author}");
+        //    if (music != null)
+        //    {
+        //        List<Music> musicList = await MusicDatabaseService.FindMusicListByArtist(music.Author);
+        //        if (musicList != null)
+        //        {
+        //            _=MusicDatabaseService.AddMusicListToFavour(musicList);
+        //        }
+        //    }
+        //}
     }
 
 }

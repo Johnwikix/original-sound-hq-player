@@ -21,7 +21,7 @@
                     <DataTemplate>
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
-                            Click="Folder_Click" Tag="{Binding}">
+                            Click="Folder_Click" Tag="{Binding}" RightTapped="Folder_RightTapped">
                                 <FontIcon Glyph="&#xf12b;" FontSize="100"/>
                             </Button>
                             <TextBlock 

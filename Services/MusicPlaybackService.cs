@@ -15,7 +15,6 @@ namespace WinUIMusicPlayer.Services
         public List<Music> currentPlayingList;
         public AudioFileReader audioFileReader;
         public IWavePlayer waveOut;
-        public bool isPlaying;
         public MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
@@ -43,7 +42,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (audioFileReader != null && isPlaying && !isUserDraggingProgressSlider)
+                if (audioFileReader != null && AppSettings.isPlaying && !isUserDraggingProgressSlider)
                 {
                     updateProgressSliders?.Invoke(this, audioFileReader.CurrentTime.TotalSeconds);
                     string currentTime = audioFileReader.CurrentTime.ToString(@"mm\:ss");
@@ -60,7 +59,7 @@ namespace WinUIMusicPlayer.Services
         public double AdjustPlaybackPosition(int seconds)
         {
             double newPosition = 0;
-            if (audioFileReader != null && isPlaying)
+            if (audioFileReader != null && AppSettings.isPlaying)
             {
                 newPosition = audioFileReader.CurrentTime.TotalSeconds + seconds;
                 newPosition = Math.Max(0, Math.Min(newPosition, audioFileReader.TotalTime.TotalSeconds));
@@ -74,7 +73,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 // 如果当前正在播放，停止播放并重新初始化音频资源
-                if (isPlaying)
+                if (AppSettings.isPlaying)
                 {
                     isSettingsChangeStop = true;
                     if (progressTimer != null)
@@ -91,7 +90,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                }
+                }                
             }
             catch (Exception ex)
             {
@@ -108,7 +107,7 @@ namespace WinUIMusicPlayer.Services
             waveOut.Init(audioFileReader);
             waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
             waveOut.Play();
-            isPlaying = true;
+            AppSettings.isPlaying = true;
             progressTimer.Start();
         }
 
@@ -273,7 +272,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    isPlaying = true;
+                    AppSettings.isPlaying = true;
                     progressTimer.Start();
                     await SavePlayState();
                 }
@@ -352,27 +351,27 @@ namespace WinUIMusicPlayer.Services
             if (waveOut != null)
             {
                 waveOut.Stop();
-                isPlaying = false;
+                AppSettings.isPlaying = false;
                 progressTimer.Stop();
             }
         }
 
         public void PlayButton()
         {
-            if (isPlaying)
+            if (AppSettings.isPlaying)
             {
                 if (AppSettings.OutputMode == "WasapiExclusive")
                 {
                     isPausing = true;
                     waveOut.Stop();
-                    isPlaying = false;
+                    AppSettings.isPlaying = false;
                     progressTimer.Stop();
                 }
                 else
                 {
                     isPausing = true;
                     waveOut.Pause();
-                    isPlaying = false;
+                    AppSettings.isPlaying = false;
                     progressTimer.Stop();
                 }
             }
@@ -400,13 +399,13 @@ namespace WinUIMusicPlayer.Services
                     if (AppSettings.OutputMode == "WasapiExclusive")
                     {
                         waveOut.Play();
-                        isPlaying = true;
+                        AppSettings.isPlaying = true;
                         progressTimer.Start();
                     }
                     else
                     {
                         waveOut.Play();
-                        isPlaying = true;
+                        AppSettings.isPlaying = true;
                         progressTimer.Start();
                     }
                 }

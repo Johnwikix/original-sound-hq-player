@@ -14,7 +14,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="View\AddFolderPage.xaml" />
-    <None Remove="View\AlbumBrowsePage.xaml" />
+    <None Remove="View\AlbumPage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
     <None Remove="View\FavouritePlayListPage.xaml" />
     <None Remove="View\FolderBrowsePage.xaml" />
@@ -91,6 +91,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\AlbumPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\PlayListSongPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -115,11 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\ArtistPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="View\AlbumBrowsePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

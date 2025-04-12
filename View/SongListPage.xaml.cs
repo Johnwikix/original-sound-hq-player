@@ -213,27 +213,7 @@ namespace WinUIMusicPlayer.View
                         addToPlaylistSubItem.Items.Add(menuItem);
                     }
                 }
-            }
-            //var targetElement = e.OriginalSource as FrameworkElement;
-            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            //if (listViewItem != null)
-            //{
-            //    listViewItem.IsSelected = true;
-            //    MusicListView.SelectedItem = listViewItem.Content;
-
-            //    // 获取音乐对象
-            //    var musicItem = listViewItem.Content as Model.Music;
-
-            //    // 获取右键菜单
-            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
-            //    {
-            //        // 为菜单项设置DataContext
-            //        foreach (var menuItem in flyout.Items)
-            //        {
-            //            menuItem.DataContext = musicItem;
-            //        }
-            //    }
-            //}
+            }            
         }
 
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)

@@ -21,8 +21,8 @@
                     <DataTemplate>
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
-                                Click="Artist_Click" Tag="{Binding}">
-                                <FontIcon Glyph="&#xe77b;" FontSize="80" Width="130" Height="130"/>                     
+                                Click="Artist_Click" Tag="{Binding}" RightTapped="Artist_RightTapped">
+                                <FontIcon Glyph="&#xe77b;" FontSize="80" Width="130" Height="130"/>
                             </Button>
                             <TextBlock 
                             Height="60" 

@@ -29,11 +29,8 @@ namespace WinUIMusicPlayer
         public event EventHandler<MMDeviceCollection> SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
-        public event EventHandler<string> PlayMusicEvent;
-        private SystemMediaTransportControls systemMediaControls;
-        private MusicPlaybackService playbackService = new MusicPlaybackService();
-        private MediaPlayer mediaPlayer;
-        private bool isPlaying;
+        public event EventHandler<string> PlayMusicEvent;        
+        //private bool isPlaying;
         internal interface IWindowNative
         {
             IntPtr WindowHandle { get; }
@@ -45,103 +42,8 @@ namespace WinUIMusicPlayer
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
-            InitializeApp();
-            InitializeSystemMediaTransportControls();
-        }
-
-        private void InitializeSystemMediaTransportControls()
-        {
-            try
-            {
-                // 获取当前窗口的句柄
-                //var windowNative = this.As<IWindowNative>();
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-                mediaPlayer = new MediaPlayer();
-                // 获取系统媒体传输控件
-                systemMediaControls = mediaPlayer.SystemMediaTransportControls;
-                // 确保控件已初始化
-                if (systemMediaControls != null)
-                {
-                    // 启用控件
-                    systemMediaControls.IsPlayEnabled = true;
-                    systemMediaControls.IsPauseEnabled = true;
-                    systemMediaControls.IsNextEnabled = true;
-                    systemMediaControls.IsPreviousEnabled = true;
-
-                    // 注册按钮事件
-                    systemMediaControls.ButtonPressed += SystemMediaControls_ButtonPressed;
-
-                    // 更新初始状态
-                    UpdateSystemMediaControlsState();
-                }
-            }
-            catch (Exception ex)
-            {
-                // 处理并记录错误
-                System.Diagnostics.Debug.WriteLine($"初始化 SMTC 失败: {ex.Message}");
-            }
-        }
-
-        private void SystemMediaControls_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
-        {
-            // 这里我们需要将 SMTC 按钮事件转发给你现有的 NAudio 播放逻辑
-            switch (args.Button)
-            {
-                case SystemMediaTransportControlsButton.Play:
-                    PlayMusicEvent?.Invoke(this, "play");
-                    break;
-                case SystemMediaTransportControlsButton.Pause:
-                    //playbackService.PlayButton();
-                    break;
-                case SystemMediaTransportControlsButton.Next:
-                    //playbackService.AutoPlayNextTrack();
-                    break;
-                case SystemMediaTransportControlsButton.Previous:
-              
-                    break;
-            }
-        }
-
-        private void UpdateSystemMediaControlsState()
-        {
-            // 根据实际播放状态更新 SMTC
-            systemMediaControls.PlaybackStatus = isPlaying ?
-                MediaPlaybackStatus.Playing :
-                MediaPlaybackStatus.Paused;
-        }
-
-        private async Task UpdateMediaInfo(string title, string artist, string album, string albumArtPath = null)
-        {
-            var updater = systemMediaControls.DisplayUpdater;
-            updater.Type = MediaPlaybackType.Music;
-
-            // 清除所有属性
-            updater.ClearAll();
-
-            // 设置音乐属性
-            var musicProperties = updater.MusicProperties;
-            musicProperties.Title = title;
-            musicProperties.Artist = artist;
-            musicProperties.AlbumTitle = album;
-
-            // 如果有专辑封面，设置
-            if (!string.IsNullOrEmpty(albumArtPath))
-            {
-                try
-                {
-                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(albumArtPath);
-                    updater.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromFile(file);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"设置专辑封面失败: {ex.Message}");
-                }
-            }
-
-            // 应用更改
-            updater.Update();
-        }
-
+            InitializeApp();            
+        }        
         private async void InitializeApp()
         {
             try

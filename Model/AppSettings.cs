@@ -17,6 +17,7 @@ namespace WinUIMusicPlayer.Model
         public static string DeviceName = "Default";
         public static string DefualtEntry { get; set; } = "文件夹选择";
         public static string DefualtPlayList { get; set; } = "歌曲";
+        public static bool isPlaying { get; set; } = false;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

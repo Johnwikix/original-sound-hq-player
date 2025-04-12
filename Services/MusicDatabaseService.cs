@@ -116,6 +116,74 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task<List<Music>> FindMusicListByArtist(string artist) {
+            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+                        where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
+                        select m;
+            return query.ToList();
+        }
+
+        public static async Task<List<Music>> FindMusicListByAlbum(string album)
+        {
+            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+                        where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
+                        select m;
+            return query.ToList();
+        }
+
+        public static async Task<List<Music>> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
+        {
+            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+                        where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
+                        select m;
+            return query.ToList();
+        }
+
+        public static async Task AddMusicListToFavour(List<Music> musics) {
+            var maxOrder = await GetMaxOrder();
+            foreach (var music in musics)
+            {
+                var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Id == music.Id && m.isFavorite == true).FirstOrDefaultAsync();
+                if (existingMusic != null)
+                {
+                    continue; // 如果已经是收藏音乐，则跳过
+                }
+                music.isFavorite = true;
+                music.Order = maxOrder + 1;
+                await _dbConnection.UpdateAsync(music);                
+            }
+        }
+
+        public static async Task AddMusicListToPlayList(List<Music> musics, int playListId)
+        {
+            PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
+                                          .Where(m => m.PlayListId == playListId)
+                                          .OrderByDescending(m => m.Order)
+                                          .FirstOrDefaultAsync();
+            var maxOrder = 0;
+            if (lastplayListMusic != null)
+            {
+                maxOrder = lastplayListMusic.Order;
+            }
+            foreach (var music in musics) {
+                var existingRecord = await _dbConnection.Table<PlayListMusic>()
+                   .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
+                   .FirstOrDefaultAsync();
+                if (existingRecord != null)
+                {
+                    continue; // 如果已经在播放列表中，则跳过
+                }
+                int newOrder = maxOrder + 1;
+                var playListMusic = new PlayListMusic
+                {
+                    PlayListId = playListId,
+                    MusicId = music.Id,
+                    Order = newOrder
+                };
+                await _dbConnection.InsertAsync(playListMusic);
+            }
+        }
+
         public static async Task AddMusicToPlayList(int playListId, int musicId)
         {
             var existingRecord = await _dbConnection.Table<PlayListMusic>()
@@ -141,6 +209,24 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
+        }
+
+        private static async Task<int> GetMaxOrder()
+        {
+            Music lastFavouriteMusic = await _dbConnection.Table<Music>()
+                                          .Where(m => m.isFavorite)
+                                          .OrderByDescending(m => m.Order)
+                                          .FirstOrDefaultAsync();
+            int maxOrder = 0;
+            if (lastFavouriteMusic != null)
+            {
+                maxOrder = lastFavouriteMusic.Order;
+            }
+            else
+            {
+                maxOrder = 1;
+            }
+            return maxOrder;
         }
 
 
@@ -536,9 +622,9 @@ namespace WinUIMusicPlayer.Services
                             existingMusic.Author = music.Author;
                             existingMusic.Duration = music.Duration;
                             existingMusic.Album = music.Album;
-                            existingMusic.FolderPath = music.FolderPath;
-                            existingMusic.LastLevelFolderPath = music.LastLevelFolderPath;
-                            existingMusic.Extension = music.Extension;
+                            existingMusic.FolderPath = newMusic.FolderPath;
+                            existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
+                            existingMusic.Extension = newMusic.Extension;
                             existingMusic.BitDepth = music.BitDepth;
                             existingMusic.BitRate = music.BitRate;
                             existingMusic.SampleRate = music.SampleRate;
