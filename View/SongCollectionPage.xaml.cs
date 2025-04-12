@@ -186,6 +186,30 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string artist = textBlock.Text;
+                if (parentPage != null)
+                {
+                    parentPage.LoadArtistMusic(artist);
+                }
+            }
+        }
+
+        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string albumName = textBlock.Text;
+                if (parentPage != null)
+                {
+                    parentPage.LoadAlbumMusic(albumName);
+                }
+            }
+        }
+
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;

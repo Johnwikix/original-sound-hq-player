@@ -133,17 +133,19 @@
             </Grid>
 
             <!-- 封面、标题、作者组件 -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0">
                 <Image x:Name="AlbumCoverImage" Width="100" Height="100" Margin="10"/>
                 <Grid Width="Auto" Height="100">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" x:Name="MusicTitleTextBlock" FontSize="18" Margin="10,0,10,0"/>
-                    <TextBlock Grid.Row="1" x:Name="MusicAuthorTextBlock" FontSize="12" Margin="10,0,10,0" VerticalAlignment="Center"/>
-                    <Grid Grid.Row="2" VerticalAlignment="Bottom">
+                    <TextBlock Grid.Row="0" x:Name="MusicTitleTextBlock" FontWeight="Bold" FontSize="18" Margin="10,0,10,0"/>
+                    <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" MaxWidth="250" TextTrimming="WordEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
+                    <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" MaxWidth="250" TextTrimming="WordEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
+                    <Grid Grid.Row="3" VerticalAlignment="Bottom">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -212,6 +214,10 @@
                 <Button x:Name="PlayModeButton" Click="PlayModeButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
+                </Button>
+                <Button Click="FullScreenButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <FontIcon x:Name="FullScreenIcon"  VerticalAlignment="Center" Glyph="&#xe740;" Margin="0" Grid.Column="0"/>
                 </Button>
                 <Button Click="VolumeSliderIconButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">

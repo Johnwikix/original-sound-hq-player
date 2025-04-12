@@ -1,3 +1,5 @@
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -7,9 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.UI.WindowManagement;
+using WinRT.Interop;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
+using AppWindow = Microsoft.UI.Windowing.AppWindow;
 using Button = Microsoft.UI.Xaml.Controls.Button;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -35,6 +40,9 @@ namespace WinUIMusicPlayer.View
         private bool isMuted = false;
         private DispatcherTimer typingTimer;
         private SystemMediaControlsService systemMediaControlsService;
+        private bool isFullScreen = false;
+        private AppWindow appWindow;
+        private WindowId windowId;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -96,11 +104,18 @@ namespace WinUIMusicPlayer.View
                 }
             }
             DisableBackButton();
-            initializeTimer();
+            InitializeTimer();
             InitializeSystemMediaControls();
+            InitializeAppWindow();
         }
 
-        private void initializeTimer()
+        private void InitializeAppWindow() {
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+            appWindow = AppWindow.GetFromWindowId(windowId);
+        }
+
+        private void InitializeTimer()
         {
             typingTimer = new DispatcherTimer();
             typingTimer.Interval = TimeSpan.FromMilliseconds(400);
@@ -633,6 +648,25 @@ namespace WinUIMusicPlayer.View
             UpdatePlayModeIcon();
         }
 
+        private void FullScreenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (appWindow != null)
+            {
+                if (isFullScreen)
+                {
+                    appWindow.SetPresenter(AppWindowPresenterKind.Default);
+                    FullScreenIcon.Glyph = "\uE740";
+                }
+                else
+                {
+                    appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                    FullScreenIcon.Glyph = "\uE73F";
+                }
+                isFullScreen = !isFullScreen;
+            }
+            
+        }
+
         private async void NextMusicButton_Click(object sender, RoutedEventArgs e)
         {
             musicPlaybackService.isManualSelect = true;
@@ -768,6 +802,7 @@ namespace WinUIMusicPlayer.View
         {
             musicPlaybackService.currentPlayingMusic = music;
             MusicTitleTextBlock.Text = music.Title;
+            MusicAlbumTextBlock.Text = music.Album;
             MusicAuthorTextBlock.Text = music.Author;
             MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
             ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
@@ -967,6 +1002,24 @@ namespace WinUIMusicPlayer.View
             double newVolume = VolumeSlider.Value + delta;
             newVolume = Math.Max(0, Math.Min(newVolume, 100));
             VolumeSlider.Value = newVolume;
+        }
+
+        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string artist = textBlock.Text;               
+                LoadArtistMusic(artist);                
+            }
+        }
+
+        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string albumName = textBlock.Text;
+                LoadAlbumMusic(albumName);                
+            }
         }
 
         private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
