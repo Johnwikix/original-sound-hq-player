@@ -30,7 +30,6 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler<double> updateProgressMax;
         public event EventHandler<string> showMessage;
         public event EventHandler<string> updatePlayPauseButton;
-        public event EventHandler playNextEvent;
         public PlayMode currentPlayMode = PlayMode.ListLoop;
         public List<Music> musicList;
         public bool isUserDraggingProgressSlider = false;
@@ -57,19 +56,6 @@ namespace WinUIMusicPlayer.Services
                         // 对于FLAC文件，从waveChannel计算当前位置和总时长                        
                         currentTimeSeconds = (double)waveChannel.Position / waveChannel.WaveFormat.AverageBytesPerSecond;
                         totalSeconds = (double)waveChannel.Length / waveChannel.WaveFormat.AverageBytesPerSecond;
-                        if (waveChannel.Position >= waveChannel.Length)
-                        {
-                            // 音频播放结束
-                            //waveOut.Stop();
-                            currentTimeSeconds = 0;
-                            totalSeconds = 0;
-                            playNextEvent?.Invoke(this, EventArgs.Empty);
-                            //DispatcherQueue?.TryEnqueue(async () =>
-                            //{
-                            //    await AutoPlayNextTrack();
-                            //});
-                            //progressTimer.Stop();
-                        }
                     }
                     else if (audioFileReader != null)
                     {
@@ -227,6 +213,12 @@ namespace WinUIMusicPlayer.Services
         public async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             bool isNaturalEnd = false;
+            if(waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            {
+                double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
+                double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
+                isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
+            }
 
             if (audioFileReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
             {
@@ -318,7 +310,8 @@ namespace WinUIMusicPlayer.Services
                     // 使用WaveChannel32封装WaveStream，以便控制音量
                     waveChannel = new WaveChannel32(pcmStream);
                     waveChannel.Volume = volume;
-                    waveChannel.CurrentTime = currentPos;                   
+                    waveChannel.CurrentTime = currentPos;
+                    waveChannel.PadWithZeroes = false;
                     waveOut.Init(waveChannel);
                 }
                 else

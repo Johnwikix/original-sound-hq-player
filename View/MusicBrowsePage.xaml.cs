@@ -69,7 +69,6 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
-            musicPlaybackService.playNextEvent += MusicPlaybackService_playNextEvent;
             if (ContentFrame != null)
             {
                 switch (AppSettings.DefualtPlayList)
@@ -109,17 +108,6 @@ namespace WinUIMusicPlayer.View
             InitializeSystemMediaControls();
             InitializeAppWindow();
             //musicPlaybackService.DispatcherQueue = this.DispatcherQueue;
-        }
-
-        private void MusicPlaybackService_playNextEvent(object? sender, EventArgs e)
-        {
-            DispatcherQueue?.TryEnqueue(async () =>
-            {
-                this.DispatcherQueue.TryEnqueue(() =>
-                {
-                    NextMusicButton_Click(null, null);
-                });
-            });
         }
 
         private void InitializeAppWindow() {
