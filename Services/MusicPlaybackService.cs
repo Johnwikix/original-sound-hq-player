@@ -1,4 +1,5 @@
-﻿using NAudio.CoreAudioApi;
+﻿using Microsoft.UI.Dispatching;
+using NAudio.CoreAudioApi;
 using NAudio.Flac;
 using NAudio.Wave;
 using System;
@@ -17,7 +18,7 @@ namespace WinUIMusicPlayer.Services
         public AudioFileReader audioFileReader;
         public WaveChannel32 waveChannel;
         public IWavePlayer waveOut;
-        public MMDevice selectedDevice = null;
+        private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
@@ -29,11 +30,12 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler<double> updateProgressMax;
         public event EventHandler<string> showMessage;
         public event EventHandler<string> updatePlayPauseButton;
+        public event EventHandler playNextEvent;
         public PlayMode currentPlayMode = PlayMode.ListLoop;
         public List<Music> musicList;
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
-        public bool isFlacAutoNext = false;
+        //public DispatcherQueue DispatcherQueue { get; set; }
 
         public MusicPlaybackService()
         {
@@ -61,7 +63,11 @@ namespace WinUIMusicPlayer.Services
                             //waveOut.Stop();
                             currentTimeSeconds = 0;
                             totalSeconds = 0;
-                            AutoPlayNextTrack();
+                            playNextEvent?.Invoke(this, EventArgs.Empty);
+                            //DispatcherQueue?.TryEnqueue(async () =>
+                            //{
+                            //    await AutoPlayNextTrack();
+                            //});
                             //progressTimer.Stop();
                         }
                     }
@@ -191,18 +197,17 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
-
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
                     waveOut = new WaveOutEvent();
                     break;
                 case "WasapiShared":
-                    OutputDeviceChange();
+                    //OutputDeviceChange();
                     waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
                     break;
                 case "WasapiExclusive":
-                    OutputDeviceChange();
+                    //OutputDeviceChange();
                     waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                     break;
                 case "DirectSound":
@@ -217,7 +222,6 @@ namespace WinUIMusicPlayer.Services
                 defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
                 defaultWaveOutEvent.NumberOfBuffers = 3;
             }
-
         }
 
         public async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
