@@ -344,6 +344,7 @@ namespace WinUIMusicPlayer.Services
                 try
                 {
                     waveOut.Play();
+                    progressTimer.Start();
                     waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                     // 根据文件类型获取总时长
@@ -367,8 +368,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    AppSettings.isPlaying = true;
-                    progressTimer.Start();
+                    AppSettings.isPlaying = true;                   
                     await SavePlayState();
                 }
                 catch (Exception ex)
