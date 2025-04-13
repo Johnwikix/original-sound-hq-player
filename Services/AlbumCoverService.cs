@@ -19,6 +19,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var groupedAlbums = musics.GroupBy(m => m.Album)
                                            .Select(g => g.First())
+                                           .OrderBy(m => m.Album)
                                            .ToList();
                 foreach (var album in groupedAlbums)
                 {

@@ -191,13 +191,17 @@ namespace WinUIMusicPlayer.Services
 
             if (isNaturalEnd)
             {
-                await Task.Delay(100);
+                //await Task.Delay(100);
                 await AutoPlayNextTrack();
             }
         }
 
         public async Task AutoPlayNextTrack()
         {
+            if (progressTimer != null)
+            {
+                progressTimer.Stop();
+            }
             switch (currentPlayMode)
             {
                 case PlayMode.SingleLoop:
@@ -251,11 +255,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
-        {
-            if (progressTimer != null)
-            {
-                progressTimer.Stop();
-            }
+        {            
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
