@@ -1095,22 +1095,15 @@ namespace WinUIMusicPlayer.View
                     if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                     {
                         musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                    }
-                    else
-                    {
-                        ProgressSlider.Value = currentPlayPosition;
-                    }
+                    }                   
                 }
-                else if (musicPlaybackService.audioFileReader != null) {
+                else if (musicPlaybackService.audioFileReader != null)
+                {
                     currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
                     if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                     {
                         musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                    }
-                    else
-                    {
-                        ProgressSlider.Value = currentPlayPosition;
-                    }
+                    }                    
                 }
             }
         }
