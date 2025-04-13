@@ -127,6 +127,7 @@ namespace WinUIMusicPlayer.Services
                         waveOut.Dispose();
                         waveOut = null;
                     }
+                    OutputDeviceChange();
                     if (audioFileReader != null)
                     {
                         ResumeMusic();
