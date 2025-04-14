@@ -107,11 +107,10 @@ namespace WinUIMusicPlayer.View
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
-            //musicPlaybackService.DispatcherQueue = this.DispatcherQueue;
         }
 
         private void InitializeAppWindow() {
-            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             appWindow = AppWindow.GetFromWindowId(windowId);
         }

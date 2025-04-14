@@ -27,8 +27,7 @@ namespace WinUIMusicPlayer.Services
                 if (!string.IsNullOrWhiteSpace(theTrack.Artist))
                 {
                     artist = theTrack.Artist;
-                }
-
+                }                
                 string album = "未知专辑";
                 if (!string.IsNullOrWhiteSpace(theTrack.Album))
                 {
@@ -123,7 +122,7 @@ namespace WinUIMusicPlayer.Services
                 }
             }
 
-            // 递归扫描子文件夹 - 保持不变
+            // 递归扫描子文件夹
             var subfolders = await folder.GetFoldersAsync();
             foreach (var subfolder in subfolders)
             {

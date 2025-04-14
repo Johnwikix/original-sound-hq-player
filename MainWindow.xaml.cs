@@ -26,12 +26,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<MMDeviceCollection> SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
-        public event EventHandler<string> PlayMusicEvent;
-        //private bool isPlaying;
-        internal interface IWindowNative
-        {
-            IntPtr WindowHandle { get; }
-        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -58,12 +53,13 @@ namespace WinUIMusicPlayer
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
+                //InitializeTaskbarService();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"≥ı ºªØ¥ÌŒÛ: {ex.Message}");
             }
-        }
+        }        
 
         private void NavigateToDefaultPage()
         {
