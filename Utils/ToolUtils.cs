@@ -1,10 +1,12 @@
-﻿using Microsoft.UI.Xaml;
+﻿using ATL;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -131,24 +133,48 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<BitmapImage> GetImageFromMusic(Music music)
+        public static async Task<BitmapImage> GetImageFromMusic(Music music,int size = 100)
         {
             try
             {
-                using (var file = TagLib.File.Create(music.Path))
+                Track theTrack = new Track(music.Path);
+                PictureInfo cover = theTrack.EmbeddedPictures.FirstOrDefault();
+                if (cover != null)
                 {
-                    if (file.Tag.Pictures.Length > 0)
+                    Image image = Image.FromStream(new MemoryStream(cover.PictureData));
+                    using (MemoryStream memoryStream = new MemoryStream())
                     {
-                        IPicture picture = file.Tag.Pictures[0];
-                        return await ReadBitmapImageAsync(picture, 80);
-                    }
-                    else
-                    {
-                        var uri = new Uri("ms-appx:///Assets/Music.png");
-                        var bitmapImage = new BitmapImage(uri);
+                        // 将 System.Drawing.Image 保存到内存流
+                        image.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+                        memoryStream.Position = 0;
+                        // 创建一个 BitmapImage 对象
+                        BitmapImage bitmapImage = new BitmapImage();
+                        // 将内存流转换为 IRandomAccessStream
+                        var randomAccessStream = memoryStream.AsRandomAccessStream();
+                        // 从流中加载图像
+                        await bitmapImage.SetSourceAsync(randomAccessStream);
                         return bitmapImage;
                     }
                 }
+                else {
+                    var uri = new Uri("ms-appx:///Assets/Music.png");
+                    var bitmapImage = new BitmapImage(uri);
+                    return bitmapImage;
+                }                
+                //using (var file = TagLib.File.Create(music.Path))
+                //{
+                //    if (file.Tag.Pictures.Length > 0)
+                //    {
+                //        IPicture picture = file.Tag.Pictures[0];
+                //        return await ReadBitmapImageAsync(picture, size);
+                //    }
+                //    else
+                //    {
+                //        var uri = new Uri("ms-appx:///Assets/Music.png");
+                //        var bitmapImage = new BitmapImage(uri);
+                //        return bitmapImage;
+                //    }
+                //}
             }
             catch (Exception ex)
             {
@@ -297,6 +323,18 @@ namespace WinUIMusicPlayer.Utils
         {
             var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a" };
             return musicExtensions.Contains(fileType.ToLower());
+        }
+
+        public static List<Music> UpdateMusicInList(List<Music> musicList, Music newMusic)
+        {
+            for (int i = 0; i < musicList.Count; i++)
+            {
+                if (musicList[i].Id == newMusic.Id)
+                {
+                    musicList[i] = newMusic;                    
+                }
+            }
+            return musicList;
         }
 
         public static async Task<BitmapImage> LoadAlbumCover(Music music)

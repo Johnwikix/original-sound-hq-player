@@ -266,10 +266,9 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
         {
-            if (parentPage != null)
-            {
-                await parentPage.LoadMusic();
-            }
+            musicList =new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
+            MusicListView.ItemsSource = musicList;
+            UpdateMusicListView();
         }
     }
 }

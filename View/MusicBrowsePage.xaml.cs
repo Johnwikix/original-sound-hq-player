@@ -1091,7 +1091,7 @@ namespace WinUIMusicPlayer.View
                 if (musicPlaybackService.waveChannel != null && musicPlaybackService.currentPlayingMusic.Extension.ToLower() == "flac")
                 {
                     currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue > 3.0)
+                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue != 0 )
                     {
                         musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                     }
@@ -1099,7 +1099,7 @@ namespace WinUIMusicPlayer.View
                 else if (musicPlaybackService.audioFileReader != null)
                 {
                     currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
-                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue > 3.0)
+                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue != 0)
                     {
                         musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                     }

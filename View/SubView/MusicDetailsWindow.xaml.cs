@@ -21,6 +21,12 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.Services;
 using ATL;
+using System.Threading.Tasks;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+using static System.Windows.Forms.DataFormats;
+using Windows.Storage.Streams;
+using Windows.Graphics.Imaging;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -49,6 +55,7 @@ namespace WinUIMusicPlayer.View.SubView
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = AppWindow.GetFromWindowId(id);
+            appWindow.SetIcon("Assets/icon.ico");
             appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: 800, _Height: 800));
         }
 
@@ -64,12 +71,27 @@ namespace WinUIMusicPlayer.View.SubView
             SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
             YearTextBlock.Text = music.Year.ToString();
             PathTextBlock.Text = music.Path;
-            AlbumCoverImage.Source =await ToolUtils.LoadAlbumCover(music);
+            AlbumCoverImage.Source =await ToolUtils.GetImageFromMusic(music,150);
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private async Task UpdateFile(Music music) {
+            Track theTrack = new Track(musicDetail.Path);
+            theTrack.Title = TitleTextBlock.Text;
+            theTrack.Artist = AuthorTextBlock.Text;
+            theTrack.Album = AlbumTextBlock.Text;
+            theTrack.Year = int.Parse(YearTextBlock.Text);
+            _ = theTrack.SaveAsync();
+            music.Title = TitleTextBlock.Text;
+            music.Author = AuthorTextBlock.Text;
+            music.Album = AlbumTextBlock.Text;
+            music.Year = int.Parse(YearTextBlock.Text);
+            await MusicDatabaseService.UpdateMusicInfo(music);
+            MusicDetailChanged?.Invoke(this, music);
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
@@ -90,26 +112,82 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     try
                     {
-                        Track theTrack = new Track(musicDetail.Path);
-                        theTrack.Title = TitleTextBlock.Text;
-                        theTrack.Artist = AuthorTextBlock.Text;
-                        theTrack.Album = AlbumTextBlock.Text;
-                        theTrack.Year = int.Parse(YearTextBlock.Text);
-                        theTrack.Save();
-                        music.Title = TitleTextBlock.Text;
-                        music.Author = AuthorTextBlock.Text;
-                        music.Album = AlbumTextBlock.Text;
-                        music.Year = int.Parse(YearTextBlock.Text);
-                        await MusicDatabaseService.UpdateMusicInfo(music);
-                        MusicDetailChanged?.Invoke(this, music);
-                        this.Close();
+                       _=UpdateFile(music);
                     }
-                    catch (Exception ex) {
+                    catch (Exception ex)
+                    {
                         System.Diagnostics.Debug.WriteLine(ex.Message);
-                        this.Close();
-                    }                    
-                }                
+                    }                   
+                }
+                this.Close();
             }            
+        }
+
+        private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            FileOpenPicker openPicker = new FileOpenPicker();
+            openPicker.ViewMode = PickerViewMode.Thumbnail;
+            openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            openPicker.FileTypeFilter.Add(".jpg");
+            openPicker.FileTypeFilter.Add(".jpeg");
+            openPicker.FileTypeFilter.Add(".png");
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
+            StorageFile file = await openPicker.PickSingleFileAsync();
+            if (file != null)
+            {
+                Track theTrack = new Track(musicDetail.Path);
+                var oldpic = theTrack.EmbeddedPictures.FirstOrDefault();
+                if (oldpic != null) {
+                    theTrack.EmbeddedPictures.Remove(oldpic);
+                }
+                PictureInfo newPicture = PictureInfo.fromBinaryData(System.IO.File.ReadAllBytes(file.Path), PictureInfo.PIC_TYPE.CD);
+                theTrack.EmbeddedPictures.Add(newPicture);
+                _=theTrack.SaveAsync();
+                using (var stream = await file.OpenAsync(FileAccessMode.Read))
+                {
+                    BitmapImage bitmapImage = new BitmapImage();
+                    await bitmapImage.SetSourceAsync(stream);
+                    AlbumCoverImage.Source = bitmapImage;
+                }
+            }
+        }
+
+        private async void SaveImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (AlbumCoverImage.Source is BitmapImage bitmapImage)
+            {
+                var renderTargetBitmap = new RenderTargetBitmap();
+                // …Ë÷√‰÷»æ≥ﬂ¥ÁŒ™Õº∆¨µƒ‘≠ º≥ﬂ¥Á
+                await renderTargetBitmap.RenderAsync(AlbumCoverImage, (int)bitmapImage.PixelWidth, (int)bitmapImage.PixelHeight);
+                var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
+                var pixels = pixelBuffer.ToArray();
+                var picker = new FileSavePicker();
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeChoices.Add("PNG Image", new[] { ".png" });
+                picker.SuggestedFileName = "SavedImage";
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                StorageFile file = await picker.PickSaveFileAsync();
+                if (file != null)
+                {
+                    using (var stream = await file.OpenStreamForWriteAsync())
+                    {
+                        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream.AsRandomAccessStream());
+                        encoder.SetPixelData(
+                            BitmapPixelFormat.Bgra8,
+                            BitmapAlphaMode.Premultiplied,
+                            (uint)renderTargetBitmap.PixelWidth,
+                            (uint)renderTargetBitmap.PixelHeight,
+                            96,
+                            96,
+                            pixels);
+                        await encoder.FlushAsync();
+                    }
+                }
+            }
         }
     }
 }

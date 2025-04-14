@@ -85,7 +85,7 @@ namespace WinUIMusicPlayer.Services
                     TrackNumber = trackNumber,
                     Year = year,
                     Lyrics = theTrack.Lyrics.ToString(),
-                };
+                };       
                 return music;
             }
             catch (Exception ex)

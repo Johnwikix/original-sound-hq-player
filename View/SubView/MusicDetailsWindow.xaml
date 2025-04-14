@@ -7,7 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="MusicDetailsWindow">
+    Title="Music Details">
 
     <Window.SystemBackdrop>
         <DesktopAcrylicBackdrop/>
@@ -38,7 +38,7 @@
             RelativePanel.AlignRightWithPanel="True">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="5*"/>
-                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="200"/>
                 </Grid.ColumnDefinitions>
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
@@ -86,7 +86,15 @@
                     <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="8" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
                 </Grid>
                 <Grid Grid.Column="1" Margin="10">
-                    <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
+                    <StackPanel>
+                        <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Click="SaveImageButton_Click" Margin="5" HorizontalAlignment="Center">
+                                <FontIcon Glyph="&#xe78c;" FontSize="16"/>
+                            </Button>
+                            <Button Content="更改封面图片" Click="SelectCoverImageButton_Click" Margin="5" HorizontalAlignment="Center"/>
+                        </StackPanel>                        
+                    </StackPanel>
                 </Grid>
             </Grid>
 
