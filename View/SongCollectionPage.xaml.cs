@@ -223,6 +223,9 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
         {
+            musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
+            MusicListView.ItemsSource = musicList;
+            UpdateMusicListView();
         }
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
