@@ -85,7 +85,7 @@ namespace WinUIMusicPlayer.Services
                             BitDepth = m.BitDepth,
                             BitRate = m.BitRate,
                             SampleRate = m.SampleRate,
-                            Channel = m.Channel,
+                            //Channel = m.Channel,
                             isFavorite = m.isFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
@@ -631,7 +631,7 @@ namespace WinUIMusicPlayer.Services
                             existingMusic.BitDepth = music.BitDepth;
                             existingMusic.BitRate = music.BitRate;
                             existingMusic.SampleRate = music.SampleRate;
-                            existingMusic.Channel = music.Channel;
+                            //existingMusic.Channel = music.Channel;
                             existingMusic.TrackNumber = music.TrackNumber;
                             await _dbConnection.UpdateAsync(existingMusic);
                             filePaths.Remove(newMusic.Path);

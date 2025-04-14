@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.Services
                 string lastLevelFolderPath = Path.GetFileName(folderPath);
 
                 int sampleRate =(int)theTrack.SampleRate;
-                int channelCount = 0;
+                //int channelCount = theTrack.ChannelsArrangement;
                 int bitDepth = theTrack.BitDepth;
                 int bitRate = theTrack.Bitrate;
                 int year = (int)theTrack.Year;              
@@ -57,7 +57,7 @@ namespace WinUIMusicPlayer.Services
                     BitDepth = bitDepth,
                     BitRate = bitRate,
                     SampleRate = sampleRate,
-                    Channel = channelCount,
+                    //Channel = channelCount,
                     TrackNumber = trackNumber,
                     Year = year,
                     Lyrics = theTrack.Lyrics.ToString(),
@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.Services
                         BitRate = wavFileInfo.BitRate,
                         SampleRate = wavFileInfo.SampleRate,
                         Year = 0,
-                        Channel = wavFileInfo.ChannelCount                        
+                        //Channel = wavFileInfo.ChannelCount                        
                     };
                     return music;
                 }
