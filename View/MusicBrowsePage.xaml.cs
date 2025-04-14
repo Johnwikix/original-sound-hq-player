@@ -43,6 +43,7 @@ namespace WinUIMusicPlayer.View
         private bool isFullScreen = false;
         private AppWindow appWindow;
         private WindowId windowId;
+        private bool isMouseOverProgressBar = false;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -1003,6 +1004,16 @@ namespace WinUIMusicPlayer.View
         {
             isMouseOverVolumeSlider = false;
         }
+
+        private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            isMouseOverProgressBar = true;
+        }
+
+        private void ProgressSlider_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            isMouseOverProgressBar = false;
+        }
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
             var thumb = FindVisualChild<Thumb>(ProgressSlider);
@@ -1085,26 +1096,28 @@ namespace WinUIMusicPlayer.View
 
         private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            //if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
-            //{
-            //    double currentPlayPosition = 0;
-            //    if (musicPlaybackService.waveChannel != null && musicPlaybackService.currentPlayingMusic.Extension.ToLower() == "flac")
-            //    {
-            //        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-            //        if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0)
-            //        {
-            //            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-            //        }
-            //    }
-            //    else if (musicPlaybackService.audioFileReader != null)
-            //    {
-            //        currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
-            //        if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0)
-            //        {
-            //            musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-            //        }
-            //    }
-            //}
+            if (isMouseOverProgressBar) {
+                if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
+                {
+                    double currentPlayPosition = 0;
+                    if (musicPlaybackService.waveChannel != null && musicPlaybackService.currentPlayingMusic.Extension.ToLower() == "flac")
+                    {
+                        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+                        if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
+                        {
+                            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                        }
+                    }
+                    else if (musicPlaybackService.audioFileReader != null)
+                    {
+                        currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
+                        if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
+                        {
+                            musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                        }
+                    }
+                }
+            }
         }
     }
 }

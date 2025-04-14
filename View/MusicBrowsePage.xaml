@@ -126,6 +126,8 @@
                         Maximum="100"
                         Value="0"
                         Margin="0"
+                        PointerEntered="ProgressSlider_PointerEntered"
+                        PointerExited="ProgressSlider_PointerExited"
                         ValueChanged="ProgressSlider_ValueChanged"
                         Grid.Column="0"
                         VerticalAlignment="Center"/>
