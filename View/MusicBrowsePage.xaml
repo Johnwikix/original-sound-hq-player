@@ -144,7 +144,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" 
                                x:Name="MusicTitleTextBlock" 
-                               TextWrapping="Wrap" 
+                               TextWrapping="WrapWholeWords" 
                                TextTrimming="CharacterEllipsis" 
                                FontWeight="Bold" 
                                MaxHeight="50"

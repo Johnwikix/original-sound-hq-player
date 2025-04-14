@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer.Utils
                         using (var file = TagLib.File.Create(song.Path))
                         {
                             if (file.Tag.Pictures.Length > 0)
-                            {
+                            {                               
                                 var picture = file.Tag.Pictures[0];
                                 newCover = await ReadBitmapImageAsync(picture, 125);
                             }

@@ -15,6 +15,30 @@ namespace WinUIMusicPlayer.Services
         public AddFolderService()
         {
         }
+
+        private async Task<int> GetBitDepth(StorageFile file) {
+            var bitDepth = 16;
+            try
+            {
+                // 其余代码保持不变...
+                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
+                                "System.Audio.SampleSize"
+                             });
+                // 处理位深度
+                if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] != null)
+                {
+                    var sampleSize = Convert.ToInt32(audioProps["System.Audio.SampleSize"]);
+                    bitDepth = sampleSize;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                bitDepth = 16;
+                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+            }
+            return bitDepth;
+        }
         public async Task<Music> getMusicInfo(StorageFile file, string folderPath)
         {
             try
@@ -38,9 +62,10 @@ namespace WinUIMusicPlayer.Services
 
                 int sampleRate =(int)theTrack.SampleRate;
                 //int channelCount = theTrack.ChannelsArrangement;
-                int bitDepth = theTrack.BitDepth;
+                int bitDepth = theTrack.BitDepth == -1 ? await GetBitDepth(file) : theTrack.BitDepth;
                 int bitRate = theTrack.Bitrate;
-                int year = (int)theTrack.Year;              
+                int year = (int)theTrack.Year;
+                
 
                 var music = new Music
                 {

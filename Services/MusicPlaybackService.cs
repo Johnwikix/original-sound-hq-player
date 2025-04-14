@@ -342,10 +342,7 @@ namespace WinUIMusicPlayer.Services
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
-                {
-                    waveOut.Play();
-                    progressTimer.Start();
-                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                {                    
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                     // 根据文件类型获取总时长
                     double totalSeconds = 0;
@@ -368,8 +365,11 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    AppSettings.isPlaying = true;                   
-                    await SavePlayState();
+                    waveOut.Play();
+                    progressTimer.Start();
+                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    AppSettings.isPlaying = true;
+                    _=Task.Run(() => SavePlayState());
                 }
                 catch (Exception ex)
                 {
