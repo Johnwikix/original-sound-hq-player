@@ -63,6 +63,23 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task<Music> GetMusic(int musicId)
+        {
+            try
+            {
+                return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+                return null;
+            }
+        }
+
+        public static async Task UpdateMusicInfo(Music music) {
+            await _dbConnection.UpdateAsync(music);
+        }
+
         public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
         {
             var query = from plm in await _dbConnection.Table<PlayListMusic>().ToListAsync()

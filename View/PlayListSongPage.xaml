@@ -25,6 +25,7 @@
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
                         <MenuFlyoutItem Text="{Binding isFavorite, Converter={StaticResource FavouriteTextConverter}}" Click="SetAsFavoriteMenuItem_Click"/>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
+                        <MenuFlyoutItem Text="属性" Click="MusicDetail_Click"/>
                         <MenuFlyoutItem Text="从播放列表中移除" Click="DeleteMenuItem_Click"/>
                     </MenuFlyout>
                 </Setter.Value>

@@ -11,6 +11,7 @@ using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View.SubView;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -288,6 +289,24 @@ namespace WinUIMusicPlayer.View
                 {
                     parentPage.LoadArtistMusic(artist);
                 }
+            }
+        }
+
+        private void MusicDetail_Click(object sender, RoutedEventArgs e)
+        {
+            if (MusicListView.SelectedItem is Music selectedMusic)
+            {
+                var musicDetailsWindow = new MusicDetailsWindow(selectedMusic);
+                musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
+                musicDetailsWindow.Activate();
+            }
+        }
+
+        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
+        {
+            if (parentPage != null)
+            {
+                await parentPage.LoadMusic();
             }
         }
 

@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.Services
                 int bitDepth = theTrack.BitDepth == -1 ? await GetBitDepth(file) : theTrack.BitDepth;
                 int bitRate = theTrack.Bitrate;
                 int year = (int)theTrack.Year;
-                
+                int channelCount = theTrack.ChannelsArrangement.NbChannels;
 
                 var music = new Music
                 {
@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.Services
                     BitDepth = bitDepth,
                     BitRate = bitRate,
                     SampleRate = sampleRate,
-                    //Channel = channelCount,
+                    Channel = channelCount,
                     TrackNumber = trackNumber,
                     Year = year,
                     Lyrics = theTrack.Lyrics.ToString(),
@@ -118,7 +118,7 @@ namespace WinUIMusicPlayer.Services
                         BitRate = wavFileInfo.BitRate,
                         SampleRate = wavFileInfo.SampleRate,
                         Year = 0,
-                        //Channel = wavFileInfo.ChannelCount                        
+                        Channel = wavFileInfo.ChannelCount
                     };
                     return music;
                 }

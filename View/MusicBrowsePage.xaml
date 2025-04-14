@@ -145,13 +145,13 @@
                     <TextBlock Grid.Row="0" 
                                x:Name="MusicTitleTextBlock" 
                                TextWrapping="WrapWholeWords" 
-                               TextTrimming="CharacterEllipsis" 
+                               TextTrimming="WordEllipsis" 
                                FontWeight="Bold" 
                                MaxHeight="50"
                                FontSize="18" 
                                Margin="10,0,10,0"/>
-                    <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" TextTrimming="CharacterEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
-                    <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" TextTrimming="CharacterEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
+                    <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
                     <Grid Grid.Row="3" VerticalAlignment="Bottom">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>

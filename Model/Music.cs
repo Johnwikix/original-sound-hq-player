@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.Model
         public int SampleRate { get; set; }
         [Ignore]
         public int PlayListOrder { get; set; }
-        //public int Channel { get; set; }
+        public int Channel { get; set; }
         public int Year { get; set; }
         private bool _isFavorite = false;
         public bool isFavorite

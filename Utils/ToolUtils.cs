@@ -298,5 +298,17 @@ namespace WinUIMusicPlayer.Utils
             var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a" };
             return musicExtensions.Contains(fileType.ToLower());
         }
+
+        public static async Task<BitmapImage> LoadAlbumCover(Music music)
+        {
+            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+            {
+                return cachedCover;
+            }
+            else
+            {
+                return await GetImageFromMusic(music);
+            }
+        }
     }
 }
