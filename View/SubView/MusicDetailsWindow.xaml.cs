@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer.View.SubView
             WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = AppWindow.GetFromWindowId(id);
             appWindow.SetIcon("Assets/icon.ico");
-            appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: 800, _Height: 800));
+            appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: 650 ,_Height: 550));
         }
 
         private async void InitalizeData(Music music)
