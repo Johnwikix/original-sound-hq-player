@@ -1085,26 +1085,26 @@ namespace WinUIMusicPlayer.View
 
         private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
-            {
-                double currentPlayPosition = 0;
-                if (musicPlaybackService.waveChannel != null && musicPlaybackService.currentPlayingMusic.Extension.ToLower() == "flac")
-                {
-                    currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue != 0 )
-                    {
-                        musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                    }
-                }
-                else if (musicPlaybackService.audioFileReader != null)
-                {
-                    currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
-                    if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0 && e.NewValue != 0)
-                    {
-                        musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                    }
-                }
-            }
+            //if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
+            //{
+            //    double currentPlayPosition = 0;
+            //    if (musicPlaybackService.waveChannel != null && musicPlaybackService.currentPlayingMusic.Extension.ToLower() == "flac")
+            //    {
+            //        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+            //        if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0)
+            //        {
+            //            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+            //        }
+            //    }
+            //    else if (musicPlaybackService.audioFileReader != null)
+            //    {
+            //        currentPlayPosition = musicPlaybackService.audioFileReader.CurrentTime.TotalSeconds;
+            //        if (Math.Abs(e.NewValue - currentPlayPosition) > 3.0)
+            //        {
+            //            musicPlaybackService.audioFileReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+            //        }
+            //    }
+            //}
         }
     }
 }
