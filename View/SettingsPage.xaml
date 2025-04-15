@@ -44,6 +44,11 @@
                 <ComboBoxItem Content="最爱" Tag="favourite"/>
                 <ComboBoxItem Content="播放列表" Tag="playList"/>
             </ComboBox>
+
+            <TextBlock Text="LrcAPI源" FontSize="16" />
+            <TextBox x:Name="LrcAPITextBox" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="200" />
+            <TextBlock Text="LrcAPI源鉴权码" FontSize="16" />
+            <TextBox x:Name="LrcAPIAuthTextBox" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="200" />
         </StackPanel>
     </Grid>
 </Page>

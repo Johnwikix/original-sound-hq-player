@@ -86,7 +86,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Language\" />
-    <Folder Include="WebService\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\Music.png">

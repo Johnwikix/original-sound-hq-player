@@ -28,6 +28,7 @@ using static System.Windows.Forms.DataFormats;
 using Windows.Storage.Streams;
 using Windows.Graphics.Imaging;
 using System.Runtime.InteropServices;
+using WinUIMusicPlayer.WebService;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -43,7 +44,6 @@ namespace WinUIMusicPlayer.View.SubView
         public EventHandler<Music> MusicDetailChanged;
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
-
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
@@ -100,7 +100,15 @@ namespace WinUIMusicPlayer.View.SubView
             theTrack.TrackNumber = int.Parse(TrackNumberBox.Text);
             theTrack.Lyrics.Clear();
             theTrack.Lyrics.ParseLRC(LyricsTextBox.Text);
-            _ = theTrack.SaveAsync();
+            var oldpic = theTrack.EmbeddedPictures.FirstOrDefault();
+            if (oldpic != null)
+            {
+                theTrack.EmbeddedPictures.Remove(oldpic);
+            }
+            var imageByte = await ToolUtils.ImageToByteArray(AlbumCoverImage);
+            PictureInfo newPicture = PictureInfo.fromBinaryData(imageByte, PictureInfo.PIC_TYPE.CD);
+            theTrack.EmbeddedPictures.Add(newPicture);
+            await theTrack.SaveAsync();
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
             music.Album = AlbumTextBlock.Text;
@@ -124,6 +132,7 @@ namespace WinUIMusicPlayer.View.SubView
 
             if (result == ContentDialogResult.Primary)
             {
+                LoadingGrid.Visibility = Visibility.Visible;
                 var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
                 if (music != null)
                 {
@@ -133,11 +142,61 @@ namespace WinUIMusicPlayer.View.SubView
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine(ex.Message);
+                        ContentDialog errorDialog = new ContentDialog
+                        {
+                            Title = "错误",
+                            Content = ex.Message,
+                            PrimaryButtonText = "确定",
+                            CloseButtonText = "取消",
+                            XamlRoot = this.Content.XamlRoot
+                        };
+                        ContentDialogResult errorResult = await errorDialog.ShowAsync();
                     }                   
                 }
                 this.Close();
             }            
+        }
+
+        private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
+        {
+            LrcService lrcService = new LrcService();
+            BitmapImage bitmapImage = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            if (bitmapImage != null)
+            {
+                AlbumCoverImage.Source = bitmapImage;
+            }
+            else {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "错误",
+                    Content = "获取封面失败，请检查设置",
+                    PrimaryButtonText = "确定",
+                    CloseButtonText = "取消",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                ContentDialogResult errorResult = await errorDialog.ShowAsync();
+            }             
+        }
+
+        private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
+        {
+            LrcService lrcService = new LrcService();
+            string lyrics = await lrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            if (lyrics != null)
+            {
+                LyricsTextBox.Text = lyrics;
+            }
+            else {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "错误",
+                    Content = "获取歌词失败，请检查设置",
+                    PrimaryButtonText = "确定",
+                    CloseButtonText = "取消",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                ContentDialogResult errorResult = await errorDialog.ShowAsync();
+            }
         }
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)

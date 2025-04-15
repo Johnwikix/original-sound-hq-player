@@ -61,6 +61,8 @@ namespace WinUIMusicPlayer.View
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.DefualtEntry = AppSettings.DefualtEntry;
             newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
+            newSettings.LrcAPISource = AppSettings.LrcAPISource;
+            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -117,6 +119,8 @@ namespace WinUIMusicPlayer.View
             }
             // 设置初始的缓冲区大小
             LatencyTextBox.Text = AppSettings.Latency.ToString();
+            LrcAPITextBox.Text = AppSettings.LrcAPISource;
+            LrcAPIAuthTextBox.Text = AppSettings.LrcAPIAuth;
             // 设置初始的默认播放列表
             foreach (ComboBoxItem item in DefualtPlayListComboBox.Items)
             {
@@ -187,6 +191,28 @@ namespace WinUIMusicPlayer.View
                 }
 
             }
+        }
+
+        private void LrcAPITextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            
+                AppSettings.LrcAPISource = LrcAPITextBox.Text;
+                if (!isInitializing)
+                {
+                    _ = SaveSetting();
+                }
+            
+        }
+
+        private void LrcAPIAuthTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+            AppSettings.LrcAPIAuth = LrcAPIAuthTextBox.Text;
+            if (!isInitializing)
+            {
+                _ = SaveSetting();
+            }
+
         }
 
         private void DefualtPlayListComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

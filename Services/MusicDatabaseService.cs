@@ -399,6 +399,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
+                AppSettings.LrcAPISource = settings.LrcAPISource;
+                AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
             }
         }
 

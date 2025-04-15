@@ -9,8 +9,13 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TagLib;
+using Windows.Graphics.Imaging;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Utils
@@ -47,7 +52,10 @@ namespace WinUIMusicPlayer.Utils
             BitmapImage newCover = album.Cover;
             if (album.Album != "未知专辑")
             {
-                var albumSongs = musics.Where(m => m.Album == album.Album);
+                var albumSongs = musics.Where(m => m.Album == album.Album && m.Extension!="WAV");
+                if (albumSongs == null || albumSongs.Count() == 0) {
+                    return DefaultAlbumCover();
+                }
                 foreach (var song in albumSongs)
                 {
                     try
@@ -348,5 +356,76 @@ namespace WinUIMusicPlayer.Utils
                 return await GetImageFromMusic(music);
             }
         }
+
+        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl)
+        {
+            byte[] buffer = null;
+            if (imageControl.Source is BitmapImage bitmapImage)
+            {
+                int MaxSize = 300;
+                double originalWidth = bitmapImage.PixelWidth;
+                double originalHeight = bitmapImage.PixelHeight;
+                double aspectRatio = originalWidth / originalHeight;
+                int newWidth, newHeight;
+                if (originalWidth > originalHeight)
+                {
+                    if (originalWidth > MaxSize)
+                    {
+                        newWidth = MaxSize;
+                        newHeight = (int)(MaxSize / aspectRatio);
+                    }
+                    else
+                    {
+                        newWidth = (int)originalWidth;
+                        newHeight = (int)originalHeight;
+                    }
+                }
+                else
+                {
+                    if (originalHeight > MaxSize)
+                    {
+                        newHeight = MaxSize;
+                        newWidth = (int)(MaxSize * aspectRatio);
+                    }
+                    else
+                    {
+                        newHeight = MaxSize;
+                        newWidth = (int)(MaxSize * aspectRatio);
+                    }                    
+                }
+                // 使用 RenderTargetBitmap 捕获图像
+                var renderTargetBitmap = new RenderTargetBitmap();
+                await renderTargetBitmap.RenderAsync(imageControl, newWidth, newHeight);
+
+                // 获取像素
+                var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
+                var pixels = pixelBuffer.ToArray();
+
+                // 创建编码器并写入流
+                var stream = new InMemoryRandomAccessStream();
+                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+
+                // 设置像素数据
+                encoder.SetPixelData(
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied,
+                    (uint)renderTargetBitmap.PixelWidth,
+                    (uint)renderTargetBitmap.PixelHeight,
+                    96.0, // DPI X
+                    96.0, // DPI Y
+                    pixels);
+
+                // 刷新编码器
+                await encoder.FlushAsync();
+
+                // 读取流到字节数组
+                stream.Seek(0);
+                buffer = new byte[stream.Size];
+                await stream.AsStream().ReadAsync(buffer, 0, buffer.Length);
+                
+            }
+            return buffer;
+        }
+
     }
 }
