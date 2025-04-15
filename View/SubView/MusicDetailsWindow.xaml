@@ -30,74 +30,83 @@
                 Style="{StaticResource CaptionTextBlockStyle}"
                 Text="音乐详情"/>
         </Grid>
-        <RelativePanel Margin="10 50 10 10">            
-
-            <Grid
-            RelativePanel.AlignLeftWithPanel="True"
-            RelativePanel.AlignTopWithPanel="True"
-            RelativePanel.AlignRightWithPanel="True">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="5*"/>
-                    <ColumnDefinition Width="200"/>
-                </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+        <RelativePanel Margin="10 50 10 10">
+            <ScrollViewer Margin="0 0 0 50" VerticalScrollBarVisibility="Auto">
+                <Grid                    
+                    RelativePanel.AlignLeftWithPanel="True"
+                    RelativePanel.AlignTopWithPanel="True"
+                    RelativePanel.AlignRightWithPanel="True">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
                         <ColumnDefinition Width="5*"/>
+                        <ColumnDefinition Width="200"/>
                     </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="5*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="标题：" FontWeight="Bold" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBox x:Name="TitleTextBlock" TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock Text="标题：" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="TitleTextBlock" TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                    <TextBlock Text="艺术家：" FontWeight="Bold" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBox x:Name="AuthorTextBlock" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />                   
+                        <TextBlock Text="艺术家：" FontWeight="Bold" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="AuthorTextBlock" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                    <TextBlock Text="专辑：" FontWeight="Bold" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBox x:Name="AlbumTextBlock" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />                    
+                        <TextBlock Text="专辑：" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="AlbumTextBlock" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                    <TextBlock Text="年份：" FontWeight="Bold" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBox x:Name="YearTextBlock" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock Text="年份：" FontWeight="Bold" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="YearTextBlock" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                    <TextBlock Text="时长：" FontWeight="Bold" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBlock x:Name="DurationTextBlock" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock Text="轨道编号：" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="TrackNumberBox" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5"/>
 
-                    <TextBlock Text="位深：" FontWeight="Bold" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBlock x:Name="BitDepthTextBlock" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock Text="歌词：" FontWeight="Bold" Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBox x:Name="LyricsTextBox" MaxHeight="100" TextWrapping="Wrap"  Grid.Row="5" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5"/>
 
-                    <TextBlock Text="比特率：" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBlock x:Name="BitRateTextBlock" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock Text="时长：" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock x:Name="DurationTextBlock" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                    <TextBlock Text="采样率：" FontWeight="Bold" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBlock x:Name="SampleRateTextBlock" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>                    
+                        <TextBlock Text="位深：" FontWeight="Bold" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock x:Name="BitDepthTextBlock" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                    <TextBlock Text="路径：" FontWeight="Bold" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                    <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="8" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock Text="比特率：" FontWeight="Bold" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock x:Name="BitRateTextBlock" Grid.Row="8" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+
+                        <TextBlock Text="采样率：" FontWeight="Bold" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock x:Name="SampleRateTextBlock" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+
+                        <TextBlock Text="路径：" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                    </Grid>
+                    <Grid Grid.Column="1" Margin="10">
+                        <StackPanel>
+                            <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Click="SaveImageButton_Click" Margin="5" HorizontalAlignment="Center">
+                                    <FontIcon Glyph="&#xe78c;" FontSize="16"/>
+                                </Button>
+                                <Button Click="SelectCoverImageButton_Click" Margin="5" HorizontalAlignment="Center">
+                                    <FontIcon Glyph="&#xe70f;" FontSize="16"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
-                <Grid Grid.Column="1" Margin="10">
-                    <StackPanel>
-                        <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button Click="SaveImageButton_Click" Margin="5" HorizontalAlignment="Center">
-                                <FontIcon Glyph="&#xe78c;" FontSize="16"/>
-                            </Button>
-                            <Button Content="更改封面图片" Click="SelectCoverImageButton_Click" Margin="5" HorizontalAlignment="Center"/>
-                        </StackPanel>                        
-                    </StackPanel>
-                </Grid>
-            </Grid>
-
+            </ScrollViewer>
             <StackPanel
                 RelativePanel.AlignBottomWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"

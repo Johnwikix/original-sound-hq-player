@@ -27,6 +27,7 @@ using Windows.Storage;
 using static System.Windows.Forms.DataFormats;
 using Windows.Storage.Streams;
 using Windows.Graphics.Imaging;
+using System.Runtime.InteropServices;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,6 +41,9 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Music musicDetail;
         public EventHandler<Music> MusicDetailChanged;
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hwnd);
+
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
@@ -56,7 +60,13 @@ namespace WinUIMusicPlayer.View.SubView
             WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = AppWindow.GetFromWindowId(id);
             appWindow.SetIcon("Assets/icon.ico");
-            appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: 650 ,_Height: 550));
+            uint dpi = GetDpiForWindow(hwnd);
+            double scaleFactor = dpi / 96.0;
+            int originalWidth = 650;
+            int originalHeight = 650;
+            int adjustedWidth = (int)(originalWidth * scaleFactor);
+            int adjustedHeight = (int)(originalHeight * scaleFactor);
+            appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
         }
 
         private async void InitalizeData(Music music)
@@ -65,6 +75,8 @@ namespace WinUIMusicPlayer.View.SubView
             TitleTextBlock.Text = music.Title;
             AuthorTextBlock.Text = music.Author;
             AlbumTextBlock.Text = music.Album;
+            TrackNumberBox.Text = music.TrackNumber.ToString();
+            LyricsTextBox.Text = music.Lyrics;
             DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
             BitDepthTextBlock.Text = $"{music.BitDepth}bit" ;
             BitRateTextBlock.Text = $"{music.BitRate}kbps";
@@ -85,11 +97,16 @@ namespace WinUIMusicPlayer.View.SubView
             theTrack.Artist = AuthorTextBlock.Text;
             theTrack.Album = AlbumTextBlock.Text;
             theTrack.Year = int.Parse(YearTextBlock.Text);
+            theTrack.TrackNumber = int.Parse(TrackNumberBox.Text);
+            theTrack.Lyrics.Clear();
+            theTrack.Lyrics.ParseLRC(LyricsTextBox.Text);
             _ = theTrack.SaveAsync();
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
             music.Album = AlbumTextBlock.Text;
             music.Year = int.Parse(YearTextBlock.Text);
+            music.TrackNumber = int.Parse(TrackNumberBox.Text);
+            music.Lyrics = LyricsTextBox.Text;
             await MusicDatabaseService.UpdateMusicInfo(music);
             MusicDetailChanged?.Invoke(this, music);
         }
@@ -112,7 +129,7 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     try
                     {
-                       _=UpdateFile(music);
+                        await UpdateFile(music);
                     }
                     catch (Exception ex)
                     {

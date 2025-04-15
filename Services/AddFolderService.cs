@@ -84,7 +84,7 @@ namespace WinUIMusicPlayer.Services
                     Channel = channelCount,
                     TrackNumber = trackNumber,
                     Year = year,
-                    Lyrics = theTrack.Lyrics.ToString(),
+                    Lyrics = theTrack.Lyrics.FormatSynchToLRC(),
                 };       
                 return music;
             }
