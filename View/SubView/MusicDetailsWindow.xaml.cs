@@ -108,6 +108,8 @@ namespace WinUIMusicPlayer.View.SubView
             var imageByte = await ToolUtils.ImageToByteArray(AlbumCoverImage);
             PictureInfo newPicture = PictureInfo.fromBinaryData(imageByte, PictureInfo.PIC_TYPE.CD);
             theTrack.EmbeddedPictures.Add(newPicture);
+            LoadingGrid.Visibility = Visibility.Visible;
+            MusicDetail.Visibility = Visibility.Collapsed;
             await theTrack.SaveAsync();
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
@@ -131,8 +133,7 @@ namespace WinUIMusicPlayer.View.SubView
             ContentDialogResult result = await confirmDialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)
-            {
-                LoadingGrid.Visibility = Visibility.Visible;
+            {                
                 var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
                 if (music != null)
                 {
