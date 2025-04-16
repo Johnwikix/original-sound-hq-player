@@ -10,7 +10,7 @@
   <Identity
     Name="SennpaiStudio.528762A6196EF"
     Publisher="CN=CF259542-70C0-4852-9523-066A80212473"
-    Version="1.0.16.0" />
+    Version="1.0.17.0" />
 
   <mp:PhoneIdentity PhoneProductId="4acbd93b-89da-420d-8e0b-8588586c1cc2"
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />

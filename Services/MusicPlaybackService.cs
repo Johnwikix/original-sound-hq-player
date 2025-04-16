@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
@@ -191,11 +192,9 @@ namespace WinUIMusicPlayer.Services
                     waveOut = new WaveOutEvent();
                     break;
                 case "WasapiShared":
-                    //OutputDeviceChange();
                     waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
                     break;
                 case "WasapiExclusive":
-                    //OutputDeviceChange();
                     waveOut = new WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                     break;
                 case "DirectSound":
@@ -300,29 +299,29 @@ namespace WinUIMusicPlayer.Services
                     waveChannel = null;
                 }
                 SelectOutputDevice();
-                // 加载新音频
                 if (music.Extension.ToLower() == "flac")
                 {
                     // 使用FlacReader读取FLAC文件
-                    FlacReader flacReader = new FlacReader(music.Path);
-
-                    // 转换为PCM流以便兼容其他代码
-                    WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
-
-                    // 使用WaveChannel32封装WaveStream，以便控制音量
-                    waveChannel = new WaveChannel32(pcmStream);
-                    waveChannel.Volume = volume;
-                    waveChannel.CurrentTime = currentPos;
-                    waveChannel.PadWithZeroes = false;
-                    waveOut.Init(waveChannel);
+                    try {
+                        FlacReader flacReader = new FlacReader(music.Path);
+                        WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
+                        // 使用WaveChannel32封装WaveStream，以便控制音量
+                        waveChannel = new WaveChannel32(pcmStream);
+                        waveChannel.Volume = volume;
+                        waveChannel.CurrentTime = currentPos;
+                        waveChannel.PadWithZeroes = false;
+                        waveOut.Init(waveChannel);
+                    } catch (Exception e) {
+                        FFmpegAudioReader fFmpegAudioReader = new FFmpegAudioReader(music.Path);
+                        waveOut.Volume = volume;
+                        waveOut.Init(fFmpegAudioReader);
+                    }
                 }
                 else
                 {
-                    // 非FLAC文件继续使用AudioFileReader
                     audioFileReader = new AudioFileReader(music.Path);
                     audioFileReader.Volume = volume;
                     audioFileReader.CurrentTime = currentPos;
-                    // 初始化播放器
                     waveOut.Init(audioFileReader);
                 }
 
@@ -349,12 +348,10 @@ namespace WinUIMusicPlayer.Services
                     double totalSeconds = 0;
                     if (music.Extension.ToLower() == "flac" && waveChannel != null)
                     {
-                        // 对于FLAC文件，从waveChannel获取总时长
                         totalSeconds = (double)waveChannel.Length / waveChannel.WaveFormat.AverageBytesPerSecond;
                     }
                     else if (audioFileReader != null)
                     {
-                        // 对于其他格式，从audioFileReader获取总时长
                         totalSeconds = audioFileReader.TotalTime.TotalSeconds;
                     }
                     updateProgressMax?.Invoke(this, totalSeconds);
@@ -415,7 +412,6 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Dispose();
                 progressTimer = null;
             }
-            // 停止并释放 waveOut
             if (waveOut != null)
             {
                 waveOut.Stop();
@@ -423,7 +419,6 @@ namespace WinUIMusicPlayer.Services
                 waveOut = null;
             }
 
-            // 释放 audioFileReader
             if (audioFileReader != null)
             {
                 audioFileReader.Dispose();
