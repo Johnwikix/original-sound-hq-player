@@ -314,7 +314,6 @@ namespace WinUIMusicPlayer.Services
                     } catch (Exception e) {
                         WaveStream fFmpegAudioReader = new FFmpegAudioReader(music.Path);
                         fFmpegAudioReader.CurrentTime = currentPos;
-                        waveOut.Volume = 0.1f;
                         waveOut.Init(fFmpegAudioReader);
                     }
                 }
