@@ -168,7 +168,7 @@
     <PublishAot>False</PublishAot>
     <PlatformTarget>x64</PlatformTarget>
     <NuGetAuditMode>all</NuGetAuditMode>
-    <AssemblyName>Original Soundscape Player</AssemblyName>
+    <AssemblyName>原声听域</AssemblyName>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
