@@ -59,7 +59,7 @@ namespace WinUIMusicPlayer
             {
                 System.Diagnostics.Debug.WriteLine($"≥ı ºªØ¥ÌŒÛ: {ex.Message}");
             }
-        }        
+        }
 
         private void NavigateToDefaultPage()
         {

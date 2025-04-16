@@ -1,5 +1,4 @@
-﻿using Microsoft.UI.Dispatching;
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Flac;
 using NAudio.Wave;
 using System;
@@ -132,7 +131,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                    if (waveChannel != null) {
+                    if (waveChannel != null)
+                    {
                         ResumeMusic();
                     }
                 }
@@ -148,7 +148,8 @@ namespace WinUIMusicPlayer.Services
         public void ResumeMusic()
         {
             SelectOutputDevice();
-            if (waveChannel != null) {
+            if (waveChannel != null)
+            {
                 waveOut.Init(waveChannel);
             }
             else if (audioFileReader != null)
@@ -156,7 +157,7 @@ namespace WinUIMusicPlayer.Services
                 waveOut.Init(audioFileReader);
             }
             waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
-            waveOut.Play();     
+            waveOut.Play();
             AppSettings.isPlaying = true;
             progressTimer.Start();
         }
@@ -214,7 +215,7 @@ namespace WinUIMusicPlayer.Services
         public async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             bool isNaturalEnd = false;
-            if(waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            if (waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
             {
                 double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
                 double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
@@ -297,7 +298,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     waveChannel.Dispose();
                     waveChannel = null;
-                }                
+                }
                 SelectOutputDevice();
                 // 加载新音频
                 if (music.Extension.ToLower() == "flac")
@@ -338,11 +339,11 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
-        {            
+        {
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
-                {                    
+                {
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                     // 根据文件类型获取总时长
                     double totalSeconds = 0;
@@ -369,7 +370,7 @@ namespace WinUIMusicPlayer.Services
                     progressTimer.Start();
                     waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
                     AppSettings.isPlaying = true;
-                    _=Task.Run(() => SavePlayState());
+                    _ = Task.Run(() => SavePlayState());
                 }
                 catch (Exception ex)
                 {

@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml;
+using System;
 using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml;
-using WinRT.Interop;
 
 namespace WinUIMusicPlayer.Services
 {

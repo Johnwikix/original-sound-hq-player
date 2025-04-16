@@ -67,19 +67,19 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Text="标题：" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="TitleTextBlock" TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBox x:Name="TitleTextBlock" BorderThickness="0"  TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
                         <TextBlock Text="艺术家：" FontWeight="Bold" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="AuthorTextBlock" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBox x:Name="AuthorTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
                         <TextBlock Text="专辑：" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="AlbumTextBlock" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
                         <TextBlock Text="年份：" FontWeight="Bold" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="YearTextBlock" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBox x:Name="YearTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
                         <TextBlock Text="轨道编号：" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="TrackNumberBox" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5"/>
+                        <TextBox x:Name="TrackNumberBox" BorderThickness="0" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5"/>
 
                         <TextBlock Text="歌词：" FontWeight="Bold" Grid.Row="5" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="5"/>
                         <Grid Grid.Row="5" Grid.Column="1">
@@ -87,9 +87,21 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="LyricsTextBox" Height="100" TextWrapping="Wrap" Grid.Row="0"  Grid.Column="0" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5"/>
-                            <Button Click="GetLyricsFromNet_Click" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Stretch">
-                                <FontIcon Glyph="&#xebd3;" FontSize="16"/>
+                            <TextBox x:Name="LyricsTextBox" BorderThickness="0" Height="100" TextWrapping="Wrap" Grid.Row="0"  Grid.Column="0" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5"/>
+                            <Button Click="GetLyricsFromNet_Click" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Stretch">                               
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Grid>
+                                            <FontIcon Glyph="&#xF385;" FontSize="16"/>
+                                            <FontIcon Glyph="&#xF386;" FontSize="16"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Button.Content>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip>
+                                        在线匹配歌词
+                                    </ToolTip>
+                                </ToolTipService.ToolTip>
                             </Button>
                         </Grid>
 
@@ -113,13 +125,40 @@
                             <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Click="GetImageFromNet_Click" Margin="5" HorizontalAlignment="Center">
-                                    <FontIcon Glyph="&#xebd3;" FontSize="16"/>
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon Glyph="&#xebd3;" FontSize="16"/>        
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            在线匹配封面
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>                                    
                                 </Button>
                                 <Button Click="SaveImageButton_Click" Margin="5" HorizontalAlignment="Center">
-                                    <FontIcon Glyph="&#xe78c;" FontSize="16"/>
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon Glyph="&#xe78c;" FontSize="16"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            保存到本地
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>                                    
                                 </Button>
                                 <Button Click="SelectCoverImageButton_Click" Margin="5" HorizontalAlignment="Center">
-                                    <FontIcon Glyph="&#xe70f;" FontSize="16"/>
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <FontIcon Glyph="&#xe70f;" FontSize="16"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip>
+                                            编辑封面
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>                                    
                                 </Button>
                             </StackPanel>
                         </StackPanel>
@@ -130,11 +169,22 @@
                 RelativePanel.AlignBottomWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"
                 Orientation="Horizontal"
-            >                
+            >
                 <Button
-                    Content="确认修改"
-                    Click="ConfirmButton_Click"
-                    Margin="5"/>
+                    Content="保存"
+                    Margin="5">
+                    <Button.Flyout>
+                        <Flyout x:Name="ConfirmFlyout">
+                            <StackPanel>
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="是否确定保存元信息至音乐" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Click="ConfirmButton_Click" Content="确认" Margin="0 0 10 0"/>
+                                    <Button Content="取消"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
                 <Button
                     Content="关闭"
                     Click="CloseButton_Click"

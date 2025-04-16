@@ -1,10 +1,9 @@
-﻿using ATL;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using TagLib;
 using Windows.Storage;
-using Windows.Storage.FileProperties;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -16,7 +15,8 @@ namespace WinUIMusicPlayer.Services
         {
         }
 
-        private async Task<int> GetBitDepth(StorageFile file) {
+        private async Task<int> GetBitDepth(StorageFile file)
+        {
             var bitDepth = 16;
             try
             {
@@ -43,50 +43,64 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                Track theTrack = new Track(file.Path);
-                int trackNumber = (int)theTrack.TrackNumber;
-                string title = !string.IsNullOrWhiteSpace(theTrack.Title) ?
-                   theTrack.Title : Path.GetFileNameWithoutExtension(file.Name);
-                string artist = "未知艺术家";
-                if (!string.IsNullOrWhiteSpace(theTrack.Artist))
+                using (TagLib.File audioFile = TagLib.File.Create(file.Path))
                 {
-                    artist = theTrack.Artist;
-                }                
-                string album = "未知专辑";
-                if (!string.IsNullOrWhiteSpace(theTrack.Album))
-                {
-                    album = theTrack.Album;
+                    Tag tag = audioFile.Tag;
+                    int trackNumber = (int)tag.Track;
+                    string title = !string.IsNullOrWhiteSpace(tag.Title) ?
+                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+                    string artist = "未知艺术家";
+                    string[] artists = audioFile.Tag.Performers;
+                    if (artists.Length > 0)
+                    {
+                        artist = artists[0]; // 取第一个艺术家
+                        Console.WriteLine("艺术家: " + string.Join(", ", artists));
+                    }
+                    string album = "未知专辑";
+                    if (!string.IsNullOrWhiteSpace(tag.Album))
+                    {
+                        album = tag.Album;
+                    }
+                    string lastLevelFolderPath = Path.GetFileName(folderPath);
+                    Properties audioProperties = audioFile.Properties;
+                    int sampleRate = audioProperties.AudioSampleRate;
+                    int bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample; ;
+                    int bitRate = audioProperties.AudioBitrate;
+                    int year = (int)tag.Year;
+                    int channelCount = audioProperties.AudioChannels;
+
+                    var music = new Music
+                    {
+                        Path = file.Path,
+                        Title = title,
+                        Author = artist,
+                        Album = album,
+                        Duration = audioProperties.Duration,
+                        FolderPath = folderPath,
+                        Order = 0,
+                        LastLevelFolderPath = lastLevelFolderPath,
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        BitDepth = bitDepth,
+                        BitRate = bitRate,
+                        SampleRate = sampleRate,
+                        Channel = channelCount,
+                        TrackNumber = trackNumber,
+                        Year = year,
+                        Lyrics = tag.Lyrics
+                    };
+                    return music;
                 }
-
-                string lastLevelFolderPath = Path.GetFileName(folderPath);
-
-                int sampleRate =(int)theTrack.SampleRate;
-                //int channelCount = theTrack.ChannelsArrangement;
-                int bitDepth = theTrack.BitDepth == -1 ? await GetBitDepth(file) : theTrack.BitDepth;
-                int bitRate = theTrack.Bitrate;
-                int year = (int)theTrack.Year;
-                int channelCount = theTrack.ChannelsArrangement.NbChannels;
-
-                var music = new Music
-                {
-                    Path = file.Path,
-                    Title = title,
-                    Author = artist,
-                    Album = album,
-                    Duration = TimeSpan.FromSeconds(theTrack.Duration),
-                    FolderPath = folderPath,
-                    Order = 0,
-                    LastLevelFolderPath = lastLevelFolderPath,
-                    Extension = file.FileType.TrimStart('.').ToUpper(),
-                    BitDepth = bitDepth,
-                    BitRate = bitRate,
-                    SampleRate = sampleRate,
-                    Channel = channelCount,
-                    TrackNumber = trackNumber,
-                    Year = year,
-                    Lyrics = theTrack.Lyrics.FormatSynchToLRC(),
-                };       
-                return music;
+                //Track theTrack = new Track(file.Path);                
+                //string artist = "未知艺术家";
+                //if (!string.IsNullOrWhiteSpace(theTrack.Artist))
+                //{
+                //    artist = theTrack.Artist;
+                //}                
+                //string album = "未知专辑";
+                //if (!string.IsNullOrWhiteSpace(theTrack.Album))
+                //{
+                //    album = theTrack.Album;
+                //}
             }
             catch (Exception ex)
             {

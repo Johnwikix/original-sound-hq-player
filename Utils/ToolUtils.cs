@@ -1,20 +1,17 @@
-﻿using ATL;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Graphics.Imaging;
-using Windows.Storage.Pickers;
-using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 
@@ -52,8 +49,9 @@ namespace WinUIMusicPlayer.Utils
             BitmapImage newCover = album.Cover;
             if (album.Album != "未知专辑")
             {
-                var albumSongs = musics.Where(m => m.Album == album.Album && m.Extension!="WAV");
-                if (albumSongs == null || albumSongs.Count() == 0) {
+                var albumSongs = musics.Where(m => m.Album == album.Album && m.Extension != "WAV");
+                if (albumSongs == null || albumSongs.Count() == 0)
+                {
                     return DefaultAlbumCover();
                 }
                 foreach (var song in albumSongs)
@@ -63,7 +61,7 @@ namespace WinUIMusicPlayer.Utils
                         using (var file = TagLib.File.Create(song.Path))
                         {
                             if (file.Tag.Pictures.Length > 0)
-                            {                               
+                            {
                                 var picture = file.Tag.Pictures[0];
                                 newCover = await ReadBitmapImageAsync(picture, 125);
                             }
@@ -90,30 +88,34 @@ namespace WinUIMusicPlayer.Utils
             return newCover;
         }
 
-        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize)
+        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
             using (var ms = new MemoryStream(picture.Data.Data))
             {
                 var bitmapImage = new BitmapImage();
-                bitmapImage.ImageOpened += (sender, args) =>
+                if (maxSize != 0)
                 {
-                    double originalWidth = bitmapImage.PixelWidth;
-                    double originalHeight = bitmapImage.PixelHeight;
-                    double aspectRatio = originalWidth / originalHeight;
-                    int newWidth, newHeight;
-                    if (originalWidth > originalHeight)
+                    bitmapImage.ImageOpened += (sender, args) =>
                     {
-                        newWidth = maxSize;
-                        newHeight = (int)(maxSize / aspectRatio);
-                    }
-                    else
-                    {
-                        newHeight = maxSize;
-                        newWidth = (int)(maxSize * aspectRatio);
-                    }
-                    bitmapImage.DecodePixelWidth = newWidth;
-                    bitmapImage.DecodePixelHeight = newHeight;
-                };
+                        double originalWidth = bitmapImage.PixelWidth;
+                        double originalHeight = bitmapImage.PixelHeight;
+                        double aspectRatio = originalWidth / originalHeight;
+                        int newWidth, newHeight;
+                        if (originalWidth > originalHeight)
+                        {
+                            newWidth = maxSize;
+                            newHeight = (int)(maxSize / aspectRatio);
+                        }
+                        else
+                        {
+                            newHeight = maxSize;
+                            newWidth = (int)(maxSize * aspectRatio);
+                        }
+                        bitmapImage.DecodePixelWidth = newWidth;
+                        bitmapImage.DecodePixelHeight = newHeight;
+                    };
+                }
+
                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                 return bitmapImage;
             }
@@ -140,49 +142,71 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
+        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData)
+        {
+            if (imageData == null || imageData.Length == 0)
+                throw new ArgumentException("Image data cannot be null or empty.");
+            using (var stream = new InMemoryRandomAccessStream())
+            {
+                using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
+                {
+                    dataWriter.WriteBytes(imageData);
+                    await dataWriter.StoreAsync();
+                }
+                var bitmapImage = new BitmapImage();
+                await bitmapImage.SetSourceAsync(stream);
+                return bitmapImage;
+            }
+        }
 
-        public static async Task<BitmapImage> GetImageFromMusic(Music music,int size = 100)
+        public static byte[] GetRawImage(Music music) {
+            try
+            {
+                using (TagLib.File audioFile = TagLib.File.Create(music.Path))
+                {
+                    // 获取音频文件中的图片数组
+                    IPicture[] pictures = audioFile.Tag.Pictures;
+
+                    if (pictures.Length > 0)
+                    {
+                        // 取第一张图片作为封面
+                        IPicture coverPicture = pictures[0];
+
+                        // 获取封面图片的字节数组
+                        byte[] coverBytes = coverPicture.Data.Data;
+                        return coverBytes;
+                    }
+                    else
+                    {
+                        Console.WriteLine("未找到封面图片信息。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {               
+                Console.WriteLine($"发生错误: {ex.Message}");
+            }
+            return null;
+        }
+
+        public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 100)
         {
             try
             {
-                Track theTrack = new Track(music.Path);
-                PictureInfo cover = theTrack.EmbeddedPictures.FirstOrDefault();
-                if (cover != null)
+                using (var file = TagLib.File.Create(music.Path))
                 {
-                    Image image = Image.FromStream(new MemoryStream(cover.PictureData));
-                    using (MemoryStream memoryStream = new MemoryStream())
+                    if (file.Tag.Pictures.Length > 0)
                     {
-                        // 将 System.Drawing.Image 保存到内存流
-                        image.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
-                        memoryStream.Position = 0;
-                        // 创建一个 BitmapImage 对象
-                        BitmapImage bitmapImage = new BitmapImage();
-                        // 将内存流转换为 IRandomAccessStream
-                        var randomAccessStream = memoryStream.AsRandomAccessStream();
-                        // 从流中加载图像
-                        await bitmapImage.SetSourceAsync(randomAccessStream);
+                        IPicture picture = file.Tag.Pictures[0];
+                        return await ReadBitmapImageAsync(picture, size);
+                    }
+                    else
+                    {
+                        var uri = new Uri("ms-appx:///Assets/Music.png");
+                        var bitmapImage = new BitmapImage(uri);
                         return bitmapImage;
                     }
                 }
-                else {
-                    var uri = new Uri("ms-appx:///Assets/Music.png");
-                    var bitmapImage = new BitmapImage(uri);
-                    return bitmapImage;
-                }                
-                //using (var file = TagLib.File.Create(music.Path))
-                //{
-                //    if (file.Tag.Pictures.Length > 0)
-                //    {
-                //        IPicture picture = file.Tag.Pictures[0];
-                //        return await ReadBitmapImageAsync(picture, size);
-                //    }
-                //    else
-                //    {
-                //        var uri = new Uri("ms-appx:///Assets/Music.png");
-                //        var bitmapImage = new BitmapImage(uri);
-                //        return bitmapImage;
-                //    }
-                //}
             }
             catch (Exception ex)
             {
@@ -339,7 +363,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 if (musicList[i].Id == newMusic.Id)
                 {
-                    musicList[i] = newMusic;                    
+                    musicList[i] = newMusic;
                 }
             }
             return musicList;
@@ -357,46 +381,15 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl)
+        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl,double scaleFactor = 1)
         {
             byte[] buffer = null;
             if (imageControl.Source is BitmapImage bitmapImage)
             {
-                int MaxSize = 300;
-                double originalWidth = bitmapImage.PixelWidth;
-                double originalHeight = bitmapImage.PixelHeight;
-                double aspectRatio = originalWidth / originalHeight;
-                int newWidth, newHeight;
-                if (originalWidth > originalHeight)
-                {
-                    if (originalWidth > MaxSize)
-                    {
-                        newWidth = MaxSize;
-                        newHeight = (int)(MaxSize / aspectRatio);
-                    }
-                    else
-                    {
-                        newWidth = (int)originalWidth;
-                        newHeight = (int)originalHeight;
-                    }
-                }
-                else
-                {
-                    if (originalHeight > MaxSize)
-                    {
-                        newHeight = MaxSize;
-                        newWidth = (int)(MaxSize * aspectRatio);
-                    }
-                    else
-                    {
-                        newHeight = MaxSize;
-                        newWidth = (int)(MaxSize * aspectRatio);
-                    }                    
-                }
                 // 使用 RenderTargetBitmap 捕获图像
                 var renderTargetBitmap = new RenderTargetBitmap();
-                await renderTargetBitmap.RenderAsync(imageControl, newWidth, newHeight);
-
+                await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth/ scaleFactor), (int)(bitmapImage.PixelHeight/ scaleFactor));
+                Debug.WriteLine($"bitmapImage长宽:{bitmapImage.PixelHeight} {bitmapImage.PixelWidth}");
                 // 获取像素
                 var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
                 var pixels = pixelBuffer.ToArray();
@@ -404,7 +397,7 @@ namespace WinUIMusicPlayer.Utils
                 // 创建编码器并写入流
                 var stream = new InMemoryRandomAccessStream();
                 var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-
+                Debug.WriteLine($"renderTargetBitmap长宽:{(uint)renderTargetBitmap.PixelHeight} {(uint)renderTargetBitmap.PixelWidth}");
                 // 设置像素数据
                 encoder.SetPixelData(
                     BitmapPixelFormat.Bgra8,
@@ -422,7 +415,7 @@ namespace WinUIMusicPlayer.Utils
                 stream.Seek(0);
                 buffer = new byte[stream.Size];
                 await stream.AsStream().ReadAsync(buffer, 0, buffer.Length);
-                
+
             }
             return buffer;
         }

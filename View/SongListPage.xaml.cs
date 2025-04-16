@@ -132,6 +132,7 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
+                musicList.Remove(selectedMusic);
                 await parentPage.RemoveMusic(selectedMusic.Id);
             }
         }
@@ -266,7 +267,7 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
         {
-            musicList =new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
+            musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
             MusicListView.ItemsSource = musicList;
             UpdateMusicListView();
         }

@@ -76,7 +76,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task UpdateMusicInfo(Music music) {
+        public static async Task UpdateMusicInfo(Music music)
+        {
             await _dbConnection.UpdateAsync(music);
         }
 
@@ -650,7 +651,8 @@ namespace WinUIMusicPlayer.Services
                             existingMusic.BitDepth = music.BitDepth;
                             existingMusic.BitRate = music.BitRate;
                             existingMusic.SampleRate = music.SampleRate;
-                            //existingMusic.Channel = music.Channel;
+                            existingMusic.Channel = music.Channel;
+                            existingMusic.Lyrics = music.Lyrics;
                             existingMusic.TrackNumber = music.TrackNumber;
                             await _dbConnection.UpdateAsync(existingMusic);
                             filePaths.Remove(newMusic.Path);

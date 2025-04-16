@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Windows.UI.WindowManagement;
-using WinRT.Interop;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -44,6 +42,7 @@ namespace WinUIMusicPlayer.View
         private AppWindow appWindow;
         private WindowId windowId;
         private bool isMouseOverProgressBar = false;
+        private NotificationService notificationService = new NotificationService();
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -110,7 +109,8 @@ namespace WinUIMusicPlayer.View
             InitializeAppWindow();
         }
 
-        private void InitializeAppWindow() {
+        private void InitializeAppWindow()
+        {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             appWindow = AppWindow.GetFromWindowId(windowId);
@@ -207,21 +207,14 @@ namespace WinUIMusicPlayer.View
             this.DispatcherQueue.TryEnqueue(() =>
             {
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
-            });            
+            });
         }
 
         private async void ShowMessage(object? sender, string message)
         {
             try
             {
-                ContentDialog contentDialog = new ContentDialog
-                {
-                    Title = "错误",
-                    Content = message,
-                    CloseButtonText = "确定",
-                    XamlRoot = this.XamlRoot
-                };
-                await contentDialog.ShowAsync();
+                notificationService.SendNotification("错误", message);
             }
             catch (Exception ex)
             {
@@ -237,12 +230,12 @@ namespace WinUIMusicPlayer.View
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
-                         if (ProgressSlider != null)
-                         {
-                             ProgressSlider.Value = value;
-                         }
+                        if (ProgressSlider != null)
+                        {
+                            ProgressSlider.Value = value;
+                        }
                     });
-                } 
+                }
             }
             catch (NullReferenceException ex)
             {
@@ -254,13 +247,16 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                this.DispatcherQueue.TryEnqueue(() =>
+                if (DispatcherQueue != null)
                 {
-                    if (PlayTimeTextBlock != null)
+                    DispatcherQueue.TryEnqueue(() =>
                     {
-                        PlayTimeTextBlock.Text = time;
-                    }
-                });
+                        if (PlayTimeTextBlock != null)
+                        {
+                            PlayTimeTextBlock.Text = time;
+                        }
+                    });
+                }               
             }
             catch (NullReferenceException ex)
             {
@@ -671,7 +667,7 @@ namespace WinUIMusicPlayer.View
                 }
                 isFullScreen = !isFullScreen;
             }
-            
+
         }
 
         private async void NextMusicButton_Click(object sender, RoutedEventArgs e)
@@ -756,7 +752,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
                 }
-            });            
+            });
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
@@ -823,7 +819,7 @@ namespace WinUIMusicPlayer.View
                     var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                     HRImage.Source = bitmapImage;
                 }
-            });            
+            });
         }
 
         private void UpdateViewList(Music music)
@@ -853,7 +849,7 @@ namespace WinUIMusicPlayer.View
                 await LoadCover(music);
                 systemMediaControlsService.UpdateSystemMediaControlsState();
                 _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
-            });           
+            });
         }
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
@@ -939,8 +935,8 @@ namespace WinUIMusicPlayer.View
                 if (musicPlaybackService.audioFileReader != null)
                 {
                     musicPlaybackService.audioFileReader.Volume = 0;
-                }                
-                if (musicPlaybackService.waveChannel != null) 
+                }
+                if (musicPlaybackService.waveChannel != null)
                 {
                     musicPlaybackService.waveChannel.Volume = 0;
                 }
@@ -952,7 +948,7 @@ namespace WinUIMusicPlayer.View
                 if (musicPlaybackService.audioFileReader != null)
                 {
                     musicPlaybackService.audioFileReader.Volume = (float)VolumeSlider.Value / 100;
-                }                
+                }
                 if (musicPlaybackService.waveChannel != null)
                 {
                     musicPlaybackService.waveChannel.Volume = (float)VolumeSlider.Value / 100;
@@ -1052,8 +1048,8 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                string artist = textBlock.Text;               
-                LoadArtistMusic(artist);                
+                string artist = textBlock.Text;
+                LoadArtistMusic(artist);
             }
         }
 
@@ -1062,7 +1058,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string albumName = textBlock.Text;
-                LoadAlbumMusic(albumName);                
+                LoadAlbumMusic(albumName);
             }
         }
 
@@ -1096,7 +1092,8 @@ namespace WinUIMusicPlayer.View
 
         private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            if (isMouseOverProgressBar) {
+            if (isMouseOverProgressBar)
+            {
                 if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
                 {
                     double currentPlayPosition = 0;

@@ -1,34 +1,23 @@
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using WinUIMusicPlayer.Model;
-using Microsoft.UI;
-using AppWindow = Microsoft.UI.Windowing.AppWindow;
-using WinRT.Interop;
-using Windows.Graphics;
-using Microsoft.UI.Xaml.Media.Imaging;
-using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.Services;
-using ATL;
-using System.Threading.Tasks;
-using Windows.Storage.Pickers;
-using Windows.Storage;
-using static System.Windows.Forms.DataFormats;
-using Windows.Storage.Streams;
-using Windows.Graphics.Imaging;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using TagLib;
+using Windows.Graphics;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
+using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -44,6 +33,10 @@ namespace WinUIMusicPlayer.View.SubView
         public EventHandler<Music> MusicDetailChanged;
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
+        private double scaleFactor = 0;
+        private NotificationService notificationService;
+        private byte[] albumCoverData = null;
+        private nint hwnd;
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
@@ -51,22 +44,24 @@ namespace WinUIMusicPlayer.View.SubView
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
-            InitalizeData(music);         
+            InitalizeData(music);
 
         }
 
-        private void setWindow() {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        private void setWindow()
+        {
+            hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = AppWindow.GetFromWindowId(id);
             appWindow.SetIcon("Assets/icon.ico");
             uint dpi = GetDpiForWindow(hwnd);
-            double scaleFactor = dpi / 96.0;
+            scaleFactor = dpi / 96.0;
             int originalWidth = 650;
             int originalHeight = 650;
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
             appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
+            notificationService = new NotificationService();
         }
 
         private async void InitalizeData(Music music)
@@ -78,12 +73,13 @@ namespace WinUIMusicPlayer.View.SubView
             TrackNumberBox.Text = music.TrackNumber.ToString();
             LyricsTextBox.Text = music.Lyrics;
             DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
-            BitDepthTextBlock.Text = $"{music.BitDepth}bit" ;
+            BitDepthTextBlock.Text = $"{music.BitDepth}bit";
             BitRateTextBlock.Text = $"{music.BitRate}kbps";
             SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
             YearTextBlock.Text = music.Year.ToString();
             PathTextBlock.Text = music.Path;
-            AlbumCoverImage.Source =await ToolUtils.GetImageFromMusic(music,150);
+            albumCoverData = ToolUtils.GetRawImage(music);
+            AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -91,26 +87,30 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private async Task UpdateFile(Music music) {
-            Track theTrack = new Track(musicDetail.Path);
-            theTrack.Title = TitleTextBlock.Text;
-            theTrack.Artist = AuthorTextBlock.Text;
-            theTrack.Album = AlbumTextBlock.Text;
-            theTrack.Year = int.Parse(YearTextBlock.Text);
-            theTrack.TrackNumber = int.Parse(TrackNumberBox.Text);
-            theTrack.Lyrics.Clear();
-            theTrack.Lyrics.ParseLRC(LyricsTextBox.Text);
-            var oldpic = theTrack.EmbeddedPictures.FirstOrDefault();
-            if (oldpic != null)
+        private async Task UpdateFile(Music music)
+        {
+            using (TagLib.File audioFile = TagLib.File.Create(music.Path))
             {
-                theTrack.EmbeddedPictures.Remove(oldpic);
+                Tag tag = audioFile.Tag;
+                byte[] albumArtData = albumCoverData;
+                Picture albumArt = new Picture
+                {
+                    Type = PictureType.FrontCover,
+                    MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
+                    Description = "Album Art",
+                    Data = new ByteVector(albumArtData)
+                };
+                tag.Pictures = new IPicture[] { albumArt };
+                tag.Title = TitleTextBlock.Text;
+                tag.Album = AlbumTextBlock.Text;
+                tag.Performers = new string[] { AuthorTextBlock.Text };
+                tag.Track = uint.Parse(TrackNumberBox.Text);
+                tag.Year = uint.Parse(YearTextBlock.Text);
+                tag.Lyrics = LyricsTextBox.Text;
+                LoadingGrid.Visibility = Visibility.Visible;
+                MusicDetail.Visibility = Visibility.Collapsed;
+                audioFile.Save();
             }
-            var imageByte = await ToolUtils.ImageToByteArray(AlbumCoverImage);
-            PictureInfo newPicture = PictureInfo.fromBinaryData(imageByte, PictureInfo.PIC_TYPE.CD);
-            theTrack.EmbeddedPictures.Add(newPicture);
-            LoadingGrid.Visibility = Visibility.Visible;
-            MusicDetail.Visibility = Visibility.Collapsed;
-            await theTrack.SaveAsync();
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
             music.Album = AlbumTextBlock.Text;
@@ -123,60 +123,34 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-            ContentDialog confirmDialog = new ContentDialog
-            {
-                Title = "是否确认修改",               
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
-                XamlRoot = this.Content.XamlRoot
-            };
-            ContentDialogResult result = await confirmDialog.ShowAsync();
 
-            if (result == ContentDialogResult.Primary)
-            {                
-                var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
-                if (music != null)
+            var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
+            if (music != null)
+            {
+                try
                 {
-                    try
-                    {
-                        await UpdateFile(music);
-                    }
-                    catch (Exception ex)
-                    {
-                        ContentDialog errorDialog = new ContentDialog
-                        {
-                            Title = "错误",
-                            Content = ex.Message,
-                            PrimaryButtonText = "确定",
-                            CloseButtonText = "取消",
-                            XamlRoot = this.Content.XamlRoot
-                        };
-                        ContentDialogResult errorResult = await errorDialog.ShowAsync();
-                    }                   
+                    await UpdateFile(music);
                 }
-                this.Close();
-            }            
+                catch (Exception ex)
+                {
+                    notificationService.SendNotification("错误", ex.Message);
+                }
+            }
+            this.Close();
         }
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
             LrcService lrcService = new LrcService();
-            BitmapImage bitmapImage = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            if (bitmapImage != null)
+            albumCoverData = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            if (albumCoverData != null)
             {
-                AlbumCoverImage.Source = bitmapImage;
+                AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             }
-            else {
-                ContentDialog errorDialog = new ContentDialog
-                {
-                    Title = "错误",
-                    Content = "获取封面失败，请检查设置",
-                    PrimaryButtonText = "确定",
-                    CloseButtonText = "取消",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                ContentDialogResult errorResult = await errorDialog.ShowAsync();
-            }             
+            else
+            {
+                notificationService.SendNotification("错误", "获取封面失败，请检查设置");
+            }
         }
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
@@ -187,84 +161,65 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 LyricsTextBox.Text = lyrics;
             }
-            else {
-                ContentDialog errorDialog = new ContentDialog
-                {
-                    Title = "错误",
-                    Content = "获取歌词失败，请检查设置",
-                    PrimaryButtonText = "确定",
-                    CloseButtonText = "取消",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                ContentDialogResult errorResult = await errorDialog.ShowAsync();
+            else
+            {
+                notificationService.SendNotification("错误", "获取歌词失败，请检查设置");
             }
         }
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
         {
-            FileOpenPicker openPicker = new FileOpenPicker();
-            openPicker.ViewMode = PickerViewMode.Thumbnail;
-            openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            openPicker.FileTypeFilter.Add(".jpg");
-            openPicker.FileTypeFilter.Add(".jpeg");
-            openPicker.FileTypeFilter.Add(".png");
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
-            StorageFile file = await openPicker.PickSingleFileAsync();
-            if (file != null)
-            {
-                Track theTrack = new Track(musicDetail.Path);
-                var oldpic = theTrack.EmbeddedPictures.FirstOrDefault();
-                if (oldpic != null) {
-                    theTrack.EmbeddedPictures.Remove(oldpic);
-                }
-                PictureInfo newPicture = PictureInfo.fromBinaryData(System.IO.File.ReadAllBytes(file.Path), PictureInfo.PIC_TYPE.CD);
-                theTrack.EmbeddedPictures.Add(newPicture);
-                _=theTrack.SaveAsync();
-                using (var stream = await file.OpenAsync(FileAccessMode.Read))
+            try {
+                FileOpenPicker openPicker = new FileOpenPicker();
+                openPicker.ViewMode = PickerViewMode.Thumbnail;
+                openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                openPicker.FileTypeFilter.Add(".jpg");
+                openPicker.FileTypeFilter.Add(".jpeg");
+                openPicker.FileTypeFilter.Add(".png");                
+                WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
+                StorageFile file = await openPicker.PickSingleFileAsync();
+                if (file != null)
                 {
-                    BitmapImage bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(stream);
-                    AlbumCoverImage.Source = bitmapImage;
+                    using (Stream stream = await file.OpenStreamForReadAsync())
+                    {
+                        albumCoverData = new byte[stream.Length];
+                        await stream.ReadAsync(albumCoverData, 0, (int)stream.Length);
+                        AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
+                    }
                 }
+            } catch (Exception ex) {
+                notificationService.SendNotification("错误", ex.Message);
             }
         }
 
         private async void SaveImageButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AlbumCoverImage.Source is BitmapImage bitmapImage)
+            var picker = new FileSavePicker();
+            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            picker.FileTypeChoices.Add("JPEG Image", new[] { ".jpg" });
+            picker.SuggestedFileName = "SavedImage";
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            StorageFile file = await picker.PickSaveFileAsync();
+            if (file != null)
             {
-                var renderTargetBitmap = new RenderTargetBitmap();
-                // 设置渲染尺寸为图片的原始尺寸
-                await renderTargetBitmap.RenderAsync(AlbumCoverImage, (int)bitmapImage.PixelWidth, (int)bitmapImage.PixelHeight);
-                var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
-                var pixels = pixelBuffer.ToArray();
-                var picker = new FileSavePicker();
-                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                picker.FileTypeChoices.Add("PNG Image", new[] { ".png" });
-                picker.SuggestedFileName = "SavedImage";
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                StorageFile file = await picker.PickSaveFileAsync();
-                if (file != null)
+                try
                 {
-                    using (var stream = await file.OpenStreamForWriteAsync())
+                    using (Stream stream = await file.OpenStreamForWriteAsync())
                     {
-                        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream.AsRandomAccessStream());
-                        encoder.SetPixelData(
-                            BitmapPixelFormat.Bgra8,
-                            BitmapAlphaMode.Premultiplied,
-                            (uint)renderTargetBitmap.PixelWidth,
-                            (uint)renderTargetBitmap.PixelHeight,
-                            96,
-                            96,
-                            pixels);
-                        await encoder.FlushAsync();
+                        await stream.WriteAsync(albumCoverData, 0, albumCoverData.Length);
                     }
+                    Console.WriteLine("图片已成功保存。");
+                }
+                catch (Exception ex)
+                {
+                    notificationService.SendNotification("错误", ex.Message);
                 }
             }
+        }
+
+        private void CloseFlyoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConfirmFlyout.Hide();
         }
     }
 }

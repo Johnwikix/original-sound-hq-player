@@ -62,6 +62,14 @@ namespace WinUIMusicPlayer.Services
 
             flyout.Items.Add(playlistSubItem);
 
+            MenuFlyoutItem properties = new MenuFlyoutItem
+            {
+                Text = "属性",
+                DataContext = item
+            };
+            //favoriteItem.Click += (sender, e) => AddToFavourite_Click(sender, e, type);
+            flyout.Items.Add(properties);
+
             // 显示菜单
             flyout.ShowAt(targetElement, position);
         }
