@@ -27,8 +27,8 @@ namespace WinUIMusicPlayer.View
     {
         public MusicPlaybackService musicPlaybackService = new MusicPlaybackService();
         public MainWindow mainWindow;
-        private string paramName = "defualt";
-        private string pageType = "MusicBrowsePage";
+        public string paramName = "defualt";
+        public string pageType = "MusicBrowsePage";
         private bool isMouseOverVolumeSlider = false;
         public string currentAlbumName;
         public string currentArtistName;

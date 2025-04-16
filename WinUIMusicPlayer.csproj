@@ -24,6 +24,7 @@
     <None Remove="View\SettingsPage.xaml" />
     <None Remove="View\SongCollectionPage.xaml" />
     <None Remove="View\SongListPage.xaml" />
+    <None Remove="View\SubView\AlbumDetailWindow.xaml" />
     <None Remove="View\SubView\MusicDetailsWindow.xaml" />
   </ItemGroup>
 
@@ -92,6 +93,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\SubView\AlbumDetailWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\SubView\MusicDetailsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -39,6 +39,17 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
+                if (parentPage.pageType == "album") {
+                    parentPage.LoadAlbumMusic(parentPage.currentAlbumName);
+                }
+                if (parentPage.pageType == "artist")
+                {
+                    parentPage.LoadArtistMusic(parentPage.currentArtistName);
+                }
+                if (parentPage.pageType == "folder")
+                {
+                    parentPage.LoadFolderMusic(parentPage.currentFolderName);
+                }
             }
         }
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.View.SubView;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -67,7 +68,7 @@ namespace WinUIMusicPlayer.Services
                 Text = "属性",
                 DataContext = item
             };
-            //favoriteItem.Click += (sender, e) => AddToFavourite_Click(sender, e, type);
+            properties.Click += (sender, e) => AlbumProperties_Click(sender, e, type);
             flyout.Items.Add(properties);
 
             // 显示菜单
@@ -104,6 +105,19 @@ namespace WinUIMusicPlayer.Services
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
+        }
+
+        private async void AlbumProperties_Click(object sender, RoutedEventArgs e, string type)
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var item = menuItem?.DataContext as Music;
+
+            if (item !=null)
+            {
+                var albumDetailWindow = new AlbumDetailWindow(item);
+                albumDetailWindow.Activate();
+            }
+
         }
 
         private async void AddToPlaylistMenuItem_Click(object sender, RoutedEventArgs e, string type)
