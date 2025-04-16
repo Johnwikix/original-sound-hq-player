@@ -312,8 +312,9 @@ namespace WinUIMusicPlayer.Services
                         waveChannel.PadWithZeroes = false;
                         waveOut.Init(waveChannel);
                     } catch (Exception e) {
-                        FFmpegAudioReader fFmpegAudioReader = new FFmpegAudioReader(music.Path);
-                        waveOut.Volume = volume;
+                        WaveStream fFmpegAudioReader = new FFmpegAudioReader(music.Path);
+                        fFmpegAudioReader.CurrentTime = currentPos;
+                        waveOut.Volume = 0.1f;
                         waveOut.Init(fFmpegAudioReader);
                     }
                 }

@@ -46,7 +46,6 @@ namespace WinUIMusicPlayer.Reader
         public FFmpegAudioReader(string filename)
         {
             ffmpegDecoder = new FfmpegDecoder(filename);
-
             if (null != ffmpegDecoder)
             {
                 int sampleRate = ffmpegDecoder.WaveFormat.SampleRate;
