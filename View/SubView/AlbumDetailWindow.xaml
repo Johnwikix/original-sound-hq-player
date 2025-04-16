@@ -34,7 +34,7 @@
             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
             <TextBlock Text="正在处理保存，请稍候..." HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
         </Grid>
-        <Grid>
+        <Grid x:Name="AlbumDetail">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>

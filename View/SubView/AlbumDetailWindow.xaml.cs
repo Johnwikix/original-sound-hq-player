@@ -85,6 +85,8 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async Task UpdateFile(Music album)
         {
+            LoadingGrid.Visibility = Visibility.Visible;
+            AlbumDetail.Visibility = Visibility.Collapsed;
             List<Music> musics = await MusicDatabaseService.FindMusicListByAlbum(album.Album);
             foreach(var music in musics) {
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
@@ -112,7 +114,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-
+            ConfirmFlyout.Hide();
             var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
             if (music != null)
             {

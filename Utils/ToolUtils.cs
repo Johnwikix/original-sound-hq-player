@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             if (imageData == null || imageData.Length == 0)
-                throw new ArgumentException("Image data cannot be null or empty.");
+                return DefaultAlbumCover();
             using (var stream = new InMemoryRandomAccessStream())
             {
                 using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))

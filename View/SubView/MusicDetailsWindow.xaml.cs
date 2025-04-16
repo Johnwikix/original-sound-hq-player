@@ -17,7 +17,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
-using TagLib;
+using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -87,12 +87,12 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private async Task UpdateFile(Music music) {
+        private async Task UpdateFile(Music music)
+        {
             using (TagLib.File audioFile = TagLib.File.Create(music.Path))
             {
-                // 读取专辑图片数据
-                byte[] albumArtData = await ToolUtils.ImageToByteArray(AlbumCoverImage);
-                // 创建 Picture 对象
+                Tag tag = audioFile.Tag;
+                byte[] albumArtData = albumCoverData;
                 Picture albumArt = new Picture
                 {
                     Type = PictureType.FrontCover,
@@ -100,43 +100,17 @@ namespace WinUIMusicPlayer.View.SubView
                     Description = "Album Art",
                     Data = new ByteVector(albumArtData)
                 };
-
-                // 获取音频文件的标签
-                Tag tag = audioFile.Tag;
-
-                // 设置专辑图片
                 tag.Pictures = new IPicture[] { albumArt };
-
-                // 设置其他信息
                 tag.Title = TitleTextBlock.Text;
                 tag.Album = AlbumTextBlock.Text;
                 tag.Performers = new string[] { AuthorTextBlock.Text };
-                tag.Track = uint.Parse(TrackNumberBox.Text); // 假设音轨编号为 5
-                tag.Year = uint.Parse(YearTextBlock.Text); // 假设年份为 2023
+                tag.Track = uint.Parse(TrackNumberBox.Text);
+                tag.Year = uint.Parse(YearTextBlock.Text);
                 tag.Lyrics = LyricsTextBox.Text;
-                // 保存更改
                 LoadingGrid.Visibility = Visibility.Visible;
                 MusicDetail.Visibility = Visibility.Collapsed;
                 audioFile.Save();
-                Console.WriteLine("所有信息已成功写入。");
             }
-            //Track theTrack = new Track(musicDetail.Path);
-            //theTrack.Title = TitleTextBlock.Text;
-            //theTrack.Artist = AuthorTextBlock.Text;
-            //theTrack.Album = AlbumTextBlock.Text;
-            //theTrack.Year = int.Parse(YearTextBlock.Text);
-            //theTrack.TrackNumber = int.Parse(TrackNumberBox.Text);
-            //theTrack.Lyrics.Clear();
-            //theTrack.Lyrics.ParseLRC(LyricsTextBox.Text);
-            //var oldpic = theTrack.EmbeddedPictures.FirstOrDefault();
-            //if (oldpic != null)
-            //{
-            //    theTrack.EmbeddedPictures.Remove(oldpic);
-            //}
-            //var imageByte = await ToolUtils.ImageToByteArray(AlbumCoverImage);
-            //PictureInfo newPicture = PictureInfo.fromBinaryData(imageByte, PictureInfo.PIC_TYPE.CD);
-            //theTrack.EmbeddedPictures.Add(newPicture);            
-            //await theTrack.SaveAsync();
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
             music.Album = AlbumTextBlock.Text;
@@ -149,7 +123,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-
+            ConfirmFlyout.Hide();
             var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
             if (music != null)
             {
@@ -195,13 +169,14 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
         {
-            try {
+            try
+            {
                 FileOpenPicker openPicker = new FileOpenPicker();
                 openPicker.ViewMode = PickerViewMode.Thumbnail;
                 openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
-                openPicker.FileTypeFilter.Add(".png");                
+                openPicker.FileTypeFilter.Add(".png");
                 WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
                 StorageFile file = await openPicker.PickSingleFileAsync();
                 if (file != null)
@@ -213,7 +188,9 @@ namespace WinUIMusicPlayer.View.SubView
                         AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
                     }
                 }
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 notificationService.SendNotification("错误", ex.Message);
             }
         }
