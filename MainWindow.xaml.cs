@@ -160,7 +160,6 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            // 移除事件处理程序，避免重复触发
             this.Activated -= MainWindow_Activated;
         }
 
