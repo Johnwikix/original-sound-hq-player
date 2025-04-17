@@ -39,6 +39,30 @@ namespace WinUIMusicPlayer.Services
             }
             return bitDepth;
         }
+
+        private async Task<int> GetBitRate(StorageFile file)
+        {
+            var bitRate = 0;
+            try
+            {
+                // 其余代码保持不变...
+                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
+                                "System.Audio.EncodingBitrate"
+                             });
+                if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] != null)
+                {
+                    int rawBitrate = Convert.ToInt32(audioProps["System.Audio.EncodingBitrate"]);
+                    bitRate = rawBitrate > 0 ? rawBitrate / 1000 : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                bitRate = 0;
+                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+            }
+            return bitRate;
+        }
         public async Task<Music> getMusicInfo(StorageFile file, string folderPath)
         {
             try
@@ -64,8 +88,8 @@ namespace WinUIMusicPlayer.Services
                     string lastLevelFolderPath = Path.GetFileName(folderPath);
                     Properties audioProperties = audioFile.Properties;
                     int sampleRate = audioProperties.AudioSampleRate;
-                    int bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample; ;
-                    int bitRate = audioProperties.AudioBitrate;
+                    int bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
+                    int bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
                     int year = (int)tag.Year;
                     int channelCount = audioProperties.AudioChannels;
 

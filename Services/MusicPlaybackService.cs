@@ -1,5 +1,6 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.Flac;
+using NAudio.Vorbis;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
@@ -17,10 +18,12 @@ namespace WinUIMusicPlayer.Services
         public Music currentPlayingMusic;
         private System.Timers.Timer progressTimer;
         public List<Music> currentPlayingList;
-        public AudioFileReader audioFileReader;
-        public FFmpegAudioReader fFmpegAudioReader;
-        public SampleChannel sampleChannel;
-        public WaveChannel32 waveChannel;
+        //public AudioFileReader audioFileReader;
+        public MultiTypeAudioReader multiTypeAudioReader;
+        //public FFmpegAudioReader fFmpegAudioReader;
+        //public SampleChannel sampleChannel;
+        //public VorbisWaveReader vorbisWaveReader;
+        //public WaveChannel32 waveChannel;
         public IWavePlayer waveOut;
         private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
@@ -55,18 +58,16 @@ namespace WinUIMusicPlayer.Services
                     double currentTimeSeconds = 0;
                     double totalSeconds = 0;
 
-                    if (currentPlayingMusic.Extension.ToLower() == "flac" && waveChannel != null)
-                    {
-                        // 对于FLAC文件，从waveChannel计算当前位置和总时长                        
-                        currentTimeSeconds = (double)waveChannel.Position / waveChannel.WaveFormat.AverageBytesPerSecond;
-                        totalSeconds = (double)waveChannel.Length / waveChannel.WaveFormat.AverageBytesPerSecond;
+                    if (multiTypeAudioReader != null)
+                    {                       
+                        currentTimeSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
+                        totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
                     }
-                    else if (fFmpegAudioReader != null)
-                    {
-                        // 对于其他格式，直接使用audioFileReader
-                        currentTimeSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
-                        totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-                    }
+                    //else if (fFmpegAudioReader != null)
+                    //{
+                    //    currentTimeSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
+                    //    totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
+                    //}
 
                     updateProgressSliders?.Invoke(this, currentTimeSeconds);
 
@@ -90,25 +91,25 @@ namespace WinUIMusicPlayer.Services
             double newPosition = 0;
             if (AppSettings.isPlaying)
             {
-                if (currentPlayingMusic.Extension.ToLower() == "flac" && waveChannel != null)
+                if (multiTypeAudioReader != null)
                 {
                     // 对于FLAC文件，计算新位置
-                    double currentTimeSeconds = (double)waveChannel.Position / waveChannel.WaveFormat.AverageBytesPerSecond;
-                    double totalSeconds = (double)waveChannel.Length / waveChannel.WaveFormat.AverageBytesPerSecond;
+                    double currentTimeSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
+                    double totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
 
                     newPosition = currentTimeSeconds + seconds;
                     newPosition = Math.Max(0, Math.Min(newPosition, totalSeconds));
 
                     // 设置新位置
-                    waveChannel.Position = (long)(newPosition * waveChannel.WaveFormat.AverageBytesPerSecond);
+                    multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
-                else if (fFmpegAudioReader != null)
-                {
-                    // 对于其他格式，使用audioFileReader
-                    newPosition = fFmpegAudioReader.CurrentTime.TotalSeconds + seconds;
-                    newPosition = Math.Max(0, Math.Min(newPosition, fFmpegAudioReader.TotalTime.TotalSeconds));
-                    fFmpegAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
-                }
+                //else if (fFmpegAudioReader != null)
+                //{
+                //    // 对于其他格式，使用audioFileReader
+                //    newPosition = fFmpegAudioReader.CurrentTime.TotalSeconds + seconds;
+                //    newPosition = Math.Max(0, Math.Min(newPosition, fFmpegAudioReader.TotalTime.TotalSeconds));
+                //    fFmpegAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                //}
             }
             return newPosition;
         }
@@ -132,11 +133,11 @@ namespace WinUIMusicPlayer.Services
                         waveOut = null;
                     }
                     OutputDeviceChange();
-                    if (fFmpegAudioReader != null)
-                    {
-                        ResumeMusic();
-                    }
-                    if (waveChannel != null)
+                    //if (fFmpegAudioReader != null)
+                    //{
+                    //    ResumeMusic();
+                    //}
+                    if (multiTypeAudioReader != null)
                     {
                         ResumeMusic();
                     }
@@ -153,16 +154,16 @@ namespace WinUIMusicPlayer.Services
         public void ResumeMusic()
         {
             SelectOutputDevice();
-            if (waveChannel != null)
+            if (multiTypeAudioReader != null)
             {
-                waveOut.Init(waveChannel);
+                waveOut.Init(multiTypeAudioReader);
             }
-            else if (fFmpegAudioReader != null)
-            {
-                sampleChannel = new SampleChannel(fFmpegAudioReader, false);
-                sampleChannel.Volume = volume;
-                waveOut.Init(sampleChannel);
-            }
+            //else if (fFmpegAudioReader != null)
+            //{
+            //    sampleChannel = new SampleChannel(fFmpegAudioReader, false);
+            //    sampleChannel.Volume = volume;
+            //    waveOut.Init(sampleChannel);
+            //}
             waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
             waveOut.Play();
             AppSettings.isPlaying = true;
@@ -220,19 +221,19 @@ namespace WinUIMusicPlayer.Services
         public async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             bool isNaturalEnd = false;
-            if (waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            if (multiTypeAudioReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
             {
-                double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
-                double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
+                double currentPositionSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
+                double totalDurationSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
                 isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
             }
 
-            if (fFmpegAudioReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
-            {
-                double currentPositionSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
-                double totalDurationSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-                isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
-            }
+            //if (fFmpegAudioReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            //{
+            //    double currentPositionSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
+            //    double totalDurationSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
+            //    isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
+            //}
 
             if (isPausing)
             {
@@ -253,7 +254,6 @@ namespace WinUIMusicPlayer.Services
 
             if (isNaturalEnd)
             {
-                //await Task.Delay(100);
                 await AutoPlayNextTrack();
             }
         }
@@ -292,63 +292,37 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Dispose();
                     waveOut = null;
                 }
-                if (sampleChannel != null)
+
+                if (multiTypeAudioReader != null)
                 {
-                    sampleChannel.Volume = 0;
-                    sampleChannel = null;
+                    multiTypeAudioReader.Dispose();
+                    multiTypeAudioReader = null;
                 }
 
-                //if (fFmpegAudioReader != null)
+                //if (audioFileReader != null)
                 //{
-                //    fFmpegAudioReader.Dispose();
-                //    //fFmpegAudioReader = null;
+                //    audioFileReader.Dispose();
+                //    audioFileReader = null;
                 //}                
-
-                if (waveChannel != null)
-                {
-                    waveChannel.Dispose();
-                    waveChannel = null;
-                }                
                 SelectOutputDevice();
-                if (music.Extension.ToLower() == "flac")
+                try
                 {
-                    // 使用FlacReader读取FLAC文件
-                    try {
-                        fFmpegAudioReader = new FFmpegAudioReader(music.Path);
-                        fFmpegAudioReader.CurrentTime = currentPos;
-                        sampleChannel = new SampleChannel(fFmpegAudioReader, false);
-                        sampleChannel.Volume = volume;
-                        waveOut.Init(sampleChannel);                        
-                    } catch (Exception e) {
-                        FlacReader flacReader = new FlacReader(music.Path);
-                        WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
-                        waveChannel = new WaveChannel32(pcmStream);
-                        waveChannel.Volume = volume;
-                        waveChannel.CurrentTime = currentPos;
-                        waveChannel.PadWithZeroes = false;
-                        waveOut.Init(waveChannel);
-                    }
+                    multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
+                    multiTypeAudioReader.CurrentTime = currentPos;
+                    multiTypeAudioReader.Volume = volume;
+                    waveOut.Init(multiTypeAudioReader);
                 }
-                else
+                catch (Exception e)
                 {
-                    try
-                    {
-                        fFmpegAudioReader = new FFmpegAudioReader(music.Path);
-                        fFmpegAudioReader.CurrentTime = currentPos;
-                        sampleChannel = new SampleChannel(fFmpegAudioReader, false);
-                        sampleChannel.Volume = volume;
-                        waveOut.Init(sampleChannel);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e);
-                    }
-                    //audioFileReader = new AudioFileReader(music.Path);
-                    //audioFileReader.Volume = volume;
-                    //audioFileReader.CurrentTime = currentPos;
-                    //waveOut.Init(audioFileReader);
+                    Debug.WriteLine(e.Message);
+                    //FlacReader flacReader = new FlacReader(music.Path);
+                    //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
+                    //waveChannel = new WaveChannel32(pcmStream);
+                    //waveChannel.Volume = volume;
+                    //waveChannel.CurrentTime = currentPos;
+                    //waveChannel.PadWithZeroes = false;
+                    //waveOut.Init(waveChannel);
                 }
-
                 return true;
             }
             catch (Exception ex)
@@ -370,14 +344,14 @@ namespace WinUIMusicPlayer.Services
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                     // 根据文件类型获取总时长
                     double totalSeconds = 0;
-                    if (music.Extension.ToLower() == "flac" && waveChannel != null)
+                    if (multiTypeAudioReader != null)
                     {
-                        totalSeconds = (double)waveChannel.Length / waveChannel.WaveFormat.AverageBytesPerSecond;
+                        totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
                     }
-                    else if (fFmpegAudioReader != null)
-                    {
-                        totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-                    }
+                    //else if (fFmpegAudioReader != null)
+                    //{
+                    //    totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
+                    //}
                     updateProgressMax?.Invoke(this, totalSeconds);
                     if (isSettingChanged)
                     {
@@ -411,21 +385,22 @@ namespace WinUIMusicPlayer.Services
                 waveOut = null;
             }
 
-            if (fFmpegAudioReader != null)
-            {
-                fFmpegAudioReader.Dispose();
-                fFmpegAudioReader = null;
-            }
+            //if (sampleChannel != null)
+            //{
+            //    sampleChannel.Volume = 0;
+            //    sampleChannel = null;
+            //}
 
-            if (sampleChannel != null)
+            //if (fFmpegAudioReader != null)
+            //{
+            //    fFmpegAudioReader.Dispose();
+            //    fFmpegAudioReader = null;
+            //}
+            
+            if (multiTypeAudioReader != null)
             {
-                sampleChannel.Volume = 0;
-                sampleChannel = null;
-            }
-            if (waveChannel != null)
-            {
-                waveChannel.Dispose();
-                waveChannel = null;
+                multiTypeAudioReader.Dispose();
+                multiTypeAudioReader = null;
             }
             if (progressTimer != null)
             {
@@ -449,22 +424,22 @@ namespace WinUIMusicPlayer.Services
                 waveOut = null;
             }
 
-            if (sampleChannel != null)
-            {
-                sampleChannel.Volume = 0;
-                sampleChannel = null;
-            }
+            //if (sampleChannel != null)
+            //{
+            //    sampleChannel.Volume = 0;
+            //    sampleChannel = null;
+            //}
 
-            if (fFmpegAudioReader != null)
-            {
-                fFmpegAudioReader.Dispose();
-                fFmpegAudioReader = null;
-            }
+            //if (fFmpegAudioReader != null)
+            //{
+            //    fFmpegAudioReader.Dispose();
+            //    fFmpegAudioReader = null;
+            //}
 
-            if (waveChannel != null)
+            if (multiTypeAudioReader != null)
             {
-                waveChannel.Dispose();
-                waveChannel = null;
+                multiTypeAudioReader.Dispose();
+                multiTypeAudioReader = null;
             }
         }
 
