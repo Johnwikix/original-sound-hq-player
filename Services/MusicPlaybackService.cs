@@ -292,23 +292,23 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Dispose();
                     waveOut = null;
                 }
-
-                if (fFmpegAudioReader != null)
+                if (sampleChannel != null)
                 {
-                    fFmpegAudioReader.Dispose();
-                    fFmpegAudioReader = null;
-                }
-
-                if (sampleChannel != null) {
                     sampleChannel.Volume = 0;
                     sampleChannel = null;
                 }
+
+                //if (fFmpegAudioReader != null)
+                //{
+                //    fFmpegAudioReader.Dispose();
+                //    //fFmpegAudioReader = null;
+                //}                
 
                 if (waveChannel != null)
                 {
                     waveChannel.Dispose();
                     waveChannel = null;
-                }
+                }                
                 SelectOutputDevice();
                 if (music.Extension.ToLower() == "flac")
                 {
@@ -322,7 +322,6 @@ namespace WinUIMusicPlayer.Services
                     } catch (Exception e) {
                         FlacReader flacReader = new FlacReader(music.Path);
                         WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
-                        // 使用WaveChannel32封装WaveStream，以便控制音量
                         waveChannel = new WaveChannel32(pcmStream);
                         waveChannel.Volume = volume;
                         waveChannel.CurrentTime = currentPos;
