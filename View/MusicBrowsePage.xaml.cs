@@ -50,11 +50,11 @@ namespace WinUIMusicPlayer.View
             InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
-            var window = Window.Current;
-            if (window != null)
-            {
-                window.Closed += Window_Closed;
-            }
+            //var window = Window.Current;
+            //if (window != null)
+            //{
+            //    window.Closed += Window_Closed;
+            //}
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
                 mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
+                mainWindow.WindowClosed += MainWindow_Closed;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -108,6 +109,11 @@ namespace WinUIMusicPlayer.View
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
+        }
+
+        private void MainWindow_Closed(object? sender, EventArgs e)
+        {
+            musicPlaybackService.DisposeAudio();
         }
 
         private void InitializeAppWindow()
@@ -600,10 +606,10 @@ namespace WinUIMusicPlayer.View
             DisableBackButton();
         }
 
-        private void Window_Closed(object sender, WindowEventArgs args)
-        {
-            musicPlaybackService.DisposeAudio();
-        }
+        //private void Window_Closed(object sender, WindowEventArgs args)
+        //{
+        //    musicPlaybackService.DisposeAudio();
+        //}
 
         private async Task LoadPlayState()
         {
@@ -933,10 +939,10 @@ namespace WinUIMusicPlayer.View
             {
                 VolumeSliderIcon.Glyph = "\ue74f";
                 musicPlaybackService.volume = 0;
-                //if (musicPlaybackService.sampleChannel != null)
-                //{
-                //    musicPlaybackService.sampleChannel.Volume = 0;
-                //}
+                if (musicPlaybackService.wasapiOut != null)
+                {
+                    musicPlaybackService.wasapiOut.Volume = 0;
+                }
                 if (musicPlaybackService.multiTypeAudioReader != null)
                 {
                     musicPlaybackService.multiTypeAudioReader.Volume = 0;
@@ -946,10 +952,10 @@ namespace WinUIMusicPlayer.View
             {
                 VolumeIconChange((int)VolumeSlider.Value);
                 musicPlaybackService.volume = (float)VolumeSlider.Value / 100;
-                //if (musicPlaybackService.sampleChannel != null)
-                //{
-                //    musicPlaybackService.sampleChannel.Volume = (float)VolumeSlider.Value / 100;
-                //}
+                if (musicPlaybackService.wasapiOut != null)
+                {
+                    musicPlaybackService.wasapiOut.Volume = (float)VolumeSlider.Value / 100;
+                }
                 if (musicPlaybackService.multiTypeAudioReader != null)
                 {
                     musicPlaybackService.multiTypeAudioReader.Volume = (float)VolumeSlider.Value / 100;
@@ -960,10 +966,10 @@ namespace WinUIMusicPlayer.View
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             musicPlaybackService.volume = (float)e.NewValue / 100;
-            //if (musicPlaybackService.sampleChannel != null)
-            //{
-            //    musicPlaybackService.sampleChannel.Volume = musicPlaybackService.volume;
-            //}
+            if (musicPlaybackService.wasapiOut != null)
+            {
+                musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
+            }
             if (musicPlaybackService.multiTypeAudioReader != null)
             {
                 musicPlaybackService.multiTypeAudioReader.Volume = musicPlaybackService.volume;

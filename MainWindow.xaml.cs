@@ -26,6 +26,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<MMDeviceCollection> SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
+        public event EventHandler WindowClosed;
 
         public MainWindow()
         {
@@ -35,7 +36,15 @@ namespace WinUIMusicPlayer
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
             InitializeApp();
+            this.Closed += MainWindow_Closed;
         }
+
+        private void MainWindow_Closed(object sender, WindowEventArgs args)
+        {
+            System.Diagnostics.Debug.WriteLine("MainWindow closed.");
+            WindowClosed?.Invoke(this, EventArgs.Empty);
+        }
+
         private async void InitializeApp()
         {
             try

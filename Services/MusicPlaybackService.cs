@@ -28,7 +28,9 @@ namespace WinUIMusicPlayer.Services
         //public VorbisWaveReader vorbisWaveReader;
         //public WaveChannel32 waveChannel;
         public IWavePlayer waveOut;
+        public CSCore.SoundOut.WasapiOut wasapiOut;
         private MMDevice selectedDevice = null;
+        private CSCore.CoreAudioAPI.MMDevice csCoreMMdevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
@@ -174,7 +176,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         public void OutputDeviceChange()
-        {
+        {            
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
             if (AppSettings.DeviceName != null)
@@ -191,6 +193,26 @@ namespace WinUIMusicPlayer.Services
             else
             {
                 selectedDevice = devices[0];
+            }
+        }
+
+        public void CScoreOutputDevice() {
+            CSCore.CoreAudioAPI.MMDeviceEnumerator enumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator();
+            var devices = enumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active);
+            if (AppSettings.DeviceName != null)
+            {
+                foreach (var device in devices)
+                {
+                    if (device.FriendlyName == AppSettings.DeviceName)
+                    {
+                        csCoreMMdevice = device;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                csCoreMMdevice = devices[0];
             }
         }
 
@@ -296,6 +318,13 @@ namespace WinUIMusicPlayer.Services
                     waveOut = null;
                 }
 
+                if (wasapiOut != null)
+                {
+                    wasapiOut.Stop();
+                    wasapiOut.Dispose();
+                    wasapiOut = null;
+                }
+
                 if (multiTypeAudioReader != null)
                 {
                     multiTypeAudioReader.Dispose();
@@ -323,13 +352,14 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
                 else {
+                    CScoreOutputDevice();
                     IWaveSource ffmpegDecoder = new FfmpegDecoder(music.Path);
-                    using (var wasapiOut = new CSCore.SoundOut.WasapiOut())
-                    {
-                        wasapiOut.Initialize(ffmpegDecoder);
-                        wasapiOut.Play();
-                        return false;
-                    }
+                    wasapiOut = new CSCore.SoundOut.WasapiOut();                    
+                    wasapiOut.Device = csCoreMMdevice;                    
+                    wasapiOut.Initialize(ffmpegDecoder);
+                    wasapiOut.Volume = volume;
+                    wasapiOut.Play();
+                    return false;
                 }
                 return true;
             }
@@ -393,18 +423,13 @@ namespace WinUIMusicPlayer.Services
                 waveOut = null;
             }
 
-            //if (sampleChannel != null)
-            //{
-            //    sampleChannel.Volume = 0;
-            //    sampleChannel = null;
-            //}
+            if (wasapiOut != null)
+            {
+                wasapiOut.Stop();
+                wasapiOut.Dispose();
+                wasapiOut = null;
+            }
 
-            //if (fFmpegAudioReader != null)
-            //{
-            //    fFmpegAudioReader.Dispose();
-            //    fFmpegAudioReader = null;
-            //}
-            
             if (multiTypeAudioReader != null)
             {
                 multiTypeAudioReader.Dispose();
@@ -430,6 +455,12 @@ namespace WinUIMusicPlayer.Services
                 waveOut.Stop();
                 waveOut.Dispose();
                 waveOut = null;
+            }
+
+            if (wasapiOut != null) {
+                wasapiOut.Stop();
+                wasapiOut.Dispose();
+                wasapiOut = null;
             }
 
             //if (sampleChannel != null)
