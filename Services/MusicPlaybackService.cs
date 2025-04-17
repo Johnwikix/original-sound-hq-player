@@ -1,4 +1,6 @@
-﻿using NAudio.CoreAudioApi;
+﻿using CSCore.Ffmpeg;
+using CSCore;
+using NAudio.CoreAudioApi;
 using NAudio.Flac;
 using NAudio.Vorbis;
 using NAudio.Wave;
@@ -6,6 +8,7 @@ using NAudio.Wave.SampleProviders;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -218,7 +221,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async void WaveOut_PlaybackStopped(object sender, StoppedEventArgs e)
+        public async void WaveOut_PlaybackStopped(object sender, NAudio.Wave.StoppedEventArgs e)
         {
             bool isNaturalEnd = false;
             if (multiTypeAudioReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
@@ -305,23 +308,28 @@ namespace WinUIMusicPlayer.Services
                 //    audioFileReader = null;
                 //}                
                 SelectOutputDevice();
-                try
+                if (music.Extension.ToLower() != "dsf")
                 {
-                    multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
-                    multiTypeAudioReader.CurrentTime = currentPos;
-                    multiTypeAudioReader.Volume = volume;
-                    waveOut.Init(multiTypeAudioReader);
+                    try
+                    {
+                        multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
+                        multiTypeAudioReader.CurrentTime = currentPos;
+                        multiTypeAudioReader.Volume = volume;
+                        waveOut.Init(multiTypeAudioReader);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e.Message);
-                    //FlacReader flacReader = new FlacReader(music.Path);
-                    //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(flacReader);
-                    //waveChannel = new WaveChannel32(pcmStream);
-                    //waveChannel.Volume = volume;
-                    //waveChannel.CurrentTime = currentPos;
-                    //waveChannel.PadWithZeroes = false;
-                    //waveOut.Init(waveChannel);
+                else {
+                    IWaveSource ffmpegDecoder = new FfmpegDecoder(music.Path);
+                    using (var wasapiOut = new CSCore.SoundOut.WasapiOut())
+                    {
+                        wasapiOut.Initialize(ffmpegDecoder);
+                        wasapiOut.Play();
+                        return false;
+                    }
                 }
                 return true;
             }
