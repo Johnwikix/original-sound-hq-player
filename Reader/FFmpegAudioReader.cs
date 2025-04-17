@@ -1,12 +1,7 @@
-﻿using CSCore.Ffmpeg;
-using CSCore;
+﻿using CSCore;
+using CSCore.Ffmpeg;
 using NAudio.Wave;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace WinUIMusicPlayer.Reader
 {
@@ -60,11 +55,11 @@ namespace WinUIMusicPlayer.Reader
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (null != ffmpegDecoder)
-            { 
-                 byte[] tempBuf = new byte[count];
-                 count = ffmpegDecoder.Read(tempBuf, 0, tempBuf.Length);
-                 Buffer.BlockCopy(tempBuf, 0, buffer, 0, count);
-                 return count;             
+            {
+                byte[] tempBuf = new byte[count];
+                count = ffmpegDecoder.Read(tempBuf, 0, tempBuf.Length);
+                Buffer.BlockCopy(tempBuf, 0, buffer, 0, count);
+                return count;
             }
             else
             {

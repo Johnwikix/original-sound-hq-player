@@ -1,29 +1,20 @@
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using WinUIMusicPlayer.Model;
-using Microsoft.UI;
-using Windows.Graphics;
-using WinUIMusicPlayer.Services;
 using System.Runtime.InteropServices;
-using AppWindow = Microsoft.UI.Windowing.AppWindow;
 using System.Threading.Tasks;
 using TagLib;
-using Windows.Storage.Pickers;
+using Windows.Graphics;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
+using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -71,8 +62,8 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void InitalizeData(Music album)
         {
-            musicDetail = album;           
-            AlbumTextBlock.Text = album.Album;          
+            musicDetail = album;
+            AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
             albumCoverData = ToolUtils.GetRawImage(album);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
@@ -88,7 +79,8 @@ namespace WinUIMusicPlayer.View.SubView
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
             List<Music> musics = await MusicDatabaseService.FindMusicListByAlbum(album.Album);
-            foreach(var music in musics) {
+            foreach (var music in musics)
+            {
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                 {
                     Tag tag = audioFile.Tag;
@@ -109,7 +101,7 @@ namespace WinUIMusicPlayer.View.SubView
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
                 await MusicDatabaseService.UpdateMusicInfo(music);
-            }            
+            }
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -195,13 +194,13 @@ namespace WinUIMusicPlayer.View
 
         private void LrcAPITextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            
-                AppSettings.LrcAPISource = LrcAPITextBox.Text;
-                if (!isInitializing)
-                {
-                    _ = SaveSetting();
-                }
-            
+
+            AppSettings.LrcAPISource = LrcAPITextBox.Text;
+            if (!isInitializing)
+            {
+                _ = SaveSetting();
+            }
+
         }
 
         private void LrcAPIAuthTextBox_TextChanged(object sender, TextChangedEventArgs e)

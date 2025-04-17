@@ -112,7 +112,7 @@ namespace WinUIMusicPlayer.Services
             var menuItem = sender as MenuFlyoutItem;
             var item = menuItem?.DataContext as Music;
 
-            if (item !=null)
+            if (item != null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(item);
                 albumDetailWindow.Activate();

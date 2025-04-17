@@ -158,7 +158,8 @@ namespace WinUIMusicPlayer
                     }
                 });
             }
-            else {
+            else
+            {
                 using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
                 {
                     using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
@@ -178,7 +179,7 @@ namespace WinUIMusicPlayer
                         }
                     }
                 }
-            }          
+            }
         }
 
         private async Task LoadAppState()

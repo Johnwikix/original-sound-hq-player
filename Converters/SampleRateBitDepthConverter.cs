@@ -16,7 +16,7 @@ namespace WinUIMusicPlayer.Converters
                 {
                     return Visibility.Visible;
                 }
-                else if(bitDepth == 1 && sampleRate >= 2822400 )
+                else if (bitDepth == 1 && sampleRate >= 2822400)
                 {
                     return Visibility.Visible;
                 }

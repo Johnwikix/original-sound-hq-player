@@ -1,4 +1,3 @@
-using CSCore.Ffmpeg;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -11,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
@@ -278,7 +276,7 @@ namespace WinUIMusicPlayer.View
                             PlayTimeTextBlock.Text = time;
                         }
                     });
-                }               
+                }
             }
             catch (NullReferenceException ex)
             {
@@ -748,18 +746,20 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            try {
+            try
+            {
                 musicPlaybackService.isInitializing = true;
                 await LoadPlayState();
-                await LoadMusic();                
+                await LoadMusic();
                 PlayTimeTextBlock.Text = "00:00/00:00";
                 musicPlaybackService.OutputDeviceChange();
                 musicPlaybackService.CScoreOutputDevice();
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"´íÎó: {ex.Message}");
                 notificationService.SendNotification("´íÎó", ex.Message);
-            }            
+            }
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -1131,10 +1131,10 @@ namespace WinUIMusicPlayer.View
                         }
                     }
                     else if (musicPlaybackService.ffmpegDecoder != null)
-                    {          
+                    {
                         currentPlayPosition = (double)musicPlaybackService.ffmpegDecoder.Position / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond;
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
-                        {                            
+                        {
                             musicPlaybackService.ffmpegDecoder.Position = (long)(e.NewValue * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
                         }
                     }

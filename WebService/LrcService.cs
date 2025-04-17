@@ -1,6 +1,4 @@
-﻿using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.IO;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Wave;
@@ -159,7 +158,8 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static byte[] GetRawImage(Music music) {
+        public static byte[] GetRawImage(Music music)
+        {
             try
             {
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
@@ -183,7 +183,7 @@ namespace WinUIMusicPlayer.Utils
                 }
             }
             catch (Exception ex)
-            {               
+            {
                 Console.WriteLine($"发生错误: {ex.Message}");
             }
             return null;
@@ -353,7 +353,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a",".dsf"};
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 
@@ -381,14 +381,14 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl,double scaleFactor = 1)
+        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
         {
             byte[] buffer = null;
             if (imageControl.Source is BitmapImage bitmapImage)
             {
                 // 使用 RenderTargetBitmap 捕获图像
                 var renderTargetBitmap = new RenderTargetBitmap();
-                await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth/ scaleFactor), (int)(bitmapImage.PixelHeight/ scaleFactor));
+                await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth / scaleFactor), (int)(bitmapImage.PixelHeight / scaleFactor));
                 Debug.WriteLine($"bitmapImage长宽:{bitmapImage.PixelHeight} {bitmapImage.PixelWidth}");
                 // 获取像素
                 var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();

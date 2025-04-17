@@ -1,14 +1,8 @@
-﻿using CSCore.Codecs.FLAC;
-using NAudio.Flac;
+﻿using NAudio.Flac;
 using NAudio.Vorbis;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Reader
 {
@@ -106,19 +100,20 @@ namespace WinUIMusicPlayer.Reader
             {
                 readerStream = new VorbisWaveReader(fileName);
             }
-            else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase)) {
+            else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
+            {
                 try
                 {
                     readerStream = new FFmpegAudioReader(fileName);
                 }
                 catch (Exception ex)
-                {                  
-                    readerStream = new FlacReader(fileName);     
+                {
+                    readerStream = new FlacReader(fileName);
                 }
             }
             else
-            {                
-                 readerStream = new AudioFileReader(fileName);
+            {
+                readerStream = new AudioFileReader(fileName);
             }
         }
 
