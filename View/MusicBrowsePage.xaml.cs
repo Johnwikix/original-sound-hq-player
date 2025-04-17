@@ -754,6 +754,7 @@ namespace WinUIMusicPlayer.View
                 await LoadMusic();                
                 PlayTimeTextBlock.Text = "00:00/00:00";
                 musicPlaybackService.OutputDeviceChange();
+                musicPlaybackService.CScoreOutputDevice();
             } catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"´íÎó: {ex.Message}");

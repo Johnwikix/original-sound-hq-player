@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MainWindow_SettingLoaded(object? sender, MMDeviceCollection devices)
+        private void MainWindow_SettingLoaded(object? sender, EventArgs e)
         {
             LoadOutputDevices();
         }
@@ -125,7 +125,7 @@ namespace WinUIMusicPlayer.View
             foreach (ComboBoxItem item in DefualtPlayListComboBox.Items)
             {
                 DefualtPlayListComboBox.SelectedIndex = 0;
-                if (item.Content.ToString() == AppSettings.DefualtPlayList)
+                if (item.Tag.ToString() == AppSettings.DefualtPlayList)
                 {
                     DefualtPlayListComboBox.SelectedItem = item;
                     break;
@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer.View
             // 设置初始的默认条目
             foreach (ComboBoxItem item in DefualtEntryComboBox.Items)
             {
-                if (item.Content.ToString() == AppSettings.DefualtEntry)
+                if (item.Tag.ToString() == AppSettings.DefualtEntry)
                 {
                     DefualtEntryComboBox.SelectedItem = item;
                     break;

@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<List<Music>> MusicListLoaded;
         public event EventHandler<List<Music>> SongCollecionLoaded;
         public event EventHandler<List<Music>> FavourListLoaded;
-        public event EventHandler<MMDeviceCollection> SettingLoaded;
+        public event EventHandler SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
         public event EventHandler<List<Music>> PlayMusicListLoaded;
         public event EventHandler WindowClosed;
@@ -135,24 +135,50 @@ namespace WinUIMusicPlayer
 
         public async Task RefreshDevice()
         {
-            await Task.Run(() =>
+            if (!AppSettings.isDsd)
             {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                AppSettings.outputDeviceList.Clear();
-                foreach (var device in devices)
+                await Task.Run(() =>
                 {
-                    AppSettings.outputDeviceList.Add(device.FriendlyName);
-                }
-                // 回到 UI 线程触发事件
-                if (SettingLoaded != null)
-                {
-                    DispatcherQueue.TryEnqueue(() =>
+                    using (MMDeviceEnumerator enumerator = new MMDeviceEnumerator())
                     {
-                        SettingLoaded?.Invoke(this, devices);
-                    });
+                        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                        AppSettings.outputDeviceList.Clear();
+                        foreach (var device in devices)
+                        {
+                            AppSettings.outputDeviceList.Add(device.FriendlyName);
+                        }
+                        // 回到 UI 线程触发事件
+                        if (SettingLoaded != null)
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                SettingLoaded?.Invoke(this, EventArgs.Empty);
+                            });
+                        }
+                    }
+                });
+            }
+            else {
+                using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
+                {
+                    using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
+                    {
+                        AppSettings.outputDeviceList.Clear();
+                        foreach (var device in devices)
+                        {
+                            AppSettings.outputDeviceList.Add(device.FriendlyName);
+                        }
+                        // 回到 UI 线程触发事件
+                        if (SettingLoaded != null)
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                SettingLoaded?.Invoke(this, EventArgs.Empty);
+                            });
+                        }
+                    }
                 }
-            });
+            }          
         }
 
         private async Task LoadAppState()
