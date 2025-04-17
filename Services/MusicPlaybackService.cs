@@ -304,37 +304,12 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (waveOut != null)
-                {
-                    waveOut.Stop();
-                    waveOut.Dispose();
-                    waveOut = null;
-                }
-
-                if (wasapiOut != null)
-                {
-                    wasapiOut.Stop();
-                    wasapiOut.Dispose();
-                    wasapiOut = null;
-                }
-
-                if (multiTypeAudioReader != null)
-                {
-                    multiTypeAudioReader.Dispose();
-                    multiTypeAudioReader = null;
-                }
-
-                if (ffmpegDecoder != null)
-                {
-                    ffmpegDecoder.Dispose();
-                    ffmpegDecoder = null;
-                }
-
-                SelectOutputDevice();
+                Reset();                
                 if (music.Extension.ToLower() != "dsf")
                 {
                     try
                     {
+                        SelectOutputDevice();
                         multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                         multiTypeAudioReader.CurrentTime = currentPos;
                         multiTypeAudioReader.Volume = volume;
@@ -467,6 +442,12 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
+
+            if (ffmpegDecoder != null)
+            {
+                ffmpegDecoder.Dispose();
+                ffmpegDecoder = null;
+            }
             if (progressTimer != null)
             {
                 progressTimer.Stop();
@@ -563,23 +544,7 @@ namespace WinUIMusicPlayer.Services
             }
             else
             {
-                if (waveOut == null)
-                {
-                    if (currentPlayingMusic != null)
-                    {
-                        playingMusic?.Invoke(this, currentPlayingMusic);
-                    }
-                    else if (musicList != null && musicList.Count > 0)
-                    {
-                        playingMusic?.Invoke(this, musicList[0]);
-                    }
-                    else
-                    {
-                        showMessage?.Invoke(this, "没有可播放的音乐");
-                        return;
-                    }
-                }
-                else if (waveOut != null)
+                if (waveOut != null)
                 {
                     isPausing = false;
                     if (AppSettings.OutputMode == "WasapiExclusive")
@@ -594,14 +559,31 @@ namespace WinUIMusicPlayer.Services
                         AppSettings.isPlaying = true;
                         progressTimer.Start();
                     }
+                    
                 }
-                if (wasapiOut != null)
+                else if (wasapiOut != null)
                 {
                     isPausing = false;
                     wasapiOut.Play();
                     AppSettings.isPlaying = true;
                     progressTimer.Start();
-                }                
+                   
+                }else
+                 {
+                    if (currentPlayingMusic != null)
+                    {
+                        playingMusic?.Invoke(this, currentPlayingMusic);
+                    }
+                    else if (musicList != null && musicList.Count > 0)
+                    {
+                        playingMusic?.Invoke(this, musicList[0]);
+                    }
+                    else
+                    {
+                        showMessage?.Invoke(this, "没有可播放的音乐");
+                        return;
+                    }
+                 }                
             }
         }
 

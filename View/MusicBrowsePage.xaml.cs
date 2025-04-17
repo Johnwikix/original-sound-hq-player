@@ -115,6 +115,20 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
             musicPlaybackService.DisposeAudio();
+            if (mainWindow != null)
+            {
+                mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
+                mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
+                mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
+                mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
+                mainWindow.WindowClosed -= MainWindow_Closed;
+            }
+            musicPlaybackService.playingMusic -= MusicPlaybackService_playingMusic;
+            musicPlaybackService.updatePlayTimeText -= MusicPlaybackService_updatePlayTimeText;
+            musicPlaybackService.updateProgressSliders -= MusicPlaybackService_updateProgressSliders;
+            musicPlaybackService.updateProgressMax -= MusicPlaybackService_updateProgressMax;
+            musicPlaybackService.showMessage -= ShowMessage;
+            musicPlaybackService.updatePlayPauseButton -= MusicPlaybackService_updatePlayPauseButton;
         }
 
         private void InitializeAppWindow()
