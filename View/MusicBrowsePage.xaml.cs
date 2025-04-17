@@ -1,3 +1,4 @@
+using CSCore.Ffmpeg;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -1087,12 +1088,12 @@ namespace WinUIMusicPlayer.View
 
                     musicPlaybackService.multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
-                //else if (musicPlaybackService.fFmpegAudioReader != null)
-                //{
-                //    // 对于其他格式，设置audioFileReader的位置
-                //    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.fFmpegAudioReader.TotalTime.TotalSeconds));
-                //    musicPlaybackService.fFmpegAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
-                //}
+                else if (musicPlaybackService.ffmpegDecoder != null)
+                {
+                    // 对于其他格式，设置audioFileReader的位置
+                    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, (double)musicPlaybackService.ffmpegDecoder.Length / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond));
+                    musicPlaybackService.ffmpegDecoder.Position = (long)(newPosition * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
+                }
             }
         }
 
@@ -1111,14 +1112,14 @@ namespace WinUIMusicPlayer.View
                             musicPlaybackService.multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                         }
                     }
-                    //else if (musicPlaybackService.fFmpegAudioReader != null)
-                    //{
-                    //    currentPlayPosition = musicPlaybackService.fFmpegAudioReader.CurrentTime.TotalSeconds;
-                    //    if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
-                    //    {
-                    //        musicPlaybackService.fFmpegAudioReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                    //    }
-                    //}
+                    else if (musicPlaybackService.ffmpegDecoder != null)
+                    {          
+                        currentPlayPosition = (double)musicPlaybackService.ffmpegDecoder.Position / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond;
+                        if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
+                        {                            
+                            musicPlaybackService.ffmpegDecoder.Position = (long)(e.NewValue * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
+                        }
+                    }
                 }
             }
         }

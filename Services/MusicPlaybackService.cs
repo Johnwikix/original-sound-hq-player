@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.Services
         public CSCore.SoundOut.WasapiOut wasapiOut;
         private MMDevice selectedDevice = null;
         private CSCore.CoreAudioAPI.MMDevice csCoreMMdevice = null;
+        public IWaveSource ffmpegDecoder;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
@@ -68,12 +69,11 @@ namespace WinUIMusicPlayer.Services
                         currentTimeSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
                         totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
                     }
-                    //else if (fFmpegAudioReader != null)
-                    //{
-                    //    currentTimeSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
-                    //    totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-                    //}
-
+                    else if (ffmpegDecoder != null)
+                    {
+                        currentTimeSeconds = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                        totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                    }
                     updateProgressSliders?.Invoke(this, currentTimeSeconds);
 
                     // 格式化显示时间
@@ -253,13 +253,6 @@ namespace WinUIMusicPlayer.Services
                 isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
             }
 
-            //if (fFmpegAudioReader != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
-            //{
-            //    double currentPositionSeconds = fFmpegAudioReader.CurrentTime.TotalSeconds;
-            //    double totalDurationSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-            //    isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
-            //}
-
             if (isPausing)
             {
                 return;
@@ -331,11 +324,12 @@ namespace WinUIMusicPlayer.Services
                     multiTypeAudioReader = null;
                 }
 
-                //if (audioFileReader != null)
-                //{
-                //    audioFileReader.Dispose();
-                //    audioFileReader = null;
-                //}                
+                if (ffmpegDecoder != null)
+                {
+                    ffmpegDecoder.Dispose();
+                    ffmpegDecoder = null;
+                }
+
                 SelectOutputDevice();
                 if (music.Extension.ToLower() != "dsf")
                 {
@@ -353,13 +347,16 @@ namespace WinUIMusicPlayer.Services
                 }
                 else {
                     CScoreOutputDevice();
-                    IWaveSource ffmpegDecoder = new FfmpegDecoder(music.Path);
+                    ffmpegDecoder = new FfmpegDecoder(music.Path);
                     wasapiOut = new CSCore.SoundOut.WasapiOut();                    
                     wasapiOut.Device = csCoreMMdevice;                    
                     wasapiOut.Initialize(ffmpegDecoder);
-                    wasapiOut.Volume = volume;
+                    wasapiOut.Volume = volume;                    
                     wasapiOut.Play();
-                    return false;
+                    progressTimer.Start();
+                    wasapiOut.Stopped += wasapiOut_Stopped;
+                    AppSettings.isPlaying = true;
+                    _ = Task.Run(() => SavePlayState());
                 }
                 return true;
             }
@@ -370,6 +367,39 @@ namespace WinUIMusicPlayer.Services
                 Reset();
                 updateProgressSliders?.Invoke(this, 0);
                 return false;
+            }
+        }
+
+        private async void wasapiOut_Stopped(object? sender, CSCore.SoundOut.PlaybackStoppedEventArgs e)
+        {
+            bool isNaturalEnd = false;
+            if (ffmpegDecoder != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+            {
+                double currentPositionSeconds = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                double totalDurationSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
+            }
+
+            if (isPausing)
+            {
+                return;
+            }
+
+            if (isManualSelect)
+            {
+                isManualSelect = false;
+                return;
+            }
+
+            if (isSettingsChangeStop)
+            {
+                isSettingsChangeStop = false;
+                return;
+            }
+
+            if (isNaturalEnd)
+            {
+                await AutoPlayNextTrack();
             }
         }
 
@@ -386,10 +416,10 @@ namespace WinUIMusicPlayer.Services
                     {
                         totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
                     }
-                    //else if (fFmpegAudioReader != null)
-                    //{
-                    //    totalSeconds = fFmpegAudioReader.TotalTime.TotalSeconds;
-                    //}
+                    if (ffmpegDecoder != null)
+                    {
+                        totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                    }
                     updateProgressMax?.Invoke(this, totalSeconds);
                     if (isSettingChanged)
                     {
@@ -399,11 +429,13 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    waveOut.Play();
-                    progressTimer.Start();
-                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
-                    AppSettings.isPlaying = true;
-                    _ = Task.Run(() => SavePlayState());
+                    if (music.Extension.ToLower() != "dsf") {
+                        waveOut.Play();
+                        progressTimer.Start();
+                        waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                        AppSettings.isPlaying = true;
+                        _ = Task.Run(() => SavePlayState());
+                    }                    
                 }
                 catch (Exception ex)
                 {
@@ -463,18 +495,6 @@ namespace WinUIMusicPlayer.Services
                 wasapiOut = null;
             }
 
-            //if (sampleChannel != null)
-            //{
-            //    sampleChannel.Volume = 0;
-            //    sampleChannel = null;
-            //}
-
-            //if (fFmpegAudioReader != null)
-            //{
-            //    fFmpegAudioReader.Dispose();
-            //    fFmpegAudioReader = null;
-            //}
-
             if (multiTypeAudioReader != null)
             {
                 multiTypeAudioReader.Dispose();
@@ -506,23 +526,37 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.isPlaying = false;
                 progressTimer.Stop();
             }
+
+            if (wasapiOut != null) { 
+                wasapiOut.Stop();
+                AppSettings.isPlaying = false;
+                progressTimer.Stop();
+            }
         }
 
         public void PlayButton()
         {
             if (AppSettings.isPlaying)
             {
-                if (AppSettings.OutputMode == "WasapiExclusive")
-                {
-                    isPausing = true;
-                    waveOut.Stop();
-                    AppSettings.isPlaying = false;
-                    progressTimer.Stop();
+                if (waveOut != null) {
+                    if (AppSettings.OutputMode == "WasapiExclusive")
+                    {
+                        isPausing = true;
+                        waveOut.Stop();
+                        AppSettings.isPlaying = false;
+                        progressTimer.Stop();
+                    }
+                    else
+                    {
+                        isPausing = true;
+                        waveOut.Pause();
+                        AppSettings.isPlaying = false;
+                        progressTimer.Stop();
+                    }
                 }
-                else
-                {
+                if (wasapiOut != null) {
                     isPausing = true;
-                    waveOut.Pause();
+                    wasapiOut.Pause();
                     AppSettings.isPlaying = false;
                     progressTimer.Stop();
                 }
@@ -545,7 +579,7 @@ namespace WinUIMusicPlayer.Services
                         return;
                     }
                 }
-                else
+                else if (waveOut != null)
                 {
                     isPausing = false;
                     if (AppSettings.OutputMode == "WasapiExclusive")
@@ -561,6 +595,13 @@ namespace WinUIMusicPlayer.Services
                         progressTimer.Start();
                     }
                 }
+                if (wasapiOut != null)
+                {
+                    isPausing = false;
+                    wasapiOut.Play();
+                    AppSettings.isPlaying = true;
+                    progressTimer.Start();
+                }                
             }
         }
 
