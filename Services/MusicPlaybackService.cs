@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer.Services
                         waveOut.Dispose();
                         waveOut = null;
                     }
-                    if (wasapiOut !=null)
+                    if (wasapiOut != null)
                     {
                         wasapiOut.Stop();
                         wasapiOut.Dispose();
@@ -151,6 +151,10 @@ namespace WinUIMusicPlayer.Services
                         OutputDeviceChange();
                         ResumeMusic();
                     }
+                }
+                else {                   
+                    OutputDeviceChange();
+                    CScoreOutputDevice();
                 }
             }
             catch (Exception ex)

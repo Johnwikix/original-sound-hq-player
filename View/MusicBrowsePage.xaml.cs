@@ -843,7 +843,7 @@ namespace WinUIMusicPlayer.View
                 MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
                 HRImage.Source = null;
-                if (music.SampleRate >= 48000 && music.BitDepth >= 24)
+                if ((music.SampleRate >= 48000 && music.BitDepth >= 24) || (music.SampleRate >= 2822400 && music.BitDepth == 1))
                 {
                     var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                     HRImage.Source = bitmapImage;
