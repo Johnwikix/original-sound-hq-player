@@ -108,13 +108,14 @@ namespace WinUIMusicPlayer.Services
                     // 设置新位置
                     multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
-                //else if (fFmpegAudioReader != null)
-                //{
-                //    // 对于其他格式，使用audioFileReader
-                //    newPosition = fFmpegAudioReader.CurrentTime.TotalSeconds + seconds;
-                //    newPosition = Math.Max(0, Math.Min(newPosition, fFmpegAudioReader.TotalTime.TotalSeconds));
-                //    fFmpegAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
-                //}
+                else if (ffmpegDecoder != null)
+                {
+                    // 对于其他格式，使用audioFileReader
+
+                    newPosition = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond + seconds;
+                    newPosition = Math.Max(0, Math.Min(newPosition, (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond));
+                    ffmpegDecoder.Position = (long)(newPosition * ffmpegDecoder.WaveFormat.BytesPerSecond);
+                }
             }
             return newPosition;
         }
@@ -138,10 +139,11 @@ namespace WinUIMusicPlayer.Services
                         waveOut = null;
                     }
                     OutputDeviceChange();
-                    //if (fFmpegAudioReader != null)
-                    //{
-                    //    ResumeMusic();
-                    //}
+                    CScoreOutputDevice();
+                    if (ffmpegDecoder != null)
+                    {
+                        ResumeMusic();
+                    }
                     if (multiTypeAudioReader != null)
                     {
                         ResumeMusic();
@@ -162,13 +164,15 @@ namespace WinUIMusicPlayer.Services
             if (multiTypeAudioReader != null)
             {
                 waveOut.Init(multiTypeAudioReader);
+                waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                waveOut.Play();
             }
-            //else if (fFmpegAudioReader != null)
-            //{
-            //    sampleChannel = new SampleChannel(fFmpegAudioReader, false);
-            //    sampleChannel.Volume = volume;
-            //    waveOut.Init(sampleChannel);
-            //}
+            else if (ffmpegDecoder != null)
+            {
+                wasapiOut.Initialize(ffmpegDecoder);
+                wasapiOut.Stopped += wasapiOut_Stopped;
+                wasapiOut.Play();
+            }
             waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
             waveOut.Play();
             AppSettings.isPlaying = true;
@@ -176,8 +180,8 @@ namespace WinUIMusicPlayer.Services
         }
 
         public void OutputDeviceChange()
-        {            
-            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+        {
+            NAudio.CoreAudioApi.MMDeviceEnumerator enumerator = new NAudio.CoreAudioApi.MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
             if (AppSettings.DeviceName != null)
             {
@@ -194,26 +198,33 @@ namespace WinUIMusicPlayer.Services
             {
                 selectedDevice = devices[0];
             }
+            CScoreOutputDevice();
         }
 
         public void CScoreOutputDevice() {
-            CSCore.CoreAudioAPI.MMDeviceEnumerator enumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator();
-            var devices = enumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active);
-            if (AppSettings.DeviceName != null)
-            {
-                foreach (var device in devices)
+            try {
+                using (CSCore.CoreAudioAPI.MMDeviceEnumerator csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
                 {
-                    if (device.FriendlyName == AppSettings.DeviceName)
+                    var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active);
+                    if (AppSettings.DeviceName != null)
                     {
-                        csCoreMMdevice = device;
-                        break;
+                        foreach (var device in devices)
+                        {
+                            if (device.FriendlyName == AppSettings.DeviceName)
+                            {
+                                csCoreMMdevice = device;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        csCoreMMdevice = devices[0];
                     }
                 }
-            }
-            else
-            {
-                csCoreMMdevice = devices[0];
-            }
+            } catch (Exception ex) {                
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+            }                    
         }
 
         public void SelectOutputDevice()
@@ -240,6 +251,22 @@ namespace WinUIMusicPlayer.Services
             {
                 defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
                 defaultWaveOutEvent.NumberOfBuffers = 3;
+            }
+        }
+
+        public void SelectCSCoreOutputDevice()
+        {
+            switch (AppSettings.OutputMode)
+            {
+                case "WasapiShared":
+                    wasapiOut = new CSCore.SoundOut.WasapiOut(false,CSCore.CoreAudioAPI.AudioClientShareMode.Shared,AppSettings.Latency);
+                    break;
+                case "WasapiExclusive":
+                    wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+                    break;
+                default:
+                    wasapiOut = new CSCore.SoundOut.WasapiOut();
+                    break;
             }
         }
 
@@ -321,9 +348,11 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
                 else {
-                    CScoreOutputDevice();
-                    ffmpegDecoder = new FfmpegDecoder(music.Path);
-                    wasapiOut = new CSCore.SoundOut.WasapiOut();                    
+                    if (csCoreMMdevice == null ) {
+                        CScoreOutputDevice();
+                    }
+                    SelectCSCoreOutputDevice();
+                    ffmpegDecoder = new FfmpegDecoder(music.Path);                                   
                     wasapiOut.Device = csCoreMMdevice;                    
                     wasapiOut.Initialize(ffmpegDecoder);
                     wasapiOut.Volume = volume;                    

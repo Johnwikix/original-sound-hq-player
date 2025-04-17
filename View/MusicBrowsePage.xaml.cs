@@ -748,11 +748,17 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            musicPlaybackService.isInitializing = true;
-            _ = LoadPlayState();
-            _ = LoadMusic();
-            musicPlaybackService.OutputDeviceChange();
-            PlayTimeTextBlock.Text = "00:00/00:00";
+            try {
+                musicPlaybackService.isInitializing = true;
+                await LoadPlayState();
+                await LoadMusic();                
+                PlayTimeTextBlock.Text = "00:00/00:00";
+                musicPlaybackService.OutputDeviceChange();
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                notificationService.SendNotification("错误", ex.Message);
+            }            
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -1097,14 +1103,11 @@ namespace WinUIMusicPlayer.View
             {
                 if (musicPlaybackService.multiTypeAudioReader != null)
                 {
-                    // 对于FLAC文件，设置waveChannel的位置
                     double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.multiTypeAudioReader.TotalTime.TotalSeconds));
-
                     musicPlaybackService.multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
                 else if (musicPlaybackService.ffmpegDecoder != null)
                 {
-                    // 对于其他格式，设置audioFileReader的位置
                     double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, (double)musicPlaybackService.ffmpegDecoder.Length / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond));
                     musicPlaybackService.ffmpegDecoder.Position = (long)(newPosition * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
                 }
