@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer.View
         private WindowId windowId;
         private bool isMouseOverProgressBar = false;
         private NotificationService notificationService = new NotificationService();
+        public EventHandler refreshSong;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -117,7 +118,7 @@ namespace WinUIMusicPlayer.View
             if (mainWindow != null)
             {
                 mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
-                mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
+                //mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
                 mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed -= MainWindow_Closed;
@@ -401,10 +402,6 @@ namespace WinUIMusicPlayer.View
             ResetNavigationButtons();
             AlbumButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadAlbumMusic(Album, SearchTextBox.Text);
-            }
         }
 
         public async void LoadArtistMusic(string artist)
@@ -415,10 +412,6 @@ namespace WinUIMusicPlayer.View
             ResetNavigationButtons();
             ArtistButton.FontSize = 26;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadArtistMusic(artist, SearchTextBox.Text);
-            }
         }
 
         public async void LoadFolderMusic(string folder)
@@ -427,10 +420,6 @@ namespace WinUIMusicPlayer.View
             paramName = folder;
             currentFolderName = folder;
             ContentFrame.Navigate(typeof(SongCollectionPage), this);
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadFolderMusic(folder, SearchTextBox.Text);
-            }
         }
 
         public async Task RemoveMusic(int musicId)
@@ -472,19 +461,20 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is SongCollectionPage)
                 {
-                    var page = ContentFrame.Content as SongCollectionPage;
-                    if (pageType == "album")
-                    {
-                        LoadAlbumMusic(paramName);
-                    }
-                    else if (pageType == "artist")
-                    {
-                        LoadArtistMusic(paramName);
-                    }
-                    else if (pageType == "folder")
-                    {
-                        LoadFolderMusic(paramName);
-                    }
+                    refreshSong?.Invoke(this, EventArgs.Empty);
+                    //var page = ContentFrame.Content as SongCollectionPage;
+                    //if (pageType == "album")
+                    //{
+                    //    LoadAlbumMusic(paramName);
+                    //}
+                    //else if (pageType == "artist")
+                    //{
+                    //    LoadArtistMusic(paramName);
+                    //}
+                    //else if (pageType == "folder")
+                    //{
+                    //    LoadFolderMusic(paramName);
+                    //}
                 }
                 else if (ContentFrame.Content is FavouritePlayListPage)
                 {

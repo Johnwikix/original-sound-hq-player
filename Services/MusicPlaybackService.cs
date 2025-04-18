@@ -5,6 +5,7 @@ using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -136,6 +137,18 @@ namespace WinUIMusicPlayer.Services
                         wasapiOut.Dispose();
                         wasapiOut = null;
                     }
+                    if (selectedDevice != null)
+                    {
+                        selectedDevice.Dispose();
+                        selectedDevice = null;
+                    }
+                    if (csCoreMMdevice != null)
+                    {
+                        csCoreMMdevice.Dispose();
+                        csCoreMMdevice = null;
+                    }
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                     OutputDeviceChange();
                     if (multiTypeAudioReader != null)
                     {
@@ -145,12 +158,26 @@ namespace WinUIMusicPlayer.Services
                     if (ffmpegDecoder != null)
                     {                        
                         ResumeMusic();
-                    }                    
+                    }
                 }
                 else
                 {
-                    OutputDeviceChange();
+                    isSettingsChangeStop = true;
+                    if (selectedDevice != null)
+                    {
+                        selectedDevice.Dispose();
+                        selectedDevice = null;
+                    }
+                    if (csCoreMMdevice != null)
+                    {
+                        csCoreMMdevice.Dispose();
+                        csCoreMMdevice = null;
+                    }
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    OutputDeviceChange();                    
                     CScoreOutputDevice();
+                    
                 }
             }
             catch (Exception ex)
@@ -221,6 +248,8 @@ namespace WinUIMusicPlayer.Services
                     selectedDevice = devices[0];
                 }
             }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         public void CScoreOutputDevice()
@@ -246,6 +275,8 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         public void SelectOutputDevice()

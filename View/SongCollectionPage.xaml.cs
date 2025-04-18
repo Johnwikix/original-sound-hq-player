@@ -29,29 +29,45 @@ namespace WinUIMusicPlayer.View
         public SongCollectionPage()
         {
             this.InitializeComponent();
+
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
+                parentPage.refreshSong += RefreshSong;
+                RefreshPage();
+            }
+        }
+
+        private async void RefreshPage() {
+            if (parentPage != null) {
                 if (parentPage.pageType == "album")
                 {
-                    parentPage.LoadAlbumMusic(parentPage.currentAlbumName);
+                    var musicList = await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, parentPage.searchText);
+                    await LoadMusicAsync(musicList, parentPage.pageType);
                 }
                 if (parentPage.pageType == "artist")
                 {
-                    parentPage.LoadArtistMusic(parentPage.currentArtistName);
+                    var musicList = await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, parentPage.searchText);
+                    await LoadMusicAsync(musicList, parentPage.pageType);
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    parentPage.LoadFolderMusic(parentPage.currentFolderName);
+                    var musicList = await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, parentPage.searchText);
+                    await LoadMusicAsync(musicList, parentPage.pageType);
                 }
             }
+        }
+
+        private void RefreshSong(object? sender, EventArgs e)
+        {
+            RefreshPage();
         }
 
         public void SortMusicList(string sortOrder, string type)

@@ -115,24 +115,6 @@ namespace WinUIMusicPlayer
             FavourListLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadArtistMusic(string artist, string search = null)
-        {
-            var musicList = await MusicDatabaseService.GetArtistMusicAsync(artist, search);
-            SongCollecionLoaded?.Invoke(this, musicList);
-        }
-
-        public async Task LoadFolderMusic(string folder, string search = null)
-        {
-            var musicList = await MusicDatabaseService.GetFolderMusicAsync(folder, search);
-            SongCollecionLoaded?.Invoke(this, musicList);
-        }
-
-        public async Task LoadAlbumMusic(string album, string search = null)
-        {
-            var musicList = await MusicDatabaseService.GetAlbumMusicAsync(album, search);
-            SongCollecionLoaded?.Invoke(this, musicList);
-        }
-
         public async Task RefreshDevice()
         {
             try {
@@ -157,6 +139,8 @@ namespace WinUIMusicPlayer
                                 });
                             }
                         }
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
                     });
                 }
                 else
@@ -180,6 +164,8 @@ namespace WinUIMusicPlayer
                             }
                         }
                     }
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                 }
             }
             catch (Exception ex)
