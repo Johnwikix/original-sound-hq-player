@@ -353,7 +353,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 Reset();
-                if (music.Extension.ToLower() != "dsf")
+                if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
                 {
                     try
                     {
@@ -459,7 +459,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    if (music.Extension.ToLower() != "dsf")
+                    if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
                     {
                         waveOut.Play();
                         waveOut.PlaybackStopped += WaveOut_PlaybackStopped;

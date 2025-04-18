@@ -353,7 +353,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a",".dsf" };
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a",".dsf",".dff" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 

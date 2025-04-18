@@ -135,50 +135,56 @@ namespace WinUIMusicPlayer
 
         public async Task RefreshDevice()
         {
-            if (!AppSettings.isDsd)
-            {
-                await Task.Run(() =>
+            try {
+                if (!AppSettings.isDsd)
                 {
-                    using (MMDeviceEnumerator enumerator = new MMDeviceEnumerator())
+                    await Task.Run(() =>
                     {
-                        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                        AppSettings.outputDeviceList.Clear();
-                        foreach (var device in devices)
+                        using (MMDeviceEnumerator enumerator = new MMDeviceEnumerator())
                         {
-                            AppSettings.outputDeviceList.Add(device.FriendlyName);
-                        }
-                        // 回到 UI 线程触发事件
-                        if (SettingLoaded != null)
-                        {
-                            DispatcherQueue.TryEnqueue(() =>
+                            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                            AppSettings.outputDeviceList.Clear();
+                            foreach (var device in devices)
                             {
-                                SettingLoaded?.Invoke(this, EventArgs.Empty);
-                            });
+                                AppSettings.outputDeviceList.Add(device.FriendlyName);
+                            }
+                            // 回到 UI 线程触发事件
+                            if (SettingLoaded != null)
+                            {
+                                DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    SettingLoaded?.Invoke(this, EventArgs.Empty);
+                                });
+                            }
                         }
-                    }
-                });
-            }
-            else
-            {
-                using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
+                    });
+                }
+                else
                 {
-                    using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
+                    using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
                     {
-                        AppSettings.outputDeviceList.Clear();
-                        foreach (var device in devices)
+                        using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
                         {
-                            AppSettings.outputDeviceList.Add(device.FriendlyName);
-                        }
-                        // 回到 UI 线程触发事件
-                        if (SettingLoaded != null)
-                        {
-                            DispatcherQueue.TryEnqueue(() =>
+                            AppSettings.outputDeviceList.Clear();
+                            foreach (var device in devices)
                             {
-                                SettingLoaded?.Invoke(this, EventArgs.Empty);
-                            });
+                                AppSettings.outputDeviceList.Add(device.FriendlyName);
+                            }
+                            // 回到 UI 线程触发事件
+                            if (SettingLoaded != null)
+                            {
+                                DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    SettingLoaded?.Invoke(this, EventArgs.Empty);
+                                });
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
             }
         }
 
