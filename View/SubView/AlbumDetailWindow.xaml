@@ -61,7 +61,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="2*" />
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left">
                                 <Button Click="GetImageFromNet_Click" Margin="5" HorizontalAlignment="Center">
@@ -101,10 +101,10 @@
                                     </ToolTipService.ToolTip>
                                 </Button>
                             </StackPanel>
-                            <TextBlock Text="标题：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5" Grid.Row="0" Grid.Column="1"/>
-                            <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="5" Grid.Row="0"  Grid.Column="2"/>
-                            <TextBlock Text="年份：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5" Grid.Row="0"  Grid.Column="3"/>
-                            <TextBox x:Name="YearTextBlock" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5" Grid.Row="0"  Grid.Column="4"/>
+                            <TextBlock Text="标题：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0" Grid.Column="1"/>
+                            <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="0 5 5 5" Grid.Row="0"  Grid.Column="2"/>
+                            <TextBlock Text="年份：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0"  Grid.Column="3"/>
+                            <TextBox x:Name="YearTextBlock" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0 5 10 5" Grid.Row="0"  Grid.Column="4"/>
                         </Grid>
                     </Grid>
                 </Grid>

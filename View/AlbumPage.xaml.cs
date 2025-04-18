@@ -93,6 +93,7 @@ namespace WinUIMusicPlayer.View
             var button = sender as Button;
             var album = button.DataContext;
 
+            ContextMenuService.Instance.SetAlbumPage(this);
             // ÏÔÊ¾×¨¼­ÓÒ¼ü²Ëµ¥
             await ContextMenuService.Instance.ShowAlbumContextMenu(
                 album,
@@ -102,6 +103,13 @@ namespace WinUIMusicPlayer.View
             );
 
             e.Handled = true;
+        }
+
+        public async void OnAlbumDetailChanged(object sender, EventArgs e)
+        {
+            var musicList = await MusicDatabaseService.GetMusicListAsync(parentPage.searchText);
+            _ = AlbumCoverService.LoadAlbumCoversAsync(musicList);
+            LoadAlbumsAsync(musicList);            
         }
 
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ATL;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class AddFolderService
     {
+        private Track track;
         public AddFolderService()
         {
         }
@@ -70,28 +72,41 @@ namespace WinUIMusicPlayer.Services
                 using (TagLib.File audioFile = TagLib.File.Create(file.Path))
                 {
                     Tag tag = audioFile.Tag;
-                    int trackNumber = (int)tag.Track;
-                    string title = !string.IsNullOrWhiteSpace(tag.Title) ?
-                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+                    string title = "未知标题";
                     string artist = "未知艺术家";
+                    string album = "未知专辑";
+                    int trackNumber = 0;
+                    int sampleRate = 0;
+                    int bitDepth = 0;
+                    int bitRate = 0;
+                    int year = 0;
+                    int channelCount = 0;
+                    string lyrics = string.Empty;
+                    TimeSpan duration = TimeSpan.Zero;
+                    string lastLevelFolderPath = Path.GetFileName(folderPath);
+                    Properties audioProperties = audioFile.Properties;
+                    trackNumber = (int)tag.Track;
+                    title = !string.IsNullOrWhiteSpace(tag.Title) ?
+                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+
                     string[] artists = audioFile.Tag.Performers;
                     if (artists.Length > 0)
                     {
                         artist = artists[0]; // 取第一个艺术家
                         Console.WriteLine("艺术家: " + string.Join(", ", artists));
                     }
-                    string album = "未知专辑";
                     if (!string.IsNullOrWhiteSpace(tag.Album))
                     {
                         album = tag.Album;
                     }
-                    string lastLevelFolderPath = Path.GetFileName(folderPath);
-                    Properties audioProperties = audioFile.Properties;
-                    int sampleRate = audioProperties.AudioSampleRate;
-                    int bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
-                    int bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
-                    int year = (int)tag.Year;
-                    int channelCount = audioProperties.AudioChannels;
+                    sampleRate = audioProperties.AudioSampleRate;
+                    bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
+                    bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
+                    year = (int)tag.Year;
+                    duration = audioProperties.Duration;
+                    channelCount = audioProperties.AudioChannels;
+                    lyrics = tag.Lyrics;
+
 
                     var music = new Music
                     {
@@ -99,7 +114,7 @@ namespace WinUIMusicPlayer.Services
                         Title = title,
                         Author = artist,
                         Album = album,
-                        Duration = audioProperties.Duration,
+                        Duration = duration,
                         FolderPath = folderPath,
                         Order = 0,
                         LastLevelFolderPath = lastLevelFolderPath,
@@ -110,21 +125,10 @@ namespace WinUIMusicPlayer.Services
                         Channel = channelCount,
                         TrackNumber = trackNumber,
                         Year = year,
-                        Lyrics = tag.Lyrics
+                        Lyrics = lyrics
                     };
                     return music;
                 }
-                //Track theTrack = new Track(file.Path);                
-                //string artist = "未知艺术家";
-                //if (!string.IsNullOrWhiteSpace(theTrack.Artist))
-                //{
-                //    artist = theTrack.Artist;
-                //}                
-                //string album = "未知专辑";
-                //if (!string.IsNullOrWhiteSpace(theTrack.Album))
-                //{
-                //    album = theTrack.Album;
-                //}
             }
             catch (Exception ex)
             {
@@ -164,6 +168,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");                     // 返回null以指示错误
                 }
+
             }
             return null;
         }

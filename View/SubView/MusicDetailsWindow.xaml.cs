@@ -73,6 +73,7 @@ namespace WinUIMusicPlayer.View.SubView
             BitRateTextBlock.Text = $"{music.BitRate}kbps";
             SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
             YearTextBlock.Text = music.Year.ToString();
+            LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
             PathTextBlock.Text = music.Path;
             albumCoverData = ToolUtils.GetRawImage(music);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);

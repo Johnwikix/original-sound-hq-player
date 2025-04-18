@@ -1,6 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +28,7 @@ namespace WinUIMusicPlayer.View.SubView
     public sealed partial class AlbumDetailWindow : Window
     {
         private Music musicDetail;
-        public EventHandler<Music> MusicDetailChanged;
+        public EventHandler AlbumDetailChanged;
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
         private double scaleFactor = 0;
@@ -100,8 +101,13 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
+                if (AppData.albumCoverCache.ContainsKey(music.Album))
+                {
+                    AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
+                }
                 await MusicDatabaseService.UpdateMusicInfo(music);
             }
+            AlbumDetailChanged?.Invoke(this,EventArgs.Empty);
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

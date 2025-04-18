@@ -60,6 +60,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
@@ -117,8 +118,11 @@
                         <TextBlock Text="采样率：" FontWeight="Bold" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock x:Name="SampleRateTextBlock" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="路径：" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock Text="最后目录：" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="LastFolderNameTextBlock" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+
+                        <TextBlock Text="路径：" FontWeight="Bold" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
                     </Grid>
                     <Grid Grid.Column="1" Margin="10">
                         <StackPanel>

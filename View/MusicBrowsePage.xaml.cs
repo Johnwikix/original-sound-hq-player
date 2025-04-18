@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.View
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
+        public string searchText = "";
         private bool isMouseOverVolumeSlider = false;
         public string currentAlbumName;
         public string currentArtistName;
@@ -466,6 +467,7 @@ namespace WinUIMusicPlayer.View
         private async void TypingTimer_Tick(object sender, object e)
         {
             typingTimer.Stop(); // 定时器触发时停止定时器
+            searchText = SearchTextBox.Text;
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 if (ContentFrame.Content is SongCollectionPage)

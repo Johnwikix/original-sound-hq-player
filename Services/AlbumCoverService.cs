@@ -10,8 +10,7 @@ using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.Services
 {
     public class AlbumCoverService
-    {
-        private static Dictionary<string, BitmapImage> _albumCoverCache = new Dictionary<string, BitmapImage>();
+    {        
 
         public static async Task LoadAlbumCoversAsync(List<Music> musics)
         {
@@ -23,7 +22,7 @@ namespace WinUIMusicPlayer.Services
                                            .ToList();
                 foreach (var album in groupedAlbums)
                 {
-                    if (_albumCoverCache.TryGetValue(album.Album, out var cachedCover))
+                    if (AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
                     {
                         album.Cover = cachedCover;
                     }
@@ -31,7 +30,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         BitmapImage cover = await ToolUtils.GetAlbumCover(album, musics);
                         album.Cover = cover;
-                        _albumCoverCache[album.Album] = cover;
+                        AppData.albumCoverCache[album.Album] = cover;
                     }
                 }
             }
@@ -43,7 +42,7 @@ namespace WinUIMusicPlayer.Services
 
         public static void ClearCache()
         {
-            _albumCoverCache.Clear();
+            AppData.albumCoverCache.Clear();
         }
     }
 }

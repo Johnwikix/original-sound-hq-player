@@ -1,10 +1,12 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 
 namespace WinUIMusicPlayer.Services
@@ -14,6 +16,13 @@ namespace WinUIMusicPlayer.Services
         private static ContextMenuService _instance;
         public static ContextMenuService Instance => _instance ??= new ContextMenuService();
         public ContextMenuService() { }
+
+        private AlbumPage albumPage;
+
+        public void SetAlbumPage(AlbumPage page)
+        {
+            albumPage = page;
+        }
 
         /// <summary>
         /// 创建并显示右键菜单
@@ -115,6 +124,10 @@ namespace WinUIMusicPlayer.Services
             if (item != null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(item);
+                if (albumPage != null)
+                {
+                    albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
+                }
                 albumDetailWindow.Activate();
             }
 
