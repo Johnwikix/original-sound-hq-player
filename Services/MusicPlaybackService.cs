@@ -136,16 +136,16 @@ namespace WinUIMusicPlayer.Services
                         wasapiOut.Dispose();
                         wasapiOut = null;
                     }
-                    if (ffmpegDecoder != null)
-                    {
-                        CScoreOutputDevice();
-                        ResumeMusic();
-                    }
+                    OutputDeviceChange();
                     if (multiTypeAudioReader != null)
                     {
-                        OutputDeviceChange();
                         ResumeMusic();
                     }
+                    CScoreOutputDevice();
+                    if (ffmpegDecoder != null)
+                    {                        
+                        ResumeMusic();
+                    }                    
                 }
                 else
                 {
