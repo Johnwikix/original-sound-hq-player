@@ -62,7 +62,6 @@ namespace WinUIMusicPlayer
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
-                //InitializeTaskbarService();
             }
             catch (Exception ex)
             {
@@ -72,12 +71,20 @@ namespace WinUIMusicPlayer
 
         private void NavigateToDefaultPage()
         {
+            foreach (var item in NavigationViewControl.MenuItems)
+            {
+                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == AppSettings.DefualtEntry)
+                {
+                    NavigationViewControl.SelectedItem = navigationViewItem;
+                    break;
+                }
+            }
             switch (AppSettings.DefualtEntry)
             {
-                case "folderPicker":
+                case "AddFolder":
                     ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
-                case "musicList":
+                case "MusicBrowse":
                     ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:

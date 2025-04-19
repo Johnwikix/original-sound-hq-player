@@ -39,6 +39,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
+                parentPage.refreshPage += RefreshPage;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
                 {
                     _lastSearchText = AppData.searchText;
@@ -49,6 +50,11 @@ namespace WinUIMusicPlayer.View
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
             }
+        }
+
+        private void RefreshPage(object? sender, EventArgs e)
+        {
+            InitializeDatabase();
         }
 
         public void SortMusicList(string sortOrder)

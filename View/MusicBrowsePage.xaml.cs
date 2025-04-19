@@ -74,9 +74,13 @@ namespace WinUIMusicPlayer.View
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
+            SelectBarItem(AppSettings.DefualtPlayList);
+        }
+
+        private void SelectBarItem(string name) {
             foreach (var item in selectPage.Items)
             {
-                if (item is SelectorBarItem selectorBarItem && selectorBarItem.Tag.ToString() == AppSettings.DefualtPlayList)
+                if (item is SelectorBarItem selectorBarItem && selectorBarItem.Tag.ToString() == name)
                 {
                     selectPage.SelectedItem = selectorBarItem;
                     NavigateToPage(selectorBarItem.Name);

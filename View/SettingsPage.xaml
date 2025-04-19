@@ -32,8 +32,8 @@
             <TextBox x:Name="LatencyTextBox" TextChanged="LatencyTextBox_TextChanged" Width="200" />
             <TextBlock Text="默认音乐进入界面" FontSize="16" />
             <ComboBox x:Name="DefualtEntryComboBox" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="200">
-                <ComboBoxItem Content="添加文件夹" Tag="folderPicker"/>
-                <ComboBoxItem Content="音乐浏览" Tag="musicList"/>               
+                <ComboBoxItem Content="添加文件夹" Tag="AddFolder"/>
+                <ComboBoxItem Content="音乐浏览" Tag="MusicBrowse"/>               
             </ComboBox>
             <TextBlock Text="默认音乐播放界面" FontSize="16" />
             <ComboBox x:Name="DefualtPlayListComboBox" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="200">
