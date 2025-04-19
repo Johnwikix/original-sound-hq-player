@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private List<Music> _allMusic;
-        private int _itemsPerPage = 50; // 每页加载的项目数
+        private int _itemsPerPage = 44; // 每页加载的项目数
         private int _currentPage = 0;
         private bool _isLoading = false;
         private ScrollViewer _gridViewScrollViewer;
@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.View
                 this.parentPage = parentPage;
                 parentPage.currentAlbumName = null;
                 parentPage.DisableBackButton();
-                parentPage.refreshAlbum += RefreshAlbum;
+                parentPage.refreshPage += RefreshAlbum;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
                 {
                     _lastSearchText = AppData.searchText;
@@ -70,14 +70,6 @@ namespace WinUIMusicPlayer.View
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
             InitializeDatabase();
-        }
-
-        public void SortList(string sortOrder = "DefaultOrder")
-        {            
-            if (_allMusic.Count > 0)
-            {
-                _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic);
-            }
         }
 
         public async void SortMusicList(string sortOrder = "DefaultOrder")
@@ -144,8 +136,7 @@ namespace WinUIMusicPlayer.View
             var scrollViewer = sender as ScrollViewer;
             if (scrollViewer == null) return;
 
-            // 当滚动到底部80%位置时加载更多
-            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.9 && !e.IsIntermediate && !_isLoading)
+            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
             {
                 _ = LoadMoreAlbumsAsync();
             }
@@ -192,11 +183,18 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
         }
 
-        public async void OnAlbumDetailChanged(object sender, EventArgs e)
+        public async void OnAlbumDetailChanged(object sender, Music cover)
         {
-            var musicList = await MusicDatabaseService.GetMusicListAsync(AppData.searchText);
-            //_ = AlbumCoverService.LoadAlbumCoversAsync(musicList);
-            LoadAlbumsAsync(musicList);            
+            foreach (var music in musicList)
+            {
+                if (music.Album == cover.Album)
+                {
+                    music.Cover = cover.Cover;
+                    music.Year = cover.Year;
+                    music.Album = cover.Album;
+                    break;
+                }
+            }
         }
 
         private void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)

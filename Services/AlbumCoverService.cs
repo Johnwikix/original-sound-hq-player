@@ -24,7 +24,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
-                        BitmapImage cover = await ToolUtils.GetAlbumCover(album, musics);
+                        BitmapImage cover = await ToolUtils.GetAlbumCover(album);
                         album.Cover = cover;
                         AppData.albumCoverCache[album.Album] = cover;
                     }
@@ -43,12 +43,13 @@ namespace WinUIMusicPlayer.Services
                 var groupedAlbums = musics.GroupBy(m => m.Album)
                                            .Select(g => g.First())
                                            .OrderBy(m => m.Album)
+                                           .Take(50)
                                            .ToList();
                 foreach (var album in groupedAlbums)
                 {
                     if (!AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
                     {
-                        AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album, musics);
+                        AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album);
                     }
                 }
             }

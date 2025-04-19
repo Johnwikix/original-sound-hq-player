@@ -13,6 +13,7 @@ using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -43,17 +44,17 @@ namespace WinUIMusicPlayer.Utils
             return bitmapImage;
         }
 
-        public static async Task<BitmapImage> GetAlbumCover(Music album, List<Music> musics)
+        public static async Task<BitmapImage> GetAlbumCover(Music album)
         {
             BitmapImage newCover = album.Cover;
+            List<Music> musics =(await MusicDatabaseService.GetAlbumMusicAsync(album.Album)).Where(m => m.Extension.ToLower() != "wav").ToList();
             if (album.Album != "未知专辑")
             {
-                var albumSongs = musics.Where(m => m.Album == album.Album && m.Extension != "WAV");
-                if (albumSongs == null || albumSongs.Count() == 0)
+                if (musics == null || musics.Count() == 0)
                 {
                     return DefaultAlbumCover();
                 }
-                foreach (var song in albumSongs)
+                foreach (var song in musics)
                 {
                     try
                     {
@@ -62,7 +63,7 @@ namespace WinUIMusicPlayer.Utils
                             if (file.Tag.Pictures.Length > 0)
                             {
                                 var picture = file.Tag.Pictures[0];
-                                newCover = await ReadBitmapImageAsync(picture, 125);
+                                newCover = await ReadBitmapImageAsync(picture, 150);
                             }
                             else
                             {
@@ -85,49 +86,7 @@ namespace WinUIMusicPlayer.Utils
                 return newCover;
             }
             return newCover;
-        }
-
-        public static async Task<BitmapImage> GetAlbumCoverFromSingleMusic(Music album)
-        {
-            BitmapImage newCover = album.Cover;
-            if (album.Album != "未知专辑")
-            {
-                if (album.Extension != "WAV")
-                {
-                    return DefaultAlbumCover();
-                }
-                try
-                {
-                    using (var file = TagLib.File.Create(album.Path))
-                    {
-                        if (file.Tag.Pictures.Length > 0)
-                        {
-                            var picture = file.Tag.Pictures[0];
-                            newCover = await ReadBitmapImageAsync(picture, 125);
-                        }
-                        else
-                        {
-                            newCover = DefaultAlbumCover();
-                        }
-                        return newCover;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    newCover = DefaultAlbumCover();
-                    Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-                    return newCover;
-                }
-            }
-            else
-            {
-                newCover = DefaultAlbumCover();
-                return newCover;
-            }
-            return newCover;
-        }
-
-
+        } 
 
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {

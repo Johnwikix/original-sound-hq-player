@@ -4,8 +4,10 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -21,7 +23,13 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FolderBrowsePage : Page
     {
         private MusicBrowsePage parentPage;
-        private List<Music> musicList;
+        private ObservableCollection<Music> musicList;
+        private List<Music> _allMusic;
+        private int _itemsPerPage = 44; // 每页加载的项目数
+        private int _currentPage = 0;
+        private bool _isLoading = false;
+        private ScrollViewer _gridViewScrollViewer;
+        private string _lastSearchText = "";
         public FolderBrowsePage()
         {
             this.InitializeComponent();
@@ -35,21 +43,40 @@ namespace WinUIMusicPlayer.View
                 this.parentPage = parentPage;
                 parentPage.currentFolderName = null;
                 parentPage.DisableBackButton();
-                InitializeData();
+                parentPage.refreshPage += RefreshFolder;
+                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
+                {
+                    _lastSearchText = AppData.searchText;
+                    InitializeData();
+                }
+                else
+                {
+                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                }
             }
+
+            FolderGridView.Loaded += (s, e) =>
+            {
+                _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(FolderGridView);
+                if (_gridViewScrollViewer != null)
+                {
+                    _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
+                }
+            };
         }
-        public void SortMusicList(string sortOrder)
+
+        private void RefreshFolder(object? sender, EventArgs e)
         {
-            var order = "DefaultOrder";
-            if (!string.IsNullOrEmpty(sortOrder))
+            InitializeData();
+        }
+
+        public async void SortMusicList(string sortOrder)
+        {
+            if (_allMusic.Count > 0)
             {
-                order = sortOrder;
+                _allMusic = ToolUtils.SortMusicList("folderCover", sortOrder, _allMusic.ToList());
+                await LoadMoreFolderAsync(true);
             }
-            if (musicList.Count > 0)
-            {
-                musicList = ToolUtils.SortMusicList("folderCover", order, musicList.ToList());
-            }
-            FolderItemsControl.ItemsSource = musicList;
         }
 
         private async void InitializeData()
@@ -58,7 +85,8 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    await parentPage.LoadMusic();
+                    _allMusic = (await MusicDatabaseService.GetMusicListAsync(AppData.searchText)).GroupBy(m => m.LastLevelFolderPath).Select(g => g.First()).OrderBy(m => m.LastLevelFolderPath).ToList();
+                    await LoadMoreFolderAsync(true);
                 }
             }
             catch (Exception ex)
@@ -67,45 +95,118 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void LoadFolder(List<Music> musics)
+        private async Task LoadMoreFolderAsync(bool isFirstLoad = false)
         {
+            if (_isLoading) return;
+
             try
             {
-                var groupArtists = musics.GroupBy(m => m.LastLevelFolderPath)
-                                             .Select(g => g.First())
-                                             .ToList();
-                musicList = groupArtists;
-                SortMusicList("DefaultOrder");
+                _isLoading = true;
+
+                if (isFirstLoad)
+                {
+                    musicList = new ObservableCollection<Music>();
+                    _currentPage = 0;
+                    FolderGridView.ItemsSource = musicList;
+                }
+
+                int startIndex = _currentPage * _itemsPerPage;
+                if (startIndex >= _allMusic.Count)
+                {
+                    _isLoading = false;
+                    return;
+                }
+                var itemsToAdd = _allMusic.Skip(startIndex)
+                                              .Take(_itemsPerPage).ToList();
+                foreach (var item in itemsToAdd)
+                {
+                    musicList.Add(item);
+                }
+                _currentPage++;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
+                Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+            }
+            finally
+            {
+                _isLoading = false;
             }
         }
 
-        private void Folder_Click(object sender, RoutedEventArgs e)
+        private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
         {
-            if (sender is Button button && button.Tag is Music music)
+            var scrollViewer = sender as ScrollViewer;
+            if (scrollViewer == null) return;
+
+            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
             {
+                _ = LoadMoreFolderAsync();
+            }
+        }
+        //public void LoadFolder(List<Music> musics)
+        //{
+        //    try
+        //    {
+        //        var groupArtists = musics.GroupBy(m => m.LastLevelFolderPath)
+        //                                     .Select(g => g.First())
+        //                                     .ToList();
+        //        musicList = groupArtists;
+        //        SortMusicList("DefaultOrder");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
+        //    }
+        //}
+
+        private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            var gridView = sender as GridView;
+            var item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            if (item != null)
+            {
+                Music folder = item.Content as Music;
                 if (parentPage != null)
                 {
-                    parentPage.LoadFolderMusic(music.LastLevelFolderPath);
+                    parentPage.LoadFolderMusic(folder.LastLevelFolderPath);
                 }
             }
         }
 
         private async void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var button = sender as Button;
-            var album = button.DataContext;
+            var originalSource = e.OriginalSource as FrameworkElement;
 
-            // 显示专辑右键菜单
-            await ContextMenuService.Instance.ShowAlbumContextMenu(
-                album,
-                button,
-                e.GetPosition(button),
-                "folder"
-            );
+            // 向上遍历查找 GridViewItem
+            GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
+
+            if (clickedItem != null)
+            {
+                // 从 GridViewItem 获取数据项
+                var folder = clickedItem.Content as Music;
+
+                if (folder != null)
+                {
+                    // 显示专辑右键菜单
+                    await ContextMenuService.Instance.ShowAlbumContextMenu(
+                        folder,
+                        originalSource,
+                        e.GetPosition(originalSource),
+                        "folder"
+                    );
+                }
+            }
+            //var button = sender as Button;
+            //var album = button.DataContext;
+
+            //// 显示专辑右键菜单
+            //await ContextMenuService.Instance.ShowAlbumContextMenu(
+            //    album,
+            //    button,
+            //    e.GetPosition(button),
+            //    "folder"
+            //);
 
             e.Handled = true;
         }

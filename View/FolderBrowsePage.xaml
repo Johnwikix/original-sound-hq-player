@@ -10,7 +10,36 @@
     mc:Ignorable="d"    >
 
     <Grid Margin="10">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <GridView x:Name="FolderGridView"                       
+                  IsItemClickEnabled="True"
+                  ItemClick="FolderGridView_ItemClick"
+                  IsRightTapEnabled="True"
+                  RightTapped="Folder_RightTapped"
+                  >
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
+                        <FontIcon Glyph="&#xf12b;" FontSize="100" Width="150" Height="150"/>
+                        <TextBlock 
+                            Height="60" 
+                            HorizontalAlignment="Center" 
+                            Width="150" 
+                            TextWrapping="Wrap" 
+                            TextTrimming="CharacterEllipsis"
+                            Text="{Binding LastLevelFolderPath}" 
+                            TextAlignment="Center" 
+                            Margin="0"
+                            VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+        <!--<ScrollViewer VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="FolderItemsControl">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -39,6 +68,6 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </ScrollViewer>
+        </ScrollViewer>-->
     </Grid>
 </Page>

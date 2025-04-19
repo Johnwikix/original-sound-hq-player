@@ -29,7 +29,6 @@ namespace WinUIMusicPlayer.View
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
-        //public string searchText = "";
         private bool isMouseOverVolumeSlider = false;
         public string currentAlbumName;
         public string currentArtistName;
@@ -45,18 +44,13 @@ namespace WinUIMusicPlayer.View
         private bool isMouseOverProgressBar = false;
         private NotificationService notificationService = new NotificationService();
         public EventHandler refreshSong;
-        public EventHandler refreshAlbum;
+        public EventHandler refreshPage;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
             InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
-            //var window = Window.Current;
-            //if (window != null)
-            //{
-            //    window.Closed += Window_Closed;
-            //}
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
@@ -142,7 +136,7 @@ namespace WinUIMusicPlayer.View
         private void InitializeTimer()
         {
             typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(400);
+            typingTimer.Interval = TimeSpan.FromMilliseconds(300);
             typingTimer.Tick += TypingTimer_Tick;
         }
 
@@ -335,15 +329,15 @@ namespace WinUIMusicPlayer.View
                     songListPage.LoadMusicAsync(musics);
                 }
                 var artistPage = ContentFrame.Content as ArtistPage;
-                if (artistPage != null)
-                {
-                    artistPage.LoadArtists(musics);
-                }
-                var folderBrowsePage = ContentFrame.Content as FolderBrowsePage;
-                if (folderBrowsePage != null)
-                {
-                    folderBrowsePage.LoadFolder(musics);
-                }
+                //if (artistPage != null)
+                //{
+                //    artistPage.LoadArtists(musics);
+                //}
+                //var folderBrowsePage = ContentFrame.Content as FolderBrowsePage;
+                //if (folderBrowsePage != null)
+                //{
+                //    folderBrowsePage.LoadFolder(musics);
+                //}
             }
             catch (Exception ex)
             {
@@ -452,28 +446,13 @@ namespace WinUIMusicPlayer.View
         private async void TypingTimer_Tick(object sender, object e)
         {
             typingTimer.Stop(); // 定时器触发时停止定时器
-            AppData.searchText = SearchTextBox.Text;
+            AppData.searchText = SearchTextBox.Text;            
             if (ContentFrame != null && ContentFrame.Content != null)
             {
+                refreshPage?.Invoke(this, EventArgs.Empty);
                 if (ContentFrame.Content is SongCollectionPage)
                 {
                     refreshSong?.Invoke(this, EventArgs.Empty);
-                    //var page = ContentFrame.Content as SongCollectionPage;
-                    //if (pageType == "album")
-                    //{
-                    //    LoadAlbumMusic(paramName);
-                    //}
-                    //else if (pageType == "artist")
-                    //{
-                    //    LoadArtistMusic(paramName);
-                    //}
-                    //else if (pageType == "folder")
-                    //{
-                    //    LoadFolderMusic(paramName);
-                    //}
-                }
-                else if (ContentFrame.Content is AlbumPage) {
-                    refreshAlbum?.Invoke(this, EventArgs.Empty);
                 }
                 else if (ContentFrame.Content is FavouritePlayListPage)
                 {

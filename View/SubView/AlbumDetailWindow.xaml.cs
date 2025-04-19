@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.View.SubView
     public sealed partial class AlbumDetailWindow : Window
     {
         private Music musicDetail;
-        public EventHandler AlbumDetailChanged;
+        public EventHandler<Music> AlbumDetailChanged;
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
         private double scaleFactor = 0;
@@ -80,6 +80,8 @@ namespace WinUIMusicPlayer.View.SubView
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
             List<Music> musics = await MusicDatabaseService.FindMusicListByAlbum(album.Album);
+            Music result = null;
+            bool isResultAssigned = false;
             foreach (var music in musics)
             {
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
@@ -101,13 +103,19 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
-                if (AppData.albumCoverCache.ContainsKey(music.Album))
-                {
-                    AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
-                }
+                
                 await MusicDatabaseService.UpdateMusicInfo(music);
+                if (!isResultAssigned)
+                {
+                    if (AppData.albumCoverCache.ContainsKey(music.Album))
+                    {
+                        AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
+                    }
+                    result = music;
+                    result.Cover = (BitmapImage)AlbumCoverImage.Source;
+                }
             }
-            AlbumDetailChanged?.Invoke(this,EventArgs.Empty);
+            AlbumDetailChanged?.Invoke(this, result);
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

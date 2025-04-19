@@ -11,9 +11,21 @@ namespace WinUIMusicPlayer.Model
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public string Path { get; set; }
-        public string Title { get; set; }
+        public string Title { get; set; }        
+        public BitmapImage cover = null;
         [Ignore]
-        public BitmapImage Cover { get; set; } = null;
+        public BitmapImage Cover
+        {
+            get { return cover; }
+            set
+            {
+                if (cover != value)
+                {
+                    cover = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public string Author { get; set; }
         public TimeSpan Duration { get; set; }
         public string Album { get; set; }

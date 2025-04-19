@@ -10,34 +10,34 @@
     mc:Ignorable="d"
     >
     <Grid Margin="10">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ArtistsItemsControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <ItemsWrapGrid Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
-                                Click="Artist_Click" Tag="{Binding}" RightTapped="Artist_RightTapped">
-                                <FontIcon Glyph="&#xe77b;" FontSize="80" Width="130" Height="130"/>
-                            </Button>
-                            <TextBlock 
-                            Height="60" 
-                            HorizontalAlignment="Center" 
-                            Width="150" 
-                            TextWrapping="Wrap" 
-                            Text="{Binding Author}" 
-                            TextAlignment="Center" 
-                            Margin="0"
-                            VerticalAlignment="Center"
-                        />
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+        <GridView x:Name="ArtistsGridView"                       
+          IsItemClickEnabled="True"
+          ItemClick="ArtistGridView_ItemClick"
+          IsRightTapEnabled="True"
+          RightTapped="Artist_RightTapped"
+          >
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
+                        <FontIcon Glyph="&#xe77b;" FontSize="80" Width="150" Height="150"/>
+                        <TextBlock 
+                    Height="60" 
+                    HorizontalAlignment="Center" 
+                    Width="150" 
+                    TextWrapping="Wrap" 
+                    TextTrimming="CharacterEllipsis"
+                    Text="{Binding Author}" 
+                    TextAlignment="Center" 
+                    Margin="0"
+                    VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
     </Grid>
 </Page>
