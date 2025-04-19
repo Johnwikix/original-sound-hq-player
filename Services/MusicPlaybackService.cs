@@ -5,6 +5,7 @@ using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -383,6 +384,10 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
+                if (!File.Exists(music.Path)) {
+                    notificationService.SendNotification("文件不存在", music.Path);
+                    return false;
+                }
                 Reset();
                 if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
                 {

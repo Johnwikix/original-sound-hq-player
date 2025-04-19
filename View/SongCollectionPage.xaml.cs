@@ -49,17 +49,17 @@ namespace WinUIMusicPlayer.View
             if (parentPage != null) {
                 if (parentPage.pageType == "album")
                 {
-                    var musicList = await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, parentPage.searchText);
+                    var musicList = await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, AppData.searchText);
                     await LoadMusicAsync(musicList, parentPage.pageType);
                 }
                 if (parentPage.pageType == "artist")
                 {
-                    var musicList = await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, parentPage.searchText);
+                    var musicList = await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, AppData.searchText);
                     await LoadMusicAsync(musicList, parentPage.pageType);
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    var musicList = await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, parentPage.searchText);
+                    var musicList = await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, AppData.searchText);
                     await LoadMusicAsync(musicList, parentPage.pageType);
                 }
             }

@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.View
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
-        public string searchText = "";
+        //public string searchText = "";
         private bool isMouseOverVolumeSlider = false;
         public string currentAlbumName;
         public string currentArtistName;
@@ -45,6 +45,7 @@ namespace WinUIMusicPlayer.View
         private bool isMouseOverProgressBar = false;
         private NotificationService notificationService = new NotificationService();
         public EventHandler refreshSong;
+        public EventHandler refreshAlbum;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -333,11 +334,6 @@ namespace WinUIMusicPlayer.View
                 {
                     songListPage.LoadMusicAsync(musics);
                 }
-                var albumBrowsePage = ContentFrame.Content as AlbumPage;
-                if (albumBrowsePage != null)
-                {
-                    albumBrowsePage.LoadAlbumsAsync(musics);
-                }
                 var artistPage = ContentFrame.Content as ArtistPage;
                 if (artistPage != null)
                 {
@@ -456,7 +452,7 @@ namespace WinUIMusicPlayer.View
         private async void TypingTimer_Tick(object sender, object e)
         {
             typingTimer.Stop(); // 定时器触发时停止定时器
-            searchText = SearchTextBox.Text;
+            AppData.searchText = SearchTextBox.Text;
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 if (ContentFrame.Content is SongCollectionPage)
@@ -475,6 +471,9 @@ namespace WinUIMusicPlayer.View
                     //{
                     //    LoadFolderMusic(paramName);
                     //}
+                }
+                else if (ContentFrame.Content is AlbumPage) {
+                    refreshAlbum?.Invoke(this, EventArgs.Empty);
                 }
                 else if (ContentFrame.Content is FavouritePlayListPage)
                 {

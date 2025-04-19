@@ -104,16 +104,23 @@ namespace WinUIMusicPlayer.Reader
             {
                 try
                 {
-                    readerStream = new FlacReader(fileName);
+                    readerStream = new FFmpegAudioReader(fileName);                    
                 }
                 catch (Exception ex)
                 {
-                    readerStream = new FFmpegAudioReader(fileName);
+                    readerStream = new FlacReader(fileName);
                 }
             }
             else
             {
-                readerStream = new AudioFileReader(fileName);
+                try
+                {
+                    readerStream = new AudioFileReader(fileName);
+                }
+                catch (Exception ex)
+                {
+                    readerStream = new FFmpegAudioReader(fileName);
+                }                
             }
         }
 

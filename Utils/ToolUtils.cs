@@ -87,6 +87,48 @@ namespace WinUIMusicPlayer.Utils
             return newCover;
         }
 
+        public static async Task<BitmapImage> GetAlbumCoverFromSingleMusic(Music album)
+        {
+            BitmapImage newCover = album.Cover;
+            if (album.Album != "未知专辑")
+            {
+                if (album.Extension != "WAV")
+                {
+                    return DefaultAlbumCover();
+                }
+                try
+                {
+                    using (var file = TagLib.File.Create(album.Path))
+                    {
+                        if (file.Tag.Pictures.Length > 0)
+                        {
+                            var picture = file.Tag.Pictures[0];
+                            newCover = await ReadBitmapImageAsync(picture, 125);
+                        }
+                        else
+                        {
+                            newCover = DefaultAlbumCover();
+                        }
+                        return newCover;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    newCover = DefaultAlbumCover();
+                    Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+                    return newCover;
+                }
+            }
+            else
+            {
+                newCover = DefaultAlbumCover();
+                return newCover;
+            }
+            return newCover;
+        }
+
+
+
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
             using (var ms = new MemoryStream(picture.Data.Data))
@@ -141,21 +183,28 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
+
         public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData)
         {
-            if (imageData == null || imageData.Length == 0)
-                return DefaultAlbumCover();
-            using (var stream = new InMemoryRandomAccessStream())
+            try
             {
-                using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
+                if (imageData == null || imageData.Length == 0)
+                    return DefaultAlbumCover();
+                using (var stream = new InMemoryRandomAccessStream())
                 {
-                    dataWriter.WriteBytes(imageData);
-                    await dataWriter.StoreAsync();
+                    using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
+                    {
+                        dataWriter.WriteBytes(imageData);
+                        await dataWriter.StoreAsync();
+                    }
+                    var bitmapImage = new BitmapImage();
+                    await bitmapImage.SetSourceAsync(stream);
+                    return bitmapImage;
                 }
-                var bitmapImage = new BitmapImage();
-                await bitmapImage.SetSourceAsync(stream);
-                return bitmapImage;
             }
+            catch(Exception ex) {
+                return DefaultAlbumCover();
+            }            
         }
 
         public static byte[] GetRawImage(Music music)
@@ -353,7 +402,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".m4a",".dsf",".dff" };
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg",".aiff", ".m4a",".dsf",".dff" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 

@@ -16,11 +16,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                var groupedAlbums = musics.GroupBy(m => m.Album)
-                                           .Select(g => g.First())
-                                           .OrderBy(m => m.Album)
-                                           .ToList();
-                foreach (var album in groupedAlbums)
+                foreach (var album in musics)
                 {
                     if (AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
                     {
@@ -31,6 +27,28 @@ namespace WinUIMusicPlayer.Services
                         BitmapImage cover = await ToolUtils.GetAlbumCover(album, musics);
                         album.Cover = cover;
                         AppData.albumCoverCache[album.Album] = cover;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+            }
+        }
+
+        public static async Task LoadAlbumCoversInCacheAsync(List<Music> musics)
+        {
+            try
+            {
+                var groupedAlbums = musics.GroupBy(m => m.Album)
+                                           .Select(g => g.First())
+                                           .OrderBy(m => m.Album)
+                                           .ToList();
+                foreach (var album in groupedAlbums)
+                {
+                    if (!AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
+                    {
+                        AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album, musics);
                     }
                 }
             }

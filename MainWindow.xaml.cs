@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer
         public async Task LoadMusicList(string search = null)
         {
             var musicList = await MusicDatabaseService.GetMusicListAsync(search);
-            _ = AlbumCoverService.LoadAlbumCoversAsync(musicList);
+            _ = AlbumCoverService.LoadAlbumCoversInCacheAsync(musicList);
             MusicListLoaded?.Invoke(this, musicList);
         }
 
