@@ -314,7 +314,7 @@ namespace WinUIMusicPlayer.Services
                     wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, AppSettings.Latency);
                     break;
                 case "WasapiExclusive":
-                    wasapiOut = new CSCore.SoundOut.WasapiOut(true, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+                    wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
                     break;
                 default:
                     wasapiOut = new CSCore.SoundOut.WasapiOut();
