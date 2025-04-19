@@ -25,6 +25,7 @@ namespace WinUIMusicPlayer.View
     {
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
+        private string _lastSearchText = "";
 
         public SongListPage()
         {
@@ -38,7 +39,15 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                InitializeDatabase();
+                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
+                {
+                    _lastSearchText = AppData.searchText;
+                    InitializeDatabase();
+                }
+                else
+                {
+                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                }
             }
         }
 
@@ -58,10 +67,7 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            if (parentPage != null)
-            {
-                await parentPage.LoadMusic();
-            }
+           LoadMusicAsync(await MusicDatabaseService.GetMusicListAsync(AppData.searchText));
         }
 
         public void LoadMusicAsync(List<Music> musics)
@@ -176,11 +182,7 @@ namespace WinUIMusicPlayer.View
             {
                 listViewItem.IsSelected = true;
                 MusicListView.SelectedItem = listViewItem.Content;
-
-                // 获取音乐对象
                 var musicItem = listViewItem.Content as Model.Music;
-
-                // 获取右键菜单
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
                     // 为菜单项设置DataContext
