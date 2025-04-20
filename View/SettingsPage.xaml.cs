@@ -50,27 +50,7 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        private async Task SaveSetting()
-        {
-            var settings = await MusicDatabaseService.GetSettings();
-            SaveSettings newSettings = new SaveSettings();
-            newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppSettings.Latency;
-            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-            newSettings.DefualtEntry = AppSettings.DefualtEntry;
-            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-            newSettings.LrcAPISource = AppSettings.LrcAPISource;
-            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
-            if (settings == null)
-            {
-                await MusicDatabaseService.InsertSettings(newSettings);
-            }
-            else
-            {
-                await MusicDatabaseService.UpdateSettings(newSettings);
-            }
-        }
+        
 
         private void LoadOutputDevices()
         {
@@ -155,7 +135,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    _ = SaveSetting();
+                    //_ = SaveSetting();
                 }
 
             }
@@ -173,7 +153,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    _ = SaveSetting();
+                    //_ = SaveSetting();
                 }
             }
         }
@@ -186,7 +166,7 @@ namespace WinUIMusicPlayer.View
                 if (!isInitializing)
                 {
                     AppSettings.OnOutputSettingsChanged();
-                    _ = SaveSetting();
+                    //_ = SaveSetting();
                 }
 
             }
@@ -194,24 +174,12 @@ namespace WinUIMusicPlayer.View
 
         private void LrcAPITextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
             AppSettings.LrcAPISource = LrcAPITextBox.Text;
-            if (!isInitializing)
-            {
-                _ = SaveSetting();
-            }
-
         }
 
         private void LrcAPIAuthTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
             AppSettings.LrcAPIAuth = LrcAPIAuthTextBox.Text;
-            if (!isInitializing)
-            {
-                _ = SaveSetting();
-            }
-
         }
 
         private void DefualtPlayListComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -222,10 +190,6 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.DefualtPlayList = selectedItem.Tag.ToString();
-                }
-                if (!isInitializing)
-                {
-                    _ = SaveSetting();
                 }
             }
         }
@@ -238,10 +202,6 @@ namespace WinUIMusicPlayer.View
                 {
                     ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
                     AppSettings.DefualtEntry = selectedItem.Tag.ToString();
-                }
-                if (!isInitializing)
-                {
-                    _ = SaveSetting();
                 }
             }
         }

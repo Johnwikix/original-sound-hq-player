@@ -25,6 +25,7 @@ namespace WinUIMusicPlayer.View
     {
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
+        private string _lastSearchText = "";
         public FavouritePlayListPage()
         {
             this.InitializeComponent();
@@ -57,8 +58,23 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                InitializeData();
+                parentPage.refreshPage += RefreshMusicList;
+                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
+                {
+                    _lastSearchText = AppData.searchText;
+                    InitializeData();
+                }
+                else
+                {
+                    UpdateMusicListView();
+                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                }
             }
+        }
+
+        private void RefreshMusicList(object? sender, EventArgs e)
+        {
+            InitializeData();
         }
 
         public void SortMusicList(string sortOrder)
@@ -79,7 +95,8 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                await parentPage.LoadFavouriteMusic();
+                var musicList = await MusicDatabaseService.GetFavoriteMusicAsync(AppData.searchText);
+                LoadMusicAsync(musicList);
             }
         }
 
@@ -170,7 +187,8 @@ namespace WinUIMusicPlayer.View
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
-                await parentPage.RemoveMusic(selectedMusic.Id);
+                await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
+                musicList.Remove(selectedMusic);
             }
         }
 

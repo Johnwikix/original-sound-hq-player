@@ -39,7 +39,7 @@
         <NavigationView Visibility="Collapsed" PaneDisplayMode="LeftCompact" x:Name="NavigationViewControl" IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="添加文件夹" Tag="AddFolder" Icon="NewFolder" />
-                <NavigationViewItem Content="音乐浏览" Tag="MusicBrowse" Icon="MusicInfo" />
+                <NavigationViewItem Content="音乐浏览" Tag="MusicBrowse" Icon="Audio" />
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame" />
         </NavigationView>

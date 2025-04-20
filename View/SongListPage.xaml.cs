@@ -26,7 +26,6 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private string _lastSearchText = "";
-
         public SongListPage()
         {
             InitializeComponent();
@@ -47,6 +46,7 @@ namespace WinUIMusicPlayer.View
                 }
                 else
                 {
+                    UpdateMusicListView();
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
             }

@@ -4,6 +4,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -47,6 +48,11 @@ namespace WinUIMusicPlayer.Services
         {
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
+            InitializingData();
+        }
+
+        private async void InitializingData() {
+            currentPlayingList = await MusicDatabaseService.LoadPlayList();
         }
 
         private void ProgressTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -508,11 +514,11 @@ namespace WinUIMusicPlayer.Services
                         wasapiOut.Stopped += wasapiOut_Stopped;
                         AppSettings.isDsd = true;
                         AppSettings.isPlaying = true;
-                        _ = Task.Run(() => SavePlayState());
+                        //_ = Task.Run(() => SavePlayState());
                     }
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
-                    _ = Task.Run(() => SavePlayState());
+                    //_ = Task.Run(() => SavePlayState());
                 }
                 catch (Exception ex)
                 {
@@ -556,8 +562,29 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void DisposeAudio()
+        private async Task SaveSetting()
         {
+            var settings = await MusicDatabaseService.GetSettings();
+            SaveSettings newSettings = new SaveSettings();
+            newSettings.OutputMode = AppSettings.OutputMode;
+            newSettings.Latency = AppSettings.Latency;
+            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+            newSettings.DefualtEntry = AppSettings.DefualtEntry;
+            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
+            newSettings.LrcAPISource = AppSettings.LrcAPISource;
+            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
+            if (settings == null)
+            {
+                await MusicDatabaseService.InsertSettings(newSettings);
+            }
+            else
+            {
+                await MusicDatabaseService.UpdateSettings(newSettings);
+            }
+        }
+
+        public async Task DisposeAudio()
+        {            
             if (progressTimer != null)
             {
                 progressTimer.Stop();
@@ -579,11 +606,19 @@ namespace WinUIMusicPlayer.Services
                 wasapiOut = null;
             }
 
+            if (ffmpegDecoder != null) {
+                ffmpegDecoder.Dispose();
+                ffmpegDecoder = null;
+            }
+
             if (multiTypeAudioReader != null)
             {
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
+            await MusicDatabaseService.SavePlayList(currentPlayingList);
+            await SavePlayState();
+            await SaveSetting();
         }
 
         public void SwitchPlayMode()

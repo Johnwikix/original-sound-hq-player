@@ -160,7 +160,7 @@ namespace WinUIMusicPlayer.View
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
                 musicList.Remove(selectedMusic);
-                await parentPage.RemoveMusic(selectedMusic.Id);
+                await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
             }
         }
 

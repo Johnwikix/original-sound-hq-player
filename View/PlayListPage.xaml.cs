@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
@@ -24,11 +25,11 @@ namespace WinUIMusicPlayer.View
         public PlayListPage()
         {
             this.InitializeComponent();
-            if (mainWindow != null)
-            {
-                mainWindow.PlayListLoaded += MainWindow_PlayListLoaded; ;
-                mainWindow.LoadPlayList();
-            }
+            //if (mainWindow != null)
+            //{
+            //    mainWindow.PlayListLoaded += MainWindow_PlayListLoaded; 
+            //    mainWindow.LoadPlayList();
+            //}
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -39,7 +40,19 @@ namespace WinUIMusicPlayer.View
                 this.parentPage = parentPage;
                 parentPage.currentPlayList = null;
                 parentPage.DisableBackButton();
+                parentPage.refreshPage += RefreshPlayList;
+                InitializingData();
             }
+        }
+
+        private void RefreshPlayList(object? sender, EventArgs e)
+        {
+            InitializingData();
+        }
+
+        private async void InitializingData() {
+            playLists = new ObservableCollection<PlayList>(await MusicDatabaseService.GetPlayListAsync());
+            PlayListView.ItemsSource = playLists;
         }
 
         private void MainWindow_PlayListLoaded(object? sender, List<PlayList> _playLists)
@@ -55,24 +68,24 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void OpenPlayListButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is PlayList playList)
-            {
-                Debug.WriteLine($"Clicked on playlist: {playList.Name}");
-                if (parentPage != null)
-                {
-                    parentPage.LoadPlayListSong(playList);
-                }
-            }
-        }
+        //private async void OpenPlayListButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (sender is Button button && button.Tag is PlayList playList)
+        //    {
+        //        Debug.WriteLine($"Clicked on playlist: {playList.Name}");
+        //        if (parentPage != null)
+        //        {
+        //            parentPage.LoadPlayListSong(playList);
+        //        }
+        //    }
+        //}
         private async void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is PlayList playList)
             {
                 Debug.WriteLine($"remove on playlist: {playList.Name}");
                 await MusicDatabaseService.RemovePlayList(playList);
-                await mainWindow.LoadPlayList();
+                playLists.Remove(playList);
             }
         }
 
@@ -98,9 +111,17 @@ namespace WinUIMusicPlayer.View
                     {
                         playList.Name = playlistName;
                         await MusicDatabaseService.UpdatePlayList(playList);
-                        await mainWindow.LoadPlayList();
+                        InitializingData();
                     }
                 }
+            }
+        }
+        private void PlayListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var playList = PlayListView.SelectedItem as PlayList;
+            if (playList != null && parentPage != null)
+            {
+                parentPage.LoadPlayListSong(playList);
             }
         }
     }

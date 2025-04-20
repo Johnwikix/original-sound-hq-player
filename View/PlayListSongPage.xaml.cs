@@ -39,6 +39,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
+                parentPage.refreshPage += RefreshPlayList;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
                 {
                     PlayListName.Text = parentPage.currentPlayList.Name;
@@ -47,10 +48,17 @@ namespace WinUIMusicPlayer.View
                 }
                 else
                 {
+                    UpdateMusicListView();
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                }
+                }                
             }
         }
+
+        private void RefreshPlayList(object? sender, EventArgs e)
+        {
+            initizeData();
+        }
+
         private async void initizeData() {
             if (parentPage != null)
             {

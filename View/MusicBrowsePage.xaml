@@ -251,6 +251,28 @@
 
             </Grid>
             <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
+                <Button x:Name="CurrentPlayListButton" Click="CurrentPlayListButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;"/>
+                </Button>
+                <TeachingTip x:Name="CurrentPlayListTeachingTip"                    
+                    Target="{x:Bind CurrentPlayListButton}"
+                    IsLightDismissEnabled="True"
+                     >
+                    <TeachingTip.Content>
+                        <ListView x:Name="CurrentPlayListView" 
+                                    DoubleTapped="CurrentPlayListView_DoubleTapped" 
+                                    MaxHeight="400"
+                                    Width="290"
+                                    >
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="model:Music">
+                                    <TextBlock Text="{x:Bind Title,Mode=OneWay}" Grid.Column="1" Margin="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </TeachingTip.Content>
+                </TeachingTip>
                 <!-- 播放模式按钮 -->
                 <Button x:Name="PlayModeButton" Click="PlayModeButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
@@ -278,6 +300,7 @@
                     PointerWheelChanged="VolumeSlider_PointerWheelChanged"
                     HorizontalAlignment="Right"/>
             </StackPanel>
+            
         </Grid>
     </Grid>
 </Page>

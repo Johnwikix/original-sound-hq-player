@@ -11,53 +11,9 @@
     mc:Ignorable="d"
    >
 
-    <Page.Resources>
-        <!-- 定义 ListViewItem 的样式 -->
-        <Style x:Key="CustomListViewItemStyle" TargetType="ListViewItem">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListViewItem">
-                        <Grid>
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal">
-                                        <!-- 正常状态下的样式设置，这里保持默认 -->
-                                    </VisualState>
-                                    <VisualState x:Name="PointerOver">
-                                        <Storyboard>
-                                            <!-- 将鼠标悬停时的背景设置为与正常状态相同（透明） -->
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Storyboard.TargetName="ContentPresenter">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="Transparent"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <!-- 按下状态的样式设置，可根据需要自定义 -->
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <!-- 禁用状态的样式设置，可根据需要自定义 -->
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter 
-                                x:Name="ContentPresenter" 
-                                Content="{TemplateBinding Content}" 
-                                ContentTemplate="{TemplateBinding ContentTemplate}"                                
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
-                                Margin="{TemplateBinding Padding}"
-                                HorizontalAlignment="Stretch">
-                                <!-- 添加水平对齐方式 -->
-                            </ContentPresenter>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Page.Resources>
     <Grid>
         <Grid Margin="0" x:Name="PlayList">
-            <ListView x:Name="PlayListView" ItemContainerStyle="{StaticResource CustomListViewItemStyle}">
+            <ListView x:Name="PlayListView" SelectionChanged="PlayListView_SelectionChanged">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayList">
                         <Grid>
@@ -66,12 +22,10 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="OpenPlayListButton" Tag="{Binding}" Click="OpenPlayListButton_Click" Grid.Column="0" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
-                                <StackPanel Orientation="Horizontal">
-                                    <FontIcon Glyph="&#xe90b;" Margin="0 0 10 0"/>
-                                    <TextBlock Text="{x:Bind Name}" FontSize="18"/>
-                                </StackPanel>                                
-                            </Button>
+                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="0" Tag="{Binding}" Orientation="Horizontal">
+                                <FontIcon Glyph="&#xe90b;" Margin="0 0 10 0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind Name}" FontSize="18" VerticalAlignment="Center"/>
+                            </StackPanel>
                             <Button x:Name="EditPlayListNameButton" Click="EditPlayListNameButton_Click" Grid.Column="1" Tag="{Binding}" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
                                 <FontIcon Glyph="&#xeb7e;"/>
                             </Button>

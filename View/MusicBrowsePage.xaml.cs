@@ -60,8 +60,8 @@ namespace WinUIMusicPlayer.View
             if (mainWindow != null)
             {
                 mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
-                mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
-                mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
+                //mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
+                //mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
                 //mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed += MainWindow_Closed;
             }
@@ -88,14 +88,14 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MainWindow_Closed(object? sender, EventArgs e)
+        private async void MainWindow_Closed(object? sender, EventArgs e)
         {
-            musicPlaybackService.DisposeAudio();
+            await musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
                 mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
                 //mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
-                mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
+                //mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
                 //mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed -= MainWindow_Closed;
             }
@@ -264,33 +264,33 @@ namespace WinUIMusicPlayer.View
             await PlayMusic(music);
         }
 
-        private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
-        {
-            musicPlaybackService.musicList = musics;
-            if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-            {
-                musicPlaybackService.currentPlayingList = musics;
-            }
-            var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
-            if (favouritePlayListPage != null)
-            {
-                favouritePlayListPage.LoadMusicAsync(musics);
-            }
-        }
+        //private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
+        //{
+        //    musicPlaybackService.musicList = musics;
+        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
+        //    {
+        //        musicPlaybackService.currentPlayingList = musics;
+        //    }
+        //    var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
+        //    if (favouritePlayListPage != null)
+        //    {
+        //        favouritePlayListPage.LoadMusicAsync(musics);
+        //    }
+        //}
 
-        private async void MainWindow_SongCollecionLoaded(object sender, List<Music> musics)
-        {
-            musicPlaybackService.musicList = musics;
-            if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-            {
-                musicPlaybackService.currentPlayingList = musics;
-            }
-            var songCollectionPage = ContentFrame.Content as SongCollectionPage;
-            if (songCollectionPage != null)
-            {
-                await songCollectionPage.LoadMusicAsync(musics, pageType);
-            }
-        }
+        //private async void MainWindow_SongCollecionLoaded(object sender, List<Music> musics)
+        //{
+        //    musicPlaybackService.musicList = musics;
+        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
+        //    {
+        //        musicPlaybackService.currentPlayingList = musics;
+        //    }
+        //    //var songCollectionPage = ContentFrame.Content as SongCollectionPage;
+        //    //if (songCollectionPage != null)
+        //    //{
+        //    //    await songCollectionPage.LoadMusicAsync(musics, pageType);
+        //    //}
+        //}
 
         private void MainWindow_MusicListLoaded(object sender, List<Music> musics)
         {
@@ -308,13 +308,13 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async Task LoadPlayList()
-        {
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadPlayList();
-            }
-        }
+        //public async Task LoadPlayList()
+        //{
+        //    if (mainWindow != null)
+        //    {
+        //        await mainWindow.LoadPlayList();
+        //    }
+        //}
 
         public async void LoadPlayListSong(PlayList playList)
         {
@@ -325,22 +325,22 @@ namespace WinUIMusicPlayer.View
             currentPage = typeof(PlayListSongPage);
             ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
-        public async Task LoadMusic()
-        {
+        //public async Task LoadMusic()
+        //{
 
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadMusicList(SearchTextBox.Text);
-            }
-        }
+        //    if (mainWindow != null)
+        //    {
+        //        await mainWindow.LoadMusicList(SearchTextBox.Text);
+        //    }
+        //}
 
-        public async Task LoadFavouriteMusic()
-        {
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadFavourMusicList(SearchTextBox.Text);
-            }
-        }
+        //public async Task LoadFavouriteMusic()
+        //{
+        //    if (mainWindow != null)
+        //    {
+        //        await mainWindow.LoadFavourMusicList(SearchTextBox.Text);
+        //    }
+        //}
 
         public async void LoadAlbumMusic(string Album)
         {
@@ -406,11 +406,11 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
-        public async Task RemoveMusic(int musicId)
-        {
-            await MusicDatabaseService.RemoveMusic(musicId);
-            await LoadMusic();
-        }
+        //public async Task RemoveMusic(int musicId)
+        //{
+        //    await MusicDatabaseService.RemoveMusic(musicId);
+        //    //await LoadMusic();
+        //}
 
         public async Task AddToFavourite(Music music)
         {
@@ -445,14 +445,14 @@ namespace WinUIMusicPlayer.View
             {
                 refreshPage?.Invoke(this, EventArgs.Empty);
                 refreshSong?.Invoke(this, EventArgs.Empty);
-                 if (ContentFrame.Content is FavouritePlayListPage)
-                {
-                    await LoadFavouriteMusic();
-                }
-                else if (ContentFrame.Content is PlayListSongPage)
-                {
-                    LoadPlayListSong(currentPlayList);
-                }
+                // if (ContentFrame.Content is FavouritePlayListPage)
+                //{
+                //    await LoadFavouriteMusic();
+                //}
+                //else if (ContentFrame.Content is PlayListSongPage)
+                //{
+                //    LoadPlayListSong(currentPlayList);
+                //}
             }
         }
 
@@ -628,7 +628,8 @@ namespace WinUIMusicPlayer.View
                 {
                     var newPlaylist = new PlayList { Name = playlistName };
                     await MusicDatabaseService.InsertPlayList(newPlaylist);
-                    await LoadPlayList();
+                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    //await LoadPlayList();
                 }
             }
         }
@@ -636,8 +637,39 @@ namespace WinUIMusicPlayer.View
         private async void PlayModeButton_Click(object sender, RoutedEventArgs e)
         {
             musicPlaybackService.SwitchPlayMode();
-            await musicPlaybackService.SavePlayState();
+            //await musicPlaybackService.SavePlayState();
             UpdatePlayModeIcon();
+        }
+
+        private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
+        {            
+            if (musicPlaybackService.currentPlayingList != null) {
+                CurrentPlayListView.ItemsSource = musicPlaybackService.currentPlayingList;
+                CurrentPlayListTeachingTip.IsOpen = true;
+                UpdateCurrentPlayList();
+            }
+        }
+
+        private void UpdateCurrentPlayList() {
+            if (musicPlaybackService.currentPlayingList != null)
+            {
+                if (musicPlaybackService.currentPlayingList.Contains(musicPlaybackService.currentPlayingMusic))
+                {
+                    CurrentPlayListView.SelectedItem = musicPlaybackService.currentPlayingMusic;
+                    DispatcherQueue.TryEnqueue(() => {
+                        CurrentPlayListView.ScrollIntoView(musicPlaybackService.currentPlayingMusic);
+                    });
+                }
+            }            
+        }
+
+        private async void CurrentPlayListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+            var selectedMusic = CurrentPlayListView.SelectedItem as Music;
+            if (selectedMusic != null)
+            {
+                await PlayMusic(selectedMusic);
+            }
         }
 
         private void FullScreenButton_Click(object sender, RoutedEventArgs e)
@@ -855,6 +887,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.currentPlayingMusic = music;
             UpdatePlayBar(music);
             UpdateViewList(music);
+            UpdateCurrentPlayList();
             await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
         }
 
@@ -966,7 +999,7 @@ namespace WinUIMusicPlayer.View
                 musicPlaybackService.multiTypeAudioReader.Volume = musicPlaybackService.volume;
             }
             VolumeIconChange((int)e.NewValue);
-            _ = musicPlaybackService.SavePlayState();
+            //_ = musicPlaybackService.SavePlayState();
         }
 
         private void VolumeIconChange(int volume)

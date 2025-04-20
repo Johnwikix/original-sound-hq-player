@@ -29,12 +29,48 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<SaveSettings>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
+                await _dbConnection.CreateTableAsync<LastPlayListState>();
             }
         }
 
         public static SQLiteAsyncConnection GetDbConnection()
         {
             return _dbConnection;
+        }
+
+        public static async Task SavePlayList(List<Music> currentPlayingList)
+        {
+            await _dbConnection.DeleteAllAsync<LastPlayListState>();
+            var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
+
+            var playListState = new LastPlayListState
+            {
+                PlayListMusicIds = musicIds
+            };
+            await _dbConnection.InsertAsync(playListState);
+        }
+
+        public static async Task<List<Music>> LoadPlayList()
+        {
+            var playListState = await _dbConnection.Table<LastPlayListState>().FirstOrDefaultAsync();
+            if (playListState == null)
+            {
+                return new List<Music>();
+            }
+
+            var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                         .Select(int.Parse).ToList();
+            var musicList = new List<Music>();
+            foreach (var musicId in musicIds)
+            {
+                var music = await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
+                if (music != null)
+                {
+                    musicList.Add(music);
+                }
+            }
+
+            return musicList;
         }
 
         public static async Task<List<Folder>> GetFoldersAsync()
@@ -678,7 +714,7 @@ namespace WinUIMusicPlayer.Services
                     if (mainWindow != null)
                     {
                         //await mainWindow.LoadMusicList();
-                        await mainWindow.LoadFavourMusicList();
+                        //await mainWindow.LoadFavourMusicList();
                     }
                 }
                 catch (Exception ex)

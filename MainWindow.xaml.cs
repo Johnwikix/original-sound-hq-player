@@ -21,10 +21,10 @@ namespace WinUIMusicPlayer
     {
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler<List<Music>> MusicListLoaded;
-        public event EventHandler<List<Music>> SongCollecionLoaded;
-        public event EventHandler<List<Music>> FavourListLoaded;
+        //public event EventHandler<List<Music>> SongCollecionLoaded;
+        //public event EventHandler<List<Music>> FavourListLoaded;
         public event EventHandler SettingLoaded;
-        public event EventHandler<List<PlayList>> PlayListLoaded;
+        //public event EventHandler<List<PlayList>> PlayListLoaded;
         //public event EventHandler<List<Music>> PlayMusicListLoaded;
         public event EventHandler WindowClosed;
 
@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer
                         LoadMusicList(),
                         RefreshDevice(),
                         LoadDeviceState(),
-                        LoadPlayList()
+                        //LoadPlayList()
                 };
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
@@ -97,11 +97,11 @@ namespace WinUIMusicPlayer
             var folderList = await MusicDatabaseService.GetFoldersAsync();
             FoldersLoaded?.Invoke(this, folderList);
         }
-        public async Task LoadPlayList()
-        {
-            var playList = await MusicDatabaseService.GetPlayListAsync();
-            PlayListLoaded?.Invoke(this, playList);
-        }
+        //public async Task LoadPlayList()
+        //{
+        //    var playList = await MusicDatabaseService.GetPlayListAsync();
+        //    PlayListLoaded?.Invoke(this, playList);
+        //}
 
         //public async Task LoadPlayListMusic(int playListId, string search = null)
         //{
@@ -116,11 +116,11 @@ namespace WinUIMusicPlayer
             MusicListLoaded?.Invoke(this, musicList);
         }
 
-        public async Task LoadFavourMusicList(string search = null)
-        {
-            var musicList = await MusicDatabaseService.GetFavoriteMusicAsync(search);
-            FavourListLoaded?.Invoke(this, musicList);
-        }
+        //public async Task LoadFavourMusicList(string search = null)
+        //{
+        //    var musicList = await MusicDatabaseService.GetFavoriteMusicAsync(search);
+        //    FavourListLoaded?.Invoke(this, musicList);
+        //}
 
         public async Task RefreshDevice()
         {

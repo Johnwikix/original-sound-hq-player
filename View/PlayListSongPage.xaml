@@ -36,7 +36,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <TextBlock x:Name="PlayListName" FontSize="18" Margin="10 0 10 10"/>
