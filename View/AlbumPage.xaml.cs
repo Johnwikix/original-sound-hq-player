@@ -69,6 +69,8 @@ namespace WinUIMusicPlayer.View
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
+            _currentPage = 0;
+            musicList.Clear();
             InitializeDatabase();
         }
 

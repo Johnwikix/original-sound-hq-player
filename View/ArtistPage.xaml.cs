@@ -66,6 +66,8 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshArtist(object? sender, EventArgs e)
         {
+            _currentPage = 0;
+            musicList.Clear();
             InitializeData();
         }
 

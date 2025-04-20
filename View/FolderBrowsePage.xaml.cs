@@ -67,6 +67,8 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshFolder(object? sender, EventArgs e)
         {
+            _currentPage = 0;
+            musicList.Clear();
             InitializeData();
         }
 
