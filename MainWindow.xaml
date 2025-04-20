@@ -29,7 +29,7 @@
             FontSize="16"
             VerticalAlignment="Center"
             Style="{StaticResource CaptionTextBlockStyle}"
-            Text="原声听域"/>
+            Text="原音HIFI播放器"/>
         </Grid>
         <!-- Loading 界面 -->
         <Grid x:Name="LoadingGrid" Visibility="Visible">

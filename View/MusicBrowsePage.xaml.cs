@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.View
         private void InitializeTimer()
         {
             typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(300);
+            typingTimer.Interval = TimeSpan.FromMilliseconds(500);
             typingTimer.Tick += TypingTimer_Tick;
         }
 
@@ -445,14 +445,6 @@ namespace WinUIMusicPlayer.View
             {
                 refreshPage?.Invoke(this, EventArgs.Empty);
                 refreshSong?.Invoke(this, EventArgs.Empty);
-                // if (ContentFrame.Content is FavouritePlayListPage)
-                //{
-                //    await LoadFavouriteMusic();
-                //}
-                //else if (ContentFrame.Content is PlayListSongPage)
-                //{
-                //    LoadPlayListSong(currentPlayList);
-                //}
             }
         }
 
