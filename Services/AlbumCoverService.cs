@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         BitmapImage cover = await ToolUtils.GetAlbumCover(album);
                         album.Cover = cover;
-                        AppData.albumCoverCache[album.Album] = cover;
+                        //AppData.albumCoverCache[album.Album] = cover;
                     }
                 }
             }
