@@ -83,19 +83,22 @@ namespace WinUIMusicPlayer.View.SubView
             Music result = null;
             bool isResultAssigned = false;
             foreach (var music in musics)
-            {
+            {                
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                 {
-                    Tag tag = audioFile.Tag;
-                    byte[] albumArtData = albumCoverData;
-                    Picture albumArt = new Picture
+                    Tag tag = audioFile.Tag;                    
+                    if (albumCoverData != null)
                     {
-                        Type = PictureType.FrontCover,
-                        MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
-                        Description = "Album Art",
-                        Data = new ByteVector(albumArtData)
-                    };
-                    tag.Pictures = new IPicture[] { albumArt };
+                        byte[] albumArtData = albumCoverData;
+                        Picture albumArt = new Picture
+                        {
+                            Type = PictureType.FrontCover,
+                            MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
+                            Description = "Album Art",
+                            Data = new ByteVector(albumArtData)
+                        };
+                        tag.Pictures = new IPicture[] { albumArt };
+                    }  
                     tag.Album = AlbumTextBlock.Text;
                     tag.Year = uint.Parse(YearTextBlock.Text);
                     LoadingGrid.Visibility = Visibility.Visible;

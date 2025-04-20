@@ -59,16 +59,17 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.refreshPage += RefreshMusicList;
-                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
-                {
-                    _lastSearchText = AppData.searchText;
-                    InitializeData();
-                }
-                else
-                {
-                    UpdateMusicListView();
-                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                }
+                InitializeData();
+                //if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
+                //{
+                //    _lastSearchText = AppData.searchText;
+                //    InitializeData();
+                //}
+                //else
+                //{
+                //    UpdateMusicListView();
+                //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                //}
             }
         }
 

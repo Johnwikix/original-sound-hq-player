@@ -39,7 +39,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
-            <TextBlock x:Name="PlayListName" FontSize="18" Margin="10 0 10 10"/>
+            <TextBlock x:Name="PlayListName" FontSize="18" Margin="30 0 10 10"/>
         </Grid>
         <Grid Grid.Row="1">
             <ListView x:Name="MusicListView" 

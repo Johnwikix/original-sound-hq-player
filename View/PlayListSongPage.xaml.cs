@@ -40,17 +40,19 @@ namespace WinUIMusicPlayer.View
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
                 parentPage.refreshPage += RefreshPlayList;
-                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
-                {
-                    PlayListName.Text = parentPage.currentPlayList.Name;
-                    _lastSearchText = AppData.searchText;
-                    initizeData();
-                }
-                else
-                {
-                    UpdateMusicListView();
-                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                }                
+                PlayListName.Text = parentPage.currentPlayList.Name;
+                initizeData();
+                //if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
+                //{
+                //    PlayListName.Text = parentPage.currentPlayList.Name;
+                //    _lastSearchText = AppData.searchText;
+                //    initizeData();
+                //}
+                //else
+                //{
+                //    UpdateMusicListView();
+                //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                //}                
             }
         }
 
