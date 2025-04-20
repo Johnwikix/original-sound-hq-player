@@ -182,18 +182,23 @@ namespace WinUIMusicPlayer.View
                         e.GetPosition(originalSource),
                         "artist"
                     );
+                    ContextMenuService.playingArtistMusic += PlayingArtist;
                 }
             }
-
-            // ÏÔÊ¾×¨¼­ÓÒ¼ü²Ëµ¥
-            //await ContextMenuService.Instance.ShowAlbumContextMenu(
-            //    album,
-            //    button,
-            //    e.GetPosition(button),
-            //    "artist"
-            //);
-
             e.Handled = true;
+        }
+
+        private async void PlayingArtist(object? sender, Music e)
+        {
+            List<Music> artists = (await MusicDatabaseService.GetArtistMusicAsync(e.Author)).OrderBy(m => m.Album).ToList();
+            if (artists != null && artists.Count > 0)
+            {
+                if (parentPage != null)
+                {
+                    parentPage.musicPlaybackService.currentPlayingList = artists;
+                    await parentPage.PlayMusic(artists[0]);
+                }
+            }
         }
 
         //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)

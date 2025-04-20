@@ -146,21 +146,6 @@ namespace WinUIMusicPlayer.View
                 _ = LoadMoreFolderAsync();
             }
         }
-        //public void LoadFolder(List<Music> musics)
-        //{
-        //    try
-        //    {
-        //        var groupArtists = musics.GroupBy(m => m.LastLevelFolderPath)
-        //                                     .Select(g => g.First())
-        //                                     .ToList();
-        //        musicList = groupArtists;
-        //        SortMusicList("DefaultOrder");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
-        //    }
-        //}
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
@@ -197,34 +182,24 @@ namespace WinUIMusicPlayer.View
                         e.GetPosition(originalSource),
                         "folder"
                     );
+                    ContextMenuService.playingFolderMusic += PlayingFolder;
                 }
             }
-            //var button = sender as Button;
-            //var album = button.DataContext;
-
-            //// 显示专辑右键菜单
-            //await ContextMenuService.Instance.ShowAlbumContextMenu(
-            //    album,
-            //    button,
-            //    e.GetPosition(button),
-            //    "folder"
-            //);
 
             e.Handled = true;
         }
 
-        //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var menuItem = sender as MenuFlyoutItem;
-        //    var music = menuItem?.DataContext as Music;
-        //    if (music != null)
-        //    {
-        //        List<Music> musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
-        //        if (musicList != null)
-        //        {
-        //            _ = MusicDatabaseService.AddMusicListToFavour(musicList);
-        //        }
-        //    }
-        //}
+        private async void PlayingFolder(object? sender, Music e)
+        {
+            List<Music> folders = (await MusicDatabaseService.GetFolderMusicAsync(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
+            if (folders != null && folders.Count > 0)
+            {
+                if (parentPage != null)
+                {
+                    parentPage.musicPlaybackService.currentPlayingList = folders;
+                    await parentPage.PlayMusic(folders[0]);
+                }
+            }
+        }
     }
 }

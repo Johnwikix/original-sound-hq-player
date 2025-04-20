@@ -180,9 +180,21 @@ namespace WinUIMusicPlayer.View
                         e.GetPosition(originalSource),
                         "album"
                     );
+                    ContextMenuService.playingAlbumMusic += PlayingAlbum;
                 }
             }
             e.Handled = true;
+        }
+
+        private async void PlayingAlbum(object? sender, Music e)
+        {
+            List<Music> albums = (await MusicDatabaseService.GetAlbumMusicAsync(e.Album)).OrderBy(m=>m.Album).ToList();
+            if (albums != null && albums.Count > 0) {
+                if (parentPage != null) {
+                    parentPage.musicPlaybackService.currentPlayingList = albums;
+                    await parentPage.PlayMusic(albums[0]);
+                }
+            }
         }
 
         public async void OnAlbumDetailChanged(object sender, Music cover)

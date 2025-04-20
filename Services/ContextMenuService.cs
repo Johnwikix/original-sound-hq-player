@@ -24,6 +24,10 @@ namespace WinUIMusicPlayer.Services
             albumPage = page;
         }
 
+        public static EventHandler<Music> playingAlbumMusic;
+        public static EventHandler<Music> playingArtistMusic;
+        public static EventHandler<Music> playingFolderMusic;
+
         /// <summary>
         /// 创建并显示右键菜单
         /// </summary>
@@ -31,6 +35,14 @@ namespace WinUIMusicPlayer.Services
         {
             // 创建菜单
             MenuFlyout flyout = new MenuFlyout();
+
+            MenuFlyoutItem play = new MenuFlyoutItem
+            {
+                Text = "播放",
+                DataContext = item
+            };
+            play.Click += (sender, e) => Play_Click(sender, e, type);
+            flyout.Items.Add(play);
 
             // 添加"添加到最爱"菜单项
             MenuFlyoutItem favoriteItem = new MenuFlyoutItem
@@ -84,6 +96,28 @@ namespace WinUIMusicPlayer.Services
             flyout.ShowAt(targetElement, position);
 
         }
+
+        private void Play_Click(object sender, RoutedEventArgs e, string type)
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var music = menuItem?.DataContext as Music;
+            if (music != null) {
+                if (type == "album")
+                {
+                    playingAlbumMusic?.Invoke(this, music);
+                }
+                if (type == "artist")
+                {
+                    playingArtistMusic?.Invoke(this, music);
+                }
+                if (type == "folder")
+                {
+                    playingFolderMusic?.Invoke(this, music);
+                }
+               
+            }            
+        }
+
         private async void AddToFavourite_Click(object sender, RoutedEventArgs e, string type)
         {
             var menuItem = sender as MenuFlyoutItem;
