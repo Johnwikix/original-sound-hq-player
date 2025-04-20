@@ -172,7 +172,7 @@
     <PublishAot>False</PublishAot>
     <PlatformTarget>x64</PlatformTarget>
     <NuGetAuditMode>all</NuGetAuditMode>
-    <AssemblyName>原声听域</AssemblyName>
+    <AssemblyName>原音HIFI播放器</AssemblyName>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
