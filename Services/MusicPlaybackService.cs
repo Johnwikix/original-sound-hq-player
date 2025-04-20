@@ -560,28 +560,7 @@ namespace WinUIMusicPlayer.Services
             {
                 progressTimer.Stop();
             }
-        }
-
-        private async Task SaveSetting()
-        {
-            var settings = await MusicDatabaseService.GetSettings();
-            SaveSettings newSettings = new SaveSettings();
-            newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppSettings.Latency;
-            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-            newSettings.DefualtEntry = AppSettings.DefualtEntry;
-            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-            newSettings.LrcAPISource = AppSettings.LrcAPISource;
-            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
-            if (settings == null)
-            {
-                await MusicDatabaseService.InsertSettings(newSettings);
-            }
-            else
-            {
-                await MusicDatabaseService.UpdateSettings(newSettings);
-            }
-        }
+        }        
 
         public async Task DisposeAudio()
         {            
@@ -618,7 +597,6 @@ namespace WinUIMusicPlayer.Services
             }
             await MusicDatabaseService.SavePlayList(currentPlayingList);
             await SavePlayState();
-            await SaveSetting();
         }
 
         public void SwitchPlayMode()
