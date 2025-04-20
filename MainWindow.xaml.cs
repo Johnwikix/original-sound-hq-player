@@ -55,10 +55,10 @@ namespace WinUIMusicPlayer
                         LoadFoldersAsync(),
                         LoadMusicList(),
                         RefreshDevice(),
-                        LoadDeviceState(),
                         //LoadPlayList()
                 };
                 await Task.WhenAll(tasks);
+                await LoadDeviceState();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
