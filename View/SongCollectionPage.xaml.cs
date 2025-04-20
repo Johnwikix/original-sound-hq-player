@@ -164,14 +164,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void AddToPlaylistMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (MusicListView.SelectedItem is Music selectedMusic)
-            {
-                // 处理添加到播放列表的逻辑
-            }
-        }
-
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (MusicListView.SelectedItem is Music selectedMusic)
@@ -223,7 +215,7 @@ namespace WinUIMusicPlayer.View
                 string artist = textBlock.Text;
                 if (parentPage != null)
                 {
-                    parentPage.LoadArtistMusic(artist);
+                    parentPage.SelectBarArtist(artist);
                 }
             }
         }
@@ -235,7 +227,7 @@ namespace WinUIMusicPlayer.View
                 string albumName = textBlock.Text;
                 if (parentPage != null)
                 {
-                    parentPage.LoadAlbumMusic(albumName);
+                    parentPage.SelectBarAlbum(albumName);
                 }
             }
         }
@@ -250,11 +242,21 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
+        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
         {
-            musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
-            MusicListView.ItemsSource = musicList;
-            UpdateMusicListView();
+            foreach (var music in musicList)
+            {
+                if (music.Path == musicItem.Path)
+                {
+                    music.Title = musicItem.Title;
+                    music.Author = musicItem.Author;
+                    music.Album = musicItem.Album;
+                    break;
+                }
+            }
+            //musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
+            //MusicListView.ItemsSource = musicList;
+            //UpdateMusicListView();
         }
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)

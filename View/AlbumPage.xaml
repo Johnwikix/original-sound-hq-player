@@ -32,7 +32,7 @@
                             Width="150" 
                             TextWrapping="Wrap" 
                             TextTrimming="CharacterEllipsis"
-                            Text="{Binding Album}" 
+                            Text="{Binding Album,Mode=OneWay}" 
                             TextAlignment="Center" 
                             Margin="0"
                             VerticalAlignment="Center"/>

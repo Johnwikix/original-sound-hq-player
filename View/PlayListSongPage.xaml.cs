@@ -25,6 +25,7 @@ namespace WinUIMusicPlayer.View
     {
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
+        private string _lastSearchText = "";
         public PlayListSongPage()
         {
             this.InitializeComponent();
@@ -37,8 +38,24 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                PlayListName.Text = parentPage.currentPlayList.Name;
                 parentPage.DisableBackButton();
+                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
+                {
+                    PlayListName.Text = parentPage.currentPlayList.Name;
+                    _lastSearchText = AppData.searchText;
+                    initizeData();
+                }
+                else
+                {
+                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+                }
+            }
+        }
+        private async void initizeData() {
+            if (parentPage != null)
+            {
+                var musicList = await MusicDatabaseService.GetMusicByPlayListId(parentPage.currentPlayListId, AppData.searchText);
+                LoadMusicAsync(musicList);
             }
         }
 
@@ -65,6 +82,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                
                 musicList = new ObservableCollection<Music>(musics);
                 MusicListView.ItemsSource = musicList;
                 UpdateMusicListView();
@@ -200,7 +218,7 @@ namespace WinUIMusicPlayer.View
                 // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
                 if (parentPage != null)
                 {
-                    parentPage.LoadAlbumMusic(albumName);
+                    parentPage.SelectBarAlbum(albumName);
                 }
             }
         }
@@ -212,7 +230,7 @@ namespace WinUIMusicPlayer.View
                 string artist = textBlock.Text;
                 if (parentPage != null)
                 {
-                    parentPage.LoadArtistMusic(artist);
+                    parentPage.SelectBarArtist(artist);
                 }
             }
         }
@@ -226,11 +244,18 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
+        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
         {
-            musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
-            MusicListView.ItemsSource = musicList;
-            UpdateMusicListView();
+            foreach (var music in musicList)
+            {
+                if (music.Path == musicItem.Path)
+                {
+                    music.Title = musicItem.Title;
+                    music.Author = musicItem.Author;
+                    music.Album = musicItem.Album;
+                    break;
+                }
+            }
         }
 
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)

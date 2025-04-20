@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.View
             if (MusicListView.SelectedItem is Music selectedMusic)
             {
                 musicList.Remove(selectedMusic);
-                await parentPage.RemoveMusic(selectedMusic.Id);
+                await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
             }
         }
 
@@ -246,7 +246,7 @@ namespace WinUIMusicPlayer.View
                 string artist = textBlock.Text;
                 if (parentPage != null)
                 {
-                    parentPage.LoadArtistMusic(artist);
+                    parentPage.SelectBarArtist(artist);
                 }
             }
         }
@@ -258,7 +258,7 @@ namespace WinUIMusicPlayer.View
                 string albumName = textBlock.Text;
                 if (parentPage != null)
                 {
-                    parentPage.LoadAlbumMusic(albumName);
+                    parentPage.SelectBarAlbum(albumName);
                 }
             }
         }
@@ -273,11 +273,19 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music music)
+        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
         {
-            musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
-            MusicListView.ItemsSource = musicList;
-            UpdateMusicListView();
+            foreach (var music in musicList)
+            {
+                if (music.Path == musicItem.Path)
+                {
+                    music.Title = musicItem.Title;
+                    music.Author = musicItem.Author;
+                    music.Album = musicItem.Album;
+                    break;
+                }
+            }
+
         }
     }
 }

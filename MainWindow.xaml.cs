@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer
         public event EventHandler<List<Music>> FavourListLoaded;
         public event EventHandler SettingLoaded;
         public event EventHandler<List<PlayList>> PlayListLoaded;
-        public event EventHandler<List<Music>> PlayMusicListLoaded;
+        //public event EventHandler<List<Music>> PlayMusicListLoaded;
         public event EventHandler WindowClosed;
 
         public MainWindow()
@@ -103,11 +103,11 @@ namespace WinUIMusicPlayer
             PlayListLoaded?.Invoke(this, playList);
         }
 
-        public async Task LoadPlayListMusic(int playListId, string search = null)
-        {
-            var musicList = await MusicDatabaseService.GetMusicByPlayListId(playListId, search);
-            PlayMusicListLoaded?.Invoke(this, musicList);
-        }
+        //public async Task LoadPlayListMusic(int playListId, string search = null)
+        //{
+        //    var musicList = await MusicDatabaseService.GetMusicByPlayListId(playListId, search);
+        //    PlayMusicListLoaded?.Invoke(this, musicList);
+        //}
 
         public async Task LoadMusicList(string search = null)
         {

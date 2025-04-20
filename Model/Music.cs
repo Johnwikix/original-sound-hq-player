@@ -11,8 +11,21 @@ namespace WinUIMusicPlayer.Model
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public string Path { get; set; }
-        public string Title { get; set; }        
-        public BitmapImage cover = null;
+        private string title;
+        public string Title
+        {
+            get { return title; }
+            set
+            {
+                if (title != value)
+                {
+                    title = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private BitmapImage cover = null;
         [Ignore]
         public BitmapImage Cover
         {
@@ -26,9 +39,36 @@ namespace WinUIMusicPlayer.Model
                 }
             }
         }
-        public string Author { get; set; }
+
+        private string author;
+
+        public string Author
+        {
+            get { return author; }
+            set
+            {
+                if (author != value)
+                {
+                    author = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public TimeSpan Duration { get; set; }
-        public string Album { get; set; }
+        private string album;
+
+        public string Album
+        {
+            get { return album; }
+            set
+            {
+                if (album != value)
+                {
+                    album = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public string FolderPath { get; set; }
         public string LastLevelFolderPath { get; set; }
         public string Extension { get; set; }

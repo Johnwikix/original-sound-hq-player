@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.View
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
+        public System.Type currentPage = typeof(SongListPage);
         private bool isMouseOverVolumeSlider = false;
         public string currentAlbumName;
         public string currentArtistName;
@@ -61,7 +62,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
                 mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
-                mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
+                //mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed += MainWindow_Closed;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
@@ -70,7 +71,6 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;            
-            DisableBackButton();
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
@@ -83,7 +83,6 @@ namespace WinUIMusicPlayer.View
                 if (item is SelectorBarItem selectorBarItem && selectorBarItem.Tag.ToString() == name)
                 {
                     selectPage.SelectedItem = selectorBarItem;
-                    NavigateToPage(selectorBarItem.Name);
                     break;
                 }
             }
@@ -97,7 +96,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
                 //mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
                 mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
-                mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
+                //mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed -= MainWindow_Closed;
             }
             musicPlaybackService.playingMusic -= MusicPlaybackService_playingMusic;
@@ -162,33 +161,30 @@ namespace WinUIMusicPlayer.View
 
         public void DisableBackButton()
         {
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (currentPage == typeof(SongCollectionPage) || currentPage == typeof(PlayListSongPage))
             {
-                if (ContentFrame.Content is SongCollectionPage || ContentFrame.Content is PlayListSongPage)
-                {
-                    BackButton.IsEnabled = true;
-                }
-                else
-                {
-                    BackButton.IsEnabled = false;
-                }
+                BackButton.IsEnabled = true;
+            }
+            else
+            {
+                BackButton.IsEnabled = false;
             }
         }
 
-        private void MainWindow_PlayMusicListLoaded(object? sender, List<Music> musics)
-        {
-            musicPlaybackService.musicList = musics;
-            //当没有播放列表时，默认播放列表为当前列表
-            if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-            {
-                musicPlaybackService.currentPlayingList = musics;
-            }
-            var playListSongPage = ContentFrame.Content as PlayListSongPage;
-            if (playListSongPage != null)
-            {
-                playListSongPage.LoadMusicAsync(musics);
-            }
-        }
+        //private void MainWindow_PlayMusicListLoaded(object? sender, List<Music> musics)
+        //{
+        //    musicPlaybackService.musicList = musics;
+        //    //当没有播放列表时，默认播放列表为当前列表
+        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
+        //    {
+        //        musicPlaybackService.currentPlayingList = musics;
+        //    }
+        //    //var playListSongPage = ContentFrame.Content as PlayListSongPage;
+        //    //if (playListSongPage != null)
+        //    //{
+        //    //    playListSongPage.LoadMusicAsync(musics);
+        //    //}
+        //}
 
         private void MusicPlaybackService_updateProgressMax(object? sender, double max)
         {
@@ -326,13 +322,8 @@ namespace WinUIMusicPlayer.View
             paramName = playList.Name;
             currentPlayList = playList;
             currentPlayListId = playList.Id;
-            //ResetNavigationButtons();
-            //PlayListButton.FontSize = 26;
-            ContentFrame.Navigate(typeof(PlayListSongPage), this, new DrillInNavigationTransitionInfo());
-            if (mainWindow != null)
-            {
-                await mainWindow.LoadPlayListMusic(playList.Id, SearchTextBox.Text);
-            }
+            currentPage = typeof(PlayListSongPage);
+            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
         public async Task LoadMusic()
         {
@@ -356,9 +347,26 @@ namespace WinUIMusicPlayer.View
             pageType = "album";
             paramName = Album;
             currentAlbumName = Album;
-            //ResetNavigationButtons();
-            //AlbumButton.FontSize = 26;
-            ContentFrame.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo());
+            currentPage = typeof(SongCollectionPage);
+            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+        }
+
+        public void SelectBarAlbum(string Album) {
+            pageType = "album";
+            paramName = Album;
+            currentAlbumName = Album;
+            currentPage = typeof(SongCollectionPage);
+            if (ContentFrame != null && ContentFrame.Content != null)
+            {
+                if (ContentFrame.Content is AlbumPage)
+                {
+                    ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                }
+                else
+                {
+                    SelectBarItem("album");
+                }
+            }
         }
 
         public async void LoadArtistMusic(string artist)
@@ -366,9 +374,27 @@ namespace WinUIMusicPlayer.View
             pageType = "artist";
             paramName = artist;
             currentArtistName = artist;
-            //ResetNavigationButtons();
-            //ArtistButton.FontSize = 26;
-            ContentFrame.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo());
+            currentPage = typeof(SongCollectionPage);
+            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+        }
+
+        public void SelectBarArtist(string artist)
+        {
+            pageType = "artist";
+            paramName = artist;
+            currentArtistName = artist;
+            currentPage = typeof(SongCollectionPage);
+            if (ContentFrame != null && ContentFrame.Content != null)
+            {
+                if (ContentFrame.Content is ArtistPage)
+                {
+                    ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                }
+                else
+                {
+                    SelectBarItem("artist");
+                }
+            }
         }
 
         public async void LoadFolderMusic(string folder)
@@ -376,7 +402,8 @@ namespace WinUIMusicPlayer.View
             pageType = "folder";
             paramName = folder;
             currentFolderName = folder;
-            ContentFrame.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo());
+            currentPage = typeof(SongCollectionPage);
+            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         public async Task RemoveMusic(int musicId)
@@ -417,21 +444,14 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 refreshPage?.Invoke(this, EventArgs.Empty);
-                if (ContentFrame.Content is SongCollectionPage)
-                {
-                    refreshSong?.Invoke(this, EventArgs.Empty);
-                }
-                else if (ContentFrame.Content is FavouritePlayListPage)
+                refreshSong?.Invoke(this, EventArgs.Empty);
+                 if (ContentFrame.Content is FavouritePlayListPage)
                 {
                     await LoadFavouriteMusic();
                 }
                 else if (ContentFrame.Content is PlayListSongPage)
                 {
                     LoadPlayListSong(currentPlayList);
-                }
-                else
-                {
-                    await LoadMusic();
                 }
             }
         }
@@ -468,12 +488,15 @@ namespace WinUIMusicPlayer.View
                 switch (pageType)
                 {
                     case "album":
+                        currentPage = typeof(AlbumPage);
                         ContentFrame.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "artist":
+                        currentPage = typeof(ArtistPage);
                         ContentFrame.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "folder":
+                        currentPage = typeof(AlbumPage);
                         ContentFrame.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
                         break;
                     default:
@@ -482,8 +505,10 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
+                currentPage = typeof(PlayListPage);
                 ContentFrame.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
             }
+            DisableBackButton();
         }
 
         private void ResetNavigationButtons()
@@ -497,28 +522,28 @@ namespace WinUIMusicPlayer.View
             }
         }
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
-        {
+        {            
             ResetNavigationButtons();
             SelectorBarItem selectedItem = sender.SelectedItem;
             selectedItem.FontSize = 26;
             int currentSelectedIndex = sender.Items.IndexOf(selectedItem);
-            System.Type page = typeof(SongListPage);
+            currentPage = typeof(SongListPage);
             Debug.WriteLine($"Navigating to page: {selectedItem.Name}");
             switch (selectedItem.Name)
             {
                 case "Song":
-                    page = typeof(SongListPage);
+                    currentPage = typeof(SongListPage);
                     break;
                 case "Album":
                     if (!string.IsNullOrEmpty(currentAlbumName))
                     {
                         pageType = "album";
                         paramName = currentAlbumName;
-                        page = typeof(SongCollectionPage);
+                        currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        page = typeof(AlbumPage);
+                        currentPage = typeof(AlbumPage);
                     }
                     break;
                 case "Artist":
@@ -526,11 +551,11 @@ namespace WinUIMusicPlayer.View
                     {
                         pageType = "artist";
                         paramName = currentArtistName;
-                        page = typeof(SongCollectionPage);
+                        currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        page = typeof(ArtistPage);
+                        currentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
@@ -538,15 +563,15 @@ namespace WinUIMusicPlayer.View
                     {
                         pageType = "folder";
                         paramName = currentFolderName;
-                        page = typeof(SongCollectionPage);
+                        currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        page = typeof(FolderBrowsePage);
+                        currentPage = typeof(FolderBrowsePage);
                     }
                     break;
                 case "Favourite":
-                    page = typeof(FavouritePlayListPage);
+                    currentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
                     if (currentPlayList != null)
@@ -554,32 +579,17 @@ namespace WinUIMusicPlayer.View
                         pageType = "playlist";
                         paramName = currentPlayList.Name;
                         currentPlayListId = currentPlayList.Id;
-                        page = typeof(PlayListSongPage);
+                        currentPage = typeof(PlayListSongPage);
                     }
                     else
                     {
-                        page = typeof(PlayListPage);
+                        currentPage = typeof(PlayListPage);
                     }
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            ContentFrame.Navigate(page, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            ContentFrame.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             previousSelectedIndex = currentSelectedIndex;
-        }
-
-        private void NavigateToPage(string page) {
-            
-        }
-
-        private void NavigationButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            //ResetNavigationButtons();
-            if (button != null)
-            {
-                button.FontSize = 26;
-                NavigateToPage(button.Tag.ToString());                
-            }
             DisableBackButton();
         }
 
@@ -709,7 +719,7 @@ namespace WinUIMusicPlayer.View
             {
                 musicPlaybackService.isInitializing = true;
                 await LoadPlayState();
-                await LoadMusic();
+                //await LoadMusic();
                 PlayTimeTextBlock.Text = "00:00/00:00";
                 musicPlaybackService.OutputDeviceChange();
                 musicPlaybackService.CScoreOutputDevice();
@@ -1037,7 +1047,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string artist = textBlock.Text;
-                LoadArtistMusic(artist);
+               SelectBarArtist(artist);
             }
         }
 
@@ -1046,7 +1056,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string albumName = textBlock.Text;
-                LoadAlbumMusic(albumName);
+                SelectBarAlbum(albumName);
             }
         }
 

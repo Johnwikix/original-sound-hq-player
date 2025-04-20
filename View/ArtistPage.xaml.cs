@@ -145,35 +145,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //public async Task LoadAlbumsAsync(List<Music> musics)
-        //{
-        //    try
-        //    {
-        //        _allMusic = musics;
-        //        await LoadMoreArtistAsync(true);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-        //    }
-        //}
-
-        //public void LoadArtists(List<Music> musics)
-        //{
-        //    try
-        //    {
-        //        var groupArtists = musics.GroupBy(m => m.Author)
-        //                                     .Select(g => g.First())
-        //                                     .ToList();
-        //        musicList = groupArtists;
-        //        SortMusicList("DefaultOrder");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-        //    }
-        //}
-
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var gridView = sender as GridView;

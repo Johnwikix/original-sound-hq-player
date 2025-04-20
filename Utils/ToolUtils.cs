@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<BitmapImage> GetAlbumCover(Music album)
         {
             BitmapImage newCover = album.Cover;
-            List<Music> musics =(await MusicDatabaseService.GetAlbumMusicAsync(album.Album)).Where(m => m.Extension.ToLower() != "wav").ToList();
+            List<Music> musics =(await MusicDatabaseService.GetAlbumMusicAsync(album.Album)).ToList();
             if (album.Album != "未知专辑")
             {
                 if (musics == null || musics.Count() == 0)
