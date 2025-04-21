@@ -414,7 +414,7 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         SelectCSCoreOutputDevice();
-                        ffmpegDecoder = new FfmpegDecoder(music.Path);                        
+                        ffmpegDecoder = new FfmpegDecoder(music.Path);                    
                         wasapiOut.Device = csCoreMMdevice;
                         wasapiOut.Initialize(ffmpegDecoder);
                     }

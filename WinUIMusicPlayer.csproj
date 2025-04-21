@@ -52,6 +52,7 @@
   <ItemGroup>
     <PackageReference Include="BunLabs.NAudio.Flac" Version="2.0.1" />
     <PackageReference Include="CSCore" Version="1.2.1.2" />
+    <PackageReference Include="flac-msvc-x64" Version="1.3.4.8790" />
     <PackageReference Include="LordLuceus.CSCore.Ffmpeg" Version="1.0.2" />
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.3" />

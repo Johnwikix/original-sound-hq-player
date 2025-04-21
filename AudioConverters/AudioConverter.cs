@@ -3,12 +3,14 @@ using CSCore.Ffmpeg;
 using CSCore.Streams;
 using NAudio.Flac;
 using NAudio.Lame;
+using NAudio.MediaFoundation;
 using NAudio.Vorbis;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -35,9 +37,9 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
+
                 }
-            }         
-                
+            }
         }
 
         public static void ConvertFlac(string flacFilePath, string outputPath, string type = "wav")
@@ -128,17 +130,20 @@ namespace WinUIMusicPlayer.AudioConverters
                         }
                     }
                 }
+                if (type == "wma") {                    
+                    using (var reader = new WaveFileReader(filePath))
+                    {
+                        MediaFoundationEncoder.EncodeToWma(reader, outputPath);
+                    }
+                }                
             }
         }
 
-        public static void ConvertDSDToWav(string filePath, string outputPath, int sampleRate,string type="wav")
+        public static void ConvertDSDToWav(string filePath, string outputPath,string type="wav")
         {
-            if (sampleRate == 0)
+            using (IWaveSource waveSource = new FfmpegDecoder(filePath))
             {
-                sampleRate = 5644800;
-            }
-            using (IWaveSource audio = (new FfmpegDecoder(filePath)).ChangeSampleRate(sampleRate / 16))
-            {
+                IWaveSource audio = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate/4);
                 if (type == "wav") {
                     using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(outputPath, audio.WaveFormat))
                     {
@@ -163,7 +168,6 @@ namespace WinUIMusicPlayer.AudioConverters
                         int bytesRead;
                         while ((bytesRead = convertedSource.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // 将读取的 PCM 数据写入到 MP3 文件中
                             mp3Writer.Write(buffer, 0, bytesRead);
                         }
                     }
@@ -199,15 +203,6 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                 }
             }
-        }
-
-        private static NAudio.Wave.WaveFormat ConvertToNAudioWaveFormat(CSCore.WaveFormat csCoreFormat)
-        {
-            return new NAudio.Wave.WaveFormat(
-                csCoreFormat.SampleRate,
-                csCoreFormat.BitsPerSample,
-                csCoreFormat.Channels
-            );
         }
 
 

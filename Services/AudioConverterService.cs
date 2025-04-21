@@ -50,13 +50,13 @@ namespace WinUIMusicPlayer.Services
                 case "dsf":
                     Task.Run(() =>
                     {
-                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, music.SampleRate,type);
+                        AudioConverter.ConvertDSDToWav(music.Path, outputPath,type);
                     });
                     break;
                 case "dff":
                     Task.Run(() =>
                     {
-                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, music.SampleRate, type);
+                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, type);
                     });
                     break;
                 default:
