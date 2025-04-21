@@ -10,44 +10,61 @@ namespace WinUIMusicPlayer.Services
 {
     public class AudioConverterService
     {
-        public static void ConvertAudio2Wav(Music music) {
-            string outputPath = AudioConverter.GenerateOutputPath(music.Path, "wav");
-            if (music.Extension.ToLower() == "mp3")
+        public static void ConvertAudio2Wav(Music music,string type="wav")
+        {
+            string outputPath = AudioConverter.GenerateOutputPath(music.Path, type);
+            switch (music.Extension.ToLower())
             {
-                Task.Run(() =>
-                {
-                    AudioConverter.ConvertMp3ToWav(music.Path, outputPath);
-                });
-            }
-            else if (music.Extension.ToLower() == "flac")
-            {
-                Task.Run(() =>
-                {
-                    AudioConverter.ConvertFlacToWav(music.Path, outputPath);
-                });
-            }
-            else if (music.Extension.ToLower() == "aiff" || music.Extension.ToLower() == "aif")
-            {
-                Task.Run(() =>
-                {
-                    AudioConverter.ConvertAiffToWav(music.Path, outputPath);
-                });
-            }
-            else if (music.Extension.ToLower() == "wav")
-            {
-            }
-            else if (music.Extension.ToLower() == "dsf" || music.Extension.ToLower() == "dff") {
-                Task.Run(() =>
-                {
-                    AudioConverter.ConvertDSDToWav(music.Path, outputPath,music.SampleRate);
-                });
-            }
-            else
-            {
-                Task.Run(() =>
-                {
-                    AudioConverter.ConvertAudioToWav(music.Path, outputPath);
-                });
+                case "mp3":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertMp3(music.Path, outputPath,type);
+                    });
+                    break;
+                case "flac":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertFlac(music.Path, outputPath, type);
+                    });
+                    break;
+                case "aiff":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertAiff(music.Path, outputPath, type);
+                    });
+                    break;
+                case "aif":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertAiff(music.Path, outputPath, type);
+                    });
+                    break;
+                case "wav":
+                    break;
+                case "ogg":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertOgg(music.Path, outputPath, type);
+                    });
+                    break;
+                case "dsf":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, music.SampleRate,type);
+                    });
+                    break;
+                case "dff":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, music.SampleRate, type);
+                    });
+                    break;
+                default:
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertAudio(music.Path, outputPath, type);
+                    });
+                    break;
             }
         }
     }

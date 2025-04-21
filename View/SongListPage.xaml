@@ -28,7 +28,8 @@
                         <MenuFlyoutSubItem Text="添加到播放列表">                                                   
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSubItem Text="转换为">
-                            <MenuFlyoutItem Text="WAV" Click="Convert2Wav_Click"></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="WAV" Tag="wav" Click="ConvertAudio_Click"></MenuFlyoutItem>
+                            <MenuFlyoutItem Text="MP3" Tag="mp3" Click="ConvertAudio_Click"></MenuFlyoutItem>
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
                         <MenuFlyoutItem Text="属性" Click="MusicDetail_Click"/>
