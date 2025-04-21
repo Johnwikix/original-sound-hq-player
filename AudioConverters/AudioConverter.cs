@@ -1,4 +1,6 @@
-﻿using NAudio.Flac;
+﻿using CSCore;
+using CSCore.Ffmpeg;
+using NAudio.Flac;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
@@ -41,9 +43,23 @@ namespace WinUIMusicPlayer.AudioConverters
             }
         }
 
-        public static void ConvertAnyAudioToWav(string filePath, string wavFilePath)
+        public static void ConvertAiffToWav(string filePath, string wavFilePath)
+        {
+            using (WaveStream audioReader = new AiffFileReader(filePath))
+            using (var wavWriter = new WaveFileWriter(wavFilePath, audioReader.WaveFormat))
+            {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    wavWriter.Write(buffer, 0, bytesRead);
+                }
+            }
+        }
+
+        public static void ConvertAudioToWav(string filePath, string wavFilePath)
         {            
-            using (WaveStream audioReader = new AudioFileReader(filePath))
+            using (WaveStream audioReader = new MediaFoundationReader(filePath))
             {                
                 using (var wavWriter = new WaveFileWriter(wavFilePath, audioReader.WaveFormat))
                 {
@@ -55,6 +71,25 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                 }
             }            
+        }
+
+        public static void ConvertDSDToWav(string filePath, string wavFilePath,int sampleRate)
+        {
+            if (sampleRate == 0) {
+                sampleRate = 5644800;
+            }
+            using (IWaveSource audio = (new FfmpegDecoder(filePath)).ChangeSampleRate(sampleRate/16))
+            {
+                using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(wavFilePath, audio.WaveFormat))
+                {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        wavWriter.Write(buffer, 0, bytesRead);
+                    }
+                }
+            }
         }
 
 
