@@ -140,6 +140,14 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private async void Convert2Wav_Click(object sender, RoutedEventArgs e)
+        {
+            if (MusicListView.SelectedItem is Music selectedMusic)
+            {
+                AudioConverterService.ConvertAudio2Wav(selectedMusic);
+            }
+        }
+
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (MusicListView.SelectedItem is Music selectedMusic)

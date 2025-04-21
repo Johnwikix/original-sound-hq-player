@@ -42,7 +42,6 @@ namespace WinUIMusicPlayer.Services
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService = new NotificationService();
-        //public DispatcherQueue DispatcherQueue { get; set; }
 
         public MusicPlaybackService()
         {
@@ -415,7 +414,7 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         SelectCSCoreOutputDevice();
-                        ffmpegDecoder = new FfmpegDecoder(music.Path);
+                        ffmpegDecoder = new FfmpegDecoder(music.Path);                        
                         wasapiOut.Device = csCoreMMdevice;
                         wasapiOut.Initialize(ffmpegDecoder);
                     }
