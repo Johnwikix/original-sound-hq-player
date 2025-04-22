@@ -1,24 +1,29 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
 using CUETools.Codecs.FLAKE;
+using Microsoft.VisualBasic.Devices;
 using NAudio.Flac;
 using NAudio.Lame;
 using NAudio.Vorbis;
 using NAudio.Wave;
+using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
     public class AudioConverter
     {
-        public static void ConvertMp3(string mp3FilePath, string outputPath, string type = "wav")
+        public EventHandler<double> progressEvent;
+        public void ConvertMp3(string mp3FilePath, string outputPath, string type = "wav")
         {
-
-
             using (Mp3FileReader mp3Reader = new Mp3FileReader(mp3FilePath))
             {
                 using (WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader))
                 {
+                    long totalBytes = pcmStream.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
                     if (type == "wav")
                     {
                         using (WaveFileWriter wavWriter = new WaveFileWriter(outputPath, pcmStream.WaveFormat))
@@ -28,8 +33,17 @@ namespace WinUIMusicPlayer.AudioConverters
                             while ((bytesRead = pcmStream.Read(buffer, 0, buffer.Length)) > 0)
                             {
                                 wavWriter.Write(buffer, 0, bytesRead);
+                                bytesWritten += bytesRead;
+                                if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                                {
+                                    double progress = (double)bytesWritten / totalBytes * 100;
+                                    Console.WriteLine($"当前写入进度: {progress:F2}%");
+                                    lastUpdate = DateTime.Now;
+                                    progressEvent?.Invoke(this,progress);
+                                }
                             }
                         }
+                        progressEvent?.Invoke(this, 100);
                     }
                     if (type == "flac")
                     {
@@ -41,23 +55,25 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = pcmStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                Console.WriteLine($"当前写入进度: {progress:F2}%");
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                         memoryStream.Position = 0;
-                        AudioBuffer buff = WAVReader.ReadAllSamples(null, memoryStream);
-                        FlakeWriter target;
-                        target = new FlakeWriter(outputPath, null, new FlakeWriterSettings { PCM = buff.PCM, EncoderMode = "7" });
-                        target.Settings.Padding = 1;
-                        target.DoSeekTable = false;
-                        target.FinalSampleCount = buff.Length;
-                        target.Write(buff);
-                        target.Close();
+                        ConvertAudioToFlac(outputPath, memoryStream);
+                        progressEvent?.Invoke(this, 100);
                     }
                 }
             }
 
         }
 
-        public static void ConvertWav(string inputFilePath, string outputPath, string type = "flac")
+        public void ConvertWav(string inputFilePath, string outputPath, string type = "flac")
         {
             if (type == "flac")
             {
@@ -70,12 +86,44 @@ namespace WinUIMusicPlayer.AudioConverters
                 target.Write(buff);
                 target.Close();
             }
+            if (type == "mp3") {
+                using (WaveStream wavReader = new WaveFileReader(inputFilePath))
+                {
+                    long totalBytes = wavReader.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
+                    if (type == "mp3")
+                    {
+                        var mp3FormatPCMStream = ResampleToMp3Format(wavReader, wavReader.WaveFormat.Channels);
+                        using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
+                        {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                mp3Writer.Write(buffer, 0, bytesRead);
+                                bytesWritten += bytesRead;
+                                if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                                {
+                                    double progress = (double)bytesWritten / totalBytes * 100;
+                                    lastUpdate = DateTime.Now;
+                                    progressEvent?.Invoke(this, progress);
+                                }
+                            }
+                        }
+                        progressEvent?.Invoke(this, 100);
+                    }
+                }
+            }
         }
 
-        public static void ConvertFlac(string flacFilePath, string outputPath, string type = "wav")
+        public void ConvertFlac(string flacFilePath, string outputPath, string type = "wav")
         {
             using (WaveStream flacReader = new FlacReader(flacFilePath))
             {
+                long totalBytes = flacReader.Length;
+                long bytesWritten = 0;
+                DateTime lastUpdate = DateTime.Now;
                 if (type == "wav")
                 {
                     using (var wavWriter = new WaveFileWriter(outputPath, flacReader.WaveFormat))
@@ -85,29 +133,48 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = flacReader.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, flacReader.WaveFormat, LAMEPreset.INSANE))
+                    var mp3FormatPCMStream = ResampleToMp3Format(flacReader, flacReader.WaveFormat.Channels);
+                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = flacReader.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // 将读取的 PCM 数据写入到 MP3 文件中
                             mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
             }
         }
 
-        public static void ConvertAiff(string filePath, string outputPath, string type = "wav")
+        public void ConvertAiff(string filePath, string outputPath, string type = "wav")
         {
             using (WaveStream audioReader = new AiffFileReader(filePath))
             {
+                long totalBytes = audioReader.Length;
+                long bytesWritten = 0;
+                DateTime lastUpdate = DateTime.Now;
                 if (type == "wav")
                 {
                     using (var wavWriter = new WaveFileWriter(outputPath, audioReader.WaveFormat))
@@ -117,30 +184,71 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, audioReader.WaveFormat, LAMEPreset.INSANE))
+                    var mp3FormatPCMStream = ResampleToMp3Format(audioReader, audioReader.WaveFormat.Channels);
+                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // 将读取的 PCM 数据写入到 MP3 文件中
                             mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
+                }
+                if (type == "flac")
+                {
+                    var memoryStream = new MemoryStream();
+                    var writer = new BinaryWriter(memoryStream);
+                    WriteWavHeader(writer, memoryStream, audioReader);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        writer.Write(buffer, 0, bytesRead);
+                        bytesWritten += bytesRead;
+                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                        {
+                            double progress = (double)bytesWritten / totalBytes * 100;
+                            lastUpdate = DateTime.Now;
+                            progressEvent?.Invoke(this, progress);
+                        }
+                    }
+                    memoryStream.Position = 0;
+                    ConvertAudioToFlac(outputPath, memoryStream);
+                    progressEvent?.Invoke(this, 100);
                 }
             }
 
         }
 
-        public static void ConvertAudio(string filePath, string outputPath, string type = "wav")
+        public void ConvertAudio(string filePath, string outputPath, string type = "wav")
         {
             using (WaveStream audioReader = new MediaFoundationReader(filePath))
             {
+                long totalBytes = audioReader.Length;
+                long bytesWritten = 0;
+                DateTime lastUpdate = DateTime.Now;
                 if (type == "wav")
                 {
                     using (var wavWriter = new WaveFileWriter(outputPath, audioReader.WaveFormat))
@@ -150,21 +258,59 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, audioReader.WaveFormat, LAMEPreset.INSANE))
+                    var mp3FormatPCMStream = ResampleToMp3Format(audioReader, audioReader.WaveFormat.Channels);
+                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // 将读取的 PCM 数据写入到 MP3 文件中
                             mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
+                }
+                if (type == "flac")
+                {
+                    var memoryStream = new MemoryStream();
+                    var writer = new BinaryWriter(memoryStream);
+                    WriteWavHeader(writer, memoryStream, audioReader);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        writer.Write(buffer, 0, bytesRead);
+                        bytesWritten += bytesRead;
+                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                        {
+                            double progress = (double)bytesWritten / totalBytes * 100;
+                            lastUpdate = DateTime.Now;
+                            progressEvent?.Invoke(this, progress);
+                        }
+                    }
+                    memoryStream.Position = 0;
+                    ConvertAudioToFlac(outputPath, memoryStream);
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "wma")
                 {
@@ -176,34 +322,47 @@ namespace WinUIMusicPlayer.AudioConverters
             }
         }
 
-        public static void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
+        public void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
         {
             using (IWaveSource waveSource = new FfmpegDecoder(filePath))
-            {
-
+            {                
                 if (type == "wav")
                 {
                     IWaveSource audio = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate / 4);
                     using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(outputPath, audio.WaveFormat))
                     {
+                        long totalBytes = audio.Length;
+                        long bytesWritten = 0;
+                        DateTime lastUpdate = DateTime.Now;
                         // 确保缓冲区大小是块对齐的倍数
                         int bufferSize = audio.WaveFormat.BlockAlign * 1024; // 使用块对齐的倍数
                         byte[] buffer = new byte[bufferSize];
                         int bytesRead;
-
                         while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
+
                     IWaveSource resampledSource = waveSource.ChangeSampleRate(44100);
                     IWaveSource convertedSource = resampledSource.ToSampleSource().ToWaveSource(16);
                     NAudio.Wave.WaveFormat wave = new NAudio.Wave.WaveFormat(convertedSource.WaveFormat.SampleRate,
                                                                              convertedSource.WaveFormat.BitsPerSample,
                                                                              convertedSource.WaveFormat.Channels);
+                    long totalBytes = convertedSource.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, wave, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
@@ -211,19 +370,38 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = convertedSource.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "flac")
                 {
-                    IWaveSource resampledSource = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate / 4);
-                    // 转换为24位格式
+                    int sampleRate = 176400;
+                    if (waveSource.WaveFormat.SampleRate / 4 <= sampleRate) {
+                        sampleRate = waveSource.WaveFormat.SampleRate;
+                    }
+                    IWaveSource resampledSource = waveSource.ChangeSampleRate(sampleRate);
                     IWaveSource audio = resampledSource.ToSampleSource().ToWaveSource(24);
-                    // 创建临时WAV文件
-                    string tempWavFile = Path.GetTempFileName();
+                    long totalBytes = audio.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
+                    string tempFileName = $"temp_{Guid.NewGuid()}.wav";
+                    string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"temp",tempFileName);
+                    string directory = Path.GetDirectoryName(tempWavFile);
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
                     try
                     {
-                        // 使用CSCore的WaveWriter创建标准WAV文件
+                        // 使用CSCore的WaveWriter创建临时WAV文件
                         using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(tempWavFile, audio.WaveFormat))
                         {
                             int bufferSize = audio.WaveFormat.BlockAlign * 1024;
@@ -232,6 +410,15 @@ namespace WinUIMusicPlayer.AudioConverters
                             while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
                             {
                                 wavWriter.Write(buffer, 0, bytesRead);
+                                bytesWritten += bytesRead;
+                                if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                                {
+                                    double progress = (double)bytesWritten / totalBytes * 100;
+                                    lastUpdate = DateTime.Now;
+                                    if (progress < 99) {
+                                        progressEvent?.Invoke(this, progress);
+                                    }                                    
+                                }
                             }
                         }
                         AudioBuffer buff = WAVReader.ReadAllSamples(tempWavFile, null);
@@ -245,16 +432,20 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     finally
                     {
+                        progressEvent?.Invoke(this, 100);
                         File.Delete(tempWavFile);
                     }
                 }
             }
         }
 
-        public static void ConvertOgg(string filePath, string outputPath, string type = "wav")
+        public void ConvertOgg(string filePath, string outputPath, string type = "wav")
         {
             using (WaveStream audio = new VorbisWaveReader(filePath))
             {
+                long totalBytes = audio.Length;
+                long bytesWritten = 0;
+                DateTime lastUpdate = DateTime.Now;
                 if (type == "wav")
                 {
                     using (WaveFileWriter wavWriter = new WaveFileWriter(outputPath, audio.WaveFormat))
@@ -264,34 +455,72 @@ namespace WinUIMusicPlayer.AudioConverters
                         while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
                         }
                     }
+                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, audio.WaveFormat, LAMEPreset.INSANE))
+                    var mp3FormatPCMStream = ResampleToMp3Format(audio, audio.WaveFormat.Channels);
+                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            // 将读取的 PCM 数据写入到 MP3 文件中
                             mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
+                        }
+                        progressEvent?.Invoke(this, 100);
+                    }
+                }
+                if (type == "flac")
+                {
+                    var memoryStream = new MemoryStream();
+                    var writer = new BinaryWriter(memoryStream);
+                    WriteWavHeader(writer, memoryStream, audio);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        writer.Write(buffer, 0, bytesRead);
+                        bytesWritten += bytesRead;
+                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                        {
+                            double progress = (double)bytesWritten / totalBytes * 100;
+                            lastUpdate = DateTime.Now;
+                            progressEvent?.Invoke(this, progress);
                         }
                     }
+                    memoryStream.Position = 0;
+                    ConvertAudioToFlac(outputPath, memoryStream);
+                    progressEvent?.Invoke(this, 100);
                 }
             }
         }
 
 
-        public static string GenerateOutputPath(string inputPath, string extension)
+        public string GenerateOutputPath(string inputPath, string extension)
         {
             string directory = Path.GetDirectoryName(inputPath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(inputPath);
             return Path.Combine(directory, $"{fileNameWithoutExtension}_output.{extension.ToLower()}");
         }
 
-        public static void WriteWavHeader(BinaryWriter writer, Stream memoryStream, WaveStream pcmStream)
+        public void WriteWavHeader(BinaryWriter writer, Stream memoryStream, WaveStream pcmStream)
         {
             // 写入 WAV 文件头
             writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
@@ -307,6 +536,24 @@ namespace WinUIMusicPlayer.AudioConverters
             writer.Write((short)pcmStream.WaveFormat.BitsPerSample); // 位深度
             writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
             writer.Write((int)pcmStream.Length); // 数据块大小
+        }
+
+        public void ConvertAudioToFlac(string outputPath, MemoryStream memoryStream)
+        {
+            AudioBuffer buff = WAVReader.ReadAllSamples(null, memoryStream);
+            FlakeWriter target;
+            target = new FlakeWriter(outputPath, null, new FlakeWriterSettings { PCM = buff.PCM, EncoderMode = "7" });
+            target.Settings.Padding = 1;
+            target.DoSeekTable = false;
+            target.FinalSampleCount = buff.Length;
+            target.Write(buff);
+            target.Close();
+        }
+
+        public static WaveStream ResampleToMp3Format(WaveStream inputStream,int channels)
+        {
+            var targetFormat = new NAudio.Wave.WaveFormat(44100, 16, channels);
+            return new ResamplerDmoStream(inputStream, targetFormat);
         }
     }
 }

@@ -26,10 +26,14 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private string _lastSearchText = "";
+        private AudioConverterService converterService;
+        private ProgressDialog progressDialog;
         public PlayListSongPage()
         {
             this.InitializeComponent();
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
+            converterService = new AudioConverterService();
+            progressDialog = new ProgressDialog("正在转换");
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -193,6 +197,31 @@ namespace WinUIMusicPlayer.View
                 else
                 {
                     Debug.WriteLine($"文件不存在: {filePath}");
+                }
+            }
+        }
+
+        private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            if (menuItem != null && menuItem.Tag.ToString() != null)
+            {
+                if (MusicListView.SelectedItem is Music selectedMusic)
+                {
+                    int progressBarValue = 0;
+                    progressDialog.UpdateProgress(0);
+                    converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                    converterService.updateProgress += (sender, progress) =>
+                    {
+                        progressBarValue = (int)progress;
+                        progressDialog.UpdateProgress(progressBarValue);
+                    };
+                    if (progressBarValue < 100)
+                    {
+                        progressDialog.XamlRoot = this.XamlRoot;
+                        progressDialog.ShowAsync();
+                    }
+
                 }
             }
         }

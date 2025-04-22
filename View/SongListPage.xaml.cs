@@ -26,9 +26,13 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private string _lastSearchText = "";
+        private AudioConverterService converterService;
+        private ProgressDialog progressDialog;
         public SongListPage()
         {
             InitializeComponent();
+            converterService = new AudioConverterService();
+            progressDialog = new ProgressDialog("正在转换");
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
@@ -147,7 +151,19 @@ namespace WinUIMusicPlayer.View
             {
                 if (MusicListView.SelectedItem is Music selectedMusic)
                 {
-                    AudioConverterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                    int progressBarValue = 0;
+                    progressDialog.UpdateProgress(progressBarValue);
+                    converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                    converterService.updateProgress += (sender, progress) =>
+                    {
+                        progressBarValue = (int)progress;
+                        progressDialog.UpdateProgress(progressBarValue);
+                    };
+                    if (progressBarValue < 100) {
+                        progressDialog.XamlRoot = this.XamlRoot;
+                        progressDialog.ShowAsync();
+                    }                   
+
                 }
             }
         }
@@ -297,7 +313,6 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-
         }
     }
 }

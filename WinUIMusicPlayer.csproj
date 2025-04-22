@@ -26,6 +26,7 @@
     <None Remove="View\SongListPage.xaml" />
     <None Remove="View\SubView\AlbumDetailWindow.xaml" />
     <None Remove="View\SubView\MusicDetailsWindow.xaml" />
+    <None Remove="View\SubView\ProgressDialog.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -100,6 +101,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\SubView\ProgressDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\SubView\AlbumDetailWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
