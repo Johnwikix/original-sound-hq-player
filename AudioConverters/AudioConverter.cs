@@ -88,13 +88,13 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             if (type == "mp3") {
                 using (WaveStream wavReader = new WaveFileReader(inputFilePath))
-                {
-                    long totalBytes = wavReader.Length;
-                    long bytesWritten = 0;
-                    DateTime lastUpdate = DateTime.Now;
+                {                    
                     if (type == "mp3")
                     {
                         var mp3FormatPCMStream = ResampleToMp3Format(wavReader, wavReader.WaveFormat.Channels);
+                        long totalBytes = mp3FormatPCMStream.Length;
+                        long bytesWritten = 0;
+                        DateTime lastUpdate = DateTime.Now;
                         using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                         {
                             byte[] buffer = new byte[4096];
@@ -147,6 +147,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "mp3")
                 {
                     var mp3FormatPCMStream = ResampleToMp3Format(flacReader, flacReader.WaveFormat.Channels);
+                    totalBytes = mp3FormatPCMStream.Length;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
@@ -198,6 +199,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "mp3")
                 {
                     var mp3FormatPCMStream = ResampleToMp3Format(audioReader, audioReader.WaveFormat.Channels);
+                    totalBytes = mp3FormatPCMStream.Length;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
@@ -271,6 +273,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "mp3")
                 {
                     var mp3FormatPCMStream = ResampleToMp3Format(audioReader, audioReader.WaveFormat.Channels);
+                    totalBytes = mp3FormatPCMStream.Length;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
@@ -466,6 +469,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "mp3")
                 {
                     var mp3FormatPCMStream = ResampleToMp3Format(audio, audio.WaveFormat.Channels);
+                    totalBytes = mp3FormatPCMStream.Length;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
