@@ -10,7 +10,7 @@ using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.Services
 {
     public class AlbumCoverService
-    {        
+    {
 
         public static async Task LoadAlbumCoversAsync(List<Music> musics)
         {

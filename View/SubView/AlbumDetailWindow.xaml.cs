@@ -83,10 +83,10 @@ namespace WinUIMusicPlayer.View.SubView
             Music result = null;
             bool isResultAssigned = false;
             foreach (var music in musics)
-            {                
+            {
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                 {
-                    Tag tag = audioFile.Tag;                    
+                    Tag tag = audioFile.Tag;
                     if (albumCoverData != null)
                     {
                         byte[] albumArtData = albumCoverData;
@@ -98,7 +98,7 @@ namespace WinUIMusicPlayer.View.SubView
                             Data = new ByteVector(albumArtData)
                         };
                         tag.Pictures = new IPicture[] { albumArt };
-                    }  
+                    }
                     tag.Album = AlbumTextBlock.Text;
                     tag.Year = uint.Parse(YearTextBlock.Text);
                     LoadingGrid.Visibility = Visibility.Visible;
@@ -106,7 +106,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
-                
+
                 await MusicDatabaseService.UpdateMusicInfo(music);
                 if (!isResultAssigned)
                 {

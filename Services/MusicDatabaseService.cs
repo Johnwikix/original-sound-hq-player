@@ -402,7 +402,7 @@ namespace WinUIMusicPlayer.Services
             {
                 query = query.Where(m =>
                     m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())                    
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
                 );
             }
             return await query.OrderBy(m => m.TrackNumber).ToListAsync();

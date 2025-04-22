@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.View
                 var mainWindow = (App.MainWindow as MainWindow);
                 if (mainWindow != null)
                 {
-                    
+
                     await mainWindow.LoadMusicList();
                     //await mainWindow.LoadFavourMusicList();
                 }

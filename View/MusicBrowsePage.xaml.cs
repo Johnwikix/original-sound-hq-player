@@ -10,12 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
-using Button = Microsoft.UI.Xaml.Controls.Button;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -70,14 +68,15 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateProgressSliders += MusicPlaybackService_updateProgressSliders;
             musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
             musicPlaybackService.showMessage += ShowMessage;
-            musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;            
+            musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
         }
 
-        private void SelectBarItem(string name) {
+        private void SelectBarItem(string name)
+        {
             foreach (var item in selectPage.Items)
             {
                 if (item is SelectorBarItem selectorBarItem && selectorBarItem.Tag.ToString() == name)
@@ -351,7 +350,8 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
-        public void SelectBarAlbum(string Album) {
+        public void SelectBarAlbum(string Album)
+        {
             pageType = "album";
             paramName = Album;
             currentAlbumName = Album;
@@ -440,7 +440,7 @@ namespace WinUIMusicPlayer.View
         private async void TypingTimer_Tick(object sender, object e)
         {
             typingTimer.Stop(); // 定时器触发时停止定时器
-            AppData.searchText = SearchTextBox.Text;            
+            AppData.searchText = SearchTextBox.Text;
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 refreshPage?.Invoke(this, EventArgs.Empty);
@@ -514,7 +514,7 @@ namespace WinUIMusicPlayer.View
             }
         }
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
-        {            
+        {
             ResetNavigationButtons();
             SelectorBarItem selectedItem = sender.SelectedItem;
             selectedItem.FontSize = 26;
@@ -634,25 +634,28 @@ namespace WinUIMusicPlayer.View
         }
 
         private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
-        {            
-            if (musicPlaybackService.currentPlayingList != null) {
+        {
+            if (musicPlaybackService.currentPlayingList != null)
+            {
                 CurrentPlayListView.ItemsSource = musicPlaybackService.currentPlayingList;
                 CurrentPlayListTeachingTip.IsOpen = true;
                 UpdateCurrentPlayList();
             }
         }
 
-        private void UpdateCurrentPlayList() {
+        private void UpdateCurrentPlayList()
+        {
             if (musicPlaybackService.currentPlayingList != null)
             {
                 if (musicPlaybackService.currentPlayingList.Contains(musicPlaybackService.currentPlayingMusic))
                 {
                     CurrentPlayListView.SelectedItem = musicPlaybackService.currentPlayingMusic;
-                    DispatcherQueue.TryEnqueue(() => {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
                         CurrentPlayListView.ScrollIntoView(musicPlaybackService.currentPlayingMusic);
                     });
                 }
-            }            
+            }
         }
 
         private async void CurrentPlayListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
@@ -1072,7 +1075,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string artist = textBlock.Text;
-               SelectBarArtist(artist);
+                SelectBarArtist(artist);
             }
         }
 

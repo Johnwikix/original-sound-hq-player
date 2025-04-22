@@ -45,8 +45,10 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void RefreshPage() {
-            if (parentPage != null) {
+        private async void RefreshPage()
+        {
+            if (parentPage != null)
+            {
                 if (parentPage.pageType == "album")
                 {
                     var musicList = await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, AppData.searchText);

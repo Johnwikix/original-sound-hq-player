@@ -1,11 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -80,14 +77,14 @@ namespace WinUIMusicPlayer.View
             {
                 _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic.ToList());
                 await LoadMoreAlbumsAsync(true);
-            }            
+            }
         }
 
         private async void InitializeDatabase()
         {
             if (parentPage != null)
             {
-                _allMusic = (await MusicDatabaseService.GetMusicListAsync(AppData.searchText)).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m=>m.Album).ToList();                
+                _allMusic = (await MusicDatabaseService.GetMusicListAsync(AppData.searchText)).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
                 await LoadMoreAlbumsAsync(true);
             }
         }
@@ -188,9 +185,11 @@ namespace WinUIMusicPlayer.View
 
         private async void PlayingAlbum(object? sender, Music e)
         {
-            List<Music> albums = (await MusicDatabaseService.GetAlbumMusicAsync(e.Album)).OrderBy(m=>m.Album).ToList();
-            if (albums != null && albums.Count > 0) {
-                if (parentPage != null) {
+            List<Music> albums = (await MusicDatabaseService.GetAlbumMusicAsync(e.Album)).OrderBy(m => m.Album).ToList();
+            if (albums != null && albums.Count > 0)
+            {
+                if (parentPage != null)
+                {
                     parentPage.musicPlaybackService.currentPlayingList = albums;
                     await parentPage.PlayMusic(albums[0]);
                 }
@@ -223,7 +222,7 @@ namespace WinUIMusicPlayer.View
                     parentPage.LoadAlbumMusic(album.Album);
                 }
             }
-        }       
+        }
     }
 }
 

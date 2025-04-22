@@ -84,14 +84,15 @@ namespace WinUIMusicPlayer.Services
 
             flyout.Items.Add(playlistSubItem);
 
-            if (type == "album") {
+            if (type == "album")
+            {
                 MenuFlyoutItem properties = new MenuFlyoutItem
                 {
                     Text = "属性",
                     DataContext = item
                 };
                 properties.Click += (sender, e) => AlbumProperties_Click(sender, e, type);
-                flyout.Items.Add(properties);                
+                flyout.Items.Add(properties);
             }
             flyout.ShowAt(targetElement, position);
 
@@ -101,7 +102,8 @@ namespace WinUIMusicPlayer.Services
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
-            if (music != null) {
+            if (music != null)
+            {
                 if (type == "album")
                 {
                     playingAlbumMusic?.Invoke(this, music);
@@ -114,8 +116,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     playingFolderMusic?.Invoke(this, music);
                 }
-               
-            }            
+
+            }
         }
 
         private async void AddToFavourite_Click(object sender, RoutedEventArgs e, string type)

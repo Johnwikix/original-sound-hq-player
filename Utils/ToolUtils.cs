@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<BitmapImage> GetAlbumCover(Music album)
         {
             BitmapImage newCover = album.Cover;
-            List<Music> musics =(await MusicDatabaseService.GetAlbumMusicAsync(album.Album)).ToList();
+            List<Music> musics = (await MusicDatabaseService.GetAlbumMusicAsync(album.Album)).ToList();
             if (album.Album != "未知专辑")
             {
                 if (musics == null || musics.Count() == 0)
@@ -86,7 +86,7 @@ namespace WinUIMusicPlayer.Utils
                 return newCover;
             }
             return newCover;
-        } 
+        }
 
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
@@ -161,9 +161,10 @@ namespace WinUIMusicPlayer.Utils
                     return bitmapImage;
                 }
             }
-            catch(Exception ex) {
+            catch (Exception ex)
+            {
                 return DefaultAlbumCover();
-            }            
+            }
         }
 
         public static byte[] GetRawImage(Music music)
@@ -361,7 +362,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg",".aiff", ".m4a",".dsf",".dff" };
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".aiff", ".m4a", ".dsf", ".dff" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 

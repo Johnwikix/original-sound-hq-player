@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
@@ -50,7 +49,8 @@ namespace WinUIMusicPlayer.View
             InitializingData();
         }
 
-        private async void InitializingData() {
+        private async void InitializingData()
+        {
             playLists = new ObservableCollection<PlayList>(await MusicDatabaseService.GetPlayListAsync());
             PlayListView.ItemsSource = playLists;
         }

@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.Reader
             {
                 try
                 {
-                    readerStream = new FFmpegAudioReader(fileName);                    
+                    readerStream = new FFmpegAudioReader(fileName);
                 }
                 catch (Exception ex)
                 {
@@ -120,7 +120,7 @@ namespace WinUIMusicPlayer.Reader
                 catch (Exception ex)
                 {
                     readerStream = new FFmpegAudioReader(fileName);
-                }                
+                }
             }
         }
 

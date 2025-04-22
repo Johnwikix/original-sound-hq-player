@@ -4,10 +4,8 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -50,7 +48,8 @@ namespace WinUIMusicPlayer.Services
             InitializingData();
         }
 
-        private async void InitializingData() {
+        private async void InitializingData()
+        {
             currentPlayingList = await MusicDatabaseService.LoadPlayList();
         }
 
@@ -162,7 +161,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     CScoreOutputDevice();
                     if (ffmpegDecoder != null)
-                    {                        
+                    {
                         ResumeMusic();
                     }
                 }
@@ -181,9 +180,9 @@ namespace WinUIMusicPlayer.Services
                     }
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
-                    OutputDeviceChange();                    
+                    OutputDeviceChange();
                     CScoreOutputDevice();
-                    
+
                 }
             }
             catch (Exception ex)
@@ -389,7 +388,8 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (!File.Exists(music.Path)) {
+                if (!File.Exists(music.Path))
+                {
                     notificationService.SendNotification("文件不存在", music.Path);
                     return false;
                 }
@@ -414,7 +414,7 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         SelectCSCoreOutputDevice();
-                        ffmpegDecoder = new FfmpegDecoder(music.Path);                    
+                        ffmpegDecoder = new FfmpegDecoder(music.Path);
                         wasapiOut.Device = csCoreMMdevice;
                         wasapiOut.Initialize(ffmpegDecoder);
                     }
@@ -559,10 +559,10 @@ namespace WinUIMusicPlayer.Services
             {
                 progressTimer.Stop();
             }
-        }        
+        }
 
         public async Task DisposeAudio()
-        {            
+        {
             if (progressTimer != null)
             {
                 progressTimer.Stop();
@@ -584,7 +584,8 @@ namespace WinUIMusicPlayer.Services
                 wasapiOut = null;
             }
 
-            if (ffmpegDecoder != null) {
+            if (ffmpegDecoder != null)
+            {
                 ffmpegDecoder.Dispose();
                 ffmpegDecoder = null;
             }

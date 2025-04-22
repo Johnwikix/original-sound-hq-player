@@ -124,7 +124,8 @@ namespace WinUIMusicPlayer
 
         public async Task RefreshDevice()
         {
-            try {
+            try
+            {
                 if (!AppSettings.isDsd)
                 {
                     await Task.Run(() =>

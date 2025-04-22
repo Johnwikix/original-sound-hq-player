@@ -61,7 +61,8 @@ namespace WinUIMusicPlayer.View
             initizeData();
         }
 
-        private async void initizeData() {
+        private async void initizeData()
+        {
             if (parentPage != null)
             {
                 var musicList = await MusicDatabaseService.GetMusicByPlayListId(parentPage.currentPlayListId, AppData.searchText);
@@ -92,7 +93,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                
+
                 musicList = new ObservableCollection<Music>(musics);
                 MusicListView.ItemsSource = musicList;
                 UpdateMusicListView();

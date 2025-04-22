@@ -1,21 +1,11 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
-using CSCore.Streams;
 using CUETools.Codecs.FLAKE;
 using NAudio.Flac;
 using NAudio.Lame;
-using NAudio.MediaFoundation;
 using NAudio.Vorbis;
 using NAudio.Wave;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using WinUIMusicPlayer.Reader;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -45,7 +35,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     {
                         var memoryStream = new MemoryStream();
                         var writer = new BinaryWriter(memoryStream);
-                        WriteWavHeader(writer,memoryStream, pcmStream);
+                        WriteWavHeader(writer, memoryStream, pcmStream);
                         byte[] buffer = new byte[4096];
                         int bytesRead;
                         while ((bytesRead = pcmStream.Read(buffer, 0, buffer.Length)) > 0)
@@ -189,7 +179,7 @@ namespace WinUIMusicPlayer.AudioConverters
         public static void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
         {
             using (IWaveSource waveSource = new FfmpegDecoder(filePath))
-            {              
+            {
 
                 if (type == "wav")
                 {
@@ -231,7 +221,8 @@ namespace WinUIMusicPlayer.AudioConverters
                     IWaveSource audio = resampledSource.ToSampleSource().ToWaveSource(24);
                     // 创建临时WAV文件
                     string tempWavFile = Path.GetTempFileName();
-                    try { 
+                    try
+                    {
                         // 使用CSCore的WaveWriter创建标准WAV文件
                         using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(tempWavFile, audio.WaveFormat))
                         {
@@ -252,9 +243,10 @@ namespace WinUIMusicPlayer.AudioConverters
                         target.Write(buff);
                         target.Close();
                     }
-                    finally {
+                    finally
+                    {
                         File.Delete(tempWavFile);
-                    }                    
+                    }
                 }
             }
         }
@@ -299,7 +291,8 @@ namespace WinUIMusicPlayer.AudioConverters
             return Path.Combine(directory, $"{fileNameWithoutExtension}_output.{extension.ToLower()}");
         }
 
-        public static void WriteWavHeader(BinaryWriter writer,Stream memoryStream, WaveStream pcmStream) {           
+        public static void WriteWavHeader(BinaryWriter writer, Stream memoryStream, WaveStream pcmStream)
+        {
             // 写入 WAV 文件头
             writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
             writer.Write((int)(pcmStream.Length + 36)); // 文件总长度 - 8

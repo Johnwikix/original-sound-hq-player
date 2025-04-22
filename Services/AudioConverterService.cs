@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using WinUIMusicPlayer.AudioConverters;
 using WinUIMusicPlayer.Model;
 
@@ -10,7 +6,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class AudioConverterService
     {
-        public static void ConvertAudio2Wav(Music music,string type="wav")
+        public static void ConvertAudio2Wav(Music music, string type = "wav")
         {
             string outputPath = AudioConverter.GenerateOutputPath(music.Path, type);
             switch (music.Extension.ToLower())
@@ -18,7 +14,7 @@ namespace WinUIMusicPlayer.Services
                 case "mp3":
                     Task.Run(() =>
                     {
-                        AudioConverter.ConvertMp3(music.Path, outputPath,type);
+                        AudioConverter.ConvertMp3(music.Path, outputPath, type);
                     });
                     break;
                 case "flac":
@@ -54,7 +50,7 @@ namespace WinUIMusicPlayer.Services
                 case "dsf":
                     Task.Run(() =>
                     {
-                        AudioConverter.ConvertDSDToWav(music.Path, outputPath,type);
+                        AudioConverter.ConvertDSDToWav(music.Path, outputPath, type);
                     });
                     break;
                 case "dff":
