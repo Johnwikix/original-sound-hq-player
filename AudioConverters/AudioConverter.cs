@@ -43,7 +43,6 @@ namespace WinUIMusicPlayer.AudioConverters
                                 }
                             }
                         }
-                        progressEvent?.Invoke(this, 100);
                     }
                     if (type == "flac")
                     {
@@ -65,9 +64,10 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                         memoryStream.Position = 0;
-                        ConvertAudioToFlac(outputPath, memoryStream);
-                        progressEvent?.Invoke(this, 100);
+                        ConvertAudioToFlac(outputPath, memoryStream);                        
                     }
+                    SaveMetaData(mp3FilePath, outputPath);
+                    progressEvent?.Invoke(this, 100);
                 }
             }
 
@@ -111,10 +111,11 @@ namespace WinUIMusicPlayer.AudioConverters
                                 }
                             }
                         }
-                        progressEvent?.Invoke(this, 100);
                     }
                 }
             }
+            SaveMetaData(inputFilePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertFlac(string flacFilePath, string outputPath, string type = "wav")
@@ -142,7 +143,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
@@ -163,9 +163,10 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
             }
+            SaveMetaData(flacFilePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertAiff(string filePath, string outputPath, string type = "wav")
@@ -193,7 +194,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
@@ -214,7 +214,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "flac")
                 {
@@ -236,8 +235,9 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                    progressEvent?.Invoke(this, 100);
                 }
+                SaveMetaData(filePath, outputPath);
+                progressEvent?.Invoke(this, 100);
             }
 
         }
@@ -267,7 +267,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
@@ -288,7 +287,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "flac")
                 {
@@ -310,7 +308,6 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "wma")
                 {
@@ -319,6 +316,8 @@ namespace WinUIMusicPlayer.AudioConverters
                         MediaFoundationEncoder.EncodeToWma(reader, outputPath);
                     }
                 }
+                SaveMetaData(filePath, outputPath);
+                progressEvent?.Invoke(this, 100);
             }
         }
 
@@ -350,7 +349,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
@@ -379,7 +377,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "flac")
                 {
@@ -432,10 +429,11 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     finally
                     {
-                        progressEvent?.Invoke(this, 100);
                         File.Delete(tempWavFile);
                     }
                 }
+                SaveMetaData(filePath, outputPath);
+                progressEvent?.Invoke(this, 100);
             }
         }
 
@@ -464,7 +462,6 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                     }
-                    progressEvent?.Invoke(this, 100);
                 }
                 if (type == "mp3")
                 {
@@ -484,7 +481,6 @@ namespace WinUIMusicPlayer.AudioConverters
                                 progressEvent?.Invoke(this, progress);
                             }
                         }
-                        progressEvent?.Invoke(this, 100);
                     }
                 }
                 if (type == "flac")
@@ -507,8 +503,9 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                    progressEvent?.Invoke(this, 100);
                 }
+                SaveMetaData(filePath, outputPath);
+                progressEvent?.Invoke(this, 100);
             }
         }
 
@@ -554,6 +551,34 @@ namespace WinUIMusicPlayer.AudioConverters
         {
             var targetFormat = new NAudio.Wave.WaveFormat(44100, 16, channels);
             return new ResamplerDmoStream(inputStream, targetFormat);
+        }
+
+        private void SaveMetaData(string inputFile,string outputPath) {
+            try
+            {
+                using (var originalFile = TagLib.File.Create(inputFile))
+                {
+                    using (var newFile = TagLib.File.Create(outputPath))
+                    {
+                        newFile.Tag.Title = originalFile.Tag.Title;
+                        newFile.Tag.Performers = originalFile.Tag.Performers;
+                        newFile.Tag.Album = originalFile.Tag.Album;
+                        newFile.Tag.Year = originalFile.Tag.Year;
+                        newFile.Tag.Track = originalFile.Tag.Track;
+                        if (originalFile.Tag.Pictures.Length > 0)
+                        {
+                            var picture = originalFile.Tag.Pictures[0];
+                            newFile.Tag.Pictures = new[] { picture };
+                        }
+
+                        newFile.Save();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"写入元信息和封面时出错: {ex.Message}");
+            }
         }
     }
 }
