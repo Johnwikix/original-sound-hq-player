@@ -1,5 +1,4 @@
-﻿using ATL;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ namespace WinUIMusicPlayer.Services
 {
     public class AddFolderService
     {
-        private Track track;
         public AddFolderService()
         {
         }

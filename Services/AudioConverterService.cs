@@ -40,6 +40,10 @@ namespace WinUIMusicPlayer.Services
                     });
                     break;
                 case "wav":
+                    Task.Run(() =>
+                    {
+                        AudioConverter.ConvertWav(music.Path, outputPath, type);
+                    });
                     break;
                 case "ogg":
                     Task.Run(() =>
