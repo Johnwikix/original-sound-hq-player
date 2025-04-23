@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer
                 await MusicDatabaseService.Initialize();
                 await LoadDeviceState();
                 SetAppStyle();
+                SetAppTheme();
                 var tasks = new Task[] {
                         LoadAppState(),
                         LoadFoldersAsync(),
@@ -79,6 +80,27 @@ namespace WinUIMusicPlayer
                 default:
                     SystemBackdrop = new DesktopAcrylicBackdrop();
                     break;
+            }
+        }
+
+        private void SetAppTheme() {
+            if (current.Content is FrameworkElement rootElement)
+            {
+                switch (AppSettings.AppTheme)
+                {
+                    case "Default":
+                        rootElement.RequestedTheme = ElementTheme.Default;
+                        break;
+                    case "Dark":
+                        rootElement.RequestedTheme = ElementTheme.Dark;
+                        break;
+                    case "Light":
+                        rootElement.RequestedTheme = ElementTheme.Light;
+                        break;
+                    default:
+                        rootElement.RequestedTheme = ElementTheme.Default;
+                        break;
+                }
             }
         }
 

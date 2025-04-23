@@ -439,6 +439,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LrcAPISource = settings.LrcAPISource;
                 AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
                 AppSettings.AppStyle = settings.AppStyle;
+                AppSettings.AppTheme = settings.AppTheme;
             }
         }
 

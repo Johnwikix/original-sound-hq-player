@@ -28,6 +28,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>                
                 <TextBlock Text="音频" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
                 <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True"  Header="输出设置" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
@@ -109,11 +110,11 @@
                 </Expander>
                 <TextBlock Text="外观" FontSize="16" Grid.Row="6" Margin="10 10 0 0" />
                 <Expander x:Name="BackdropSettings" 
-          Header="应用样式" 
-          Margin="10"
-          Grid.Row="7"
-          HorizontalAlignment="Stretch" 
-          HorizontalContentAlignment="Stretch">
+                        Header="应用样式" 
+                        Margin="10 10 10 0"
+                        Grid.Row="7"
+                        HorizontalAlignment="Stretch" 
+                        HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
@@ -133,6 +134,40 @@
                      Tag="Mica"
                      GroupName="BackdropGroup"
                      Margin="0,5,0,5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <Expander x:Name="ThemeSettings" 
+                        Header="主题样式" 
+                        Margin="10 0 10 0"
+                        Grid.Row="8"
+                        HorizontalAlignment="Stretch" 
+                        HorizontalContentAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
+                                <RadioButton x:Name="DefaultRadioButton" Content="系统默认" 
+                                    Checked="ThemeRadioButton_Checked" 
+                                    Tag="Default"
+                                    GroupName="ThemeGroup"
+                                    Margin="0,5,0,5"/>
+                                <RadioButton x:Name="DarkRadioButton" Content="深色" 
+                                    Checked="ThemeRadioButton_Checked" 
+                                    Tag="Dark"
+                                    GroupName="ThemeGroup"
+                                    Margin="0,5,0,5"/>
+                                <RadioButton x:Name="LightRadioButton" Content="浅色" 
+                                    Checked="ThemeRadioButton_Checked" 
+                                    Tag="Light"
+                                    GroupName="ThemeGroup"
+                                    Margin="0,5,0,5"/>
                             </StackPanel>
                         </Grid>
                     </Expander.Content>
