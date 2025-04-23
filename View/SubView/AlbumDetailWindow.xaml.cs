@@ -118,6 +118,21 @@ namespace WinUIMusicPlayer.View.SubView
             int adjustedHeight = (int)(originalHeight * scaleFactor);
             albumDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
             notificationService = new NotificationService();
+            var mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null) {
+                mainWindow.themeChanged += MainWindow_themeChanged;
+                mainWindow.styleChanged += MainWindow_styleChanged;
+            }
+        }
+
+        private void MainWindow_styleChanged(object? sender, EventArgs e)
+        {
+            SetAppStyle();
+        }
+
+        private void MainWindow_themeChanged(object? sender, EventArgs e)
+        {
+            SetAppTheme();
         }
 
         private async void InitalizeData(Music album)

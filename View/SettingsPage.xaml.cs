@@ -288,13 +288,11 @@ namespace WinUIMusicPlayer.View
                         {
                             case "Acrylic":
                                 // 设置为Acrylic背景
-                                //mainWindow.SystemBackdrop = new DesktopAcrylicBackdrop();
                                 AppSettings.AppStyle = "Acrylic";
                                 break;
 
                             case "Mica":
                                 // 设置为Mica背景
-                                //mainWindow.SystemBackdrop = new MicaBackdrop();
                                 AppSettings.AppStyle = "Mica";
                                 break;
                         }

@@ -27,6 +27,8 @@ namespace WinUIMusicPlayer
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
         public event EventHandler WindowClosed;
+        public event EventHandler themeChanged;
+        public event EventHandler styleChanged;
         public MainWindow current;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
 
@@ -94,6 +96,7 @@ namespace WinUIMusicPlayer
                     SystemBackdrop = new DesktopAcrylicBackdrop();
                     break;
             }
+            styleChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void SetAppTheme() {
@@ -134,6 +137,7 @@ namespace WinUIMusicPlayer
                         AppSettings.elementTheme = ElementTheme.Default;
                         break;
                 }
+                themeChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
