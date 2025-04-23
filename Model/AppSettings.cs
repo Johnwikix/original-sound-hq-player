@@ -22,9 +22,9 @@ namespace WinUIMusicPlayer.Model
         public static string LrcAPISource { get; set; }
         public static string LrcAPIAuth { get; set; }
         public static bool isDsd { get; set; } = false;
-        public static string AppStyle { get; set; }
-        public static string AppTheme { get; set; }
-        public static ElementTheme elementTheme { get; set; }
+        public static string AppStyle { get; set; } = "Acrylic";
+        public static string AppTheme { get; set; } = "Default";
+        public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
