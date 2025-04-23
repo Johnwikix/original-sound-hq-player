@@ -35,6 +35,7 @@ namespace WinUIMusicPlayer.View.SubView
         private nint hwnd;
         public MusicDetailsWindow current;
         private AppWindow musicDetailAppWindow;
+        private MainWindow mainWindow;
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
@@ -46,6 +47,22 @@ namespace WinUIMusicPlayer.View.SubView
             current = this;
             SetAppStyle();
             SetAppTheme();
+            mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.themeChanged += MainWindow_themeChanged;
+                mainWindow.styleChanged += MainWindow_styleChanged;
+            }
+            this.Closed += MusicDetailWindow_Closed;
+        }
+
+        private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
+        {
+            if (mainWindow != null)
+            {
+                mainWindow.themeChanged -= MainWindow_themeChanged;
+                mainWindow.styleChanged -= MainWindow_styleChanged;
+            }
         }
 
         public void SetAppStyle()
@@ -115,13 +132,7 @@ namespace WinUIMusicPlayer.View.SubView
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
             musicDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
-            notificationService = new NotificationService();
-            var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
-            {
-                mainWindow.themeChanged += MainWindow_themeChanged;
-                mainWindow.styleChanged += MainWindow_styleChanged;
-            }
+            notificationService = new NotificationService();                        
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {

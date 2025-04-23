@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
@@ -84,60 +85,73 @@ namespace WinUIMusicPlayer
         }
 
         public void SetAppStyle() {
-            switch (AppSettings.AppStyle)
-            {
-                case "Acrylic":
-                    SystemBackdrop = new DesktopAcrylicBackdrop();
-                    break;
-                case "Mica":
-                    SystemBackdrop = new MicaBackdrop();
-                    break;
-                default:
-                    SystemBackdrop = new DesktopAcrylicBackdrop();
-                    break;
+            try {
+                switch (AppSettings.AppStyle)
+                {
+                    case "Acrylic":
+                        SystemBackdrop = new DesktopAcrylicBackdrop();
+                        break;
+                    case "Mica":
+                        SystemBackdrop = new MicaBackdrop();
+                        break;
+                    default:
+                        SystemBackdrop = new DesktopAcrylicBackdrop();
+                        break;
+                }
+                styleChanged?.Invoke(this, EventArgs.Empty);
+            } catch(Exception ex) {
+                Debug.WriteLine(ex.Message);
             }
-            styleChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void SetAppTheme() {
-            Microsoft.UI.Windowing.AppWindowTitleBar m_TitleBar = m_AppWindow.TitleBar;
-            if (current.Content is FrameworkElement rootElement)
-            {
-                switch (AppSettings.AppTheme)
+            try {
+                Microsoft.UI.Windowing.AppWindowTitleBar m_TitleBar = m_AppWindow.TitleBar;
+                if (current.Content is FrameworkElement rootElement)
                 {
-                    case "Default":
-                        m_TitleBar.ButtonForegroundColor = null;
-                        m_TitleBar.ButtonHoverForegroundColor = null;
-                        m_TitleBar.ButtonPressedForegroundColor = null;
-                        m_TitleBar.ButtonHoverBackgroundColor = null;
-                        m_TitleBar.ButtonPressedBackgroundColor = null;
-                        rootElement.RequestedTheme = ElementTheme.Default;
-                        AppSettings.elementTheme = ElementTheme.Default;
-                        break;
-                    case "Dark":
-                        rootElement.RequestedTheme = ElementTheme.Dark;
-                        AppSettings.elementTheme = ElementTheme.Dark;
-                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 50, 50, 50);
-                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 80, 80, 80);                        
-                        break;
-                    case "Light":
-                        rootElement.RequestedTheme = ElementTheme.Light;
-                        AppSettings.elementTheme = ElementTheme.Light;
-                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 220, 220, 220);
-                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 190, 190, 190);                        
-                        break;
-                    default:
-                        rootElement.RequestedTheme = ElementTheme.Default;
-                        AppSettings.elementTheme = ElementTheme.Default;
-                        break;
+                    switch (AppSettings.AppTheme)
+                    {
+                        case "Default":
+                            m_TitleBar.ButtonForegroundColor = null;
+                            m_TitleBar.ButtonHoverForegroundColor = null;
+                            m_TitleBar.ButtonPressedForegroundColor = null;
+                            m_TitleBar.ButtonHoverBackgroundColor = null;
+                            m_TitleBar.ButtonPressedBackgroundColor = null;
+                            rootElement.RequestedTheme = ElementTheme.Default;
+                            AppSettings.elementTheme = ElementTheme.Default;
+                            break;
+                        case "Dark":
+                            rootElement.RequestedTheme = ElementTheme.Dark;
+                            AppSettings.elementTheme = ElementTheme.Dark;
+                            m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                            m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                            m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+                            m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 50, 50, 50);
+                            m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 80, 80, 80);
+                            break;
+                        case "Light":
+                            rootElement.RequestedTheme = ElementTheme.Light;
+                            AppSettings.elementTheme = ElementTheme.Light;
+                            m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
+                            m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
+                            m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
+                            m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 220, 220, 220);
+                            m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 190, 190, 190);
+                            break;
+                        default:
+                            m_TitleBar.ButtonForegroundColor = null;
+                            m_TitleBar.ButtonHoverForegroundColor = null;
+                            m_TitleBar.ButtonPressedForegroundColor = null;
+                            m_TitleBar.ButtonHoverBackgroundColor = null;
+                            m_TitleBar.ButtonPressedBackgroundColor = null;
+                            rootElement.RequestedTheme = ElementTheme.Default;
+                            AppSettings.elementTheme = ElementTheme.Default;
+                            break;
+                    }
+                    themeChanged?.Invoke(this, EventArgs.Empty);
                 }
-                themeChanged?.Invoke(this, EventArgs.Empty);
+            } catch(Exception ex) {
+                Debug.WriteLine(ex.Message);
             }
         }
 

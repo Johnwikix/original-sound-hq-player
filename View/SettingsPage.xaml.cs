@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -277,68 +278,78 @@ namespace WinUIMusicPlayer.View
 
         private void BackdropRadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (!isInitializing)
-            {
-                if (sender is RadioButton radioButton)
+            try {
+                if (!isInitializing)
                 {
-                    var mainWindow = (App.MainWindow as MainWindow);
-                    if (mainWindow != null)
+                    if (sender is RadioButton radioButton)
                     {
-                        switch (radioButton.Tag.ToString())
-                        {
-                            case "Acrylic":
-                                // 设置为Acrylic背景
-                                AppSettings.AppStyle = "Acrylic";
-                                break;
-
-                            case "Mica":
-                                // 设置为Mica背景
-                                AppSettings.AppStyle = "Mica";
-                                break;
-                        }
-                        mainWindow.SetAppStyle();
-                        _ = SaveSetting();
-                    }
-                }
-            }            
-        }
-
-        private void ThemeRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!isInitializing)
-            {
-                if (sender is RadioButton radioButton)
-                {
-                    var mainWindow = (App.MainWindow as MainWindow);
-                    if (mainWindow != null)
-                    {
-                        if (mainWindow.current.Content is FrameworkElement rootElement)
+                        var mainWindow = (App.MainWindow as MainWindow);
+                        if (mainWindow != null)
                         {
                             switch (radioButton.Tag.ToString())
                             {
-                                case "Default":                                    
-                                    AppSettings.AppTheme = "Default"; 
-                                    AppSettings.elementTheme = ElementTheme.Default;
+                                case "Acrylic":
+                                    // 设置为Acrylic背景
+                                    AppSettings.AppStyle = "Acrylic";
                                     break;
-                                case "Dark":
-                                    AppSettings.AppTheme = "Dark";
-                                    AppSettings.elementTheme = ElementTheme.Dark;
-                                    break;
-                                case "Light":
-                                    AppSettings.AppTheme = "Light";
-                                    AppSettings.elementTheme = ElementTheme.Light;
-                                    break;
-                                default:
-                                    AppSettings.AppTheme = "Default";
-                                    AppSettings.elementTheme= ElementTheme.Default;
+
+                                case "Mica":
+                                    // 设置为Mica背景
+                                    AppSettings.AppStyle = "Mica";
                                     break;
                             }
-                            mainWindow.SetAppTheme();
+                            mainWindow.SetAppStyle();
                             _ = SaveSetting();
                         }
                     }
                 }
-            }            
+            } catch(Exception ex) {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }           
+        }
+
+        private void ThemeRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            try {
+                if (!isInitializing)
+                {
+                    if (sender is RadioButton radioButton)
+                    {
+                        var mainWindow = (App.MainWindow as MainWindow);
+                        if (mainWindow != null)
+                        {
+                            if (mainWindow.current.Content is FrameworkElement rootElement)
+                            {
+                                switch (radioButton.Tag.ToString())
+                                {
+                                    case "Default":
+                                        AppSettings.AppTheme = "Default";
+                                        AppSettings.elementTheme = ElementTheme.Default;
+                                        break;
+                                    case "Dark":
+                                        AppSettings.AppTheme = "Dark";
+                                        AppSettings.elementTheme = ElementTheme.Dark;
+                                        break;
+                                    case "Light":
+                                        AppSettings.AppTheme = "Light";
+                                        AppSettings.elementTheme = ElementTheme.Light;
+                                        break;
+                                    default:
+                                        AppSettings.AppTheme = "Default";
+                                        AppSettings.elementTheme = ElementTheme.Default;
+                                        break;
+                                }
+                                mainWindow.SetAppTheme();
+                                _ = SaveSetting();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { 
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+                      
         }
     }
 }
