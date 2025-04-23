@@ -22,73 +22,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <!--<StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                <Button x:Name="BackButton" 
-                    Tag="Back" 
-                    BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="14"
-                    Margin="0 0 20 0"
-                    Background="Transparent" 
-                    Click="BackButton_Click"
-                    >
-                    <FontIcon Glyph="&#xe830;" FontSize="14"/>
-                </Button>
-                <Button x:Name="SongButton" 
-                    Click="NavigationButton_Click" 
-                    Tag="Song" 
-                    BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="20"
-                    Background="Transparent" >歌曲</Button>
-                <Button x:Name="AlbumButton" 
-                    Click="NavigationButton_Click" 
-                    Tag="Album" BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="20"
-                    Background="Transparent" >专辑</Button>
-                <Button x:Name="ArtistButton" 
-                    Click="NavigationButton_Click" 
-                    Tag="Artist" 
-                    BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="20"
-                    Background="Transparent" >艺术家</Button>
-                <Button x:Name="FolderButton" 
-                    Click="NavigationButton_Click" 
-                    Tag="Folder" 
-                    BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="20"
-                    Background="Transparent" >文件夹</Button>
-                <Button x:Name="FavouriteButton" 
-                    Click="NavigationButton_Click" 
-                    Tag="Favourite"
-                    BorderThickness="0" 
-                    BorderBrush="Transparent" 
-                    FontSize="20"
-                    Background="Transparent" >最爱</Button>
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="PlayListButton" 
-                        Click="NavigationButton_Click" 
-                        Tag="PlayList"
-                        BorderThickness="0" 
-                        BorderBrush="Transparent" 
-                        FontSize="20"
-                        Background="Transparent" >播放列表</Button>
-                    <Button x:Name="PlayListAddButton" 
-                         Click="AddPlayList_Click" 
-                            Tag="PlayListAdd"
-                            BorderThickness="0" 
-                            BorderBrush="Transparent" 
-                            FontSize="20"
-                            Background="Transparent" >
-                        <FontIcon Glyph="&#xe948;"></FontIcon>
-                    </Button>
-                </StackPanel>
-                
-            </StackPanel>-->
+        <Grid Grid.Row="0">            
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="BackButton" 
                         Tag="Back" 

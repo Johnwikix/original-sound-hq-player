@@ -20,12 +20,8 @@ namespace WinUIMusicPlayer
     public sealed partial class MainWindow : Window
     {
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
-        public event EventHandler<List<Music>> MusicListLoaded;
-        //public event EventHandler<List<Music>> SongCollecionLoaded;
-        //public event EventHandler<List<Music>> FavourListLoaded;
+        public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
-        //public event EventHandler<List<PlayList>> PlayListLoaded;
-        //public event EventHandler<List<Music>> PlayMusicListLoaded;
         public event EventHandler WindowClosed;
 
         public MainWindow()
@@ -97,30 +93,17 @@ namespace WinUIMusicPlayer
             var folderList = await MusicDatabaseService.GetFoldersAsync();
             FoldersLoaded?.Invoke(this, folderList);
         }
-        //public async Task LoadPlayList()
-        //{
-        //    var playList = await MusicDatabaseService.GetPlayListAsync();
-        //    PlayListLoaded?.Invoke(this, playList);
-        //}
 
-        //public async Task LoadPlayListMusic(int playListId, string search = null)
-        //{
-        //    var musicList = await MusicDatabaseService.GetMusicByPlayListId(playListId, search);
-        //    PlayMusicListLoaded?.Invoke(this, musicList);
-        //}
+        public void UpdateMusicList() {
+            updateMusicList?.Invoke(this, EventArgs.Empty);
+        }
 
         public async Task LoadMusicList(string search = null)
         {
             var musicList = await MusicDatabaseService.GetMusicListAsync(search);
             _ = AlbumCoverService.LoadAlbumCoversInCacheAsync(musicList);
-            MusicListLoaded?.Invoke(this, musicList);
+            //MusicListLoaded?.Invoke(this, musicList);
         }
-
-        //public async Task LoadFavourMusicList(string search = null)
-        //{
-        //    var musicList = await MusicDatabaseService.GetFavoriteMusicAsync(search);
-        //    FavourListLoaded?.Invoke(this, musicList);
-        //}
 
         public async Task RefreshDevice()
         {

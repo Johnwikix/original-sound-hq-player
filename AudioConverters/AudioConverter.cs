@@ -385,7 +385,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     int sampleRate = 176400;
                     if (waveSource.WaveFormat.SampleRate / 4 <= sampleRate) {
-                        sampleRate = waveSource.WaveFormat.SampleRate;
+                        sampleRate = waveSource.WaveFormat.SampleRate / 4;
                     }
                     IWaveSource resampledSource = waveSource.ChangeSampleRate(sampleRate);
                     IWaveSource audio = resampledSource.ToSampleSource().ToWaveSource(24);

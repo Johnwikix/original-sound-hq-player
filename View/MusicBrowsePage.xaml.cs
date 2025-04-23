@@ -57,11 +57,12 @@ namespace WinUIMusicPlayer.View
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
-                mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
+                //mainWindow.MusicListLoaded += MainWindow_MusicListLoaded;
                 //mainWindow.SongCollecionLoaded += MainWindow_SongCollecionLoaded;
                 //mainWindow.FavourListLoaded += MainWindow_FavourListLoaded;
                 //mainWindow.PlayMusicListLoaded += MainWindow_PlayMusicListLoaded;
                 mainWindow.WindowClosed += MainWindow_Closed;
+                mainWindow.updateMusicList += MainWindow_updateMusicList;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -73,6 +74,15 @@ namespace WinUIMusicPlayer.View
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
+        }
+
+        public void MainWindow_updateMusicList(object? sender, EventArgs e)
+        {
+            if (ContentFrame != null && ContentFrame.Content != null)
+            {
+                refreshPage?.Invoke(this, EventArgs.Empty);
+                refreshSong?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private void SelectBarItem(string name)
@@ -92,7 +102,7 @@ namespace WinUIMusicPlayer.View
             await musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
-                mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
+                //mainWindow.MusicListLoaded -= MainWindow_MusicListLoaded;
                 //mainWindow.SongCollecionLoaded -= MainWindow_SongCollecionLoaded;
                 //mainWindow.FavourListLoaded -= MainWindow_FavourListLoaded;
                 //mainWindow.PlayMusicListLoaded -= MainWindow_PlayMusicListLoaded;
@@ -291,21 +301,21 @@ namespace WinUIMusicPlayer.View
         //    //}
         //}
 
-        private void MainWindow_MusicListLoaded(object sender, List<Music> musics)
-        {
-            try
-            {
-                musicPlaybackService.musicList = musics;
-                if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-                {
-                    musicPlaybackService.currentPlayingList = musics;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"º”‘ÿ∏Ë«˙¡–±Ì ß∞‹: {ex.Message}");
-            }
-        }
+        //private void MainWindow_MusicListLoaded(object sender, List<Music> musics)
+        //{
+        //    try
+        //    {
+        //        musicPlaybackService.musicList = musics;
+        //        if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
+        //        {
+        //            musicPlaybackService.currentPlayingList = musics;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"º”‘ÿ∏Ë«˙¡–±Ì ß∞‹: {ex.Message}");
+        //    }
+        //}
 
         //public async Task LoadPlayList()
         //{

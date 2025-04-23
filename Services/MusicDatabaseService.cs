@@ -713,6 +713,7 @@ namespace WinUIMusicPlayer.Services
                     var mainWindow = (App.MainWindow as MainWindow);
                     if (mainWindow != null)
                     {
+                        mainWindow.UpdateMusicList();
                         //await mainWindow.LoadMusicList();
                         //await mainWindow.LoadFavourMusicList();
                     }
