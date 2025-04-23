@@ -438,6 +438,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.LrcAPISource = settings.LrcAPISource;
                 AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
+                AppSettings.AppStyle = settings.AppStyle;
             }
         }
 

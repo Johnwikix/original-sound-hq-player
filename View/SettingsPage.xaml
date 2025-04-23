@@ -10,45 +10,134 @@
     mc:Ignorable="d"
     >
 
+    
     <Grid Margin="32 32 32 32">
-        <StackPanel Orientation="Vertical" Margin="0 20 0 0" HorizontalAlignment="Left" VerticalAlignment="Top" Spacing="20">
-            <TextBlock Text="设置页面" FontSize="20" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="设置"  Grid.Row="0" FontSize="28" Margin="10 20 0 20" />
+        <ScrollView  Grid.Row="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>                
+                <TextBlock Text="音频" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
+                <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True"  Header="输出设置" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="输出模式" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
+                            <ComboBox x:Name="OutputModeComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="OutputModeComboBox_SelectionChanged" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <ComboBoxItem Content="Wasapi独占" Tag="WasapiExclusive"/>
+                                <ComboBoxItem Content="Wasapi共享" Tag="WasapiShared"/>
+                                <ComboBoxItem Content="WaveOut" Tag="WaveOut"/>
+                                <ComboBoxItem Content="DirectSound" Tag="DirectSound"/>
+                            </ComboBox>
 
-            <!-- 输出模式选择 -->
-            <TextBlock Text="输出模式" FontSize="16" />
-            <ComboBox x:Name="OutputModeComboBox" SelectionChanged="OutputModeComboBox_SelectionChanged" Width="200">
-                <ComboBoxItem Content="Wasapi独占" Tag="WasapiExclusive"/>
-                <ComboBoxItem Content="Wasapi共享" Tag="WasapiShared"/>
-                <ComboBoxItem Content="WaveOut" Tag="WaveOut"/>
-                <ComboBoxItem Content="DirectSound" Tag="DirectSound"/>
-            </ComboBox>
+                            <!-- 输出设备选择 -->
+                            <TextBlock Text="输出设备" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="OutputDeviceComboBox"  Grid.Column="1" Grid.Row="1" Margin="10" SelectionChanged="OutputDeviceComboBox_SelectionChanged" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
-            <!-- 输出设备选择 -->
-            <TextBlock Text="输出设备" FontSize="16" />
-            <ComboBox x:Name="OutputDeviceComboBox" SelectionChanged="OutputDeviceComboBox_SelectionChanged" Width="200" />
-
-            <!-- 缓冲区大小输入 -->
-            <TextBlock Text="缓冲区大小 (毫秒)" FontSize="16" />
-            <TextBox x:Name="LatencyTextBox" TextChanged="LatencyTextBox_TextChanged" Width="200" />
-            <TextBlock Text="默认音乐进入界面" FontSize="16" />
-            <ComboBox x:Name="DefualtEntryComboBox" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="200">
-                <ComboBoxItem Content="添加文件夹" Tag="AddFolder"/>
-                <ComboBoxItem Content="音乐浏览" Tag="MusicBrowse"/>               
-            </ComboBox>
-            <TextBlock Text="默认音乐播放界面" FontSize="16" />
-            <ComboBox x:Name="DefualtPlayListComboBox" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="200">
-                <ComboBoxItem Content="歌曲" Tag="song"/>
-                <ComboBoxItem Content="专辑" Tag="album"/>
-                <ComboBoxItem Content="艺术家" Tag="artist"/>
-                <ComboBoxItem Content="文件夹" Tag="folder"/>
-                <ComboBoxItem Content="最爱" Tag="favourite"/>
-                <ComboBoxItem Content="播放列表" Tag="playList"/>
-            </ComboBox>
-
-            <TextBlock Text="LrcAPI源" FontSize="16" />
-            <TextBox x:Name="LrcAPITextBox" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="200" />
-            <TextBlock Text="LrcAPI源鉴权码" FontSize="16" />
-            <TextBox x:Name="LrcAPIAuthTextBox" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="200" />
-        </StackPanel>
-    </Grid>
+                            <!-- 缓冲区大小输入 -->
+                            <TextBlock Text="缓冲区大小 (毫秒)" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
+                            <TextBox x:Name="LatencyTextBox"  Grid.Column="1" Grid.Row="2" Margin="10" TextChanged="LatencyTextBox_TextChanged" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <TextBlock Text="功能" FontSize="16" Grid.Row="3" Margin="10 10 0 0" />
+                <Expander x:Name="UiSettings" Margin="10 10 10 0" Header="界面设置" Grid.Row="4" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="默认音乐进入界面" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
+                            <ComboBox x:Name="DefualtEntryComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <ComboBoxItem Content="添加文件夹" Tag="AddFolder"/>
+                                <ComboBoxItem Content="音乐浏览" Tag="MusicBrowse"/>
+                            </ComboBox>
+                            <TextBlock Text="默认音乐播放界面" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center" />
+                            <ComboBox x:Name="DefualtPlayListComboBox"  Grid.Column="1" Grid.Row="1" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <ComboBoxItem Content="歌曲" Tag="song"/>
+                                <ComboBoxItem Content="专辑" Tag="album"/>
+                                <ComboBoxItem Content="艺术家" Tag="artist"/>
+                                <ComboBoxItem Content="文件夹" Tag="folder"/>
+                                <ComboBoxItem Content="最爱" Tag="favourite"/>
+                                <ComboBoxItem Content="播放列表" Tag="playList"/>
+                            </ComboBox>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <Expander x:Name="CoverSettings" Margin="10 0 10 10" Header="封面匹配服务设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="LrcAPI源" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center"/>
+                            <TextBox x:Name="LrcAPITextBox"  Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBlock Text="LrcAPI源鉴权码"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <TextBox x:Name="LrcAPIAuthTextBox"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <TextBlock Text="外观" FontSize="16" Grid.Row="6" Margin="10 10 0 0" />
+                <Expander x:Name="BackdropSettings" 
+          Header="应用样式" 
+          Margin="10"
+          Grid.Row="7"
+          HorizontalAlignment="Stretch" 
+          HorizontalContentAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
+                                <RadioButton x:Name="AcrylicRadioButton" Content="Acrylic (亚克力)" 
+                     Checked="BackdropRadioButton_Checked" 
+                     Tag="Acrylic"
+                     GroupName="BackdropGroup"
+                     Margin="0,5,0,5"/>
+                                <RadioButton x:Name="MicaRadioButton" Content="Mica (云母)" 
+                     Checked="BackdropRadioButton_Checked" 
+                     Tag="Mica"
+                     GroupName="BackdropGroup"
+                     Margin="0,5,0,5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+            </Grid>
+        </ScrollView>
+    </Grid>    
 </Page>

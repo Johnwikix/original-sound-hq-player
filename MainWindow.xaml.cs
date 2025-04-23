@@ -23,16 +23,16 @@ namespace WinUIMusicPlayer
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
         public event EventHandler WindowClosed;
-
+        public MainWindow current;
         public MainWindow()
         {
             InitializeComponent();
-            this.Activated += MainWindow_Activated;
-            SystemBackdrop = new DesktopAcrylicBackdrop();
+            this.Activated += MainWindow_Activated;            
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
+            current = this;
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -44,8 +44,10 @@ namespace WinUIMusicPlayer
         private async void InitializeApp()
         {
             try
-            {
+            {                
                 await MusicDatabaseService.Initialize();
+                await LoadDeviceState();
+                SetAppStyle();
                 var tasks = new Task[] {
                         LoadAppState(),
                         LoadFoldersAsync(),
@@ -53,8 +55,7 @@ namespace WinUIMusicPlayer
                         RefreshDevice(),
                         //LoadPlayList()
                 };
-                await Task.WhenAll(tasks);
-                await LoadDeviceState();
+                await Task.WhenAll(tasks);                
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
@@ -62,6 +63,22 @@ namespace WinUIMusicPlayer
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"≥ı ºªØ¥ÌŒÛ: {ex.Message}");
+            }
+        }
+
+        private void SetAppStyle() {
+            switch (AppSettings.AppStyle)
+            {
+                case "Acrylic":
+                    SystemBackdrop = new DesktopAcrylicBackdrop();
+                    break;
+
+                case "Mica":
+                    SystemBackdrop = new MicaBackdrop();
+                    break;
+                default:
+                    SystemBackdrop = new DesktopAcrylicBackdrop();
+                    break;
             }
         }
 

@@ -1,4 +1,6 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -62,6 +64,7 @@ namespace WinUIMusicPlayer.View
             newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
             newSettings.LrcAPISource = AppSettings.LrcAPISource;
             newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
+            newSettings.AppStyle = AppSettings.AppStyle;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -142,6 +145,19 @@ namespace WinUIMusicPlayer.View
                 }
             }
             isInitializing = false;
+
+            switch (AppSettings.AppStyle)
+            {
+                case "Acrylic":
+                    AcrylicRadioButton.IsChecked = true;
+                    break;
+                case "Mica":
+                    MicaRadioButton.IsChecked = true;
+                    break;
+                default:
+                    AcrylicRadioButton.IsChecked = true;
+                    break;
+            }
         }
 
         private void OutputModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -238,6 +254,36 @@ namespace WinUIMusicPlayer.View
                 }
                 if (!isInitializing)
                 {
+                    _ = SaveSetting();
+                }
+            }
+        }
+
+        private void BackdropRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton radioButton)
+            {
+                var mainWindow = (App.MainWindow as MainWindow);
+                if (mainWindow != null)
+                {
+                    switch (radioButton.Tag.ToString())
+                    {
+                        case "Acrylic":
+                            // 设置为Acrylic背景
+                            mainWindow.SystemBackdrop = new DesktopAcrylicBackdrop();
+                            //if (mainWindow.current.Content is FrameworkElement rootElement)
+                            //{
+                            //    rootElement.RequestedTheme = ElementTheme.Light;
+                            //}
+                            AppSettings.AppStyle = "Acrylic";                            
+                            break;
+
+                        case "Mica":
+                            // 设置为Mica背景
+                            mainWindow.SystemBackdrop = new MicaBackdrop();
+                            AppSettings.AppStyle = "Mica";
+                            break;
+                    }
                     _ = SaveSetting();
                 }
             }

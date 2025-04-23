@@ -14,5 +14,6 @@ namespace WinUIMusicPlayer.Model
         public string DefualtPlayList { get; set; }
         public string LrcAPISource { get; set; }
         public string LrcAPIAuth { get; set; }
+        public string AppStyle { get; set; }
     }
 }
