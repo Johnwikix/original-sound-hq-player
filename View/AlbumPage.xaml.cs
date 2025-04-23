@@ -33,6 +33,8 @@ namespace WinUIMusicPlayer.View
         public AlbumPage()
         {
             this.InitializeComponent();
+            musicList = new ObservableCollection<Music>();
+            AlbumGridView.ItemsSource = musicList;
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -69,6 +71,7 @@ namespace WinUIMusicPlayer.View
             InitializeDatabase();
         }
 
+
         public async void SortMusicList(string sortOrder = "DefaultOrder")
         {
             if (_allMusic.Count > 0)
@@ -97,14 +100,8 @@ namespace WinUIMusicPlayer.View
 
                 if (isFirstLoad)
                 {
-                    if (musicList != null)
-                    {
-                        musicList.Clear();
-                        musicList = null;
-                    }
-                    musicList = new ObservableCollection<Music>();
-                    _currentPage = 0;
-                    AlbumGridView.ItemsSource = musicList;
+                    musicList.Clear();
+                    _currentPage = 0;                    
                 }
 
                 int startIndex = _currentPage * _itemsPerPage;

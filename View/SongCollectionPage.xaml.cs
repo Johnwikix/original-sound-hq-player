@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             converterService = new AudioConverterService();
             progressDialog = new ProgressDialog("正在转换");
+            musicList = new ObservableCollection<Music>();
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
@@ -54,18 +55,18 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage.pageType == "album")
                 {
-                    var musicList = await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, AppData.searchText);
-                    await LoadMusicAsync(musicList, parentPage.pageType);
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, AppData.searchText));
+                    await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "artist")
                 {
-                    var musicList = await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, AppData.searchText);
-                    await LoadMusicAsync(musicList, parentPage.pageType);
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, AppData.searchText));
+                    await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    var musicList = await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, AppData.searchText);
-                    await LoadMusicAsync(musicList, parentPage.pageType);
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, AppData.searchText));
+                    await LoadMusicAsync(musics, parentPage.pageType);
                 }
             }
         }
@@ -89,17 +90,17 @@ namespace WinUIMusicPlayer.View
             MusicListView.ItemsSource = musicList;
         }
 
-        public async Task LoadMusicAsync(List<Music> musics, string type = null)
+        public async Task LoadMusicAsync(ObservableCollection<Music> musics, string type = null)
         {
             try
             {
-                musicList = new ObservableCollection<Music>(musics);
+                musicList = musics;
                 if (type != null)
                 {
                     SortMusicList("DefaultOrder", type);
                 }
                 else
-                {
+                {                   
                     MusicListView.ItemsSource = musicList;
                 }
                 UpdateMusicListView();

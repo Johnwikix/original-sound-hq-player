@@ -33,6 +33,8 @@ namespace WinUIMusicPlayer.View
         public FolderBrowsePage()
         {
             this.InitializeComponent();
+            musicList = new ObservableCollection<Music>();
+            FolderGridView.ItemsSource = musicList;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -67,8 +69,6 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshFolder(object? sender, EventArgs e)
         {
-            _currentPage = 0;
-            musicList.Clear();
             InitializeData();
         }
 
@@ -107,9 +107,8 @@ namespace WinUIMusicPlayer.View
 
                 if (isFirstLoad)
                 {
-                    musicList = new ObservableCollection<Music>();
+                    musicList.Clear();
                     _currentPage = 0;
-                    FolderGridView.ItemsSource = musicList;
                 }
 
                 int startIndex = _currentPage * _itemsPerPage;

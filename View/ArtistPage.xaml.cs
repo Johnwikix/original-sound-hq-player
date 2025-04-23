@@ -33,6 +33,8 @@ namespace WinUIMusicPlayer.View
         public ArtistPage()
         {
             this.InitializeComponent();
+            musicList = new ObservableCollection<Music>();
+            ArtistsGridView.ItemsSource = musicList;
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -66,8 +68,8 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshArtist(object? sender, EventArgs e)
         {
-            _currentPage = 0;
-            musicList.Clear();
+            //_currentPage = 0;
+            //musicList.Clear();
             InitializeData();
         }
 
@@ -105,10 +107,9 @@ namespace WinUIMusicPlayer.View
                 _isLoading = true;
 
                 if (isFirstLoad)
-                {
-                    musicList = new ObservableCollection<Music>();
+                {  
+                    musicList.Clear();
                     _currentPage = 0;
-                    ArtistsGridView.ItemsSource = musicList;
                 }
 
                 int startIndex = _currentPage * _itemsPerPage;
