@@ -211,6 +211,7 @@ namespace WinUIMusicPlayer.View
                 if (MusicListView.SelectedItem is Music selectedMusic)
                 {
                     int progressBarValue = 0;
+                    progressDialog.RequestedTheme = AppSettings.elementTheme;
                     progressDialog.UpdateProgress(progressBarValue);
                     converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
                     converterService.updateProgress += (sender, progress) =>

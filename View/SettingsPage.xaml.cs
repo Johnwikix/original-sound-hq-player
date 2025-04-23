@@ -288,20 +288,17 @@ namespace WinUIMusicPlayer.View
                         {
                             case "Acrylic":
                                 // 设置为Acrylic背景
-                                mainWindow.SystemBackdrop = new DesktopAcrylicBackdrop();
-                                //if (mainWindow.current.Content is FrameworkElement rootElement)
-                                //{
-                                //    rootElement.RequestedTheme = ElementTheme.Light;
-                                //}
+                                //mainWindow.SystemBackdrop = new DesktopAcrylicBackdrop();
                                 AppSettings.AppStyle = "Acrylic";
                                 break;
 
                             case "Mica":
                                 // 设置为Mica背景
-                                mainWindow.SystemBackdrop = new MicaBackdrop();
+                                //mainWindow.SystemBackdrop = new MicaBackdrop();
                                 AppSettings.AppStyle = "Mica";
                                 break;
                         }
+                        mainWindow.SetAppStyle();
                         _ = SaveSetting();
                     }
                 }
@@ -321,23 +318,24 @@ namespace WinUIMusicPlayer.View
                         {
                             switch (radioButton.Tag.ToString())
                             {
-                                case "Default":
-                                    rootElement.RequestedTheme = ElementTheme.Default;
-                                    AppSettings.AppTheme = "Default";
+                                case "Default":                                    
+                                    AppSettings.AppTheme = "Default"; 
+                                    AppSettings.elementTheme = ElementTheme.Default;
                                     break;
                                 case "Dark":
-                                    rootElement.RequestedTheme = ElementTheme.Dark;
                                     AppSettings.AppTheme = "Dark";
+                                    AppSettings.elementTheme = ElementTheme.Dark;
                                     break;
                                 case "Light":
-                                    rootElement.RequestedTheme = ElementTheme.Light;
                                     AppSettings.AppTheme = "Light";
+                                    AppSettings.elementTheme = ElementTheme.Light;
                                     break;
                                 default:
-                                    rootElement.RequestedTheme = ElementTheme.Default;
                                     AppSettings.AppTheme = "Default";
+                                    AppSettings.elementTheme= ElementTheme.Default;
                                     break;
                             }
+                            mainWindow.SetAppTheme();
                             _ = SaveSetting();
                         }
                     }

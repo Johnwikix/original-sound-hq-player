@@ -35,6 +35,8 @@ namespace WinUIMusicPlayer.View.SubView
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
+        public AlbumDetailWindow current;
+        private AppWindow albumDetailAppWindow;
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
@@ -43,21 +45,78 @@ namespace WinUIMusicPlayer.View.SubView
             SetTitleBar(AlbumDetailTitleBar);
             setWindow();
             InitalizeData(music);
+            current = this;
+            SetAppStyle();
+            SetAppTheme();
+        }
+
+        public void SetAppStyle()
+        {
+            switch (AppSettings.AppStyle)
+            {
+                case "Acrylic":
+                    SystemBackdrop = new DesktopAcrylicBackdrop();
+                    break;
+                case "Mica":
+                    SystemBackdrop = new MicaBackdrop();
+                    break;
+                default:
+                    SystemBackdrop = new DesktopAcrylicBackdrop();
+                    break;
+            }
+        }
+
+        public void SetAppTheme()
+        {
+            Microsoft.UI.Windowing.AppWindowTitleBar m_TitleBar = albumDetailAppWindow.TitleBar;
+            if (current.Content is FrameworkElement rootElement)
+            {
+                switch (AppSettings.AppTheme)
+                {
+                    case "Default":
+                        m_TitleBar.ButtonForegroundColor = null;
+                        m_TitleBar.ButtonHoverForegroundColor = null;
+                        m_TitleBar.ButtonPressedForegroundColor = null;
+                        m_TitleBar.ButtonHoverBackgroundColor = null;
+                        m_TitleBar.ButtonPressedBackgroundColor = null;
+                        rootElement.RequestedTheme = ElementTheme.Default;
+                        break;
+                    case "Dark":
+                        rootElement.RequestedTheme = ElementTheme.Dark;
+                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 50, 50, 50);
+                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 80, 80, 80);
+                        break;
+                    case "Light":
+                        rootElement.RequestedTheme = ElementTheme.Light;
+                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
+                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
+                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
+                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 220, 220, 220);
+                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 190, 190, 190);
+                        break;
+                    default:
+                        rootElement.RequestedTheme = ElementTheme.Default;
+                        break;
+                }
+            }
         }
 
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = AppWindow.GetFromWindowId(id);
-            appWindow.SetIcon("Assets/icon.ico");
+            albumDetailAppWindow = AppWindow.GetFromWindowId(id);
+            albumDetailAppWindow.SetIcon("Assets/icon.ico");
             uint dpi = GetDpiForWindow(hwnd);
             scaleFactor = dpi / 96.0;
             int originalWidth = 550;
             int originalHeight = 700;
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
-            appWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
+            albumDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
             notificationService = new NotificationService();
         }
 

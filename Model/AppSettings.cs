@@ -1,4 +1,5 @@
-﻿using NAudio.CoreAudioApi;
+﻿using Microsoft.UI.Xaml;
+using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 
@@ -23,6 +24,7 @@ namespace WinUIMusicPlayer.Model
         public static bool isDsd { get; set; } = false;
         public static string AppStyle { get; set; }
         public static string AppTheme { get; set; }
+        public static ElementTheme elementTheme { get; set; }
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
