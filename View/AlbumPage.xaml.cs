@@ -66,8 +66,6 @@ namespace WinUIMusicPlayer.View
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
-            _currentPage = 0;
-            musicList.Clear();
             InitializeDatabase();
         }
 
@@ -99,6 +97,11 @@ namespace WinUIMusicPlayer.View
 
                 if (isFirstLoad)
                 {
+                    if (musicList != null)
+                    {
+                        musicList.Clear();
+                        musicList = null;
+                    }
                     musicList = new ObservableCollection<Music>();
                     _currentPage = 0;
                     AlbumGridView.ItemsSource = musicList;
