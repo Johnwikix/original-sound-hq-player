@@ -116,8 +116,7 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder)
         {
-            var order = "DefaultOrder";
-            musicList.Clear();
+            var order = "DefaultOrder";            
             List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
@@ -126,7 +125,8 @@ namespace WinUIMusicPlayer.View
             if (musicList.Count > 0)
             {
                 musics = ToolUtils.SortMusicList("playList", order, musicList.ToList());
-            }            
+            }
+            musicList.Clear();
             foreach (var music in musics) {
                 musicList.Add(music);
             }

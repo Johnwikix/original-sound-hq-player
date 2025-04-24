@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.View
         private void InitializeTimer()
         {
             typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(500);
+            typingTimer.Interval = TimeSpan.FromMilliseconds(200);
             typingTimer.Tick += TypingTimer_Tick;
         }
 

@@ -87,8 +87,7 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
-            List<Music> musics = new List<Music>();
-            musicList.Clear();
+            List<Music> musics = new List<Music>();            
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
@@ -97,6 +96,7 @@ namespace WinUIMusicPlayer.View
             {
                 musics = ToolUtils.SortMusicList("favour", order, musicList.ToList());
             }
+            musicList.Clear();
             foreach (Music music in musics) {
                 musicList.Add(music);
             }
