@@ -11,14 +11,14 @@
     >
 
     
-    <Grid Margin="32 32 32 32">
+    <Grid Margin="0 32 0 32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <TextBlock Text="设置"  Grid.Row="0" FontSize="28" Margin="10 20 0 20" />
-        <ScrollView  Grid.Row="1">
-            <Grid>
+        <ScrollView Grid.Row="1">
+            <Grid Margin="32 0 32 0" >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
