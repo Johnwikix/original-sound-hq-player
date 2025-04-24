@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.View
                     _currentPage = 0;                    
                 }
 
-                for (int i = 0; i < 3; i++) 
+                for (int i = 0; i < 2; i++) 
                 {
                     int startIndex = _currentPage * _itemsPerPage;
                     if (startIndex >= _allMusic.Count)

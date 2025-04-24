@@ -436,6 +436,8 @@ namespace WinUIMusicPlayer.View
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             if (string.IsNullOrEmpty(SearchTextBox.Text)) {
                 AppData.searchText = SearchTextBox.Text;
                 if (ContentFrame != null && ContentFrame.Content != null)
@@ -1153,6 +1155,8 @@ namespace WinUIMusicPlayer.View
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
                 AppData.searchText = SearchTextBox.Text;
                 if (ContentFrame != null && ContentFrame.Content != null)
                 {

@@ -216,14 +216,6 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception e)
                 {
-                    //wasapiOut.Dispose();
-                    //wasapiOut = null;
-                    //wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, AppSettings.Latency);
-                    //wasapiOut.Device = csCoreMMdevice;
-                    //wasapiOut.Initialize(ffmpegDecoder);
-                    //wasapiOut.Volume = volume;
-                    //wasapiOut.Stopped += wasapiOut_Stopped;
-                    //wasapiOut.Play();
                     notificationService.SendNotification("DSD独占播放失败", "请尝试切换至共享模式");
                 }
                 AppSettings.isDsd = true;
