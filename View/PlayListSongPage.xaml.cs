@@ -34,6 +34,8 @@ namespace WinUIMusicPlayer.View
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             converterService = new AudioConverterService();
             progressDialog = new ProgressDialog("ÕýÔÚ×ª»»");
+            musicList = new ObservableCollection<Music>();
+            MusicListView.ItemsSource = musicList;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -98,8 +100,12 @@ namespace WinUIMusicPlayer.View
             try
             {
 
-                musicList = new ObservableCollection<Music>(musics);
-                MusicListView.ItemsSource = musicList;
+                musicList.Clear();
+                foreach (var music in musics)
+                {
+                    musicList.Add(music);
+                }
+                //MusicListView.ItemsSource = musicList;
                 UpdateMusicListView();
             }
             catch (Exception ex)
@@ -111,15 +117,19 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
+            musicList.Clear();
+            List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
             }
             if (musicList.Count > 0)
             {
-                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("playList", order, musicList.ToList()));
+                musics = ToolUtils.SortMusicList("playList", order, musicList.ToList());
+            }            
+            foreach (var music in musics) {
+                musicList.Add(music);
             }
-            MusicListView.ItemsSource = musicList;
         }
 
         public void UpdateMusicListView()

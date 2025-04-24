@@ -70,7 +70,20 @@ namespace WinUIMusicPlayer.Model
             }
         }
         public string FolderPath { get; set; }
-        public string LastLevelFolderPath { get; set; }
+        public string lastLevelFolderPath;
+
+        public string LastLevelFolderPath
+        {
+            get { return lastLevelFolderPath; }
+            set
+            {
+                if (lastLevelFolderPath != value)
+                {
+                    lastLevelFolderPath = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public string Extension { get; set; }
         public int Order { get; set; }
         public int BitDepth { get; set; }

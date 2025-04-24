@@ -34,6 +34,7 @@ namespace WinUIMusicPlayer.View
             converterService = new AudioConverterService();
             progressDialog = new ProgressDialog("正在转换");
             musicList = new ObservableCollection<Music>();
+            MusicListView.ItemsSource = musicList;
         }
 
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
@@ -79,29 +80,36 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder, string type)
         {
             var order = "DefaultOrder";
+            musicList.Clear();
+            List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
             }
             if (musicList.Count > 0)
             {
-                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList(type, order, musicList.ToList()));
+
+                musics = ToolUtils.SortMusicList(type, order, musicList.ToList());
+            }            
+            foreach (var music in musics)
+            {
+                musicList.Add(music);
             }
-            MusicListView.ItemsSource = musicList;
+            //MusicListView.ItemsSource = musicList;
         }
 
         public async Task LoadMusicAsync(ObservableCollection<Music> musics, string type = null)
         {
             try
             {
-                musicList = musics;
+                musicList.Clear();
+                foreach (var music in musics)
+                {
+                    musicList.Add(music);
+                }
                 if (type != null)
                 {
                     SortMusicList("DefaultOrder", type);
-                }
-                else
-                {                   
-                    MusicListView.ItemsSource = musicList;
                 }
                 UpdateMusicListView();
             }

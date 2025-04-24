@@ -31,7 +31,7 @@
                             Width="150" 
                             TextWrapping="Wrap" 
                             TextTrimming="CharacterEllipsis"
-                            Text="{Binding LastLevelFolderPath}" 
+                            Text="{Binding LastLevelFolderPath,Mode=OneWay}" 
                             TextAlignment="Center" 
                             Margin="0"
                             VerticalAlignment="Center"/>

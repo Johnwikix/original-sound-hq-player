@@ -34,6 +34,8 @@ namespace WinUIMusicPlayer.View
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             converterService = new AudioConverterService();
             progressDialog = new ProgressDialog("ÕýÔÚ×ª»»");
+            musicList = new ObservableCollection<Music>();
+            MusicListView.ItemsSource = musicList;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
@@ -85,15 +87,19 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
+            List<Music> musics = new List<Music>();
+            musicList.Clear();
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
             }
             if (musicList.Count > 0)
             {
-                musicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("favour", order, musicList.ToList()));
+                musics = ToolUtils.SortMusicList("favour", order, musicList.ToList());
             }
-            MusicListView.ItemsSource = musicList;
+            foreach (Music music in musics) {
+                musicList.Add(music);
+            }
         }
 
         private async void InitializeData()
@@ -109,8 +115,12 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                musicList = new ObservableCollection<Music>(musics);
-                MusicListView.ItemsSource = musicList;
+                musicList.Clear();
+                foreach (Music music in musics) {
+                    musicList.Add(music);
+                }
+                //musicList = new ObservableCollection<Music>(musics);
+                //MusicListView.ItemsSource = musicList;
                 UpdateMusicListView();
             }
             catch (Exception ex)
@@ -136,7 +146,7 @@ namespace WinUIMusicPlayer.View
             int maxOrder = musicList.Any() ? musicList.Max(m => m.Order) : 0;
             newMusic.Order = maxOrder + 1;
             musicList.Insert(0, newMusic);
-            MusicListView.ItemsSource = musicList;
+            //MusicListView.ItemsSource = musicList;
         }
 
         private void RemoveMusic(Music musicToRemove)
@@ -145,7 +155,7 @@ namespace WinUIMusicPlayer.View
             if (music != null)
             {
                 musicList.Remove(music);
-                MusicListView.ItemsSource = musicList;
+                //MusicListView.ItemsSource = musicList;
             }
         }
 
