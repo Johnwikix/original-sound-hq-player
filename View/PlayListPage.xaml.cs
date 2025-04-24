@@ -101,6 +101,7 @@ namespace WinUIMusicPlayer.View
                     CloseButtonText = "È¡Ïû",
                     XamlRoot = this.XamlRoot
                 };
+                contentDialog.RequestedTheme = AppSettings.elementTheme;
                 ContentDialogResult result = await contentDialog.ShowAsync();
 
                 if (result == ContentDialogResult.Primary)

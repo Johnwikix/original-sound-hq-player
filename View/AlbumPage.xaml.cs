@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private List<Music> _allMusic;
-        private int _itemsPerPage = 44; // 每页加载的项目数
+        private int _itemsPerPage = 50; // 每页加载的项目数
         private int _currentPage = 0;
         private bool _isLoading = false;
         private ScrollViewer _gridViewScrollViewer;
@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer.View
                 }
             }
 
-            AlbumGridView.Loaded += (s, e) =>
+            AlbumGridView.Loaded += async (s, e) =>
             {
                 _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(AlbumGridView);
                 if (_gridViewScrollViewer != null)
@@ -104,20 +104,23 @@ namespace WinUIMusicPlayer.View
                     _currentPage = 0;                    
                 }
 
-                int startIndex = _currentPage * _itemsPerPage;
-                if (startIndex >= _allMusic.Count)
+                for (int i = 0; i < 3; i++) 
                 {
-                    _isLoading = false;
-                    return;
+                    int startIndex = _currentPage * _itemsPerPage;
+                    if (startIndex >= _allMusic.Count)
+                    {
+                        break;
+                    }
+
+                    var itemsToAdd = _allMusic.Skip(startIndex)
+                                                 .Take(_itemsPerPage).ToList();
+                    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
+                    foreach (var item in itemsToAdd)
+                    {
+                        musicList.Add(item);
+                    }
+                    _currentPage++;
                 }
-                var itemsToAdd = _allMusic.Skip(startIndex)
-                                              .Take(_itemsPerPage).ToList();
-                await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
-                foreach (var item in itemsToAdd)
-                {
-                    musicList.Add(item);
-                }
-                _currentPage++;
             }
             catch (Exception ex)
             {
@@ -127,7 +130,7 @@ namespace WinUIMusicPlayer.View
             {
                 _isLoading = false;
             }
-        }
+        }       
 
         // GridView 滚动事件处理
         private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
