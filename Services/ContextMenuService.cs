@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
@@ -27,6 +28,8 @@ namespace WinUIMusicPlayer.Services
         public static EventHandler<Music> playingAlbumMusic;
         public static EventHandler<Music> playingArtistMusic;
         public static EventHandler<Music> playingFolderMusic;
+        //public static EventHandler rescanFolderStart;
+        public static EventHandler rescanFolderEnd;
 
         /// <summary>
         /// 创建并显示右键菜单
@@ -58,16 +61,17 @@ namespace WinUIMusicPlayer.Services
             {
                 Text = "添加到播放列表"
             };
-            //if (type == "folder") {
+            if (type == "folder")
+            {
 
-            //    MenuFlyoutItem rescanItem = new MenuFlyoutItem
-            //    {
-            //        Text = "重新扫描",
-            //        DataContext = item
-            //    };
-            //    rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
-            //    flyout.Items.Add(rescanItem);
-            //}
+                MenuFlyoutItem rescanItem = new MenuFlyoutItem
+                {
+                    Text = "重新扫描",
+                    DataContext = item
+                };
+                rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
+                flyout.Items.Add(rescanItem);
+            }
 
             // 获取所有播放列表
             List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
@@ -149,8 +153,23 @@ namespace WinUIMusicPlayer.Services
 
         private async void RescanFolder_Click(object sender, RoutedEventArgs e, string type)
         {
-            var menuItem = sender as MenuFlyoutItem;
-            var music = menuItem?.DataContext as Music;
+            try
+            {
+                //rescanFolderStart?.Invoke(this, EventArgs.Empty);
+                var menuItem = sender as MenuFlyoutItem;
+                var item = menuItem?.DataContext as Music;
+                if (item != null)
+                {
+                    if (!string.IsNullOrEmpty(item.FolderPath))
+                    {
+                        await MusicDatabaseService.RescanLastLevelFolder(item.FolderPath);
+                    }
+                }
+            }
+            finally {
+                rescanFolderEnd?.Invoke(this, EventArgs.Empty);
+            }         
+            
         }
 
         private async void AlbumProperties_Click(object sender, RoutedEventArgs e, string type)

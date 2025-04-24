@@ -23,51 +23,29 @@
             </GridView.ItemsPanel>
             <GridView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
-                        <FontIcon Glyph="&#xf12b;" FontSize="100" Width="150" Height="150"/>
-                        <TextBlock 
-                            Height="60" 
-                            HorizontalAlignment="Center" 
-                            Width="150" 
-                            TextWrapping="Wrap" 
-                            TextTrimming="CharacterEllipsis"
-                            Text="{Binding LastLevelFolderPath,Mode=OneWay}" 
-                            TextAlignment="Center" 
-                            Margin="0"
-                            VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Visibility="Collapsed" Grid.Row="0">
+                            <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="50" Height="50"/>
+                        </Grid>
+                        <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
+                            <FontIcon Glyph="&#xf12b;" FontSize="100" Width="150" Height="150"/>
+                            <TextBlock 
+                                Height="60" 
+                                HorizontalAlignment="Center" 
+                                Width="150" 
+                                TextWrapping="Wrap" 
+                                TextTrimming="CharacterEllipsis"
+                                Text="{Binding LastLevelFolderPath}" 
+                                TextAlignment="Center" 
+                                Margin="0"
+                                VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
-        <!--<ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="FolderItemsControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <ItemsWrapGrid Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <Button Width="150" Height="150" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"
-                            Click="Folder_Click" Tag="{Binding}" RightTapped="Folder_RightTapped">
-                                <FontIcon Glyph="&#xf12b;" FontSize="100"/>
-                            </Button>
-                            <TextBlock 
-                            Height="60" 
-                            HorizontalAlignment="Center" 
-                            Width="150" 
-                            TextWrapping="Wrap" 
-                            TextTrimming="CharacterEllipsis"
-                            Text="{Binding LastLevelFolderPath}" 
-                            TextAlignment="Center" 
-                            Margin="0"
-                            VerticalAlignment="Center"
-                        />
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>-->
     </Grid>
 </Page>

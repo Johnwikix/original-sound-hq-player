@@ -182,10 +182,20 @@ namespace WinUIMusicPlayer.View
                         "folder"
                     );
                     ContextMenuService.playingFolderMusic += PlayingFolder;
+                    ContextMenuService.rescanFolderEnd += RescanFolderEnd;
                 }
             }
 
             e.Handled = true;
+        }
+
+        private void RescanFolderEnd(object? sender, EventArgs e)
+        {
+            var mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.UpdateMusicList();
+            }
         }
 
         private async void PlayingFolder(object? sender, Music e)

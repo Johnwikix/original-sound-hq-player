@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Microsoft.UI.Xaml.Shapes;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -15,7 +16,7 @@ namespace WinUIMusicPlayer.Services
     public class MusicDatabaseService
     {
         private static SQLiteAsyncConnection _dbConnection;
-        private static readonly string DbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+        private static readonly string DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private static AddFolderService addFolderService = new AddFolderService();
 
         public static async Task Initialize()
@@ -630,6 +631,63 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
+        private async static Task updateMusic(Music music,string folderPath) {
+            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
+            var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == music.Path).FirstOrDefaultAsync();
+            Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
+            existingMusic.Title = newMusic.Title;
+            existingMusic.Author = newMusic.Author;
+            existingMusic.Duration = newMusic.Duration;
+            existingMusic.Album = newMusic.Album;
+            //existingMusic.Extension = newMusic.Extension;
+            existingMusic.BitDepth = newMusic.BitDepth;
+            existingMusic.BitRate = newMusic.BitRate;
+            existingMusic.SampleRate = newMusic.SampleRate;
+            existingMusic.Channel = newMusic.Channel;
+            existingMusic.Lyrics = newMusic.Lyrics;
+            existingMusic.TrackNumber = newMusic.TrackNumber;
+            await _dbConnection.UpdateAsync(existingMusic);
+        }
+
+        public static async Task RescanLastLevelFolder(string folderPath) {
+            List<Music> musics = await _dbConnection.Table<Music>().Where(f => f.FolderPath == folderPath).ToListAsync();
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
+            List<string> filePaths = files.Select(file => file.Path).ToList();
+            List<string> musicPaths = musics.Select(music => music.Path).ToList();
+            var filesNotInMusics = filePaths.Except(musicPaths).ToList();
+            var musicsNotInFiles = musicPaths.Except(filePaths).ToList();
+            if (musicsNotInFiles.Count > 0) {
+                foreach (var music in musicsNotInFiles)
+                {
+                    var musicToDelete = await _dbConnection.Table<Music>().Where(m => m.Path == music).FirstOrDefaultAsync();
+                    if (musicToDelete != null)
+                    {
+                        await _dbConnection.DeleteAsync(musicToDelete);
+                    }
+                    musics.Remove(musicToDelete);
+                }
+            }
+            if (filesNotInMusics.Count > 0) {
+                foreach (var file in filesNotInMusics)
+                {
+                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(file);
+                    Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
+                    await _dbConnection.InsertAsync(music);
+                }
+            }
+            HashSet<string> pathSet = new HashSet<string>(musicsNotInFiles);
+
+            // 过滤Music列表，排除Path存在于pathSet中的项
+            List<Music> filteredList = musics
+                .Where(m => !pathSet.Contains(m.Path))
+                .ToList();
+            foreach (Music music in filteredList) {
+                await updateMusic(music,music.FolderPath);
+            }
+           
+        }
+
         public static async Task RescanFolder(int folderId)
         {
             var folderToRescan = await _dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
@@ -676,23 +734,22 @@ namespace WinUIMusicPlayer.Services
                         }
                         else
                         {
-                            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
-                            var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == newMusic.Path).FirstOrDefaultAsync();
-                            Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-                            existingMusic.Title = music.Title;
-                            existingMusic.Author = music.Author;
-                            existingMusic.Duration = music.Duration;
-                            existingMusic.Album = music.Album;
-                            existingMusic.FolderPath = newMusic.FolderPath;
-                            existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
-                            existingMusic.Extension = newMusic.Extension;
-                            existingMusic.BitDepth = music.BitDepth;
-                            existingMusic.BitRate = music.BitRate;
-                            existingMusic.SampleRate = music.SampleRate;
-                            existingMusic.Channel = music.Channel;
-                            existingMusic.Lyrics = music.Lyrics;
-                            existingMusic.TrackNumber = music.TrackNumber;
-                            await _dbConnection.UpdateAsync(existingMusic);
+                            await updateMusic(newMusic, folder.Path);
+                            //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
+                            //var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == newMusic.Path).FirstOrDefaultAsync();
+                            //Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
+                            //existingMusic.Title = music.Title;
+                            //existingMusic.Author = music.Author;
+                            //existingMusic.Duration = music.Duration;
+                            //existingMusic.Album = music.Album;
+                            //existingMusic.Extension = newMusic.Extension;
+                            //existingMusic.BitDepth = music.BitDepth;
+                            //existingMusic.BitRate = music.BitRate;
+                            //existingMusic.SampleRate = music.SampleRate;
+                            //existingMusic.Channel = music.Channel;
+                            //existingMusic.Lyrics = music.Lyrics;
+                            //existingMusic.TrackNumber = music.TrackNumber;
+                            //await _dbConnection.UpdateAsync(existingMusic);
                             filePaths.Remove(newMusic.Path);
                         }
                     }
