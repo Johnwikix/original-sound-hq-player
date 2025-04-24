@@ -3,6 +3,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -1150,12 +1151,15 @@ namespace WinUIMusicPlayer.View
 
         private void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            AppData.searchText = SearchTextBox.Text;
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                refreshPage?.Invoke(this, EventArgs.Empty);
-                refreshSong?.Invoke(this, EventArgs.Empty);
-            }
+                AppData.searchText = SearchTextBox.Text;
+                if (ContentFrame != null && ContentFrame.Content != null)
+                {
+                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    refreshSong?.Invoke(this, EventArgs.Empty);
+                }
+            }            
         }
     }
 }
