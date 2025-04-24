@@ -683,12 +683,12 @@ namespace WinUIMusicPlayer.View
             {
                 if (isFullScreen)
                 {
-                    appWindow.SetPresenter(AppWindowPresenterKind.Default);
+                    //appWindow.SetPresenter(AppWindowPresenterKind.Default);
                     FullScreenIcon.Glyph = "\uE740";
                 }
                 else
                 {
-                    appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                    //appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
                     FullScreenIcon.Glyph = "\uE73F";
                 }
                 isFullScreen = !isFullScreen;
