@@ -734,7 +734,7 @@ namespace WinUIMusicPlayer.View
             }
             else if (index == 0 && musicPlaybackService.currentPlayingList.Count > 1)
             {
-                await PlayMusic(musicPlaybackService.currentPlayingList[musicPlaybackService.musicList.Count - 1]);
+                await PlayMusic(musicPlaybackService.currentPlayingList[musicPlaybackService.currentPlayingList.Count - 1]);
 
             }
         }

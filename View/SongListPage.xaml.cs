@@ -113,11 +113,17 @@ namespace WinUIMusicPlayer.View
                 {
                     if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
                     {
-                        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
-                        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
+                        Music selectedMusic = null;
+                        foreach (var music in musicList)
+                        {
+                            if (music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id)
+                            {
+                                selectedMusic =  music;
+                            }
+                        }
+                        MusicListView.SelectedItem = selectedMusic;
+                        MusicListView.ScrollIntoView(selectedMusic);
                     }
-                    var selectItem = MusicListView.SelectedItems;
-                    Debug.WriteLine(selectItem);
                 }
             }
             catch (Exception ex)
@@ -242,9 +248,21 @@ namespace WinUIMusicPlayer.View
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            foreach (Music item in uniqueSelectedMusics) {
-                await parentPage.AddToFavourite(item);
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            {
+                foreach (Music item in uniqueSelectedMusics)
+                {
+                    await parentPage.AddToFavourite(item);
+                }
             }
+            else
+            {
+                if (MusicListView.SelectedItem is Music selectedMusic)
+                {
+                    await parentPage.AddToFavourite(selectedMusic);
+                }
+            }
+            
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -273,8 +291,8 @@ namespace WinUIMusicPlayer.View
         private List<Music> GetUniqueSelectedItems()
         {
             var uniqueItems = new Dictionary<int, Music>();
-
-            foreach (var item in MusicListView.SelectedItems)
+            var selectedItems = MusicListView.SelectedItems;
+            foreach (var item in selectedItems)
             {
                 if (item is Music music)
                 {
@@ -284,7 +302,6 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-
             return uniqueItems.Values.ToList();
         }
 
