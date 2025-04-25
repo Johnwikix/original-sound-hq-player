@@ -351,7 +351,7 @@ namespace WinUIMusicPlayer.View
                         int progressBarValue = 0;
                         progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = progressDialog.UpdateProgress(progressBarValue);
-                        await converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                        _=converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
                         converterService.updateProgress += (sender, progress) =>
                         {
                             progressBarValue = (int)progress;
