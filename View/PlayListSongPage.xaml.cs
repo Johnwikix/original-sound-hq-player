@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -276,26 +277,62 @@ namespace WinUIMusicPlayer.View
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
-            var menuItem = sender as MenuFlyoutItem;
-            if (menuItem != null && menuItem.Tag.ToString() != null)
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                if (MusicListView.SelectedItem is Music selectedMusic)
+                var menuItem = sender as MenuFlyoutItem;
+                if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
                     int progressBarValue = 0;
                     progressDialog.RequestedTheme = AppSettings.elementTheme;
-                    progressDialog.UpdateProgress(0);
-                    converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                    await progressDialog.UpdateProgress(progressBarValue);
                     converterService.updateProgress += (sender, progress) =>
                     {
-                        progressBarValue = (int)progress;
-                        progressDialog.UpdateProgress(progressBarValue);
+                        if (progressBarValue < (int)progress)
+                        {
+                            progressBarValue = (int)progress;
+                        }
+                        if (progressBarValue < 100)
+                        {
+                            _ = progressDialog.UpdateProgress(progressBarValue);
+                        }
                     };
-                    if (progressBarValue < 100)
-                    {
-                        progressDialog.XamlRoot = this.XamlRoot;
-                        progressDialog.ShowAsync();
-                    }
+                    progressDialog.XamlRoot = this.XamlRoot;
+                    _ = progressDialog.ShowAsync();
 
+                    List<Task> conversionTasks = new List<Task>();
+                    foreach (Music item in uniqueSelectedMusics)
+                    {
+                        Task conversionTask = converterService.ConvertAudio2Wav(item, menuItem.Tag.ToString());
+                        conversionTasks.Add(conversionTask);
+                    }
+                    await Task.WhenAll(conversionTasks);
+                    _ = progressDialog.UpdateProgress(100);
+                }
+            }
+            else
+            {
+                var menuItem = sender as MenuFlyoutItem;
+                if (menuItem != null && menuItem.Tag.ToString() != null)
+                {
+                    if (MusicListView.SelectedItem is Music selectedMusic)
+                    {
+                        int progressBarValue = 0;
+                        progressDialog.RequestedTheme = AppSettings.elementTheme;
+                        _ = progressDialog.UpdateProgress(progressBarValue);
+                        await converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                        converterService.updateProgress += (sender, progress) =>
+                        {
+                            progressBarValue = (int)progress;
+                            _ = progressDialog.UpdateProgress(progressBarValue);
+                        };
+                        if (progressBarValue < 100)
+                        {
+                            progressDialog.XamlRoot = this.XamlRoot;
+                            _ = progressDialog.ShowAsync();
+                        }
+
+                    }
                 }
             }
         }

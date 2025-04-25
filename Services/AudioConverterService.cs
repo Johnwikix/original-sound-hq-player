@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Services
     public class AudioConverterService
     {
         public EventHandler<double> updateProgress;
-        public void ConvertAudio2Wav(Music music, string type = "wav")
+        public async Task ConvertAudio2Wav(Music music, string type = "wav")
         {
             AudioConverter converter = new AudioConverter();
             converter.progressEvent += (sender, progress) =>
@@ -21,55 +21,55 @@ namespace WinUIMusicPlayer.Services
             switch (music.Extension.ToLower())
             {
                 case "mp3":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertMp3(music.Path, outputPath, type);
                     });
                     break;
                 case "flac":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertFlac(music.Path, outputPath, type);
                     });
                     break;
                 case "aiff":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertAiff(music.Path, outputPath, type);
                     });
                     break;
                 case "aif":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertAiff(music.Path, outputPath, type);
                     });
                     break;
                 case "wav":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertWav(music.Path, outputPath, type);
                     });
                     break;
                 case "ogg":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertOgg(music.Path, outputPath, type);
                     });
                     break;
                 case "dsf":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertDSDToWav(music.Path, outputPath, type);
                     });
                     break;
                 case "dff":
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertDSDToWav(music.Path, outputPath, type);
                     });
                     break;
                 default:
-                    Task.Run(() =>
+                    await Task.Run(() =>
                     {
                         converter.ConvertAudio(music.Path, outputPath, type);
                     });

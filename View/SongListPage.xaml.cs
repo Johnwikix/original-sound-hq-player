@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -180,22 +181,31 @@ namespace WinUIMusicPlayer.View
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
                     int progressBarValue = 0;
-                    int currentSong = 0;
                     progressDialog.RequestedTheme = AppSettings.elementTheme;
-                    progressDialog.UpdateProgress(progressBarValue);
+                    await progressDialog.UpdateProgress(progressBarValue);
                     converterService.updateProgress += (sender, progress) =>
                     {
-                        progressBarValue = (int)(progress * currentSong/ uniqueSelectedMusics.Count);
-                        progressDialog.UpdateProgress(progressBarValue);
+                        if (progressBarValue < (int)progress)
+                        {
+                            progressBarValue = (int)progress;
+                        }
+                        if (progressBarValue < 100)
+                        {
+                            _ = progressDialog.UpdateProgress(progressBarValue);
+                        }
                     };
                     progressDialog.XamlRoot = this.XamlRoot;
-                    progressDialog.ShowAsync();
+                    _ = progressDialog.ShowAsync();
+
+                    List<Task> conversionTasks = new List<Task>();
                     foreach (Music item in uniqueSelectedMusics)
-                    {                        
-                        converterService.ConvertAudio2Wav(item, menuItem.Tag.ToString());                       
-                        currentSong++;
+                    {
+                        Task conversionTask = converterService.ConvertAudio2Wav(item, menuItem.Tag.ToString());
+                        conversionTasks.Add(conversionTask);
                     }
-                }                
+                    await Task.WhenAll(conversionTasks);
+                    _ = progressDialog.UpdateProgress(100);
+                }
             }
             else
             {
@@ -206,22 +216,22 @@ namespace WinUIMusicPlayer.View
                     {
                         int progressBarValue = 0;
                         progressDialog.RequestedTheme = AppSettings.elementTheme;
-                        progressDialog.UpdateProgress(progressBarValue);
-                        converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                        _ = progressDialog.UpdateProgress(progressBarValue);
+                        await converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
                         converterService.updateProgress += (sender, progress) =>
                         {
                             progressBarValue = (int)progress;
-                            progressDialog.UpdateProgress(progressBarValue);
+                            _ = progressDialog.UpdateProgress(progressBarValue);
                         };
                         if (progressBarValue < 100)
                         {
                             progressDialog.XamlRoot = this.XamlRoot;
-                            progressDialog.ShowAsync();
+                            _ = progressDialog.ShowAsync();
                         }
 
                     }
                 }
-            }            
+            }
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
