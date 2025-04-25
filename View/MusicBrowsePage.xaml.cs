@@ -68,7 +68,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
-            InitializeTimer();
+            //InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
@@ -117,12 +117,12 @@ namespace WinUIMusicPlayer.View
             appWindow = AppWindow.GetFromWindowId(windowId);
         }
 
-        private void InitializeTimer()
-        {
-            typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(200);
-            typingTimer.Tick += TypingTimer_Tick;
-        }
+        //private void InitializeTimer()
+        //{
+        //    typingTimer = new DispatcherTimer();
+        //    typingTimer.Interval = TimeSpan.FromMilliseconds(200);
+        //    typingTimer.Tick += TypingTimer_Tick;
+        //}
 
         private void InitializeSystemMediaControls()
         {
@@ -437,18 +437,19 @@ namespace WinUIMusicPlayer.View
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            typingTimer.Stop();
-            typingTimer.Start();
-            //GC.Collect();
-            //GC.WaitForPendingFinalizers();
-            //if (string.IsNullOrEmpty(SearchTextBox.Text)) {
-            //    AppData.searchText = SearchTextBox.Text;
-            //    if (ContentFrame != null && ContentFrame.Content != null)
-            //    {
-            //        refreshPage?.Invoke(this, EventArgs.Empty);
-            //        refreshSong?.Invoke(this, EventArgs.Empty);
-            //    }
-            //}
+            //typingTimer.Stop();
+            //typingTimer.Start();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            if (string.IsNullOrEmpty(SearchTextBox.Text))
+            {
+                AppData.searchText = SearchTextBox.Text;
+                if (ContentFrame != null && ContentFrame.Content != null)
+                {
+                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    refreshSong?.Invoke(this, EventArgs.Empty);
+                }
+            }
         }
 
         private async void TypingTimer_Tick(object sender, object e)
@@ -1160,19 +1161,19 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        //{
-        //    if (e.Key == Windows.System.VirtualKey.Enter)
-        //    {
-        //        GC.Collect();
-        //        GC.WaitForPendingFinalizers();
-        //        AppData.searchText = SearchTextBox.Text;
-        //        if (ContentFrame != null && ContentFrame.Content != null)
-        //        {
-        //            refreshPage?.Invoke(this, EventArgs.Empty);
-        //            refreshSong?.Invoke(this, EventArgs.Empty);
-        //        }
-        //    }            
-        //}
+        private void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                AppData.searchText = SearchTextBox.Text;
+                if (ContentFrame != null && ContentFrame.Content != null)
+                {
+                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    refreshSong?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
     }
 }
