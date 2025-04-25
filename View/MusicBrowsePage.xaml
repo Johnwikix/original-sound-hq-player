@@ -68,7 +68,7 @@
                     <ComboBoxItem FontSize="12" Content="歌手" Tag="Artist"/>
                     <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>                    
                 </ComboBox>
-                <TextBox x:Name="SearchTextBox" KeyDown="SearchTextBox_KeyDown" PlaceholderText="回车搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
+                <TextBox x:Name="SearchTextBox" PlaceholderText="回车搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
             </StackPanel>
         </Grid>
         <Frame x:Name="ContentFrame" IsNavigationStackEnabled="False" Grid.Row="1" Margin="10"/>
@@ -76,9 +76,7 @@
         <Grid Grid.Row="2" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- 进度条和播放时间 -->
                 <RowDefinition Height="Auto"/>
-                <!-- 封面、标题、作者、播放模式、播放按钮、音量 -->
             </Grid.RowDefinitions>
 
             <!-- 进度条和播放时间 -->

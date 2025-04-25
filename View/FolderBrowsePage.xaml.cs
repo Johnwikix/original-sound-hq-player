@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.View
         private MusicBrowsePage parentPage;
         private ObservableCollection<Music> musicList;
         private List<Music> _allMusic;
-        private int _itemsPerPage = 150; // 每页加载的项目数
+        private int _itemsPerPage = 100; // 每页加载的项目数
         private int _currentPage = 0;
         private bool _isLoading = false;
         private ScrollViewer _gridViewScrollViewer;

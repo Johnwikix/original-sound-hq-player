@@ -26,7 +26,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         BitmapImage cover = await ToolUtils.GetAlbumCover(album);
                         album.Cover = cover;
-                        //AppData.albumCoverCache[album.Album] = cover;
+                        if (AppSettings.isCoverCacheEnabled) {
+                            AppData.albumCoverCache[album.Album] = cover;
+                        }
                     }
                 }
             }
@@ -43,7 +45,7 @@ namespace WinUIMusicPlayer.Services
                 var groupedAlbums = musics.GroupBy(m => m.Album)
                                            .Select(g => g.First())
                                            .OrderBy(m => m.Album)
-                                           .Take(150)
+                                           .Take(AppSettings.maxCoverPreLoadNum)
                                            .ToList();
                 foreach (var album in groupedAlbums)
                 {

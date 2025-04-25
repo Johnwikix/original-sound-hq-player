@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
@@ -67,6 +68,8 @@ namespace WinUIMusicPlayer.View
             newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
+            newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -174,6 +177,8 @@ namespace WinUIMusicPlayer.View
                     DefaultRadioButton.IsChecked = true;
                     break;
             }
+            MaxCoverPreLoadNumberBox.Value = AppSettings.maxCoverPreLoadNum;
+            CoverCacheToggle.IsOn = AppSettings.isCoverCacheEnabled;
             isInitializing = false;
         }
 
@@ -350,6 +355,30 @@ namespace WinUIMusicPlayer.View
                 System.Diagnostics.Debug.WriteLine(ex.Message);
             }
                       
+        }
+
+        private void CoverCacheToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!isInitializing)
+            {
+                AppSettings.isCoverCacheEnabled = CoverCacheToggle.IsOn;
+                _ = SaveSetting();
+            }            
+        }
+
+        private void MaxCoverPreLoadNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+        {
+            if (!isInitializing)
+            {
+                AppSettings.maxCoverPreLoadNum = (int)args.NewValue;
+                _ = SaveSetting();
+            }
+        }
+
+        private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
+            await Launcher.LaunchUriAsync(uri);
         }
     }
 }

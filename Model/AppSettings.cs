@@ -25,6 +25,8 @@ namespace WinUIMusicPlayer.Model
         public static string AppStyle { get; set; } = "Acrylic";
         public static string AppTheme { get; set; } = "Default";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
+        public static bool isCoverCacheEnabled { get; set; } = false;
+        public static int maxCoverPreLoadNum { get; set; } = 100;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

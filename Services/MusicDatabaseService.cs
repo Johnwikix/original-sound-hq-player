@@ -441,6 +441,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;
+                AppSettings.isCoverCacheEnabled = settings.isCoverCacheEnabled;
+                AppSettings.maxCoverPreLoadNum = settings.maxCoverPreLoadNum;
             }
         }
 

@@ -31,6 +31,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>                
                 <TextBlock Text="音频" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
                 <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True"  Header="输出设置" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
@@ -92,10 +93,12 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CoverSettings" Margin="10 0 10 10" Header="封面匹配服务设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CoverSettings" Margin="10 0 10 10" Header="封面设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
@@ -103,10 +106,28 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="LrcAPI源" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
+                                <TextBlock Text="封面服务LrcAPI源" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center" Tapped="ToolTip_Tapped">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="文档说明：https://docs.lrc.cx/docs/QuickStart/" VerticalOffset="10"/>
+                                    </ToolTipService.ToolTip>
+                                </FontIcon>
+                            </StackPanel>                            
                             <TextBox x:Name="LrcAPITextBox"  Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <TextBlock Text="LrcAPI源鉴权码"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <TextBlock Text="封面服务LrcAPI源鉴权码"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
                             <TextBox x:Name="LrcAPIAuthTextBox"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal">
+                                <TextBlock Text="封面缓存"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="开启后根据专辑封面数量内存占用会有一定上升" VerticalOffset="10"/>
+                                    </ToolTipService.ToolTip>
+                                </FontIcon>
+                            </StackPanel>
+                            <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" Toggled="CoverCacheToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
+                            <TextBlock Text="最大封面预载数量"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <NumberBox x:Name="MaxCoverPreLoadNumberBox" ValueChanged="MaxCoverPreLoadNumberBox_ValueChanged" Grid.Column="1" Grid.Row="2" Value="50" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>

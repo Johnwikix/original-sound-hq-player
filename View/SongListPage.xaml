@@ -24,7 +24,7 @@
                 <Setter.Value>
                     <MenuFlyout>
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
-                        <MenuFlyoutItem Text="{Binding isFavorite, Converter={StaticResource FavouriteTextConverter}}" Click="SetAsFavoriteMenuItem_Click"/>
+                        <MenuFlyoutItem Text="添加/取消最爱" Click="SetAsFavoriteMenuItem_Click"/>
                         <MenuFlyoutSubItem Text="添加到播放列表">                                                   
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSubItem Text="转换为">
@@ -42,6 +42,7 @@
     </Page.Resources>
     <Grid>
         <ListView x:Name="MusicListView" 
+          SelectionMode="Extended"
           DoubleTapped="MusicListView_DoubleTapped" 
           ItemContainerStyle="{StaticResource ListViewItemStyle}" 
           RightTapped="MusicListView_RightTapped">
