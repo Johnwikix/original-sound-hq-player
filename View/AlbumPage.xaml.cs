@@ -43,6 +43,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.currentAlbumName = null;
+                parentPage.pageType = null;
                 parentPage.DisableBackButton();
                 parentPage.refreshPage += RefreshAlbum;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
@@ -85,7 +86,7 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
+                _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
                 await LoadMoreAlbumsAsync(true);
             }
         }

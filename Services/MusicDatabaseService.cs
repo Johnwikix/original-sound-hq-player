@@ -437,22 +437,26 @@ namespace WinUIMusicPlayer.Services
             return query.OrderByDescending(m => m.Order).ToList();
         }
 
-        public static async Task<List<Music>> GetArtistMusicAsync(string artist, string search = null)
-        {
-            var query = _dbConnection.Table<Music>().Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-                );
-            }
-            return await query.OrderBy(m => m.Album).ToListAsync();
-        }
+        //public static async Task<List<Music>> GetArtistMusicAsync(string artist, string search = null)
+        //{
+        //    var query = _dbConnection.Table<Music>().Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        query = query.Where(m =>
+        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //            m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+        //        );
+        //    }
+        //    return await query.OrderBy(m => m.Album).ToListAsync();
+        //}
 
         public static List<Music> GetArtistMusicFromMem(string artist, string search = null)
         {
-            var query = AppData.allSongs.Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
+            var query = AppData.allSongs.AsQueryable();
+            if (artist != null)
+            {
+                query = query.Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
+            }
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(m =>
@@ -463,23 +467,27 @@ namespace WinUIMusicPlayer.Services
             return query.OrderBy(m => m.Album).ToList();
         }
 
-        public static async Task<List<Music>> GetFolderMusicAsync(string folder, string search = null)
-        {
-            var query = _dbConnection.Table<Music>().Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
-            }
-            return await query.OrderBy(m => m.LastLevelFolderPath).ToListAsync();
-        }
+        //public static async Task<List<Music>> GetFolderMusicAsync(string folder, string search = null)
+        //{
+        //    var query = _dbConnection.Table<Music>().Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        query = query.Where(m =>
+        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //            m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+        //            m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+        //        );
+        //    }
+        //    return await query.OrderBy(m => m.LastLevelFolderPath).ToListAsync();
+        //}
 
         public static List<Music> GetFolderMusicFromMem(string folder, string search = null)
         {
-            var query = AppData.allSongs.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+            var query = AppData.allSongs.AsQueryable();
+            if (folder != null)
+            {
+                query = query.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+            }
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(m =>
@@ -491,22 +499,26 @@ namespace WinUIMusicPlayer.Services
             return query.OrderBy(m => m.LastLevelFolderPath).ToList();
         }
 
-        public static async Task<List<Music>> GetAlbumMusicAsync(string album, string search = null)
-        {
-            var query = _dbConnection.Table<Music>().Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
-            }
-            return await query.OrderBy(m => m.TrackNumber).ToListAsync();
-        }
+        //public static async Task<List<Music>> GetAlbumMusicAsync(string album, string search = null)
+        //{
+        //    var query = _dbConnection.Table<Music>().Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        query = query.Where(m =>
+        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //            m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+        //        );
+        //    }
+        //    return await query.OrderBy(m => m.TrackNumber).ToListAsync();
+        //}
 
         public static List<Music> GetAlbumMusicFromMem(string album, string search = null)
         {
-            var query = AppData.allSongs.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+            var query = AppData.allSongs.AsQueryable();
+            if (album != null)
+            {
+                query = query.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+            }
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(m =>

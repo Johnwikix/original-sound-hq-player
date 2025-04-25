@@ -43,6 +43,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.currentArtistName = null;
+                parentPage.pageType = null;
                 parentPage.DisableBackButton();
                 parentPage.refreshPage += RefreshArtist;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
