@@ -290,19 +290,16 @@ namespace WinUIMusicPlayer.View
 
         private List<Music> GetUniqueSelectedItems()
         {
-            var uniqueItems = new Dictionary<int, Music>();
+            List<Music> uniqueItems = new List<Music>();
             var selectedItems = MusicListView.SelectedItems;
             foreach (var item in selectedItems)
             {
                 if (item is Music music)
                 {
-                    if (!uniqueItems.ContainsKey(music.Id))
-                    {
-                        uniqueItems[music.Id] = music;
-                    }
+                    uniqueItems.Add(music);
                 }
             }
-            return uniqueItems.Values.ToList();
+            return uniqueItems;
         }
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)

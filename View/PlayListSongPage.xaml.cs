@@ -80,13 +80,13 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                var draggedItem = args.Items[0] as Music;
-                // 获取拖拽后的新索引
-                var newIndex = sender.Items.IndexOf(draggedItem);
+                //var draggedItem = args.Items[0] as Music;
+                //// 获取拖拽后的新索引
+                //var newIndex = sender.Items.IndexOf(draggedItem);
                 // 从数据源中移除该项
-                musicList.Remove(draggedItem);
+                //musicList.Remove(draggedItem);
                 // 将该项插入到新的位置
-                musicList.Insert(newIndex, draggedItem);
+                //musicList.Insert(newIndex, draggedItem);
                 for (int i = 0; i < musicList.Count; i++)
                 {
                     musicList[i].PlayListOrder = musicList.Count - i;
@@ -136,19 +136,46 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                if (parentPage != null)
+                if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
                 {
-                    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
+                    Music selectedMusic = null;
+                    foreach (var music in musicList)
                     {
-                        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
-                        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
+                        if (music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id)
+                        {
+                            selectedMusic = music;
+                        }
                     }
+                    MusicListView.SelectedItem = selectedMusic;
+                    MusicListView.ScrollIntoView(selectedMusic);
                 }
+                //if (parentPage != null)
+                //{
+                //    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
+                //    {
+                //        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
+                //        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
+                //    }
+                //}
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"滚动音乐失败: {ex.Message}");
             }
+        }
+
+        private List<Music> GetUniqueSelectedItems()
+        {
+            List<Music> uniqueItems = new List<Music>();
+            var selectedItems = MusicListView.SelectedItems;
+            foreach (var item in selectedItems)
+            {
+                if (item is Music music)
+                {
+                    uniqueItems.Add(music);
+                }
+            }
+            return uniqueItems;
         }
 
         private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
@@ -164,28 +191,64 @@ namespace WinUIMusicPlayer.View
 
         private async void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (MusicListView.SelectedItem is Music selectedMusic)
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
-                await parentPage.PlayMusic(selectedMusic);
+                parentPage.musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
+                await parentPage.PlayMusic(uniqueSelectedMusics[0]);
             }
+            else
+            {
+                if (MusicListView.SelectedItem is Music selectedMusic)
+                {
+                    parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
+                    await parentPage.PlayMusic(selectedMusic);
+                }
+            }            
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (MusicListView.SelectedItem is Music selectedMusic)
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, selectedMusic.Id);
-                musicList.Remove(selectedMusic);
+                foreach (Music item in uniqueSelectedMusics)
+                {
+                    await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, item.Id);
+                    musicList.Remove(item);
+                }
             }
+            else
+            {
+                if (MusicListView.SelectedItem is Music selectedMusic)
+                {
+                    await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, selectedMusic.Id);
+                    musicList.Remove(selectedMusic);
+                }
+            }           
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (MusicListView.SelectedItem is Music selectedMusic)
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                await parentPage.AddToFavourite(selectedMusic);
+                foreach (Music item in uniqueSelectedMusics)
+                {
+                    await parentPage.AddToFavourite(item);
+                }
             }
+            else
+            {
+                if (MusicListView.SelectedItem is Music selectedMusic)
+                {
+                    await parentPage.AddToFavourite(selectedMusic);
+                }
+            }
+            //if (MusicListView.SelectedItem is Music selectedMusic)
+            //{
+            //    await parentPage.AddToFavourite(selectedMusic);
+            //}
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -243,22 +306,55 @@ namespace WinUIMusicPlayer.View
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
             if (listViewItem != null)
             {
-                listViewItem.IsSelected = true;
-                MusicListView.SelectedItem = listViewItem.Content;
-
-                // 获取音乐对象
                 var musicItem = listViewItem.Content as Model.Music;
-
-                // 获取右键菜单
+                // 检查当前指向的元素是否已在选中项列表中
+                bool isCurrentItemSelected = false;
+                foreach (var item in MusicListView.SelectedItems)
+                {
+                    if (item is Music selectedMusic && musicItem != null && selectedMusic.Id == musicItem.Id)
+                    {
+                        isCurrentItemSelected = true;
+                        break;
+                    }
+                }
+                // 如果当前项不在选中列表中，则清除现有选择并选中当前项
+                if (!isCurrentItemSelected)
+                {
+                    MusicListView.SelectedItems.Clear();
+                    listViewItem.IsSelected = true;
+                    MusicListView.SelectedItem = musicItem;
+                }
+                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                // 设置右键菜单
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
                     // 为菜单项设置DataContext
                     foreach (var menuItem in flyout.Items)
                     {
                         menuItem.DataContext = musicItem;
-                    }
+                    }                   
                 }
             }
+            //var targetElement = e.OriginalSource as FrameworkElement;
+            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
+            //if (listViewItem != null)
+            //{
+            //    listViewItem.IsSelected = true;
+            //    MusicListView.SelectedItem = listViewItem.Content;
+
+            //    // 获取音乐对象
+            //    var musicItem = listViewItem.Content as Model.Music;
+
+            //    // 获取右键菜单
+            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
+            //    {
+            //        // 为菜单项设置DataContext
+            //        foreach (var menuItem in flyout.Items)
+            //        {
+            //            menuItem.DataContext = musicItem;
+            //        }
+            //    }
+            //}
         }
 
         private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)

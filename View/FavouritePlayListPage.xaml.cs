@@ -40,13 +40,6 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            var draggedItem = args.Items[0] as Music;
-            // 获取拖拽后的新索引
-            var newIndex = sender.Items.IndexOf(draggedItem);
-            // 从数据源中移除该项
-            musicList.Remove(draggedItem);
-            // 将该项插入到新的位置
-            musicList.Insert(newIndex, draggedItem);
             for (int i = 0; i < musicList.Count; i++)
             {
                 musicList[i].Order = musicList.Count - i;

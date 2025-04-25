@@ -24,7 +24,7 @@
                 <Setter.Value>
                     <MenuFlyout>
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
-                        <MenuFlyoutItem Text="{Binding isFavorite, Converter={StaticResource FavouriteTextConverter}}" Click="SetAsFavoriteMenuItem_Click"/>
+                        <MenuFlyoutItem Text="添加/取消最爱" Click="SetAsFavoriteMenuItem_Click"/>
                         <MenuFlyoutSubItem Text="转换为">
                             <MenuFlyoutItem Text="WAV" Tag="wav" Click="ConvertAudio_Click"></MenuFlyoutItem>
                             <MenuFlyoutItem Text="MP3" Tag="mp3" Click="ConvertAudio_Click"></MenuFlyoutItem>
@@ -51,6 +51,7 @@
             DoubleTapped="MusicListView_DoubleTapped" 
             ItemContainerStyle="{StaticResource ListViewItemStyle}" 
             RightTapped="MusicListView_RightTapped"
+            SelectionMode="Extended"
             CanDragItems="True"
             CanReorderItems="True"
             AllowDrop="True">
