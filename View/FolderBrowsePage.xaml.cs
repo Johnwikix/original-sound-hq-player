@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    _allMusic = (await MusicDatabaseService.GetMusicListAsync(AppData.searchText)).GroupBy(m => m.LastLevelFolderPath).Select(g => g.First()).OrderBy(m => m.LastLevelFolderPath).ToList();
+                    _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.LastLevelFolderPath).Select(g => g.First()).OrderBy(m => m.LastLevelFolderPath).ToList();
                     await LoadMoreFolderAsync(true);
                 }
             }
@@ -200,7 +200,7 @@ namespace WinUIMusicPlayer.View
 
         private async void PlayingFolder(object? sender, Music e)
         {
-            List<Music> folders = (await MusicDatabaseService.GetFolderMusicAsync(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
+            List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
             if (folders != null && folders.Count > 0)
             {
                 if (parentPage != null)

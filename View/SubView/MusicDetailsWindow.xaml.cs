@@ -198,6 +198,7 @@ namespace WinUIMusicPlayer.View.SubView
             music.TrackNumber = int.Parse(TrackNumberBox.Text);
             music.Lyrics = LyricsTextBox.Text;
             await MusicDatabaseService.UpdateMusicInfo(music);
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);
         }
 

@@ -194,6 +194,7 @@ namespace WinUIMusicPlayer.View.SubView
                 music.Year = int.Parse(YearTextBlock.Text);
 
                 await MusicDatabaseService.UpdateMusicInfo(music);
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 if (!isResultAssigned)
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))

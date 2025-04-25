@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -72,7 +73,7 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                var musicList = await MusicDatabaseService.GetMusicByPlayListId(parentPage.currentPlayListId, AppData.searchText);
+                var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(parentPage.currentPlayListId, AppData.searchText);
                 LoadMusicAsync(musicList);
             }
         }
@@ -81,17 +82,11 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                //var draggedItem = args.Items[0] as Music;
-                //// 获取拖拽后的新索引
-                //var newIndex = sender.Items.IndexOf(draggedItem);
-                // 从数据源中移除该项
-                //musicList.Remove(draggedItem);
-                // 将该项插入到新的位置
-                //musicList.Insert(newIndex, draggedItem);
                 for (int i = 0; i < musicList.Count; i++)
                 {
-                    musicList[i].PlayListOrder = musicList.Count - i;
+                    musicList[i].PlayListOrder = musicList.Count - i;                   
                     await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);
+                    await MusicDatabaseService.GetPlayListMusic();
                 }
             }
         }

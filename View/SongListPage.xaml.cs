@@ -85,7 +85,7 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
-            ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetMusicListAsync(AppData.searchText));
+            ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetMusicListFromMem(AppData.searchText));
             LoadMusicAsync(musics);
         }
 
@@ -435,6 +435,8 @@ namespace WinUIMusicPlayer.View
                     music.Title = musicItem.Title;
                     music.Author = musicItem.Author;
                     music.Album = musicItem.Album;
+                    music.Year = musicItem.Year;
+                    music.TrackNumber = musicItem.TrackNumber;
                     break;
                 }
             }

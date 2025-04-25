@@ -74,8 +74,9 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
         }
 
-        public void MainWindow_updateMusicList(object? sender, EventArgs e)
+        public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 refreshPage?.Invoke(this, EventArgs.Empty);
@@ -419,7 +420,7 @@ namespace WinUIMusicPlayer.View
         public async Task AddToFavourite(Music music)
         {
             music.isFavorite = !music.isFavorite;
-            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);
+            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);            
             if (musicPlaybackService.currentPlayingMusic != null)
             {
                 if (musicPlaybackService.currentPlayingMusic.Id == music.Id)
@@ -428,6 +429,7 @@ namespace WinUIMusicPlayer.View
                     ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.isFavorite ? "\ueb52" : "\ueb51";
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public void UpdateFavourtPlaylist(List<Music> newMusicList)
@@ -895,11 +897,17 @@ namespace WinUIMusicPlayer.View
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
-            musicPlaybackService.currentPlayingMusic = music;
-            UpdatePlayBar(music);
-            UpdateViewList(music);
-            UpdateCurrentPlayList();
-            await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+            try
+            {
+                musicPlaybackService.currentPlayingMusic = music;
+                UpdatePlayBar(music);
+                UpdateViewList(music);
+                UpdateCurrentPlayList();
+                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+            }
+            catch (Exception ex) {
+                notificationService.SendNotification("´íÎó", ex.Message);
+            }
         }
 
         private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -56,17 +56,17 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage.pageType == "album")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetAlbumMusicAsync(parentPage.currentAlbumName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetAlbumMusicFromMem(parentPage.currentAlbumName, AppData.searchText));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "artist")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetArtistMusicAsync(parentPage.currentArtistName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetArtistMusicFromMem(parentPage.currentArtistName, AppData.searchText));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(await MusicDatabaseService.GetFolderMusicAsync(parentPage.currentFolderName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetFolderMusicFromMem(parentPage.currentFolderName, AppData.searchText));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
             }

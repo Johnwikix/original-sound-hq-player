@@ -88,7 +88,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    _allMusic = (await MusicDatabaseService.GetMusicListAsync(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
+                    _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
                     await LoadMoreArtistAsync(true);
                 }
             }
@@ -191,7 +191,7 @@ namespace WinUIMusicPlayer.View
 
         private async void PlayingArtist(object? sender, Music e)
         {
-            List<Music> artists = (await MusicDatabaseService.GetArtistMusicAsync(e.Author)).OrderBy(m => m.Album).ToList();
+            List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
             if (artists != null && artists.Count > 0)
             {
                 if (parentPage != null)

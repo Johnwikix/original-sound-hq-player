@@ -118,6 +118,46 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(music);
         }
 
+        public static List<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
+        {
+            var query = from plm in AppData.allPlayListMusics
+                        join m in AppData.allSongs on plm.MusicId equals m.Id
+                        where plm.PlayListId == playListId
+                        orderby plm.Order descending
+                        select new Music
+                        {
+                            Id = m.Id,
+                            Path = m.Path,
+                            Title = m.Title,
+                            Cover = m.Cover,
+                            Author = m.Author,
+                            Duration = m.Duration,
+                            Album = m.Album,
+                            FolderPath = m.FolderPath,
+                            LastLevelFolderPath = m.LastLevelFolderPath,
+                            Extension = m.Extension,
+                            Order = m.Order,
+                            BitDepth = m.BitDepth,
+                            BitRate = m.BitRate,
+                            SampleRate = m.SampleRate,
+                            //Channel = m.Channel,
+                            isFavorite = m.isFavorite,
+                            TrackNumber = m.TrackNumber,
+                            Lyrics = m.Lyrics,
+                            PlayListOrder = plm.Order
+                        };
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.ToList();
+        }
+
         public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
         {
             var query = from plm in await _dbConnection.Table<PlayListMusic>().ToListAsync()
@@ -267,6 +307,7 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
+            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
         private static async Task<int> GetMaxOrder()
@@ -340,19 +381,32 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.UpdateAsync(settings);
         }
+        public static async Task GetPlayListMusic()
+        {
+            AppData.allPlayListMusics.Clear();
+            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+        }
 
-        public static async Task<List<Music>> GetMusicListAsync(string search = null)
+        public static async Task<List<Music>> GetMusicListAsync()
         {
             var query = _dbConnection.Table<Music>();
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-                );
-            }
+            //if (!string.IsNullOrEmpty(search))
+            //{
+            //    query = query.Where(m =>
+            //        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+            //        m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+            //        m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+            //    );
+            //}
             return await query.OrderBy(m => m.Title).ToListAsync();
+        }
+
+        public static List<Music> GetMusicListFromMem(string search) {
+            return AppData.allSongs.Where(m =>
+                m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+            ).OrderBy(m => m.Title).ToList();
         }
 
         public static async Task<List<Music>> GetFavoriteMusicAsync(string search = null)
@@ -369,6 +423,20 @@ namespace WinUIMusicPlayer.Services
             return await query.OrderByDescending(m => m.Order).ToListAsync();
         }
 
+        public static List<Music> GetFavoriteMusicFromMem(string search = null)
+        {
+            var query = AppData.allSongs.Where(m => m.isFavorite == true);
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.OrderByDescending(m => m.Order).ToList();
+        }
+
         public static async Task<List<Music>> GetArtistMusicAsync(string artist, string search = null)
         {
             var query = _dbConnection.Table<Music>().Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
@@ -380,6 +448,19 @@ namespace WinUIMusicPlayer.Services
                 );
             }
             return await query.OrderBy(m => m.Album).ToListAsync();
+        }
+
+        public static List<Music> GetArtistMusicFromMem(string artist, string search = null)
+        {
+            var query = AppData.allSongs.Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.OrderBy(m => m.Album).ToList();
         }
 
         public static async Task<List<Music>> GetFolderMusicAsync(string folder, string search = null)
@@ -396,6 +477,20 @@ namespace WinUIMusicPlayer.Services
             return await query.OrderBy(m => m.LastLevelFolderPath).ToListAsync();
         }
 
+        public static List<Music> GetFolderMusicFromMem(string folder, string search = null)
+        {
+            var query = AppData.allSongs.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.OrderBy(m => m.LastLevelFolderPath).ToList();
+        }
+
         public static async Task<List<Music>> GetAlbumMusicAsync(string album, string search = null)
         {
             var query = _dbConnection.Table<Music>().Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
@@ -408,6 +503,20 @@ namespace WinUIMusicPlayer.Services
             }
             return await query.OrderBy(m => m.TrackNumber).ToListAsync();
         }
+
+        public static List<Music> GetAlbumMusicFromMem(string album, string search = null)
+        {
+            var query = AppData.allSongs.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(m =>
+                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                );
+            }
+            return query.OrderBy(m => m.TrackNumber).ToList();
+        }
+
 
         public static async Task<SavePlayState> GetPlayStateAsync()
         {
@@ -459,6 +568,7 @@ namespace WinUIMusicPlayer.Services
         public static async Task RemoveMusic(int musicId)
         {
             await _dbConnection.DeleteAsync<Music>(musicId);
+            AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
         }
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)
         {

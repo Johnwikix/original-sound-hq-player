@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using NAudio.Gui;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -44,7 +45,12 @@ namespace WinUIMusicPlayer.View
             for (int i = 0; i < musicList.Count; i++)
             {
                 musicList[i].Order = musicList.Count - i;
-                await MusicDatabaseService.UpdateMuisc(musicList[i]);
+                int index = AppData.allSongs.FindIndex(m => m == musicList[i]);
+                if (index != -1)
+                {
+                    AppData.allSongs[index].Order = musicList[i].Order;
+                }
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);                
             }
             if (parentPage != null)
             {
@@ -100,7 +106,7 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                var musicList = await MusicDatabaseService.GetFavoriteMusicAsync(AppData.searchText);
+                var musicList =MusicDatabaseService.GetFavoriteMusicFromMem(AppData.searchText);
                 LoadMusicAsync(musicList);
             }
         }
