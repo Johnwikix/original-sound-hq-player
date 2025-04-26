@@ -813,9 +813,11 @@ namespace WinUIMusicPlayer.Services
             // 过滤Music列表，排除Path存在于pathSet中的项
             List<Music> filteredList = musics
                 .Where(m => !pathSet.Contains(m.Path))
-                .ToList();
+                .ToList();            
             foreach (Music music in filteredList) {
-                await updateMusic(music,music.FolderPath);
+                if (IsMusicFile(music.Extension)) {
+                    await updateMusic(music, music.FolderPath);
+                }                
             }
            
         }
