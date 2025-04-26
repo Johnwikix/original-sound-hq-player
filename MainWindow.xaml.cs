@@ -1,3 +1,4 @@
+using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -30,8 +31,12 @@ namespace WinUIMusicPlayer
         public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
+        public event EventHandler playLastSong;
+        public event EventHandler playNextSong;
+        public event EventHandler playStop;
         public MainWindow current;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
+        private TaskbarIcon notifyIcon;
 
         public MainWindow()
         {
@@ -41,9 +46,23 @@ namespace WinUIMusicPlayer
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
-            current = this;
+            current = this;            
             m_AppWindow = GetAppWindowForCurrentWindow(this);
+            m_AppWindow.SetIcon("Assets/icon.ico");
+            InitializeNotifyIcon();
+            m_AppWindow.Closing += AppWindow_Closing;
         }
+
+        private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
+        {
+            // 取消关闭操作
+            args.Cancel = true;
+            // 最小化到托盘
+            m_AppWindow.Hide();
+        }
+
+
+
         private Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
         {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
@@ -153,6 +172,127 @@ namespace WinUIMusicPlayer
             } catch(Exception ex) {
                 Debug.WriteLine(ex.Message);
             }
+        }
+
+        private void InitializeNotifyIcon()
+        {
+            try
+            {
+                notifyIcon = new TaskbarIcon();
+                notifyIcon.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icon.ico"));
+                notifyIcon.ToolTipText = "原音HIFI";
+                notifyIcon.Visibility = Visibility.Visible;
+                var contextMenu = new MenuFlyout();
+                var openCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
+                openCommand.Label = "显示";
+                openCommand.ExecuteRequested += (s, e) => {
+                    ShowWindow();
+                };                
+                var lastCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
+                lastCommand.Label = "上一首";
+                lastCommand.ExecuteRequested += (s, e) => {
+                    LastSong();
+                };
+
+                var playCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
+                playCommand.Label = "播放/暂停";
+                playCommand.ExecuteRequested += (s, e) => {
+                    PlayStop();
+                };
+                var nextCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
+                nextCommand.Label = "下一首";
+                nextCommand.ExecuteRequested += (s, e) => {
+                    NextSong();
+                };
+                var exitCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
+                exitCommand.Label = "退出";
+                exitCommand.ExecuteRequested += (s, e) => {
+                    CloseApplication();
+                };
+                var openMenuItem = new MenuFlyoutItem { Text = "显示", Command = openCommand };
+                contextMenu.Items.Add(openMenuItem);
+                var lastMenuItem = new MenuFlyoutItem { Text = "上一首", Command = lastCommand };
+                contextMenu.Items.Add(lastMenuItem);
+                var playMenuItem = new MenuFlyoutItem { Text = "播放/暂停", Command = playCommand };
+                contextMenu.Items.Add(playMenuItem);
+                var nextMenuItem = new MenuFlyoutItem { Text = "下一首", Command = nextCommand };
+                contextMenu.Items.Add(nextMenuItem);
+                contextMenu.Items.Add(new MenuFlyoutSeparator());
+                var exitMenuItem = new MenuFlyoutItem { Text = "退出", Command = exitCommand };
+                contextMenu.Items.Add(exitMenuItem);
+                notifyIcon.ContextFlyout = contextMenu;
+                notifyIcon.LeftClickCommand = new RelayCommand(() => {
+                    Debug.WriteLine("托盘图标被左击");
+                    ShowWindow();
+                });
+
+                if (this.Content is FrameworkElement rootElement)
+                {
+                    rootElement.Resources.Add("NotifyIconResource", notifyIcon);
+                }
+
+                notifyIcon.ForceCreate();
+                notifyIcon.ShowNotification("原音HIFI", "托盘图标已初始化");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"初始化系统托盘图标时出错: {ex.Message}");
+            }
+        }
+
+        private void NextSong()
+        {
+            playLastSong?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void PlayStop()
+        {
+            playStop?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void LastSong()
+        {
+            playLastSong?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ShowWindow()
+        {
+            Debug.WriteLine("托盘图标被左击");
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (m_AppWindow != null)
+                {
+                    m_AppWindow.Show();
+                    Debug.WriteLine("窗口已通过左击显示");
+                }
+            });
+        }
+
+        private void CloseApplication()
+        {
+            m_AppWindow.Closing -= AppWindow_Closing;
+            notifyIcon?.Dispose();
+            this.Close();
+        }
+
+        public class RelayCommand : System.Windows.Input.ICommand
+        {
+            private readonly Action _execute;
+            private readonly Func<bool> _canExecute;
+
+            public RelayCommand(Action execute, Func<bool> canExecute = null)
+            {
+                _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+                _canExecute = canExecute;
+            }
+
+            public event EventHandler CanExecuteChanged;
+
+            public bool CanExecute(object parameter) => _canExecute?.Invoke() ?? true;
+
+            public void Execute(object parameter) => _execute();
+
+            public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void NavigateToDefaultPage()

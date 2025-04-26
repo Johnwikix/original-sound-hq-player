@@ -6,14 +6,26 @@
     xmlns:local="using:WinUIMusicPlayer"
     xmlns:view="using:WinUIMusicPlayer.View"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:tb="using:H.NotifyIcon"
     Title="原音HIFI播放器"
-    >
-
+    >    
     <Window.SystemBackdrop>
         <DesktopAcrylicBackdrop/>
     </Window.SystemBackdrop>
     <Grid>
+        <!--<tb:TaskbarIcon
+            x:Name="NotifyIcon"
+            IconSource="ms-appx:///Assets/icon.png"
+            ToolTipText="WinUI 3 应用程序">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="打开" Click="OpenMenuItem_Click"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem Text="退出" Click="ExitMenuItem_Click"/>
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>-->
         <Grid
         x:Name="AppTitleBar"
         Height="44"

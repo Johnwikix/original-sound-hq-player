@@ -1,6 +1,8 @@
 ﻿using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using System;
+using System.Diagnostics;
 using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -28,12 +30,16 @@ namespace WinUIMusicPlayer
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            MainWindow = new MainWindow();
-            var hWnd = WindowNative.GetWindowHandle(MainWindow);
-            WindowId windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
-            AppWindow appWindow = AppWindow.GetFromWindowId(windowId);
-            appWindow.SetIcon("Assets/icon.ico");
-            MainWindow.Activate();
+            try
+            {
+                MainWindow = new MainWindow();
+                MainWindow.Activate();
+            }
+            catch (Exception ex)
+            {
+                // 记录错误信息
+                Debug.WriteLine($"激活窗口时出错: {ex.Message}");
+            }
         }
 
         public static MainWindow MainWindow { get; private set; }

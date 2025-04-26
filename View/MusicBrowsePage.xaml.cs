@@ -61,6 +61,9 @@ namespace WinUIMusicPlayer.View
             {
                 mainWindow.WindowClosed += MainWindow_Closed;
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
+                mainWindow.playLastSong += PlayLastSong;
+                mainWindow.playStop += PlayNStop;
+                mainWindow.playNextSong += PlayNextSong;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -72,6 +75,21 @@ namespace WinUIMusicPlayer.View
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
+        }
+
+        private void PlayNextSong(object? sender, EventArgs e)
+        {
+            NextMusicButton_Click(null, null);
+        }
+
+        private void PlayNStop(object? sender, EventArgs e)
+        {
+            PlayButton_Click(null, null);
+        }
+
+        private void PlayLastSong(object? sender, EventArgs e)
+        {
+            LastMusicButton_Click(null, null);
         }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
@@ -102,6 +120,10 @@ namespace WinUIMusicPlayer.View
             if (mainWindow != null)
             {
                 mainWindow.WindowClosed -= MainWindow_Closed;
+                mainWindow.updateMusicList -= MainWindow_updateMusicList;
+                mainWindow.playLastSong -= PlayLastSong;
+                mainWindow.playStop -= PlayNStop;
+                mainWindow.playNextSong -= PlayNextSong;
             }
             musicPlaybackService.playingMusic -= MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText -= MusicPlaybackService_updatePlayTimeText;

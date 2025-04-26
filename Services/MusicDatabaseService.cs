@@ -611,8 +611,16 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
+        public static async Task SavePlayState(List<Music> currentPlayingList,PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
         {
+            await _dbConnection.DeleteAllAsync<LastPlayListState>();
+            var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
+
+            var playListState = new LastPlayListState
+            {
+                PlayListMusicIds = musicIds
+            };
+            _ = _dbConnection.InsertAsync(playListState);
             var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
             if (playState == null)
             {
@@ -626,11 +634,11 @@ namespace WinUIMusicPlayer.Services
             playState.Volume = volume;
             if (playState.Id == 0)
             {
-                await _dbConnection.InsertAsync(playState);
+                _ = _dbConnection.InsertAsync(playState);
             }
             else
             {
-                await _dbConnection.UpdateAsync(playState);
+                _ = _dbConnection.UpdateAsync(playState);
             }
         }
 

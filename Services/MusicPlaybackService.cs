@@ -587,8 +587,7 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
-            await MusicDatabaseService.SavePlayList(currentPlayingList);
-            await SavePlayState();
+            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id,volume);
         }
 
         public void SwitchPlayMode()
@@ -696,17 +695,6 @@ namespace WinUIMusicPlayer.Services
                         return;
                     }
                 }
-            }
-        }
-
-        public async Task SavePlayState()
-        {
-            if (!isInitializing)
-            {
-                await MusicDatabaseService.SavePlayState(
-                    currentPlayMode,
-                    currentPlayingMusic?.Id,
-                    volume);
             }
         }
     }
