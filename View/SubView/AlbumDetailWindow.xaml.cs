@@ -193,8 +193,7 @@ namespace WinUIMusicPlayer.View.SubView
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
 
-                await MusicDatabaseService.UpdateMusicInfo(music);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                await MusicDatabaseService.UpdateMusicInfo(music);                
                 if (!isResultAssigned)
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
@@ -205,6 +204,7 @@ namespace WinUIMusicPlayer.View.SubView
                     result.Cover = (BitmapImage)AlbumCoverImage.Source;
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             AlbumDetailChanged?.Invoke(this, result);
         }
 

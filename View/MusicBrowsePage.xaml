@@ -68,7 +68,7 @@
                     <ComboBoxItem FontSize="12" Content="歌手" Tag="Artist"/>
                     <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>                    
                 </ComboBox>
-                <TextBox x:Name="SearchTextBox" PlaceholderText="回车搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged" KeyDown="SearchTextBox_KeyDown"/>
+                <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged" KeyDown="SearchTextBox_KeyDown"/>
             </StackPanel>
         </Grid>
         <Frame x:Name="ContentFrame" IsNavigationStackEnabled="False" Grid.Row="1" Margin="10"/>
