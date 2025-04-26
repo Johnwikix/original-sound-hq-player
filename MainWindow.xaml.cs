@@ -221,8 +221,8 @@ namespace WinUIMusicPlayer
                 var exitMenuItem = new MenuFlyoutItem { Text = "ÍË³ö", Command = exitCommand };
                 contextMenu.Items.Add(exitMenuItem);
                 notifyIcon.ContextFlyout = contextMenu;
-                notifyIcon.LeftClickCommand = new RelayCommand(() => {
-                    Debug.WriteLine("ÍÐÅÌÍ¼±ê±»×ó»÷");
+                notifyIcon.DoubleClickCommand = new RelayCommand(() =>
+                {
                     ShowWindow();
                 });
 
