@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.View
                 }
             }
             // 设置初始的缓冲区大小
-            LatencyTextBox.Text = AppSettings.Latency.ToString();
+            LatencyNumberBox.Value = AppSettings.Latency;
             LrcAPITextBox.Text = AppSettings.LrcAPISource;
             LrcAPIAuthTextBox.Text = AppSettings.LrcAPIAuth;
             // 设置初始的默认播放列表
@@ -214,20 +214,6 @@ namespace WinUIMusicPlayer.View
                     AppSettings.OnOutputSettingsChanged();
                     _ = SaveSetting();
                 }
-            }
-        }
-
-        private void LatencyTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (int.TryParse(LatencyTextBox.Text, out int latency))
-            {
-                AppSettings.Latency = latency;
-                if (!isInitializing)
-                {
-                    AppSettings.OnOutputSettingsChanged();
-                    _ = SaveSetting();
-                }
-
             }
         }
 
@@ -379,6 +365,16 @@ namespace WinUIMusicPlayer.View
         {
             Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
             await Launcher.LaunchUriAsync(uri);
+        }
+
+        private void LatencyNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+        {           
+            if (!isInitializing)
+            {
+                AppSettings.Latency = (int)LatencyNumberBox.Value;
+                AppSettings.OnOutputSettingsChanged();
+                _ = SaveSetting();
+            }
         }
     }
 }

@@ -60,7 +60,7 @@
 
                             <!-- 缓冲区大小输入 -->
                             <TextBlock Text="缓冲区大小 (毫秒)" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
-                            <TextBox x:Name="LatencyTextBox"  Grid.Column="1" Grid.Row="2" Margin="10" TextChanged="LatencyTextBox_TextChanged" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" ValueChanged="LatencyNumberBox_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>
