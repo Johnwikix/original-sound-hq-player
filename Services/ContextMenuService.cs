@@ -128,7 +128,6 @@ namespace WinUIMusicPlayer.Services
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
-            Debug.WriteLine($"专辑名称: {music.Album}, 艺术家: {music.Author}");
             if (music != null)
             {
                 List<Music> musicList = new List<Music>();
