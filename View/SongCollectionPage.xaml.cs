@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
-                parentPage.refreshSong += RefreshSong;
+                //parentPage.refreshSong += RefreshSong;
                 RefreshPage();
             }
         }
@@ -56,17 +56,17 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage.pageType == "album")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetAlbumMusicFromMem(parentPage.currentAlbumName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetAlbumMusicFromMem(parentPage.currentAlbumName, null));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "artist")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetArtistMusicFromMem(parentPage.currentArtistName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetArtistMusicFromMem(parentPage.currentArtistName, null));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetFolderMusicFromMem(parentPage.currentFolderName, AppData.searchText));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetFolderMusicFromMem(parentPage.currentFolderName, null));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
             }
