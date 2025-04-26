@@ -44,13 +44,9 @@ namespace WinUIMusicPlayer.View
         {
             for (int i = 0; i < musicList.Count; i++)
             {
-                musicList[i].Order = musicList.Count - i;
-                int index = AppData.allSongs.FindIndex(m => m == musicList[i]);
-                if (index != -1)
-                {
-                    AppData.allSongs[index].Order = musicList[i].Order;
-                }
-                await MusicDatabaseService.UpdateMuisc(musicList[i]);                
+                musicList[i].Order = musicList.Count - i;                
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);   
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
             if (parentPage != null)
             {
