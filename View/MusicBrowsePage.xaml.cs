@@ -1226,7 +1226,7 @@ namespace WinUIMusicPlayer.View
             PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
             PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
             PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
-
+            TopPanel.Visibility = Visibility.Collapsed;
             ContentFrame.Visibility = Visibility.Collapsed;
             AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
             PlayingDetail.Visibility = Visibility.Visible;
@@ -1242,10 +1242,10 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             isInPlayingDetailMode = false;
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImage);            
+            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImage);
+            TopPanel.Visibility = Visibility.Visible;
             ContentFrame.Visibility = Visibility.Visible;
             PlayingDetail.Visibility = Visibility.Collapsed;
-
             AlbumCoverAuthorTitleModel.Visibility = Visibility.Visible;
 
             ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover");

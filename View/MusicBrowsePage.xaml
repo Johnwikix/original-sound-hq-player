@@ -22,7 +22,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">            
+        <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">            
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="BackButton" 
                         Tag="Back" 
@@ -98,7 +98,9 @@
                 </Button.Transitions>
             </Button>
             <!-- 专辑封面 -->
-            <Image x:Name="PlayingDetailAlbumCoverImage" Margin="50 10 10 10" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Image x:Name="PlayingDetailAlbumCoverImage" />
+            </Border>            
             <!-- 右侧信息面板 -->
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical" Margin="10 10 50 10" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <StackPanel.Transitions>
