@@ -437,6 +437,7 @@ namespace WinUIMusicPlayer.View
                     music.Album = musicItem.Album;
                     music.Year = musicItem.Year;
                     music.TrackNumber = musicItem.TrackNumber;
+                    music.Lyrics = musicItem.Lyrics;
                     break;
                 }
             }
