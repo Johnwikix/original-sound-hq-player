@@ -88,7 +88,11 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.LastLevelFolderPath).Select(g => g.First()).OrderBy(m => m.LastLevelFolderPath).ToList();
+                    _allMusic = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
+                        .GroupBy(m => m.LastLevelFolderPath)
+                        .Select(g => g.First())
+                        .OrderBy(m => m.LastLevelFolderPath)
+                        .ToList();
                     await LoadMoreFolderAsync(true);
                 }
             }

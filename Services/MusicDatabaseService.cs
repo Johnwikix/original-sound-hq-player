@@ -409,6 +409,16 @@ namespace WinUIMusicPlayer.Services
             ).OrderBy(m => m.Title).ToList();
         }
 
+        public static List<Music> GetMusicListFromMemWithFolderSearchOption(string search)
+        {
+            return AppData.allSongs.Where(m =>
+                m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+                m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Contains(search.ToLower())
+            ).OrderBy(m => m.Title).ToList();
+        }
+
         public static async Task<List<Music>> GetFavoriteMusicAsync(string search = null)
         {
             var query = _dbConnection.Table<Music>().Where(m => m.isFavorite == true);

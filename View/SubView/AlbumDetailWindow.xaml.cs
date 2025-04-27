@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View.SubView
                     tag.Album = AlbumTextBlock.Text;
                     tag.Year = uint.Parse(YearTextBlock.Text);
                     LoadingGrid.Visibility = Visibility.Visible;
-                    audioFile.Save();
+                    await Task.Run(() => audioFile.Save());
                 }
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);

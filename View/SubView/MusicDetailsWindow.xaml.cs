@@ -189,7 +189,7 @@ namespace WinUIMusicPlayer.View.SubView
                 tag.Lyrics = LyricsTextBox.Text;
                 LoadingGrid.Visibility = Visibility.Visible;
                 MusicDetail.Visibility = Visibility.Collapsed;
-                audioFile.Save();
+                await Task.Run(() => audioFile.Save());
             }
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
