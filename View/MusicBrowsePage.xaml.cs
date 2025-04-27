@@ -49,6 +49,7 @@ namespace WinUIMusicPlayer.View
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public int previousSelectedIndex = 0;
+        private bool isInPlayingDetailMode = false;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -876,9 +877,10 @@ namespace WinUIMusicPlayer.View
             _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
         }
 
-        private void UpdatePlayBar(Music music)
+        private async void UpdatePlayBar(Music music)
         {
-            DispatcherQueue.TryEnqueue(() =>
+            await LoadCover(music);
+            DispatcherQueue.TryEnqueue(async() =>
             {
                 MusicTitleTextBlock.Text = music.Title;
                 MusicAlbumTextBlock.Text = music.Album;
@@ -890,13 +892,17 @@ namespace WinUIMusicPlayer.View
                 {
                     var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                     HRImage.Source = bitmapImage;
-                }
+                }                
+                PlayingDetailTitleTextBlock.Text = music.Title;
+                PlayingDetailAlbumTextBlock.Text = music.Album;
+                PlayingDetailArtistTextBlock.Text = music.Author;
+                PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
             });
         }
 
         private void UpdateViewList(Music music)
         {
-            DispatcherQueue.TryEnqueue(async () =>
+            DispatcherQueue.TryEnqueue(() =>
             {
                 var songListPage = ContentFrame.Content as SongListPage;
                 var songCollectionPage = ContentFrame.Content as SongCollectionPage;
@@ -917,8 +923,7 @@ namespace WinUIMusicPlayer.View
                 if (playListSongPage != null)
                 {
                     playListSongPage.UpdateMusicListView();
-                }
-                await LoadCover(music);                
+                }                                
             });
         }
 
@@ -1209,6 +1214,46 @@ namespace WinUIMusicPlayer.View
             //        refreshSong?.Invoke(this, EventArgs.Empty);
             //    }
             //}
+        }
+
+        private async void AlbumCoverImage_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            isInPlayingDetailMode = true;
+            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
+            BitmapImage cover = await GetImageFromMusic(musicPlaybackService.currentPlayingMusic, 0);
+            PlayingDetailAlbumCoverImage.Source = cover;
+
+            PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
+            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
+            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
+
+            ContentFrame.Visibility = Visibility.Collapsed;
+            AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+            PlayingDetail.Visibility = Visibility.Visible;
+
+            ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
+            if (animation != null)
+            {
+                animation.Configuration = new DirectConnectedAnimationConfiguration();
+                animation.TryStart(PlayingDetailAlbumCoverImage);
+            }
+        }
+
+        private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
+        {
+            isInPlayingDetailMode = false;
+            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImage);            
+            ContentFrame.Visibility = Visibility.Visible;
+            PlayingDetail.Visibility = Visibility.Collapsed;
+
+            AlbumCoverAuthorTitleModel.Visibility = Visibility.Visible;
+
+            ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover");
+            if (animation != null)
+            {
+                animation.Configuration = new BasicConnectedAnimationConfiguration();
+                animation.TryStart(AlbumCoverImage);
+            }
         }
     }
 }

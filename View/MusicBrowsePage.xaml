@@ -71,12 +71,69 @@
                 <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged" KeyDown="SearchTextBox_KeyDown"/>
             </StackPanel>
         </Grid>
-        <Frame x:Name="ContentFrame" IsNavigationStackEnabled="False" Grid.Row="1" Margin="10"/>
-        <!-- 底部控制区域 -->
-        <Grid Grid.Row="2" Margin="10">
+        <Frame x:Name="ContentFrame" IsNavigationStackEnabled="False" Grid.Row="1" Margin="10" Visibility="Visible"/>
+        <Grid x:Name="PlayingDetail" Grid.Row="1" Visibility="Collapsed">
+            <!-- Define transitions -->
+            <Grid.Transitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
+                </TransitionCollection>
+            </Grid.Transitions>
+            <!-- 定义列和行 -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- 返回按钮 -->
+            <Button x:Name="CancelPlayingDetailButton" Click="CancelPlayingDetailButton_Click"  Margin="20 10 10 10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"  Grid.Row="0" Grid.Column="0">
+                <FontIcon Glyph="&#xE70D;" ></FontIcon>
+                <Button.Transitions>
+                    <TransitionCollection>
+                        <EntranceThemeTransition FromHorizontalOffset="0" FromVerticalOffset="-20" />
+                    </TransitionCollection>
+                </Button.Transitions>
+            </Button>
+            <!-- 专辑封面 -->
+            <Image x:Name="PlayingDetailAlbumCoverImage" Margin="50 10 10 10" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            <!-- 右侧信息面板 -->
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical" Margin="10 10 50 10" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <StackPanel.Transitions>
+                    <TransitionCollection>
+                        <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
+                    </TransitionCollection>
+                </StackPanel.Transitions>
+                <TextBlock x:Name="PlayingDetailTitleTextBlock" Margin="10 0 10 10" FontSize="30" FontWeight="Bold" TextWrapping="WrapWholeWords">
+                    <TextBlock.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                        </TransitionCollection>
+                    </TextBlock.Transitions>
+                </TextBlock>
+                <TextBlock x:Name="PlayingDetailAlbumTextBlock" Margin="10" FontSize="22" TextWrapping="WrapWholeWords">
+                    <TextBlock.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                        </TransitionCollection>
+                    </TextBlock.Transitions>
+                </TextBlock>
+                <TextBlock x:Name="PlayingDetailArtistTextBlock" Margin="10" FontSize="20" TextWrapping="WrapWholeWords">
+                    <TextBlock.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                        </TransitionCollection>
+                    </TextBlock.Transitions>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+        <!-- 底部控制区域 -->
+        <Grid Grid.Row="2" Margin="10" Height="150">
+            <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- 进度条和播放时间 -->
@@ -99,9 +156,20 @@
             </Grid>
 
             <!-- 封面、标题、作者组件 -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0">
-                <Image x:Name="AlbumCoverImage" Width="100" Height="100" Margin="10"/>
+            <StackPanel x:Name="AlbumCoverAuthorTitleModel" Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0" Visibility="Visible">
+                <StackPanel.Transitions>
+                    <TransitionCollection>
+                        <EntranceThemeTransition/>
+                    </TransitionCollection>
+                </StackPanel.Transitions>
+                <Image x:Name="AlbumCoverImage" Width="100" Height="100" Margin="10" Tapped="AlbumCoverImage_Tapped"/>
                 <Grid Width="Auto" Height="100" MaxWidth="300">
+                    <Grid.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                        </TransitionCollection>
+                    </Grid.Transitions>
+                    <!-- Rest of your grid content remains the same -->
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -109,13 +177,13 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" 
-                               x:Name="MusicTitleTextBlock" 
-                               TextWrapping="WrapWholeWords" 
-                               TextTrimming="WordEllipsis" 
-                               FontWeight="Bold" 
-                               MaxHeight="50"
-                               FontSize="18" 
-                               Margin="10,0,10,0"/>
+                   x:Name="MusicTitleTextBlock" 
+                   TextWrapping="WrapWholeWords" 
+                   TextTrimming="WordEllipsis" 
+                   FontWeight="Bold" 
+                   MaxHeight="50"
+                   FontSize="18" 
+                   Margin="10,0,10,0"/>
                     <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
                     <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
                     <Grid Grid.Row="3" VerticalAlignment="Bottom">
@@ -123,8 +191,8 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock  Grid.Column="0" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0"/>
-                        <Image x:Name="HRImage" Height="10" Grid.Column="1" ></Image>
+                        <TextBlock Grid.Column="0" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0"/>
+                        <Image x:Name="HRImage" Height="10" Grid.Column="1"></Image>
                     </Grid>
                 </Grid>
             </StackPanel>
