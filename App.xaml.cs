@@ -24,6 +24,7 @@ namespace WinUIMusicPlayer
         private const string MutexName = "WinUIMusicPlayer_SingleInstanceMutex";
         public static MainWindow MainWindow { get; private set; }
         private Window _tempWindow = null;
+        public const int WM_SHOWME = 0x8001;
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -88,14 +89,15 @@ namespace WinUIMusicPlayer
                     if (process.Id != current.Id)
                     {
                         // 尝试枚举进程的所有窗口
+                        bool windowFound = false;
                         EnumWindows((hWnd, lParam) =>
                         {
+
                             uint processId;
                             GetWindowThreadProcessId(hWnd, out processId);
 
                             if (processId == process.Id)
                             {
-                                // 获取窗口标题，检查是否是应用的主窗口
                                 int length = GetWindowTextLength(hWnd);
                                 if (length > 0)
                                 {
@@ -116,12 +118,21 @@ namespace WinUIMusicPlayer
                                         return false; // 停止枚举
                                     }
                                 }
+
+                                // 发送自定义消息给窗口，通知它显示
+                                SendMessage(hWnd, WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
+                                windowFound = true;
+                                return false; // 停止枚举
                             }
 
                             return true; // 继续枚举
                         }, IntPtr.Zero);
 
-                        break;
+                        // 如果找到窗口，则退出函数
+                        if (windowFound)
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -131,7 +142,10 @@ namespace WinUIMusicPlayer
             }
         }
 
+
         // Win32 API 声明
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")]
         private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 

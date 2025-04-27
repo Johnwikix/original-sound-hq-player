@@ -7,6 +7,7 @@ using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
@@ -38,6 +39,38 @@ namespace WinUIMusicPlayer
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
 
+        // 声明窗口句柄和消息处理相关变量
+        private IntPtr m_hwnd;
+        private IntPtr defaultWndProc;
+        private WndProcDelegate newWndProcDelegate;
+
+        // 窗口过程委托和常量定义
+        private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        private const int GWLP_WNDPROC = -4;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsIconic(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_RESTORE = 9;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -51,6 +84,30 @@ namespace WinUIMusicPlayer
             m_AppWindow.SetIcon("Assets/icon.ico");
             InitializeNotifyIcon();
             m_AppWindow.Closing += AppWindow_Closing;
+
+            // 获取窗口句柄并设置消息钩子
+            m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            newWndProcDelegate = new WndProcDelegate(NewWindowProc);
+            defaultWndProc = GetWindowLongPtr(m_hwnd, GWLP_WNDPROC);
+            SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
+        }
+
+        private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+        {
+            // 处理自定义的显示消息
+            if (msg == App.WM_SHOWME)
+            {
+                Debug.WriteLine("收到显示窗口消息");
+                // 在UI线程上执行显示窗口
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ShowWindow();
+                });
+                return IntPtr.Zero;
+            }
+
+            // 调用默认窗口过程处理其他消息
+            return CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
         }
 
         private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
@@ -74,6 +131,10 @@ namespace WinUIMusicPlayer
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
             System.Diagnostics.Debug.WriteLine("MainWindow closed.");
+            if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
+            {
+                SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, defaultWndProc);
+            }
             WindowClosed?.Invoke(this, EventArgs.Empty);
         }
 
@@ -255,19 +316,34 @@ namespace WinUIMusicPlayer
             playLastSong?.Invoke(this, EventArgs.Empty);
         }
 
-        private void ShowWindow()
+        public void ShowWindow()
         {
-            Debug.WriteLine("托盘图标被左击");
+            Debug.WriteLine("准备显示窗口");
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (m_AppWindow != null)
                 {
+                    // 先确保窗口显示
                     m_AppWindow.Show();
-                    Debug.WriteLine("窗口已通过左击显示");
+
+                    // 设置前台窗口激活
+                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                    SetForegroundWindow(hwnd);
+
+                    // 如果窗口被最小化，则恢复它
+                    if (IsIconic(hwnd))
+                    {
+                        ShowWindow(hwnd, SW_RESTORE);
+                    }
+
+                    Debug.WriteLine("窗口已显示并激活");
+                }
+                else
+                {
+                    Debug.WriteLine("m_AppWindow为空");
                 }
             });
         }
-
         private void CloseApplication()
         {
             m_AppWindow.Closing -= AppWindow_Closing;
