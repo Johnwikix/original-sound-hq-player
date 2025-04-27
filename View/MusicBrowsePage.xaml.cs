@@ -865,8 +865,15 @@ namespace WinUIMusicPlayer.View
             }
             else
             {
-                AlbumCoverImage.Source = await GetImageFromMusic(music);
+                BitmapImage cover = await GetImageFromMusic(music);
+                AlbumCoverImage.Source = cover;
+                if (AppSettings.isCoverCacheEnabled)
+                {
+                    AppData.albumCoverCache[music.Album] = cover;
+                }
             }
+            systemMediaControlsService.UpdateSystemMediaControlsState();
+            _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
         }
 
         private void UpdatePlayBar(Music music)
@@ -911,9 +918,7 @@ namespace WinUIMusicPlayer.View
                 {
                     playListSongPage.UpdateMusicListView();
                 }
-                await LoadCover(music);
-                systemMediaControlsService.UpdateSystemMediaControlsState();
-                _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
+                await LoadCover(music);                
             });
         }
 
