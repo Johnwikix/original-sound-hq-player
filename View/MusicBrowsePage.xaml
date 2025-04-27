@@ -108,21 +108,21 @@
                         <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
                     </TransitionCollection>
                 </StackPanel.Transitions>
-                <TextBlock x:Name="PlayingDetailTitleTextBlock" Margin="10 0 10 10" FontSize="30" FontWeight="Bold" TextWrapping="WrapWholeWords">
+                <TextBlock x:Name="PlayingDetailTitleTextBlock" Margin="5 0 5 5" FontSize="30" FontWeight="Bold" TextWrapping="WrapWholeWords">
                     <TextBlock.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                         </TransitionCollection>
                     </TextBlock.Transitions>
                 </TextBlock>
-                <TextBlock x:Name="PlayingDetailAlbumTextBlock" Margin="10" FontSize="22" TextWrapping="WrapWholeWords">
+                <TextBlock x:Name="PlayingDetailAlbumTextBlock" Margin="5" FontSize="20" TextWrapping="WrapWholeWords">
                     <TextBlock.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                         </TransitionCollection>
                     </TextBlock.Transitions>
                 </TextBlock>
-                <TextBlock x:Name="PlayingDetailArtistTextBlock" Margin="10" FontSize="20" TextWrapping="WrapWholeWords">
+                <TextBlock x:Name="PlayingDetailArtistTextBlock" Margin="5" FontSize="20" TextWrapping="WrapWholeWords">
                     <TextBlock.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
