@@ -32,6 +32,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>                
                 <TextBlock Text="音频" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
                 <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True"  Header="输出设置" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
@@ -93,7 +94,7 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CoverSettings" Margin="10 0 10 10" Header="封面设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CoverSettings" Margin="10 0 10 0" Header="封面设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -131,11 +132,35 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock Text="外观" FontSize="16" Grid.Row="6" Margin="10 10 0 0" />
+                <Expander x:Name="CloseSettings" Margin="10 0 10 10" Header="关闭按钮功能" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
+                                <RadioButton x:Name="CloseAppRadioButton" Content="关闭应用" 
+                                        Checked="ClosedRadioButton_Checked" 
+                                        Tag="Closed"
+                                        GroupName="ClosedGroup"
+                                        Margin="0,5,0,5"/>
+                                <RadioButton x:Name="RunningBackendRadioButton" Content="后台运行" 
+                                        Checked="ClosedRadioButton_Checked" 
+                                        Tag="RunningBackend"
+                                        GroupName="ClosedGroup"
+                                        Margin="0,5,0,5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <TextBlock Text="外观" FontSize="16" Grid.Row="7" Margin="10 10 0 0" />
                 <Expander x:Name="BackdropSettings" 
                         Header="应用样式" 
                         Margin="10 10 10 0"
-                        Grid.Row="7"
+                        Grid.Row="8"
                         HorizontalAlignment="Stretch" 
                         HorizontalContentAlignment="Stretch">
                     <Expander.Content>
@@ -164,7 +189,7 @@
                 <Expander x:Name="ThemeSettings" 
                         Header="主题样式" 
                         Margin="10 0 10 0"
-                        Grid.Row="8"
+                        Grid.Row="9"
                         HorizontalAlignment="Stretch" 
                         HorizontalContentAlignment="Stretch">
                     <Expander.Content>

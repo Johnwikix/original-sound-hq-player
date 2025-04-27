@@ -112,10 +112,12 @@ namespace WinUIMusicPlayer
 
         private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
-            // 取消关闭操作
-            args.Cancel = true;
-            // 最小化到托盘
-            m_AppWindow.Hide();
+            if (AppSettings.isRunningBackend) {
+                // 取消关闭操作
+                args.Cancel = true;
+                // 最小化到托盘
+                m_AppWindow.Hide();
+            }
         }
 
 

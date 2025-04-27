@@ -70,6 +70,7 @@ namespace WinUIMusicPlayer.View
             newSettings.AppTheme = AppSettings.AppTheme;
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
+            newSettings.isRunningBackend = AppSettings.isRunningBackend;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -179,7 +180,15 @@ namespace WinUIMusicPlayer.View
             }
             MaxCoverPreLoadNumberBox.Value = AppSettings.maxCoverPreLoadNum;
             CoverCacheToggle.IsOn = AppSettings.isCoverCacheEnabled;
+            if (AppSettings.isRunningBackend) {
+                RunningBackendRadioButton.IsChecked = true;
+            }
+            else
+            {
+                CloseAppRadioButton.IsChecked = true;
+            }
             isInitializing = false;
+           
         }
 
         private void OutputModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -374,6 +383,34 @@ namespace WinUIMusicPlayer.View
                 AppSettings.Latency = (int)LatencyNumberBox.Value;
                 AppSettings.OnOutputSettingsChanged();
                 _ = SaveSetting();
+            }
+        }
+
+        private void ClosedRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!isInitializing)
+                {
+                    if (sender is RadioButton radioButton)
+                    {
+                        switch (radioButton.Tag.ToString())
+                        {
+                            case "Closed":
+                                AppSettings.isRunningBackend = false;
+                                break;
+
+                            case "RunningBackend":
+                                AppSettings.isRunningBackend = true;
+                                break;
+                        }
+                        _ = SaveSetting();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
             }
         }
     }

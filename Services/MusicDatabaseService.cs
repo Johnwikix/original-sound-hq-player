@@ -564,6 +564,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppTheme = settings.AppTheme;
                 AppSettings.isCoverCacheEnabled = settings.isCoverCacheEnabled;
                 AppSettings.maxCoverPreLoadNum = settings.maxCoverPreLoadNum;
+                AppSettings.isRunningBackend = settings.isRunningBackend;
             }
         }
 

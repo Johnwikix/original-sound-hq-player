@@ -27,6 +27,7 @@ namespace WinUIMusicPlayer.Model
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = false;
         public static int maxCoverPreLoadNum { get; set; } = 100;
+        public static bool isRunningBackend { get; set; } = true;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

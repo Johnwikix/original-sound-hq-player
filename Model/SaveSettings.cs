@@ -18,5 +18,6 @@ namespace WinUIMusicPlayer.Model
         public string AppTheme { get; set; }
         public bool isCoverCacheEnabled { get; set; } = false;
         public int maxCoverPreLoadNum { get; set; } = 100;
+        public bool isRunningBackend { get; set; } = true;
     }
 }
