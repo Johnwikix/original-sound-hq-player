@@ -1273,6 +1273,19 @@ namespace WinUIMusicPlayer.View
             PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
             PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
             PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
+            PlayingDetailHRImage.Source = null;
+            if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 && 
+                musicPlaybackService.currentPlayingMusic.BitDepth >= 24) || 
+                (musicPlaybackService.currentPlayingMusic.SampleRate >= 2822400 && 
+                musicPlaybackService.currentPlayingMusic.BitDepth == 1))
+            {
+                var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
+                PlayingDetailHRImage.Source = bitmapImage;
+            }
+            PlayingDetailMusicInfoTextBlock.Text = $"{musicPlaybackService.currentPlayingMusic.Extension} " +
+                $"{musicPlaybackService.currentPlayingMusic.SampleRate}Hz " +
+                $"{musicPlaybackService.currentPlayingMusic.BitDepth}bit " +
+                $"{musicPlaybackService.currentPlayingMusic.BitRate}kbps";
             TopPanel.Visibility = Visibility.Collapsed;
             ContentFrame.Visibility = Visibility.Collapsed;
             AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
