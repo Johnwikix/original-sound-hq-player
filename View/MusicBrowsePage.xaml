@@ -138,7 +138,7 @@
                             </TransitionCollection>
                         </TextBlock.Transitions>
                     </TextBlock>
-                    <Grid Margin="5,5,0,0">
+                    <Grid Margin="5,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
