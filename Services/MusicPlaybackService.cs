@@ -91,7 +91,18 @@ namespace WinUIMusicPlayer.Services
                 {
                     int minutes = int.Parse(timeMatch.Groups[1].Value);
                     int seconds = int.Parse(timeMatch.Groups[2].Value);
-                    int milliseconds = int.Parse(timeMatch.Groups[3].Value) * 10;
+                    string millisecondStr = timeMatch.Groups[3].Value;
+                    int milliseconds;
+
+                    // 根据毫秒部分的长度处理不同格式
+                    if (millisecondStr.Length == 2)
+                    {
+                        milliseconds = int.Parse(millisecondStr) * 10;
+                    }
+                    else
+                    {
+                        milliseconds = int.Parse(millisecondStr);
+                    }
 
                     TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
 
