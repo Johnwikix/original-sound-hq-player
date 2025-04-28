@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -40,6 +42,8 @@ namespace WinUIMusicPlayer.Services
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService = new NotificationService();
+        public event EventHandler<int> updateCurrentLyricIndex;
+        private List<LyricLine> _lyrics = new List<LyricLine>();
 
         public MusicPlaybackService()
         {
@@ -51,6 +55,64 @@ namespace WinUIMusicPlayer.Services
         private async void InitializingData()
         {
             currentPlayingList = await MusicDatabaseService.LoadPlayList();
+        }
+
+        public void SetLyrics(string lyricsContent)
+        {
+            _lyrics = ParseLrcLyrics(lyricsContent);
+        }
+
+        public List<LyricLine> ParseLrcLyrics(string lrcContent)
+        {
+            var lyrics = new List<LyricLine>();
+
+            if (string.IsNullOrEmpty(lrcContent))
+            {
+                lyrics.Add(new LyricLine
+                {
+                    Text = "没有歌词",
+                    Time = TimeSpan.Zero,
+                    IsCurrent = true
+                });
+                return lyrics;
+            }
+
+            string[] lines = lrcContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string line in lines)
+            {
+                string trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
+                    continue;
+
+                // 匹配时间标签 [mm:ss.xx]
+                Match timeMatch = Regex.Match(trimmedLine, @"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
+                if (timeMatch.Success)
+                {
+                    int minutes = int.Parse(timeMatch.Groups[1].Value);
+                    int seconds = int.Parse(timeMatch.Groups[2].Value);
+                    int milliseconds = int.Parse(timeMatch.Groups[3].Value) * 10;
+
+                    TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
+
+                    // 提取歌词文本（时间标签后的所有内容）
+                    string text = trimmedLine.Substring(timeMatch.Length).Trim();
+
+                    // 如果是空行或元信息行（如作词作曲），跳过或添加为特殊行
+                    if (string.IsNullOrEmpty(text))
+                        continue;
+
+                    lyrics.Add(new LyricLine
+                    {
+                        Time = time,
+                        Text = text,
+                        IsCurrent = false
+                    });
+                }
+            }
+
+            // 按时间排序歌词
+            return lyrics.OrderBy(l => l.Time).ToList();
         }
 
         private void ProgressTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -79,13 +141,40 @@ namespace WinUIMusicPlayer.Services
                     TimeSpan totalTime = TimeSpan.FromSeconds(totalSeconds);
                     string currentTimeText = currentTime.ToString(@"mm\:ss");
                     string totalTimeText = totalTime.ToString(@"mm\:ss");
-
                     updatePlayTimeText?.Invoke(this, $"{currentTimeText}/{totalTimeText}");
+                    UpdateLyrics(currentTime);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
+            }
+        }
+
+        private void UpdateLyrics(TimeSpan currentPosition)
+        {
+            if (_lyrics.Count == 0)
+                return;
+            var ly = _lyrics;
+            // 查找当前应显示的歌词
+            int currentIndex = -1;
+            for (int i = 0; i < _lyrics.Count; i++)
+            {
+                // 找到时间戳小于等于当前播放位置的最后一条歌词
+                if (_lyrics[i].Time <= currentPosition)
+                {
+                    currentIndex = i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // 触发事件通知UI更新
+            if (currentIndex >= 0)
+            {
+                updateCurrentLyricIndex?.Invoke(this, currentIndex);
             }
         }
 

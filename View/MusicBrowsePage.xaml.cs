@@ -9,9 +9,11 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -50,6 +52,7 @@ namespace WinUIMusicPlayer.View
         public EventHandler refreshPage;
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
+        private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -72,10 +75,48 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
+            musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
+            LyricsListView.ItemsSource = _uiLyrics;
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
+        }
+
+        private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
+        {
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                Debug.WriteLine(currentIndex);
+                // 创建当前歌词的副本
+                for (int i = 0; i < _uiLyrics.Count; i++)
+                {
+                    // 获取旧歌词
+                    var lyric = _uiLyrics[i];
+                    _uiLyrics[i].IsCurrent = (i == currentIndex);
+                }
+                // 滚动到当前歌词
+                if (currentIndex >= 0 && currentIndex < _uiLyrics.Count)
+                {
+                    LyricsListView.ScrollIntoView(_uiLyrics[currentIndex]);
+                }
+            });
+        }
+
+        private async void LoadLyricsToUI(string lyricsContent)
+        {
+            // 设置播放服务中的歌词
+            musicPlaybackService.SetLyrics(lyricsContent);
+
+            // 清空UI歌词集合
+            _uiLyrics.Clear();
+
+            // 解析歌词并添加到UI集合
+            List<LyricLine> parsedLyrics = musicPlaybackService.ParseLrcLyrics(lyricsContent);
+            foreach (var lyric in parsedLyrics)
+            {
+                _uiLyrics.Add(lyric);
+            }
         }
 
         private void PlayNextSong(object? sender, EventArgs e)
@@ -936,6 +977,7 @@ namespace WinUIMusicPlayer.View
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                LoadLyricsToUI(music.Lyrics);
             }
             catch (Exception ex) {
                 notificationService.SendNotification("错误", ex.Message);
