@@ -138,6 +138,26 @@
                             </TransitionCollection>
                         </TextBlock.Transitions>
                     </TextBlock>
+                    <Grid Margin="5,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="PlayingDetailMusicInfoTextBlock" FontSize="14" Margin="0,0,10,0">
+                            <TextBlock.Transitions>
+                                <TransitionCollection>
+                                    <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                                </TransitionCollection>
+                            </TextBlock.Transitions>
+                        </TextBlock>
+                        <Image x:Name="PlayingDetailHRImage" Height="12" Grid.Column="1">
+                            <Image.Transitions>
+                                <TransitionCollection>
+                                    <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                                </TransitionCollection>
+                            </Image.Transitions>
+                        </Image>
+                    </Grid>
                 </StackPanel>
                 <!-- 添加歌词显示列表 -->
                 <ListView x:Name="LyricsListView" 
@@ -164,7 +184,13 @@
                                 Margin="0,8,0,8"                               
                                 FontSize="{x:Bind IsCurrent,Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
                                 FontWeight="{x:Bind IsCurrent, Mode=OneWay,Converter={StaticResource BoolToFontWeightConverter}}"
-                                Opacity="{x:Bind IsCurrent,Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"/>
+                                Opacity="{x:Bind IsCurrent,Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}">
+                                <TextBlock.Transitions>
+                                    <TransitionCollection>
+                                        <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
+                                    </TransitionCollection>
+                                </TextBlock.Transitions>
+                            </TextBlock>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
