@@ -121,8 +121,16 @@ namespace WinUIMusicPlayer.Services
                     });
                 }
             }
-
-            // 按时间排序歌词
+            if (lyrics.Count ==0)
+            {
+                lyrics.Add(new LyricLine
+                {
+                    Text = "没有可识别的歌词",
+                    Time = TimeSpan.Zero,
+                    IsCurrent = true
+                });
+                return lyrics;
+            }
             return lyrics.OrderBy(l => l.Time).ToList();
         }
 

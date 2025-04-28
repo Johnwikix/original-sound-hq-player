@@ -107,8 +107,35 @@ namespace WinUIMusicPlayer.Model
             }
         }
 
-        public int TrackNumber { get; set; }
-        public string Lyrics { get; set; }
+        private int _trackNumber { get; set; }
+
+        public int TrackNumber
+        {
+            get { return _trackNumber; }
+            set
+            {
+                if (_trackNumber != value)
+                {
+                    _trackNumber = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private string _lyrics { get; set; }
+
+        public string Lyrics
+        {
+            get { return _lyrics; }
+            set
+            {
+                if (_lyrics != value)
+                {
+                    _lyrics = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())

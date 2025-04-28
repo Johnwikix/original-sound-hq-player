@@ -87,7 +87,6 @@ namespace WinUIMusicPlayer.View
         {
             this.DispatcherQueue.TryEnqueue(() =>
             {
-                Debug.WriteLine(currentIndex);
                 // 创建当前歌词的副本
                 for (int i = 0; i < _uiLyrics.Count; i++)
                 {
@@ -677,6 +676,7 @@ namespace WinUIMusicPlayer.View
             {
                 UpdatePlayBar(musicPlaybackService.currentPlayingMusic);
                 await LoadCover(musicPlaybackService.currentPlayingMusic);
+                LoadLyricsToUI(musicPlaybackService.currentPlayingMusic.Lyrics);
             }
             UpdatePlayModeIcon();
             musicPlaybackService.isInitializing = false;
