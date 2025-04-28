@@ -102,6 +102,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -129,6 +130,15 @@
                             <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" Toggled="CoverCacheToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
                             <TextBlock Text="最大封面预载数量"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
                             <NumberBox x:Name="MaxCoverPreLoadNumberBox" ValueChanged="MaxCoverPreLoadNumberBox_ValueChanged" Grid.Column="1" Grid.Row="2" Value="50" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
+                            <StackPanel Grid.Column="0" Grid.Row="4" Orientation="Horizontal">
+                                <TextBlock Text="自动歌词匹配"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="需要配置LrcAPI服务" VerticalOffset="10"/>
+                                    </ToolTipService.ToolTip>
+                                </FontIcon>
+                            </StackPanel>
+                            <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="4" x:Name="AutoLyricsToggle" Toggled="AutoLyricsToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>

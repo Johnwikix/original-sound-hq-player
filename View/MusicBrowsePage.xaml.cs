@@ -104,14 +104,11 @@ namespace WinUIMusicPlayer.View
 
         private async void LoadLyricsToUI(string lyricsContent)
         {
-            // 设置播放服务中的歌词
-            musicPlaybackService.SetLyrics(lyricsContent);
-
-            // 清空UI歌词集合
             _uiLyrics.Clear();
-
+            // 设置播放服务中的歌词
+            await musicPlaybackService.SetLyrics(lyricsContent);
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = musicPlaybackService.ParseLrcLyrics(lyricsContent);
+            List<LyricLine> parsedLyrics = await musicPlaybackService.ParseLrcLyrics(lyricsContent);
             foreach (var lyric in parsedLyrics)
             {
                 _uiLyrics.Add(lyric);
@@ -934,13 +931,18 @@ namespace WinUIMusicPlayer.View
                 {
                     var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                     HRImage.Source = bitmapImage;
-                    PlayingDetailHRImage.Source = bitmapImage;
+                    if (isInPlayingDetailMode) {
+                        PlayingDetailHRImage.Source = bitmapImage;
+                    }                    
+                }
+                if (isInPlayingDetailMode)
+                {
+                    PlayingDetailTitleTextBlock.Text = music.Title;
+                    PlayingDetailAlbumTextBlock.Text = music.Album;
+                    PlayingDetailArtistTextBlock.Text = music.Author;
+                    PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+                    PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
                 }                
-                PlayingDetailTitleTextBlock.Text = music.Title;
-                PlayingDetailAlbumTextBlock.Text = music.Album;
-                PlayingDetailArtistTextBlock.Text = music.Author;
-                PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
             });
         }
 

@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
+using WinUIMusicPlayer.WebService;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
@@ -44,6 +45,7 @@ namespace WinUIMusicPlayer.Services
         private NotificationService notificationService = new NotificationService();
         public event EventHandler<int> updateCurrentLyricIndex;
         private List<LyricLine> _lyrics = new List<LyricLine>();
+        private LrcService lrcService = new LrcService();
 
         public MusicPlaybackService()
         {
@@ -57,28 +59,50 @@ namespace WinUIMusicPlayer.Services
             currentPlayingList = await MusicDatabaseService.LoadPlayList();
         }
 
-        public void SetLyrics(string lyricsContent)
+        public async Task SetLyrics(string lyricsContent)
         {
-            _lyrics = ParseLrcLyrics(lyricsContent);
+            _lyrics = await ParseLrcLyrics(lyricsContent);
         }
 
-        public List<LyricLine> ParseLrcLyrics(string lrcContent)
+        public async Task<List<LyricLine>> ParseLrcLyrics(string lrcContent)
         {
-            var lyrics = new List<LyricLine>();
+            List<LyricLine> lyrics = new List<LyricLine>();
 
             if (string.IsNullOrEmpty(lrcContent))
             {
-                lyrics.Add(new LyricLine
+                if (AppSettings.isAutoLyricsEnabled) {
+                    var autoLyrics = await lrcService.GetLyricsAsync(currentPlayingMusic.Title, currentPlayingMusic.Album, currentPlayingMusic.Author);
+                    if (autoLyrics != null)
+                    {
+                        lrcContent = autoLyrics;
+                        return SpliteContent(lrcContent, lyrics);
+                    }
+                    else {
+                        lyrics.Add(new LyricLine
+                        {
+                            Text = "没有歌词",
+                            Time = TimeSpan.Zero,
+                            IsCurrent = true
+                        });
+                        return lyrics;
+                    }
+                }
+                else
                 {
-                    Text = "没有歌词",
-                    Time = TimeSpan.Zero,
-                    IsCurrent = true
-                });
-                return lyrics;
+                    lyrics.Add(new LyricLine
+                    {
+                        Text = "没有歌词",
+                        Time = TimeSpan.Zero,
+                        IsCurrent = true
+                    });
+                    return lyrics;
+                }                
             }
+            return SpliteContent(lrcContent, lyrics);
+        }
 
+        private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics) {
             string[] lines = lrcContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
             foreach (string line in lines)
             {
                 string trimmedLine = line.Trim();
@@ -121,7 +145,7 @@ namespace WinUIMusicPlayer.Services
                     });
                 }
             }
-            if (lyrics.Count ==0)
+            if (lyrics.Count == 0)
             {
                 lyrics.Add(new LyricLine
                 {

@@ -28,6 +28,7 @@ namespace WinUIMusicPlayer.Model
         public static bool isCoverCacheEnabled { get; set; } = false;
         public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
+        public static bool isAutoLyricsEnabled { get; set; } = false;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

@@ -71,6 +71,7 @@ namespace WinUIMusicPlayer.View
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
+            newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -180,6 +181,7 @@ namespace WinUIMusicPlayer.View
             }
             MaxCoverPreLoadNumberBox.Value = AppSettings.maxCoverPreLoadNum;
             CoverCacheToggle.IsOn = AppSettings.isCoverCacheEnabled;
+            AutoLyricsToggle.IsOn = AppSettings.isAutoLyricsEnabled;
             if (AppSettings.isRunningBackend) {
                 RunningBackendRadioButton.IsChecked = true;
             }
@@ -411,6 +413,15 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private void AutoLyricsToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!isInitializing)
+            {
+                AppSettings.isAutoLyricsEnabled = AutoLyricsToggle.IsOn;
+                _ = SaveSetting();
             }
         }
     }
