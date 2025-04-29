@@ -86,7 +86,7 @@ namespace WinUIMusicPlayer.View
 
         private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
         {
-            this.DispatcherQueue.TryEnqueue(() =>
+            this.DispatcherQueue.TryEnqueue( async () =>
             {
                 // 创建当前歌词的副本
                 for (int i = 0; i < _uiLyrics.Count; i++)
@@ -99,6 +99,24 @@ namespace WinUIMusicPlayer.View
                 if (currentIndex >= 0 && currentIndex < _uiLyrics.Count)
                 {
                     LyricsListView.ScrollIntoView(_uiLyrics[currentIndex]);
+                    await Task.Delay(50);
+                    // 获取目标项的容器
+                    var container = LyricsListView.ContainerFromItem(_uiLyrics[currentIndex]) as ListViewItem;
+                    if (container != null)
+                    {
+                        // 计算需要滚动的位置，使项目居中
+                        var scrollViewer = FindVisualChild<ScrollViewer>(LyricsListView);
+                        if (scrollViewer != null)                        {
+                            // 计算项目在ListView中的位置
+                            var transform = container.TransformToVisual(LyricsListView);
+                            var itemPosition = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+                            // 计算目标项目与ListView中心的偏移量
+                            var itemOffset = itemPosition.Y + (container.ActualHeight / 2);
+                            var listViewCenter = scrollViewer.ViewportHeight / 2;
+                            var scrollOffset = itemOffset - listViewCenter;
+                            scrollViewer.ChangeView(null, scrollViewer.VerticalOffset + scrollOffset, null, false);
+                        }
+                    }
                 }
             });
         }

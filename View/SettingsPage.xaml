@@ -94,7 +94,7 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CoverSettings" Margin="10 0 10 0" Header="封面设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CoverSettings" Margin="10 0 10 0" Header="封面歌词设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
