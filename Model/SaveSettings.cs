@@ -12,7 +12,7 @@ namespace WinUIMusicPlayer.Model
         public string DeviceFriendlyName { get; set; }
         public string DefualtEntry { get; set; }
         public string DefualtPlayList { get; set; }
-        public string LrcAPISource { get; set; }
+        public string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public string LrcAPIAuth { get; set; }
         public string AppStyle { get; set; }
         public string AppTheme { get; set; }

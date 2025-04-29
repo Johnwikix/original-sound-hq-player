@@ -38,6 +38,7 @@ namespace WinUIMusicPlayer.View.SubView
         public AlbumDetailWindow current;
         private AppWindow albumDetailAppWindow;
         private MainWindow mainWindow;
+        private BitmapImage albumCoverBitmapImage;
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
@@ -152,7 +153,8 @@ namespace WinUIMusicPlayer.View.SubView
             musicDetail = album;
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
-            albumCoverData = ToolUtils.GetRawImage(album);
+            albumCoverData = ToolUtils.GetRawImage(album);           
+            albumCoverBitmapImage = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData, 150);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 
@@ -167,6 +169,7 @@ namespace WinUIMusicPlayer.View.SubView
             AlbumDetail.Visibility = Visibility.Collapsed;
             List<Music> musics = await MusicDatabaseService.FindMusicListByAlbum(album.Album);
             Music result = null;
+            // 避免重复写入标志位
             bool isResultAssigned = false;
             foreach (var music in musics)
             {
@@ -186,23 +189,23 @@ namespace WinUIMusicPlayer.View.SubView
                         tag.Pictures = new IPicture[] { albumArt };
                     }
                     tag.Album = AlbumTextBlock.Text;
-                    tag.Year = uint.Parse(YearTextBlock.Text);
-                    LoadingGrid.Visibility = Visibility.Visible;
+                    tag.Year = uint.Parse(YearTextBlock.Text);                    
                     await Task.Run(() => audioFile.Save());
                 }
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
 
-                await MusicDatabaseService.UpdateMusicInfo(music);                
+                await MusicDatabaseService.UpdateMusicInfo(music);
                 if (!isResultAssigned)
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
                     {
-                        AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
+                        AppData.albumCoverCache[music.Album] = albumCoverBitmapImage;
                     }
                     result = music;
-                    result.Cover = (BitmapImage)AlbumCoverImage.Source;
-                }
+                    result.Cover = albumCoverBitmapImage;
+                    isResultAssigned = true;
+                }                
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             AlbumDetailChanged?.Invoke(this, result);

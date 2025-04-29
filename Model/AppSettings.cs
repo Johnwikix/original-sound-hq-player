@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.Model
         public static string DefualtEntry { get; set; } = "文件夹选择";
         public static string DefualtPlayList { get; set; } = "歌曲";
         public static bool isPlaying { get; set; } = false;
-        public static string LrcAPISource { get; set; }
+        public static string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public static string LrcAPIAuth { get; set; }
         public static bool isDsd { get; set; } = false;
         public static string AppStyle { get; set; } = "Acrylic";

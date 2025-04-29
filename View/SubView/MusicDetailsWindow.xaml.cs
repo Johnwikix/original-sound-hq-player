@@ -1,6 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -13,6 +14,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
+using static SQLite.SQLite3;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -198,6 +200,11 @@ namespace WinUIMusicPlayer.View.SubView
             music.TrackNumber = int.Parse(TrackNumberBox.Text);
             music.Lyrics = LyricsTextBox.Text;
             await MusicDatabaseService.UpdateMusicInfo(music);
+            BitmapImage albumCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData, 150);
+            if (AppData.albumCoverCache.ContainsKey(music.Album))
+            {
+                AppData.albumCoverCache[music.Album] = albumCover;
+            }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);
         }

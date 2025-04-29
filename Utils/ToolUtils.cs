@@ -95,30 +95,53 @@ namespace WinUIMusicPlayer.Utils
                 var bitmapImage = new BitmapImage();
                 if (maxSize != 0)
                 {
-                    bitmapImage.ImageOpened += (sender, args) =>
-                    {
-                        double originalWidth = bitmapImage.PixelWidth;
-                        double originalHeight = bitmapImage.PixelHeight;
-                        double aspectRatio = originalWidth / originalHeight;
-                        int newWidth, newHeight;
-                        if (originalWidth > originalHeight)
-                        {
-                            newWidth = maxSize;
-                            newHeight = (int)(maxSize / aspectRatio);
-                        }
-                        else
-                        {
-                            newHeight = maxSize;
-                            newWidth = (int)(maxSize * aspectRatio);
-                        }
-                        bitmapImage.DecodePixelWidth = newWidth;
-                        bitmapImage.DecodePixelHeight = newHeight;
-                    };
+                    setBitmapSize(bitmapImage, maxSize);
+                    //bitmapImage.ImageOpened += (sender, args) =>
+                    //{
+                    //    double originalWidth = bitmapImage.PixelWidth;
+                    //    double originalHeight = bitmapImage.PixelHeight;
+                    //    double aspectRatio = originalWidth / originalHeight;
+                    //    int newWidth, newHeight;
+                    //    if (originalWidth > originalHeight)
+                    //    {
+                    //        newWidth = maxSize;
+                    //        newHeight = (int)(maxSize / aspectRatio);
+                    //    }
+                    //    else
+                    //    {
+                    //        newHeight = maxSize;
+                    //        newWidth = (int)(maxSize * aspectRatio);
+                    //    }
+                    //    bitmapImage.DecodePixelWidth = newWidth;
+                    //    bitmapImage.DecodePixelHeight = newHeight;
+                    //};
                 }
 
                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                 return bitmapImage;
             }
+        }
+
+        private static void setBitmapSize(BitmapImage bitmapImage,int maxSize) {
+            bitmapImage.ImageOpened += (sender, args) =>
+            {
+                double originalWidth = bitmapImage.PixelWidth;
+                double originalHeight = bitmapImage.PixelHeight;
+                double aspectRatio = originalWidth / originalHeight;
+                int newWidth, newHeight;
+                if (originalWidth > originalHeight)
+                {
+                    newWidth = maxSize;
+                    newHeight = (int)(maxSize / aspectRatio);
+                }
+                else
+                {
+                    newHeight = maxSize;
+                    newWidth = (int)(maxSize * aspectRatio);
+                }
+                bitmapImage.DecodePixelWidth = newWidth;
+                bitmapImage.DecodePixelHeight = newHeight;
+            };
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
@@ -143,7 +166,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData)
+        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData,int maxSize = 0)
         {
             try
             {
@@ -157,6 +180,10 @@ namespace WinUIMusicPlayer.Utils
                         await dataWriter.StoreAsync();
                     }
                     var bitmapImage = new BitmapImage();
+                    if (maxSize != 0)
+                    {
+                        setBitmapSize(bitmapImage, maxSize);
+                    }
                     await bitmapImage.SetSourceAsync(stream);
                     return bitmapImage;
                 }

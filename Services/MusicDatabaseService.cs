@@ -541,7 +541,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.LrcAPISource = settings.LrcAPISource;
+                AppSettings.LrcAPISource = string.IsNullOrEmpty(settings.LrcAPISource) ? "https://api.lrc.cx" : settings.LrcAPISource;
                 AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;
