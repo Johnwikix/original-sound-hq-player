@@ -230,7 +230,7 @@ namespace WinUIMusicPlayer.View
 
         private void LrcAPITextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.LrcAPISource = LrcAPITextBox.Text;
+            AppSettings.LrcAPISource = string.IsNullOrEmpty(LrcAPITextBox.Text) ? "https://api.lrc.cx" : LrcAPITextBox.Text;
             if (!isInitializing)
             {
                 _ = SaveSetting();
