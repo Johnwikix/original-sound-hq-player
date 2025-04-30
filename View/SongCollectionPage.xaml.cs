@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
-                //parentPage.refreshSong += RefreshSong;
+                parentPage.refreshSong += RefreshSong;
                 RefreshPage();
             }
         }
@@ -197,9 +197,9 @@ namespace WinUIMusicPlayer.View
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {
-                    musicList.Remove(item);
+                {                    
                     await MusicDatabaseService.RemoveMusic(item.Id);
+                    musicList.Remove(item);
                 }
                 if (parentPage != null)
                 {
@@ -210,7 +210,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (MusicListView.SelectedItem is Music selectedMusic)
                 {
-                    //musicList.Remove(selectedMusic);
+                    musicList.Remove(selectedMusic);
                     await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
                     if (parentPage != null)
                     {

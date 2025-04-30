@@ -756,6 +756,8 @@ namespace WinUIMusicPlayer.Services
             existingMusic.Author = newMusic.Author;
             existingMusic.Duration = newMusic.Duration;
             existingMusic.Album = newMusic.Album;
+            existingMusic.FolderPath = newMusic.FolderPath;
+            existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
             //existingMusic.Extension = newMusic.Extension;
             existingMusic.BitDepth = newMusic.BitDepth;
             existingMusic.BitRate = newMusic.BitRate;
@@ -766,46 +768,46 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(existingMusic);
         }
 
-        public static async Task RescanLastLevelFolder(string folderPath) {
-            List<Music> musics = await _dbConnection.Table<Music>().Where(f => f.FolderPath == folderPath).ToListAsync();
-            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-            List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-            List<string> filePaths = files.Select(file => file.Path).ToList();
-            List<string> musicPaths = musics.Select(music => music.Path).ToList();
-            var filesNotInMusics = filePaths.Except(musicPaths).ToList();
-            var musicsNotInFiles = musicPaths.Except(filePaths).ToList();
-            if (musicsNotInFiles.Count > 0) {
-                foreach (var music in musicsNotInFiles)
-                {
-                    var musicToDelete = await _dbConnection.Table<Music>().Where(m => m.Path == music).FirstOrDefaultAsync();
-                    if (musicToDelete != null)
-                    {
-                        await _dbConnection.DeleteAsync(musicToDelete);
-                    }
-                    musics.Remove(musicToDelete);
-                }
-            }
-            if (filesNotInMusics.Count > 0) {
-                foreach (var file in filesNotInMusics)
-                {
-                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(file);
-                    Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
-                    await _dbConnection.InsertAsync(music);
-                }
-            }
-            HashSet<string> pathSet = new HashSet<string>(musicsNotInFiles);
+        //public static async Task RescanLastLevelFolder(string folderPath) {
+        //    List<Music> musics = await _dbConnection.Table<Music>().Where(f => f.FolderPath == folderPath).ToListAsync();
+        //    var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+        //    List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
+        //    List<string> filePaths = files.Select(file => file.Path).ToList();
+        //    List<string> musicPaths = musics.Select(music => music.Path).ToList();
+        //    var filesNotInMusics = filePaths.Except(musicPaths).ToList();
+        //    var musicsNotInFiles = musicPaths.Except(filePaths).ToList();
+        //    if (musicsNotInFiles.Count > 0) {
+        //        foreach (var music in musicsNotInFiles)
+        //        {
+        //            var musicToDelete = await _dbConnection.Table<Music>().Where(m => m.Path == music).FirstOrDefaultAsync();
+        //            if (musicToDelete != null)
+        //            {
+        //                await _dbConnection.DeleteAsync(musicToDelete);
+        //            }
+        //            musics.Remove(musicToDelete);
+        //        }
+        //    }
+        //    if (filesNotInMusics.Count > 0) {
+        //        foreach (var file in filesNotInMusics)
+        //        {
+        //            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(file);
+        //            Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
+        //            await _dbConnection.InsertAsync(music);
+        //        }
+        //    }
+        //    HashSet<string> pathSet = new HashSet<string>(musicsNotInFiles);
 
-            // 过滤Music列表，排除Path存在于pathSet中的项
-            List<Music> filteredList = musics
-                .Where(m => !pathSet.Contains(m.Path))
-                .ToList();            
-            foreach (Music music in filteredList) {
-                if (IsMusicFile(music.Extension)) {
-                    await updateMusic(music, music.FolderPath);
-                }                
-            }
+        //    // 过滤Music列表，排除Path存在于pathSet中的项
+        //    List<Music> filteredList = musics
+        //        .Where(m => !pathSet.Contains(m.Path))
+        //        .ToList();            
+        //    foreach (Music music in filteredList) {
+        //        if (IsMusicFile(music.Extension)) {
+        //            await updateMusic(music, music.FolderPath);
+        //        }                
+        //    }
            
-        }
+        //}
 
         public static async Task RescanFolder(int folderId)
         {
@@ -814,92 +816,94 @@ namespace WinUIMusicPlayer.Services
             {
                 try
                 {
-                    // 获取StorageFolder对象
 
-                    var folder = await StorageFolder.GetFolderFromPathAsync(folderToRescan.Path);
-                    List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-
-                    var musicFilesInFolder = await _dbConnection.Table<Music>()
-                       .Where(m => m.FolderPath.Contains(folderToRescan.Path))
-                       .ToListAsync();
-
-                    HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                    // 遍历 IReadOnlyList<StorageFile>，将文件路径添加到 HashSet 中
-                    foreach (var file in files)
-                    {
-                        try
-                        {
-                            if (ToolUtils.IsMusicFile(file.FileType))
-                            {
-                                filePaths.Add(file.Path);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
-                        }
-                    }
-
-                    // 存储需要删除的 Music 项
-                    var toDelete = new List<Music>();
-
-                    // 检查 Music 列表中的项
-                    foreach (var newMusic in musicFilesInFolder)
-                    {
-                        if (!filePaths.Contains(newMusic.Path))
-                        {
-                            toDelete.Add(newMusic);
-                        }
-                        else
-                        {
-                            await updateMusic(newMusic, folder.Path);
-                            //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
-                            //var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == newMusic.Path).FirstOrDefaultAsync();
-                            //Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-                            //existingMusic.Title = music.Title;
-                            //existingMusic.Author = music.Author;
-                            //existingMusic.Duration = music.Duration;
-                            //existingMusic.Album = music.Album;
-                            //existingMusic.Extension = newMusic.Extension;
-                            //existingMusic.BitDepth = music.BitDepth;
-                            //existingMusic.BitRate = music.BitRate;
-                            //existingMusic.SampleRate = music.SampleRate;
-                            //existingMusic.Channel = music.Channel;
-                            //existingMusic.Lyrics = music.Lyrics;
-                            //existingMusic.TrackNumber = music.TrackNumber;
-                            //await _dbConnection.UpdateAsync(existingMusic);
-                            filePaths.Remove(newMusic.Path);
-                        }
-                    }
-
-                    // 执行删除操作
-                    foreach (var music in toDelete)
-                    {
-                        await _dbConnection.DeleteAsync(music);
-                        musicFilesInFolder.Remove(music);
-                    }
-
-                    // 执行添加操作
-                    foreach (var path in filePaths)
-                    {
-                        StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                        Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-                        await _dbConnection.InsertAsync(music);
-                    }
-                    // 更新UI和主窗口的音乐列表
-                    var mainWindow = (App.MainWindow as MainWindow);
-                    if (mainWindow != null)
-                    {
-                        mainWindow.UpdateMusicList();
-                        //await mainWindow.LoadMusicList();
-                        //await mainWindow.LoadFavourMusicList();
-                    }
+                    await RescanFolderByPath(folderToRescan.Path);
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"重新扫描文件夹时出错: {ex.Message}");
                 }
+            }
+        }
+
+        public static async Task RescanFolderByPath(string folderPath) {
+            // 获取StorageFolder对象
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
+
+            var musicFilesInFolder = await _dbConnection.Table<Music>()
+               .Where(m => m.FolderPath.Contains(folderPath))
+               .ToListAsync();
+            HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // 遍历 IReadOnlyList<StorageFile>，将文件路径添加到 HashSet 中
+            foreach (var file in files)
+            {
+                try
+                {
+                    if (ToolUtils.IsMusicFile(file.FileType))
+                    {
+                        filePaths.Add(file.Path);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                }
+            }
+
+            // 存储需要删除的 Music 项
+            var toDelete = new List<Music>();
+
+            // 检查 Music 列表中的项
+            foreach (var newMusic in musicFilesInFolder)
+            {
+                if (!filePaths.Contains(newMusic.Path))
+                {
+                    toDelete.Add(newMusic);
+                }
+                else
+                {
+                    await updateMusic(newMusic, folder.Path);
+                    //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
+                    //var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == newMusic.Path).FirstOrDefaultAsync();
+                    //Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
+                    //existingMusic.Title = music.Title;
+                    //existingMusic.Author = music.Author;
+                    //existingMusic.Duration = music.Duration;
+                    //existingMusic.Album = music.Album;
+                    //existingMusic.Extension = newMusic.Extension;
+                    //existingMusic.BitDepth = music.BitDepth;
+                    //existingMusic.BitRate = music.BitRate;
+                    //existingMusic.SampleRate = music.SampleRate;
+                    //existingMusic.Channel = music.Channel;
+                    //existingMusic.Lyrics = music.Lyrics;
+                    //existingMusic.TrackNumber = music.TrackNumber;
+                    //await _dbConnection.UpdateAsync(existingMusic);
+                    filePaths.Remove(newMusic.Path);
+                }
+            }
+
+            // 执行删除操作
+            foreach (var music in toDelete)
+            {
+                await _dbConnection.DeleteAsync(music);
+                musicFilesInFolder.Remove(music);
+            }
+
+            // 执行添加操作
+            foreach (var path in filePaths)
+            {
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
+                Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
+                await _dbConnection.InsertAsync(music);
+            }
+            // 更新UI和主窗口的音乐列表
+            var mainWindow = (App.MainWindow as MainWindow);
+            if (mainWindow != null)
+            {
+                mainWindow.UpdateMusicList();
+                //await mainWindow.LoadMusicList();
+                //await mainWindow.LoadFavourMusicList();
             }
         }
     }

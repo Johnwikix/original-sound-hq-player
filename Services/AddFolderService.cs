@@ -80,8 +80,11 @@ namespace WinUIMusicPlayer.Services
                     int year = 0;
                     int channelCount = 0;
                     string lyrics = string.Empty;
-                    TimeSpan duration = TimeSpan.Zero;
-                    string lastLevelFolderPath = Path.GetFileName(folderPath);
+                    TimeSpan duration = TimeSpan.Zero; 
+                    //string lastLevelFolderPath = Path.GetFileName(folderPath);
+                    string lastLevelDirectory = Path.GetDirectoryName(file.Path);
+                    DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
+                    string lastLevelFolderPath = directoryInfo.Name;
                     Properties audioProperties = audioFile.Properties;
                     trackNumber = (int)tag.Track;
                     title = !string.IsNullOrWhiteSpace(tag.Title) ?
@@ -113,7 +116,7 @@ namespace WinUIMusicPlayer.Services
                         Author = artist,
                         Album = album,
                         Duration = duration,
-                        FolderPath = folderPath,
+                        FolderPath = lastLevelDirectory,
                         Order = 0,
                         LastLevelFolderPath = lastLevelFolderPath,
                         Extension = file.FileType.TrimStart('.').ToUpper(),

@@ -161,7 +161,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (!string.IsNullOrEmpty(item.FolderPath))
                     {
-                        await MusicDatabaseService.RescanLastLevelFolder(item.FolderPath);
+                        await MusicDatabaseService.RescanFolderByPath(item.FolderPath);
                     }
                 }
             }

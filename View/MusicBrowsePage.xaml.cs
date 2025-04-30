@@ -1207,9 +1207,9 @@ namespace WinUIMusicPlayer.View
             {
                 string artist = textBlock.Text;
                 SelectBarArtist(artist);
-                var package = new DataPackage();
-                package.SetText(artist);
-                Clipboard.SetContent(package);
+                //var package = new DataPackage();
+                //package.SetText(artist);
+                //Clipboard.SetContent(package);
             }
         }
 
@@ -1219,9 +1219,9 @@ namespace WinUIMusicPlayer.View
             {
                 string albumName = textBlock.Text;
                 SelectBarAlbum(albumName);
-                var package = new DataPackage();
-                package.SetText(albumName);
-                Clipboard.SetContent(package);
+                //var package = new DataPackage();
+                //package.SetText(albumName);
+                //Clipboard.SetContent(package);
             }
         }
 
@@ -1341,6 +1341,39 @@ namespace WinUIMusicPlayer.View
             {
                 animation.Configuration = new BasicConnectedAnimationConfiguration();
                 animation.TryStart(AlbumCoverImage);
+            }
+        }
+
+        private void PlayingDetailTitleTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string title = textBlock.Text;
+                var package = new DataPackage();
+                package.SetText(title);
+                Clipboard.SetContent(package);
+            }
+        }
+
+        private void PlayingDetailAlbumTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string album = textBlock.Text;
+                var package = new DataPackage();
+                package.SetText(album);
+                Clipboard.SetContent(package);
+            }
+        }
+
+        private void PlayingDetailArtistTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string author = textBlock.Text;
+                var package = new DataPackage();
+                package.SetText(author);
+                Clipboard.SetContent(package);
             }
         }
     }

@@ -278,7 +278,10 @@ namespace WinUIMusicPlayer.Utils
             }
             if (sortOrder == "Album")
             {
-                return musicList.OrderBy(m => m.Album).ToList();
+                return musicList.GroupBy(m => m.Album)
+                                .OrderBy(g => g.Key)
+                                .SelectMany(g => g.OrderBy(m => m.TrackNumber))
+                                .ToList();
             }
             switch (type)
             {
@@ -294,7 +297,7 @@ namespace WinUIMusicPlayer.Utils
                     switch (sortOrder)
                     {
                         case "DefaultOrder":
-                            return musicList.OrderBy(m => m.LastLevelFolderPath).ToList(); ;
+                            return musicList.OrderBy(m => m.LastLevelFolderPath).ToList();
                         default:
                             return musicList.ToList();
                     }
@@ -302,7 +305,10 @@ namespace WinUIMusicPlayer.Utils
                     switch (sortOrder)
                     {
                         case "DefaultOrder":
-                            return musicList.OrderBy(m => m.Album).ToList(); ;
+                            return musicList.GroupBy(m => m.Album)
+                                            .OrderBy(g => g.Key)
+                                            .SelectMany(g => g.OrderBy(m => m.TrackNumber))
+                                            .ToList();
                         default:
                             return musicList.ToList();
                     }
