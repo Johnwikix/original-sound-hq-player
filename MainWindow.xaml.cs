@@ -39,8 +39,6 @@ namespace WinUIMusicPlayer
         public MainWindow current;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
-        private TaskbarThumbnailService _taskbarService;
-        private bool _isPlaying = false;
 
         // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
@@ -89,7 +87,6 @@ namespace WinUIMusicPlayer
             PowerManagementHelper.DisableEfficiencyMode();
             PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
             m_AppWindow.Closing += AppWindow_Closing;
-            InitializeTaskbarService();
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             newWndProcDelegate = new WndProcDelegate(NewWindowProc);
@@ -114,55 +111,7 @@ namespace WinUIMusicPlayer
             // 调用默认窗口过程处理其他消息
             return CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
         }
-
-        private void InitializeTaskbarService()
-        {
-            _taskbarService = new TaskbarThumbnailService(this);
-            _taskbarService.ThumbButtonClicked += TaskbarService_ThumbButtonClicked;
-            var buttons = new List<TaskbarThumbnailService.ThumbnailButton>
-            {
-                new TaskbarThumbnailService.ThumbnailButton
-                {
-                    Id = 0,
-                    Tooltip = "播放/暂停",
-                    IconPath = @"Assets\Icons\play.ico"
-                },
-                new TaskbarThumbnailService.ThumbnailButton
-                {
-                    Id = 1,
-                    Tooltip = "停止",
-                    IconPath = @"Assets\Icons\stop.ico"
-                },
-                new TaskbarThumbnailService.ThumbnailButton
-                {
-                    Id = 2,
-                    Tooltip = "下一个",
-                    IconPath = @"Assets\Icons\next.ico"
-                }
-            };
-
-            // 添加按钮到任务栏
-            _taskbarService.AddButtons(buttons);
-
-            // 设置缩略图提示文本
-            _taskbarService.SetThumbnailTooltip("我的WinUI3应用");
-        }
-
-        private void TaskbarService_ThumbButtonClicked(object sender, TaskbarThumbnailService.ThumbButtonClickedEventArgs e)
-        {
-            switch (e.ButtonId)
-            {
-                case 0: // 播放/暂停按钮
-                    Debug.WriteLine("播放/暂停按钮被点击");
-                    break;
-                case 1: // 停止按钮
-                    Debug.WriteLine("停止按钮被点击");
-                    break;
-                case 2: // 下一个按钮
-                    Debug.WriteLine("下一个按钮被点击");
-                    break;
-            }
-        }
+        
 
         private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
