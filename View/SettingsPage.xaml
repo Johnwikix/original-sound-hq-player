@@ -49,7 +49,8 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="输出模式" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
                             <ComboBox x:Name="OutputModeComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="OutputModeComboBox_SelectionChanged" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem Content="Wasapi独占" Tag="WasapiExclusive"/>
+                                <ComboBoxItem Content="Wasapi独占(推送)" Tag="WasapiExclusivePush"/>
+                                <ComboBoxItem Content="Wasapi独占(事件)" Tag="WasapiExclusiveEvent"/>
                                 <ComboBoxItem Content="Wasapi共享" Tag="WasapiShared"/>
                                 <ComboBoxItem Content="WaveOut" Tag="WaveOut"/>
                                 <ComboBoxItem Content="DirectSound" Tag="DirectSound"/>

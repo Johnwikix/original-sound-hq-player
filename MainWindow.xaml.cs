@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -83,6 +84,7 @@ namespace WinUIMusicPlayer
             m_AppWindow = GetAppWindowForCurrentWindow(this);
             m_AppWindow.SetIcon("Assets/icon.ico");
             InitializeNotifyIcon();
+            PowerManagementHelper.DisableEfficiencyMode();
             m_AppWindow.Closing += AppWindow_Closing;
 
             // 获取窗口句柄并设置消息钩子
@@ -90,6 +92,82 @@ namespace WinUIMusicPlayer
             newWndProcDelegate = new WndProcDelegate(NewWindowProc);
             defaultWndProc = GetWindowLongPtr(m_hwnd, GWLP_WNDPROC);
             SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr GetCurrentProcess();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetProcessInformation(IntPtr hProcess, PROCESS_INFORMATION_CLASS ProcessInformationClass, IntPtr ProcessInformation, uint ProcessInformationSize);
+
+        // 进程信息类
+        enum PROCESS_INFORMATION_CLASS
+        {
+            ProcessMemoryPriority,
+            ProcessMemoryExhaustionInfo,
+            ProcessAppMemoryInfo,
+            ProcessInPrivateInfo,
+            ProcessPowerThrottling,
+            ProcessReservedValue1,
+            ProcessTelemetryCoverageInfo,
+            ProcessProtectionLevelInfo,
+            ProcessLeapSecondInfo,
+            ProcessMachineTypeInfo,
+            ProcessInformationClassMax
+        }
+
+        // 电源节流设置结构
+        [StructLayout(LayoutKind.Sequential)]
+        struct PROCESS_POWER_THROTTLING_STATE
+        {
+            public uint Version;
+            public uint ControlMask;
+            public uint StateMask;
+        }
+
+        // 在应用启动时禁用效率模式
+        private void DisableEfficiencyMode()
+        {
+            try
+            {
+                const uint PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1;
+                const uint PROCESS_POWER_THROTTLING_EXECUTION_SPEED = 0x1;
+                const uint PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION = 0x4;
+
+                var throttleState = new PROCESS_POWER_THROTTLING_STATE
+                {
+                    Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                    ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
+                    StateMask = 0 // 设置为0表示禁用这些功能
+                };
+
+                int size = Marshal.SizeOf<PROCESS_POWER_THROTTLING_STATE>();
+                IntPtr pThrottleState = Marshal.AllocHGlobal(size);
+                Marshal.StructureToPtr(throttleState, pThrottleState, false);
+
+                bool result = SetProcessInformation(
+                    GetCurrentProcess(),
+                    PROCESS_INFORMATION_CLASS.ProcessPowerThrottling,
+                    pThrottleState,
+                    (uint)size
+                );
+
+                Marshal.FreeHGlobal(pThrottleState);
+
+                if (!result)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    Debug.WriteLine($"禁用效率模式失败，错误代码: {error}");
+                }
+                else
+                {
+                    Debug.WriteLine("成功禁用效率模式");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"尝试禁用效率模式时出错: {ex.Message}");
+            }
         }
 
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)

@@ -176,5 +176,6 @@ namespace WinUIMusicPlayer
         private const int SW_RESTORE = 9;
 
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
     }
 }

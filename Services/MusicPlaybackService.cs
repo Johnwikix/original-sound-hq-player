@@ -418,7 +418,10 @@ namespace WinUIMusicPlayer.Services
                 case "WasapiShared":
                     waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
                     break;
-                case "WasapiExclusive":
+                case "WasapiExclusivePush":
+                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, false, AppSettings.Latency);
+                    break;
+                case "WasapiExclusiveEvent":
                     waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                     break;
                 case "DirectSound":
@@ -442,8 +445,11 @@ namespace WinUIMusicPlayer.Services
                 case "WasapiShared":
                     wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, AppSettings.Latency);
                     break;
-                case "WasapiExclusive":
-                    wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+                case "WasapiExclusivePush":
+                    wasapiOut = new CSCore.SoundOut.WasapiOut(true, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+                    break;
+                case "WasapiExclusiveEvent":
+                    wasapiOut = new CSCore.SoundOut.WasapiOut(true, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
                     break;
                 default:
                     wasapiOut = new CSCore.SoundOut.WasapiOut();
@@ -761,7 +767,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (waveOut != null)
                 {
-                    if (AppSettings.OutputMode == "WasapiExclusive")
+                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                     {
                         isPausing = true;
                         waveOut.Stop();
@@ -789,7 +795,7 @@ namespace WinUIMusicPlayer.Services
                 if (waveOut != null)
                 {
                     isPausing = false;
-                    if (AppSettings.OutputMode == "WasapiExclusive")
+                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                     {
                         waveOut.Play();
                         AppSettings.isPlaying = true;
