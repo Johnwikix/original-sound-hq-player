@@ -85,6 +85,7 @@ namespace WinUIMusicPlayer
             m_AppWindow.SetIcon("Assets/icon.ico");
             InitializeNotifyIcon();
             PowerManagementHelper.DisableEfficiencyMode();
+            PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
             m_AppWindow.Closing += AppWindow_Closing;
 
             // 获取窗口句柄并设置消息钩子
