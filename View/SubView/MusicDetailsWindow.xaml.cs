@@ -200,10 +200,9 @@ namespace WinUIMusicPlayer.View.SubView
             music.TrackNumber = int.Parse(TrackNumberBox.Text);
             music.Lyrics = LyricsTextBox.Text;
             await MusicDatabaseService.UpdateMusicInfo(music);
-            BitmapImage albumCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData, 150);
             if (AppData.albumCoverCache.ContainsKey(music.Album))
             {
-                AppData.albumCoverCache[music.Album] = albumCover;
+                AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);

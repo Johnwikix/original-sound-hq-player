@@ -154,7 +154,6 @@ namespace WinUIMusicPlayer.View.SubView
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
             albumCoverData = ToolUtils.GetRawImage(album);           
-            albumCoverBitmapImage = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData, 150);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 
@@ -200,10 +199,10 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
                     {
-                        AppData.albumCoverCache[music.Album] = albumCoverBitmapImage;
+                        AppData.albumCoverCache[music.Album] =(BitmapImage) AlbumCoverImage.Source;
                     }
                     result = music;
-                    result.Cover = albumCoverBitmapImage;
+                    result.Cover = (BitmapImage)AlbumCoverImage.Source;
                     isResultAssigned = true;
                 }                
             }
