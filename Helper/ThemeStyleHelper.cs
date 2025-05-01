@@ -32,6 +32,15 @@ namespace WinUIMusicPlayer.Helper
                     case "Acrylic":
                         _window.SystemBackdrop = new DesktopAcrylicBackdrop();
                         break;
+                    case "TransparentAcrylic":
+                        var customAcrylic = new CustomAcrylicSystemBackdrop
+                        {
+                            TintOpacity = 0,
+                            LuminosityOpacity = 0.1,
+                            TintColor = Color.FromArgb(255,0,0,0)
+                        };
+                        _window.SystemBackdrop = customAcrylic;
+                        break;
                     case "Mica":
                         _window.SystemBackdrop = new MicaBackdrop();
                         break;

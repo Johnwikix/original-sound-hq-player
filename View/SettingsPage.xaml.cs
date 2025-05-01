@@ -153,6 +153,9 @@ namespace WinUIMusicPlayer.View
                 case "Acrylic":
                     AcrylicRadioButton.IsChecked = true;
                     break;
+                case "TransparentAcrylic":
+                    TransparentAcrylicRadioButton.IsChecked = true;
+                    break;
                 case "Mica":
                     MicaRadioButton.IsChecked = true;
                     break;
@@ -292,7 +295,9 @@ namespace WinUIMusicPlayer.View
                                     // 设置为Acrylic背景
                                     AppSettings.AppStyle = "Acrylic";
                                     break;
-
+                                case "TransparentAcrylic":
+                                    AppSettings.AppStyle = "TransparentAcrylic";
+                                    break;
                                 case "Mica":
                                     // 设置为Mica背景
                                     AppSettings.AppStyle = "Mica";

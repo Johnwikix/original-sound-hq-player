@@ -184,15 +184,20 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
                                 <RadioButton x:Name="AcrylicRadioButton" Content="Acrylic (亚克力)" 
-                     Checked="BackdropRadioButton_Checked" 
-                     Tag="Acrylic"
-                     GroupName="BackdropGroup"
-                     Margin="0,5,0,5"/>
+                                    Checked="BackdropRadioButton_Checked" 
+                                    Tag="Acrylic"
+                                    GroupName="BackdropGroup"
+                                    Margin="0,5,0,5"/>
+                                <RadioButton x:Name="TransparentAcrylicRadioButton" Content="Transparent Acrylic (透明亚克力)" 
+                                    Checked="BackdropRadioButton_Checked" 
+                                    Tag="TransparentAcrylic"
+                                    GroupName="BackdropGroup"
+                                    Margin="0,5,0,5"/>
                                 <RadioButton x:Name="MicaRadioButton" Content="Mica (云母)" 
-                     Checked="BackdropRadioButton_Checked" 
-                     Tag="Mica"
-                     GroupName="BackdropGroup"
-                     Margin="0,5,0,5"/>
+                                    Checked="BackdropRadioButton_Checked" 
+                                    Tag="Mica"
+                                    GroupName="BackdropGroup"
+                                    Margin="0,5,0,5"/>
                             </StackPanel>
                         </Grid>
                     </Expander.Content>

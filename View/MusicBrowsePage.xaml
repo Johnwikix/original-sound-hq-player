@@ -102,7 +102,7 @@
                 </Button.Transitions>
             </Button>
             <!-- 专辑封面 -->
-            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Image x:Name="PlayingDetailAlbumCoverImage" />
             </Border>
             <Grid Grid.Row="1" Grid.Column="1" >
@@ -162,7 +162,7 @@
                 <!-- 添加歌词显示列表 -->
                 <ListView x:Name="LyricsListView" 
                         Grid.Row="1"
-                        Margin="15,20,5,5" 
+                        Margin="15,20,5,10" 
                         VerticalAlignment="Stretch"
                         IsItemClickEnabled="False"
                         SelectionMode="None"
