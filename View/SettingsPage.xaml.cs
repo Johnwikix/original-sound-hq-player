@@ -1,10 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Windows.System;
 using WinUIMusicPlayer.Model;
@@ -148,7 +146,7 @@ namespace WinUIMusicPlayer.View
                     DefualtEntryComboBox.SelectedItem = item;
                     break;
                 }
-            }          
+            }
 
             switch (AppSettings.AppStyle)
             {
@@ -180,7 +178,8 @@ namespace WinUIMusicPlayer.View
             MaxCoverPreLoadNumberBox.Value = AppSettings.maxCoverPreLoadNum;
             CoverCacheToggle.IsOn = AppSettings.isCoverCacheEnabled;
             AutoLyricsToggle.IsOn = AppSettings.isAutoLyricsEnabled;
-            if (AppSettings.isRunningBackend) {
+            if (AppSettings.isRunningBackend)
+            {
                 RunningBackendRadioButton.IsChecked = true;
             }
             else
@@ -188,7 +187,7 @@ namespace WinUIMusicPlayer.View
                 CloseAppRadioButton.IsChecked = true;
             }
             isInitializing = false;
-           
+
         }
 
         private void OutputModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -278,7 +277,8 @@ namespace WinUIMusicPlayer.View
 
         private void BackdropRadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            try {
+            try
+            {
                 if (!isInitializing)
                 {
                     if (sender is RadioButton radioButton)
@@ -303,14 +303,17 @@ namespace WinUIMusicPlayer.View
                         }
                     }
                 }
-            } catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 System.Diagnostics.Debug.WriteLine(ex.Message);
-            }           
+            }
         }
 
         private void ThemeRadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            try {
+            try
+            {
                 if (!isInitializing)
                 {
                     if (sender is RadioButton radioButton)
@@ -346,10 +349,11 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-            catch (Exception ex) { 
+            catch (Exception ex)
+            {
                 System.Diagnostics.Debug.WriteLine(ex.Message);
             }
-                      
+
         }
 
         private void CoverCacheToggle_Toggled(object sender, RoutedEventArgs e)
@@ -358,7 +362,7 @@ namespace WinUIMusicPlayer.View
             {
                 AppSettings.isCoverCacheEnabled = CoverCacheToggle.IsOn;
                 _ = SaveSetting();
-            }            
+            }
         }
 
         private void MaxCoverPreLoadNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
@@ -377,7 +381,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private void LatencyNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
-        {           
+        {
             if (!isInitializing)
             {
                 AppSettings.Latency = (int)LatencyNumberBox.Value;

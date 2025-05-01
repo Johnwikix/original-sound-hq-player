@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer.View.SubView
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
             albumDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
-            notificationService = new NotificationService();            
+            notificationService = new NotificationService();
         }
 
         private void MainWindow_styleChanged(object? sender, EventArgs e)
@@ -153,7 +153,7 @@ namespace WinUIMusicPlayer.View.SubView
             musicDetail = album;
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
-            albumCoverData = ToolUtils.GetRawImage(album);           
+            albumCoverData = ToolUtils.GetRawImage(album);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 
@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View.SubView
                         tag.Pictures = new IPicture[] { albumArt };
                     }
                     tag.Album = AlbumTextBlock.Text;
-                    tag.Year = uint.Parse(YearTextBlock.Text);                    
+                    tag.Year = uint.Parse(YearTextBlock.Text);
                     await Task.Run(() => audioFile.Save());
                 }
                 music.Album = AlbumTextBlock.Text;
@@ -199,12 +199,12 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
                     {
-                        AppData.albumCoverCache[music.Album] =(BitmapImage) AlbumCoverImage.Source;
+                        AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
                     }
                     result = music;
                     result.Cover = (BitmapImage)AlbumCoverImage.Source;
                     isResultAssigned = true;
-                }                
+                }
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             AlbumDetailChanged?.Invoke(this, result);

@@ -102,10 +102,10 @@ namespace WinUIMusicPlayer.View
                 if (isFirstLoad)
                 {
                     musicList.Clear();
-                    _currentPage = 0;                    
+                    _currentPage = 0;
                 }
 
-                for (int i = 0; i < 2; i++) 
+                for (int i = 0; i < 2; i++)
                 {
                     int startIndex = _currentPage * _itemsPerPage;
                     if (startIndex >= _allMusic.Count)
@@ -131,7 +131,7 @@ namespace WinUIMusicPlayer.View
             {
                 _isLoading = false;
             }
-        }       
+        }
 
         // GridView 滚动事件处理
         private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)

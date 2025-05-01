@@ -1,13 +1,9 @@
 ﻿using H.NotifyIcon;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Diagnostics;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -41,35 +37,40 @@ namespace WinUIMusicPlayer.Helper
                 // 显示窗口菜单项
                 var openCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
                 openCommand.Label = "显示";
-                openCommand.ExecuteRequested += (s, e) => {
+                openCommand.ExecuteRequested += (s, e) =>
+                {
                     ShowWindow();
                 };
 
                 // 上一首菜单项
                 var lastCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
                 lastCommand.Label = "上一首";
-                lastCommand.ExecuteRequested += (s, e) => {
+                lastCommand.ExecuteRequested += (s, e) =>
+                {
                     OnPlayLastSong();
                 };
 
                 // 播放/暂停菜单项
                 var playCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
                 playCommand.Label = "播放/暂停";
-                playCommand.ExecuteRequested += (s, e) => {
+                playCommand.ExecuteRequested += (s, e) =>
+                {
                     OnPlayStop();
                 };
 
                 // 下一首菜单项
                 var nextCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
                 nextCommand.Label = "下一首";
-                nextCommand.ExecuteRequested += (s, e) => {
+                nextCommand.ExecuteRequested += (s, e) =>
+                {
                     OnPlayNextSong();
                 };
 
                 // 退出菜单项
                 var exitCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
                 exitCommand.Label = "退出";
-                exitCommand.ExecuteRequested += (s, e) => {
+                exitCommand.ExecuteRequested += (s, e) =>
+                {
                     CloseApplication();
                 };
 

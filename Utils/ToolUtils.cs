@@ -103,7 +103,8 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        private static void setBitmapSize(BitmapImage bitmapImage,int maxSize) {
+        private static void setBitmapSize(BitmapImage bitmapImage, int maxSize)
+        {
             bitmapImage.ImageOpened += (sender, args) =>
             {
                 double originalWidth = bitmapImage.PixelWidth;
@@ -147,7 +148,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData,int maxSize = 0)
+        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData, int maxSize = 0)
         {
             try
             {
@@ -376,7 +377,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] {".mp3",".wav",".flac",".wma",".aac",".ogg",".aiff",".m4a",".dsf",".dff"};
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".aiff", ".m4a", ".dsf", ".dff" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 

@@ -14,7 +14,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
-using static SQLite.SQLite3;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -134,7 +133,7 @@ namespace WinUIMusicPlayer.View.SubView
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
             musicDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
-            notificationService = new NotificationService();                        
+            notificationService = new NotificationService();
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {

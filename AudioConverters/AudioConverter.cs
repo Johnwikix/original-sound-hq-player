@@ -1,13 +1,11 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
 using CUETools.Codecs.FLAKE;
-using Microsoft.VisualBasic.Devices;
 using NAudio.Flac;
 using NAudio.Lame;
 using NAudio.Vorbis;
 using NAudio.Wave;
 using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace WinUIMusicPlayer.AudioConverters
@@ -39,7 +37,7 @@ namespace WinUIMusicPlayer.AudioConverters
                                     double progress = (double)bytesWritten / totalBytes * 100;
                                     Console.WriteLine($"当前写入进度: {progress:F2}%");
                                     lastUpdate = DateTime.Now;
-                                    progressEvent?.Invoke(this,progress);
+                                    progressEvent?.Invoke(this, progress);
                                 }
                             }
                         }
@@ -64,7 +62,7 @@ namespace WinUIMusicPlayer.AudioConverters
                             }
                         }
                         memoryStream.Position = 0;
-                        ConvertAudioToFlac(outputPath, memoryStream);                        
+                        ConvertAudioToFlac(outputPath, memoryStream);
                     }
                     SaveMetaData(mp3FilePath, outputPath);
                     progressEvent?.Invoke(this, 100);
@@ -86,9 +84,10 @@ namespace WinUIMusicPlayer.AudioConverters
                 target.Write(buff);
                 target.Close();
             }
-            if (type == "mp3") {
+            if (type == "mp3")
+            {
                 using (WaveStream wavReader = new WaveFileReader(inputFilePath))
-                {                    
+                {
                     if (type == "mp3")
                     {
                         var mp3FormatPCMStream = ResampleToMp3Format(wavReader, wavReader.WaveFormat.Channels);
@@ -327,7 +326,7 @@ namespace WinUIMusicPlayer.AudioConverters
         public void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
         {
             using (IWaveSource waveSource = new FfmpegDecoder(filePath))
-            {                
+            {
                 if (type == "wav")
                 {
                     IWaveSource audio = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate / 4);
@@ -384,7 +383,8 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "flac")
                 {
                     int sampleRate = 176400;
-                    if (waveSource.WaveFormat.SampleRate / 4 <= sampleRate) {
+                    if (waveSource.WaveFormat.SampleRate / 4 <= sampleRate)
+                    {
                         sampleRate = waveSource.WaveFormat.SampleRate / 4;
                     }
                     IWaveSource resampledSource = waveSource.ChangeSampleRate(sampleRate);
@@ -393,7 +393,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     long bytesWritten = 0;
                     DateTime lastUpdate = DateTime.Now;
                     string tempFileName = $"temp_{Guid.NewGuid()}.wav";
-                    string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"temp",tempFileName);
+                    string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp", tempFileName);
                     string directory = Path.GetDirectoryName(tempWavFile);
                     if (!Directory.Exists(directory))
                     {
@@ -415,9 +415,10 @@ namespace WinUIMusicPlayer.AudioConverters
                                 {
                                     double progress = (double)bytesWritten / totalBytes * 100;
                                     lastUpdate = DateTime.Now;
-                                    if (progress < 99) {
+                                    if (progress < 99)
+                                    {
                                         progressEvent?.Invoke(this, progress);
-                                    }                                    
+                                    }
                                 }
                             }
                         }
@@ -551,13 +552,14 @@ namespace WinUIMusicPlayer.AudioConverters
             target.Close();
         }
 
-        public static WaveStream ResampleToMp3Format(WaveStream inputStream,int channels)
+        public static WaveStream ResampleToMp3Format(WaveStream inputStream, int channels)
         {
             var targetFormat = new NAudio.Wave.WaveFormat(44100, 16, channels);
             return new ResamplerDmoStream(inputStream, targetFormat);
         }
 
-        private void SaveMetaData(string inputFile,string outputPath) {
+        private void SaveMetaData(string inputFile, string outputPath)
+        {
             try
             {
                 using (var originalFile = TagLib.File.Create(inputFile))

@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using NAudio.Gui;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -44,8 +43,8 @@ namespace WinUIMusicPlayer.View
         {
             for (int i = 0; i < musicList.Count; i++)
             {
-                musicList[i].Order = musicList.Count - i;                
-                await MusicDatabaseService.UpdateMuisc(musicList[i]);   
+                musicList[i].Order = musicList.Count - i;
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
             if (parentPage != null)
@@ -83,7 +82,7 @@ namespace WinUIMusicPlayer.View
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
-            List<Music> musics = new List<Music>();            
+            List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
@@ -93,7 +92,8 @@ namespace WinUIMusicPlayer.View
                 musics = ToolUtils.SortMusicList("favour", order, musicList.ToList());
             }
             musicList.Clear();
-            foreach (Music music in musics) {
+            foreach (Music music in musics)
+            {
                 musicList.Add(music);
             }
         }
@@ -102,7 +102,7 @@ namespace WinUIMusicPlayer.View
         {
             if (parentPage != null)
             {
-                var musicList =MusicDatabaseService.GetFavoriteMusicFromMem(AppData.searchText);
+                var musicList = MusicDatabaseService.GetFavoriteMusicFromMem(AppData.searchText);
                 LoadMusicAsync(musicList);
             }
         }
@@ -112,7 +112,8 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicList.Clear();
-                foreach (Music music in musics) {
+                foreach (Music music in musics)
+                {
                     musicList.Add(music);
                 }
                 //musicList = new ObservableCollection<Music>(musics);
@@ -242,7 +243,7 @@ namespace WinUIMusicPlayer.View
                     await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
                     musicList.Remove(selectedMusic);
                 }
-            }            
+            }
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -269,7 +270,7 @@ namespace WinUIMusicPlayer.View
                     }
                     await parentPage.AddToFavourite(selectedMusic);
                 }
-            }            
+            }
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -353,7 +354,7 @@ namespace WinUIMusicPlayer.View
                         int progressBarValue = 0;
                         progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = progressDialog.UpdateProgress(progressBarValue);
-                        _=converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
+                        _ = converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
                         converterService.updateProgress += (sender, progress) =>
                         {
                             progressBarValue = (int)progress;

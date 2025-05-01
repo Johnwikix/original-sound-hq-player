@@ -1,15 +1,11 @@
-﻿using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml;
-using Microsoft.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WinUIMusicPlayer.Model;
+﻿using Microsoft.UI;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using System;
+using System.Diagnostics;
 using Windows.UI;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {

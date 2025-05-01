@@ -2,21 +2,15 @@ using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
-using Windows.UI.ViewManagement;
-using Windows.UI.WindowManagement;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -53,12 +47,12 @@ namespace WinUIMusicPlayer
         public MainWindow()
         {
             InitializeComponent();
-            this.Activated += MainWindow_Activated;            
+            this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
-            current = this;            
+            current = this;
             m_AppWindow = GetAppWindowForCurrentWindow(this);
             m_AppWindow.SetIcon("Assets/icon.ico");
             themeStyleHelper = new ThemeStyleHelper(this, m_AppWindow);
@@ -80,7 +74,7 @@ namespace WinUIMusicPlayer
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
-        }       
+        }
 
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
@@ -99,11 +93,12 @@ namespace WinUIMusicPlayer
             // 调用默认窗口过程处理其他消息
             return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
         }
-        
+
 
         private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
-            if (AppSettings.isRunningBackend) {
+            if (AppSettings.isRunningBackend)
+            {
                 // 取消关闭操作
                 args.Cancel = true;
                 // 最小化到托盘
@@ -133,7 +128,7 @@ namespace WinUIMusicPlayer
         private async void InitializeApp()
         {
             try
-            {                
+            {
                 await MusicDatabaseService.Initialize();
                 await MusicDatabaseService.GetSettingsAsync();
                 themeStyleHelper.SetAppStyle();
@@ -144,7 +139,7 @@ namespace WinUIMusicPlayer
                         LoadMusicList(),
                         RefreshDevice(),
                 };
-                await Task.WhenAll(tasks);                
+                await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
@@ -155,18 +150,20 @@ namespace WinUIMusicPlayer
             }
         }
 
-        public void SetAppStyle() {
+        public void SetAppStyle()
+        {
             themeStyleHelper.SetAppStyle();
         }
 
-        public void SetAppTheme() {
+        public void SetAppTheme()
+        {
             themeStyleHelper.SetAppTheme();
-        }       
+        }
 
         public void ShowWindow()
         {
-            notifyIconHelper.ShowWindow();            
-        }        
+            notifyIconHelper.ShowWindow();
+        }
 
         private void NavigateToDefaultPage()
         {
@@ -197,7 +194,8 @@ namespace WinUIMusicPlayer
             FoldersLoaded?.Invoke(this, folderList);
         }
 
-        public void UpdateMusicList() {
+        public void UpdateMusicList()
+        {
             updateMusicList?.Invoke(this, EventArgs.Empty);
         }
 

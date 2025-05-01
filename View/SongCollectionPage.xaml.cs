@@ -79,7 +79,7 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder, string type)
         {
-            var order = "DefaultOrder";            
+            var order = "DefaultOrder";
             List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
@@ -189,7 +189,7 @@ namespace WinUIMusicPlayer.View
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {                    
+                {
                     await MusicDatabaseService.RemoveMusic(item.Id);
                     musicList.Remove(item);
                 }
@@ -271,13 +271,14 @@ namespace WinUIMusicPlayer.View
                         {
                             progressBarValue = (int)progress;
                         }
-                        if (progressBarValue < 100) {
+                        if (progressBarValue < 100)
+                        {
                             _ = progressDialog.UpdateProgress(progressBarValue);
-                        }                        
+                        }
                     };
                     progressDialog.XamlRoot = this.XamlRoot;
                     _ = progressDialog.ShowAsync();
-                    
+
                     List<Task> conversionTasks = new List<Task>();
                     foreach (Music item in uniqueSelectedMusics)
                     {

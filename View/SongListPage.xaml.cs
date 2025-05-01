@@ -119,7 +119,7 @@ namespace WinUIMusicPlayer.View
                         {
                             if (music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id)
                             {
-                                selectedMusic =  music;
+                                selectedMusic = music;
                             }
                         }
                         MusicListView.SelectedItem = selectedMusic;
@@ -163,7 +163,8 @@ namespace WinUIMusicPlayer.View
                 parentPage.musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
                 await parentPage.PlayMusic(uniqueSelectedMusics[0]);
             }
-            else {
+            else
+            {
                 if (MusicListView.SelectedItem is Music selectedMusic)
                 {
                     parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
@@ -252,7 +253,7 @@ namespace WinUIMusicPlayer.View
                     musicList.Remove(selectedMusic);
                     await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
                 }
-            }           
+            }
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -272,7 +273,7 @@ namespace WinUIMusicPlayer.View
                     await parentPage.AddToFavourite(selectedMusic);
                 }
             }
-            
+
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)

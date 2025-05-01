@@ -1,14 +1,6 @@
-﻿using H.NotifyIcon;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
-using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -58,7 +50,7 @@ namespace WinUIMusicPlayer
                 // 记录错误信息
                 Debug.WriteLine($"激活窗口时出错: {ex.Message}");
             }
-        }       
+        }
 
     }
 }

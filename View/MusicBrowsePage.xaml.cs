@@ -3,7 +3,6 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -13,10 +12,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
-using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
@@ -86,9 +83,10 @@ namespace WinUIMusicPlayer.View
 
         private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
         {
-            this.DispatcherQueue.TryEnqueue( async () =>
+            this.DispatcherQueue.TryEnqueue(async () =>
             {
-                try {
+                try
+                {
                     // 创建当前歌词的副本
                     for (int i = 0; i < _uiLyrics.Count; i++)
                     {
@@ -123,7 +121,9 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
-                } catch (Exception ex) { 
+                }
+                catch (Exception ex)
+                {
                     notificationService.SendNotification("错误", $"更新歌词失败: {ex.Message}");
                 }
             });
@@ -507,7 +507,7 @@ namespace WinUIMusicPlayer.View
         public async Task AddToFavourite(Music music)
         {
             music.isFavorite = !music.isFavorite;
-            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);            
+            await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);
             if (musicPlaybackService.currentPlayingMusic != null)
             {
                 if (musicPlaybackService.currentPlayingMusic.Id == music.Id)
@@ -939,14 +939,14 @@ namespace WinUIMusicPlayer.View
                 }
             }
             systemMediaControlsService.UpdateSystemMediaControlsState();
-            await Task.Delay(300);            
+            await Task.Delay(300);
             _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
         }
 
         private async void UpdatePlayBar(Music music)
         {
             await LoadCover(music);
-            DispatcherQueue.TryEnqueue(async() =>
+            DispatcherQueue.TryEnqueue(async () =>
             {
                 MusicTitleTextBlock.Text = music.Title;
                 MusicAlbumTextBlock.Text = music.Album;
@@ -959,9 +959,10 @@ namespace WinUIMusicPlayer.View
                 {
                     var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));
                     HRImage.Source = bitmapImage;
-                    if (isInPlayingDetailMode) {
+                    if (isInPlayingDetailMode)
+                    {
                         PlayingDetailHRImage.Source = bitmapImage;
-                    }                    
+                    }
                 }
                 if (isInPlayingDetailMode)
                 {
@@ -970,7 +971,7 @@ namespace WinUIMusicPlayer.View
                     PlayingDetailArtistTextBlock.Text = music.Author;
                     PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
-                }                
+                }
             });
         }
 
@@ -997,7 +998,7 @@ namespace WinUIMusicPlayer.View
                 if (playListSongPage != null)
                 {
                     playListSongPage.UpdateMusicListView();
-                }                                
+                }
             });
         }
 
@@ -1012,7 +1013,8 @@ namespace WinUIMusicPlayer.View
                 await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 LoadLyricsToUI(music.Lyrics);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 notificationService.SendNotification("错误", ex.Message);
             }
         }
@@ -1302,9 +1304,9 @@ namespace WinUIMusicPlayer.View
             PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
             PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
             PlayingDetailHRImage.Source = null;
-            if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 && 
-                musicPlaybackService.currentPlayingMusic.BitDepth >= 24) || 
-                (musicPlaybackService.currentPlayingMusic.SampleRate >= 2822400 && 
+            if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 &&
+                musicPlaybackService.currentPlayingMusic.BitDepth >= 24) ||
+                (musicPlaybackService.currentPlayingMusic.SampleRate >= 2822400 &&
                 musicPlaybackService.currentPlayingMusic.BitDepth == 1))
             {
                 var bitmapImage = new BitmapImage(new Uri("ms-appx:///Assets/hr.png"));

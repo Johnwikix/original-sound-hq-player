@@ -70,14 +70,16 @@ namespace WinUIMusicPlayer.Services
 
             if (string.IsNullOrEmpty(lrcContent))
             {
-                if (AppSettings.isAutoLyricsEnabled) {
+                if (AppSettings.isAutoLyricsEnabled)
+                {
                     var autoLyrics = await lrcService.GetLyricsAsync(currentPlayingMusic.Title, currentPlayingMusic.Album, currentPlayingMusic.Author);
                     if (autoLyrics != null)
                     {
                         lrcContent = autoLyrics;
                         return SpliteContent(lrcContent, lyrics);
                     }
-                    else {
+                    else
+                    {
                         lyrics.Add(new LyricLine
                         {
                             Text = "没有歌词",
@@ -96,12 +98,13 @@ namespace WinUIMusicPlayer.Services
                         IsCurrent = true
                     });
                     return lyrics;
-                }                
+                }
             }
             return SpliteContent(lrcContent, lyrics);
         }
 
-        private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics) {
+        private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics)
+        {
             string[] lines = lrcContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string line in lines)
             {
@@ -725,7 +728,7 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
-            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id,volume);
+            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id, volume);
         }
 
         public void SwitchPlayMode()

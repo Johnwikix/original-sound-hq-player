@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -84,7 +83,7 @@ namespace WinUIMusicPlayer.View
             {
                 for (int i = 0; i < musicList.Count; i++)
                 {
-                    musicList[i].PlayListOrder = musicList.Count - i;                   
+                    musicList[i].PlayListOrder = musicList.Count - i;
                     await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);
                     await MusicDatabaseService.GetPlayListMusic();
                 }
@@ -112,7 +111,7 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder)
         {
-            var order = "DefaultOrder";            
+            var order = "DefaultOrder";
             List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
@@ -123,7 +122,8 @@ namespace WinUIMusicPlayer.View
                 musics = ToolUtils.SortMusicList("playList", order, musicList.ToList());
             }
             musicList.Clear();
-            foreach (var music in musics) {
+            foreach (var music in musics)
+            {
                 musicList.Add(music);
             }
         }
@@ -200,7 +200,7 @@ namespace WinUIMusicPlayer.View
                     parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
                     await parentPage.PlayMusic(selectedMusic);
                 }
-            }            
+            }
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -221,7 +221,7 @@ namespace WinUIMusicPlayer.View
                     await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, selectedMusic.Id);
                     musicList.Remove(selectedMusic);
                 }
-            }           
+            }
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -364,7 +364,7 @@ namespace WinUIMusicPlayer.View
                     foreach (var menuItem in flyout.Items)
                     {
                         menuItem.DataContext = musicItem;
-                    }                   
+                    }
                 }
             }
             //var targetElement = e.OriginalSource as FrameworkElement;

@@ -1,9 +1,7 @@
-﻿using Microsoft.UI.Xaml.Shapes;
-using SQLite;
+﻿using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -391,7 +389,8 @@ namespace WinUIMusicPlayer.Services
             return await query.OrderBy(m => m.Title).ToListAsync();
         }
 
-        public static List<Music> GetMusicListFromMem(string search) {
+        public static List<Music> GetMusicListFromMem(string search)
+        {
             return AppData.allSongs.Where(m =>
                 m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                 m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
@@ -575,7 +574,7 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(List<Music> currentPlayingList,PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
+        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
         {
             await _dbConnection.DeleteAllAsync<LastPlayListState>();
             var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
@@ -727,7 +726,8 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async static Task updateMusic(Music music,string folderPath) {
+        private async static Task updateMusic(Music music, string folderPath)
+        {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == music.Path).FirstOrDefaultAsync();
             Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
@@ -763,7 +763,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task RescanFolderByPath(string folderPath) {
+        public static async Task RescanFolderByPath(string folderPath)
+        {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
             List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);

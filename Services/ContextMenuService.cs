@@ -2,8 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
@@ -165,10 +163,11 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-            finally {
+            finally
+            {
                 rescanFolderEnd?.Invoke(this, EventArgs.Empty);
-            }         
-            
+            }
+
         }
 
         private async void AlbumProperties_Click(object sender, RoutedEventArgs e, string type)

@@ -80,7 +80,7 @@ namespace WinUIMusicPlayer.Services
                     int year = 0;
                     int channelCount = 0;
                     string lyrics = string.Empty;
-                    TimeSpan duration = TimeSpan.Zero; 
+                    TimeSpan duration = TimeSpan.Zero;
                     //string lastLevelFolderPath = Path.GetFileName(folderPath);
                     string lastLevelDirectory = Path.GetDirectoryName(file.Path);
                     DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);

@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.View
                 _isLoading = true;
 
                 if (isFirstLoad)
-                {  
+                {
                     musicList.Clear();
                     _currentPage = 0;
                 }
