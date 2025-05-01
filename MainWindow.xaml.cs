@@ -11,6 +11,7 @@ using Windows.Media.Devices;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -32,7 +33,6 @@ namespace WinUIMusicPlayer
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
-        public MainWindow current;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
@@ -52,8 +52,7 @@ namespace WinUIMusicPlayer
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
-            current = this;
-            m_AppWindow = GetAppWindowForCurrentWindow(this);
+            m_AppWindow = ToolUtils.GetAppWindowForCurrentWindow(this);
             m_AppWindow.SetIcon("Assets/icon.ico");
             themeStyleHelper = new ThemeStyleHelper(this, m_AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
@@ -107,12 +106,12 @@ namespace WinUIMusicPlayer
         }
 
 
-        private Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            return Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-        }
+        //private Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
+        //{
+        //    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        //    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+        //    return Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+        //}
 
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)

@@ -40,36 +40,36 @@ namespace WinUIMusicPlayer.Helper
                     {
                         // 尝试枚举进程的所有窗口
                         bool windowFound = false;
-                        EnumWindows((hWnd, lParam) =>
+                        WindowHelper.EnumWindows((hWnd, lParam) =>
                         {
                             uint processId;
-                            GetWindowThreadProcessId(hWnd, out processId);
+                            WindowHelper.GetWindowThreadProcessId(hWnd, out processId);
 
                             if (processId == process.Id)
                             {
-                                int length = GetWindowTextLength(hWnd);
+                                int length = WindowHelper.GetWindowTextLength(hWnd);
                                 if (length > 0)
                                 {
                                     StringBuilder windowTitle = new StringBuilder(length + 1);
-                                    GetWindowText(hWnd, windowTitle, windowTitle.Capacity);
+                                    WindowHelper.GetWindowText(hWnd, windowTitle, windowTitle.Capacity);
 
                                     // 检查窗口标题，或者只要找到第一个可见窗口就激活
-                                    if (IsWindowVisible(hWnd))
+                                    if (WindowHelper.IsWindowVisible(hWnd))
                                     {
                                         // 如果窗口最小化，则恢复它
-                                        if (IsIconic(hWnd))
+                                        if (WindowHelper.IsIconic(hWnd))
                                         {
-                                            ShowWindow(hWnd, SW_RESTORE);
+                                            WindowHelper.ShowWindow(hWnd, WindowHelper.SW_RESTORE);
                                         }
 
                                         // 将窗口置于前台
-                                        SetForegroundWindow(hWnd);
+                                        WindowHelper.SetForegroundWindow(hWnd);
                                         return false; // 停止枚举
                                     }
                                 }
 
                                 // 发送自定义消息给窗口，通知它显示
-                                SendMessage(hWnd, WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
+                                WindowHelper.SendMessage(hWnd, WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
                                 windowFound = true;
                                 return false; // 停止枚举
                             }
@@ -103,41 +103,5 @@ namespace WinUIMusicPlayer.Helper
                 _mutex = null;
             }
         }
-
-        #region Win32 API 声明
-        [DllImport("user32.dll")]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-        [DllImport("user32.dll")]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern int GetWindowTextLength(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsIconic(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        private const int SW_RESTORE = 9;
-
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-        #endregion
     }
 }

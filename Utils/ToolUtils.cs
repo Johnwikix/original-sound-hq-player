@@ -26,6 +26,13 @@ namespace WinUIMusicPlayer.Utils
             RandomLoop
         }
 
+        public static Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            return Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+        }
+
         public static T FindParent<T>(DependencyObject child) where T : DependencyObject
         {
             DependencyObject parent = VisualTreeHelper.GetParent(child);

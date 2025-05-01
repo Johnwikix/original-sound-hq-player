@@ -321,30 +321,27 @@ namespace WinUIMusicPlayer.View
                         var mainWindow = (App.MainWindow as MainWindow);
                         if (mainWindow != null)
                         {
-                            if (mainWindow.current.Content is FrameworkElement rootElement)
+                            switch (radioButton.Tag.ToString())
                             {
-                                switch (radioButton.Tag.ToString())
-                                {
-                                    case "Default":
-                                        AppSettings.AppTheme = "Default";
-                                        AppSettings.elementTheme = ElementTheme.Default;
-                                        break;
-                                    case "Dark":
-                                        AppSettings.AppTheme = "Dark";
-                                        AppSettings.elementTheme = ElementTheme.Dark;
-                                        break;
-                                    case "Light":
-                                        AppSettings.AppTheme = "Light";
-                                        AppSettings.elementTheme = ElementTheme.Light;
-                                        break;
-                                    default:
-                                        AppSettings.AppTheme = "Default";
-                                        AppSettings.elementTheme = ElementTheme.Default;
-                                        break;
-                                }
-                                mainWindow.SetAppTheme();
-                                _ = SaveSetting();
+                                case "Default":
+                                    AppSettings.AppTheme = "Default";
+                                    AppSettings.elementTheme = ElementTheme.Default;
+                                    break;
+                                case "Dark":
+                                    AppSettings.AppTheme = "Dark";
+                                    AppSettings.elementTheme = ElementTheme.Dark;
+                                    break;
+                                case "Light":
+                                    AppSettings.AppTheme = "Light";
+                                    AppSettings.elementTheme = ElementTheme.Light;
+                                    break;
+                                default:
+                                    AppSettings.AppTheme = "Default";
+                                    AppSettings.elementTheme = ElementTheme.Default;
+                                    break;
                             }
+                            mainWindow.SetAppTheme();
+                            _ = SaveSetting();
                         }
                     }
                 }

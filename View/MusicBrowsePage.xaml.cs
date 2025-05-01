@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
@@ -200,9 +201,10 @@ namespace WinUIMusicPlayer.View
 
         private void InitializeAppWindow()
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
-            appWindow = AppWindow.GetFromWindowId(windowId);
+            //var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            //windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+            //appWindow = AppWindow.GetFromWindowId(windowId);
+            appWindow = ToolUtils.GetAppWindowForCurrentWindow(App.MainWindow);
         }
 
         private void InitializeTimer()

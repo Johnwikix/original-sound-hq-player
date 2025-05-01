@@ -10,6 +10,7 @@ using TagLib;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -34,8 +35,8 @@ namespace WinUIMusicPlayer.View.SubView
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
-        public MusicDetailsWindow current;
         private AppWindow musicDetailAppWindow;
+        private ThemeStyleHelper themeStyleHelper;
         private MainWindow mainWindow;
         public MusicDetailsWindow(Music music)
         {
@@ -45,9 +46,9 @@ namespace WinUIMusicPlayer.View.SubView
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
             InitalizeData(music);
-            current = this;
-            SetAppStyle();
-            SetAppTheme();
+            themeStyleHelper = new ThemeStyleHelper(this, musicDetailAppWindow);
+            themeStyleHelper.SetAppStyle();
+            themeStyleHelper.SetAppTheme();
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
@@ -63,60 +64,6 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 mainWindow.themeChanged -= MainWindow_themeChanged;
                 mainWindow.styleChanged -= MainWindow_styleChanged;
-            }
-        }
-
-        public void SetAppStyle()
-        {
-            switch (AppSettings.AppStyle)
-            {
-                case "Acrylic":
-                    SystemBackdrop = new DesktopAcrylicBackdrop();
-                    break;
-                case "Mica":
-                    SystemBackdrop = new MicaBackdrop();
-                    break;
-                default:
-                    SystemBackdrop = new DesktopAcrylicBackdrop();
-                    break;
-            }
-        }
-
-        public void SetAppTheme()
-        {
-            Microsoft.UI.Windowing.AppWindowTitleBar m_TitleBar = musicDetailAppWindow.TitleBar;
-            if (current.Content is FrameworkElement rootElement)
-            {
-                switch (AppSettings.AppTheme)
-                {
-                    case "Default":
-                        m_TitleBar.ButtonForegroundColor = null;
-                        m_TitleBar.ButtonHoverForegroundColor = null;
-                        m_TitleBar.ButtonPressedForegroundColor = null;
-                        m_TitleBar.ButtonHoverBackgroundColor = null;
-                        m_TitleBar.ButtonPressedBackgroundColor = null;
-                        rootElement.RequestedTheme = ElementTheme.Default;
-                        break;
-                    case "Dark":
-                        rootElement.RequestedTheme = ElementTheme.Dark;
-                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
-                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 50, 50, 50);
-                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 80, 80, 80);
-                        break;
-                    case "Light":
-                        rootElement.RequestedTheme = ElementTheme.Light;
-                        m_TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
-                        m_TitleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(255, 220, 220, 220);
-                        m_TitleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(255, 190, 190, 190);
-                        break;
-                    default:
-                        rootElement.RequestedTheme = ElementTheme.Default;
-                        break;
-                }
             }
         }
 
@@ -137,11 +84,11 @@ namespace WinUIMusicPlayer.View.SubView
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {
-            SetAppStyle();
+            themeStyleHelper.SetAppStyle();
         }
         private void MainWindow_themeChanged(object? sender, EventArgs e)
         {
-            SetAppTheme();
+            themeStyleHelper.SetAppTheme();
         }
 
         private async void InitalizeData(Music music)
