@@ -140,7 +140,6 @@ namespace WinUIMusicPlayer.Services
                             BitDepth = m.BitDepth,
                             BitRate = m.BitRate,
                             SampleRate = m.SampleRate,
-                            //Channel = m.Channel,
                             isFavorite = m.isFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
@@ -180,7 +179,6 @@ namespace WinUIMusicPlayer.Services
                             BitDepth = m.BitDepth,
                             BitRate = m.BitRate,
                             SampleRate = m.SampleRate,
-                            //Channel = m.Channel,
                             isFavorite = m.isFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
@@ -390,14 +388,6 @@ namespace WinUIMusicPlayer.Services
         public static async Task<List<Music>> GetMusicListAsync()
         {
             var query = _dbConnection.Table<Music>();
-            //if (!string.IsNullOrEmpty(search))
-            //{
-            //    query = query.Where(m =>
-            //        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-            //        m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
-            //        m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-            //    );
-            //}
             return await query.OrderBy(m => m.Title).ToListAsync();
         }
 
@@ -446,19 +436,6 @@ namespace WinUIMusicPlayer.Services
             }
             return query.OrderByDescending(m => m.Order).ToList();
         }
-
-        //public static async Task<List<Music>> GetArtistMusicAsync(string artist, string search = null)
-        //{
-        //    var query = _dbConnection.Table<Music>().Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
-        //    if (!string.IsNullOrEmpty(search))
-        //    {
-        //        query = query.Where(m =>
-        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-        //            m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-        //        );
-        //    }
-        //    return await query.OrderBy(m => m.Album).ToListAsync();
-        //}
 
         public static List<Music> GetArtistMusicFromMem(string artist, string search = null)
         {
@@ -513,7 +490,7 @@ namespace WinUIMusicPlayer.Services
         }
 
 
-        public static async Task<SavePlayState> GetPlayStateAsync()
+        public static async Task GetPlayStateAsync()
         {
             var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
             if (playState == null)
@@ -527,7 +504,9 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playState);
             }
-            return playState;
+            AppData.PlayMode = playState.PlayMode;
+            AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
+            AppData.Volume = playState.Volume;
         }
 
         public static async Task GetSettingsAsync()
@@ -758,7 +737,6 @@ namespace WinUIMusicPlayer.Services
             existingMusic.Album = newMusic.Album;
             existingMusic.FolderPath = newMusic.FolderPath;
             existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
-            //existingMusic.Extension = newMusic.Extension;
             existingMusic.BitDepth = newMusic.BitDepth;
             existingMusic.BitRate = newMusic.BitRate;
             existingMusic.SampleRate = newMusic.SampleRate;
@@ -767,47 +745,6 @@ namespace WinUIMusicPlayer.Services
             existingMusic.TrackNumber = newMusic.TrackNumber;
             await _dbConnection.UpdateAsync(existingMusic);
         }
-
-        //public static async Task RescanLastLevelFolder(string folderPath) {
-        //    List<Music> musics = await _dbConnection.Table<Music>().Where(f => f.FolderPath == folderPath).ToListAsync();
-        //    var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-        //    List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-        //    List<string> filePaths = files.Select(file => file.Path).ToList();
-        //    List<string> musicPaths = musics.Select(music => music.Path).ToList();
-        //    var filesNotInMusics = filePaths.Except(musicPaths).ToList();
-        //    var musicsNotInFiles = musicPaths.Except(filePaths).ToList();
-        //    if (musicsNotInFiles.Count > 0) {
-        //        foreach (var music in musicsNotInFiles)
-        //        {
-        //            var musicToDelete = await _dbConnection.Table<Music>().Where(m => m.Path == music).FirstOrDefaultAsync();
-        //            if (musicToDelete != null)
-        //            {
-        //                await _dbConnection.DeleteAsync(musicToDelete);
-        //            }
-        //            musics.Remove(musicToDelete);
-        //        }
-        //    }
-        //    if (filesNotInMusics.Count > 0) {
-        //        foreach (var file in filesNotInMusics)
-        //        {
-        //            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(file);
-        //            Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
-        //            await _dbConnection.InsertAsync(music);
-        //        }
-        //    }
-        //    HashSet<string> pathSet = new HashSet<string>(musicsNotInFiles);
-
-        //    // 过滤Music列表，排除Path存在于pathSet中的项
-        //    List<Music> filteredList = musics
-        //        .Where(m => !pathSet.Contains(m.Path))
-        //        .ToList();            
-        //    foreach (Music music in filteredList) {
-        //        if (IsMusicFile(music.Extension)) {
-        //            await updateMusic(music, music.FolderPath);
-        //        }                
-        //    }
-           
-        //}
 
         public static async Task RescanFolder(int folderId)
         {
@@ -864,21 +801,6 @@ namespace WinUIMusicPlayer.Services
                 else
                 {
                     await updateMusic(newMusic, folder.Path);
-                    //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
-                    //var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == newMusic.Path).FirstOrDefaultAsync();
-                    //Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-                    //existingMusic.Title = music.Title;
-                    //existingMusic.Author = music.Author;
-                    //existingMusic.Duration = music.Duration;
-                    //existingMusic.Album = music.Album;
-                    //existingMusic.Extension = newMusic.Extension;
-                    //existingMusic.BitDepth = music.BitDepth;
-                    //existingMusic.BitRate = music.BitRate;
-                    //existingMusic.SampleRate = music.SampleRate;
-                    //existingMusic.Channel = music.Channel;
-                    //existingMusic.Lyrics = music.Lyrics;
-                    //existingMusic.TrackNumber = music.TrackNumber;
-                    //await _dbConnection.UpdateAsync(existingMusic);
                     filePaths.Remove(newMusic.Path);
                 }
             }
@@ -902,8 +824,6 @@ namespace WinUIMusicPlayer.Services
             if (mainWindow != null)
             {
                 mainWindow.UpdateMusicList();
-                //await mainWindow.LoadMusicList();
-                //await mainWindow.LoadFavourMusicList();
             }
         }
     }

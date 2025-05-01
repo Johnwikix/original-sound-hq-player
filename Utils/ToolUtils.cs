@@ -96,25 +96,6 @@ namespace WinUIMusicPlayer.Utils
                 if (maxSize != 0)
                 {
                     setBitmapSize(bitmapImage, maxSize);
-                    //bitmapImage.ImageOpened += (sender, args) =>
-                    //{
-                    //    double originalWidth = bitmapImage.PixelWidth;
-                    //    double originalHeight = bitmapImage.PixelHeight;
-                    //    double aspectRatio = originalWidth / originalHeight;
-                    //    int newWidth, newHeight;
-                    //    if (originalWidth > originalHeight)
-                    //    {
-                    //        newWidth = maxSize;
-                    //        newHeight = (int)(maxSize / aspectRatio);
-                    //    }
-                    //    else
-                    //    {
-                    //        newHeight = maxSize;
-                    //        newWidth = (int)(maxSize * aspectRatio);
-                    //    }
-                    //    bitmapImage.DecodePixelWidth = newWidth;
-                    //    bitmapImage.DecodePixelHeight = newHeight;
-                    //};
                 }
 
                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());

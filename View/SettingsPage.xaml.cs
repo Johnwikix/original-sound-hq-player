@@ -27,7 +27,6 @@ namespace WinUIMusicPlayer.View
         public SettingsPage()
         {
             this.InitializeComponent();
-            DateTime dateTime = DateTime.Now;
             InitializeSettings();
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
@@ -49,7 +48,6 @@ namespace WinUIMusicPlayer.View
                 this.mainWindow = _mainWindow;
                 if (mainWindow != null)
                 {
-                    DateTime dateTime = DateTime.Now;
                     await mainWindow.RefreshDevice();
                 }
             }

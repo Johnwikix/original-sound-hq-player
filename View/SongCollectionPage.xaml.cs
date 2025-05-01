@@ -148,14 +148,6 @@ namespace WinUIMusicPlayer.View
                     MusicListView.SelectedItem = selectedMusic;
                     MusicListView.ScrollIntoView(selectedMusic);
                 }
-                //if (parentPage != null)
-                //{
-                //    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
-                //    {
-                //        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
-                //        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
-                //    }
-                //}
             }
             catch (Exception ex)
             {
@@ -218,15 +210,6 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    //musicList.Remove(selectedMusic);
-            //    await MusicDatabaseService.RemoveMusic(selectedMusic.Id);
-            //    if (parentPage != null)
-            //    {
-            //        parentPage.MainWindow_updateMusicList(null, null);
-            //    }
-            //}
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -246,10 +229,6 @@ namespace WinUIMusicPlayer.View
                     await parentPage.AddToFavourite(selectedMusic);
                 }
             }
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    await parentPage.AddToFavourite(selectedMusic);
-            //}
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -334,28 +313,6 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-            //var menuItem = sender as MenuFlyoutItem;
-            //if (menuItem != null && menuItem.Tag.ToString() != null)
-            //{
-            //    if (MusicListView.SelectedItem is Music selectedMusic)
-            //    {
-            //        int progressBarValue = 0;
-            //        progressDialog.RequestedTheme = AppSettings.elementTheme;
-            //        progressDialog.UpdateProgress(progressBarValue);
-            //        converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
-            //        converterService.updateProgress += (sender, progress) =>
-            //        {
-            //            progressBarValue = (int)progress;
-            //            progressDialog.UpdateProgress(progressBarValue);
-            //        };
-            //        if (progressBarValue < 100)
-            //        {
-            //            progressDialog.XamlRoot = this.XamlRoot;
-            //            progressDialog.ShowAsync();
-            //        }
-
-            //    }
-            //}
         }
 
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
@@ -420,9 +377,6 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-            //musicList = new ObservableCollection<Music>(ToolUtils.UpdateMusicInList(musicList.ToList(), music));
-            //MusicListView.ItemsSource = musicList;
-            //UpdateMusicListView();
         }
 
         private List<Music> GetUniqueSelectedItems()
@@ -504,52 +458,6 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-            //var targetElement = e.OriginalSource as FrameworkElement;
-            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            //if (listViewItem != null)
-            //{
-            //    listViewItem.IsSelected = true;
-            //    MusicListView.SelectedItem = listViewItem.Content;
-
-            //    // 获取音乐对象
-            //    var musicItem = listViewItem.Content as Model.Music;
-
-            //    // 获取右键菜单
-            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
-            //    {
-            //        // 为菜单项设置DataContext
-            //        foreach (var menuItem in flyout.Items)
-            //        {
-            //            menuItem.DataContext = musicItem;
-            //        }
-
-            //        // 找到“添加到播放列表”子菜单
-            //        var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
-
-            //        // 清空之前的菜单项
-            //        addToPlaylistSubItem.Items.Clear();
-
-            //        // 从数据库获取播放列表
-            //        var playlists = await MusicDatabaseService.GetPlayListAsync();
-
-            //        // 为每个播放列表添加菜单项
-            //        foreach (var playlist in playlists)
-            //        {
-            //            var menuItem = new MenuFlyoutItem
-            //            {
-            //                Text = playlist.Name
-            //            };
-            //            menuItem.Click += async (s, args) =>
-            //            {
-            //                if (musicItem != null)
-            //                {
-            //                    await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
-            //                }
-            //            };
-            //            addToPlaylistSubItem.Items.Add(menuItem);
-            //        }
-            //    }
-            //}
         }
     }
 }
