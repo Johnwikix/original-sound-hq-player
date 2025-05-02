@@ -22,8 +22,8 @@ namespace WinUIMusicPlayer.Model
         public static string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public static string LrcAPIAuth { get; set; }
         public static bool isDsd { get; set; } = false;
-        public static string AppStyle { get; set; } = "Acrylic";
-        public static string AppTheme { get; set; } = "Default";
+        public static string AppStyle { get; set; } = "TransparentAcrylic";
+        public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = false;
         public static int maxCoverPreLoadNum { get; set; } = 100;

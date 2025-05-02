@@ -36,7 +36,7 @@ namespace WinUIMusicPlayer.Helper
                         var customAcrylic = new CustomAcrylicSystemBackdrop
                         {
                             TintOpacity = 0,
-                            LuminosityOpacity = 0.1,
+                            LuminosityOpacity = 0.15,
                             TintColor = Color.FromArgb(255,0,0,0)
                         };
                         _window.SystemBackdrop = customAcrylic;

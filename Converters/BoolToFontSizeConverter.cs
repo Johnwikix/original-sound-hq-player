@@ -8,7 +8,7 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            return (bool)value ? 20.0 : 16.0;
+            return (bool)value ? 24.0 : 18.0;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

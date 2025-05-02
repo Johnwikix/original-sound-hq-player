@@ -117,21 +117,21 @@
                             <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
                         </TransitionCollection>
                     </StackPanel.Transitions>
-                    <TextBlock x:Name="PlayingDetailTitleTextBlock" Tapped="PlayingDetailTitleTextBlock_Tapped" Margin="5 0 5 5" FontSize="30" FontWeight="Bold" TextWrapping="WrapWholeWords">
+                    <TextBlock x:Name="PlayingDetailTitleTextBlock" Tapped="PlayingDetailTitleTextBlock_Tapped" Margin="5 0 5 5" FontSize="36" FontWeight="Bold" TextWrapping="WrapWholeWords">
                         <TextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                             </TransitionCollection>
                         </TextBlock.Transitions>
                     </TextBlock>
-                    <TextBlock x:Name="PlayingDetailAlbumTextBlock" Tapped="PlayingDetailAlbumTextBlock_Tapped" Margin="5" FontSize="20" TextWrapping="WrapWholeWords">
+                    <TextBlock x:Name="PlayingDetailAlbumTextBlock" Tapped="PlayingDetailAlbumTextBlock_Tapped" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
                         <TextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                             </TransitionCollection>
                         </TextBlock.Transitions>
                     </TextBlock>
-                    <TextBlock x:Name="PlayingDetailArtistTextBlock" Tapped="PlayingDetailArtistTextBlock_Tapped" Margin="5" FontSize="20" TextWrapping="WrapWholeWords">
+                    <TextBlock x:Name="PlayingDetailArtistTextBlock" Tapped="PlayingDetailArtistTextBlock_Tapped" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
                         <TextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -143,14 +143,14 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="PlayingDetailMusicInfoTextBlock" FontSize="14" Margin="0,0,10,0">
+                        <TextBlock Grid.Column="0" x:Name="PlayingDetailMusicInfoTextBlock" FontSize="15" Margin="0,0,10,0">
                             <TextBlock.Transitions>
                                 <TransitionCollection>
                                     <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                                 </TransitionCollection>
                             </TextBlock.Transitions>
                         </TextBlock>
-                        <Image x:Name="PlayingDetailHRImage" Height="12" Grid.Column="1">
+                        <Image x:Name="PlayingDetailHRImage" Height="13" Grid.Column="1">
                             <Image.Transitions>
                                 <TransitionCollection>
                                     <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />

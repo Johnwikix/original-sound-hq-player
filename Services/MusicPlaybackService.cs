@@ -361,31 +361,45 @@ namespace WinUIMusicPlayer.Services
 
         public void OutputDeviceChange()
         {
-            using (var enumerator = new NAudio.CoreAudioApi.MMDeviceEnumerator())
+            selectedDevice = null;
+            using (var enumerator = new MMDeviceEnumerator())
             {
-                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                if (AppSettings.DeviceName != null)
+                try
                 {
-                    foreach (var device in devices)
+                    if (AppSettings.DeviceName != null)
                     {
-                        if (device.FriendlyName == AppSettings.DeviceName)
+                        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                        foreach (var device in devices)
                         {
-                            selectedDevice = device;
-                            break;
+                            if (device.FriendlyName == AppSettings.DeviceName)
+                            {
+                                selectedDevice = device;
+                                break;
+                            }
                         }
                     }
+
+                    // 如果未找到指定名称的设备，则使用系统默认设备
+                    if (selectedDevice == null)
+                    {
+                        selectedDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                        AppSettings.DeviceName = selectedDevice.FriendlyName;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    selectedDevice = devices[0];
+                    Console.WriteLine($"获取音频设备时出错: {ex.Message}");
+                    selectedDevice = null;
                 }
             }
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
+        
 
         public void CScoreOutputDevice()
         {
+            csCoreMMdevice = null;
             using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
             {
                 using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
@@ -400,11 +414,12 @@ namespace WinUIMusicPlayer.Services
                                 break;
                             }
                         }
-                    }
-                    else
-                    {
-                        csCoreMMdevice = devices[0];
-                    }
+                    }                    
+                }
+                if (selectedDevice == null)
+                {
+                    csCoreMMdevice = csCoreEnumerator.GetDefaultAudioEndpoint(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.Role.Multimedia);
+                    AppSettings.DeviceName = csCoreMMdevice.FriendlyName;
                 }
             }
             GC.Collect();
@@ -413,6 +428,7 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
+            var device = selectedDevice;
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
@@ -540,6 +556,10 @@ namespace WinUIMusicPlayer.Services
                     catch (Exception e)
                     {
                         Debug.WriteLine(e.Message);
+                        Reset();
+                        OutputDeviceChange();
+                        CScoreOutputDevice();
+                        return false;
                     }
                 }
                 else
@@ -560,6 +580,10 @@ namespace WinUIMusicPlayer.Services
                         //wasapiOut.Initialize(ffmpegDecoder);
                         //wasapiOut.Volume = volume;
                         notificationService.SendNotification("DSD独占播放失败", "请尝试切换至共享模式");
+                        Reset();
+                        OutputDeviceChange();
+                        CScoreOutputDevice();
+                        return false;
                     }
                 }
                 return true;
@@ -658,6 +682,11 @@ namespace WinUIMusicPlayer.Services
                     System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                     Reset();
                 }
+            }
+            else {
+                Reset();
+                OutputDeviceChange();
+                CScoreOutputDevice();
             }
         }
 

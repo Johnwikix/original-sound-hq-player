@@ -14,8 +14,8 @@ namespace WinUIMusicPlayer.Model
         public string DefualtPlayList { get; set; }
         public string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public string LrcAPIAuth { get; set; }
-        public string AppStyle { get; set; }
-        public string AppTheme { get; set; }
+        public string AppStyle { get; set; } = "TransparentAcrylic";
+        public string AppTheme { get; set; } = "Dark";
         public bool isCoverCacheEnabled { get; set; } = false;
         public int maxCoverPreLoadNum { get; set; } = 100;
         public bool isRunningBackend { get; set; } = true;
