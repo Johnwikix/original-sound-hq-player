@@ -2,11 +2,17 @@
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.Media.Playlists;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -28,6 +34,8 @@ namespace WinUIMusicPlayer.Services
         public static EventHandler<Music> playingFolderMusic;
         //public static EventHandler rescanFolderStart;
         public static EventHandler rescanFolderEnd;
+        public static EventHandler hideTransmission;
+        public static EventHandler showTransmission;
 
         /// <summary>
         /// 创建并显示右键菜单
@@ -59,18 +67,6 @@ namespace WinUIMusicPlayer.Services
             {
                 Text = "添加到播放列表"
             };
-            if (type == "folder")
-            {
-
-                MenuFlyoutItem rescanItem = new MenuFlyoutItem
-                {
-                    Text = "重新扫描",
-                    DataContext = item
-                };
-                rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
-                flyout.Items.Add(rescanItem);
-            }
-
             // 获取所有播放列表
             List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
             foreach (PlayList playlist in playlists)
@@ -83,8 +79,35 @@ namespace WinUIMusicPlayer.Services
                 menuItem.Click += (sender, e) => AddToPlaylistMenuItem_Click(sender, e, type);
                 playlistSubItem.Items.Add(menuItem);
             }
-
             flyout.Items.Add(playlistSubItem);
+            MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
+            {
+                Text = "发送至usb设备"
+            };
+
+            List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+            foreach (var device in usbStorageDevices)
+            {
+                MenuFlyoutItem usbDeviceItem = new MenuFlyoutItem
+                {
+                    Text = $"路径：{device.Path}，剩余容量：{device.FreeSpaceInGB}GB",
+                    DataContext = new { MusicItem = item, UsbStorageDevice = device }
+                };
+                usbDeviceItem.Click += (sender, e) => SendMusicToUsbDevice_Click(sender, e, type);
+                usbDeviceSubItem.Items.Add(usbDeviceItem);
+            }
+            flyout.Items.Add(usbDeviceSubItem);
+            if (type == "folder")
+            {
+
+                MenuFlyoutItem rescanItem = new MenuFlyoutItem
+                {
+                    Text = "重新扫描",
+                    DataContext = item
+                };
+                rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
+                flyout.Items.Add(rescanItem);
+            }
 
             if (type == "album")
             {
@@ -99,6 +122,40 @@ namespace WinUIMusicPlayer.Services
             flyout.ShowAt(targetElement, position);
 
         }
+
+        private async void SendMusicToUsbDevice_Click(object sender, RoutedEventArgs e, string type)
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var data = menuItem.DataContext as dynamic;
+            Music item = data.MusicItem as Music;
+            UsbStorageDevice device = data.UsbStorageDevice;
+            if (item != null)
+            {
+                List<Music> musicList = new List<Music>();
+                if (type == "album")
+                {
+                    musicList = await MusicDatabaseService.FindMusicListByAlbum(item.Album);
+                }
+                if (type == "artist")
+                {
+                    musicList = await MusicDatabaseService.FindMusicListByArtist(item.Author);
+                }
+                if (type == "folder")
+                {
+                    musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
+                }
+                if (musicList != null && musicList.Count > 0)
+                {
+                    showTransmission?.Invoke(this, EventArgs.Empty);
+                    var usbWriter = new UsbWriterHelper();
+                    usbWriter.hideTransmission += (s, e) =>
+                    {
+                        hideTransmission?.Invoke(this, EventArgs.Empty);
+                    };
+                    _ = usbWriter.WriteToUsb(musicList, device);
+                }
+            }
+        }     
 
         private void Play_Click(object sender, RoutedEventArgs e, string type)
         {

@@ -182,6 +182,20 @@ namespace WinUIMusicPlayer.View
                         "album"
                     );
                     ContextMenuService.playingAlbumMusic += PlayingAlbum;
+                    ContextMenuService.showTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.ShowTransmission();
+                        }
+                    };
+                    ContextMenuService.hideTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.HideTransmission();
+                        }
+                    };
                 }
             }
             e.Handled = true;

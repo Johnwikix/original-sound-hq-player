@@ -16,5 +16,7 @@ namespace WinUIMusicPlayer.Model
         public static float Volume { get; set; } = 0.5f;
 
         public static string searchText = string.Empty;
+
+        public static List<UsbStorageDevice> usbStorageDevices = new List<UsbStorageDevice>();
     }
 }

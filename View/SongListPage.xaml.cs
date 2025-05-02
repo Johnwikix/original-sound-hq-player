@@ -9,7 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -337,7 +339,7 @@ namespace WinUIMusicPlayer.View
                     listViewItem.IsSelected = true;
                     MusicListView.SelectedItem = musicItem;
                 }
-                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();                
                 // …Ë÷√”“º¸≤Àµ•
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
@@ -375,6 +377,42 @@ namespace WinUIMusicPlayer.View
                             }
                         };
                         addToPlaylistSubItem.Items.Add(menuItem);
+                    }
+                    List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                    var usbDeviceSubItem = flyout.Items[4] as MenuFlyoutSubItem;                    
+                    usbDeviceSubItem.Items.Clear();
+                    foreach (var usbDevice in usbDevices)
+                    {
+                        var menuItem = new MenuFlyoutItem
+                        {
+                            Text = $"¬∑æ∂£∫{usbDevice.Path}£¨ £”‡»›¡ø£∫{usbDevice.FreeSpaceInGB}GB",
+                            Tag = usbDevice.Path
+                        };
+                        menuItem.Click += async (s, args) =>
+                        {
+                            if (uniqueSelectedMusics.Count > 1)
+                            {
+                                parentPage.ShowTransmission();
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                   parentPage.HideTransmission();                                        
+                                };
+                                _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);                              
+                            }
+                            else if (musicItem != null)
+                            {
+                                parentPage.ShowTransmission();
+                                List<Music> musicItems = new List<Music> { musicItem };
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                   parentPage.HideTransmission();                                  
+                                };
+                                _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                            }
+                        };
+                        usbDeviceSubItem.Items.Add(menuItem);
                     }
                 }
             }

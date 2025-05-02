@@ -31,6 +31,8 @@
                             <MenuFlyoutItem Text="MP3" Tag="mp3" Click="ConvertAudio_Click"></MenuFlyoutItem>
                             <MenuFlyoutItem Text="Flac" Tag="flac" Click="ConvertAudio_Click"></MenuFlyoutItem>
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutSubItem Text="发送到" Tag="usbDevices">
+                        </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
                         <MenuFlyoutItem Text="属性" Click="MusicDetail_Click"/>
                         <MenuFlyoutItem Text="删除" Click="DeleteMenuItem_Click"/>

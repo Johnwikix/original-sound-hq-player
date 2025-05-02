@@ -188,6 +188,20 @@ namespace WinUIMusicPlayer.View
                     );
                     ContextMenuService.playingFolderMusic += PlayingFolder;
                     ContextMenuService.rescanFolderEnd += RescanFolderEnd;
+                    ContextMenuService.showTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.ShowTransmission();
+                        }
+                    };
+                    ContextMenuService.hideTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.HideTransmission();
+                        }
+                    };
                 }
             }
 

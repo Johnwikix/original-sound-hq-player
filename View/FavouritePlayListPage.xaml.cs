@@ -9,7 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -116,8 +118,6 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(music);
                 }
-                //musicList = new ObservableCollection<Music>(musics);
-                //MusicListView.ItemsSource = musicList;
                 UpdateMusicListView();
             }
             catch (Exception ex)
@@ -143,7 +143,6 @@ namespace WinUIMusicPlayer.View
             int maxOrder = musicList.Any() ? musicList.Max(m => m.Order) : 0;
             newMusic.Order = maxOrder + 1;
             musicList.Insert(0, newMusic);
-            //MusicListView.ItemsSource = musicList;
         }
 
         private void RemoveMusic(Music musicToRemove)
@@ -152,7 +151,6 @@ namespace WinUIMusicPlayer.View
             if (music != null)
             {
                 musicList.Remove(music);
-                //MusicListView.ItemsSource = musicList;
             }
         }
 
@@ -176,14 +174,6 @@ namespace WinUIMusicPlayer.View
                         MusicListView.ScrollIntoView(selectedMusic);
                     }
                 }
-                //if (parentPage != null)
-                //{
-                //    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
-                //    {
-                //        MusicListView.SelectedItem = parentPage.musicPlaybackService.currentPlayingMusic;
-                //        MusicListView.ScrollIntoView(parentPage.musicPlaybackService.currentPlayingMusic);
-                //    }
-                //}
             }
             catch (Exception ex)
             {
@@ -218,11 +208,6 @@ namespace WinUIMusicPlayer.View
                     await parentPage.PlayMusic(selectedMusic);
                 }
             }
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
-            //    await parentPage.PlayMusic(selectedMusic);
-            //}
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -433,6 +418,42 @@ namespace WinUIMusicPlayer.View
                             }
                         };
                         addToPlaylistSubItem.Items.Add(menuItem);
+                    }
+                    List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                    var usbDeviceSubItem = flyout.Items[4] as MenuFlyoutSubItem;
+                    usbDeviceSubItem.Items.Clear();
+                    foreach (var usbDevice in usbDevices)
+                    {
+                        var menuItem = new MenuFlyoutItem
+                        {
+                            Text = $"Â·¾¶£º{usbDevice.Path}£¬Ê£ÓàÈÝÁ¿£º{usbDevice.FreeSpaceInGB}GB",
+                            Tag = usbDevice.Path
+                        };
+                        menuItem.Click += async (s, args) =>
+                        {
+                            if (uniqueSelectedMusics.Count > 1)
+                            {
+                                parentPage.ShowTransmission();
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                    parentPage.HideTransmission();
+                                };
+                                _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                            }
+                            else if (musicItem != null)
+                            {
+                                parentPage.ShowTransmission();
+                                List<Music> musicItems = new List<Music> { musicItem };
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                    parentPage.HideTransmission();
+                                };
+                                _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                            }
+                        };
+                        usbDeviceSubItem.Items.Add(menuItem);
                     }
                 }
             }

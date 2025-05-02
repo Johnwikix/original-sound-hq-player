@@ -132,11 +132,12 @@ namespace WinUIMusicPlayer.View
 
         private async void LoadLyricsToUI(string lyricsContent)
         {
-            _uiLyrics.Clear();
+            //_uiLyrics.Clear();
             // 设置播放服务中的歌词
             await musicPlaybackService.SetLyrics(lyricsContent);
             // 解析歌词并添加到UI集合
             List<LyricLine> parsedLyrics = await musicPlaybackService.ParseLrcLyrics(lyricsContent);
+            _uiLyrics.Clear();
             foreach (var lyric in parsedLyrics)
             {
                 _uiLyrics.Add(lyric);
@@ -201,9 +202,6 @@ namespace WinUIMusicPlayer.View
 
         private void InitializeAppWindow()
         {
-            //var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            //windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
-            //appWindow = AppWindow.GetFromWindowId(windowId);
             appWindow = ToolUtils.GetAppWindowForCurrentWindow(App.MainWindow);
         }
 
@@ -252,6 +250,16 @@ namespace WinUIMusicPlayer.View
             };
         }
 
+        public void ShowTransmission()
+        {
+            Transmission.Visibility = Visibility.Visible;
+        }
+
+        public void HideTransmission()
+        {
+            Transmission.Visibility = Visibility.Collapsed;
+        }
+
         public void DisableBackButton()
         {
             if (currentPage == typeof(SongCollectionPage) || currentPage == typeof(PlayListSongPage))
@@ -263,21 +271,6 @@ namespace WinUIMusicPlayer.View
                 BackButton.IsEnabled = false;
             }
         }
-
-        //private void MainWindow_PlayMusicListLoaded(object? sender, List<Music> musics)
-        //{
-        //    musicPlaybackService.musicList = musics;
-        //    //当没有播放列表时，默认播放列表为当前列表
-        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-        //    {
-        //        musicPlaybackService.currentPlayingList = musics;
-        //    }
-        //    //var playListSongPage = ContentFrame.Content as PlayListSongPage;
-        //    //if (playListSongPage != null)
-        //    //{
-        //    //    playListSongPage.LoadMusicAsync(musics);
-        //    //}
-        //}
 
         private void MusicPlaybackService_updateProgressMax(object? sender, double max)
         {
@@ -357,58 +350,6 @@ namespace WinUIMusicPlayer.View
             await PlayMusic(music);
         }
 
-        //private void MainWindow_FavourListLoaded(object? sender, List<Music> musics)
-        //{
-        //    musicPlaybackService.musicList = musics;
-        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-        //    {
-        //        musicPlaybackService.currentPlayingList = musics;
-        //    }
-        //    var favouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
-        //    if (favouritePlayListPage != null)
-        //    {
-        //        favouritePlayListPage.LoadMusicAsync(musics);
-        //    }
-        //}
-
-        //private async void MainWindow_SongCollecionLoaded(object sender, List<Music> musics)
-        //{
-        //    musicPlaybackService.musicList = musics;
-        //    if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-        //    {
-        //        musicPlaybackService.currentPlayingList = musics;
-        //    }
-        //    //var songCollectionPage = ContentFrame.Content as SongCollectionPage;
-        //    //if (songCollectionPage != null)
-        //    //{
-        //    //    await songCollectionPage.LoadMusicAsync(musics, pageType);
-        //    //}
-        //}
-
-        //private void MainWindow_MusicListLoaded(object sender, List<Music> musics)
-        //{
-        //    try
-        //    {
-        //        musicPlaybackService.musicList = musics;
-        //        if (musicPlaybackService.currentPlayingList == null || musicPlaybackService.currentPlayingList.Count == 0)
-        //        {
-        //            musicPlaybackService.currentPlayingList = musics;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载歌曲列表失败: {ex.Message}");
-        //    }
-        //}
-
-        //public async Task LoadPlayList()
-        //{
-        //    if (mainWindow != null)
-        //    {
-        //        await mainWindow.LoadPlayList();
-        //    }
-        //}
-
         public async void LoadPlayListSong(PlayList playList)
         {
             pageType = "playlist";
@@ -418,22 +359,6 @@ namespace WinUIMusicPlayer.View
             currentPage = typeof(PlayListSongPage);
             ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
-        //public async Task LoadMusic()
-        //{
-
-        //    if (mainWindow != null)
-        //    {
-        //        await mainWindow.LoadMusicList(SearchTextBox.Text);
-        //    }
-        //}
-
-        //public async Task LoadFavouriteMusic()
-        //{
-        //    if (mainWindow != null)
-        //    {
-        //        await mainWindow.LoadFavourMusicList(SearchTextBox.Text);
-        //    }
-        //}
 
         public async void LoadAlbumMusic(string Album)
         {
@@ -1278,21 +1203,6 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-        }
-
-        private void SearchTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            //if (e.Key == Windows.System.VirtualKey.Enter)
-            //{
-            //    GC.Collect();
-            //    GC.WaitForPendingFinalizers();
-            //    AppData.searchText = SearchTextBox.Text;
-            //    if (ContentFrame != null && ContentFrame.Content != null)
-            //    {
-            //        refreshPage?.Invoke(this, EventArgs.Empty);
-            //        refreshSong?.Invoke(this, EventArgs.Empty);
-            //    }
-            //}
         }
 
         private async void AlbumCoverImage_Tapped(object sender, TappedRoutedEventArgs e)

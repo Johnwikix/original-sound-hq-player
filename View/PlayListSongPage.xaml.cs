@@ -9,7 +9,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -332,7 +334,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
@@ -365,28 +367,44 @@ namespace WinUIMusicPlayer.View
                     {
                         menuItem.DataContext = musicItem;
                     }
+                    List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                    var usbDeviceSubItem = flyout.Items[3] as MenuFlyoutSubItem;
+                    usbDeviceSubItem.Items.Clear();
+                    foreach (var usbDevice in usbDevices)
+                    {
+                        var menuItem = new MenuFlyoutItem
+                        {
+                            Text = $"路径：{usbDevice.Path}，剩余容量：{usbDevice.FreeSpaceInGB}GB",
+                            Tag = usbDevice.Path
+                        };
+                        menuItem.Click += async (s, args) =>
+                        {
+                            if (uniqueSelectedMusics.Count > 1)
+                            {
+                                parentPage.ShowTransmission();
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                    parentPage.HideTransmission();
+                                };
+                                _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                            }
+                            else if (musicItem != null)
+                            {
+                                parentPage.ShowTransmission();
+                                List<Music> musicItems = new List<Music> { musicItem };
+                                var usbWriter = new UsbWriterHelper();
+                                usbWriter.hideTransmission += (sender, args) =>
+                                {
+                                    parentPage.HideTransmission();
+                                };
+                                _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                            }
+                        };
+                        usbDeviceSubItem.Items.Add(menuItem);
+                    }
                 }
             }
-            //var targetElement = e.OriginalSource as FrameworkElement;
-            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            //if (listViewItem != null)
-            //{
-            //    listViewItem.IsSelected = true;
-            //    MusicListView.SelectedItem = listViewItem.Content;
-
-            //    // 获取音乐对象
-            //    var musicItem = listViewItem.Content as Model.Music;
-
-            //    // 获取右键菜单
-            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
-            //    {
-            //        // 为菜单项设置DataContext
-            //        foreach (var menuItem in flyout.Items)
-            //        {
-            //            menuItem.DataContext = musicItem;
-            //        }
-            //    }
-            //}
         }
 
         private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)

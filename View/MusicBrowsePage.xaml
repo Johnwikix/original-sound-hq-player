@@ -60,6 +60,10 @@
             
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10">
+                <StackPanel x:Name="Transmission" Orientation="Horizontal" Visibility="Collapsed" Margin="10 0 10 0">
+                    <TextBlock Text="正在传输" HorizontalAlignment="Center" FontSize="15" VerticalAlignment="Center" Margin="5 0 5 0"/>
+                    <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="20" Height="20"/>
+                </StackPanel>               
                 <TextBlock Text="排序方式" FontSize="14" Margin="10 0 10 0" VerticalAlignment="Center"/>
                 <ComboBox x:Name="SortByComboBox"  
                         FontSize="12"
@@ -72,7 +76,7 @@
                     <ComboBoxItem FontSize="12" Content="歌手" Tag="Artist"/>
                     <ComboBoxItem FontSize="12" Content="专辑" Tag="Album"/>                    
                 </ComboBox>
-                <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged" KeyDown="SearchTextBox_KeyDown"/>
+                <TextBox x:Name="SearchTextBox" PlaceholderText="搜索音乐" Width="200" Margin="0 0 10 0" TextChanged="SearchTextBox_TextChanged"/>
             </StackPanel>
         </Grid>
         <Frame x:Name="ContentFrame" IsNavigationStackEnabled="False" Grid.Row="1" Margin="10" Visibility="Visible"/>
@@ -318,7 +322,7 @@
 
             </Grid>
             <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
-                <Button x:Name="CurrentPlayListButton" Click="CurrentPlayListButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="CurrentPlayListButton" Click="CurrentPlayListButton_Click" Margin="10 0 0 0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;"/>
                 </Button>

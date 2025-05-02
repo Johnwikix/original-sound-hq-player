@@ -10,6 +10,7 @@ using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -104,14 +105,6 @@ namespace WinUIMusicPlayer
                 m_AppWindow.Hide();
             }
         }
-
-
-        //private Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
-        //{
-        //    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-        //    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-        //    return Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-        //}
 
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)

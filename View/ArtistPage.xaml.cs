@@ -185,6 +185,20 @@ namespace WinUIMusicPlayer.View
                         "artist"
                     );
                     ContextMenuService.playingArtistMusic += PlayingArtist;
+                    ContextMenuService.showTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.ShowTransmission();
+                        }
+                    };
+                    ContextMenuService.hideTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.HideTransmission();
+                        }
+                    };
                 }
             }
             e.Handled = true;
