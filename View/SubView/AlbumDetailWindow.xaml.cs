@@ -124,6 +124,7 @@ namespace WinUIMusicPlayer.View.SubView
                 using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                 {
                     Tag tag = audioFile.Tag;
+                    tag.Pictures = Array.Empty<IPicture>();
                     if (albumCoverData != null)
                     {
                         byte[] albumArtData = albumCoverData;
