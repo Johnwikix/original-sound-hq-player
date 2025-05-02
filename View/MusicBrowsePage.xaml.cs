@@ -1,4 +1,5 @@
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -309,7 +310,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (DispatcherQueue != null)
                 {
-                    DispatcherQueue.TryEnqueue(() =>
+                    DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
                     {
                         if (ProgressSlider != null)
                         {

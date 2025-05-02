@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.View
             AddFolderGrid.Visibility = Visibility.Collapsed;
             if (folder != null)
             {
-                await MusicDatabaseService.CheckFolderBeforeAdd(folder);
+                await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
                 await LoadFoldersAsync();
                 var mainWindow = (App.MainWindow as MainWindow);
                 if (mainWindow != null)
@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.View
             var button = sender as Button;
             if (button != null && button.Tag is int folderId)
             {
-                await MusicDatabaseService.RescanFolder(folderId);
+                await Task.Run(() => MusicDatabaseService.RescanFolder(folderId));
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;

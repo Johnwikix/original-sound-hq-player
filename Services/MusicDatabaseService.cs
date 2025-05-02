@@ -824,7 +824,10 @@ namespace WinUIMusicPlayer.Services
             var mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
-                mainWindow.UpdateMusicList();
+                mainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    mainWindow.UpdateMusicList();
+                });
             }
         }
     }

@@ -692,6 +692,9 @@ namespace WinUIMusicPlayer.Services
 
         public void Reset()
         {
+            isManualSelect = false;
+            isPausing = false;
+            isSettingsChangeStop = false;
             if (waveOut != null)
             {
                 waveOut.Stop();
