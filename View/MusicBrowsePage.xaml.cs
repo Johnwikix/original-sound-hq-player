@@ -868,12 +868,17 @@ namespace WinUIMusicPlayer.View
             }
             systemMediaControlsService.UpdateSystemMediaControlsState();
             await Task.Delay(300);
-            _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
+            if (isInPlayingDetailMode)
+            {
+                _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
+            }
+            else {
+                _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
+            }            
         }
 
-        private async void UpdatePlayBar(Music music)
-        {
-            await LoadCover(music);
+        private void UpdatePlayBar(Music music)
+        {            
             DispatcherQueue.TryEnqueue(async () =>
             {
                 MusicTitleTextBlock.Text = music.Title;
@@ -900,6 +905,7 @@ namespace WinUIMusicPlayer.View
                     PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
                 }
+                await LoadCover(music);
             });
         }
 

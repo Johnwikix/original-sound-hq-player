@@ -114,12 +114,12 @@ namespace WinUIMusicPlayer.View
                     }
 
                     var itemsToAdd = _allMusic.Skip(startIndex)
-                                                 .Take(_itemsPerPage).ToList();
-                    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
+                                                 .Take(_itemsPerPage).ToList();                    
                     foreach (var item in itemsToAdd)
                     {
                         musicList.Add(item);
                     }
+                    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
                     _currentPage++;
                 }
             }
