@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private List<Music> _allMusic;
-        private int _itemsPerPage = 50; // 每页加载的项目数
+        private int _itemsPerPage = 1000; // 每页加载的项目数
         private int _currentPage = 0;
         private bool _isLoading = false;
         private ScrollViewer _gridViewScrollViewer;
@@ -57,18 +57,19 @@ namespace WinUIMusicPlayer.View
                 }
             }
 
-            AlbumGridView.Loaded += async (s, e) =>
-            {
-                _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(AlbumGridView);
-                if (_gridViewScrollViewer != null)
-                {
-                    _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
-                }
-            };
+            //AlbumGridView.Loaded += async (s, e) =>
+            //{
+            //    _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(AlbumGridView);
+            //    if (_gridViewScrollViewer != null)
+            //    {
+            //        _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
+            //    }
+            //};
         }
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
+            musicList.Clear();
             InitializeDatabase();
         }
 
@@ -77,6 +78,7 @@ namespace WinUIMusicPlayer.View
         {
             if (_allMusic.Count > 0)
             {
+                musicList.Clear();
                 _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic.ToList());
                 await LoadMoreAlbumsAsync(true);
             }
@@ -93,44 +95,49 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
-            if (_isLoading) return;
+            //if (_isLoading) return;
 
             try
             {
-                _isLoading = true;
-
-                if (isFirstLoad)
+                foreach (var item in _allMusic)
                 {
-                    musicList.Clear();
-                    _currentPage = 0;
+                    musicList.Add(item);
                 }
+                await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
+                //_isLoading = true;
 
-                for (int i = 0; i < 2; i++)
-                {
-                    int startIndex = _currentPage * _itemsPerPage;
-                    if (startIndex >= _allMusic.Count)
-                    {
-                        break;
-                    }
+                //if (isFirstLoad)
+                //{
+                //    musicList.Clear();
+                //    _currentPage = 0;
+                //}
 
-                    var itemsToAdd = _allMusic.Skip(startIndex)
-                                                 .Take(_itemsPerPage).ToList();                    
-                    foreach (var item in itemsToAdd)
-                    {
-                        musicList.Add(item);
-                    }
-                    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
-                    _currentPage++;
-                }
+                //for (int i = 0; i < 2; i++)
+                //{
+                //    int startIndex = _currentPage * _itemsPerPage;
+                //    if (startIndex >= _allMusic.Count)
+                //    {
+                //        break;
+                //    }
+
+                //    var itemsToAdd = _allMusic.Skip(startIndex)
+                //                                 .Take(_itemsPerPage).ToList();                    
+                //    foreach (var item in itemsToAdd)
+                //    {
+                //        musicList.Add(item);
+                //    }
+                //    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
+                //    _currentPage++;
+                //}
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-            finally
-            {
-                _isLoading = false;
-            }
+            //finally
+            //{
+            //    _isLoading = false;
+            //}
         }
 
         // GridView 滚动事件处理

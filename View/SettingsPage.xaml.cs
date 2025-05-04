@@ -278,7 +278,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void BackdropRadioButton_Checked(object sender, RoutedEventArgs e)
+        private async void BackdropRadioButton_Checked(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -287,25 +287,59 @@ namespace WinUIMusicPlayer.View
                     if (sender is RadioButton radioButton)
                     {
                         var mainWindow = (App.MainWindow as MainWindow);
-                        if (mainWindow != null)
+                        if (AppSettings.AppStyle == "TransparentAcrylic")
                         {
-                            switch (radioButton.Tag.ToString())
+                            ContentDialog contentDialog = new ContentDialog
                             {
-                                case "Acrylic":
-                                    // 设置为Acrylic背景
-                                    AppSettings.AppStyle = "Acrylic";
-                                    break;
-                                case "TransparentAcrylic":
-                                    AppSettings.AppStyle = "TransparentAcrylic";
-                                    break;
-                                case "Mica":
-                                    // 设置为Mica背景
-                                    AppSettings.AppStyle = "Mica";
-                                    break;
+                                Title = "注意",
+                                Content = "从透明亚克力切换至别的样式需要关闭应用",
+                                PrimaryButtonText = "确定",
+                                XamlRoot = this.XamlRoot
+                            };
+                            contentDialog.RequestedTheme = AppSettings.elementTheme;
+                            ContentDialogResult result = await contentDialog.ShowAsync();
+
+                            if (result == ContentDialogResult.Primary)
+                            {
+                                if (mainWindow != null)
+                                {
+                                    switch (radioButton.Tag.ToString())
+                                    {
+                                        case "Acrylic":
+                                            // 设置为Acrylic背景
+                                            AppSettings.AppStyle = "Acrylic";
+                                            break;        
+                                        case "Mica":
+                                            // 设置为Mica背景
+                                            AppSettings.AppStyle = "Mica";
+                                            break;
+                                    }
+                                    _ = SaveSetting();
+                                    Application.Current.Exit();
+                                }
                             }
-                            mainWindow.SetAppStyle();
-                            _ = SaveSetting();
                         }
+                        else {
+                            if (mainWindow != null)
+                            {
+                                switch (radioButton.Tag.ToString())
+                                {
+                                    case "Acrylic":
+                                        // 设置为Acrylic背景
+                                        AppSettings.AppStyle = "Acrylic";
+                                        break;
+                                    case "TransparentAcrylic":
+                                        AppSettings.AppStyle = "TransparentAcrylic";
+                                        break;
+                                    case "Mica":
+                                        // 设置为Mica背景
+                                        AppSettings.AppStyle = "Mica";
+                                        break;
+                                }
+                                mainWindow.SetAppStyle();
+                                _ = SaveSetting();
+                            }
+                        }                        
                     }
                 }
             }

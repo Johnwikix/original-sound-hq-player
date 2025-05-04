@@ -70,6 +70,7 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshFolder(object? sender, EventArgs e)
         {
+            musicList.Clear();
             InitializeData();
         }
 
@@ -77,6 +78,7 @@ namespace WinUIMusicPlayer.View
         {
             if (_allMusic.Count > 0)
             {
+                musicList.Clear();
                 _allMusic = ToolUtils.SortMusicList("folderCover", sortOrder, _allMusic.ToList());
                 await LoadMoreFolderAsync(true);
             }
@@ -104,40 +106,44 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadMoreFolderAsync(bool isFirstLoad = false)
         {
-            if (_isLoading) return;
+            //if (_isLoading) return;
 
             try
             {
-                _isLoading = true;
-
-                if (isFirstLoad)
-                {
-                    musicList.Clear();
-                    _currentPage = 0;
-                }
-
-                int startIndex = _currentPage * _itemsPerPage;
-                if (startIndex >= _allMusic.Count)
-                {
-                    _isLoading = false;
-                    return;
-                }
-                var itemsToAdd = _allMusic.Skip(startIndex)
-                                              .Take(_itemsPerPage).ToList();
-                foreach (var item in itemsToAdd)
+                foreach (var item in _allMusic)
                 {
                     musicList.Add(item);
                 }
-                _currentPage++;
+                //_isLoading = true;
+
+                //if (isFirstLoad)
+                //{
+                //    musicList.Clear();
+                //    _currentPage = 0;
+                //}
+
+                //int startIndex = _currentPage * _itemsPerPage;
+                //if (startIndex >= _allMusic.Count)
+                //{
+                //    _isLoading = false;
+                //    return;
+                //}
+                //var itemsToAdd = _allMusic.Skip(startIndex)
+                //                              .Take(_itemsPerPage).ToList();
+                //foreach (var item in itemsToAdd)
+                //{
+                //    musicList.Add(item);
+                //}
+                //_currentPage++;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-            finally
-            {
-                _isLoading = false;
-            }
+            //finally
+            //{
+            //    _isLoading = false;
+            //}
         }
 
         private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)

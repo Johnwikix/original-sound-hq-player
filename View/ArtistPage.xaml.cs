@@ -70,7 +70,7 @@ namespace WinUIMusicPlayer.View
         private void RefreshArtist(object? sender, EventArgs e)
         {
             //_currentPage = 0;
-            //musicList.Clear();
+            musicList.Clear();
             InitializeData();
         }
 
@@ -78,6 +78,7 @@ namespace WinUIMusicPlayer.View
         {
             if (_allMusic.Count > 0)
             {
+                musicList.Clear();
                 _allMusic = ToolUtils.SortMusicList("artistCover", sortOrder, _allMusic.ToList());
                 await LoadMoreArtistAsync(true);
             }
@@ -101,40 +102,44 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadMoreArtistAsync(bool isFirstLoad = false)
         {
-            if (_isLoading) return;
+            //if (_isLoading) return;
 
             try
             {
-                _isLoading = true;
-
-                if (isFirstLoad)
-                {
-                    musicList.Clear();
-                    _currentPage = 0;
-                }
-
-                int startIndex = _currentPage * _itemsPerPage;
-                if (startIndex >= _allMusic.Count)
-                {
-                    _isLoading = false;
-                    return;
-                }
-                var itemsToAdd = _allMusic.Skip(startIndex)
-                                              .Take(_itemsPerPage).ToList();
-                foreach (var item in itemsToAdd)
+                foreach (var item in _allMusic)
                 {
                     musicList.Add(item);
                 }
-                _currentPage++;
+                //_isLoading = true;
+
+                //if (isFirstLoad)
+                //{
+                //    musicList.Clear();
+                //    _currentPage = 0;
+                //}
+
+                //int startIndex = _currentPage * _itemsPerPage;
+                //if (startIndex >= _allMusic.Count)
+                //{
+                //    _isLoading = false;
+                //    return;
+                //}
+                //var itemsToAdd = _allMusic.Skip(startIndex)
+                //                              .Take(_itemsPerPage).ToList();
+                //foreach (var item in itemsToAdd)
+                //{
+                //    musicList.Add(item);
+                //}
+                //_currentPage++;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-            finally
-            {
-                _isLoading = false;
-            }
+            //finally
+            //{
+            //    _isLoading = false;
+            //}
         }
 
         // GridView 滚动事件处理
