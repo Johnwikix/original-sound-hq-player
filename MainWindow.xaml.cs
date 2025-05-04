@@ -5,9 +5,12 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
+using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -125,6 +128,7 @@ namespace WinUIMusicPlayer
                 await MusicDatabaseService.GetSettingsAsync();
                 themeStyleHelper.SetAppStyle();
                 themeStyleHelper.SetAppTheme();
+                //_=Task.Run(() => ReadUsbDevice());
                 var tasks = new Task[] {
                         MusicDatabaseService.GetPlayStateAsync(),
                         LoadFoldersAsync(),
@@ -134,7 +138,7 @@ namespace WinUIMusicPlayer
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
-                NavigateToDefaultPage();
+                NavigateToDefaultPage();                
             }
             catch (Exception ex)
             {
@@ -155,6 +159,31 @@ namespace WinUIMusicPlayer
         public void ShowWindow()
         {
             notifyIconHelper.ShowWindow();
+        }
+
+        private async Task ReadUsbDevice()
+        {
+            try
+            {
+                DateTime startTime = DateTime.Now;
+                List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                string path = usbStorageDevices.FirstOrDefault()?.Path;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string musicPath = Path.Combine(path, "MUSIC");
+                    StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(musicPath);
+                    var musics = await MusicDatabaseService.GetMusicListByFolder(folder);
+                    foreach (var music in musics) {
+                        Debug.WriteLine($"音乐文件: {music.Path},音乐标题：{music.Title}");
+                    }
+                }
+                DateTime endTime = DateTime.Now;
+                Debug.WriteLine($"读取USB设备耗时: {(endTime - startTime).TotalMilliseconds} 毫秒");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
+            }
         }
 
         private void NavigateToDefaultPage()

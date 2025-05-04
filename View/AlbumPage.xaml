@@ -11,7 +11,7 @@
 >
 
     <Grid Margin="10">
-        <GridView x:Name="AlbumGridView"                       
+        <GridView x:Name="AlbumGridView"   
                   IsItemClickEnabled="True"
                   ItemClick="AlbumGridView_ItemClick"
                   IsRightTapEnabled="True"

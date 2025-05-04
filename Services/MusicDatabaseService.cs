@@ -605,6 +605,13 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task<List<Music>> GetMusicListByFolder(StorageFolder folder)
+        {
+            var musicFiles = new List<Music>();
+            await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
+            return musicFiles;
+        }
+
         public static async Task ScanFolderAsync(StorageFolder folder)
         {
             var musicFiles = new List<Music>();

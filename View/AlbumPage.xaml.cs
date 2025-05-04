@@ -25,9 +25,6 @@ namespace WinUIMusicPlayer.View
         private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
         private List<Music> _allMusic;
-        private int _itemsPerPage = 1000; // 每页加载的项目数
-        private int _currentPage = 0;
-        private bool _isLoading = false;
         private ScrollViewer _gridViewScrollViewer;
         private string _lastSearchText = "";
         public AlbumPage()
@@ -95,7 +92,6 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
-            //if (_isLoading) return;
 
             try
             {
@@ -104,53 +100,24 @@ namespace WinUIMusicPlayer.View
                     musicList.Add(item);
                 }
                 await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
-                //_isLoading = true;
-
-                //if (isFirstLoad)
-                //{
-                //    musicList.Clear();
-                //    _currentPage = 0;
-                //}
-
-                //for (int i = 0; i < 2; i++)
-                //{
-                //    int startIndex = _currentPage * _itemsPerPage;
-                //    if (startIndex >= _allMusic.Count)
-                //    {
-                //        break;
-                //    }
-
-                //    var itemsToAdd = _allMusic.Skip(startIndex)
-                //                                 .Take(_itemsPerPage).ToList();                    
-                //    foreach (var item in itemsToAdd)
-                //    {
-                //        musicList.Add(item);
-                //    }
-                //    await AlbumCoverService.LoadAlbumCoversAsync(itemsToAdd);
-                //    _currentPage++;
-                //}
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-            //finally
-            //{
-            //    _isLoading = false;
-            //}
         }
 
         // GridView 滚动事件处理
-        private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        {
-            var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer == null) return;
+        //private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        //{
+        //    var scrollViewer = sender as ScrollViewer;
+        //    if (scrollViewer == null) return;
 
-            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
-            {
-                _ = LoadMoreAlbumsAsync();
-            }
-        }
+        //    if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
+        //    {
+        //        _ = LoadMoreAlbumsAsync();
+        //    }
+        //}
 
         // 修改LoadAlbumsAsync方法为异步清空重新加载
         public async Task LoadAlbumsAsync(List<Music> musics)
