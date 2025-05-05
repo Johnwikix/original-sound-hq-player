@@ -133,7 +133,7 @@ namespace WinUIMusicPlayer.View
 
         private async void LoadLyricsToUI(string lyricsContent)
         {
-            //_uiLyrics.Clear();
+            _uiLyrics.Clear();
             // 设置播放服务中的歌词
             await musicPlaybackService.SetLyrics(lyricsContent);
             // 解析歌词并添加到UI集合
@@ -941,11 +941,11 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicPlaybackService.currentPlayingMusic = music;
+                LoadLyricsToUI(music.Lyrics);
                 UpdatePlayBar(music);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
-                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                LoadLyricsToUI(music.Lyrics);
+                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);                
             }
             catch (Exception ex)
             {
