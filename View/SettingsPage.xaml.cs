@@ -287,59 +287,79 @@ namespace WinUIMusicPlayer.View
                     if (sender is RadioButton radioButton)
                     {
                         var mainWindow = (App.MainWindow as MainWindow);
-                        if (AppSettings.AppStyle == "TransparentAcrylic")
+                        if (mainWindow != null)
                         {
-                            ContentDialog contentDialog = new ContentDialog
+                            switch (radioButton.Tag.ToString())
                             {
-                                Title = "注意",
-                                Content = "从透明亚克力切换至别的样式需要关闭应用",
-                                PrimaryButtonText = "确定",
-                                XamlRoot = this.XamlRoot
-                            };
-                            contentDialog.RequestedTheme = AppSettings.elementTheme;
-                            ContentDialogResult result = await contentDialog.ShowAsync();
-
-                            if (result == ContentDialogResult.Primary)
-                            {
-                                if (mainWindow != null)
-                                {
-                                    switch (radioButton.Tag.ToString())
-                                    {
-                                        case "Acrylic":
-                                            // 设置为Acrylic背景
-                                            AppSettings.AppStyle = "Acrylic";
-                                            break;        
-                                        case "Mica":
-                                            // 设置为Mica背景
-                                            AppSettings.AppStyle = "Mica";
-                                            break;
-                                    }
-                                    _ = SaveSetting();
-                                    Application.Current.Exit();
-                                }
+                                case "Acrylic":
+                                    // 设置为Acrylic背景
+                                    AppSettings.AppStyle = "Acrylic";
+                                    break;
+                                case "TransparentAcrylic":
+                                    AppSettings.AppStyle = "TransparentAcrylic";
+                                    break;
+                                case "Mica":
+                                    // 设置为Mica背景
+                                    AppSettings.AppStyle = "Mica";
+                                    break;
                             }
+                            mainWindow.SetAppStyle();
+                            _ = SaveSetting();
                         }
-                        else {
-                            if (mainWindow != null)
-                            {
-                                switch (radioButton.Tag.ToString())
-                                {
-                                    case "Acrylic":
-                                        // 设置为Acrylic背景
-                                        AppSettings.AppStyle = "Acrylic";
-                                        break;
-                                    case "TransparentAcrylic":
-                                        AppSettings.AppStyle = "TransparentAcrylic";
-                                        break;
-                                    case "Mica":
-                                        // 设置为Mica背景
-                                        AppSettings.AppStyle = "Mica";
-                                        break;
-                                }
-                                mainWindow.SetAppStyle();
-                                _ = SaveSetting();
-                            }
-                        }                        
+                        //if (AppSettings.AppStyle == "TransparentAcrylic")
+                        //{
+                        //    ContentDialog contentDialog = new ContentDialog
+                        //    {
+                        //        Title = "注意",
+                        //        Content = "从透明亚克力切换至别的样式需要关闭应用",
+                        //        PrimaryButtonText = "确定",
+                        //        XamlRoot = this.XamlRoot
+                        //    };
+                        //    contentDialog.RequestedTheme = AppSettings.elementTheme;
+                        //    ContentDialogResult result = await contentDialog.ShowAsync();
+
+                        //    if (result == ContentDialogResult.Primary)
+                        //    {
+                        //        if (mainWindow != null)
+                        //        {
+                        //            switch (radioButton.Tag.ToString())
+                        //            {
+                        //                case "Acrylic":
+                        //                    // 设置为Acrylic背景
+                        //                    AppSettings.AppStyle = "Acrylic";
+                        //                    break;        
+                        //                case "Mica":
+                        //                    // 设置为Mica背景
+                        //                    AppSettings.AppStyle = "Mica";
+                        //                    break;
+                        //            }
+                        //            mainWindow.SetAppStyle();
+                        //            _ = SaveSetting();
+                        //            //Application.Current.Exit();
+                        //        }
+                        //    }
+                        //}
+                        //else {
+                        //    if (mainWindow != null)
+                        //    {
+                        //        switch (radioButton.Tag.ToString())
+                        //        {
+                        //            case "Acrylic":
+                        //                // 设置为Acrylic背景
+                        //                AppSettings.AppStyle = "Acrylic";
+                        //                break;
+                        //            case "TransparentAcrylic":
+                        //                AppSettings.AppStyle = "TransparentAcrylic";
+                        //                break;
+                        //            case "Mica":
+                        //                // 设置为Mica背景
+                        //                AppSettings.AppStyle = "Mica";
+                        //                break;
+                        //        }
+                        //        mainWindow.SetAppStyle();
+                        //        _ = SaveSetting();
+                        //    }
+                        //}                        
                     }
                 }
             }

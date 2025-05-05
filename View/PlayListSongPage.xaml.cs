@@ -368,40 +368,58 @@ namespace WinUIMusicPlayer.View
                         menuItem.DataContext = musicItem;
                     }
                     List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                    var usbDeviceSubItem = flyout.Items[3] as MenuFlyoutSubItem;
-                    usbDeviceSubItem.Items.Clear();
-                    foreach (var usbDevice in usbDevices)
+                    if (menuFlyout.Items.Count > 6)
                     {
-                        var menuItem = new MenuFlyoutItem
+                        MenuFlyoutSubItem fifthItem = menuFlyout.Items[3] as MenuFlyoutSubItem;
+                        if (fifthItem != null)
                         {
-                            Text = $"路径：{usbDevice.Path}，剩余容量：{usbDevice.FreeSpaceInGB}GB",
-                            Tag = usbDevice.Path
-                        };
-                        menuItem.Click += async (s, args) =>
+                            if (fifthItem.Tag.ToString() == "usbDevice")
+                            {
+                                menuFlyout.Items.RemoveAt(3);
+                            }
+                        }
+                    }
+                    if (usbDevices != null && usbDevices.Count > 0)
+                    {
+                        MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
-                            if (uniqueSelectedMusics.Count > 1)
-                            {
-                                parentPage.ShowTransmission();
-                                var usbWriter = new UsbWriterHelper();
-                                usbWriter.hideTransmission += (sender, args) =>
-                                {
-                                    parentPage.HideTransmission();
-                                };
-                                _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
-                            }
-                            else if (musicItem != null)
-                            {
-                                parentPage.ShowTransmission();
-                                List<Music> musicItems = new List<Music> { musicItem };
-                                var usbWriter = new UsbWriterHelper();
-                                usbWriter.hideTransmission += (sender, args) =>
-                                {
-                                    parentPage.HideTransmission();
-                                };
-                                _ = usbWriter.WriteToUsb(musicItems, usbDevice);
-                            }
+                            Text = "发送至usb设备",
+                            Tag = "usbDevice",
                         };
-                        usbDeviceSubItem.Items.Add(menuItem);
+                        foreach (var usbDevice in usbDevices)
+                        {
+                            var menuItem = new MenuFlyoutItem
+                            {
+                                Text = $"路径：{usbDevice.Path}，剩余容量：{usbDevice.FreeSpaceInGB}GB",
+                                Tag = usbDevice.Path
+                            };
+                            menuItem.Click += async (s, args) =>
+                            {
+                                if (uniqueSelectedMusics.Count > 1)
+                                {
+                                    parentPage.ShowTransmission();
+                                    var usbWriter = new UsbWriterHelper();
+                                    usbWriter.hideTransmission += (sender, args) =>
+                                    {
+                                        parentPage.HideTransmission();
+                                    };
+                                    _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                }
+                                else if (musicItem != null)
+                                {
+                                    parentPage.ShowTransmission();
+                                    List<Music> musicItems = new List<Music> { musicItem };
+                                    var usbWriter = new UsbWriterHelper();
+                                    usbWriter.hideTransmission += (sender, args) =>
+                                    {
+                                        parentPage.HideTransmission();
+                                    };
+                                    _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                                }
+                            };
+                            usbDeviceSubItem.Items.Add(menuItem);
+                        }
+                        menuFlyout.Items.Insert(3, usbDeviceSubItem);
                     }
                 }
             }

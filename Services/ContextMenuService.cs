@@ -80,23 +80,27 @@ namespace WinUIMusicPlayer.Services
                 playlistSubItem.Items.Add(menuItem);
             }
             flyout.Items.Add(playlistSubItem);
-            MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
-            {
-                Text = "发送至usb设备"
-            };
+
 
             List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-            foreach (var device in usbStorageDevices)
-            {
-                MenuFlyoutItem usbDeviceItem = new MenuFlyoutItem
+            if (usbStorageDevices != null && usbStorageDevices.Count > 0) {
+                MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                 {
-                    Text = $"路径：{device.Path}，剩余容量：{device.FreeSpaceInGB}GB",
-                    DataContext = new { MusicItem = item, UsbStorageDevice = device }
+                    Text = "发送至usb设备"
                 };
-                usbDeviceItem.Click += (sender, e) => SendMusicToUsbDevice_Click(sender, e, type);
-                usbDeviceSubItem.Items.Add(usbDeviceItem);
-            }
-            flyout.Items.Add(usbDeviceSubItem);
+
+                foreach (var device in usbStorageDevices)
+                {
+                    MenuFlyoutItem usbDeviceItem = new MenuFlyoutItem
+                    {
+                        Text = $"路径：{device.Path}，剩余容量：{device.FreeSpaceInGB}GB",
+                        DataContext = new { MusicItem = item, UsbStorageDevice = device }
+                    };
+                    usbDeviceItem.Click += (sender, e) => SendMusicToUsbDevice_Click(sender, e, type);
+                    usbDeviceSubItem.Items.Add(usbDeviceItem);
+                }
+                flyout.Items.Add(usbDeviceSubItem);
+            }            
             if (type == "folder")
             {
 

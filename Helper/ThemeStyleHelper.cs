@@ -1,11 +1,14 @@
 ﻿using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -21,29 +24,88 @@ namespace WinUIMusicPlayer.Helper
         {
             _window = window;
             _appWindow = appWindow;
+            
         }
-
         public void SetAppStyle()
         {
             try
             {
+                var uiColor = Color.FromArgb(255, 32, 32, 32);
                 _window.SystemBackdrop = null;
                 switch (AppSettings.AppStyle)
                 {
                     case "Acrylic":
-                        _window.SystemBackdrop = new DesktopAcrylicBackdrop();
+                        //_window.SystemBackdrop = new DesktopAcrylicBackdrop();
+                        if (AppSettings.AppTheme == "Default")
+                        {
+                            if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                            }
+                        }
+                        else
+                        {
+                            if (AppSettings.AppTheme == "Light")
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                            }
+                        }
+                        var acrylic = new CustomAcrylicSystemBackdrop
+                        {
+                            TintOpacity = 0.5f,
+                            LuminosityOpacity = 0.8f,
+                            TintColor = uiColor
+                        };
+                        _window.SystemBackdrop = acrylic;
                         break;
-                    case "TransparentAcrylic":
+                    case "TransparentAcrylic":                        
+                        float colorOpacity = 0.2f;
+                        if (AppSettings.AppTheme == "Default")
+                        {
+                            if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                                colorOpacity = 0.5f;
+                            }
+                        }
+                        else {
+                            if (AppSettings.AppTheme == "Light")
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                                colorOpacity = 0.5f;
+                            }
+                        }
                         var customAcrylic = new CustomAcrylicSystemBackdrop
                         {
                             TintOpacity = 0,
-                            LuminosityOpacity = 0.15,
-                            TintColor = Color.FromArgb(255, 0, 0, 0)
+                            LuminosityOpacity = colorOpacity,
+                            TintColor = uiColor
                         };
                         _window.SystemBackdrop = customAcrylic;
                         break;
                     case "Mica":
-                        _window.SystemBackdrop = new MicaBackdrop();
+                        //_window.SystemBackdrop = new MicaBackdrop();
+                        if (AppSettings.AppTheme == "Default")
+                        {
+                            if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                            }
+                        }
+                        else
+                        {
+                            if (AppSettings.AppTheme == "Light")
+                            {
+                                uiColor = Color.FromArgb(255, 255, 255, 255);
+                            }
+                        }
+                        var mica = new CustomMicaSystemBackdrop
+                        {
+                            MicaKind = MicaKind.Base,
+                            TintOpacity = 0.8f,
+                            TintColor = uiColor
+                        };
+                        _window.SystemBackdrop = mica;
                         break;
                     default:
                         _window.SystemBackdrop = new DesktopAcrylicBackdrop();

@@ -22,7 +22,7 @@
         <Style x:Key="ListViewItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
-                    <MenuFlyout>
+                    <MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
                         <MenuFlyoutItem Text="添加/取消最爱" Click="SetAsFavoriteMenuItem_Click"/>
                         <MenuFlyoutSubItem Text="添加到播放列表" Tag="playList">                                                   
@@ -31,8 +31,6 @@
                             <MenuFlyoutItem Text="WAV" Tag="wav" Click="ConvertAudio_Click"></MenuFlyoutItem>
                             <MenuFlyoutItem Text="MP3" Tag="mp3" Click="ConvertAudio_Click"></MenuFlyoutItem>
                             <MenuFlyoutItem Text="Flac" Tag="flac" Click="ConvertAudio_Click"></MenuFlyoutItem>
-                        </MenuFlyoutSubItem>
-                        <MenuFlyoutSubItem Text="发送到" Tag="usbDevices">
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
                         <MenuFlyoutItem Text="属性" Click="MusicDetail_Click"/>

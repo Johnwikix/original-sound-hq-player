@@ -11,12 +11,14 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using Windows.Storage;
+using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,7 +28,7 @@ namespace WinUIMusicPlayer
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainWindow : Window
+    public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
     {
         public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler updateMusicList;
@@ -41,6 +43,7 @@ namespace WinUIMusicPlayer
         private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
         private NotifyIconHelper notifyIconHelper;
+        private UISettings uiSettings;
 
         // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
@@ -76,7 +79,20 @@ namespace WinUIMusicPlayer
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
-            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
+            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));            
+            uiSettings = new UISettings();
+            // 注册颜色值变化事件，这会在系统主题变化时触发
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        private void UiSettings_ColorValuesChanged(UISettings sender, object args)
+        {
+            Debug.WriteLine("colorchange");
+            _=DispatcherQueue.EnqueueAsync(() =>
+            {
+                // 重新应用样式
+                SetAppStyle();
+            });
         }
 
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
@@ -153,6 +169,7 @@ namespace WinUIMusicPlayer
 
         public void SetAppTheme()
         {
+            themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
         }
 

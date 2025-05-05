@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Composition;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -7,13 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.UI;
-using Microsoft.UI.Xaml.Media;
 
 namespace WinUIMusicPlayer.Helper
 {
-    public class CustomAcrylicSystemBackdrop : SystemBackdrop
+    public class CustomMicaSystemBackdrop : SystemBackdrop
     {
-        private DesktopAcrylicController _acrylicController;
+        private MicaController _micaController;
         private SystemBackdropConfiguration _backdropConfiguration;
         private Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
 
@@ -21,10 +21,10 @@ namespace WinUIMusicPlayer.Helper
         private ICompositionSupportsSystemBackdrop _currentTarget;
         private bool _isConnected = false;
 
-        // 透明度属性
-        public double TintOpacity { get; set; } = 0.8;
-        public double LuminosityOpacity { get; set; } = 0.7;
+        // Mica效果属性
+        public MicaKind MicaKind { get; set; } = MicaKind.Base;
         public Color TintColor { get; set; } = Color.FromArgb(255, 135, 206, 235); // SkyBlue
+        public float TintOpacity { get; set; } = 0.8f;
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -49,20 +49,20 @@ namespace WinUIMusicPlayer.Helper
                 window.Closed += Window_Closed;
             }
 
-            // 创建并初始化亚克力控制器
-            _acrylicController = new DesktopAcrylicController();
+            // 创建并初始化云母控制器
+            _micaController = new MicaController();
 
-            // 设置透明度和颜色属性
-            SetAcrylicProperties();
+            // 设置云母效果属性
+            SetMicaProperties();
 
-            // 激活亚克力效果
-            if (_acrylicController != null)
+            // 激活云母效果
+            if (_micaController != null)
             {
                 // 设置配置
-                _acrylicController.SetSystemBackdropConfiguration(_backdropConfiguration);
+                _micaController.SetSystemBackdropConfiguration(_backdropConfiguration);
 
                 // 添加目标
-                _acrylicController.AddSystemBackdropTarget(connectedTarget);
+                _micaController.AddSystemBackdropTarget(connectedTarget);
             }
         }
 
@@ -83,19 +83,19 @@ namespace WinUIMusicPlayer.Helper
             if (disconnectedTarget is FrameworkElement element)
             {
                 element.ActualThemeChanged -= RootElement_ActualThemeChanged;
-
-                if (_currentTarget is Window window)
-                {
-                    window.Activated += Window_Activated;
-                    window.Closed += Window_Closed;
-                }
             }
 
-            if (_acrylicController != null)
+            if (disconnectedTarget is Window window)
             {
-                _acrylicController.RemoveSystemBackdropTarget(disconnectedTarget);
-                _acrylicController.Dispose();
-                _acrylicController = null;
+                window.Activated -= Window_Activated;
+                window.Closed -= Window_Closed;
+            }
+
+            if (_micaController != null)
+            {
+                _micaController.RemoveSystemBackdropTarget(disconnectedTarget);
+                _micaController.Dispose();
+                _micaController = null;
             }
 
             _backdropConfiguration = null;
@@ -112,10 +112,10 @@ namespace WinUIMusicPlayer.Helper
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // 确保释放资源
-            if (_acrylicController != null)
+            if (_micaController != null)
             {
-                _acrylicController.Dispose();
-                _acrylicController = null;
+                _micaController.Dispose();
+                _micaController = null;
             }
 
             _backdropConfiguration = null;
@@ -140,13 +140,13 @@ namespace WinUIMusicPlayer.Helper
             }
         }
 
-        // 设置亚克力效果的属性
-        private void SetAcrylicProperties()
+        // 设置云母效果的属性
+        private void SetMicaProperties()
         {
-            if (_acrylicController == null || _dispatcherQueue == null || !_isConnected)
+            if (_micaController == null || _dispatcherQueue == null || !_isConnected)
             {
                 // 记录日志，帮助诊断问题
-                System.Diagnostics.Debug.WriteLine("SetAcrylicProperties被调用，但控制器或调度队列无效");
+                System.Diagnostics.Debug.WriteLine("SetMicaProperties被调用，但控制器或调度队列无效");
                 return;
             }
 
@@ -155,13 +155,13 @@ namespace WinUIMusicPlayer.Helper
                 try
                 {
                     // 再次检查，因为在队列执行时可能已经变化
-                    if (_acrylicController != null && _isConnected)
+                    if (_micaController != null && _isConnected)
                     {
-                        // 设置亚克力效果的透明度和颜色
-                        _acrylicController.TintColor = TintColor;
-                        _acrylicController.TintOpacity = (float)TintOpacity;
-                        _acrylicController.LuminosityOpacity = (float)LuminosityOpacity;
-                        System.Diagnostics.Debug.WriteLine($"成功更新亚克力效果 - 颜色: {TintColor}, 不透明度: {TintOpacity}");
+                        // 设置云母效果的类型和颜色
+                        _micaController.Kind = MicaKind;
+                        _micaController.TintColor = TintColor;
+                        _micaController.TintOpacity = TintOpacity;
+                        System.Diagnostics.Debug.WriteLine($"成功更新云母效果 - 类型: {MicaKind}, 颜色: {TintColor}, 不透明度: {TintOpacity}");
                     }
                     else
                     {
@@ -170,19 +170,25 @@ namespace WinUIMusicPlayer.Helper
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SetAcrylicProperties error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"SetMicaProperties error: {ex.Message}");
                 }
             });
         }
 
-        // 提供一个公共方法，用于动态更新亚克力效果的透明度
-        public void UpdateProperties(double tintOpacity, double luminosityOpacity, Color tintColor)
+        // 提供一个公共方法，用于动态更新云母效果的属性
+        public void UpdateProperties(MicaKind micaKind, float tintOpacity, Color tintColor)
         {
+            MicaKind = micaKind;
             TintOpacity = tintOpacity;
-            LuminosityOpacity = luminosityOpacity;
             TintColor = tintColor;
 
-            SetAcrylicProperties();
+            SetMicaProperties();
+        }
+
+        // 检查系统是否支持Mica效果
+        public static bool IsSupported()
+        {
+            return MicaController.IsSupported();
         }
     }
 }

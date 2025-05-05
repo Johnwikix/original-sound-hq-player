@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer
                 // 创建并激活主窗口
                 MainWindow = new MainWindow();
                 MainWindow.Activate();
+
             }
             catch (Exception ex)
             {
