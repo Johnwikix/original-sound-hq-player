@@ -17,6 +17,7 @@
         <converters:SampleRateBitDepthConverter x:Key="SampleRateBitDepthConverter"/>
         <converters:FavouriteIconConverter x:Key="FavouriteIconConverter"/>
         <converters:FavouriteTextConverter x:Key="FavouriteTextConverter"/>
+        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
         <Style x:Key="ListViewItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
@@ -55,6 +56,7 @@
                         <ColumnDefinition Width="0.5*"/>
                         <ColumnDefinition Width="0.5*"/>
                         <ColumnDefinition Width="0.5*"/>
+                        <ColumnDefinition Width="0.25*"/>
                     </Grid.ColumnDefinitions>
                     <Button x:Name="isFavouriteIconButton"  
                             Grid.Column="0"                            
@@ -86,6 +88,7 @@
                         </attached:MultiValueBindingHelper.Bindings>
                     </Image>
                     <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="6" Margin="5" VerticalAlignment="Center"  />
+                    <FontIcon x:Name="IsExistOnDeviceIcon" Grid.Column="7" Glyph="{x:Bind IsExistOnDevice,Mode=OneWay,Converter={StaticResource IsExistOnDeviceConverter}}"></FontIcon>
                 </Grid>
             </DataTemplate>
         </ListView.ItemTemplate>

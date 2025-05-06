@@ -136,6 +136,21 @@ namespace WinUIMusicPlayer.Model
                 }
             }
         }
+
+        private bool _isExistOnDevice { get; set; } = false;
+        public bool IsExistOnDevice
+        {
+            get { return _isExistOnDevice; }
+            set
+            {
+                if (_isExistOnDevice != value)
+                {
+                    _isExistOnDevice = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
