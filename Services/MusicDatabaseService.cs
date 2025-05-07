@@ -72,6 +72,11 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync(subFolder);
         }
 
+        public static async Task DeleteAll()
+        {
+            await _dbConnection.DeleteAllAsync<SubFolder>();
+        }
+
         public static async Task<List<SubFolder>> GetSubFolders(int folderId)
         {
             return await _dbConnection.Table<SubFolder>().Where(f => f.FolderId == folderId).ToListAsync();
@@ -809,7 +814,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task RescanFolderByPath(string folderPath)
+        public static async Task RescanFolderByPath(string folderPath,bool isUpdate = true)
         {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
@@ -866,14 +871,17 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.InsertAsync(music);
             }
             // 更新UI和主窗口的音乐列表
-            var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
-            {
-                mainWindow.DispatcherQueue.TryEnqueue(() =>
+            if (isUpdate) {
+                var mainWindow = (App.MainWindow as MainWindow);
+                if (mainWindow != null)
                 {
-                    mainWindow.UpdateMusicList();
-                });
+                    mainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        mainWindow.UpdateMusicList();
+                    });
+                }
             }
+            
         }
     }
 }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Devices.Gpio;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services
@@ -32,8 +33,11 @@ namespace WinUIMusicPlayer.Services
         }
 
         public static async Task AutoScan() {
+            //await MusicDatabaseService.DeleteAll();
             List<Folder> folders = await MusicDatabaseService.GetFolders();
+            int changeCount = 0;
             foreach (Folder folder in folders) {
+                subFolderList.Clear();
                 List<SubFolder> subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
                 List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
                 if (subFoldersInDb != null && subFoldersInDb.Count > 0)
@@ -43,8 +47,9 @@ namespace WinUIMusicPlayer.Services
                         if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
                         {
                             await MusicDatabaseService.AddSubFolder(subFolder);
-                            await MusicDatabaseService.RescanFolderByPath(subFolder.Path);
-                            Debug.WriteLine($"Added new subfolder: {subFolder.Path}");
+                            await MusicDatabaseService.RescanFolderByPath(subFolder.Path,false);
+                            Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
+                            changeCount++;
                         }
                         else
                         {
@@ -53,8 +58,9 @@ namespace WinUIMusicPlayer.Services
                             {
                                 dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
                                 await MusicDatabaseService.UpdateSubFolder(dbSubFolder);
-                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path);
-                                Debug.WriteLine($"Updated subfolder: {subFolder.Path}");
+                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false);
+                                Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
+                                changeCount++;
                             }
                         }
                     }
@@ -65,13 +71,24 @@ namespace WinUIMusicPlayer.Services
                         if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
                         {
                             await MusicDatabaseService.DeleteSubFolder(dbSubFolder);
-                            Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path}");
+                            Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path},time:{dbSubFolder.LastModifiedTime},folderId:{dbSubFolder.FolderId}");
                         }
                     }
                 }
                 else {
                     await MusicDatabaseService.InsertSubFolders(subFolders);
-                }                
+                }
+                if (changeCount > 0) {
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                    var mainWindow = (App.MainWindow as MainWindow);
+                    if (mainWindow != null)
+                    {
+                        mainWindow.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            mainWindow.UpdateMusicList();
+                        });
+                    }
+                }
             }
         }
     }
