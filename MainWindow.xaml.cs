@@ -154,7 +154,8 @@ namespace WinUIMusicPlayer
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
-                NavigateToDefaultPage();                
+                NavigateToDefaultPage(); 
+                await AutoRescanService.AutoScan();
             }
             catch (Exception ex)
             {

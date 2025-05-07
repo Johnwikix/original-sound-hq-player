@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -29,6 +31,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
+                await _dbConnection.CreateTableAsync<SubFolder>();
             }
         }
 
@@ -47,6 +50,36 @@ namespace WinUIMusicPlayer.Services
                 PlayListMusicIds = musicIds
             };
             await _dbConnection.InsertAsync(playListState);
+        }
+
+        public static async Task InsertSubFolders(List<SubFolder> subFolder)
+        {
+            await _dbConnection.InsertAllAsync(subFolder);
+        }
+
+        public static async Task AddSubFolder(SubFolder subFolder)
+        {
+            await _dbConnection.InsertAsync(subFolder);
+        }
+
+        public static async Task UpdateSubFolder(SubFolder subFolder)
+        {
+            await _dbConnection.UpdateAsync(subFolder);
+        }
+
+        public static async Task DeleteSubFolder(SubFolder subFolder)
+        {
+            await _dbConnection.DeleteAsync(subFolder);
+        }
+
+        public static async Task<List<SubFolder>> GetSubFolders(int folderId)
+        {
+            return await _dbConnection.Table<SubFolder>().Where(f => f.FolderId == folderId).ToListAsync();
+        }
+
+        public static async Task<List<Folder>> GetFolders()
+        {
+            return await _dbConnection.Table<Folder>().ToListAsync();
         }
 
         public static async Task<List<Music>> LoadPlayList()
@@ -611,13 +644,16 @@ namespace WinUIMusicPlayer.Services
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
             return musicFiles;
         }
-
-        public static async Task ScanFolderAsync(StorageFolder folder)
+        
+        public static async Task ScanFolderAsync(StorageFolder folder,int folderId)
         {
             var musicFiles = new List<Music>();
             // 递归获取所有音乐文件
+            DateTime startTime = DateTime.Now;
+            List<SubFolder> subFolders = AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId);
+            await InsertSubFolders(subFolders);
+            Debug.WriteLine($"获取文件夹中的所有文件耗时: {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
-
             // 获取已存在的音乐文件路径
             var existingMusicPaths = await _dbConnection.Table<Music>()
                 .ToListAsync()
@@ -650,14 +686,18 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.DeleteAsync(musicFile);
                 }
 
+                var subfoldersToRemove = await _dbConnection.Table<SubFolder>()
+                    .Where(sf => sf.Path.StartsWith(folderToRemove.Path))
+                    .ToListAsync();
+                foreach (var subfolder in subfoldersToRemove)
+                {
+                    Debug.WriteLine($"删除子文件夹: {subfolder.Path},{subfolder.FolderId}");
+                    await _dbConnection.DeleteAsync(subfolder);
+                }
+
                 // 移除文件夹信息
                 await _dbConnection.DeleteAsync(folderToRemove);
             }
-        }
-
-        public static async Task<List<Folder>> GetFolders()
-        {
-            return await _dbConnection.Table<Folder>().ToListAsync();
         }
 
         public static async Task<Folder> GetFolder(int folderId)
@@ -703,9 +743,8 @@ namespace WinUIMusicPlayer.Services
                     Type = "本地"
                 };
                 await _dbConnection.InsertAsync(newFolder);
-
                 // 扫描文件夹中的音乐文件
-                await ScanFolderAsync(folder);
+                await ScanFolderAsync(folder, newFolder.Id);
 
             }
         }
@@ -773,9 +812,11 @@ namespace WinUIMusicPlayer.Services
         public static async Task RescanFolderByPath(string folderPath)
         {
             // 获取StorageFolder对象
+            DateTime startTime = DateTime.Now;
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
             List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-
+            DateTime endTime = DateTime.Now;
+            Debug.WriteLine($"获取文件夹中的所有文件耗时: {(endTime - startTime).TotalMilliseconds} 毫秒");
             var musicFilesInFolder = await _dbConnection.Table<Music>()
                .Where(m => m.FolderPath.Contains(folderPath))
                .ToListAsync();

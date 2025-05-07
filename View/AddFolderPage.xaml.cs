@@ -95,8 +95,6 @@ namespace WinUIMusicPlayer.View
                 if (mainWindow != null)
                 {
                     mainWindow.UpdateMusicList();
-                    //await mainWindow.LoadMusicList();
-                    //await mainWindow.LoadFavourMusicList();
                 }
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
