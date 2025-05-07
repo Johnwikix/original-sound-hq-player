@@ -812,11 +812,8 @@ namespace WinUIMusicPlayer.Services
         public static async Task RescanFolderByPath(string folderPath)
         {
             // 获取StorageFolder对象
-            DateTime startTime = DateTime.Now;
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
             List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-            DateTime endTime = DateTime.Now;
-            Debug.WriteLine($"获取文件夹中的所有文件耗时: {(endTime - startTime).TotalMilliseconds} 毫秒");
             var musicFilesInFolder = await _dbConnection.Table<Music>()
                .Where(m => m.FolderPath.Contains(folderPath))
                .ToListAsync();

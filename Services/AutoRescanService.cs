@@ -65,7 +65,6 @@ namespace WinUIMusicPlayer.Services
                         if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
                         {
                             await MusicDatabaseService.DeleteSubFolder(dbSubFolder);
-                            await MusicDatabaseService.RescanFolderByPath(dbSubFolder.Path);
                             Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path}");
                         }
                     }
