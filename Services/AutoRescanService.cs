@@ -34,61 +34,71 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task AutoScan() {
             //await MusicDatabaseService.DeleteAllSubFolder();
-            List<Folder> folders = await MusicDatabaseService.GetFolders();
-            int changeCount = 0;
-            foreach (Folder folder in folders) {
-                subFolderList.Clear();
-                List<SubFolder> subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
-                List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
-                if (subFoldersInDb != null && subFoldersInDb.Count > 0)
+            try {
+                List<Folder> folders = await MusicDatabaseService.GetFolders();
+                int changeCount = 0;
+                foreach (Folder folder in folders)
                 {
-                    foreach (SubFolder subFolder in subFolders)
+                    subFolderList.Clear();
+                    List<SubFolder> subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
+                    List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
+                    if (subFoldersInDb != null && subFoldersInDb.Count > 0)
                     {
-                        if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
+                        foreach (SubFolder subFolder in subFolders)
                         {
-                            await MusicDatabaseService.AddSubFolder(subFolder);
-                            await MusicDatabaseService.RescanFolderByPath(subFolder.Path,false);
-                            Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
-                            changeCount++;
-                        }
-                        else
-                        {
-                            SubFolder dbSubFolder = subFoldersInDb.First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
-                            if (dbSubFolder.LastModifiedTime != subFolder.LastModifiedTime)
+                            if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
                             {
-                                dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
-                                await MusicDatabaseService.UpdateSubFolder(dbSubFolder);
-                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false);
-                                Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
+                                await MusicDatabaseService.AddSubFolder(subFolder);
+                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false,true);
+                                Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
                                 changeCount++;
+                            }
+                            else
+                            {
+                                SubFolder dbSubFolder = subFoldersInDb.First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
+                                if (dbSubFolder.LastModifiedTime != subFolder.LastModifiedTime)
+                                {
+                                    dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
+                                    await MusicDatabaseService.UpdateSubFolder(dbSubFolder);
+                                    await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false,true);
+                                    Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
+                                    changeCount++;
+                                }
+                            }
+                        }
+
+                        // 处理删除
+                        foreach (SubFolder dbSubFolder in subFoldersInDb)
+                        {
+                            if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
+                            {
+                                await MusicDatabaseService.DeleteSubFolder(dbSubFolder);
+                                await MusicDatabaseService.DeleteSubFolderByPath(dbSubFolder.Path);
+                                Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path},time:{dbSubFolder.LastModifiedTime},folderId:{dbSubFolder.FolderId}");
                             }
                         }
                     }
-
-                    // 处理删除
-                    foreach (SubFolder dbSubFolder in subFoldersInDb)
+                    else
                     {
-                        if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
+                        await MusicDatabaseService.InsertSubFolders(subFolders);
+                    }
+                    if (changeCount > 0)
+                    {
+                        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                        var mainWindow = (App.MainWindow as MainWindow);
+                        if (mainWindow != null)
                         {
-                            await MusicDatabaseService.DeleteSubFolder(dbSubFolder);
-                            Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path},time:{dbSubFolder.LastModifiedTime},folderId:{dbSubFolder.FolderId}");
+                            mainWindow.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                mainWindow.UpdateMusicList();
+                            });
                         }
                     }
                 }
-                else {
-                    await MusicDatabaseService.InsertSubFolders(subFolders);
-                }
-                if (changeCount > 0) {
-                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-                    var mainWindow = (App.MainWindow as MainWindow);
-                    if (mainWindow != null)
-                    {
-                        mainWindow.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            mainWindow.UpdateMusicList();
-                        });
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error: {ex.Message}");
             }
         }
     }

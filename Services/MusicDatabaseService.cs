@@ -72,6 +72,17 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync(subFolder);
         }
 
+        public static async Task DeleteSubFolderByPath(string subFolderPath)
+        {
+            var musicToDelete = await _dbConnection.Table<Music>()
+                                              .Where(m => m.Path.Contains(subFolderPath))
+                                              .ToListAsync();
+            foreach (var music in musicToDelete)
+            {
+                await _dbConnection.DeleteAsync(music);
+            }
+        }
+
         public static async Task DeleteAllSubFolder()
         {
             await _dbConnection.DeleteAllAsync<SubFolder>();
@@ -821,14 +832,26 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task RescanFolderByPath(string folderPath,bool isUpdate = true)
+        public static async Task RescanFolderByPath(string folderPath,bool isUpdate = true,bool isSingleFolder=false)
         {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-            List<StorageFile> files = await GetAllFilesInFolderAndSubfolders(folder);
-            var musicFilesInFolder = await _dbConnection.Table<Music>()
-               .Where(m => m.FolderPath.Contains(folderPath))
-               .ToListAsync();
+            List<StorageFile> files = null;
+            List<Music> musicFilesInFolder = null;
+            if (isSingleFolder)
+            {
+                var currentFiles = await folder.GetFilesAsync();
+                files = new List<StorageFile>();
+                files.AddRange(currentFiles);
+                musicFilesInFolder = AppData.allSongs
+                    .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+            }
+            else {
+                files = await GetAllFilesInFolderAndSubfolders(folder);
+                musicFilesInFolder = await _dbConnection.Table<Music>()
+                   .Where(m => m.FolderPath.Contains(folderPath))
+                   .ToListAsync();
+            }
             HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             // 遍历 IReadOnlyList<StorageFile>，将文件路径添加到 HashSet 中
             foreach (var file in files)

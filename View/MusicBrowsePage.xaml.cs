@@ -110,7 +110,7 @@ namespace WinUIMusicPlayer.View
 
             // 启动设备监视器
             deviceWatcher.Start();
-        }
+        }        
 
         private async void StartWatchingFileFolder()
         {
@@ -120,6 +120,7 @@ namespace WinUIMusicPlayer.View
                 if (!string.IsNullOrEmpty(folder.Path))
                 {
                     var watcher = new FileSystemWatcher(folder.Path);
+                    watcher.IncludeSubdirectories = true;
                     watcher.NotifyFilter = NotifyFilters.FileName | 
                         NotifyFilters.DirectoryName | 
                         NotifyFilters.LastWrite;
@@ -164,6 +165,7 @@ namespace WinUIMusicPlayer.View
         {
             // 当 USB 存储设备插入时触发            
             System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
+            Task.Delay(1500).Wait(); // 等待设备稳定
             await ReadUsbDevice();
         }
 
