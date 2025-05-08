@@ -275,7 +275,7 @@ namespace WinUIMusicPlayer.View
                     await parentPage.AddToFavourite(selectedMusic);
                 }
             }
-
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -405,18 +405,21 @@ namespace WinUIMusicPlayer.View
                             };
                             menuItem.Click += async (s, args) =>
                             {
+                                DateTime startTime = DateTime.Now;
                                 if (uniqueSelectedMusics.Count > 1)
                                 {
+                                    Debug.WriteLine($"消耗时间： {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
                                     parentPage.ShowTransmission();
                                     var usbWriter = new UsbWriterHelper();
                                     usbWriter.hideTransmission += (sender, args) =>
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
                                 }
                                 else if (musicItem != null)
                                 {
+                                    Debug.WriteLine($"消耗时间： {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
                                     parentPage.ShowTransmission();
                                     List<Music> musicItems = new List<Music> { musicItem };
                                     var usbWriter = new UsbWriterHelper();
@@ -424,7 +427,7 @@ namespace WinUIMusicPlayer.View
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
                                 }
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
@@ -444,6 +447,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
                     await parentPage.AddToFavourite(music);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
         }

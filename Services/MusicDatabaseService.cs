@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync(subFolder);
         }
 
-        public static async Task DeleteAll()
+        public static async Task DeleteAllSubFolder()
         {
             await _dbConnection.DeleteAllAsync<SubFolder>();
         }
@@ -245,25 +245,34 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task<List<Music>> FindMusicListByArtist(string artist)
+        public static List<Music> FindMusicListByArtist(string artist)
         {
-            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //            where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
+            //            select m;
+            var query = from m in AppData.allSongs
                         where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
                         select m;
             return query.ToList();
         }
 
-        public static async Task<List<Music>> FindMusicListByAlbum(string album)
+        public static List<Music> FindMusicListByAlbum(string album)
         {
-            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //            where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
+            //            select m;
+            var query = from m in AppData.allSongs
                         where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
                         select m;
             return query.ToList();
         }
 
-        public static async Task<List<Music>> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
+        public static List<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
         {
-            var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
+            //            where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
+            //            select m;
+            var query = from m in AppData.allSongs
                         where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
                         select m;
             return query.ToList();
@@ -654,10 +663,8 @@ namespace WinUIMusicPlayer.Services
         {
             var musicFiles = new List<Music>();
             // 递归获取所有音乐文件
-            DateTime startTime = DateTime.Now;
             List<SubFolder> subFolders = AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId);
             await InsertSubFolders(subFolders);
-            Debug.WriteLine($"获取文件夹中的所有文件耗时: {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
             // 获取已存在的音乐文件路径
             var existingMusicPaths = await _dbConnection.Table<Music>()
@@ -866,6 +873,11 @@ namespace WinUIMusicPlayer.Services
             // 执行添加操作
             foreach (var path in filePaths)
             {
+                var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
+                if (existingMusic != null)
+                {
+                    continue;
+                }
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
                 Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
                 await _dbConnection.InsertAsync(music);

@@ -243,6 +243,7 @@ namespace WinUIMusicPlayer.View
                         musicList.Remove(item);
                     }
                     await parentPage.AddToFavourite(item);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
             else
@@ -254,6 +255,7 @@ namespace WinUIMusicPlayer.View
                         musicList.Remove(selectedMusic);
                     }
                     await parentPage.AddToFavourite(selectedMusic);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
         }
@@ -455,7 +457,7 @@ namespace WinUIMusicPlayer.View
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
                                 }
                                 else if (musicItem != null)
                                 {
@@ -466,7 +468,7 @@ namespace WinUIMusicPlayer.View
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
                                 }
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
@@ -542,6 +544,7 @@ namespace WinUIMusicPlayer.View
                         musicList.Remove(music);
                     }
                     await parentPage.AddToFavourite(music);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
         }

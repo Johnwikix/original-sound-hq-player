@@ -160,7 +160,6 @@ namespace WinUIMusicPlayer.Reader
                     uniqueId = Guid.NewGuid().ToString(); // 最坏情况下使用随机GUID
                 }
             }
-
             return uniqueId;
         }
     }

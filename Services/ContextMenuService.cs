@@ -138,15 +138,15 @@ namespace WinUIMusicPlayer.Services
                 List<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByAlbum(item.Album);
+                    musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByArtist(item.Author);
+                    musicList = MusicDatabaseService.FindMusicListByArtist(item.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
+                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
                 if (musicList != null && musicList.Count > 0)
                 {
@@ -156,7 +156,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         hideTransmission?.Invoke(this, EventArgs.Empty);
                     };
-                    _ = usbWriter.WriteToUsb(musicList, device);
+                    await usbWriter.WriteToUsb(musicList, device);
                 }
             }
         }     
@@ -192,19 +192,20 @@ namespace WinUIMusicPlayer.Services
                 List<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByAlbum(music.Album);
+                    musicList =  MusicDatabaseService.FindMusicListByAlbum(music.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByArtist(music.Author);
+                    musicList =  MusicDatabaseService.FindMusicListByArtist(music.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
+                    musicList =  MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
                 if (musicList != null && musicList.Count > 0)
                 {
-                    _ = MusicDatabaseService.AddMusicListToFavour(musicList);
+                    await MusicDatabaseService.AddMusicListToFavour(musicList);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
         }
@@ -261,15 +262,15 @@ namespace WinUIMusicPlayer.Services
                 List<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByAlbum(item.Album);
+                    musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByArtist(item.Author);
+                    musicList = MusicDatabaseService.FindMusicListByArtist(item.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = await MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
+                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
                 if (musicList != null && musicList.Count > 0)
                 {

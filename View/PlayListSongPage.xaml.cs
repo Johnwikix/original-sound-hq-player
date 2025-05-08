@@ -243,6 +243,7 @@ namespace WinUIMusicPlayer.View
                     await parentPage.AddToFavourite(selectedMusic);
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             //if (MusicListView.SelectedItem is Music selectedMusic)
             //{
             //    await parentPage.AddToFavourite(selectedMusic);
@@ -403,7 +404,7 @@ namespace WinUIMusicPlayer.View
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
                                 }
                                 else if (musicItem != null)
                                 {
@@ -414,7 +415,7 @@ namespace WinUIMusicPlayer.View
                                     {
                                         parentPage.HideTransmission();
                                     };
-                                    _ = usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
                                 }
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
@@ -485,6 +486,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
                     await parentPage.AddToFavourite(music);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
             }
         }

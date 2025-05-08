@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         public static async Task AutoScan() {
-            //await MusicDatabaseService.DeleteAll();
+            //await MusicDatabaseService.DeleteAllSubFolder();
             List<Folder> folders = await MusicDatabaseService.GetFolders();
             int changeCount = 0;
             foreach (Folder folder in folders) {

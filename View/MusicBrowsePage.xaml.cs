@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Devices.Enumeration;
@@ -59,6 +61,8 @@ namespace WinUIMusicPlayer.View
         private bool isInPlayingDetailMode = false;
         private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
         private DeviceWatcher deviceWatcher;
+        private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
+        private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -88,6 +92,8 @@ namespace WinUIMusicPlayer.View
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
             StartWatchingUsbStorageDevices();
+            StartWatchingFileFolder();
+            OnFileChanged(null,null);
         }
         private void StartWatchingUsbStorageDevices()
         {
@@ -104,6 +110,54 @@ namespace WinUIMusicPlayer.View
 
             // 启动设备监视器
             deviceWatcher.Start();
+        }
+
+        private async void StartWatchingFileFolder()
+        {
+            List<Folder> folders = await MusicDatabaseService.GetFolders();
+            foreach (var folder in folders)
+            {
+                if (!string.IsNullOrEmpty(folder.Path))
+                {
+                    var watcher = new FileSystemWatcher(folder.Path);
+                    watcher.NotifyFilter = NotifyFilters.FileName | 
+                        NotifyFilters.DirectoryName | 
+                        NotifyFilters.LastWrite;
+
+                    // 订阅事件
+                    watcher.Changed += OnFileChanged;
+
+                    // 开始监听
+                    watcher.EnableRaisingEvents = true;
+
+                    watchers.Add(watcher);
+                }
+            }
+        }
+
+        private async void OnFileChanged(object sender, FileSystemEventArgs e)
+        {
+            if (!await scanSemaphore.WaitAsync(0))
+            {
+                Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
+                return;
+            }
+            try
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProcessingRing.Visibility = Visibility.Visible;
+                });
+                await AutoRescanService.AutoScan();
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProcessingRing.Visibility = Visibility.Collapsed;
+                });
+            }
+            finally
+            {
+                scanSemaphore.Release();
+            }
         }
 
         private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
@@ -295,12 +349,12 @@ namespace WinUIMusicPlayer.View
 
         public void ShowTransmission()
         {
-            Transmission.Visibility = Visibility.Visible;
+            ProcessingRing.Visibility = Visibility.Visible;
         }
 
         public void HideTransmission()
         {
-            Transmission.Visibility = Visibility.Collapsed;
+            ProcessingRing.Visibility = Visibility.Collapsed;
         }
 
         private async Task ReadUsbDevice()
@@ -523,7 +577,7 @@ namespace WinUIMusicPlayer.View
                     ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.isFavorite ? "\ueb52" : "\ueb51";
                 }
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            //AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public void UpdateFavourtPlaylist(List<Music> newMusicList)
@@ -907,6 +961,7 @@ namespace WinUIMusicPlayer.View
             {
                 ((FontIcon)PlayBarFavouriteButton.Content).Glyph = !musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
                 await AddToFavourite(musicPlaybackService.currentPlayingMusic);
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 NotifySubPageUpdateFavouriteState();
             }
         }
