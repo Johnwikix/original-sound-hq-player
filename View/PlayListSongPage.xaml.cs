@@ -367,7 +367,7 @@ namespace WinUIMusicPlayer.View
                     {
                         menuItem.DataContext = musicItem;
                     }
-                    List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                    //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
                     if (menuFlyout.Items.Count > 6)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[3] as MenuFlyoutSubItem;
@@ -379,14 +379,14 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
-                    if (usbDevices != null && usbDevices.Count > 0)
+                    if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
                     {
                         MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
                             Text = "发送至usb设备",
                             Tag = "usbDevice",
                         };
-                        foreach (var usbDevice in usbDevices)
+                        foreach (var usbDevice in AppData.usbStorageDevices)
                         {
                             var menuItem = new MenuFlyoutItem
                             {

@@ -11,9 +11,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Devices.Enumeration;
+using Windows.Devices.Portable;
+using Windows.Storage;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -53,6 +58,7 @@ namespace WinUIMusicPlayer.View
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
         private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
+        private DeviceWatcher deviceWatcher;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -81,8 +87,44 @@ namespace WinUIMusicPlayer.View
             InitializeSystemMediaControls();
             InitializeAppWindow();
             SelectBarItem(AppSettings.DefualtPlayList);
+            StartWatchingUsbStorageDevices();
+        }
+        private void StartWatchingUsbStorageDevices()
+        {
+            // 定义设备选择器以筛选 USB 存储设备
+            string deviceSelector = StorageDevice.GetDeviceSelector();
+
+            // 创建设备监视器
+            deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
+
+            // 注册设备添加、移除和枚举完成事件
+            deviceWatcher.Added += DeviceWatcher_Added;
+            deviceWatcher.Removed += DeviceWatcher_Removed;
+            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
+
+            // 启动设备监视器
+            deviceWatcher.Start();
         }
 
+        private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        {
+            // 当 USB 存储设备插入时触发            
+            System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
+            await ReadUsbDevice();
+        }
+
+        private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            // 当 USB 存储设备移除时触发            
+            System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
+            await ReadUsbDevice();
+        }
+
+        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        {
+            // 设备枚举完成时触发
+            System.Diagnostics.Debug.WriteLine("设备枚举已完成");
+        }
         private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
         {
             this.DispatcherQueue.TryEnqueue(async () =>
@@ -259,6 +301,42 @@ namespace WinUIMusicPlayer.View
         public void HideTransmission()
         {
             Transmission.Visibility = Visibility.Collapsed;
+        }
+
+        private async Task ReadUsbDevice()
+        {
+            try
+            {
+                AppData.usbStorageDevices.Clear();
+                AppData.usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (AppData.usbStorageDevices.Count > 0)
+                    {
+                        UsbDeviceCombox.Visibility = Visibility.Visible;
+                        UsbDeviceCombox.ItemsSource = AppData.usbStorageDevices;
+                        UsbDeviceCombox.SelectedIndex = 0;
+                    }
+                    else
+                    {
+                        UsbDeviceCombox.Visibility = Visibility.Collapsed;
+                    }
+                });               
+            }
+            catch (Exception ex)
+            {
+                UsbDeviceCombox.Visibility = Visibility.Collapsed;
+                System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
+            }
+        }
+
+        private void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AppData.usbStorageDevice = null;
+            if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
+            {
+                AppData.usbStorageDevice = usbStorageDevice;
+            }           
         }
 
         public void DisableBackButton()

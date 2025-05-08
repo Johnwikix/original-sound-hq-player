@@ -82,14 +82,14 @@ namespace WinUIMusicPlayer.Services
             flyout.Items.Add(playlistSubItem);
 
 
-            List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-            if (usbStorageDevices != null && usbStorageDevices.Count > 0) {
+            //List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+            if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0) {
                 MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                 {
                     Text = "发送至usb设备"
                 };
 
-                foreach (var device in usbStorageDevices)
+                foreach (var device in AppData.usbStorageDevices)
                 {
                     MenuFlyoutItem usbDeviceItem = new MenuFlyoutItem
                     {
