@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.View
                 }
                 if (parentPage.pageType == "folder")
                 {
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetFolderMusicFromMem(parentPage.currentFolderName, null));
+                    ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetFolderMusicFromMem(parentPage.currentFolderName, AppData.searchText));
                     await LoadMusicAsync(musics, parentPage.pageType);
                 }
             }
