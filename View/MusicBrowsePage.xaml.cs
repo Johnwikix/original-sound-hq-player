@@ -335,6 +335,7 @@ namespace WinUIMusicPlayer.View
             AppData.usbStorageDevice = null;
             if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
             {
+                Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
                 AppData.usbStorageDevice = usbStorageDevice;
             }           
         }
