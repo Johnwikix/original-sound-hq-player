@@ -58,7 +58,17 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.InsertAllAsync(subFolder);
         }
 
+        public static async Task InsertUsbDeviceSubFolders(List<UsbDeviceSubFolder> usbDeviceSubFolders)
+        {
+            await _dbConnection.InsertAllAsync(usbDeviceSubFolders);
+        }
+
         public static async Task AddSubFolder(SubFolder subFolder)
+        {
+            await _dbConnection.InsertAsync(subFolder);
+        }
+
+        public static async Task AddUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
         {
             await _dbConnection.InsertAsync(subFolder);
         }
@@ -68,7 +78,17 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(subFolder);
         }
 
+        public static async Task UpdateUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
+        {
+            await _dbConnection.UpdateAsync(subFolder);
+        }
+
         public static async Task DeleteSubFolder(SubFolder subFolder)
+        {
+            await _dbConnection.DeleteAsync(subFolder);
+        }
+
+        public static async Task DeleteUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
         {
             await _dbConnection.DeleteAsync(subFolder);
         }
@@ -84,6 +104,17 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task DeleteUsbDeviceSubFolderByPath(string subFolderPath,string uniqueDeviceId)
+        {
+            List<UsbDeviceMusic> musicToDelete = await _dbConnection.Table<UsbDeviceMusic>()
+                                              .Where(m => m.Path.Contains(subFolderPath) && m.UniqueDeviceId == uniqueDeviceId)
+                                              .ToListAsync();
+            foreach (var music in musicToDelete)
+            {
+                await _dbConnection.DeleteAsync(music);
+            }
+        }
+
         public static async Task DeleteAllSubFolder()
         {
             await _dbConnection.DeleteAllAsync<SubFolder>();
@@ -92,6 +123,11 @@ namespace WinUIMusicPlayer.Services
         public static async Task<List<SubFolder>> GetSubFolders(int folderId)
         {
             return await _dbConnection.Table<SubFolder>().Where(f => f.FolderId == folderId).ToListAsync();
+        }
+
+        public static async Task<List<UsbDeviceSubFolder>> GetUsbDeviceSubFolders(string uniqueDeviceId)
+        {
+            return await _dbConnection.Table<UsbDeviceSubFolder>().Where(f => f.UniqueDeviceId == uniqueDeviceId).ToListAsync();
         }
 
         public static async Task<List<Folder>> GetFolders()
