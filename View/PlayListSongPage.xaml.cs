@@ -48,9 +48,13 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
-                parentPage.refreshPage += RefreshPlayList;
+                parentPage.refreshPage += RefreshPlayList;              
                 PlayListName.Text = parentPage.currentPlayList.Name;
                 initizeData();
+                clearUsbDeviceMusicList(null, null);
+                refreshUsbDeviceMusicList(null, null);
+                parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
+                parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
                 //if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
                 //{
                 //    PlayListName.Text = parentPage.currentPlayList.Name;
@@ -62,6 +66,23 @@ namespace WinUIMusicPlayer.View
                 //    UpdateMusicListView();
                 //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 //}                
+            }
+        }
+
+        private void clearUsbDeviceMusicList(object? sender, EventArgs e)
+        {
+            foreach (var music in musicList)
+            {
+                music.IsExistOnDevice = false;
+            }
+        }
+
+        private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
+        {
+            HashSet<string> usbMusicTitles = new HashSet<string>(parentPage.musicOnUsbDevice.Select(u => u.Title));
+            foreach (var music in musicList)
+            {
+                music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
             }
         }
 

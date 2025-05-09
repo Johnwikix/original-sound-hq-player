@@ -49,10 +49,29 @@ namespace WinUIMusicPlayer.View
                 this.parentPage = parentPage;
                 parentPage.DisableBackButton();
                 parentPage.refreshSong += RefreshSong;
+                clearUsbDeviceMusicList(null, null);
+                refreshUsbDeviceMusicList(null, null);
+                parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
+                parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
                 RefreshPage();
             }
         }
+        private void clearUsbDeviceMusicList(object? sender, EventArgs e)
+        {
+            foreach (var music in musicList)
+            {
+                music.IsExistOnDevice = false;
+            }
+        }
 
+        private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
+        {
+            HashSet<string> usbMusicTitles = new HashSet<string>(parentPage.musicOnUsbDevice.Select(u => u.Title));
+            foreach (var music in musicList)
+            {
+                music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+            }
+        }
         private async void RefreshPage()
         {
             if (parentPage != null)

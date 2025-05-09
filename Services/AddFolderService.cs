@@ -174,6 +174,65 @@ namespace WinUIMusicPlayer.Services
             return null;
         }
 
+        public UsbDeviceMusic getUsbDeviceMusicInfo(StorageFile file, string folderPath,string uniqueDeviceId)
+        {
+            try
+            {
+                using (TagLib.File audioFile = TagLib.File.Create(file.Path))
+                {
+                    Tag tag = audioFile.Tag;
+                    string title = "未知标题";
+                    string artist = "未知艺术家";
+                    string album = "未知专辑";
+                    title = !string.IsNullOrWhiteSpace(tag.Title) ?
+                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+
+                    string[] artists = audioFile.Tag.Performers;
+                    if (artists.Length > 0)
+                    {
+                        artist = artists[0]; // 取第一个艺术家
+                        Console.WriteLine("艺术家: " + string.Join(", ", artists));
+                    }
+                    if (!string.IsNullOrWhiteSpace(tag.Album))
+                    {
+                        album = tag.Album;
+                    }
+                    var music = new UsbDeviceMusic
+                    {
+                        Path = file.Path,
+                        Title = title,
+                        Author = artist,
+                        Album = album,                        
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        UniqueDeviceId = uniqueDeviceId
+                    };
+                    return music;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 即使提取元数据失败，也尝试添加基本信息
+                try
+                {
+                    var music = new UsbDeviceMusic
+                    {
+                        Path = file.Path,
+                        Title = Path.GetFileNameWithoutExtension(file.Name),
+                        Author = "未知艺术家",                       
+                        Album = "未知专辑",                       
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        UniqueDeviceId = uniqueDeviceId
+                    };
+                    return music;
+                }
+                catch (Exception innerEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");                     // 返回null以指示错误
+                }
+            }
+            return null;
+        }
+
 
 
         public async Task GetMusicFilesRecursive(StorageFolder folder, List<Music> musicFiles)

@@ -32,6 +32,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
                 await _dbConnection.CreateTableAsync<SubFolder>();
+                await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
             }
         }
 
@@ -798,7 +799,7 @@ namespace WinUIMusicPlayer.Services
         private async static Task updateMusic(Music music, string folderPath)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == music.Path).FirstOrDefaultAsync();
+            var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
             Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
             existingMusic.Title = newMusic.Title;
             existingMusic.Author = newMusic.Author;
@@ -917,6 +918,94 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             
+        }
+
+        public static async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId) {
+            return await _dbConnection.Table<UsbDeviceMusic>().Where(m=>m.UniqueDeviceId ==uniqueDeviceId).ToListAsync();
+        }
+
+        public static async Task<List<UsbDeviceMusic>> RescanUsbDeviceFolderByPath(List<UsbDeviceMusic> usbDeviceMusics,string uniqueDeviceId, string folderPath,bool isSingleFolder = false)
+        {
+            // 获取StorageFolder对象
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            List<StorageFile> files = null;
+            List<UsbDeviceMusic> musicFilesInFolder = null;
+            if (isSingleFolder)
+            {
+                var currentFiles = await folder.GetFilesAsync();
+                files = new List<StorageFile>();
+                files.AddRange(currentFiles);
+                musicFilesInFolder = usbDeviceMusics.Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+            }
+            else
+            {
+                files = await GetAllFilesInFolderAndSubfolders(folder);
+                musicFilesInFolder = usbDeviceMusics
+                   .Where(m => m.Path.Contains(folderPath)).ToList();
+            }
+            HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // 遍历 IReadOnlyList<StorageFile>，将文件路径添加到 HashSet 中
+            foreach (var file in files)
+            {
+                try
+                {
+                    if (ToolUtils.IsMusicFile(file.FileType))
+                    {
+                        filePaths.Add(file.Path);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                }
+            }
+
+            // 存储需要删除的 Music 项
+            var toDelete = new List<UsbDeviceMusic>();
+
+            // 检查 Music 列表中的项
+            foreach (var newMusic in musicFilesInFolder)
+            {
+                if (!filePaths.Contains(newMusic.Path))
+                {
+                    toDelete.Add(newMusic);
+                }
+                else
+                {
+                    //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
+                    //UsbDeviceMusic existingMusic = usbDeviceMusics.Where(m => m.Path == newMusic.Path).FirstOrDefault();
+                    //Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
+                    //existingMusic.Title = music.Title;
+                    //existingMusic.Author = music.Author;
+                    //existingMusic.Extension = music.Extension;
+                    //existingMusic.Album = music.Album;                    
+                    //await _dbConnection.UpdateAsync(existingMusic);
+                    filePaths.Remove(newMusic.Path);
+                }
+            }
+
+            // 执行删除操作
+            foreach (var music in toDelete)
+            {
+                await _dbConnection.DeleteAsync(music);
+                musicFilesInFolder.Remove(music);
+            }
+
+            // 执行添加操作
+            List<UsbDeviceMusic> usbDeviceMusicsInsertList = new List<UsbDeviceMusic>();
+            foreach (var path in filePaths)
+            {
+                var existingMusic = usbDeviceMusics.Where(m => m.Path == path).FirstOrDefault();
+                if (existingMusic != null)
+                {
+                    continue;
+                }
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
+                UsbDeviceMusic usbDeviceMusic = addFolderService.getUsbDeviceMusicInfo(storageFile, folder.Path,uniqueDeviceId);
+                usbDeviceMusicsInsertList.Add(usbDeviceMusic);
+                await _dbConnection.InsertAsync(usbDeviceMusic);
+            }
+            return usbDeviceMusicsInsertList;
         }
     }
 }
