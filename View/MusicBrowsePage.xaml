@@ -112,14 +112,20 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <!-- 返回按钮 -->
-            <Button x:Name="CancelPlayingDetailButton" Click="CancelPlayingDetailButton_Click"  Margin="20 10 10 10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent"  Grid.Row="0" Grid.Column="0">
-                <FontIcon Glyph="&#xE70D;" ></FontIcon>
-                <Button.Transitions>
-                    <TransitionCollection>
-                        <EntranceThemeTransition FromHorizontalOffset="0" FromVerticalOffset="-20" />
-                    </TransitionCollection>
-                </Button.Transitions>
-            </Button>
+            <StackPanel  Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+                <Button x:Name="CancelPlayingDetailButton" Click="CancelPlayingDetailButton_Click"  Margin="20 10 10 10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent">
+                    <FontIcon Glyph="&#xE70D;" ></FontIcon>
+                    <Button.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="0" FromVerticalOffset="-20" />
+                        </TransitionCollection>
+                    </Button.Transitions>
+                </Button>
+                <Button Click="FullScreenButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <FontIcon x:Name="FullScreenIcon"  VerticalAlignment="Center" Glyph="&#xe740;" Margin="0" Grid.Column="0"/>
+                </Button>
+            </StackPanel>
             <!-- 专辑封面 -->
             <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Image x:Name="PlayingDetailAlbumCoverImage" />
@@ -364,11 +370,7 @@
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
                 </Button>
-                <Button Click="FullScreenButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
-                        HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <FontIcon x:Name="FullScreenIcon"  VerticalAlignment="Center" Glyph="&#xe740;" Margin="0" Grid.Column="0"/>
-                </Button>
-                <Button Click="VolumeSliderIconButton_Click" Margin="10 0 0 0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button Click="VolumeSliderIconButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="VolumeSliderIcon"  VerticalAlignment="Center" Glyph="&#xe995;" Margin="0" Grid.Column="0"/>
                 </Button>                
