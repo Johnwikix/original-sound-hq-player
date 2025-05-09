@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -44,8 +45,9 @@ namespace WinUIMusicPlayer.Services
         public bool isInitializing = true;
         private NotificationService notificationService = new NotificationService();
         public event EventHandler<int> updateCurrentLyricIndex;
-        private List<LyricLine> _lyrics = new List<LyricLine>();
+        public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
+        private CancellationTokenSource _lyricsCancellationTokenSource;
 
         public MusicPlaybackService()
         {
@@ -67,27 +69,39 @@ namespace WinUIMusicPlayer.Services
         public async Task<List<LyricLine>> ParseLrcLyrics(string lrcContent)
         {
             List<LyricLine> lyrics = new List<LyricLine>();
-
+            CancelPreviousLyricsTask();
             if (string.IsNullOrEmpty(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
                 {
-                    var autoLyrics = await lrcService.GetLyricsAsync(currentPlayingMusic.Title, currentPlayingMusic.Album, currentPlayingMusic.Author);
-                    if (autoLyrics != null)
+                    _lyricsCancellationTokenSource = new CancellationTokenSource();
+                    try
                     {
-                        lrcContent = autoLyrics;
-                        return SpliteContent(lrcContent, lyrics);
-                    }
-                    else
-                    {
-                        lyrics.Add(new LyricLine
+                        var autoLyrics = await lrcService.GetLyricsAsync(
+                            currentPlayingMusic.Title,
+                            currentPlayingMusic.Album,
+                            currentPlayingMusic.Author,
+                            _lyricsCancellationTokenSource.Token);
+
+                        if (autoLyrics != null)
                         {
-                            Text = "没有歌词",
-                            Time = TimeSpan.Zero,
-                            IsCurrent = true
-                        });
-                        return lyrics;
+                            lrcContent = autoLyrics;
+                            return SpliteContent(lrcContent, lyrics);
+                        }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine("歌词获取任务已被取消");
+                    }
+
+                    // 如果获取失败或被取消，返回默认歌词
+                    lyrics.Add(new LyricLine
+                    {
+                        Text = "没有歌词",
+                        Time = TimeSpan.Zero,
+                        IsCurrent = true
+                    });
+                    return lyrics;
                 }
                 else
                 {
@@ -101,6 +115,19 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             return SpliteContent(lrcContent, lyrics);
+        }
+
+        private void CancelPreviousLyricsTask()
+        {
+            if (_lyricsCancellationTokenSource != null)
+            {
+                if (!_lyricsCancellationTokenSource.IsCancellationRequested)
+                {
+                    _lyricsCancellationTokenSource.Cancel();
+                }
+                _lyricsCancellationTokenSource.Dispose();
+                _lyricsCancellationTokenSource = null;
+            }
         }
 
         private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics)
@@ -728,6 +755,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task DisposeAudio()
         {
+            CancelPreviousLyricsTask();
             if (progressTimer != null)
             {
                 progressTimer.Stop();
@@ -760,7 +788,7 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
-            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id, volume);
+            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id, volume);            
         }
 
         public void SwitchPlayMode()

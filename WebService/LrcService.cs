@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 
@@ -35,14 +36,21 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public async Task<string> GetLyricsAsync(string title, string album, string artist)
+        public async Task<string> GetLyricsAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
         {
             try
             {
                 var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                var response = await _httpClient.GetAsync(requestUrl);
+                // 在请求中传入 CancellationToken
+                var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
+                // 在读取内容时也传入 CancellationToken
+                return await response.Content.ReadAsStringAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("获取歌词的任务已被取消。");
+                return null;
             }
             catch (Exception ex)
             {

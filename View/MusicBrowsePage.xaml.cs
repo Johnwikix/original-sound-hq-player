@@ -235,7 +235,7 @@ namespace WinUIMusicPlayer.View
             // 设置播放服务中的歌词
             await musicPlaybackService.SetLyrics(lyricsContent);
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = await musicPlaybackService.ParseLrcLyrics(lyricsContent);
+            List<LyricLine> parsedLyrics =musicPlaybackService._lyrics;
             _uiLyrics.Clear();
             foreach (var lyric in parsedLyrics)
             {
