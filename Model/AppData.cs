@@ -10,6 +10,8 @@ namespace WinUIMusicPlayer.Model
 
         public static List<Music> allSongs = new List<Music>();
 
+        public static List<UsbDeviceMusic> musicOnUsbDevice = new List<UsbDeviceMusic>();
+
         public static List<PlayListMusic> allPlayListMusics = new List<PlayListMusic>();
         public static PlayMode PlayMode { get; set; }
         public static int? LastPlayedMusicId { get; set; }

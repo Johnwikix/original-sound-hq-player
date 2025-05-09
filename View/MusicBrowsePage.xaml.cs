@@ -64,8 +64,7 @@ namespace WinUIMusicPlayer.View
         private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
         private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
-        public event EventHandler refreshUsbDeviceMusicList;
-        public List<UsbDeviceMusic> musicOnUsbDevice = new List<UsbDeviceMusic>();
+        public event EventHandler refreshUsbDeviceMusicList;        
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -394,7 +393,7 @@ namespace WinUIMusicPlayer.View
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             AppData.usbStorageDevice = null;
-            musicOnUsbDevice.Clear();
+            AppData.musicOnUsbDevice.Clear();
             clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
             if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
             {
@@ -404,14 +403,19 @@ namespace WinUIMusicPlayer.View
                 if (usbDeviceMusics != null && usbDeviceMusics.Count > 0)
                 {
                     // 检查是否需要重新扫描
-                    musicOnUsbDevice = usbDeviceMusics;
+                    DateTime startTime = DateTime.Now;
+                    UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
+                    await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
+                    Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
+                    AppData.musicOnUsbDevice = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+                    Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
                 }
                 else
                 {
                     // 读取USB设备中的音乐文件
                     string folderPath = Path.Combine(usbStorageDevice.Path,"MUSIC");
                     if (Directory.Exists(folderPath)) {
-                        musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics,usbStorageDevice.UniqueId,folderPath, false);
+                        AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics,usbStorageDevice.UniqueId,folderPath, false);
                     }
                     else
                     {

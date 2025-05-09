@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
                 await _dbConnection.CreateTableAsync<SubFolder>();
                 await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
+                await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
         }
 
@@ -639,6 +640,11 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.DeleteAsync<Music>(musicId);
             AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
+            HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
+            foreach (var music in AppData.allSongs)
+            {
+                music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+            }
         }
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)
         {

@@ -12,24 +12,64 @@ namespace WinUIMusicPlayer.Services
 {
     public class AutoRescanService
     {
-        private static List<SubFolder> subFolderList = new List<SubFolder>();
+        //private static List<SubFolder> subFolderList = new List<SubFolder>();
+        //public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
+        //{           
+        //    SubFolder folderItem = new SubFolder
+        //    {
+        //        Path = folder,
+        //        LastModifiedTime = Directory.GetLastWriteTime(folder),
+        //        FolderId=folderId
+        //    };
+        //    subFolderList.Add(folderItem);
+        //    Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.FolderId}");
+        //    // 递归获取子文件夹
+        //    string[] subFolders = Directory.GetDirectories(folder);
+        //    foreach (string subFolderItem in subFolders)
+        //    {
+        //        RecordInitialFolderTimes(subFolderItem, folderId);
+        //    }
+        //    return subFolderList;
+        //}
+
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
-        {           
-            SubFolder folderItem = new SubFolder
+        {
+            // 创建方法内的局部变量，每次调用都会创建新的列表
+            List<SubFolder> result = new List<SubFolder>();
+
+            // 调用辅助方法进行递归收集
+            CollectFolderInfo(folder, folderId, result);
+
+            return result;
+        }
+
+        // 添加一个辅助方法来递归收集文件夹信息
+        private static void CollectFolderInfo(string folder, int folderId, List<SubFolder> folderList)
+        {
+            try
             {
-                Path = folder,
-                LastModifiedTime = Directory.GetLastWriteTime(folder),
-                FolderId=folderId
-            };
-            subFolderList.Add(folderItem);
-            Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.FolderId}");
-            // 递归获取子文件夹
-            string[] subFolders = Directory.GetDirectories(folder);
-            foreach (string subFolderItem in subFolders)
-            {
-                RecordInitialFolderTimes(subFolderItem, folderId);
+                // 添加当前文件夹
+                SubFolder folderItem = new SubFolder
+                {
+                    Path = folder,
+                    LastModifiedTime = Directory.GetLastWriteTime(folder),
+                    FolderId = folderId
+                };
+                folderList.Add(folderItem);
+                Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.FolderId}");
+
+                // 递归获取子文件夹
+                string[] subFolders = Directory.GetDirectories(folder);
+                foreach (string subFolderItem in subFolders)
+                {
+                    CollectFolderInfo(subFolderItem, folderId, folderList);
+                }
             }
-            return subFolderList;
+            catch (Exception ex)
+            {
+                // 安全处理可能的异常（如权限问题或文件夹不存在）
+                Debug.WriteLine($"文件夹扫描错误 {folder}: {ex.Message}");
+            }
         }
 
         public static async Task AutoScan() {
@@ -39,8 +79,12 @@ namespace WinUIMusicPlayer.Services
                 int changeCount = 0;
                 foreach (Folder folder in folders)
                 {
-                    subFolderList.Clear();
-                    List<SubFolder> subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
+                    //subFolderList.Clear();
+                    List<SubFolder> subFolders = new List<SubFolder>();
+                    await Task.Run(() =>
+                    {
+                        subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
+                    });
                     List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
                     if (subFoldersInDb != null && subFoldersInDb.Count > 0)
                     {

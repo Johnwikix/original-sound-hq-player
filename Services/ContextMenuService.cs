@@ -157,6 +157,7 @@ namespace WinUIMusicPlayer.Services
                         hideTransmission?.Invoke(this, EventArgs.Empty);
                     };
                     await usbWriter.WriteToUsb(musicList, device);
+                    UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                 }
             }
         }     

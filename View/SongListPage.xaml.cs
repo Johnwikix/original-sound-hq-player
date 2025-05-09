@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.View
 
         private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
-            HashSet<string> usbMusicTitles = new HashSet<string>(parentPage.musicOnUsbDevice.Select(u => u.Title));
+            HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
             foreach (var music in musicList)
             {
                 music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
