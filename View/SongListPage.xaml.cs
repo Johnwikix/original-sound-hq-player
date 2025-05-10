@@ -463,6 +463,7 @@ namespace WinUIMusicPlayer.View
                                         usbDeviceMusic.Title = music.Title;
                                         usbDeviceMusic.Author = music.Author;
                                         usbDeviceMusic.Album = music.Album;
+                                        usbDeviceMusic.Extension = music.Extension;
                                         usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                     }
@@ -482,6 +483,7 @@ namespace WinUIMusicPlayer.View
                                     usbDeviceMusic.Title = musicItem.Title;
                                     usbDeviceMusic.Author = musicItem.Author;
                                     usbDeviceMusic.Album = musicItem.Album;
+                                    usbDeviceMusic.Extension = musicItem.Extension;
                                     usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                     AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }

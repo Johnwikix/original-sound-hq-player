@@ -166,6 +166,7 @@ namespace WinUIMusicPlayer.Services
                         usbDeviceMusic.Title = music.Title;
                         usbDeviceMusic.Author = music.Author;
                         usbDeviceMusic.Album = music.Album;
+                        usbDeviceMusic.Extension = music.Extension;
                         usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                     }
