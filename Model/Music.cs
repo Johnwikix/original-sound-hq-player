@@ -136,9 +136,9 @@ namespace WinUIMusicPlayer.Model
                 }
             }
         }
-
-        private bool _isExistOnDevice { get; set; } = false;
-        public bool IsExistOnDevice
+        private int _isExistOnDevice = 0;
+        [Ignore]
+        public int IsExistOnDevice
         {
             get { return _isExistOnDevice; }
             set

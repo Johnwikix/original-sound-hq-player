@@ -11,7 +11,15 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            return (bool)value ? "\uE73E" : "";
+            if ((int)value == 1)
+            {
+                return "\uE73A";
+            }
+            if ((int)value == 2)
+            {
+                return "\uE73D";
+            }
+            return "";
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {

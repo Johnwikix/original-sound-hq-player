@@ -640,10 +640,32 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.DeleteAsync<Music>(musicId);
             AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
-            HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
+            //HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
+            //foreach (var music in AppData.allSongs)
+            //{
+            //    music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+            //}
+            var usbMusicGroups = AppData.musicOnUsbDevice
+                .GroupBy(u => u.Title)
+                .ToDictionary(g => g.Key, g => g.ToList());
             foreach (var music in AppData.allSongs)
             {
-                music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+                music.IsExistOnDevice = 0;
+
+                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+                {
+                    music.IsExistOnDevice = 1;
+                    foreach (var usbMusic in matchingItems)
+                    {
+                        if (music.Author == usbMusic.Author &&
+                            music.Album == usbMusic.Album &&
+                            music.Extension == usbMusic.Extension)
+                        {
+                            music.IsExistOnDevice = 2;
+                            break;
+                        }
+                    }
+                }
             }
         }
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)

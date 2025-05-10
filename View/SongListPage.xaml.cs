@@ -67,16 +67,38 @@ namespace WinUIMusicPlayer.View
         {
             foreach (var music in musicList)
             {
-                music.IsExistOnDevice = false;
+                music.IsExistOnDevice = 0;
             }
         }
 
         private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
-            HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
+            //HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
+            //foreach (var music in musicList)
+            //{
+            //    music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+            //}
+            var usbMusicGroups = AppData.musicOnUsbDevice
+                                        .GroupBy(u => u.Title)
+                                        .ToDictionary(g => g.Key, g => g.ToList());
             foreach (var music in musicList)
             {
-                music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
+                music.IsExistOnDevice = 0;
+
+                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+                {
+                    music.IsExistOnDevice = 1;
+                    foreach (var usbMusic in matchingItems)
+                    {
+                        if (music.Author == usbMusic.Author &&
+                            music.Album == usbMusic.Album &&
+                            music.Extension == usbMusic.Extension)
+                        {
+                            music.IsExistOnDevice = 2;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -435,6 +457,20 @@ namespace WinUIMusicPlayer.View
                                         parentPage.HideTransmission();
                                     };
                                     await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    foreach (var music in uniqueSelectedMusics)
+                                    {
+                                        var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
+                                        if (existingMusic != null)
+                                        {
+                                            continue; // 如果已经存在，则跳过
+                                        }
+                                        UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
+                                        usbDeviceMusic.Title = music.Title;
+                                        usbDeviceMusic.Author = music.Author;
+                                        usbDeviceMusic.Album = music.Album;
+                                        usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+                                        AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                                    }
                                 }
                                 else if (musicItem != null)
                                 {
@@ -447,7 +483,14 @@ namespace WinUIMusicPlayer.View
                                         parentPage.HideTransmission();
                                     };
                                     await usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
+                                    usbDeviceMusic.Title = musicItem.Title;
+                                    usbDeviceMusic.Author = musicItem.Author;
+                                    usbDeviceMusic.Album = musicItem.Album;
+                                    usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+                                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }
+                                refreshUsbDeviceMusicList(null, null);
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
                         }

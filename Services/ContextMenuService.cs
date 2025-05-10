@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Media.Playlists;
@@ -158,6 +159,20 @@ namespace WinUIMusicPlayer.Services
                     };
                     await usbWriter.WriteToUsb(musicList, device);
                     UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
+                    foreach (var music in musicList)
+                    {
+                        var existingMusic = AppData.musicOnUsbDevice.Where(m=>m.Title==music.Title).FirstOrDefault();
+                        if (existingMusic != null)
+                        {
+                            continue; // 如果已经存在，则跳过
+                        }
+                        UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
+                        usbDeviceMusic.Title = music.Title;
+                        usbDeviceMusic.Author = music.Author;
+                        usbDeviceMusic.Album = music.Album;
+                        usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+                        AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                    }
                 }
             }
         }     
