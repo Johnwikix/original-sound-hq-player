@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -89,11 +88,6 @@ namespace WinUIMusicPlayer.View
 
         private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
-            //HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
-            //foreach (var music in musicList)
-            //{
-            //    music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
-            //}
             var usbMusicGroups = AppData.musicOnUsbDevice
                             .GroupBy(u => u.Title)
                             .ToDictionary(g => g.Key, g => g.ToList());

@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.Reader
             {
                 try
                 {
-                    readerStream = new FlacReader(fileName);                    
+                    readerStream = new FlacReader(fileName);
                 }
                 catch (Exception ex)
                 {

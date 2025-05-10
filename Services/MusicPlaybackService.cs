@@ -422,7 +422,7 @@ namespace WinUIMusicPlayer.Services
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
-        
+
 
         public void CScoreOutputDevice()
         {
@@ -441,7 +441,7 @@ namespace WinUIMusicPlayer.Services
                                 break;
                             }
                         }
-                    }                    
+                    }
                 }
                 if (selectedDevice == null)
                 {
@@ -710,7 +710,8 @@ namespace WinUIMusicPlayer.Services
                     Reset();
                 }
             }
-            else {
+            else
+            {
                 Reset();
                 OutputDeviceChange();
                 CScoreOutputDevice();
@@ -788,7 +789,7 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
-            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id, volume);            
+            await MusicDatabaseService.SavePlayState(currentPlayingList, currentPlayMode, currentPlayingMusic?.Id, volume);
         }
 
         public void SwitchPlayMode()

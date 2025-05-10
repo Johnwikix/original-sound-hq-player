@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 
@@ -70,13 +69,14 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task UsbDeviceSubFolderAutoScan(List<UsbDeviceMusic> usbDeviceMusics,string folder, string uniqueDeviceId)
+        public async Task UsbDeviceSubFolderAutoScan(List<UsbDeviceMusic> usbDeviceMusics, string folder, string uniqueDeviceId)
         {
             try
             {
                 int changeCount = 0;
                 List<UsbDeviceSubFolder> subFolders = new List<UsbDeviceSubFolder>();
-                await Task.Run(() => {
+                await Task.Run(() =>
+                {
                     subFolders = RecordInitialFolderTimes(folder, uniqueDeviceId);
                 });
                 List<UsbDeviceSubFolder> subFoldersInDb = await MusicDatabaseService.GetUsbDeviceSubFolders(uniqueDeviceId);

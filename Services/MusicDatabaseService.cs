@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task DeleteUsbDeviceSubFolderByPath(string subFolderPath,string uniqueDeviceId)
+        public static async Task DeleteUsbDeviceSubFolderByPath(string subFolderPath, string uniqueDeviceId)
         {
             List<UsbDeviceMusic> musicToDelete = await _dbConnection.Table<UsbDeviceMusic>()
                                               .Where(m => m.Path.Contains(subFolderPath) && m.UniqueDeviceId == uniqueDeviceId)
@@ -734,8 +734,8 @@ namespace WinUIMusicPlayer.Services
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
             return musicFiles;
         }
-        
-        public static async Task ScanFolderAsync(StorageFolder folder,int folderId)
+
+        public static async Task ScanFolderAsync(StorageFolder folder, int folderId)
         {
             var musicFiles = new List<Music>();
             // 递归获取所有音乐文件
@@ -897,7 +897,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task RescanFolderByPath(string folderPath,bool isUpdate = true,bool isSingleFolder=false)
+        public static async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
         {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
@@ -911,7 +911,8 @@ namespace WinUIMusicPlayer.Services
                 musicFilesInFolder = AppData.allSongs
                     .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
-            else {
+            else
+            {
                 files = await GetAllFilesInFolderAndSubfolders(folder);
                 musicFilesInFolder = await _dbConnection.Table<Music>()
                    .Where(m => m.FolderPath.Contains(folderPath))
@@ -971,7 +972,8 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.InsertAsync(music);
             }
             // 更新UI和主窗口的音乐列表
-            if (isUpdate) {
+            if (isUpdate)
+            {
                 var mainWindow = (App.MainWindow as MainWindow);
                 if (mainWindow != null)
                 {
@@ -981,14 +983,15 @@ namespace WinUIMusicPlayer.Services
                     });
                 }
             }
-            
+
         }
 
-        public static async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId) {
-            return await _dbConnection.Table<UsbDeviceMusic>().Where(m=>m.UniqueDeviceId ==uniqueDeviceId).ToListAsync();
+        public static async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId)
+        {
+            return await _dbConnection.Table<UsbDeviceMusic>().Where(m => m.UniqueDeviceId == uniqueDeviceId).ToListAsync();
         }
 
-        public static async Task<List<UsbDeviceMusic>> RescanUsbDeviceFolderByPath(List<UsbDeviceMusic> usbDeviceMusics,string uniqueDeviceId, string folderPath,bool isSingleFolder = false)
+        public static async Task<List<UsbDeviceMusic>> RescanUsbDeviceFolderByPath(List<UsbDeviceMusic> usbDeviceMusics, string uniqueDeviceId, string folderPath, bool isSingleFolder = false)
         {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
@@ -1065,7 +1068,7 @@ namespace WinUIMusicPlayer.Services
                     continue;
                 }
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                UsbDeviceMusic usbDeviceMusic = addFolderService.getUsbDeviceMusicInfo(storageFile, folder.Path,uniqueDeviceId);
+                UsbDeviceMusic usbDeviceMusic = addFolderService.getUsbDeviceMusicInfo(storageFile, folder.Path, uniqueDeviceId);
                 usbDeviceMusicsInsertList.Add(usbDeviceMusic);
                 await _dbConnection.InsertAsync(usbDeviceMusic);
             }

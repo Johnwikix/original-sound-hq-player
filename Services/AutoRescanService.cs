@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Windows.Devices.Gpio;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services
@@ -72,9 +70,11 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task AutoScan() {
+        public static async Task AutoScan()
+        {
             //await MusicDatabaseService.DeleteAllSubFolder();
-            try {
+            try
+            {
                 List<Folder> folders = await MusicDatabaseService.GetFolders();
                 int changeCount = 0;
                 foreach (Folder folder in folders)
@@ -93,7 +93,7 @@ namespace WinUIMusicPlayer.Services
                             if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
                             {
                                 await MusicDatabaseService.AddSubFolder(subFolder);
-                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false,true);
+                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false, true);
                                 Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
                                 changeCount++;
                             }
@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.Services
                                 {
                                     dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
                                     await MusicDatabaseService.UpdateSubFolder(dbSubFolder);
-                                    await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false,true);
+                                    await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false, true);
                                     Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
                                     changeCount++;
                                 }

@@ -12,13 +12,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
-using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -64,7 +62,7 @@ namespace WinUIMusicPlayer.View
         private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
         private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
-        public event EventHandler refreshUsbDeviceMusicList;        
+        public event EventHandler refreshUsbDeviceMusicList;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -95,7 +93,7 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
-            OnFileChanged(null,null);
+            OnFileChanged(null, null);
         }
         private void StartWatchingUsbStorageDevices()
         {
@@ -112,7 +110,7 @@ namespace WinUIMusicPlayer.View
 
             // 启动设备监视器
             deviceWatcher.Start();
-        }        
+        }
 
         private async void StartWatchingFileFolder()
         {
@@ -123,8 +121,8 @@ namespace WinUIMusicPlayer.View
                 {
                     var watcher = new FileSystemWatcher(folder.Path);
                     watcher.IncludeSubdirectories = true;
-                    watcher.NotifyFilter = NotifyFilters.FileName | 
-                        NotifyFilters.DirectoryName | 
+                    watcher.NotifyFilter = NotifyFilters.FileName |
+                        NotifyFilters.DirectoryName |
                         NotifyFilters.LastWrite;
 
                     // 订阅事件
@@ -237,7 +235,7 @@ namespace WinUIMusicPlayer.View
             // 设置播放服务中的歌词
             await musicPlaybackService.SetLyrics(lyricsContent);
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics =musicPlaybackService._lyrics;
+            List<LyricLine> parsedLyrics = musicPlaybackService._lyrics;
             _uiLyrics.Clear();
             foreach (var lyric in parsedLyrics)
             {
@@ -381,7 +379,7 @@ namespace WinUIMusicPlayer.View
                         UsbDeviceCombox.ItemsSource = null;
                         UsbDeviceCombox.SelectedIndex = -1;
                     }
-                });               
+                });
             }
             catch (Exception ex)
             {
@@ -413,9 +411,10 @@ namespace WinUIMusicPlayer.View
                 else
                 {
                     // 读取USB设备中的音乐文件
-                    string folderPath = Path.Combine(usbStorageDevice.Path,"MUSIC");
-                    if (Directory.Exists(folderPath)) {
-                        AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics,usbStorageDevice.UniqueId,folderPath, false);
+                    string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
+                    if (Directory.Exists(folderPath))
+                    {
+                        AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
                     }
                     else
                     {
@@ -1038,13 +1037,14 @@ namespace WinUIMusicPlayer.View
             {
                 _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
             }
-            else {
+            else
+            {
                 _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
-            }            
+            }
         }
 
         private void UpdatePlayBar(Music music)
-        {            
+        {
             DispatcherQueue.TryEnqueue(async () =>
             {
                 MusicTitleTextBlock.Text = music.Title;
@@ -1111,7 +1111,7 @@ namespace WinUIMusicPlayer.View
                 UpdatePlayBar(music);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
-                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);                
+                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
             }
             catch (Exception ex)
             {

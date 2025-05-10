@@ -6,9 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 using Windows.UI;
-using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -24,7 +22,7 @@ namespace WinUIMusicPlayer.Helper
         {
             _window = window;
             _appWindow = appWindow;
-            
+
         }
         public void SetAppStyle()
         {
@@ -58,7 +56,7 @@ namespace WinUIMusicPlayer.Helper
                         };
                         _window.SystemBackdrop = acrylic;
                         break;
-                    case "TransparentAcrylic":                        
+                    case "TransparentAcrylic":
                         float colorOpacity = 0.2f;
                         if (AppSettings.AppTheme == "Default")
                         {
@@ -68,7 +66,8 @@ namespace WinUIMusicPlayer.Helper
                                 colorOpacity = 0.5f;
                             }
                         }
-                        else {
+                        else
+                        {
                             if (AppSettings.AppTheme == "Light")
                             {
                                 uiColor = Color.FromArgb(255, 255, 255, 255);

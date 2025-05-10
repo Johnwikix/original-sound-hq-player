@@ -174,7 +174,7 @@ namespace WinUIMusicPlayer.Services
             return null;
         }
 
-        public UsbDeviceMusic getUsbDeviceMusicInfo(StorageFile file, string folderPath,string uniqueDeviceId)
+        public UsbDeviceMusic getUsbDeviceMusicInfo(StorageFile file, string folderPath, string uniqueDeviceId)
         {
             try
             {
@@ -202,7 +202,7 @@ namespace WinUIMusicPlayer.Services
                         Path = file.Path,
                         Title = title,
                         Author = artist,
-                        Album = album,                        
+                        Album = album,
                         Extension = file.FileType.TrimStart('.').ToUpper(),
                         UniqueDeviceId = uniqueDeviceId
                     };
@@ -218,8 +218,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         Path = file.Path,
                         Title = Path.GetFileNameWithoutExtension(file.Name),
-                        Author = "未知艺术家",                       
-                        Album = "未知专辑",                       
+                        Author = "未知艺术家",
+                        Album = "未知专辑",
                         Extension = file.FileType.TrimStart('.').ToUpper(),
                         UniqueDeviceId = uniqueDeviceId
                     };

@@ -5,20 +5,15 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
-using Windows.Storage;
 using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -79,7 +74,7 @@ namespace WinUIMusicPlayer
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
-            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));            
+            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
@@ -88,7 +83,7 @@ namespace WinUIMusicPlayer
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
         {
             Debug.WriteLine("colorchange");
-            _=DispatcherQueue.EnqueueAsync(() =>
+            _ = DispatcherQueue.EnqueueAsync(() =>
             {
                 // 重新应用样式
                 SetAppStyle();
@@ -153,7 +148,7 @@ namespace WinUIMusicPlayer
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
-                NavigateToDefaultPage(); 
+                NavigateToDefaultPage();
                 //await AutoRescanService.AutoScan();
             }
             catch (Exception ex)

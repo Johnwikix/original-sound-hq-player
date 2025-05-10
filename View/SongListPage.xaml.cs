@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -48,7 +47,7 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.refreshPage += RefreshPage;
-                refreshUsbDeviceMusicList(null,null);                
+                refreshUsbDeviceMusicList(null, null);
                 parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
                 {
@@ -73,11 +72,6 @@ namespace WinUIMusicPlayer.View
 
         private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
-            //HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
-            //foreach (var music in musicList)
-            //{
-            //    music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
-            //}
             var usbMusicGroups = AppData.musicOnUsbDevice
                                         .GroupBy(u => u.Title)
                                         .ToDictionary(g => g.Key, g => g.ToList());
@@ -380,7 +374,7 @@ namespace WinUIMusicPlayer.View
                     listViewItem.IsSelected = true;
                     MusicListView.SelectedItem = musicItem;
                 }
-                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();                
+                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 // 设置右键菜单
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
@@ -431,7 +425,8 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
-                    if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0) {                        
+                    if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
+                    {
                         MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
                             Text = "发送至usb设备",

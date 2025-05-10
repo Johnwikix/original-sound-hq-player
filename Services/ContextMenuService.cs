@@ -2,18 +2,13 @@
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
-using Windows.Media.Playlists;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -84,7 +79,8 @@ namespace WinUIMusicPlayer.Services
 
 
             //List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-            if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0) {
+            if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
+            {
                 MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                 {
                     Text = "发送至usb设备"
@@ -101,7 +97,7 @@ namespace WinUIMusicPlayer.Services
                     usbDeviceSubItem.Items.Add(usbDeviceItem);
                 }
                 flyout.Items.Add(usbDeviceSubItem);
-            }            
+            }
             if (type == "folder")
             {
 
@@ -161,7 +157,7 @@ namespace WinUIMusicPlayer.Services
                     UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                     foreach (var music in musicList)
                     {
-                        var existingMusic = AppData.musicOnUsbDevice.Where(m=>m.Title==music.Title).FirstOrDefault();
+                        var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
                         if (existingMusic != null)
                         {
                             continue; // 如果已经存在，则跳过
@@ -175,7 +171,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-        }     
+        }
 
         private void Play_Click(object sender, RoutedEventArgs e, string type)
         {
@@ -208,15 +204,15 @@ namespace WinUIMusicPlayer.Services
                 List<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList =  MusicDatabaseService.FindMusicListByAlbum(music.Album);
+                    musicList = MusicDatabaseService.FindMusicListByAlbum(music.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList =  MusicDatabaseService.FindMusicListByArtist(music.Author);
+                    musicList = MusicDatabaseService.FindMusicListByArtist(music.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList =  MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
+                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
                 if (musicList != null && musicList.Count > 0)
                 {

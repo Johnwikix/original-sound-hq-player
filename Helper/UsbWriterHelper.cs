@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 
@@ -12,7 +9,8 @@ namespace WinUIMusicPlayer.Helper
     public class UsbWriterHelper
     {
         public EventHandler hideTransmission;
-        public UsbWriterHelper() { 
+        public UsbWriterHelper()
+        {
         }
         public async Task WriteToUsb(List<Music> musicList, UsbStorageDevice device)
         {
@@ -46,7 +44,7 @@ namespace WinUIMusicPlayer.Helper
                     else
                     {
                         Console.WriteLine($"源文件 {sourceFilePath} 不存在，无法复制。");
-                    }                    
+                    }
                 }
                 catch (Exception ex)
                 {
