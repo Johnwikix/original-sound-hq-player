@@ -12,7 +12,7 @@
     <Page.Resources>
         <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
     </Page.Resources>
-    <Grid Margin="10">
+    <Grid Margin="0">
         <GridView x:Name="FolderGridView"                       
                   IsItemClickEnabled="True"
                   ItemClick="FolderGridView_ItemClick"
