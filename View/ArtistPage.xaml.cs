@@ -56,6 +56,16 @@ namespace WinUIMusicPlayer.View
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
                 ToolUtils.RefreshIcon(musicList, "artist");
+                parentPage.refreshUsbDeviceMusicList +=
+                    (s, e) =>
+                    {
+                        ToolUtils.RefreshIcon(musicList, "album");
+                    };
+                parentPage.clearUsbDeviceMusicList +=
+                    (s, e) =>
+                    {
+                        ToolUtils.RefreshIcon(musicList, "album");
+                    };
             }
 
             //ArtistsGridView.Loaded += (s, e) =>
