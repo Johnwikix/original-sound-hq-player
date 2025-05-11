@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -49,6 +50,47 @@ namespace WinUIMusicPlayer.Utils
             bitmapImage.DecodePixelWidth = 125;
             bitmapImage.DecodePixelHeight = 125;
             return bitmapImage;
+        }
+
+        public static void RefreshIcon(ObservableCollection<Music> musicList,string type = "album")
+        {
+            foreach (var item in musicList)
+            {
+                if (type == "album")
+                {
+                    if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
+                    {
+                        item.IsExistOnDevice = 1;
+                    }
+                    else
+                    {
+                        item.IsExistOnDevice = 0;
+                    }
+                }
+                else if (type == "artist")
+                {
+                    if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Author == item.Author))
+                    {
+                        item.IsExistOnDevice = 1;
+                    }
+                    else
+                    {
+                        item.IsExistOnDevice = 0;
+                    }
+                }
+                else if (type == "folder")
+                {
+                    var allSongList = AppData.allSongs.Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath).ToList();
+                    item.IsExistOnDevice = 0;
+                    foreach (var songs in allSongList) {
+                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
+                        {
+                            item.IsExistOnDevice = 1;
+                            break;
+                        }
+                    }
+                }                
+            }
         }
 
         public static async Task<BitmapImage> GetAlbumCover(Music album)

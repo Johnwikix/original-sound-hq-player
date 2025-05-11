@@ -56,16 +56,17 @@ namespace WinUIMusicPlayer.View
                 {
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
+                ToolUtils.RefreshIcon(musicList, "folder");
             }
 
-            FolderGridView.Loaded += (s, e) =>
-            {
-                _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(FolderGridView);
-                if (_gridViewScrollViewer != null)
-                {
-                    _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
-                }
-            };
+            //FolderGridView.Loaded += (s, e) =>
+            //{
+            //    _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(FolderGridView);
+            //    if (_gridViewScrollViewer != null)
+            //    {
+            //        _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
+            //    }
+            //};
         }
 
         private void RefreshFolder(object? sender, EventArgs e)
@@ -146,16 +147,16 @@ namespace WinUIMusicPlayer.View
             //}
         }
 
-        private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        {
-            var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer == null) return;
+        //private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        //{
+        //    var scrollViewer = sender as ScrollViewer;
+        //    if (scrollViewer == null) return;
 
-            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
-            {
-                _ = LoadMoreFolderAsync();
-            }
-        }
+        //    if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
+        //    {
+        //        _ = LoadMoreFolderAsync();
+        //    }
+        //}
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

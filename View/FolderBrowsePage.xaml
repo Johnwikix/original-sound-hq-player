@@ -7,8 +7,11 @@
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
     mc:Ignorable="d"    >
-
+    <Page.Resources>
+        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
+    </Page.Resources>
     <Grid Margin="10">
         <GridView x:Name="FolderGridView"                       
                   IsItemClickEnabled="True"
@@ -37,7 +40,19 @@
                             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="50" Height="50"/>
                         </Grid>
                         <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
-                            <FontIcon Glyph="&#xf12b;" FontSize="100" Width="150" Height="150"/>
+                            <Grid Width="150" Height="150">
+                                <!-- 图片在下层 -->
+                                <FontIcon Glyph="&#xf12b;" FontSize="100" Width="150" Height="150"/>
+                                <!-- 图标位于右下角 -->
+                                <FontIcon 
+                                    x:Name="IsExistOnDeviceIcon" 
+                                    FontSize="16" 
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,5,5"
+                                    Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}"/>
+                            </Grid>
+                            
                             <TextBlock 
                                 Height="60" 
                                 HorizontalAlignment="Center" 

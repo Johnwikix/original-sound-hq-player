@@ -52,6 +52,7 @@ namespace WinUIMusicPlayer.View
                 {
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
+                ToolUtils.RefreshIcon(musicList,"album");
             }
 
             //AlbumGridView.Loaded += async (s, e) =>
@@ -64,10 +65,45 @@ namespace WinUIMusicPlayer.View
             //};
         }
 
+        //private void RefreshIcon() {
+        //    foreach (var item in musicList)
+        //    {
+        //        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
+        //        {
+        //            item.IsExistOnDevice = 1;
+        //            var albumSongs = AppData.allSongs.Where(m => m.Album == item.Album).ToList();
+        //            bool allSongsExist = true;
+        //            // 遍历专辑中的每首歌曲
+        //            foreach (var song in albumSongs)
+        //            {
+        //                bool songExists = AppData.musicOnUsbDevice.Any(usbMusic =>
+        //                    usbMusic.Title == song.Title &&
+        //                    usbMusic.Album == song.Album &&
+        //                    usbMusic.Author == song.Author &&
+        //                    usbMusic.Extension == song.Extension);
+        //                if (!songExists)
+        //                {
+        //                    allSongsExist = false;
+        //                    break;
+        //                }
+        //            }
+        //            if (allSongsExist && albumSongs.Count > 0)
+        //            {
+        //                item.IsExistOnDevice = 2;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            item.IsExistOnDevice = 0;
+        //        }
+        //    }
+        //}
+
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
             musicList.Clear();
             InitializeDatabase();
+
         }
 
 
@@ -96,7 +132,7 @@ namespace WinUIMusicPlayer.View
             try
             {
                 foreach (var item in _allMusic)
-                {
+                {                    
                     musicList.Add(item);
                 }
                 await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
@@ -120,18 +156,18 @@ namespace WinUIMusicPlayer.View
         //}
 
         // 修改LoadAlbumsAsync方法为异步清空重新加载
-        public async Task LoadAlbumsAsync(List<Music> musics)
-        {
-            try
-            {
-                _allMusic = musics;
-                await LoadMoreAlbumsAsync(true);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            }
-        }
+        //public async Task LoadAlbumsAsync(List<Music> musics)
+        //{
+        //    try
+        //    {
+        //        _allMusic = musics;
+        //        await LoadMoreAlbumsAsync(true);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+        //    }
+        //}
 
         private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {

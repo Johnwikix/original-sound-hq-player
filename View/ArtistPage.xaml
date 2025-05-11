@@ -8,7 +8,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
     >
+    <Page.Resources>
+        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
+    </Page.Resources>
     <Grid Margin="10">
         <GridView x:Name="ArtistsGridView"                       
           IsItemClickEnabled="True"
@@ -30,17 +34,26 @@
             <GridView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
-                        <FontIcon Glyph="&#xe77b;" FontSize="80" Width="150" Height="150"/>
+                        <Grid Width="150" Height="150">
+                            <FontIcon Glyph="&#xe77b;" FontSize="80" Width="150" Height="150"/>
+                            <FontIcon 
+                                x:Name="IsExistOnDeviceIcon" 
+                                FontSize="16" 
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom"
+                                Margin="0,0,5,5"
+                                Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}"/>
+                        </Grid>                       
                         <TextBlock 
-                    Height="60" 
-                    HorizontalAlignment="Center" 
-                    Width="150" 
-                    TextWrapping="Wrap" 
-                    TextTrimming="CharacterEllipsis"
-                    Text="{Binding Author,Mode=OneWay}" 
-                    TextAlignment="Center" 
-                    Margin="0"
-                    VerticalAlignment="Center"/>
+                            Height="60" 
+                            HorizontalAlignment="Center" 
+                            Width="150" 
+                            TextWrapping="Wrap" 
+                            TextTrimming="CharacterEllipsis"
+                            Text="{Binding Author,Mode=OneWay}" 
+                            TextAlignment="Center" 
+                            Margin="0"
+                            VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
             </GridView.ItemTemplate>

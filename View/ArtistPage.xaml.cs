@@ -55,16 +55,17 @@ namespace WinUIMusicPlayer.View
                 {
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
+                ToolUtils.RefreshIcon(musicList, "artist");
             }
 
-            ArtistsGridView.Loaded += (s, e) =>
-            {
-                _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(ArtistsGridView);
-                if (_gridViewScrollViewer != null)
-                {
-                    _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
-                }
-            };
+            //ArtistsGridView.Loaded += (s, e) =>
+            //{
+            //    _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(ArtistsGridView);
+            //    if (_gridViewScrollViewer != null)
+            //    {
+            //        _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
+            //    }
+            //};
         }
 
         private void RefreshArtist(object? sender, EventArgs e)
@@ -143,16 +144,16 @@ namespace WinUIMusicPlayer.View
         }
 
         // GridView 滚动事件处理
-        private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        {
-            var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer == null) return;
+        //private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        //{
+        //    var scrollViewer = sender as ScrollViewer;
+        //    if (scrollViewer == null) return;
 
-            if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
-            {
-                _ = LoadMoreArtistAsync();
-            }
-        }
+        //    if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
+        //    {
+        //        _ = LoadMoreArtistAsync();
+        //    }
+        //}
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

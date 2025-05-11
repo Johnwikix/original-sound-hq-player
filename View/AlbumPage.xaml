@@ -8,8 +8,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
 >
-
+    <Page.Resources>
+        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
+    </Page.Resources>
     <Grid Margin="10">
         <GridView x:Name="AlbumGridView"   
                   IsItemClickEnabled="True"
@@ -31,17 +34,32 @@
             <GridView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
-                        <Image x:Name="AlbumCoverImage" Width="150" Height="150" Stretch="Uniform" Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}" CacheMode="BitmapCache" />
+                        <Grid Width="150" Height="150">
+                            <!-- 图片在下层 -->
+                            <Image x:Name="AlbumCoverImage" 
+                                Width="150" Height="150" 
+                                Stretch="Uniform" 
+                                Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}" 
+                                CacheMode="BitmapCache" />
+                            <!-- 图标位于右下角 -->
+                            <FontIcon 
+                                x:Name="IsExistOnDeviceIcon" 
+                                FontSize="16" 
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom"
+                                Margin="0,0,5,5"
+                                Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}"/>
+                        </Grid>
                         <TextBlock 
-                            Height="60" 
-                            HorizontalAlignment="Center" 
-                            Width="150" 
-                            TextWrapping="Wrap" 
-                            TextTrimming="CharacterEllipsis"
-                            Text="{Binding Album,Mode=OneWay}" 
-                            TextAlignment="Center" 
-                            Margin="0"
-                            VerticalAlignment="Center"/>
+                             Height="60" 
+                             HorizontalAlignment="Center" 
+                             Width="150" 
+                             TextWrapping="Wrap" 
+                             TextTrimming="CharacterEllipsis"
+                             Text="{Binding Album,Mode=OneWay}" 
+                             TextAlignment="Center" 
+                             Margin="0"
+                             VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
             </GridView.ItemTemplate>
