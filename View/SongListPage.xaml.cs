@@ -47,8 +47,10 @@ namespace WinUIMusicPlayer.View
             {
                 this.parentPage = parentPage;
                 parentPage.refreshPage += RefreshPage;
+                clearUsbDeviceMusicList(null, null);
                 refreshUsbDeviceMusicList(null, null);
                 parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
+                parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
                 {
                     _lastSearchText = AppData.searchText;
