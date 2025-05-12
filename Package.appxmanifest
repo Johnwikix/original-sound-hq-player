@@ -16,9 +16,10 @@
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
-    <DisplayName>原声听域播放器</DisplayName>
+    <DisplayName>Resources:AppMainTitle</DisplayName>
     <PublisherDisplayName>Sennpai Studio</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
+	<Description>Resources:AppDescription</Description>
   </Properties>
 
   <Dependencies>
@@ -37,8 +38,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="原音HIFI播放器"
-        Description="原音HIFI播放器"
+        DisplayName="ms-resource:Resources/AppMainTitle"
+        Description="ms-resource:Resources/AppMainTitle"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

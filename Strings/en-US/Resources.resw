@@ -135,4 +135,7 @@
   <data name="MusicBrowse.Text" xml:space="preserve">
     <value>Music Browse</value>
   </data>
+  <data name="AppMainTitle" xml:space="preserve">
+    <value>OriginalSound HIFI Player</value>
+  </data>
 </root>

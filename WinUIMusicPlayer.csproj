@@ -161,7 +161,7 @@
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefaultLanguage>zh-cn</DefaultLanguage>
+    <DefaultLanguage>en-us</DefaultLanguage>
 
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
@@ -177,7 +177,7 @@
     <PublishAot>False</PublishAot>
     <PlatformTarget>x64</PlatformTarget>
     <NuGetAuditMode>all</NuGetAuditMode>
-    <AssemblyName>原音HIFI播放器</AssemblyName>
+    <AssemblyName>OriginalSound HIFI Player</AssemblyName>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">

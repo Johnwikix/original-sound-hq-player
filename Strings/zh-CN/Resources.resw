@@ -135,4 +135,7 @@
   <data name="MusicBrowse.Text" xml:space="preserve">
     <value>音乐浏览</value>
   </data>
+  <data name="AppMainTitle" xml:space="preserve">
+    <value>原音HIFI播放器</value>
+  </data>
 </root>

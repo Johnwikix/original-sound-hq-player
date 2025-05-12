@@ -9,7 +9,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:tb="using:H.NotifyIcon"
-    Title="原音HIFI播放器"
     >    
     <Window.SystemBackdrop>
         <DesktopAcrylicBackdrop/>

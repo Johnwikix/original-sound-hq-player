@@ -2,6 +2,7 @@ using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -44,11 +45,12 @@ namespace WinUIMusicPlayer
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
-
+        private readonly ResourceLoader _resourceLoader;
 
         public MainWindow()
         {
             InitializeComponent();
+            _resourceLoader = new ResourceLoader();
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
@@ -243,7 +245,11 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            this.Activated -= MainWindow_Activated;
+            if (args.WindowActivationState != WindowActivationState.Deactivated)
+            {
+                Title = _resourceLoader.GetString("AppMainTitle");
+                this.Activated -= MainWindow_Activated; // 只执行一次
+            }
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
