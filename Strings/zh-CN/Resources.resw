@@ -120,4 +120,19 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>原音HIFI播放器</value>
   </data>
+  <data name="LoadingText.Text" xml:space="preserve">
+    <value>正在加载数据，请稍候...</value>
+  </data>
+  <data name="SongTab.Text" xml:space="preserve">
+    <value>歌曲</value>
+  </data>
+  <data name="AlbumTab.Text" xml:space="preserve">
+    <value>专辑</value>
+  </data>
+  <data name="AddFolder.Text" xml:space="preserve">
+    <value>添加文件夹</value>
+  </data>
+  <data name="MusicBrowse.Text" xml:space="preserve">
+    <value>音乐浏览</value>
+  </data>
 </root>

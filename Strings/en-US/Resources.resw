@@ -120,4 +120,19 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>OriginalSound HIFI Player</value>
   </data>
+  <data name="LoadingText.Text" xml:space="preserve">
+    <value>Loading data...</value>
+  </data>
+  <data name="SongTab.Text" xml:space="preserve">
+    <value>Songs</value>
+  </data>
+  <data name="AlbumTab.Text" xml:space="preserve">
+    <value>Albums</value>
+  </data>
+  <data name="AddFolder.Text" xml:space="preserve">
+    <value>Add Folder</value>
+  </data>
+  <data name="MusicBrowse.Text" xml:space="preserve">
+    <value>Music Browse</value>
+  </data>
 </root>
