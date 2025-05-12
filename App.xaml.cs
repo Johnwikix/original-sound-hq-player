@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
+using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -22,6 +23,20 @@ namespace WinUIMusicPlayer
         public App()
         {
             this.InitializeComponent();
+            var systemLanguages = GlobalizationPreferences.Languages;
+            bool isChineseLanguage = false;
+            if (systemLanguages[0].StartsWith("zh"))
+            {
+                isChineseLanguage=true;
+            }
+            if (isChineseLanguage)
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "zh-CN";
+            }
+            else
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en-US";
+            }
         }
 
         /// <summary>
