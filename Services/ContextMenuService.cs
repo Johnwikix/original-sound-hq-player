@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Devices.Usb;
 using Windows.Foundation;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 
@@ -43,7 +45,7 @@ namespace WinUIMusicPlayer.Services
 
             MenuFlyoutItem play = new MenuFlyoutItem
             {
-                Text = "播放",
+                Text = ToolUtils.GetString("FlyoutPlay"),
                 DataContext = item
             };
             play.Click += (sender, e) => Play_Click(sender, e, type);
@@ -52,7 +54,7 @@ namespace WinUIMusicPlayer.Services
             // 添加"添加到最爱"菜单项
             MenuFlyoutItem favoriteItem = new MenuFlyoutItem
             {
-                Text = "添加到最爱",
+                Text = ToolUtils.GetString("FlyoutFavorite"),
                 DataContext = item
             };
             favoriteItem.Click += (sender, e) => AddToFavourite_Click(sender, e, type);
@@ -61,7 +63,7 @@ namespace WinUIMusicPlayer.Services
             // 创建"添加到播放列表"子菜单
             MenuFlyoutSubItem playlistSubItem = new MenuFlyoutSubItem
             {
-                Text = "添加到播放列表"
+                Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
             };
             // 获取所有播放列表
             List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
@@ -83,14 +85,15 @@ namespace WinUIMusicPlayer.Services
             {
                 MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                 {
-                    Text = "发送至usb设备"
+                    Text = ToolUtils.GetString("SendToUsbDevice"),
+                    Tag = "usbDevice",
                 };
 
                 foreach (var device in AppData.usbStorageDevices)
                 {
                     MenuFlyoutItem usbDeviceItem = new MenuFlyoutItem
                     {
-                        Text = $"路径：{device.Path}，剩余容量：{device.FreeSpaceInGB}GB",
+                        Text = $"{device.Name} , {ToolUtils.GetString("Path")}：{device.Path} , {ToolUtils.GetString("FreeSpace")}：{device.FreeSpaceInGB}GB",
                         DataContext = new { MusicItem = item, UsbStorageDevice = device }
                     };
                     usbDeviceItem.Click += (sender, e) => SendMusicToUsbDevice_Click(sender, e, type);
@@ -103,7 +106,7 @@ namespace WinUIMusicPlayer.Services
 
                 MenuFlyoutItem rescanItem = new MenuFlyoutItem
                 {
-                    Text = "重新扫描",
+                    Text = ToolUtils.GetString("Rescan"),
                     DataContext = item
                 };
                 rescanItem.Click += (sender, e) => RescanFolder_Click(sender, e, type);
@@ -114,7 +117,7 @@ namespace WinUIMusicPlayer.Services
             {
                 MenuFlyoutItem properties = new MenuFlyoutItem
                 {
-                    Text = "属性",
+                    Text = ToolUtils.GetString("FlyoutProperties"),
                     DataContext = item
                 };
                 properties.Click += (sender, e) => AlbumProperties_Click(sender, e, type);

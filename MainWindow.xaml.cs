@@ -45,12 +45,10 @@ namespace WinUIMusicPlayer
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
-        private readonly ResourceLoader _resourceLoader;
 
         public MainWindow()
         {
             InitializeComponent();
-            _resourceLoader = new ResourceLoader();
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
@@ -247,7 +245,7 @@ namespace WinUIMusicPlayer
         {
             if (args.WindowActivationState != WindowActivationState.Deactivated)
             {
-                Title = _resourceLoader.GetString("AppMainTitle");
+                Title = ToolUtils.GetString("AppMainTitle");
                 this.Activated -= MainWindow_Activated; // 只执行一次
             }
         }

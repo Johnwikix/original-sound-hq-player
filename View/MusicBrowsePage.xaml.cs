@@ -801,10 +801,10 @@ namespace WinUIMusicPlayer.View
         {
             ContentDialog contentDialog = new ContentDialog
             {
-                Title = "添加播放列表",
-                Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = "请输入播放列表名称" },
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
+                Title = ToolUtils.GetString("FlyoutAddToPlaylist"),
+                Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
+                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+                CloseButtonText = ToolUtils.GetString("CloseButton"),
                 XamlRoot = this.XamlRoot
             };
             contentDialog.RequestedTheme = AppSettings.elementTheme;

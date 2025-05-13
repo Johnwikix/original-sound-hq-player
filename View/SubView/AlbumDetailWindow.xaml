@@ -28,11 +28,11 @@
             FontSize="16"
             VerticalAlignment="Center"
             Style="{StaticResource CaptionTextBlockStyle}"
-            Text="专辑详情"/>
+            x:Uid="AlbumDetailTitleBar"/>
         </Grid>
         <Grid x:Name="LoadingGrid" Visibility="Collapsed">
             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
-            <TextBlock Text="正在处理保存，请稍候..." HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
+            <TextBlock x:Uid="LoadingTextBlock" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
         </Grid>
         <Grid x:Name="AlbumDetail">
             <Grid.RowDefinitions>
@@ -71,8 +71,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            在线匹配封面
+                                        <ToolTip x:Uid="GetImageFromNetButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>
                                 </Button>
@@ -83,8 +82,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            保存到本地
+                                        <ToolTip x:Uid="SaveImageButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>
                                 </Button>
@@ -95,16 +93,15 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            编辑封面
+                                        <ToolTip x:Uid="SelectCoverImageButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>
                                 </Button>
                             </StackPanel>
-                            <TextBlock Text="标题：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0" Grid.Column="1"/>
-                            <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="0 5 5 5" Grid.Row="0"  Grid.Column="2"/>
-                            <TextBlock Text="年份：" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0"  Grid.Column="3"/>
-                            <TextBox x:Name="YearTextBlock" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0 5 10 5" Grid.Row="0"  Grid.Column="4"/>
+                            <TextBlock x:Uid="TitleLabel" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0" Grid.Column="1"/>
+                            <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="5" Grid.Row="0"  Grid.Column="2"/>
+                            <TextBlock x:Uid="YearLabel" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0"  Grid.Column="3"/>
+                            <TextBox x:Name="YearTextBlock" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5 5 10 5" Grid.Row="0"  Grid.Column="4"/>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -115,22 +112,22 @@
                     Grid.Row="1"    
                     >
                 <Button
-                    Content="保存"
+                    x:Uid="SaveButton"
                     Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
                                 <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="是否确定保存元信息至专辑内所有音乐" Margin="0,0,0,12" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Click="ConfirmButton_Click" Content="确认" Margin="0 0 10 0"/>
-                                    <Button Content="取消"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
+                                    <Button Click="ConfirmButton_Click" x:Uid="ConfirmButton" Margin="0 0 10 0"/>
+                                    <Button x:Uid="CancelButton"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
                 <Button
-                    Content="关闭"
+                    x:Uid="CloseButtonItem"
                     Click="CloseButton_Click"
                     Margin="5"/>
             </StackPanel>

@@ -2,13 +2,16 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Resources;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Resources;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -30,12 +33,14 @@ namespace WinUIMusicPlayer.View
         private string _lastSearchText = "";
         private AudioConverterService converterService;
         private ProgressDialog progressDialog;
+        
         public FavouritePlayListPage()
         {
             this.InitializeComponent();
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             converterService = new AudioConverterService();
-            progressDialog = new ProgressDialog("正在转换");
+            progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
+            progressDialog.Title = ToolUtils.GetString("Processing");
             musicList = new ObservableCollection<Music>();
             MusicListView.ItemsSource = musicList;
         }
@@ -473,14 +478,14 @@ namespace WinUIMusicPlayer.View
                     {
                         MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
-                            Text = "发送至usb设备",
+                            Text = ToolUtils.GetString("SendToUsbDevice"),
                             Tag = "usbDevice",
                         };
                         foreach (var usbDevice in AppData.usbStorageDevices)
                         {
                             var menuItem = new MenuFlyoutItem
                             {
-                                Text = $"路径：{usbDevice.Path}，剩余容量：{usbDevice.FreeSpaceInGB}GB",
+                                Text = $"{usbDevice.Name} , {ToolUtils.GetString("Path")}：{usbDevice.Path} , {ToolUtils.GetString("FreeSpace")}：{usbDevice.FreeSpaceInGB}GB",
                                 Tag = usbDevice.Path
                             };
                             menuItem.Click += async (s, args) =>

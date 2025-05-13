@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -512,14 +513,14 @@ namespace WinUIMusicPlayer.View
                     {
                         MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
-                            Text = "发送至usb设备",
+                            Text = ToolUtils.GetString("SendToUsbDevice"),
                             Tag = "usbDevice",
                         };
                         foreach (var usbDevice in AppData.usbStorageDevices)
                         {
                             var menuItem = new MenuFlyoutItem
                             {
-                                Text = $"路径：{usbDevice.Path}，剩余容量：{usbDevice.FreeSpaceInGB}GB",
+                                Text = $"{usbDevice.Name} , {ToolUtils.GetString("Path")}：{usbDevice.Path} , {ToolUtils.GetString("FreeSpace")}：{usbDevice.FreeSpaceInGB}GB",
                                 Tag = usbDevice.Path
                             };
                             menuItem.Click += async (s, args) =>

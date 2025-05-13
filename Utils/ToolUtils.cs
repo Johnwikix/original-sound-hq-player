@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.Windows.ApplicationModel.Resources;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,12 @@ namespace WinUIMusicPlayer.Utils
 {
     public class ToolUtils
     {
+        private ResourceLoader resourceLoader = new ResourceLoader();
+
+        public static string GetString(string key)
+        {
+            return new ResourceLoader().GetString(key);
+        }
         public enum PlayMode
         {
             SingleLoop,

@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -95,10 +96,10 @@ namespace WinUIMusicPlayer.View
             {
                 ContentDialog contentDialog = new ContentDialog
                 {
-                    Title = "修改播放列表",
+                    Title = ToolUtils.GetString("ModifyPlaylist"),
                     Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{playList.Name}" },
-                    PrimaryButtonText = "确定",
-                    CloseButtonText = "取消",
+                    PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+                    CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = this.XamlRoot
                 };
                 contentDialog.RequestedTheme = AppSettings.elementTheme;

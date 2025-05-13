@@ -24,18 +24,17 @@
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
-                        <MenuFlyoutItem Text="播放" Click="PlayMenuItem_Click"/>
-                        <MenuFlyoutItem Text="添加/取消最爱" Click="SetAsFavoriteMenuItem_Click"/>
-                        <MenuFlyoutSubItem Text="添加到播放列表" Tag="playList">                                                   
+                        <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click"/>
+                        <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click"/>
+                        <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList"/>
+                        <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
+                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Tag="wav" Click="ConvertAudio_Click"/>
+                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Tag="mp3" Click="ConvertAudio_Click"/>
+                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Tag="flac" Click="ConvertAudio_Click"/>
                         </MenuFlyoutSubItem>
-                        <MenuFlyoutSubItem Text="转换为">
-                            <MenuFlyoutItem Text="WAV" Tag="wav" Click="ConvertAudio_Click"></MenuFlyoutItem>
-                            <MenuFlyoutItem Text="MP3" Tag="mp3" Click="ConvertAudio_Click"></MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Flac" Tag="flac" Click="ConvertAudio_Click"></MenuFlyoutItem>
-                        </MenuFlyoutSubItem>
-                        <MenuFlyoutItem Text="打开文件位置" Click="OpenInExplorer_Click"/>
-                        <MenuFlyoutItem Text="属性" Click="MusicDetail_Click"/>
-                        <MenuFlyoutItem Text="删除" Click="DeleteMenuItem_Click"/>
+                        <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click"/>
+                        <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click"/>
+                        <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click"/>
                     </MenuFlyout>
                 </Setter.Value>
             </Setter>            
