@@ -40,6 +40,17 @@ namespace WinUIMusicPlayer.Helper
                             File.Copy(sourceFilePath, targetFilePath, true);
                         });
                         Console.WriteLine($"已将 {sourceFilePath} 复制到 {targetFilePath}");
+                        if (!string.IsNullOrEmpty(music.Lyrics))
+                        {
+                            await Task.Run(() =>
+                            {
+                                string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
+                                string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
+                                File.WriteAllText(lrcFilePath, music.Lyrics);
+                                Console.WriteLine($"已创建歌词文件: {lrcFilePath}");
+                            });                           
+                            
+                        }
                     }
                     else
                     {
