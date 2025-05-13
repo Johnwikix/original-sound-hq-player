@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 
@@ -46,10 +47,9 @@ namespace WinUIMusicPlayer.Helper
                             {
                                 string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                                 string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                                File.WriteAllText(lrcFilePath, music.Lyrics);
+                                File.WriteAllText(lrcFilePath, ConvertLyrics(music.Lyrics));
                                 Console.WriteLine($"已创建歌词文件: {lrcFilePath}");
-                            });                           
-                            
+                            });
                         }
                     }
                     else
@@ -63,6 +63,33 @@ namespace WinUIMusicPlayer.Helper
                 }
             }
             hideTransmission?.Invoke(this, EventArgs.Empty);
+        }
+
+        private string ConvertLyrics(string lyrics) {
+            Regex timeRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
+            string[] lines = lyrics.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                Match timeMatch = timeRegex.Match(lines[i]);
+                while (timeMatch.Success)
+                {
+                    string timePart = timeMatch.Value;
+                    string minutes = timeMatch.Groups[1].Value;
+                    string seconds = timeMatch.Groups[2].Value;
+                    string milliseconds = timeMatch.Groups[3].Value;
+
+                    if (milliseconds.Length == 3)
+                    {
+                        milliseconds = milliseconds.Substring(0, 2);
+                    }
+
+                    string newTimePart = $"[{minutes}:{seconds}.{milliseconds}]";
+                    lines[i] = lines[i].Replace(timePart, newTimePart);
+                    timeMatch = timeMatch.NextMatch();
+                }
+            }
+
+            return string.Join("\r\n", lines);
         }
 
         private string SanitizeFileName(string name, char[] invalidChars)
