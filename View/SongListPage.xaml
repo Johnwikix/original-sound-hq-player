@@ -94,7 +94,7 @@
                             </attached:MultiValueBindingHelper.Bindings>
                         </Image>
                         <TextBlock Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" Grid.Column="5" Margin="5" VerticalAlignment="Center"  />
-                        <FontIcon x:Name="IsExistOnDeviceIcon" FontSize="14" Glyph="{x:Bind IsExistOnDevice,Mode=OneWay,Converter={StaticResource IsExistOnDeviceConverter}}"></FontIcon>
+                        <FontIcon x:Name="IsExistOnDeviceIcon" Grid.Column="6" FontSize="14" Glyph="{x:Bind IsExistOnDevice,Mode=OneWay,Converter={StaticResource IsExistOnDeviceConverter}}"></FontIcon>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
