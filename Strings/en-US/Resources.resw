@@ -145,7 +145,7 @@
     <value>Folders</value>
   </data>
   <data name="FavouriteTab.Text" xml:space="preserve">
-    <value>Favourite</value>
+    <value>Favourites</value>
   </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
     <value>Playlists</value>
@@ -172,9 +172,135 @@
     <value>Album</value>
   </data>
   <data name="SearchMusic.PlaceholderText" xml:space="preserve">
-    <value>Search Music</value>
+    <value>Search Musics</value>
   </data>
   <data name="Settings.Text" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="SettingAudio.Text" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="SettingOutput.Header" xml:space="preserve">
+    <value>Output Settings</value>
+  </data>
+  <data name="SettingOutputMode.Text" xml:space="preserve">
+    <value>Output Modes</value>
+  </data>
+  <data name="WasapiExclusivePush.Content" xml:space="preserve">
+    <value>Wasapi Exclusive(Push)</value>
+  </data>
+  <data name="WasapiExclusiveEvent.Content" xml:space="preserve">
+    <value>Wasapi Exclusive(Event)</value>
+  </data>
+  <data name="WasapiShared.Content" xml:space="preserve">
+    <value>Wasapi Shared</value>
+  </data>
+  <data name="WaveOut.Content" xml:space="preserve">
+    <value>WaveOut</value>
+  </data>
+  <data name="DirectSound.Content" xml:space="preserve">
+    <value>DirectSound</value>
+  </data>
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
+    <value>Output Device</value>
+  </data>
+  <data name="SettingBufferSize.Text" xml:space="preserve">
+    <value>Buffer size (ms)</value>
+  </data>
+  <data name="SettingFunction.Text" xml:space="preserve">
+    <value>Function</value>
+  </data>
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
+    <value>Default Entry Interface</value>
+  </data>
+  <data name="AddFolderCombox.Content" xml:space="preserve">
+    <value>Add Folder</value>
+  </data>
+  <data name="MusicBrowseCombox.Content" xml:space="preserve">
+    <value>Music Browse</value>
+  </data>
+  <data name="AlbumCombox.Content" xml:space="preserve">
+    <value>Albums</value>
+  </data>
+  <data name="FavouriteCombox.Content" xml:space="preserve">
+    <value>Favourites</value>
+  </data>
+  <data name="FolderCombox.Content" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="PlaylistCombox.Content" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
+  <data name="SongCombox.Content" xml:space="preserve">
+    <value>Songs</value>
+  </data>
+  <data name="ArtistCombox.Content" xml:space="preserve">
+    <value>Artists</value>
+  </data>
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+    <value>Default Music Entry Interface</value>
+  </data>
+  <data name="SettingInterface.Header" xml:space="preserve">
+    <value>Interface Settings</value>
+  </data>
+  <data name="SettingCoverLyrics.Header" xml:space="preserve">
+    <value>Cover lyrics settings</value>
+  </data>
+  <data name="CoverServiceLrcAPISource.Text" xml:space="preserve">
+    <value>Cover Service LrcAPI Source</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceDoc.Content" xml:space="preserve">
+    <value>document:https://docs.lrc.cx/docs/QuickStart/</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceAuthCode.Text" xml:space="preserve">
+    <value>Cover Service LrcAPI Source Auth Code</value>
+  </data>
+  <data name="CoverCache.Text" xml:space="preserve">
+    <value>Cover Cache</value>
+  </data>
+  <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
+    <value>Maximum number of pre loaded covers</value>
+  </data>
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
+    <value>Auto Lyric Matching</value>
+  </data>
+  <data name="NeedConfigureLrcAPIService.Content" xml:space="preserve">
+    <value>Need to configure LrcAPI service</value>
+  </data>
+  <data name="CloseButtonFunction.Header" xml:space="preserve">
+    <value>Close button function</value>
+  </data>
+  <data name="CloseApp.Content" xml:space="preserve">
+    <value>Close App</value>
+  </data>
+  <data name="Backgrounder.Content" xml:space="preserve">
+    <value>Backgrounder</value>
+  </data>
+  <data name="Appearance.Text" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="AppStyle.Header" xml:space="preserve">
+    <value>App Style</value>
+  </data>
+  <data name="MicaStyle.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+  <data name="AcrylicStyle.Content" xml:space="preserve">
+    <value>Acrylic</value>
+  </data>
+  <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
+    <value>Transparent Acrylic</value>
+  </data>
+  <data name="ThemeStyle.Header" xml:space="preserve">
+    <value>Theme Style</value>
+  </data>
+  <data name="SystemDefaultTheme.Content" xml:space="preserve">
+    <value>System Default</value>
+  </data>
+  <data name="Dark.Content" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Light.Content" xml:space="preserve">
+    <value>Light</value>
   </data>
 </root>

@@ -177,4 +177,130 @@
   <data name="Settings.Text" xml:space="preserve">
     <value>设置</value>
   </data>
+  <data name="SettingAudio.Text" xml:space="preserve">
+    <value>音频</value>
+  </data>
+  <data name="SettingOutput.Header" xml:space="preserve">
+    <value>输出设置</value>
+  </data>
+  <data name="SettingOutputMode.Text" xml:space="preserve">
+    <value>输出模式</value>
+  </data>
+  <data name="WasapiExclusivePush.Content" xml:space="preserve">
+    <value>Wasapi独占(推送)</value>
+  </data>
+  <data name="WasapiExclusiveEvent.Content" xml:space="preserve">
+    <value>Wasapi独占(事件)</value>
+  </data>
+  <data name="WasapiShared.Content" xml:space="preserve">
+    <value>Wasapi共享</value>
+  </data>
+  <data name="WaveOut.Content" xml:space="preserve">
+    <value>WaveOut</value>
+  </data>
+  <data name="DirectSound.Content" xml:space="preserve">
+    <value>DirectSound</value>
+  </data>
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
+    <value>输出设备</value>
+  </data>
+  <data name="SettingBufferSize.Text" xml:space="preserve">
+    <value>缓冲区大小 (毫秒)</value>
+  </data>
+  <data name="SettingFunction.Text" xml:space="preserve">
+    <value>功能</value>
+  </data>
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
+    <value>默认进入界面</value>
+  </data>
+  <data name="AddFolderCombox.Content" xml:space="preserve">
+    <value>添加文件夹</value>
+  </data>
+  <data name="MusicBrowseCombox.Content" xml:space="preserve">
+    <value>音乐浏览</value>
+  </data>
+  <data name="AlbumCombox.Content" xml:space="preserve">
+    <value>专辑</value>
+  </data>
+  <data name="FavouriteCombox.Content" xml:space="preserve">
+    <value>最爱</value>
+  </data>
+  <data name="FolderCombox.Content" xml:space="preserve">
+    <value>文件夹</value>
+  </data>
+  <data name="PlaylistCombox.Content" xml:space="preserve">
+    <value>播放列表</value>
+  </data>
+  <data name="SongCombox.Content" xml:space="preserve">
+    <value>歌曲</value>
+  </data>
+  <data name="ArtistCombox.Content" xml:space="preserve">
+    <value>艺术家</value>
+  </data>
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+    <value>默认音乐进入界面</value>
+  </data>
+  <data name="SettingInterface.Header" xml:space="preserve">
+    <value>界面设置</value>
+  </data>
+  <data name="SettingCoverLyrics.Header" xml:space="preserve">
+    <value>封面歌词设置</value>
+  </data>
+  <data name="CoverServiceLrcAPISource.Text" xml:space="preserve">
+    <value>封面服务LrcAPI源</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceDoc.Content" xml:space="preserve">
+    <value>文档说明：https://docs.lrc.cx/docs/QuickStart/</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceAuthCode.Text" xml:space="preserve">
+    <value>封面服务LrcAPI源鉴权码</value>
+  </data>
+  <data name="CoverCache.Text" xml:space="preserve">
+    <value>封面缓存</value>
+  </data>
+  <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
+    <value>最大封面预载数量</value>
+  </data>
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
+    <value>自动歌词匹配</value>
+  </data>
+  <data name="NeedConfigureLrcAPIService.Content" xml:space="preserve">
+    <value>需要配置LrcAPI服务</value>
+  </data>
+  <data name="CloseButtonFunction.Header" xml:space="preserve">
+    <value>关闭按钮功能</value>
+  </data>
+  <data name="CloseApp.Content" xml:space="preserve">
+    <value>关闭应用</value>
+  </data>
+  <data name="Backgrounder.Content" xml:space="preserve">
+    <value>后台运行</value>
+  </data>
+  <data name="Appearance.Text" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="AppStyle.Header" xml:space="preserve">
+    <value>应用样式</value>
+  </data>
+  <data name="MicaStyle.Content" xml:space="preserve">
+    <value>云母</value>
+  </data>
+  <data name="AcrylicStyle.Content" xml:space="preserve">
+    <value>亚克力</value>
+  </data>
+  <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
+    <value>透明亚克力</value>
+  </data>
+  <data name="ThemeStyle.Header" xml:space="preserve">
+    <value>主题样式</value>
+  </data>
+  <data name="SystemDefaultTheme.Content" xml:space="preserve">
+    <value>系统默认</value>
+  </data>
+  <data name="Dark.Content" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="Light.Content" xml:space="preserve">
+    <value>浅色</value>
+  </data>
 </root>

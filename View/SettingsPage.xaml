@@ -34,8 +34,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>                
-                <TextBlock Text="音频" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
-                <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True"  Header="输出设置" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
+                <TextBlock x:Uid="SettingAudio" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
+                <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True" x:Uid="SettingOutput" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
@@ -47,27 +47,27 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="输出模式" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
+                            <TextBlock x:Uid="SettingOutputMode" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
                             <ComboBox x:Name="OutputModeComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="OutputModeComboBox_SelectionChanged" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem Content="Wasapi独占(推送)" Tag="WasapiExclusivePush"/>
-                                <ComboBoxItem Content="Wasapi独占(事件)" Tag="WasapiExclusiveEvent"/>
-                                <ComboBoxItem Content="Wasapi共享" Tag="WasapiShared"/>
-                                <ComboBoxItem Content="WaveOut" Tag="WaveOut"/>
-                                <ComboBoxItem Content="DirectSound" Tag="DirectSound"/>
+                                <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush"/>
+                                <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent"/>
+                                <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared"/>
+                                <ComboBoxItem x:Uid="WaveOut" Tag="WaveOut"/>
+                                <ComboBoxItem x:Uid="DirectSound" Tag="DirectSound"/>
                             </ComboBox>
 
                             <!-- 输出设备选择 -->
-                            <TextBlock Text="输出设备" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
+                            <TextBlock x:Uid="SettingOutputDevice" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
                             <ComboBox x:Name="OutputDeviceComboBox"  Grid.Column="1" Grid.Row="1" Margin="10" SelectionChanged="OutputDeviceComboBox_SelectionChanged" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
                             <!-- 缓冲区大小输入 -->
-                            <TextBlock Text="缓冲区大小 (毫秒)" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
+                            <TextBlock x:Uid="SettingBufferSize" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
                             <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" ValueChanged="LatencyNumberBox_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock Text="功能" FontSize="16" Grid.Row="3" Margin="10 10 0 0" />
-                <Expander x:Name="UiSettings" Margin="10 10 10 0" Header="界面设置" Grid.Row="4" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <TextBlock x:Uid="SettingFunction" FontSize="16" Grid.Row="3" Margin="10 10 0 0" />
+                <Expander x:Name="UiSettings" Margin="10 10 10 0" x:Uid="SettingInterface" Grid.Row="4" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -78,24 +78,24 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="默认音乐进入界面" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
+                            <TextBlock x:Uid="DefaultEntryInterface" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
                             <ComboBox x:Name="DefualtEntryComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem Content="添加文件夹" Tag="AddFolder"/>
-                                <ComboBoxItem Content="音乐浏览" Tag="MusicBrowse"/>
+                                <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder"/>
+                                <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse"/>
                             </ComboBox>
-                            <TextBlock Text="默认音乐播放界面" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center" />
+                            <TextBlock x:Uid="DefaultMusicEntryInterface" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center" />
                             <ComboBox x:Name="DefualtPlayListComboBox"  Grid.Column="1" Grid.Row="1" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem Content="歌曲" Tag="song"/>
-                                <ComboBoxItem Content="专辑" Tag="album"/>
-                                <ComboBoxItem Content="艺术家" Tag="artist"/>
-                                <ComboBoxItem Content="文件夹" Tag="folder"/>
-                                <ComboBoxItem Content="最爱" Tag="favourite"/>
-                                <ComboBoxItem Content="播放列表" Tag="playList"/>
+                                <ComboBoxItem x:Uid="SongCombox" Tag="song"/>
+                                <ComboBoxItem x:Uid="AlbumCombox" Tag="album"/>
+                                <ComboBoxItem x:Uid="ArtistCombox" Tag="artist"/>
+                                <ComboBoxItem x:Uid="FolderCombox" Tag="folder"/>
+                                <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite"/>
+                                <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList"/>
                             </ComboBox>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CoverSettings" Margin="10 0 10 0" Header="封面歌词设置" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CoverSettings" Margin="10 0 10 0" x:Uid="SettingCoverLyrics" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -110,18 +110,18 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
-                                <TextBlock Text="封面服务LrcAPI源" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <TextBlock x:Uid="CoverServiceLrcAPISource" FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center" Tapped="ToolTip_Tapped">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip Content="文档说明：https://docs.lrc.cx/docs/QuickStart/" VerticalOffset="10"/>
+                                        <ToolTip x:Uid="CoverServiceLrcAPISourceDoc" VerticalOffset="10"/>
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>                            
                             <TextBox x:Name="LrcAPITextBox"  Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <TextBlock Text="封面服务LrcAPI源鉴权码"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <TextBlock x:Uid="CoverServiceLrcAPISourceAuthCode"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
                             <TextBox x:Name="LrcAPIAuthTextBox"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal">
-                                <TextBlock Text="封面缓存"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <TextBlock x:Uid="CoverCache"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <!--<FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="开启后根据专辑封面数量内存占用会有一定上升" VerticalOffset="10"/>
@@ -129,13 +129,13 @@
                                 </FontIcon>-->
                             </StackPanel>
                             <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" Toggled="CoverCacheToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
-                            <TextBlock Text="最大封面预载数量"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <TextBlock x:Uid="MaximumNumberOfPreLoadedCovers"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
                             <NumberBox x:Name="MaxCoverPreLoadNumberBox" ValueChanged="MaxCoverPreLoadNumberBox_ValueChanged" Grid.Column="1" Grid.Row="2" Value="50" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
                             <StackPanel Grid.Column="0" Grid.Row="4" Orientation="Horizontal">
-                                <TextBlock Text="自动歌词匹配"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <TextBlock x:Uid="AutoLyricMatching"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip Content="需要配置LrcAPI服务" VerticalOffset="10"/>
+                                        <ToolTip x:Uid="NeedConfigureLrcAPIService" VerticalOffset="10"/>
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>
@@ -143,7 +143,7 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CloseSettings" Margin="10 0 10 10" Header="关闭按钮功能" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CloseSettings" Margin="10 0 10 10" x:Uid="CloseButtonFunction" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
@@ -153,12 +153,12 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="CloseAppRadioButton" Content="关闭应用" 
+                                <RadioButton x:Name="CloseAppRadioButton" x:Uid="CloseApp" 
                                         Checked="ClosedRadioButton_Checked" 
                                         Tag="Closed"
                                         GroupName="ClosedGroup"
                                         Margin="0,5,0,5"/>
-                                <RadioButton x:Name="RunningBackendRadioButton" Content="后台运行" 
+                                <RadioButton x:Name="RunningBackendRadioButton" x:Uid="Backgrounder" 
                                         Checked="ClosedRadioButton_Checked" 
                                         Tag="RunningBackend"
                                         GroupName="ClosedGroup"
@@ -167,9 +167,9 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock Text="外观" FontSize="16" Grid.Row="7" Margin="10 10 0 0" />
+                <TextBlock x:Uid="Appearance" FontSize="16" Grid.Row="7" Margin="10 10 0 0" />
                 <Expander x:Name="BackdropSettings" 
-                        Header="应用样式" 
+                        x:Uid="AppStyle" 
                         Margin="10 10 10 0"
                         Grid.Row="8"
                         HorizontalAlignment="Stretch" 
@@ -183,17 +183,17 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="MicaRadioButton" Content="Mica (云母)" 
+                                <RadioButton x:Name="MicaRadioButton" x:Uid="MicaStyle" 
                                     Checked="BackdropRadioButton_Checked" 
                                     Tag="Mica"
                                     GroupName="BackdropGroup"
                                     Margin="0,5,0,5"/>
-                                <RadioButton x:Name="AcrylicRadioButton" Content="Acrylic (亚克力)" 
+                                <RadioButton x:Name="AcrylicRadioButton" x:Uid="AcrylicStyle" 
                                     Checked="BackdropRadioButton_Checked" 
                                     Tag="Acrylic"
                                     GroupName="BackdropGroup"
                                     Margin="0,5,0,5"/>
-                                <RadioButton x:Name="TransparentAcrylicRadioButton" Content="Transparent Acrylic (透明亚克力)" 
+                                <RadioButton x:Name="TransparentAcrylicRadioButton" x:Uid="TransparentAcrylicStyle" 
                                     Checked="BackdropRadioButton_Checked" 
                                     Tag="TransparentAcrylic"
                                     GroupName="BackdropGroup"
@@ -203,7 +203,7 @@
                     </Expander.Content>
                 </Expander>
                 <Expander x:Name="ThemeSettings" 
-                        Header="主题样式" 
+                        x:Uid="ThemeStyle" 
                         Margin="10 0 10 0"
                         Grid.Row="9"
                         HorizontalAlignment="Stretch" 
@@ -217,17 +217,17 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="DefaultRadioButton" Content="系统默认" 
+                                <RadioButton x:Name="DefaultRadioButton" x:Uid="SystemDefaultTheme" 
                                     Checked="ThemeRadioButton_Checked" 
                                     Tag="Default"
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
-                                <RadioButton x:Name="DarkRadioButton" Content="深色" 
+                                <RadioButton x:Name="DarkRadioButton" x:Uid="Dark" 
                                     Checked="ThemeRadioButton_Checked" 
                                     Tag="Dark"
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
-                                <RadioButton x:Name="LightRadioButton" Content="浅色" 
+                                <RadioButton x:Name="LightRadioButton" x:Uid="Light" 
                                     Checked="ThemeRadioButton_Checked" 
                                     Tag="Light"
                                     GroupName="ThemeGroup"
