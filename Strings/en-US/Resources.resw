@@ -138,4 +138,43 @@
   <data name="AppMainTitle" xml:space="preserve">
     <value>OriginalSound HIFI Player</value>
   </data>
+  <data name="ArtistTab.Text" xml:space="preserve">
+    <value>Artists</value>
+  </data>
+  <data name="FolderTab.Text" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="FavouriteTab.Text" xml:space="preserve">
+    <value>Favourite</value>
+  </data>
+  <data name="PlaylistTab.Text" xml:space="preserve">
+    <value>Playlists</value>
+  </data>
+  <data name="Transmitting.Text" xml:space="preserve">
+    <value>Transmitting</value>
+  </data>
+  <data name="USBDevice.PlaceholderText" xml:space="preserve">
+    <value>USB Device</value>
+  </data>
+  <data name="SortOrder.Text" xml:space="preserve">
+    <value>Sort Order</value>
+  </data>
+  <data name="SortOrderDefault.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="SortOrderA_Z.Content" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+  <data name="SortOrderArtist.Content" xml:space="preserve">
+    <value>Artist</value>
+  </data>
+  <data name="SortOrderAlbum.Content" xml:space="preserve">
+    <value>Album</value>
+  </data>
+  <data name="SearchMusic.PlaceholderText" xml:space="preserve">
+    <value>Search Music</value>
+  </data>
+  <data name="Settings.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
 </root>
