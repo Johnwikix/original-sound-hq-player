@@ -75,14 +75,6 @@ namespace WinUIMusicPlayer.View
             foreach (var music in musicList)
             {
                 music.IsExistOnDevice = 0;
-                if (music.Album == "未知专辑")
-                {
-                    music.Album = ToolUtils.GetString("UnknownAlbum");
-                }
-                if (music.Author == "未知艺术家")
-                {
-                    music.Author = ToolUtils.GetString("UnknownArtist");
-                }
             }
         }
 

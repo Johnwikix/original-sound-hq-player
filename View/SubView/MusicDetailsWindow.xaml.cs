@@ -168,7 +168,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 catch (Exception ex)
                 {
-                    notificationService.SendNotification("¥ÌŒÛ", ex.Message);
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }
             this.Close();
@@ -184,7 +184,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification("¥ÌŒÛ", "ªÒ»°∑‚√Ê ß∞‹£¨«ÎºÏ≤È…Ë÷√");
+                notificationService.SendNotification(ToolUtils.GetString("Error"), "ªÒ»°∑‚√Ê ß∞‹£¨«ÎºÏ≤È…Ë÷√");
             }
         }
 
@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification("¥ÌŒÛ", "ªÒ»°∏Ë¥  ß∞‹£¨«ÎºÏ≤È…Ë÷√");
+                notificationService.SendNotification(ToolUtils.GetString("Error"), "ªÒ»°∏Ë¥  ß∞‹£¨«ÎºÏ≤È…Ë÷√");
             }
         }
 
@@ -226,7 +226,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                notificationService.SendNotification("¥ÌŒÛ", ex.Message);
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
@@ -250,7 +250,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 catch (Exception ex)
                 {
-                    notificationService.SendNotification("¥ÌŒÛ", ex.Message);
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }
         }

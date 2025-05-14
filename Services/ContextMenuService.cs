@@ -290,7 +290,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 if (musicList != null && musicList.Count > 0)
                 {
-                    _ = MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
+                    await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);                    
                 }
             }
         }

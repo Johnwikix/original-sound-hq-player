@@ -76,16 +76,16 @@ namespace WinUIMusicPlayer.Helper
                 };
 
                 // 添加所有菜单项
-                var openMenuItem = new MenuFlyoutItem { Text = "显示", Command = openCommand };
+                var openMenuItem = new MenuFlyoutItem { Text = ToolUtils.GetString("Display"), Command = openCommand };
                 contextMenu.Items.Add(openMenuItem);
-                var lastMenuItem = new MenuFlyoutItem { Text = "上一首", Command = lastCommand };
+                var lastMenuItem = new MenuFlyoutItem { Text = ToolUtils.GetString("LastSong"), Command = lastCommand };
                 contextMenu.Items.Add(lastMenuItem);
-                var playMenuItem = new MenuFlyoutItem { Text = "播放/暂停", Command = playCommand };
+                var playMenuItem = new MenuFlyoutItem { Text = ToolUtils.GetString("PlayNPause"), Command = playCommand };
                 contextMenu.Items.Add(playMenuItem);
-                var nextMenuItem = new MenuFlyoutItem { Text = "下一首", Command = nextCommand };
+                var nextMenuItem = new MenuFlyoutItem { Text = ToolUtils.GetString("NextSong"), Command = nextCommand };
                 contextMenu.Items.Add(nextMenuItem);
                 contextMenu.Items.Add(new MenuFlyoutSeparator());
-                var exitMenuItem = new MenuFlyoutItem { Text = "退出", Command = exitCommand };
+                var exitMenuItem = new MenuFlyoutItem { Text = ToolUtils.GetString("Exit"), Command = exitCommand };
                 contextMenu.Items.Add(exitMenuItem);
 
                 _notifyIcon.ContextFlyout = contextMenu;

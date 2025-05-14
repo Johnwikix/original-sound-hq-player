@@ -35,6 +35,7 @@ namespace WinUIMusicPlayer.View
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            DateTime startTime = DateTime.Now;
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
@@ -64,6 +65,7 @@ namespace WinUIMusicPlayer.View
                         ToolUtils.RefreshIcon(musicList, "album");
                     };
             }
+            Debug.WriteLine($"专辑列表加载耗时: {(DateTime.Now - startTime).TotalMilliseconds} ms");
 
             //AlbumGridView.Loaded += async (s, e) =>
             //{

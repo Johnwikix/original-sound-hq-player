@@ -501,4 +501,7 @@
   <data name="UnknownArtist" xml:space="preserve">
     <value>Unknown Artist</value>
   </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
 </root>

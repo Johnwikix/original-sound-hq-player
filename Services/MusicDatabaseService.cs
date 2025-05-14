@@ -372,6 +372,8 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
+            AppData.allSongs = await GetMusicListAsync();
+            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
         public static async Task AddMusicToPlayList(int playListId, int musicId)
@@ -482,7 +484,19 @@ namespace WinUIMusicPlayer.Services
         public static async Task<List<Music>> GetMusicListAsync()
         {
             var query = _dbConnection.Table<Music>();
-            return await query.OrderBy(m => m.Title).ToListAsync();
+            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
+            Parallel.ForEach(musicList, music =>
+            {
+                if (music.Album == "未知专辑" || music.Album == "Unknown Album")
+                {
+                    music.Album = ToolUtils.GetString("UnknownAlbum");
+                }
+                if (music.Author == "未知艺术家" || music.Author == "Unknown Artist")
+                {
+                    music.Author = ToolUtils.GetString("UnknownArtist");
+                }
+            });
+            return musicList;
         }
 
         public static List<Music> GetMusicListFromMem(string search)

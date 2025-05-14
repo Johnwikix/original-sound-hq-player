@@ -224,7 +224,7 @@ namespace WinUIMusicPlayer.View
                 }
                 catch (Exception ex)
                 {
-                    notificationService.SendNotification("错误", $"更新歌词失败: {ex.Message}");
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), $"更新歌词失败: {ex.Message}");
                 }
             });
         }
@@ -418,7 +418,7 @@ namespace WinUIMusicPlayer.View
                     }
                     else
                     {
-                        notificationService.SendNotification("错误", "USB设备中没有音乐文件");
+                        notificationService.SendNotification(ToolUtils.GetString("Error"), "USB设备中没有音乐文件");
                     }
                 }
                 refreshUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
@@ -460,11 +460,11 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                notificationService.SendNotification("错误", message);
+                notificationService.SendNotification(ToolUtils.GetString("Error"), message);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"{ToolUtils.GetString("Error")}: {ex.Message}");
             }
         }
 
@@ -711,12 +711,12 @@ namespace WinUIMusicPlayer.View
         }
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
+            DateTime startTime = DateTime.Now;
             ResetNavigationButtons();
             SelectorBarItem selectedItem = sender.SelectedItem;
             selectedItem.FontSize = 26;
             int currentSelectedIndex = sender.Items.IndexOf(selectedItem);
             currentPage = typeof(SongListPage);
-            Debug.WriteLine($"Navigating to page: {selectedItem.Name}");
             switch (selectedItem.Name)
             {
                 case "Song":
@@ -732,7 +732,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(AlbumPage);
-                    }
+                    }                    
                     break;
                 case "Artist":
                     if (!string.IsNullOrEmpty(currentArtistName))
@@ -744,7 +744,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(ArtistPage);
-                    }
+                    }                    
                     break;
                 case "Folder":
                     if (!string.IsNullOrEmpty(currentFolderName))
@@ -756,7 +756,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(FolderBrowsePage);
-                    }
+                    }                    
                     break;
                 case "Favourite":
                     currentPage = typeof(FavouritePlayListPage);
@@ -952,7 +952,7 @@ namespace WinUIMusicPlayer.View
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-                notificationService.SendNotification("错误", ex.Message);
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
@@ -1048,8 +1048,8 @@ namespace WinUIMusicPlayer.View
             DispatcherQueue.TryEnqueue(async () =>
             {
                 MusicTitleTextBlock.Text = music.Title;
-                MusicAlbumTextBlock.Text = music.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : music.Album;
-                MusicAuthorTextBlock.Text = music.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : music.Author;
+                MusicAlbumTextBlock.Text = music.Album;
+                MusicAuthorTextBlock.Text = music.Author;
                 MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
                 HRImage.Source = null;
@@ -1066,8 +1066,8 @@ namespace WinUIMusicPlayer.View
                 if (isInPlayingDetailMode)
                 {
                     PlayingDetailTitleTextBlock.Text = music.Title;
-                    PlayingDetailAlbumTextBlock.Text = music.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : music.Album;
-                    PlayingDetailArtistTextBlock.Text = music.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : music.Author;
+                    PlayingDetailAlbumTextBlock.Text = music.Album;
+                    PlayingDetailArtistTextBlock.Text = music.Author;
                     PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
                 }
@@ -1115,7 +1115,7 @@ namespace WinUIMusicPlayer.View
             }
             catch (Exception ex)
             {
-                notificationService.SendNotification("错误", ex.Message);
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
@@ -1386,8 +1386,8 @@ namespace WinUIMusicPlayer.View
             PlayingDetailAlbumCoverImage.Source = cover;
 
             PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
-            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : musicPlaybackService.currentPlayingMusic.Author;
-            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : musicPlaybackService.currentPlayingMusic.Album;
+            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
+            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
             PlayingDetailHRImage.Source = null;
             if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 &&
                 musicPlaybackService.currentPlayingMusic.BitDepth >= 24) ||
