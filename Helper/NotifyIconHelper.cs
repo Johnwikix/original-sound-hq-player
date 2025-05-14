@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -29,14 +30,14 @@ namespace WinUIMusicPlayer.Helper
             {
                 _notifyIcon = new TaskbarIcon();
                 _notifyIcon.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icon.ico"));
-                _notifyIcon.ToolTipText = "原音HIFI";
+                _notifyIcon.ToolTipText = ToolUtils.GetString("AppMainTitle");
                 _notifyIcon.Visibility = Visibility.Visible;
 
                 var contextMenu = new MenuFlyout();
 
                 // 显示窗口菜单项
                 var openCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
-                openCommand.Label = "显示";
+                openCommand.Label = ToolUtils.GetString("Display");
                 openCommand.ExecuteRequested += (s, e) =>
                 {
                     ShowWindow();
@@ -44,7 +45,7 @@ namespace WinUIMusicPlayer.Helper
 
                 // 上一首菜单项
                 var lastCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
-                lastCommand.Label = "上一首";
+                lastCommand.Label = ToolUtils.GetString("LastSong");
                 lastCommand.ExecuteRequested += (s, e) =>
                 {
                     OnPlayLastSong();
@@ -52,7 +53,7 @@ namespace WinUIMusicPlayer.Helper
 
                 // 播放/暂停菜单项
                 var playCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
-                playCommand.Label = "播放/暂停";
+                playCommand.Label = ToolUtils.GetString("PlayNPause");
                 playCommand.ExecuteRequested += (s, e) =>
                 {
                     OnPlayStop();
@@ -60,7 +61,7 @@ namespace WinUIMusicPlayer.Helper
 
                 // 下一首菜单项
                 var nextCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
-                nextCommand.Label = "下一首";
+                nextCommand.Label = ToolUtils.GetString("NextSong");
                 nextCommand.ExecuteRequested += (s, e) =>
                 {
                     OnPlayNextSong();
@@ -68,7 +69,7 @@ namespace WinUIMusicPlayer.Helper
 
                 // 退出菜单项
                 var exitCommand = new Microsoft.UI.Xaml.Input.XamlUICommand();
-                exitCommand.Label = "退出";
+                exitCommand.Label = ToolUtils.GetString("Exit");
                 exitCommand.ExecuteRequested += (s, e) =>
                 {
                     CloseApplication();
@@ -100,7 +101,7 @@ namespace WinUIMusicPlayer.Helper
                 }
 
                 _notifyIcon.ForceCreate();
-                _notifyIcon.ShowNotification("原音HIFI", "托盘图标已初始化");
+                _notifyIcon.ShowNotification(ToolUtils.GetString("AppMainTitle"), ToolUtils.GetString("TrayIconInitialized"));
             }
             catch (Exception ex)
             {

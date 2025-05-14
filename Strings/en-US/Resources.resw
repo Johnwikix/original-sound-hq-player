@@ -477,4 +477,22 @@
   <data name="NoRecognizableLyrics" xml:space="preserve">
     <value>No recognizable lyrics</value>
   </data>
+  <data name="Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="LastSong" xml:space="preserve">
+    <value>Last Song</value>
+  </data>
+  <data name="NextSong" xml:space="preserve">
+    <value>Next Song</value>
+  </data>
+  <data name="PlayNPause" xml:space="preserve">
+    <value>Play/Pause</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="TrayIconInitialized" xml:space="preserve">
+    <value>Tray icon initialized</value>
+  </data>
 </root>

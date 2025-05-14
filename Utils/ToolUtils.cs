@@ -25,7 +25,15 @@ namespace WinUIMusicPlayer.Utils
 
         public static string GetString(string key)
         {
-            return new ResourceLoader().GetString(key);
+            try
+            {
+                return new ResourceLoader().GetString(key);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"获取字符串失败: {ex.Message}");
+                return key;
+            }
         }
         public enum PlayMode
         {
