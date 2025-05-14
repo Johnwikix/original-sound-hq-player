@@ -28,11 +28,11 @@
                 FontSize="16"
                 VerticalAlignment="Center"
                 Style="{StaticResource CaptionTextBlockStyle}"
-                Text="音乐详情"/>
+                x:Uid="MusicDetailTitleBar"/>
         </Grid>
         <Grid x:Name="LoadingGrid" Visibility="Collapsed">
             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
-            <TextBlock Text="正在处理保存，请稍候..." HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
+            <TextBlock x:Uid="LoadingGrid" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
         </Grid>
         <RelativePanel x:Name="MusicDetail"  Margin="10 50 10 10">
             <ScrollViewer 
@@ -67,22 +67,22 @@
                             <ColumnDefinition Width="5*"/>                            
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="标题：" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="TitleTextBlock" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
                         <TextBox x:Name="TitleTextBlock" BorderThickness="0"  TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                        <TextBlock Text="艺术家：" FontWeight="Bold" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="AuthorTextBlock" FontWeight="Bold" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
                         <TextBox x:Name="AuthorTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                        <TextBlock Text="专辑：" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="AlbumTextBlock" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
                         <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                        <TextBlock Text="年份：" FontWeight="Bold" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="YearTextBlock" FontWeight="Bold" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
                         <TextBox x:Name="YearTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
 
-                        <TextBlock Text="轨道编号：" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="TrackNumberBox" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
                         <TextBox x:Name="TrackNumberBox" BorderThickness="0" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5"/>
 
-                        <TextBlock Text="歌词：" FontWeight="Bold" Grid.Row="5" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="Lyrics" FontWeight="Bold" Grid.Row="5" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="5"/>
                         <Grid Grid.Row="5" Grid.Column="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -99,29 +99,28 @@
                                     </StackPanel>
                                 </Button.Content>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip>
-                                        在线匹配歌词
+                                    <ToolTip x:Uid="LyricsTextBox">
                                     </ToolTip>
                                 </ToolTipService.ToolTip>
                             </Button>
                         </Grid>
 
-                        <TextBlock Text="时长：" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="DurationTextBlock" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock x:Name="DurationTextBlock" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="位深：" FontWeight="Bold" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="BitDepthTextBlock" FontWeight="Bold" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock x:Name="BitDepthTextBlock" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="比特率：" FontWeight="Bold" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="BitRateTextBlock" FontWeight="Bold" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock x:Name="BitRateTextBlock" Grid.Row="8" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="采样率：" FontWeight="Bold" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="SampleRateTextBlock" FontWeight="Bold" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock x:Name="SampleRateTextBlock" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="最后目录：" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="LastFolderNameTextBlock" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="LastFolderNameTextBlock" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
 
-                        <TextBlock Text="路径：" FontWeight="Bold" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="PathTextBlock" FontWeight="Bold" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
                         <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
                     </Grid>
                     <Grid Grid.Column="1" Margin="10">
@@ -135,8 +134,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            在线匹配封面
+                                        <ToolTip x:Uid="GetImageFromNetButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>                                    
                                 </Button>
@@ -147,8 +145,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            保存到本地
+                                        <ToolTip x:Uid="SaveImageButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>                                    
                                 </Button>
@@ -159,8 +156,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            编辑封面
+                                        <ToolTip  x:Uid="SelectCoverImageButton">
                                         </ToolTip>
                                     </ToolTipService.ToolTip>                                    
                                 </Button>
@@ -175,22 +171,22 @@
                 Orientation="Horizontal"
             >
                 <Button
-                    Content="保存"
+                    x:Uid="SaveButton"
                     Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
                                 <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="是否确定保存元信息至音乐" Margin="0,0,0,12" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Click="ConfirmButton_Click" Content="确认" Margin="0 0 10 0"/>
-                                    <Button Content="取消"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
+                                    <Button Click="ConfirmButton_Click" x:Uid="ConfirmButton" Margin="0 0 10 0"/>
+                                    <Button x:Uid="CancelButton"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
                 <Button
-                    Content="关闭"
+                    x:Uid="CloseButtonItem"
                     Click="CloseButton_Click"
                     Margin="5"/>
             </StackPanel>

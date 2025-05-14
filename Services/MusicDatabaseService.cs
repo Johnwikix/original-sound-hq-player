@@ -167,7 +167,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (SQLiteException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SQLite error: {ex.Message}");
                 return new List<Folder>();
             }
         }
@@ -180,7 +180,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (SQLiteException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"SQLite error: {ex.Message}");
                 return new List<PlayList>();
             }
         }

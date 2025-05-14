@@ -420,4 +420,61 @@
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="MusicDetailTitleBar.Text" xml:space="preserve">
+    <value>Music Details</value>
+  </data>
+  <data name="LoadingGrid.Text" xml:space="preserve">
+    <value>Processing save, please wait...</value>
+  </data>
+  <data name="TitleTextBlock.Text" xml:space="preserve">
+    <value>Title:</value>
+  </data>
+  <data name="AuthorTextBlock.Text" xml:space="preserve">
+    <value>Artist:</value>
+  </data>
+  <data name="AlbumTextBlock.Text" xml:space="preserve">
+    <value>Album:</value>
+  </data>
+  <data name="YearTextBlock.Text" xml:space="preserve">
+    <value>Year:</value>
+  </data>
+  <data name="TrackNumberBox.Text" xml:space="preserve">
+    <value>Track Number:</value>
+  </data>
+  <data name="LyricsTextBox.Content" xml:space="preserve">
+    <value>Match lyrics online</value>
+  </data>
+  <data name="DurationTextBlock.Text" xml:space="preserve">
+    <value>Duration:</value>
+  </data>
+  <data name="BitDepthTextBlock.Text" xml:space="preserve">
+    <value>Bit Depth:</value>
+  </data>
+  <data name="BitRateTextBlock.Text" xml:space="preserve">
+    <value>Bit Rate:</value>
+  </data>
+  <data name="SampleRateTextBlock.Text" xml:space="preserve">
+    <value>Sample Rate:</value>
+  </data>
+  <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
+    <value>Last Folder Name:</value>
+  </data>
+  <data name="PathTextBlock.Text" xml:space="preserve">
+    <value>Path:</value>
+  </data>
+  <data name="Lyrics.Text" xml:space="preserve">
+    <value>Lyrics:</value>
+  </data>
+  <data name="MusicDetailTitle" xml:space="preserve">
+    <value>Music Details</value>
+  </data>
+  <data name="AlbumDetailTitle" xml:space="preserve">
+    <value>Album Details</value>
+  </data>
+  <data name="LyricsGetFailed" xml:space="preserve">
+    <value>No available lyrics</value>
+  </data>
+  <data name="NoRecognizableLyrics" xml:space="preserve">
+    <value>No recognizable lyrics</value>
+  </data>
 </root>

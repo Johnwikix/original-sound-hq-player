@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -97,7 +98,7 @@ namespace WinUIMusicPlayer.Services
                     // 如果获取失败或被取消，返回默认歌词
                     lyrics.Add(new LyricLine
                     {
-                        Text = "没有歌词",
+                        Text = ToolUtils.GetString("LyricsGetFailed"),
                         Time = TimeSpan.Zero,
                         IsCurrent = true
                     });
@@ -107,7 +108,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     lyrics.Add(new LyricLine
                     {
-                        Text = "没有歌词",
+                        Text = ToolUtils.GetString("LyricsGetFailed"),
                         Time = TimeSpan.Zero,
                         IsCurrent = true
                     });
@@ -179,7 +180,7 @@ namespace WinUIMusicPlayer.Services
             {
                 lyrics.Add(new LyricLine
                 {
-                    Text = "没有可识别的歌词",
+                    Text = ToolUtils.GetString("NoRecognizableLyrics"),
                     Time = TimeSpan.Zero,
                     IsCurrent = true
                 });
