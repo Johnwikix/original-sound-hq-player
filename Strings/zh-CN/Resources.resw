@@ -495,4 +495,10 @@
   <data name="TrayIconInitialized" xml:space="preserve">
     <value>托盘图标已初始化</value>
   </data>
+  <data name="UnknownAlbum" xml:space="preserve">
+    <value>未知专辑</value>
+  </data>
+  <data name="UnknownArtist" xml:space="preserve">
+    <value>未知艺术家</value>
+  </data>
 </root>

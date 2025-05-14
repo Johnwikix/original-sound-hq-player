@@ -47,9 +47,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                parentPage.refreshPage += RefreshPage;
-                clearUsbDeviceMusicList(null, null);
-                refreshUsbDeviceMusicList(null, null);
+                parentPage.refreshPage += RefreshPage;                
                 parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
                 parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
@@ -62,6 +60,8 @@ namespace WinUIMusicPlayer.View
                     UpdateMusicListView();
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
+                clearUsbDeviceMusicList(null, null);
+                refreshUsbDeviceMusicList(null, null);
             }
         }
 
@@ -70,6 +70,14 @@ namespace WinUIMusicPlayer.View
             foreach (var music in musicList)
             {
                 music.IsExistOnDevice = 0;
+                if (music.Album == "未知专辑")
+                {
+                    music.Album = ToolUtils.GetString("UnknownAlbum");
+                }
+                if (music.Author == "未知艺术家")
+                {
+                    music.Author = ToolUtils.GetString("UnknownArtist");
+                }
             }
         }
 

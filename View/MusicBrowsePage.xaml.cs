@@ -1048,8 +1048,8 @@ namespace WinUIMusicPlayer.View
             DispatcherQueue.TryEnqueue(async () =>
             {
                 MusicTitleTextBlock.Text = music.Title;
-                MusicAlbumTextBlock.Text = music.Album;
-                MusicAuthorTextBlock.Text = music.Author;
+                MusicAlbumTextBlock.Text = music.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : music.Album;
+                MusicAuthorTextBlock.Text = music.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : music.Author;
                 MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
                 HRImage.Source = null;
@@ -1066,8 +1066,8 @@ namespace WinUIMusicPlayer.View
                 if (isInPlayingDetailMode)
                 {
                     PlayingDetailTitleTextBlock.Text = music.Title;
-                    PlayingDetailAlbumTextBlock.Text = music.Album;
-                    PlayingDetailArtistTextBlock.Text = music.Author;
+                    PlayingDetailAlbumTextBlock.Text = music.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : music.Album;
+                    PlayingDetailArtistTextBlock.Text = music.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : music.Author;
                     PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
                 }
@@ -1386,8 +1386,8 @@ namespace WinUIMusicPlayer.View
             PlayingDetailAlbumCoverImage.Source = cover;
 
             PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
-            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
-            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
+            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author == "未知艺术家" ? ToolUtils.GetString("UnknownArtist") : musicPlaybackService.currentPlayingMusic.Author;
+            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album == "未知专辑" ? ToolUtils.GetString("UnknownAlbum") : musicPlaybackService.currentPlayingMusic.Album;
             PlayingDetailHRImage.Source = null;
             if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 &&
                 musicPlaybackService.currentPlayingMusic.BitDepth >= 24) ||

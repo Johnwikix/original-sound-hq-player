@@ -495,4 +495,10 @@
   <data name="TrayIconInitialized" xml:space="preserve">
     <value>Tray icon initialized</value>
   </data>
+  <data name="UnknownAlbum" xml:space="preserve">
+    <value>Unknown Album</value>
+  </data>
+  <data name="UnknownArtist" xml:space="preserve">
+    <value>Unknown Artist</value>
+  </data>
 </root>

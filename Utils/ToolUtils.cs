@@ -71,6 +71,14 @@ namespace WinUIMusicPlayer.Utils
         {
             foreach (var item in musicList)
             {
+                if (item.Album == "未知专辑")
+                {
+                    item.Album = GetString("UnknownAlbum");
+                }
+                if (item.Author == "未知艺术家")
+                {
+                    item.Author = GetString("UnknownArtist");
+                }
                 if (type == "album")
                 {
                     if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
@@ -104,7 +112,8 @@ namespace WinUIMusicPlayer.Utils
                             break;
                         }
                     }
-                }                
+                }               
+               
             }
         }
 
