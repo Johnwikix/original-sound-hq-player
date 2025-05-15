@@ -16,10 +16,10 @@
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
-    <DisplayName>Resources:AppMainTitle</DisplayName>
+    <DisplayName>OriginalSound HI-FI Player</DisplayName>
     <PublisherDisplayName>Sennpai Studio</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
-	<Description>Resources:AppDescription</Description>
+	<Description>OriginalSound HI-FI Player</Description>
   </Properties>
 
   <Dependencies>
