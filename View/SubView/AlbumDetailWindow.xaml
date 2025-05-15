@@ -99,7 +99,7 @@
                                 </Button>
                             </StackPanel>
                             <TextBlock x:Uid="TitleLabel" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0" Grid.Column="1"/>
-                            <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="5" Grid.Row="0"  Grid.Column="2"/>
+                            <TextBox x:Name="AlbumTextBlock" ScrollViewer.HorizontalScrollBarVisibility="Auto"  BorderThickness="0" HorizontalAlignment="Stretch" Margin="5" Grid.Row="0"  Grid.Column="2"/>
                             <TextBlock x:Uid="YearLabel" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 5 0 5" Grid.Row="0"  Grid.Column="3"/>
                             <TextBox x:Name="YearTextBlock" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5 5 10 5" Grid.Row="0"  Grid.Column="4"/>
                         </Grid>

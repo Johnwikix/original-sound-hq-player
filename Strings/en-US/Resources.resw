@@ -292,7 +292,7 @@
     <value>Transparent Acrylic</value>
   </data>
   <data name="ThemeStyle.Header" xml:space="preserve">
-    <value>Theme Style</value>
+    <value>App Theme</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
     <value>System Default</value>

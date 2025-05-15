@@ -292,7 +292,7 @@
     <value>透明亚克力</value>
   </data>
   <data name="ThemeStyle.Header" xml:space="preserve">
-    <value>主题样式</value>
+    <value>应用主题</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
     <value>系统默认</value>
