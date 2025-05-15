@@ -184,7 +184,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), "获取封面失败，请检查设置");
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainCover"));
             }
         }
 
@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), "获取歌词失败，请检查设置");
+                notificationService.SendNotification(ToolUtils.GetString("Error"),ToolUtils.GetString("FailedObtainLyrics"));
             }
         }
 

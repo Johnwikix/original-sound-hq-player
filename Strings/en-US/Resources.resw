@@ -504,4 +504,25 @@
   <data name="Error" xml:space="preserve">
     <value>Error</value>
   </data>
+  <data name="DSDPlaybackFailed" xml:space="preserve">
+    <value>DSD exclusive playback failed</value>
+  </data>
+  <data name="SwitchingToSharedMode" xml:space="preserve">
+    <value>Please try switching to shared mode</value>
+  </data>
+  <data name="FileDoNotExist" xml:space="preserve">
+    <value>File does not exist</value>
+  </data>
+  <data name="UpdatingLyricsFailed" xml:space="preserve">
+    <value>Updating lyrics failed</value>
+  </data>
+  <data name="NoMusicInUSBDevice" xml:space="preserve">
+    <value>There are no music files in the USB device</value>
+  </data>
+  <data name="FailedObtainCover" xml:space="preserve">
+    <value>Failed to obtain cover</value>
+  </data>
+  <data name="FailedObtainLyrics" xml:space="preserve">
+    <value>Failed to obtain lyrics</value>
+  </data>
 </root>

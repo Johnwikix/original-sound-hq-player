@@ -379,7 +379,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception e)
                 {
-                    notificationService.SendNotification("DSD独占播放失败", "请尝试切换至共享模式");
+                    notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
                 }
                 AppSettings.isDsd = true;
             }
@@ -567,7 +567,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!File.Exists(music.Path))
                 {
-                    notificationService.SendNotification("文件不存在", music.Path);
+                    notificationService.SendNotification(ToolUtils.GetString("FileDoNotExist"), music.Path);
                     return false;
                 }
                 Reset();
@@ -607,7 +607,7 @@ namespace WinUIMusicPlayer.Services
                         //wasapiOut.Device = csCoreMMdevice;
                         //wasapiOut.Initialize(ffmpegDecoder);
                         //wasapiOut.Volume = volume;
-                        notificationService.SendNotification("DSD独占播放失败", "请尝试切换至共享模式");
+                        notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
                         Reset();
                         OutputDeviceChange();
                         CScoreOutputDevice();

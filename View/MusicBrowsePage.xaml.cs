@@ -224,7 +224,7 @@ namespace WinUIMusicPlayer.View
                 }
                 catch (Exception ex)
                 {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), $"更新歌词失败: {ex.Message}");
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), $"{ToolUtils.GetString("UpdatingLyricsFailed")}: {ex.Message}");
                 }
             });
         }
@@ -418,7 +418,7 @@ namespace WinUIMusicPlayer.View
                     }
                     else
                     {
-                        notificationService.SendNotification(ToolUtils.GetString("Error"), "USB设备中没有音乐文件");
+                        notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("NoMusicInUSBDevice"));
                     }
                 }
                 refreshUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);

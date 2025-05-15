@@ -504,4 +504,25 @@
   <data name="Error" xml:space="preserve">
     <value>错误</value>
   </data>
+  <data name="DSDPlaybackFailed" xml:space="preserve">
+    <value>DSD独占播放失败</value>
+  </data>
+  <data name="SwitchingToSharedMode" xml:space="preserve">
+    <value>请尝试切换至共享模式</value>
+  </data>
+  <data name="FileDoNotExist" xml:space="preserve">
+    <value>文件不存在</value>
+  </data>
+  <data name="UpdatingLyricsFailed" xml:space="preserve">
+    <value>更新歌词失败</value>
+  </data>
+  <data name="NoMusicInUSBDevice" xml:space="preserve">
+    <value>USB设备中没有音乐文件</value>
+  </data>
+  <data name="FailedObtainCover" xml:space="preserve">
+    <value>获取封面失败</value>
+  </data>
+  <data name="FailedObtainLyrics" xml:space="preserve">
+    <value>获取歌词失败</value>
+  </data>
 </root>
