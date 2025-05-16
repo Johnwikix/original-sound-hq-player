@@ -31,9 +31,13 @@ namespace WinUIMusicPlayer
             else if (systemLanguages[0].StartsWith("es"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
-            } else if (systemLanguages[0].StartsWith("ja")) 
+            }
+            else if (systemLanguages[0].StartsWith("ja"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
+            }
+            else if (systemLanguages[0].StartsWith("ru")) {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
             }
             else
             {

@@ -490,14 +490,16 @@ namespace WinUIMusicPlayer.Services
                 if (music.Album == "未知专辑" 
                     || music.Album == "Unknown Album" 
                     || music.Album == "Álbum desconocido" 
-                    || music.Album == "不明なアルバム")
+                    || music.Album == "不明なアルバム"
+                    || music.Album == "Неизвестный альбом")
                 {
                     music.Album = ToolUtils.GetString("UnknownAlbum");
                 }
                 if (music.Author == "未知艺术家" 
                     || music.Author == "Unknown Artist" 
                     || music.Author == "Artista desconocido"
-                    || music.Author == "不明なアーティスト")
+                    || music.Author == "不明なアーティスト"
+                    || music.Author == "Неизвестный артист")
                 {
                     music.Author = ToolUtils.GetString("UnknownArtist");
                 }

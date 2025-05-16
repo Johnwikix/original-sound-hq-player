@@ -1,4 +1,5 @@
 using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -41,6 +42,7 @@ namespace WinUIMusicPlayer.View.SubView
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
+            mainWindow = (App.MainWindow as MainWindow);
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(MusicDetailTitleBar);
@@ -48,8 +50,7 @@ namespace WinUIMusicPlayer.View.SubView
             InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, musicDetailAppWindow);
             themeStyleHelper.SetAppStyle();
-            themeStyleHelper.SetAppTheme();
-            mainWindow = (App.MainWindow as MainWindow);
+            themeStyleHelper.SetAppTheme();            
             if (mainWindow != null)
             {
                 mainWindow.themeChanged += MainWindow_themeChanged;
@@ -80,7 +81,20 @@ namespace WinUIMusicPlayer.View.SubView
             int originalHeight = 650;
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
-            musicDetailAppWindow.MoveAndResize(new RectInt32(_X: 560, _Y: 280, _Width: adjustedWidth, _Height: adjustedHeight));
+
+            // 获取主窗口句柄和信息
+            IntPtr mainHwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
+            WindowId mainWindowId = Win32Interop.GetWindowIdFromWindow(mainHwnd);
+            AppWindow mainAppWindow = AppWindow.GetFromWindowId(mainWindowId);
+            PointInt32 mainWindowPosition = mainAppWindow.Position; // 主窗口位置（X,Y）
+            int mainWindowWidth = mainAppWindow.Size.Width;         // 主窗口宽度
+            int mainWindowHeight = mainAppWindow.Size.Height;       // 主窗口高度
+
+            // 计算子窗口在主窗口中心的位置
+            int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;
+            int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
+
+            musicDetailAppWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
             notificationService = new NotificationService();
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)

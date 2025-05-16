@@ -1,0 +1,450 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>  
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+            <xsd:complexType>
+                <xsd:choice maxOccurs="unbounded">
+                    <xsd:element name="data">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+                            <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+                            <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="resheader">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" use="required" />
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:choice>
+            </xsd:complexType>
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+	<data name="AppTitle.Text" xml:space="preserve">
+    <value>Hi-Fi-плеер Original Sound</value>
+  </data>
+	<data name="LoadingText.Text" xml:space="preserve">
+    <value>Загрузка данных, пожалуйста подождите...</value>
+  </data>
+	<data name="SongTab.Text" xml:space="preserve">
+    <value>Песни</value>
+  </data>
+	<data name="AlbumTab.Text" xml:space="preserve">
+    <value>Альбомы</value>
+  </data>
+	<data name="AddFolder.Text" xml:space="preserve">
+    <value>Добавить папку</value>
+  </data>
+	<data name="MusicBrowse.Text" xml:space="preserve">
+    <value>Просмотр музыки</value>
+  </data>
+	<data name="AppMainTitle" xml:space="preserve">
+    <value>Hi-Fi-плеер Original Sound</value>
+  </data>
+	<data name="ArtistTab.Text" xml:space="preserve">
+    <value>Артисты</value>
+  </data>
+	<data name="FolderTab.Text" xml:space="preserve">
+    <value>Папки</value>
+  </data>
+	<data name="FavouriteTab.Text" xml:space="preserve">
+    <value>Избранное</value>
+  </data>
+	<data name="PlaylistTab.Text" xml:space="preserve">
+    <value>Плейлисты</value>
+  </data>
+	<data name="Transmitting.Text" xml:space="preserve">
+    <value>Передача данных</value>
+  </data>
+	<data name="USBDevice.PlaceholderText" xml:space="preserve">
+    <value>USB-устройство</value>
+  </data>
+	<data name="SortOrder.Text" xml:space="preserve">
+    <value>Сортировка</value>
+  </data>
+	<data name="SortOrderDefault.Content" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+	<data name="SortOrderA_Z.Content" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+	<data name="SortOrderArtist.Content" xml:space="preserve">
+    <value>Артисты</value>
+  </data>
+	<data name="SortOrderAlbum.Content" xml:space="preserve">
+    <value>Альбомы</value>
+  </data>
+	<data name="SearchMusic.PlaceholderText" xml:space="preserve">
+    <value>Поиск музыки</value>
+  </data>
+	<data name="Settings.Text" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+	<data name="SettingAudio.Text" xml:space="preserve">
+    <value>Аудио</value>
+  </data>
+	<data name="SettingOutput.Header" xml:space="preserve">
+    <value>Настройки вывода</value>
+  </data>
+	<data name="SettingOutputMode.Text" xml:space="preserve">
+    <value>Режим вывода</value>
+  </data>
+	<data name="WasapiExclusivePush.Content" xml:space="preserve">
+    <value>Wasapi Эксклюзивный (Пуш)</value>
+  </data>
+	<data name="WasapiExclusiveEvent.Content" xml:space="preserve">
+    <value>Wasapi Эксклюзивный (Событие)</value>
+  </data>
+	<data name="WasapiShared.Content" xml:space="preserve">
+    <value>Wasapi Общий</value>
+  </data>
+	<data name="WaveOut.Content" xml:space="preserve">
+    <value>WaveOut</value>
+  </data>
+	<data name="DirectSound.Content" xml:space="preserve">
+    <value>DirectSound</value>
+  </data>
+	<data name="SettingOutputDevice.Text" xml:space="preserve">
+    <value>Устройство вывода</value>
+  </data>
+	<data name="SettingBufferSize.Text" xml:space="preserve">
+    <value>Размер буфера (мс)</value>
+  </data>
+	<data name="SettingFunction.Text" xml:space="preserve">
+    <value>Функции</value>
+  </data>
+	<data name="DefaultEntryInterface.Text" xml:space="preserve">
+    <value>Стартвая страница</value>
+  </data>
+	<data name="AddFolderCombox.Content" xml:space="preserve">
+    <value>Добавить папку</value>
+  </data>
+	<data name="MusicBrowseCombox.Content" xml:space="preserve">
+    <value>Просмотр музыки</value>
+  </data>
+	<data name="AlbumCombox.Content" xml:space="preserve">
+    <value>Альбомы</value>
+  </data>
+	<data name="FavouriteCombox.Content" xml:space="preserve">
+    <value>Избранное</value>
+  </data>
+	<data name="FolderCombox.Content" xml:space="preserve">
+    <value>Папки</value>
+  </data>
+	<data name="PlaylistCombox.Content" xml:space="preserve">
+    <value>Плейлисты</value>
+  </data>
+	<data name="SongCombox.Content" xml:space="preserve">
+    <value>Песни</value>
+  </data>
+	<data name="ArtistCombox.Content" xml:space="preserve">
+    <value>Артисты</value>
+  </data>
+	<data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+    <value>Стартвая страница музыки</value>
+  </data>
+	<data name="SettingInterface.Header" xml:space="preserve">
+    <value>Настройки интерфейса</value>
+  </data>
+	<data name="SettingCoverLyrics.Header" xml:space="preserve">
+    <value>Настройки обложки иrics</value>
+  </data>
+	<data name="CoverServiceLrcAPISource.Text" xml:space="preserve">
+    <value>Источник CoverServiceLrcAPI</value>
+  </data>
+	<data name="CoverServiceLrcAPISourceDoc.Content" xml:space="preserve">
+    <value>Документация: https://docs.lrc.cx/docs/QuickStart/</value>
+  </data>
+	<data name="CoverServiceLrcAPISourceAuthCode.Text" xml:space="preserve">
+    <value>Код авторизации CoverServiceLrcAPI</value>
+  </data>
+	<data name="CoverCache.Text" xml:space="preserve">
+    <value>Кэш обложек</value>
+  </data>
+	<data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
+    <value>Макс. количество 미리 загруженных обложек</value>
+  </data>
+	<data name="AutoLyricMatching.Text" xml:space="preserve">
+    <value>Автоматическое сопоставлениеrics</value>
+  </data>
+	<data name="NeedConfigureLrcAPIService.Content" xml:space="preserve">
+    <value>Необходимо настроить службуLrcAPI</value>
+  </data>
+	<data name="CloseButtonFunction.Header" xml:space="preserve">
+    <value>Функция кнопки Закрыть</value>
+  </data>
+	<data name="CloseApp.Content" xml:space="preserve">
+    <value>Закрыть приложение</value>
+  </data>
+	<data name="Backgrounder.Content" xml:space="preserve">
+    <value>Работа в фоне</value>
+  </data>
+	<data name="Appearance.Text" xml:space="preserve">
+    <value>Внешний вид</value>
+  </data>
+	<data name="AppStyle.Header" xml:space="preserve">
+    <value>Стиль приложения</value>
+  </data>
+	<data name="MicaStyle.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+	<data name="AcrylicStyle.Content" xml:space="preserve">
+    <value>Акриловый</value>
+  </data>
+	<data name="TransparentAcrylicStyle.Content" xml:space="preserve">
+    <value>Прозрачный акриловый</value>
+  </data>
+	<data name="ThemeStyle.Header" xml:space="preserve">
+    <value>Тема приложения</value>
+  </data>
+	<data name="SystemDefaultTheme.Content" xml:space="preserve">
+    <value>По умолчанию системы</value>
+  </data>
+	<data name="Dark.Content" xml:space="preserve">
+    <value>Темная</value>
+  </data>
+	<data name="Light.Content" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
+	<data name="FlyoutPlayItem.Text" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+	<data name="FlyoutFavoriteItem.Text" xml:space="preserve">
+    <value>Добавить/удалить из избранного</value>
+  </data>
+	<data name="FlyoutAddToPlaylistItem.Text" xml:space="preserve">
+    <value>Добавить в плейлист</value>
+  </data>
+	<data name="FlyoutConvertItem.Text" xml:space="preserve">
+    <value>Преобразовать в</value>
+  </data>
+	<data name="FlyoutConvertWavItem.Text" xml:space="preserve">
+    <value>WAV</value>
+  </data>
+	<data name="FlyoutConvertMp3Item.Text" xml:space="preserve">
+    <value>MP3</value>
+  </data>
+	<data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
+    <value>Flac</value>
+  </data>
+	<data name="FlyoutOpenLocationItem.Text" xml:space="preserve">
+    <value>Открыть расположение файла</value>
+  </data>
+	<data name="FlyoutPropertiesItem.Text" xml:space="preserve">
+    <value>Свойства</value>
+  </data>
+	<data name="FlyoutDeleteItem.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+	<data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
+    <value>Удалить из плейлиста</value>
+  </data>
+	<data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
+    <value>Удалить из избранного</value>
+  </data>
+	<data name="SendToUsbDevice" xml:space="preserve">
+    <value>Отправить на USB-устройство</value>
+  </data>
+	<data name="Path" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+	<data name="FreeSpace" xml:space="preserve">
+    <value>Доступно места</value>
+  </data>
+	<data name="Rescan" xml:space="preserve">
+    <value>Пересканировать</value>
+  </data>
+	<data name="FlyoutProperties" xml:space="preserve">
+    <value>Свойства</value>
+  </data>
+	<data name="FlyoutAddToPlaylist" xml:space="preserve">
+    <value>Добавить в плейлист</value>
+  </data>
+	<data name="FlyoutPlay" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+	<data name="FlyoutFavorite" xml:space="preserve">
+    <value>Добавить в избранное</value>
+  </data>
+	<data name="EnterPlaylistName" xml:space="preserve">
+    <value>Введите имя плейлиста</value>
+  </data>
+	<data name="PrimaryButton" xml:space="preserve">
+    <value>Потвердить</value>
+  </data>
+	<data name="CloseButton" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+	<data name="ModifyPlaylist" xml:space="preserve">
+    <value>Изменить плейлист</value>
+  </data>
+	<data name="Converting" xml:space="preserve">
+    <value>Преобразование...</value>
+  </data>
+	<data name="Processing" xml:space="preserve">
+    <value>Обработка...</value>
+  </data>
+	<data name="AlbumDetailWindow.Title" xml:space="preserve">
+    <value>Свойства альбома</value>
+  </data>
+	<data name="AlbumDetailTitleBar.Text" xml:space="preserve">
+    <value>Сведения об альбоме</value>
+  </data>
+	<data name="LoadingTextBlock.Text" xml:space="preserve">
+    <value>Сохранение данных, пожалуйста подождите...</value>
+  </data>
+	<data name="GetImageFromNetButton.Content" xml:space="preserve">
+    <value>Искать обложку онлайн</value>
+  </data>
+	<data name="SaveImageButton.Content" xml:space="preserve">
+    <value>Сохранить локально</value>
+  </data>
+	<data name="SelectCoverImageButton.Content" xml:space="preserve">
+    <value>Редактировать обложку</value>
+  </data>
+	<data name="TitleLabel.Text" xml:space="preserve">
+    <value>Название</value>
+  </data>
+	<data name="YearLabel.Text" xml:space="preserve">
+    <value>Год</value>
+  </data>
+	<data name="ConfirmFlyout.Text" xml:space="preserve">
+    <value>Сохранить метаданные во всех треках альбома?</value>
+  </data>
+	<data name="ConfirmButton.Content" xml:space="preserve">
+    <value>Потвердить</value>
+  </data>
+	<data name="CancelButton.Content" xml:space="preserve">
+    <value>Отменить</value>
+  </data>
+	<data name="SaveButton.Content" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+	<data name="CloseButtonItem.Content" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+	<data name="MusicDetailTitleBar.Text" xml:space="preserve">
+    <value>Сведения о треке</value>
+  </data>
+	<data name="LoadingGrid.Text" xml:space="preserve">
+    <value>Сохранение данных, пожалуйста подождите...</value>
+  </data>
+	<data name="TitleTextBlock.Text" xml:space="preserve">
+  <value>Название:</value>
+</data>
+	<data name="AuthorTextBlock.Text" xml:space="preserve">
+  <value>Артист:</value>
+</data>
+	<data name="AlbumTextBlock.Text" xml:space="preserve">
+  <value>Альбом:</value>
+</data>
+	<data name="YearTextBlock.Text" xml:space="preserve">
+  <value>Год:</value>
+</data>
+	<data name="TrackNumberBox.Text" xml:space="preserve">
+  <value>№ трека:</value>
+</data>
+	<data name="LyricsTextBox.Content" xml:space="preserve">
+  <value>Автоматическое сопоставлениеrics онлайн</value>
+</data>
+	<data name="DurationTextBlock.Text" xml:space="preserve">
+  <value>Продолжительность:</value>
+</data>
+	<data name="BitDepthTextBlock.Text" xml:space="preserve">
+  <value>Глубина бита:</value>
+</data>
+	<data name="BitRateTextBlock.Text" xml:space="preserve">
+  <value>Битрейт:</value>
+</data>
+	<data name="SampleRateTextBlock.Text" xml:space="preserve">
+  <value>Частота дискретизации:</value>
+</data>
+	<data name="LastFolderNameTextBlock.Text" xml:space="preserve">
+  <value>Последняя папка:</value>
+</data>
+	<data name="PathTextBlock.Text" xml:space="preserve">
+  <value>Путь:</value>
+</data>
+	<data name="Lyrics.Text" xml:space="preserve">
+  <value>Слова песни:</value>
+</data>
+	<data name="MusicDetailTitle" xml:space="preserve">
+  <value>Сведения о треке</value>
+</data>
+	<data name="AlbumDetailTitle" xml:space="preserve">
+  <value>Сведения об альбоме</value>
+</data>
+	<data name="LyricsGetFailed" xml:space="preserve">
+  <value>Без текста</value>
+</data>
+	<data name="NoRecognizableLyrics" xml:space="preserve">
+  <value>Текст не распознан</value>
+</data>
+	<data name="Display" xml:space="preserve">
+  <value>Показать</value>
+</data>
+	<data name="LastSong" xml:space="preserve">
+  <value>Предыдущая</value>
+</data>
+	<data name="NextSong" xml:space="preserve">
+  <value>Следующая</value>
+</data>
+	<data name="PlayNPause" xml:space="preserve">
+  <value>Воспроизвести/Пауза</value>
+</data>
+	<data name="Exit" xml:space="preserve">
+  <value>Выход</value>
+</data>
+	<data name="TrayIconInitialized" xml:space="preserve">
+  <value>Иконка в трее инициализирована</value>
+</data>
+	<data name="UnknownAlbum" xml:space="preserve">
+  <value>Неизвестный альбом</value>
+</data>
+	<data name="UnknownArtist" xml:space="preserve">
+  <value>Неизвестный артист</value>
+</data>
+	<data name="Error" xml:space="preserve">
+  <value>Ошибка</value>
+</data>
+	<data name="DSDPlaybackFailed" xml:space="preserve">
+  <value>Ошибка воспроизведения DSD в esclusивном режиме</value>
+</data>
+	<data name="SwitchingToSharedMode" xml:space="preserve">
+  <value>Попробуйте переключиться на общий режим</value>
+</data>
+	<data name="FileDoNotExist" xml:space="preserve">
+  <value>Файл не существует</value>
+</data>
+	<data name="UpdatingLyricsFailed" xml:space="preserve">
+  <value>Ошибка обновления текста</value>
+</data>
+	<data name="NoMusicInUSBDevice" xml:space="preserve">
+  <value>В USB-устройстве нет музыкальных файлов</value>
+</data>
+	<data name="FailedObtainCover" xml:space="preserve">
+  <value>Не удалось получить обложку</value>
+</data>
+	<data name="FailedObtainLyrics" xml:space="preserve">
+  <value>Не удалось получить текст</value>
+</data>
+</root>
