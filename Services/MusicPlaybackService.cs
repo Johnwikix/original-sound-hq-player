@@ -87,6 +87,9 @@ namespace WinUIMusicPlayer.Services
                         if (autoLyrics != null)
                         {
                             lrcContent = autoLyrics;
+                            currentPlayingMusic.Lyrics = lrcContent;
+                            //AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic.Id).Lyrics = lrcContent;
+                            await MusicDatabaseService.UpdateMusicInfo(currentPlayingMusic);
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }
