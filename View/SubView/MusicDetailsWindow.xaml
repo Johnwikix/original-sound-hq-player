@@ -89,20 +89,39 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="LyricsTextBox" BorderThickness="0" Height="100" TextWrapping="Wrap" Grid.Row="0"  Grid.Column="0" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5"/>
-                            <Button Click="GetLyricsFromNet_Click" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Stretch">                               
-                                <Button.Content>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Grid>
-                                            <FontIcon Glyph="&#xF385;" FontSize="16"/>
-                                            <FontIcon Glyph="&#xF386;" FontSize="16"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Button.Content>
-                                <ToolTipService.ToolTip>
-                                    <ToolTip x:Uid="LyricsTextBox">
-                                    </ToolTip>
-                                </ToolTipService.ToolTip>
-                            </Button>
+                            <Grid Grid.Row="0" Grid.Column="1" VerticalAlignment="Stretch">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Button Grid.Row="0" Click="GetLyricsFromNet_Click" VerticalAlignment="Stretch"  Margin="5">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid>
+                                                <FontIcon Glyph="&#xF385;" FontSize="16"/>
+                                                <FontIcon Glyph="&#xF386;" FontSize="16"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="LyricsTextBox">
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                                <Button Click="SaveLyricsToDateBase_Click" Grid.Row="1" VerticalAlignment="Stretch" Margin="5">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid>
+                                                <FontIcon Glyph="&#xE73E;" FontSize="16"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="LyricsSaveToDataBase">
+                                        </ToolTip>
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                            </Grid>
                         </Grid>
 
                         <TextBlock TextWrapping="WrapWholeWords" x:Uid="DurationTextBlock" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>

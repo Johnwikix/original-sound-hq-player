@@ -525,4 +525,7 @@
   <data name="FailedObtainLyrics" xml:space="preserve">
     <value>获取歌词失败</value>
   </data>
+  <data name="LyricsSaveToDataBase.Content" xml:space="preserve">
+    <value>保存歌词到数据库</value>
+  </data>
 </root>

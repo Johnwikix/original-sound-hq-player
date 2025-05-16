@@ -62,15 +62,16 @@ namespace WinUIMusicPlayer.Services
             currentPlayingList = await MusicDatabaseService.LoadPlayList();
         }
 
-        public async Task SetLyrics(string lyricsContent)
+        public async Task SetLyrics()
         {
-            _lyrics = await ParseLrcLyrics(lyricsContent);
+            string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id)?.Lyrics;
+            _lyrics = await ParseLrcLyrics(lrcContent);
         }
 
-        public async Task<List<LyricLine>> ParseLrcLyrics(string lrcContent)
+        public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
-            List<LyricLine> lyrics = new List<LyricLine>();
             CancelPreviousLyricsTask();
+            List<LyricLine> lyrics = new List<LyricLine>();           
             if (string.IsNullOrEmpty(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
@@ -99,12 +100,12 @@ namespace WinUIMusicPlayer.Services
                     }
 
                     // 如果获取失败或被取消，返回默认歌词
-                    lyrics.Add(new LyricLine
-                    {
-                        Text = ToolUtils.GetString("LyricsGetFailed"),
-                        Time = TimeSpan.Zero,
-                        IsCurrent = true
-                    });
+                    //lyrics.Add(new LyricLine
+                    //{
+                    //    Text = ToolUtils.GetString("LyricsGetFailed"),
+                    //    Time = TimeSpan.Zero,
+                    //    IsCurrent = true
+                    //});
                     return lyrics;
                 }
                 else

@@ -185,11 +185,12 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task<Music> GetMusic(int musicId)
+        public static Music GetMusic(int musicId)
         {
             try
             {
-                return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
+                //return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
+                return AppData.allSongs.Where(m => m.Id == musicId).FirstOrDefault();
             }
             catch (SQLiteException ex)
             {

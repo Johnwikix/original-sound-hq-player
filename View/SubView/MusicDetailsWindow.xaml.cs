@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using TagLib;
@@ -173,7 +174,7 @@ namespace WinUIMusicPlayer.View.SubView
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             ConfirmFlyout.Hide();
-            var music = await MusicDatabaseService.GetMusic(musicDetail.Id);
+            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
             if (music != null)
             {
                 try
@@ -272,6 +273,16 @@ namespace WinUIMusicPlayer.View.SubView
         private void CloseFlyoutButton_Click(object sender, RoutedEventArgs e)
         {
             ConfirmFlyout.Hide();
+        }
+
+        private async void SaveLyricsToDateBase_Click(object sender, RoutedEventArgs e)
+        {
+            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+            if (music != null) {
+                music.Lyrics = LyricsTextBox.Text;
+                await MusicDatabaseService.UpdateMusicInfo(music);
+            }
+            this.Close();
         }
     }
 }

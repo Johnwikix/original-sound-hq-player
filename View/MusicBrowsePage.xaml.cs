@@ -229,11 +229,11 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        private async void LoadLyricsToUI(string lyricsContent)
+        private async void LoadLyricsToUI()
         {
             _uiLyrics.Clear();
             // 设置播放服务中的歌词
-            await musicPlaybackService.SetLyrics(lyricsContent);
+            await musicPlaybackService.SetLyrics();
             // 解析歌词并添加到UI集合
             List<LyricLine> parsedLyrics = musicPlaybackService._lyrics;
             _uiLyrics.Clear();
@@ -791,8 +791,8 @@ namespace WinUIMusicPlayer.View
             if (musicPlaybackService.currentPlayingMusic != null)
             {
                 UpdatePlayBar(musicPlaybackService.currentPlayingMusic);
-                //await LoadCover(musicPlaybackService.currentPlayingMusic);
-                LoadLyricsToUI(musicPlaybackService.currentPlayingMusic.Lyrics);
+                //await LoadCover(musicPlaybackService.currentPlayingMusic);                
+                LoadLyricsToUI();
             }
             UpdatePlayModeIcon();
             musicPlaybackService.isInitializing = false;
@@ -1107,7 +1107,7 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicPlaybackService.currentPlayingMusic = music;
-                LoadLyricsToUI(music.Lyrics);
+                LoadLyricsToUI();
                 UpdatePlayBar(music);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
