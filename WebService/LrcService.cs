@@ -26,7 +26,6 @@ namespace WinUIMusicPlayer.WebService
                 var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
-                // 直接将响应内容读取为字节数组
                 return await response.Content.ReadAsByteArrayAsync();
             }
             catch (Exception ex)
@@ -41,10 +40,8 @@ namespace WinUIMusicPlayer.WebService
             try
             {
                 var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                // 在请求中传入 CancellationToken
                 var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
-                // 在读取内容时也传入 CancellationToken
                 return await response.Content.ReadAsStringAsync(cancellationToken);
             }
             catch (OperationCanceledException)

@@ -487,11 +487,17 @@ namespace WinUIMusicPlayer.Services
             var musicList = await query.OrderBy(m => m.Title).ToListAsync();
             Parallel.ForEach(musicList, music =>
             {
-                if (music.Album == "未知专辑" || music.Album == "Unknown Album")
+                if (music.Album == "未知专辑" 
+                    || music.Album == "Unknown Album" 
+                    || music.Album == "Álbum desconocido" 
+                    || music.Album == "不明なアルバム")
                 {
                     music.Album = ToolUtils.GetString("UnknownAlbum");
                 }
-                if (music.Author == "未知艺术家" || music.Author == "Unknown Artist")
+                if (music.Author == "未知艺术家" 
+                    || music.Author == "Unknown Artist" 
+                    || music.Author == "Artista desconocido"
+                    || music.Author == "不明なアーティスト")
                 {
                     music.Author = ToolUtils.GetString("UnknownArtist");
                 }

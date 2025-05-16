@@ -24,20 +24,22 @@ namespace WinUIMusicPlayer
         {
             this.InitializeComponent();
             var systemLanguages = GlobalizationPreferences.Languages;
-            bool isChineseLanguage = false;
             if (systemLanguages[0].StartsWith("zh"))
             {
-                isChineseLanguage=true;
-            }
-            if (isChineseLanguage)
-            {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "zh-CN";
+            }
+            else if (systemLanguages[0].StartsWith("es"))
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
+            } else if (systemLanguages[0].StartsWith("ja")) 
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
             }
             else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
             }
-            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
 
         /// <summary>
