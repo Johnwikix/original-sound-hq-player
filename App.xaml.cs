@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
             }
-            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
         }
 
         /// <summary>

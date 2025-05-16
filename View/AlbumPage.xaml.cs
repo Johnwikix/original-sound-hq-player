@@ -113,9 +113,7 @@ namespace WinUIMusicPlayer.View
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
-            musicList.Clear();
             InitializeDatabase();
-
         }
 
 
@@ -131,6 +129,7 @@ namespace WinUIMusicPlayer.View
 
         private async void InitializeDatabase()
         {
+            musicList.Clear();
             if (parentPage != null)
             {
                 _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();

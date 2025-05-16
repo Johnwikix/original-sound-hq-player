@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshFolder(object? sender, EventArgs e)
         {
-            musicList.Clear();
+            //musicList.Clear();
             InitializeData();
         }
 
@@ -99,6 +99,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                musicList.Clear();
                 if (parentPage != null)
                 {
                     _allMusic = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))

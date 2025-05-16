@@ -81,7 +81,6 @@ namespace WinUIMusicPlayer.View
         private void RefreshArtist(object? sender, EventArgs e)
         {
             //_currentPage = 0;
-            musicList.Clear();
             InitializeData();
         }
 
@@ -99,6 +98,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                musicList.Clear();
                 if (parentPage != null)
                 {
                     _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
