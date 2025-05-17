@@ -97,6 +97,7 @@ namespace WinUIMusicPlayer.Services
                             //AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic.Id).Lyrics = lrcContent;
                             cancellationToken.ThrowIfCancellationRequested();
                             await MusicDatabaseService.UpdateMusicInfo(currentPlayingMusic);
+                            AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id).Lyrics = lrcContent;
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }
