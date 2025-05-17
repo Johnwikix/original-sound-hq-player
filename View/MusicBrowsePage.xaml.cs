@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.View
         private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
+        private int _lastLyricIndex = -1;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -99,15 +100,12 @@ namespace WinUIMusicPlayer.View
         {
             // 定义设备选择器以筛选 USB 存储设备
             string deviceSelector = StorageDevice.GetDeviceSelector();
-
             // 创建设备监视器
             deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-
             // 注册设备添加、移除和枚举完成事件
             deviceWatcher.Added += DeviceWatcher_Added;
             deviceWatcher.Removed += DeviceWatcher_Removed;
             deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-
             // 启动设备监视器
             deviceWatcher.Start();
         }
@@ -182,7 +180,10 @@ namespace WinUIMusicPlayer.View
             System.Diagnostics.Debug.WriteLine("设备枚举已完成");
         }
         private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
-        {
+        {            
+            if (_lastLyricIndex == currentIndex|| !isInPlayingDetailMode)
+                return;
+            Debug.WriteLine($"last:{_lastLyricIndex},cur:{currentIndex}");
             this.DispatcherQueue.TryEnqueue(async () =>
             {
                 try
@@ -221,6 +222,7 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
+                    _lastLyricIndex = currentIndex;
                 }
                 catch (Exception ex)
                 {
@@ -231,6 +233,7 @@ namespace WinUIMusicPlayer.View
 
         private async void LoadLyricsToUI()
         {
+            _lastLyricIndex = -1;
             _uiLyrics.Clear();
             // 设置播放服务中的歌词
             await musicPlaybackService.SetLyrics();
