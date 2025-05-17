@@ -611,10 +611,10 @@ namespace WinUIMusicPlayer.View
             //AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
-        public void UpdateFavourtPlaylist(List<Music> newMusicList)
-        {
-            musicPlaybackService.musicList = newMusicList;
-        }
+        //public void UpdateFavourtPlaylist(List<Music> newMusicList)
+        //{
+        //    musicPlaybackService.musicList = newMusicList;
+        //}
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -1124,20 +1124,20 @@ namespace WinUIMusicPlayer.View
             if (e.AddedItems.Count > 0)
             {
                 ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                var sortOrder = selectedItem.Tag.ToString();
+                AppData.sortOrder = selectedItem.Tag.ToString();
                 if (ContentFrame != null && ContentFrame.Content != null)
                 {
                     if (ContentFrame.Content is SongCollectionPage)
                     {
                         var page = ContentFrame.Content as SongCollectionPage;
-                        page.SortMusicList(sortOrder, pageType);
+                        page.SortMusicList(AppData.sortOrder, pageType);
                     }
                     if (ContentFrame.Content is SongListPage)
                     {
                         var page = ContentFrame.Content as SongListPage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                     if (ContentFrame.Content is FavouritePlayListPage)
@@ -1145,7 +1145,7 @@ namespace WinUIMusicPlayer.View
                         var page = ContentFrame.Content as FavouritePlayListPage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                     if (ContentFrame.Content is AlbumPage)
@@ -1153,7 +1153,7 @@ namespace WinUIMusicPlayer.View
                         var page = ContentFrame.Content as AlbumPage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                     if (ContentFrame.Content is ArtistPage)
@@ -1161,7 +1161,7 @@ namespace WinUIMusicPlayer.View
                         var page = ContentFrame.Content as ArtistPage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                     if (ContentFrame.Content is FolderBrowsePage)
@@ -1169,7 +1169,7 @@ namespace WinUIMusicPlayer.View
                         var page = ContentFrame.Content as FolderBrowsePage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                     if (ContentFrame.Content is PlayListSongPage)
@@ -1177,7 +1177,7 @@ namespace WinUIMusicPlayer.View
                         var page = ContentFrame.Content as PlayListSongPage;
                         if (page != null)
                         {
-                            page.SortMusicList(sortOrder);
+                            page.SortMusicList(AppData.sortOrder);
                         }
                     }
                 }

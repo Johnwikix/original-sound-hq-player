@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler<string> showMessage;
         public event EventHandler<string> updatePlayPauseButton;
         public PlayMode currentPlayMode = PlayMode.ListLoop;
-        public List<Music> musicList;
+        //public List<Music> musicList;
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService = new NotificationService();
@@ -64,39 +64,45 @@ namespace WinUIMusicPlayer.Services
 
         public async Task SetLyrics()
         {
+            CancelPreviousLyricsTask();
+            _lyrics.Clear();
             string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id)?.Lyrics;
-            _lyrics = await ParseLrcLyrics(lrcContent);
+            var lyricsContent = await ParseLrcLyrics(lrcContent);
+            if (lyricsContent != null) {
+                _lyrics = lyricsContent;
+            }            
         }
 
         public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
-            CancelPreviousLyricsTask();
+            _lyricsCancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = _lyricsCancellationTokenSource.Token;
             List<LyricLine> lyrics = new List<LyricLine>();           
             if (string.IsNullOrEmpty(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
                 {
-                    _lyricsCancellationTokenSource = new CancellationTokenSource();
                     try
                     {
                         var autoLyrics = await lrcService.GetLyricsAsync(
                             currentPlayingMusic.Title,
                             currentPlayingMusic.Album,
                             currentPlayingMusic.Author,
-                            _lyricsCancellationTokenSource.Token);
+                            cancellationToken);
 
                         if (autoLyrics != null)
                         {
                             lrcContent = autoLyrics;
                             currentPlayingMusic.Lyrics = lrcContent;
                             //AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic.Id).Lyrics = lrcContent;
+                            cancellationToken.ThrowIfCancellationRequested();
                             await MusicDatabaseService.UpdateMusicInfo(currentPlayingMusic);
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        Console.WriteLine("歌词获取任务已被取消");
+                        Debug.WriteLine("歌词获取任务已被取消");
                     }
 
                     // 如果获取失败或被取消，返回默认歌词
@@ -106,7 +112,7 @@ namespace WinUIMusicPlayer.Services
                     //    Time = TimeSpan.Zero,
                     //    IsCurrent = true
                     //});
-                    return lyrics;
+                    return null;
                 }
                 else
                 {
@@ -126,12 +132,22 @@ namespace WinUIMusicPlayer.Services
         {
             if (_lyricsCancellationTokenSource != null)
             {
-                if (!_lyricsCancellationTokenSource.IsCancellationRequested)
+                try
                 {
-                    _lyricsCancellationTokenSource.Cancel();
+                    if (!_lyricsCancellationTokenSource.IsCancellationRequested)
+                    {
+                        _lyricsCancellationTokenSource.Cancel();
+                    }
                 }
-                _lyricsCancellationTokenSource.Dispose();
-                _lyricsCancellationTokenSource = null;
+                catch (ObjectDisposedException)
+                {
+                    // 忽略已释放对象的异常
+                }
+                finally
+                {
+                    _lyricsCancellationTokenSource.Dispose();
+                    _lyricsCancellationTokenSource = null;
+                }
             }
         }
 
@@ -892,9 +908,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         playingMusic?.Invoke(this, currentPlayingMusic);
                     }
-                    else if (musicList != null && musicList.Count > 0)
+                    else if (currentPlayingList != null && currentPlayingList.Count > 0)
                     {
-                        playingMusic?.Invoke(this, musicList[0]);
+                        playingMusic?.Invoke(this, currentPlayingList[0]);
                     }
                     else
                     {

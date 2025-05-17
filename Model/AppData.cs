@@ -22,5 +22,7 @@ namespace WinUIMusicPlayer.Model
         public static List<UsbStorageDevice> usbStorageDevices = new List<UsbStorageDevice>();
 
         public static UsbStorageDevice usbStorageDevice = new UsbStorageDevice();
+
+        public static string sortOrder = "DefaultOrder";
     }
 }

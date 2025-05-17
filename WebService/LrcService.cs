@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,16 +43,17 @@ namespace WinUIMusicPlayer.WebService
                 var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cancellationToken);
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                return result;
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine("获取歌词的任务已被取消。");
+                Debug.WriteLine("GetLyricsAsync获取歌词的任务已被取消。");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching lyrics: {ex.Message}");
+                Debug.WriteLine($"GetLyricsAsync Error fetching lyrics: {ex.Message}");
                 return null;
             }
         }

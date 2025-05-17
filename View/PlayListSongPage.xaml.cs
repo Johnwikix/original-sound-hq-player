@@ -125,9 +125,9 @@ namespace WinUIMusicPlayer.View
                 for (int i = 0; i < musicList.Count; i++)
                 {
                     musicList[i].PlayListOrder = musicList.Count - i;
-                    await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);
-                    await MusicDatabaseService.GetPlayListMusic();
+                    await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);                    
                 }
+                await MusicDatabaseService.GetPlayListMusic();
             }
         }
 
@@ -141,6 +141,7 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(music);
                 }
+                SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
             catch (Exception ex)

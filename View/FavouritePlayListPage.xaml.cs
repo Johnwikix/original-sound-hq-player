@@ -50,13 +50,13 @@ namespace WinUIMusicPlayer.View
             for (int i = 0; i < musicList.Count; i++)
             {
                 musicList[i].Order = musicList.Count - i;
-                await MusicDatabaseService.UpdateMuisc(musicList[i]);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);                
             }
-            if (parentPage != null)
-            {
-                parentPage.UpdateFavourtPlaylist(musicList.ToList());
-            }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            //if (parentPage != null)
+            //{
+            //    parentPage.UpdateFavourtPlaylist(musicList.ToList());
+            //}
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -159,6 +159,7 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(music);
                 }
+                SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
             catch (Exception ex)

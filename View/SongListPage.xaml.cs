@@ -138,6 +138,7 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(music);
                 }
+                SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
             catch (Exception ex)
