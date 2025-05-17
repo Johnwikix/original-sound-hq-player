@@ -183,7 +183,6 @@ namespace WinUIMusicPlayer.View
         {            
             if (_lastLyricIndex == currentIndex|| !isInPlayingDetailMode)
                 return;
-            Debug.WriteLine($"last:{_lastLyricIndex},cur:{currentIndex}");
             this.DispatcherQueue.TryEnqueue(async () =>
             {
                 try
