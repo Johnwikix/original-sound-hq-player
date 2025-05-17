@@ -531,4 +531,19 @@
   <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
     <value>OriginalSound HIFI Player</value>
   </data>
+  <data name="IconDisplay.Text" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="IconLastSong.Text" xml:space="preserve">
+    <value>Last Song</value>
+  </data>
+  <data name="IconNextSong.Text" xml:space="preserve">
+    <value>Next Song</value>
+  </data>
+  <data name="IconPlayNPause.Text" xml:space="preserve">
+    <value>Play/Pause</value>
+  </data>
+  <data name="IconExit.Text" xml:space="preserve">
+    <value>Exit</value>
+  </data>
 </root>

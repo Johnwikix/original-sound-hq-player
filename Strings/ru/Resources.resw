@@ -531,4 +531,19 @@
   <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
     <value>Hi-Fi-плеер Original Sound</value>
   </data>
+  <data name="IconDisplay.Text" xml:space="preserve">
+    <value>Показать</value>
+  </data>
+  <data name="IconLastSong.Text" xml:space="preserve">
+    <value>Предыдущая</value>
+  </data>
+  <data name="IconNextSong.Text" xml:space="preserve">
+    <value>Следующая</value>
+  </data>
+  <data name="IconPlayNPause.Text" xml:space="preserve">
+    <value>Воспроизвести/Пауза</value>
+  </data>
+  <data name="IconExit.Text" xml:space="preserve">
+    <value>Выход</value>
+  </data>
 </root>

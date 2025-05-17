@@ -20,12 +20,12 @@
             x:Uid="AppMainTitleIcon">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
-                    <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" Text="显示"/>
-                    <MenuFlyoutItem x:Name="LastSong" Text="上一首" Click="LastSong_Click"/>
-                    <MenuFlyoutItem x:Name="PlayNPause" Text="播放/暂停" Click="PlayNPause_Click" />
-                    <MenuFlyoutItem x:Name="NextSong" Text="下一首" Click="NextSong_Click"/>
+                    <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" x:Uid="IconDisplay"/>
+                    <MenuFlyoutItem x:Name="LastSong" x:Uid="IconLastSong" Click="LastSong_Click"/>
+                    <MenuFlyoutItem x:Name="PlayNPause" x:Uid="IconPlayNPause" Click="PlayNPause_Click" />
+                    <MenuFlyoutItem x:Name="NextSong" x:Uid="IconNextSong" Click="NextSong_Click"/>
                     <MenuFlyoutSeparator/>
-                    <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" Text="退出"/>
+                    <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" x:Uid="IconExit"/>
                 </MenuFlyout>
             </tb:TaskbarIcon.ContextFlyout>
         </tb:TaskbarIcon>
