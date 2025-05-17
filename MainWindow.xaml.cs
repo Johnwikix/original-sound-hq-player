@@ -81,6 +81,7 @@ namespace WinUIMusicPlayer
             m_AppWindow.Closing += AppWindow_Closing;
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            AppData.m_hWnd = m_hwnd;
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
@@ -95,7 +96,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                // 方法1：使用注册表
+                //使用注册表
                 using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\SennpeiStudio\OriginalSoundHIFIPlayer"))
                 {
                     key.SetValue("MainWindowHandle", handle.ToInt64());
@@ -118,11 +119,9 @@ namespace WinUIMusicPlayer
 
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
-            // 处理自定义的显示消息
             if (msg == SingleInstanceHelper.WM_SHOWME)
             {
                 Debug.WriteLine("收到显示窗口消息");
-                // 在UI线程上执行显示窗口
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (this == null)
@@ -150,7 +149,7 @@ namespace WinUIMusicPlayer
                 // 取消关闭操作
                 args.Cancel = true;
                 // 最小化到托盘
-                m_AppWindow.Hide();
+                this.Hide();
             }
         }
 

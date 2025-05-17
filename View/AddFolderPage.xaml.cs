@@ -82,8 +82,8 @@ namespace WinUIMusicPlayer.View
             var folderPicker = new Windows.Storage.Pickers.FolderPicker();
             folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
             folderPicker.FileTypeFilter.Add("*");
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+            //var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
             var folder = await folderPicker.PickSingleFolderAsync();
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
