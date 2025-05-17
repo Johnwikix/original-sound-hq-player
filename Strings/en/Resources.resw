@@ -528,4 +528,7 @@
   <data name="LyricsSaveToDataBase.Content" xml:space="preserve">
     <value>Save lyrics to database</value>
   </data>
+  <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
+    <value>OriginalSound HIFI Player</value>
+  </data>
 </root>

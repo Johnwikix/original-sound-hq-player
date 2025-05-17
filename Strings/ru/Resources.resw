@@ -528,4 +528,7 @@
   <data name="LyricsSaveToDataBase.Content" xml:space="preserve">
     <value>Сохранить текст в базу данных</value>
   </data>
+  <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
+    <value>Hi-Fi-плеер Original Sound</value>
+  </data>
 </root>

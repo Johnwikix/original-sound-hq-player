@@ -6,26 +6,15 @@
     xmlns:local="using:WinUIMusicPlayer"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:view="using:WinUIMusicPlayer.View"
+    xmlns:controls="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:tb="using:H.NotifyIcon"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"     
     >    
     <Window.SystemBackdrop>
         <DesktopAcrylicBackdrop/>
     </Window.SystemBackdrop>
     <Grid>
-        <!--<tb:TaskbarIcon
-            x:Name="NotifyIcon"
-            IconSource="ms-appx:///Assets/icon.png"
-            ToolTipText="WinUI 3 应用程序">
-            <tb:TaskbarIcon.ContextFlyout>
-                <MenuFlyout>
-                    <MenuFlyoutItem Text="打开" Click="OpenMenuItem_Click"/>
-                    <MenuFlyoutSeparator/>
-                    <MenuFlyoutItem Text="退出" Click="ExitMenuItem_Click"/>
-                </MenuFlyout>
-            </tb:TaskbarIcon.ContextFlyout>
-        </tb:TaskbarIcon>-->
+        <controls:NotifyIconControl x:Name="AppNotifyIconControl"></controls:NotifyIconControl>
         <Grid
         x:Name="AppTitleBar"
         Height="44"

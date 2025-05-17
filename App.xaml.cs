@@ -58,7 +58,7 @@ namespace WinUIMusicPlayer
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {
                     // 应用程序已在运行，尝试激活现有实例
-                    SingleInstanceHelper.ActivateExistingInstance();
+                    //SingleInstanceHelper.ActivateExistingInstance();
                     Environment.Exit(0);
                     return;
                 }

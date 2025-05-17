@@ -528,4 +528,7 @@
   <data name="LyricsSaveToDataBase.Content" xml:space="preserve">
     <value>歌詞をデータベースに保存</value>
   </data>
+  <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
+    <value>原音HIFIプレイヤー</value>
+  </data>
 </root>

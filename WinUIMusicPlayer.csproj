@@ -13,6 +13,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumPage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
@@ -52,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BunLabs.NAudio.Flac" Version="2.0.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CSCore" Version="1.2.1.2" />
     <PackageReference Include="CUETools.Codecs.FLAKE-Reloaded" Version="1.0.1" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.0" />
@@ -99,6 +101,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Controls\NotifyIconControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\SubView\ProgressDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

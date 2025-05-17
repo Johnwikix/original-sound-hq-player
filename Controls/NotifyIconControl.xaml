@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="WinUIMusicPlayer.Controls.NotifyIconControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tb="using:H.NotifyIcon"
+    mc:Ignorable="d">
+
+    <Grid>
+        <tb:TaskbarIcon
+            x:Name="NotifyIcon"
+            x:FieldModifier="public"
+            ContextMenuMode="SecondWindow"
+            IconSource="/Assets/icon.ico"
+            LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+            NoLeftClickDelay="True"
+            x:Uid="AppMainTitleIcon">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" Text="显示"/>
+                    <MenuFlyoutItem x:Name="LastSong" Text="上一首" Click="LastSong_Click"/>
+                    <MenuFlyoutItem x:Name="PlayNPause" Text="播放/暂停" Click="PlayNPause_Click" />
+                    <MenuFlyoutItem x:Name="NextSong" Text="下一首" Click="NextSong_Click"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" Text="退出"/>
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+    </Grid>
+</UserControl>

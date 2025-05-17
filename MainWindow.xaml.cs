@@ -1,4 +1,6 @@
+using CommunityToolkit.Mvvm.Messaging;
 using H.NotifyIcon;
+using H.NotifyIcon.EfficiencyMode;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -10,11 +12,14 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using Windows.UI.ViewManagement;
+using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Handler;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,7 +45,7 @@ namespace WinUIMusicPlayer
         private ThemeStyleHelper themeStyleHelper;
         private NotifyIconHelper notifyIconHelper;
         private UISettings uiSettings;
-
+        private WindowMessageHandler _messageHandler;
         // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
@@ -61,14 +66,21 @@ namespace WinUIMusicPlayer
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
 
             // 初始化系统托盘图标辅助类
-            notifyIconHelper = new NotifyIconHelper(this, m_AppWindow);
-            notifyIconHelper.PlayLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
-            notifyIconHelper.PlayNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
-            notifyIconHelper.PlayStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
-            notifyIconHelper.Initialize();
+            //notifyIconHelper = new NotifyIconHelper(this, m_AppWindow);
+            //notifyIconHelper.PlayLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
+            //notifyIconHelper.PlayNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
+            //notifyIconHelper.PlayStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
+            //notifyIconHelper.Initialize();
             //InitializeNotifyIcon();
-            PowerManagementHelper.DisableEfficiencyMode();
-            PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+            if (AppNotifyIconControl != null)
+            {
+                AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
+                AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
+                AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
+            }
+            EfficiencyModeUtilities.SetEfficiencyMode(false);
+            //PowerManagementHelper.DisableEfficiencyMode();
+            //PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
             m_AppWindow.Closing += AppWindow_Closing;
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -78,6 +90,27 @@ namespace WinUIMusicPlayer
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+            // 设置窗口标识符，使其他实例可以找到它
+            SingleInstanceHelper.SetWindowIdentifier(m_hwnd);
+            //_messageHandler = new WindowMessageHandler(m_hwnd);
+            //_messageHandler.MessageReceived += OnMessageReceived;
+        }
+
+        private void OnMessageReceived(object? sender, WindowMessageEventArgs e)
+        {
+            if (e.MessageId == SingleInstanceHelper.WM_SHOWME)
+            {
+                // 在 UI 线程上执行
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    // 显示并激活窗口
+                    if (!this.Visible)
+                    {
+                        this.Show();
+                    }
+                    this.Activate();
+                });
+            }
         }
 
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
