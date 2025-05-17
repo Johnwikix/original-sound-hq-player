@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using Windows.UI.ViewManagement;
-using WinUIMusicPlayer.Controls;
-using WinUIMusicPlayer.Handler;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -45,7 +43,6 @@ namespace WinUIMusicPlayer
         private ThemeStyleHelper themeStyleHelper;
         private NotifyIconHelper notifyIconHelper;
         private UISettings uiSettings;
-        private WindowMessageHandler _messageHandler;
         // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
@@ -87,32 +84,28 @@ namespace WinUIMusicPlayer
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
+            Debug.WriteLine($"窗口句柄: {m_hwnd}");
+            SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
-            // 设置窗口标识符，使其他实例可以找到它
-            SingleInstanceHelper.SetWindowIdentifier(m_hwnd);
-            //_messageHandler = new WindowMessageHandler(m_hwnd);
-            //_messageHandler.MessageReceived += OnMessageReceived;
         }
 
-        private void OnMessageReceived(object? sender, WindowMessageEventArgs e)
+        private void SaveMainWindowHandle(IntPtr handle)
         {
-            if (e.MessageId == SingleInstanceHelper.WM_SHOWME)
+            try
             {
-                // 在 UI 线程上执行
-                DispatcherQueue.TryEnqueue(() =>
+                // 方法1：使用注册表
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\SennpeiStudio\OriginalSoundHIFIPlayer"))
                 {
-                    // 显示并激活窗口
-                    if (!this.Visible)
-                    {
-                        this.Show();
-                    }
-                    this.Activate();
-                });
+                    key.SetValue("MainWindowHandle", handle.ToInt64());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"保存窗口句柄失败: {ex.Message}");
             }
         }
-
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
         {
             Debug.WriteLine("colorchange");
@@ -132,7 +125,15 @@ namespace WinUIMusicPlayer
                 // 在UI线程上执行显示窗口
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    ShowWindow();
+                    if (this == null)
+                    {
+                        return;
+                    }
+
+                    if (!this.Visible)
+                    {
+                        this.Show();
+                    }
                 });
                 return IntPtr.Zero;
             }
@@ -199,11 +200,6 @@ namespace WinUIMusicPlayer
         {
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
-        }
-
-        public void ShowWindow()
-        {
-            notifyIconHelper.ShowWindow();
         }
 
         private void NavigateToDefaultPage()

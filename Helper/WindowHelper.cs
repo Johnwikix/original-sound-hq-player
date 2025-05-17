@@ -54,7 +54,8 @@ namespace WinUIMusicPlayer.Helper
         public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr SetProp(IntPtr hWnd, string lpString, IntPtr hData);
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindow(IntPtr hWnd);
 
     }
 }

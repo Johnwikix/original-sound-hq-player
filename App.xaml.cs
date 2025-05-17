@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer
     {
         public static MainWindow MainWindow { get; private set; }
         private Window _tempWindow = null;
+        
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -43,7 +44,7 @@ namespace WinUIMusicPlayer
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
             }
-            Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
         }
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace WinUIMusicPlayer
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {
                     // 应用程序已在运行，尝试激活现有实例
-                    //SingleInstanceHelper.ActivateExistingInstance();
+                    SingleInstanceHelper.ActivateExistingInstance();
                     Environment.Exit(0);
                     return;
                 }
