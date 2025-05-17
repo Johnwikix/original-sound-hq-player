@@ -57,13 +57,12 @@ namespace WinUIMusicPlayer.Helper
                         _window.SystemBackdrop = acrylic;
                         break;
                     case "TransparentAcrylic":
-                        float colorOpacity = 0.2f;
+                        float colorOpacity = 0.4f;
                         if (AppSettings.AppTheme == "Default")
                         {
                             if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
                             {
                                 uiColor = Color.FromArgb(255, 255, 255, 255);
-                                colorOpacity = 0.5f;
                             }
                         }
                         else
@@ -71,7 +70,6 @@ namespace WinUIMusicPlayer.Helper
                             if (AppSettings.AppTheme == "Light")
                             {
                                 uiColor = Color.FromArgb(255, 255, 255, 255);
-                                colorOpacity = 0.5f;
                             }
                         }
                         var customAcrylic = new CustomAcrylicSystemBackdrop
