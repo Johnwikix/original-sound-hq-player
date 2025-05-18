@@ -15,7 +15,8 @@
             x:FieldModifier="public"
             ContextMenuMode="SecondWindow"
             IconSource="/Assets/icon.ico"
-            DoubleClickCommand="{x:Bind ShowHideWindowCommand}"
+            LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+            NoLeftClickDelay="True"
             x:Uid="AppMainTitleIcon">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>

@@ -76,62 +76,7 @@ namespace WinUIMusicPlayer.Helper
                         }                           
                         return;
                     }
-                }
-
-                // 如果没有找到保存的句柄，则回退到进程枚举方法
-                //Process current = Process.GetCurrentProcess();
-                //foreach (Process process in Process.GetProcessesByName(current.ProcessName))
-                //{
-                //    if (process.Id != current.Id)
-                //    {
-                //        // 尝试枚举进程的所有窗口
-                //        bool windowFound = false;
-                //        WindowHelper.EnumWindows((hWnd, lParam) =>
-                //        {
-                //            uint processId;
-                //            WindowHelper.GetWindowThreadProcessId(hWnd, out processId);
-
-                //            if (processId == process.Id)
-                //            {
-                //                int length = WindowHelper.GetWindowTextLength(hWnd);
-                //                if (length > 0)
-                //                {
-                //                    StringBuilder windowTitle = new StringBuilder(length + 1);
-                //                    WindowHelper.GetWindowText(hWnd, windowTitle, windowTitle.Capacity);
-
-                //                    // 检查窗口标题，或者只要找到第一个可见窗口就激活
-                //                    if (WindowHelper.IsWindowVisible(hWnd))
-                //                    {
-                //                        // 如果窗口最小化，则恢复它
-                //                        if (WindowHelper.IsIconic(hWnd))
-                //                        {
-                //                            WindowHelper.ShowWindow(hWnd, WindowHelper.SW_RESTORE);
-                //                        }
-
-                //                        // 将窗口置于前台
-                //                        WindowHelper.SetForegroundWindow(hWnd);
-                //                        return false; // 停止枚举
-                //                    }
-                //                }
-
-                //                // 发送自定义消息给窗口，通知它显示
-                //                Debug.WriteLine($"尝试发送显示窗口消息,句柄:{hWnd}");
-                //                WindowHelper.SendMessage(hWnd, WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
-                //                Debug.WriteLine("消息已发送");
-                //                windowFound = true;
-                //                return false; // 停止枚举
-                //            }
-
-                //            return true; // 继续枚举
-                //        }, IntPtr.Zero);
-
-                //        // 如果找到窗口，则退出函数
-                //        if (windowFound)
-                //        {
-                //            break;
-                //        }
-                //    }
-                //}
+                }             
             }
             catch (Exception ex)
             {

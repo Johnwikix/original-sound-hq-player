@@ -16,6 +16,9 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using H.NotifyIcon.Core;
 using CommunityToolkit.Mvvm.Input;
 using H.NotifyIcon;
+using System.Diagnostics;
+using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Model;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -57,16 +60,30 @@ namespace WinUIMusicPlayer.Controls
         [RelayCommand]
         public void ShowHideWindow()
         {
-            var window = App.MainWindow;
-            if (window == null)
+            if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
             {
-                return;
+                // 如果窗口最小化，则恢复它
+                if (WindowHelper.IsIconic(AppData.m_hWnd))
+                {
+                    WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
+                }
+                // 将窗口置于前台
+                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
             }
+            else
+            {
+                var window = App.MainWindow;
+                if (window == null)
+                {
+                    return;
+                }
 
-            if (!window.Visible)
-            {
-                window.Show();
+                if (!window.Visible)
+                {
+                    window.Show();
+                }
             }
+            
         }
     }
 }
