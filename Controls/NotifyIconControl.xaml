@@ -15,17 +15,36 @@
             x:FieldModifier="public"
             ContextMenuMode="SecondWindow"
             IconSource="/Assets/icon.ico"
-            LeftClickCommand="{x:Bind ShowHideWindowCommand}"
-            NoLeftClickDelay="True"
+            DoubleClickCommand="{x:Bind ShowHideWindowCommand}"
             x:Uid="AppMainTitleIcon">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
-                    <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" x:Uid="IconDisplay"/>
-                    <MenuFlyoutItem x:Name="LastSong" x:Uid="IconLastSong" Click="LastSong_Click"/>
-                    <MenuFlyoutItem x:Name="PlayNPause" x:Uid="IconPlayNPause" Click="PlayNPause_Click" />
-                    <MenuFlyoutItem x:Name="NextSong" x:Uid="IconNextSong" Click="NextSong_Click"/>
+                    <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" x:Uid="IconDisplay">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE7F4;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem x:Name="LastSong" x:Uid="IconLastSong" Click="LastSong_Click">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE892;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem MinWidth="200" x:Name="PlayNPause" x:Uid="IconPlayNPause" Click="PlayNPause_Click">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE768;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem x:Name="NextSong" x:Uid="IconNextSong" Click="NextSong_Click">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE893;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
                     <MenuFlyoutSeparator/>
-                    <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" x:Uid="IconExit"/>
+                    <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" x:Uid="IconExit">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE89F;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
                 </MenuFlyout>
             </tb:TaskbarIcon.ContextFlyout>
         </tb:TaskbarIcon>

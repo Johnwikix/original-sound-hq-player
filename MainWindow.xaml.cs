@@ -76,6 +76,8 @@ namespace WinUIMusicPlayer
                 AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
             }
             EfficiencyModeUtilities.SetEfficiencyMode(false);
+            WindowExtensions.Hide(this, enableEfficiencyMode: false);
+            WindowExtensions.Show(this, disableEfficiencyMode: true);
             //PowerManagementHelper.DisableEfficiencyMode();
             //PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
             m_AppWindow.Closing += AppWindow_Closing;

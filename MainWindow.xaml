@@ -14,7 +14,7 @@
         <DesktopAcrylicBackdrop/>
     </Window.SystemBackdrop>
     <Grid>
-        <controls:NotifyIconControl x:Name="AppNotifyIconControl"></controls:NotifyIconControl>
+        <controls:NotifyIconControl MinWidth="200" x:Name="AppNotifyIconControl"></controls:NotifyIconControl>
         <Grid
         x:Name="AppTitleBar"
         Height="44"
