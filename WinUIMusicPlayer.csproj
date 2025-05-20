@@ -13,6 +13,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\last.ico" />
+    <None Remove="Assets\next.ico" />
+    <None Remove="Assets\play.ico" />
+    <None Remove="Assets\stop.ico" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumPage.xaml" />

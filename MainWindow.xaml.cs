@@ -9,9 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using testDemo.Taskbar;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 using Windows.UI.ViewManagement;
+using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -47,6 +49,7 @@ namespace WinUIMusicPlayer
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
+        private TaskbarHelper _taskbarHelper;
 
         public MainWindow()
         {
@@ -192,6 +195,13 @@ namespace WinUIMusicPlayer
             }
         }
 
+        public void UpdateTaskbarIcon()
+        {
+            if (_taskbarHelper != null) {
+                _taskbarHelper.UpdateTaskbarButtonIcon();
+            }
+        }
+
         public void SetAppStyle()
         {
             themeStyleHelper.SetAppStyle();
@@ -277,6 +287,45 @@ namespace WinUIMusicPlayer
             {
                 Title = ToolUtils.GetString("AppMainTitle");
                 this.Activated -= MainWindow_Activated; // 只执行一次
+            }
+            if (_taskbarHelper == null)
+            {
+                InitializeTaskbarHelper();
+            }
+        }
+
+        private void InitializeTaskbarHelper()
+        {
+            try
+            {
+                // 获取窗口句柄
+                IntPtr hwnd = WindowNative.GetWindowHandle(this);
+
+                // 创建任务栏助手并初始化
+                _taskbarHelper = new TaskbarHelper(hwnd);
+                _taskbarHelper.InitializeThumbButtons();
+
+                // 注册按钮点击事件
+                _taskbarHelper.ThumbButtonClicked += TaskbarHelper_ThumbButtonClicked;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"初始化任务栏助手出错: {ex.Message}");
+            }
+        }
+
+        private void TaskbarHelper_ThumbButtonClicked(object sender, ThumbButtonClickedEventArgs e)
+        {
+            if (e.ButtonId == 0) { 
+                playLastSong?.Invoke(this, EventArgs.Empty);
+            }            
+            else if (e.ButtonId == 1)
+            {
+                playStop?.Invoke(this, EventArgs.Empty);
+            }
+            else if (e.ButtonId == 2)
+            {
+                playNextSong?.Invoke(this, EventArgs.Empty);
             }
         }
 

@@ -977,6 +977,9 @@ namespace WinUIMusicPlayer.View
                 {
                     ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // ≤•∑≈Õº±Í
                 }
+                if (mainWindow != null) {
+                    mainWindow.UpdateTaskbarIcon();
+                }
             });
         }
 
