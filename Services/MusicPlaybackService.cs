@@ -685,8 +685,7 @@ namespace WinUIMusicPlayer.Services
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
-                {
-                    updatePlayPauseButton?.Invoke(this, "\uE769");
+                {                    
                     // 根据文件类型获取总时长
                     double totalSeconds = 0;
                     if (multiTypeAudioReader != null)
@@ -718,12 +717,13 @@ namespace WinUIMusicPlayer.Services
                         wasapiOut.Play();
                         wasapiOut.Stopped += wasapiOut_Stopped;
                         AppSettings.isDsd = true;
-                        AppSettings.isPlaying = true;
+                        AppSettings.isPlaying = true;                        
                         //_ = Task.Run(() => SavePlayState());
                     }
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
                     //_ = Task.Run(() => SavePlayState());
+                    updatePlayPauseButton?.Invoke(this, "\uE769");
                 }
                 catch (Exception ex)
                 {

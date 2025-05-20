@@ -456,6 +456,10 @@ namespace WinUIMusicPlayer.View
             {
                 ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
             });
+            if (mainWindow != null)
+            {
+                mainWindow.UpdateTaskbarIcon();
+            }
         }
 
         private async void ShowMessage(object? sender, string message)
