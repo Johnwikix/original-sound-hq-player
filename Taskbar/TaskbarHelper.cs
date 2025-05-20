@@ -143,7 +143,8 @@ namespace testDemo.Taskbar
 
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 _iconHandles[0] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\last.ico"), 32);
-                _iconHandles[1] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
+
+                _iconHandles[1] = AppSettings.isPlaying ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32) : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
                 _iconHandles[2] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\next.ico"), 32);
 
                 // 按钮1 
