@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using System.Runtime.InteropServices;
 
 namespace testDemo.Taskbar
 {
-    public class TaskbarHelper
+    public class TaskbarHelper: IDisposable
     {
         // 消息常量
         private const int WM_COMMAND = 0x0111;
@@ -19,6 +20,10 @@ namespace testDemo.Taskbar
         // SetWindowSubclass 函数
         [DllImport("Comctl32.dll", SetLastError = true)]
         private static extern bool SetWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, IntPtr uIdSubclass, IntPtr dwRefData);
+
+        [DllImport("Comctl32.dll", SetLastError = true)]
+        private static extern bool RemoveWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, IntPtr uIdSubclass);
+
 
         // DefSubclassProc 函数
         [DllImport("Comctl32.dll", SetLastError = true)]
@@ -61,7 +66,13 @@ namespace testDemo.Taskbar
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyIcon(IntPtr hIcon);
 
+        [DllImport("user32.dll")]
+        private static extern bool IsWindow(IntPtr hWnd);
+
         private IntPtr[] _iconHandles = new IntPtr[3]; // 存储图标句柄以便后续释放
+
+        private bool _isDisposed = false;
+        private bool _isSubclassed = false;
 
 
         // 缩略图按钮点击事件
@@ -170,7 +181,13 @@ namespace testDemo.Taskbar
 
                 // 设置窗口子类过程来处理按钮点击事件
                 _wndProc = new SubclassProc(WindowSubclassProc);
-               SetWindowSubclass(_hwnd, _wndProc, (IntPtr)1, IntPtr.Zero);
+                _isSubclassed = SetWindowSubclass(_hwnd, _wndProc, (IntPtr)1, IntPtr.Zero);
+
+                if (!_isSubclassed)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    System.Diagnostics.Debug.WriteLine($"设置窗口子类失败，错误码: {error}");
+                }                
             }
             catch (Exception ex)
             {
@@ -271,10 +288,44 @@ namespace testDemo.Taskbar
             UpdateButtonIcon(1, newIconPath);
         }
 
+        ~TaskbarHelper()
+        {
+            Dispose(false);
+        }
         public void Dispose()
         {
             // 释放图标资源
             ReleaseIcons();
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_isDisposed)
+                return;
+
+            if (disposing)
+            {
+                // 释放托管资源
+                ThumbButtonClicked = null;
+            }
+
+            // 释放非托管资源
+            Uninitialize();
+            ReleaseIcons();
+
+            _isDisposed = true;
+        }
+
+        private void Uninitialize()
+        {
+            if (_isSubclassed && _wndProc != null && IsWindow(_hwnd))
+            {
+                RemoveWindowSubclass(_hwnd, _wndProc, (IntPtr)1);
+                _isSubclassed = false;
+            }
+
+            _taskbarList = null;
+            _buttons = null;
         }
     }
 }

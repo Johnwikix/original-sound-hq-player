@@ -152,7 +152,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.isRunningBackend)
             {
                 // 取消关闭操作
-                args.Cancel = true;
+                args.Cancel = true;                
                 // 最小化到托盘
                 this.Hide();
             }
@@ -166,6 +166,8 @@ namespace WinUIMusicPlayer
             {
                 WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
             }
+            _taskbarHelper?.Dispose();
+            _taskbarHelper = null;
             WindowClosed?.Invoke(this, EventArgs.Empty);
         }
 
@@ -294,13 +296,13 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private void InitializeTaskbarHelper()
+        public void InitializeTaskbarHelper()
         {
             try
             {
                 // 获取窗口句柄
                 IntPtr hwnd = WindowNative.GetWindowHandle(this);
-
+                _taskbarHelper?.Dispose();
                 // 创建任务栏助手并初始化
                 _taskbarHelper = new TaskbarHelper(hwnd);
                 _taskbarHelper.InitializeThumbButtons();

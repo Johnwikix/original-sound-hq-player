@@ -81,6 +81,7 @@ namespace WinUIMusicPlayer.Controls
                 if (!window.Visible)
                 {
                     window.Show();
+                    window.InitializeTaskbarHelper();
                 }
             }
             
