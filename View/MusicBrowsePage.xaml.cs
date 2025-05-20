@@ -452,14 +452,15 @@ namespace WinUIMusicPlayer.View
 
         private void MusicPlaybackService_updatePlayPauseButton(object? sender, string e)
         {
-            this.DispatcherQueue.TryEnqueue(() =>
-            {
-                ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
-            });
-            if (mainWindow != null)
-            {
-                mainWindow.UpdateTaskbarIcon();
-            }
+            //this.DispatcherQueue.TryEnqueue(() =>
+            //{
+            //    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769";
+            //});
+            //if (mainWindow != null)
+            //{
+            //    mainWindow.UpdateTaskbarIcon();
+            //}
+            UpdatePlayPauseButtonIcon();
         }
 
         private async void ShowMessage(object? sender, string message)
