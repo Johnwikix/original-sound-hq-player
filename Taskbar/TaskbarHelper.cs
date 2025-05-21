@@ -74,6 +74,8 @@ namespace testDemo.Taskbar
         private bool _isDisposed = false;
         private bool _isSubclassed = false;
 
+        private bool _isCurrentPlaying = false; // 当前播放状态
+
 
         // 缩略图按钮点击事件
         public event EventHandler<ThumbButtonClickedEventArgs> ThumbButtonClicked;
@@ -257,15 +259,7 @@ namespace testDemo.Taskbar
             if (buttonId == 1) // 按钮1的ID是0
             {         
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string newIconPath = System.IO.Path.Combine(appDir, "Assets\\stop.ico");
-                if (AppSettings.isPlaying)
-                {
-                    newIconPath = System.IO.Path.Combine(appDir, "Assets\\stop.ico");
-                }
-                else
-                {
-                    newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
-                }
+                string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath); // 按钮2的ID是1
                 System.Diagnostics.Debug.WriteLine("已将按钮2的图标更改为Button4.ico");
             }
@@ -276,17 +270,12 @@ namespace testDemo.Taskbar
 
         public void UpdateTaskbarButtonIcon()
         {
-            string appDir = AppDomain.CurrentDomain.BaseDirectory;
-            string newIconPath = System.IO.Path.Combine(appDir, "Assets\\stop.ico");
-            if (AppSettings.isPlaying)
-            {
-                newIconPath = System.IO.Path.Combine(appDir, "Assets\\stop.ico");
-            }
-            else
-            {
-                newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");                
-            }
-            UpdateButtonIcon(1, newIconPath);
+            if (_isCurrentPlaying != AppSettings.isPlaying) {
+                _isCurrentPlaying = AppSettings.isPlaying;
+                string appDir = AppDomain.CurrentDomain.BaseDirectory;
+                string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
+                UpdateButtonIcon(1, newIconPath);
+            }            
         }
 
         ~TaskbarHelper()
