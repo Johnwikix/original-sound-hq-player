@@ -790,7 +790,7 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadPlayState()
         {
-            musicPlaybackService.currentPlayMode = AppData.PlayMode;
+            AppData.currentPlayMode = AppData.PlayMode;
             musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
             musicPlaybackService.volume = AppData.Volume;
             VolumeSlider.Value = musicPlaybackService.volume * 100;
@@ -931,7 +931,7 @@ namespace WinUIMusicPlayer.View
 
         private void UpdatePlayModeIcon()
         {
-            switch (musicPlaybackService.currentPlayMode)
+            switch (AppData.currentPlayMode)
             {
                 case PlayMode.SingleLoop:
                     PlayModeIcon.Glyph = "\ue8ed"; // µ¥ÇúÑ­»·Í¼±ê
