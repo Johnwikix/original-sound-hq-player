@@ -76,10 +76,8 @@ namespace WinUIMusicPlayer
                 AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
             }
             EfficiencyModeUtilities.SetEfficiencyMode(false);
-            //WindowExtensions.Hide(this, enableEfficiencyMode: false);
-            //WindowExtensions.Show(this, disableEfficiencyMode: true);
-            PowerManagementHelper.DisableEfficiencyMode();
-            PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+            WindowExtensions.Hide(this, enableEfficiencyMode: false);
+            WindowExtensions.Show(this, disableEfficiencyMode: true);
             m_AppWindow.Closing += AppWindow_Closing;
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -152,6 +150,8 @@ namespace WinUIMusicPlayer
                 args.Cancel = true;
                 // 最小化到托盘
                 this.Hide();
+                PowerManagementHelper.DisableEfficiencyMode();
+                PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
             }
         }
 
