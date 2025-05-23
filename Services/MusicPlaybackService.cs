@@ -580,7 +580,33 @@ namespace WinUIMusicPlayer.Services
                     int randomIndex = random.Next(currentPlayingList.Count);
                     playingMusic?.Invoke(this, currentPlayingList[randomIndex]);
                     break;
+                case PlayMode.RepeatOff:
+                    MusicEnd();                    
+                    break;
             }
+        }
+
+        private void MusicEnd()
+        {
+            if (multiTypeAudioReader != null)
+            {
+                multiTypeAudioReader.CurrentTime = TimeSpan.Zero;
+            }
+            else if (ffmpegDecoder != null)
+            {
+                ffmpegDecoder.Position = 0;
+            }
+            updateProgressSliders?.Invoke(this, 0);
+            progressTimer.Stop();
+            AppSettings.isPlaying = false;
+            updatePlayPauseButton?.Invoke(this, "\uE768");
+        }
+
+        public void PlayNextTrack()
+        {
+            int currentIndex = currentPlayingList.FindIndex(m => m.Id == currentPlayingMusic.Id);
+            int nextIndex = (currentIndex + 1) % currentPlayingList.Count;
+            playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
         }
 
         public async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
@@ -826,6 +852,9 @@ namespace WinUIMusicPlayer.Services
                     AppData.currentPlayMode = PlayMode.RandomLoop;
                     break;
                 case PlayMode.RandomLoop:
+                    AppData.currentPlayMode = PlayMode.RepeatOff;
+                    break;
+                case PlayMode.RepeatOff:
                     AppData.currentPlayMode = PlayMode.SingleLoop;
                     break;
             }

@@ -39,7 +39,8 @@ namespace WinUIMusicPlayer.Utils
         {
             SingleLoop,
             ListLoop,
-            RandomLoop
+            RandomLoop,
+            RepeatOff
         }
 
         public static Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)

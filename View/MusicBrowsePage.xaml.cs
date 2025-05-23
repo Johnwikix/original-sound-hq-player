@@ -894,7 +894,7 @@ namespace WinUIMusicPlayer.View
         private async void NextMusicButton_Click(object sender, RoutedEventArgs e)
         {
             musicPlaybackService.isManualSelect = true;
-            await musicPlaybackService.AutoPlayNextTrack();
+            musicPlaybackService.PlayNextTrack();
             musicPlaybackService.isManualSelect = false;
         }
 
@@ -941,6 +941,9 @@ namespace WinUIMusicPlayer.View
                     break;
                 case PlayMode.RandomLoop:
                     PlayModeIcon.Glyph = "\ue8b1"; // Ëæ»úÑ­»·Í¼±ê
+                    break;
+                case PlayMode.RepeatOff:
+                    PlayModeIcon.Glyph = "\uF5E7";
                     break;
             }
         }
