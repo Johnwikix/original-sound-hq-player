@@ -173,14 +173,15 @@ namespace WinUIMusicPlayer.View
 
                     if (folders.Any())
                     {
-                        var firstFolder = folders.First();
-                        string folderPath = firstFolder.Path;
-                        Debug.WriteLine($"路径: {folderPath}");
-                        // 在这里可以进一步处理文件夹路径
-                        StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
                         LoadingGrid.Visibility = Visibility.Visible;
                         AddFolderGrid.Visibility = Visibility.Collapsed;
-                        await AddFolderMusic(folder);
+                        foreach (var item in folders)
+                        {       
+                            string folderPath = item.Path;
+                            Debug.WriteLine($"路径: {folderPath}");
+                            StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+                            await AddFolderMusic(folder);    
+                        }                        
                         LoadingGrid.Visibility = Visibility.Collapsed;
                         AddFolderGrid.Visibility = Visibility.Visible;
                     }
