@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
-using System.Runtime.InteropServices;
 
 namespace testDemo.Taskbar
 {
-    public class TaskbarHelper: IDisposable
+    public class TaskbarHelper : IDisposable
     {
         // 消息常量
         private const int WM_COMMAND = 0x0111;
@@ -84,7 +78,7 @@ namespace testDemo.Taskbar
         {
             _hwnd = hwnd;
         }
-        
+
 
         private IntPtr CreateIconFromImage(string imagePath, int size = 16)
         {
@@ -190,7 +184,7 @@ namespace testDemo.Taskbar
                 {
                     int error = Marshal.GetLastWin32Error();
                     System.Diagnostics.Debug.WriteLine($"设置窗口子类失败，错误码: {error}");
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -257,7 +251,7 @@ namespace testDemo.Taskbar
             System.Diagnostics.Debug.WriteLine($"任务栏按钮点击：按钮ID {buttonId}");
 
             if (buttonId == 1) // 按钮1的ID是0
-            {         
+            {
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath); // 按钮2的ID是1
@@ -270,12 +264,13 @@ namespace testDemo.Taskbar
 
         public void UpdateTaskbarButtonIcon()
         {
-            if (_isCurrentPlaying != AppSettings.isPlaying) {
+            if (_isCurrentPlaying != AppSettings.isPlaying)
+            {
                 _isCurrentPlaying = AppSettings.isPlaying;
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath);
-            }            
+            }
         }
 
         ~TaskbarHelper()

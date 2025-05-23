@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 
 namespace WinUIMusicPlayer.Helper
@@ -67,22 +66,23 @@ namespace WinUIMusicPlayer.Helper
                             }
                             // 将窗口置于前台
                             WindowHelper.SetForegroundWindow(mainWindowHandle);
-      
+
                         }
-                        else {
+                        else
+                        {
                             Debug.WriteLine($"发送显示窗口消息到保存的句柄: {mainWindowHandle}");
                             WindowHelper.SendMessage(mainWindowHandle, WM_SHOWME, IntPtr.Zero, IntPtr.Zero);
                             Debug.WriteLine("消息已发送");
-                        }                           
+                        }
                         return;
                     }
-                }             
+                }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"激活已有实例时出错: {ex.Message}");
             }
-        }        
+        }
 
         /// <summary>
         /// 释放互斥量资源

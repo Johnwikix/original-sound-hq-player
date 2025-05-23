@@ -65,7 +65,8 @@ namespace WinUIMusicPlayer.Helper
             hideTransmission?.Invoke(this, EventArgs.Empty);
         }
 
-        private string ConvertLyrics(string lyrics) {
+        private string ConvertLyrics(string lyrics)
+        {
             Regex timeRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
             string[] lines = lyrics.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             for (int i = 0; i < lines.Length; i++)

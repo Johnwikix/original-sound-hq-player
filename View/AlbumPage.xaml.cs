@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer.View
                 {
                     Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 }
-                ToolUtils.RefreshIcon(musicList,"album");
+                ToolUtils.RefreshIcon(musicList, "album");
                 parentPage.refreshUsbDeviceMusicList +=
                     (s, e) =>
                     {
@@ -143,7 +143,7 @@ namespace WinUIMusicPlayer.View
             try
             {
                 foreach (var item in _allMusic)
-                {                    
+                {
                     musicList.Add(item);
                 }
                 await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);

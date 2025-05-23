@@ -97,7 +97,8 @@ namespace WinUIMusicPlayer.View
             AddFolderGrid.Visibility = Visibility.Visible;
         }
 
-        private async Task AddFolderMusic(StorageFolder folder) {
+        private async Task AddFolderMusic(StorageFolder folder)
+        {
             if (folder != null)
             {
                 await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
@@ -160,14 +161,11 @@ namespace WinUIMusicPlayer.View
 
         private async void Grid_Drop(object sender, DragEventArgs e)
         {
-            // 恢复原来的背景色
-
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 try
                 {
                     var items = await e.DataView.GetStorageItemsAsync();
-
                     // 筛选出文件夹
                     var folders = items.Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
 
@@ -176,12 +174,12 @@ namespace WinUIMusicPlayer.View
                         LoadingGrid.Visibility = Visibility.Visible;
                         AddFolderGrid.Visibility = Visibility.Collapsed;
                         foreach (var item in folders)
-                        {       
+                        {
                             string folderPath = item.Path;
                             Debug.WriteLine($"路径: {folderPath}");
                             StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-                            await AddFolderMusic(folder);    
-                        }                        
+                            await AddFolderMusic(folder);
+                        }
                         LoadingGrid.Visibility = Visibility.Collapsed;
                         AddFolderGrid.Visibility = Visibility.Visible;
                     }

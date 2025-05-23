@@ -16,7 +16,7 @@ namespace WinUIMusicPlayer
     {
         public static MainWindow MainWindow { get; private set; }
         private Window _tempWindow = null;
-        
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -37,7 +37,8 @@ namespace WinUIMusicPlayer
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
             }
-            else if (systemLanguages[0].StartsWith("ru")) {
+            else if (systemLanguages[0].StartsWith("ru"))
+            {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
             }
             else

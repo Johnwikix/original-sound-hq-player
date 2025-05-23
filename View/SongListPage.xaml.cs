@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -47,7 +46,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                parentPage.refreshPage += RefreshPage;                
+                parentPage.refreshPage += RefreshPage;
                 parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
                 parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
                 if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)

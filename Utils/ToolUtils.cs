@@ -67,7 +67,7 @@ namespace WinUIMusicPlayer.Utils
             return bitmapImage;
         }
 
-        public static void RefreshIcon(ObservableCollection<Music> musicList,string type = "album")
+        public static void RefreshIcon(ObservableCollection<Music> musicList, string type = "album")
         {
             foreach (var item in musicList)
             {
@@ -97,15 +97,16 @@ namespace WinUIMusicPlayer.Utils
                 {
                     var allSongList = AppData.allSongs.Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath).ToList();
                     item.IsExistOnDevice = 0;
-                    foreach (var songs in allSongList) {
+                    foreach (var songs in allSongList)
+                    {
                         if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
                         {
                             item.IsExistOnDevice = 1;
                             break;
                         }
                     }
-                }               
-               
+                }
+
             }
         }
 

@@ -1,5 +1,4 @@
 using Microsoft.UI;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -51,7 +50,7 @@ namespace WinUIMusicPlayer.View.SubView
             InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, musicDetailAppWindow);
             themeStyleHelper.SetAppStyle();
-            themeStyleHelper.SetAppTheme();            
+            themeStyleHelper.SetAppTheme();
             if (mainWindow != null)
             {
                 mainWindow.themeChanged += MainWindow_themeChanged;
@@ -213,7 +212,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"),ToolUtils.GetString("FailedObtainLyrics"));
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
             }
         }
 
@@ -278,7 +277,8 @@ namespace WinUIMusicPlayer.View.SubView
         private async void SaveLyricsToDateBase_Click(object sender, RoutedEventArgs e)
         {
             var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music != null) {
+            if (music != null)
+            {
                 music.Lyrics = LyricsTextBox.Text;
                 await MusicDatabaseService.UpdateMusicInfo(music);
             }

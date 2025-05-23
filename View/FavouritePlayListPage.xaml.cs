@@ -2,16 +2,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Resources;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -33,7 +30,7 @@ namespace WinUIMusicPlayer.View
         private string _lastSearchText = "";
         private AudioConverterService converterService;
         private ProgressDialog progressDialog;
-        
+
         public FavouritePlayListPage()
         {
             this.InitializeComponent();
@@ -50,7 +47,7 @@ namespace WinUIMusicPlayer.View
             for (int i = 0; i < musicList.Count; i++)
             {
                 musicList[i].Order = musicList.Count - i;
-                await MusicDatabaseService.UpdateMuisc(musicList[i]);                
+                await MusicDatabaseService.UpdateMuisc(musicList[i]);
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             //if (parentPage != null)
@@ -65,7 +62,7 @@ namespace WinUIMusicPlayer.View
             if (e.Parameter is MusicBrowsePage parentPage)
             {
                 this.parentPage = parentPage;
-                parentPage.refreshPage += RefreshMusicList;                
+                parentPage.refreshPage += RefreshMusicList;
                 parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
                 parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
                 InitializeData();

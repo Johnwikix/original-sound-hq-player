@@ -1,10 +1,8 @@
-using CommunityToolkit.Mvvm.Messaging;
 using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,7 +17,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -152,7 +149,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.isRunningBackend)
             {
                 // 取消关闭操作
-                args.Cancel = true;                
+                args.Cancel = true;
                 // 最小化到托盘
                 this.Hide();
             }
@@ -199,7 +196,8 @@ namespace WinUIMusicPlayer
 
         public void UpdateTaskbarIcon()
         {
-            if (_taskbarHelper != null) {
+            if (_taskbarHelper != null)
+            {
                 _taskbarHelper.UpdateTaskbarButtonIcon();
             }
         }
@@ -318,9 +316,10 @@ namespace WinUIMusicPlayer
 
         private void TaskbarHelper_ThumbButtonClicked(object sender, ThumbButtonClickedEventArgs e)
         {
-            if (e.ButtonId == 0) { 
+            if (e.ButtonId == 0)
+            {
                 playLastSong?.Invoke(this, EventArgs.Empty);
-            }            
+            }
             else if (e.ButtonId == 1)
             {
                 playStop?.Invoke(this, EventArgs.Empty);

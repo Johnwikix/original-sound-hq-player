@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.View.SubView
             InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, albumDetailAppWindow);
             themeStyleHelper.SetAppStyle();
-            themeStyleHelper.SetAppTheme();            
+            themeStyleHelper.SetAppTheme();
             if (mainWindow != null)
             {
                 mainWindow.themeChanged += MainWindow_themeChanged;
@@ -201,7 +201,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             else
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"),ToolUtils.GetString("FailedObtainCover"));
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainCover"));
             }
         }
 

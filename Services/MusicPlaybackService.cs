@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.Services
         {
             notificationService = new NotificationService();
             progressTimer = new System.Timers.Timer(1000);
-            progressTimer.Elapsed += ProgressTimer_Elapsed;            
+            progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
         }
 
@@ -69,16 +69,17 @@ namespace WinUIMusicPlayer.Services
             _lyrics.Clear();
             string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id)?.Lyrics;
             var lyricsContent = await ParseLrcLyrics(lrcContent);
-            if (lyricsContent != null) {
+            if (lyricsContent != null)
+            {
                 _lyrics = lyricsContent;
-            }            
+            }
         }
 
         public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
-            List<LyricLine> lyrics = new List<LyricLine>();           
+            List<LyricLine> lyrics = new List<LyricLine>();
             if (string.IsNullOrEmpty(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
@@ -686,7 +687,7 @@ namespace WinUIMusicPlayer.Services
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
-                {                    
+                {
                     // 根据文件类型获取总时长
                     double totalSeconds = 0;
                     if (multiTypeAudioReader != null)
@@ -718,7 +719,7 @@ namespace WinUIMusicPlayer.Services
                         wasapiOut.Play();
                         wasapiOut.Stopped += wasapiOut_Stopped;
                         AppSettings.isDsd = true;
-                        AppSettings.isPlaying = true;                        
+                        AppSettings.isPlaying = true;
                         //_ = Task.Run(() => SavePlayState());
                     }
                     progressTimer.Start();

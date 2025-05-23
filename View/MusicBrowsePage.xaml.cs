@@ -180,8 +180,8 @@ namespace WinUIMusicPlayer.View
             System.Diagnostics.Debug.WriteLine("设备枚举已完成");
         }
         private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
-        {            
-            if (_lastLyricIndex == currentIndex|| !isInPlayingDetailMode)
+        {
+            if (_lastLyricIndex == currentIndex || !isInPlayingDetailMode)
                 return;
             this.DispatcherQueue.TryEnqueue(async () =>
             {
@@ -739,7 +739,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(AlbumPage);
-                    }                    
+                    }
                     break;
                 case "Artist":
                     if (!string.IsNullOrEmpty(currentArtistName))
@@ -751,7 +751,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(ArtistPage);
-                    }                    
+                    }
                     break;
                 case "Folder":
                     if (!string.IsNullOrEmpty(currentFolderName))
@@ -763,7 +763,7 @@ namespace WinUIMusicPlayer.View
                     else
                     {
                         currentPage = typeof(FolderBrowsePage);
-                    }                    
+                    }
                     break;
                 case "Favourite":
                     currentPage = typeof(FavouritePlayListPage);
@@ -982,7 +982,8 @@ namespace WinUIMusicPlayer.View
                 {
                     ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
                 }
-                if (mainWindow != null) {
+                if (mainWindow != null)
+                {
                     mainWindow.UpdateTaskbarIcon();
                 }
             });

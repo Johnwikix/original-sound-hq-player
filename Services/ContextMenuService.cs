@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Devices.Usb;
 using Windows.Foundation;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -290,7 +289,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 if (musicList != null && musicList.Count > 0)
                 {
-                    await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);                    
+                    await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 }
             }
         }
