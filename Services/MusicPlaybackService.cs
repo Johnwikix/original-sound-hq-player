@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.Services
         //public List<Music> musicList;
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
-        private NotificationService notificationService = new NotificationService();
+        private NotificationService notificationService;
         public event EventHandler<int> updateCurrentLyricIndex;
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
@@ -52,8 +52,9 @@ namespace WinUIMusicPlayer.Services
 
         public MusicPlaybackService()
         {
+            notificationService = new NotificationService();
             progressTimer = new System.Timers.Timer(1000);
-            progressTimer.Elapsed += ProgressTimer_Elapsed;
+            progressTimer.Elapsed += ProgressTimer_Elapsed;            
             InitializingData();
         }
 

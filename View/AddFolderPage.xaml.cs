@@ -3,11 +3,15 @@ using Microsoft.UI.Xaml.Controls;
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -20,10 +24,11 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AddFolderPage : Page
     {
         private AddFolderService addFolderService = new AddFolderService();
+        private NotificationService notificationService;
         public AddFolderPage()
         {
             this.InitializeComponent();
-
+            notificationService = new NotificationService();
             var mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
@@ -87,6 +92,12 @@ namespace WinUIMusicPlayer.View
             var folder = await folderPicker.PickSingleFolderAsync();
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
+            await AddFolderMusic(folder);
+            LoadingGrid.Visibility = Visibility.Collapsed;
+            AddFolderGrid.Visibility = Visibility.Visible;
+        }
+
+        private async Task AddFolderMusic(StorageFolder folder) {
             if (folder != null)
             {
                 await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
@@ -97,8 +108,6 @@ namespace WinUIMusicPlayer.View
                     mainWindow.UpdateMusicList();
                 }
             }
-            LoadingGrid.Visibility = Visibility.Collapsed;
-            AddFolderGrid.Visibility = Visibility.Visible;
         }
 
 
@@ -134,6 +143,59 @@ namespace WinUIMusicPlayer.View
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
+        }
+
+        private void Grid_DragOver(object sender, DragEventArgs e)
+        {
+            // 检查拖拽的数据是否包含文件
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                e.AcceptedOperation = DataPackageOperation.Link;
+            }
+            else
+            {
+                e.AcceptedOperation = DataPackageOperation.None;
+            }
+        }
+
+        private async void Grid_Drop(object sender, DragEventArgs e)
+        {
+            // 恢复原来的背景色
+
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                try
+                {
+                    var items = await e.DataView.GetStorageItemsAsync();
+
+                    // 筛选出文件夹
+                    var folders = items.Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
+
+                    if (folders.Any())
+                    {
+                        var firstFolder = folders.First();
+                        string folderPath = firstFolder.Path;
+                        Debug.WriteLine($"路径: {folderPath}");
+                        // 在这里可以进一步处理文件夹路径
+                        StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+                        LoadingGrid.Visibility = Visibility.Visible;
+                        AddFolderGrid.Visibility = Visibility.Collapsed;
+                        await AddFolderMusic(folder);
+                        LoadingGrid.Visibility = Visibility.Collapsed;
+                        AddFolderGrid.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("请拖拽文件夹，不是文件");
+                        notificationService.SendNotification(ToolUtils.GetString("Warning"), ToolUtils.GetString("PleaseDragFolder"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"错误: {ex.Message}");
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                }
+            }
         }
     }
 }

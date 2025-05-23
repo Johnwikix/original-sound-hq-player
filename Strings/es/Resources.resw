@@ -546,4 +546,10 @@
   <data name="IconExit.Text" xml:space="preserve">
     <value>Salir</value>
   </data>
+  <data name="PleaseDragFolder" xml:space="preserve">
+    <value>Por favor, arrastre la carpeta, no el archivo</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Advertencia</value>
+  </data>
 </root>
