@@ -40,6 +40,31 @@
                             <FontIcon Glyph="&#xE893;"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
+                    <MenuFlyoutSubItem x:Name="PlayModeFlyout" Text="播放模式">
+                        <MenuFlyoutSubItem.Icon>
+                            <FontIcon Glyph="&#xECE9;"></FontIcon>
+                        </MenuFlyoutSubItem.Icon>
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatAll" Text="列表循环" Click="PlayMode_Click">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8EE;"></FontIcon>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatOne" Text="单曲循环" Click="PlayMode_Click">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8ED;"></FontIcon>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatOff" Text="单曲播放" Click="PlayMode_Click">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xF5E7;"></FontIcon>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <ToggleMenuFlyoutItem x:Name="IconShuffle" Text="随机循环" Click="PlayMode_Click">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8B1;"></FontIcon>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                    </MenuFlyoutSubItem>
                     <MenuFlyoutSeparator/>
                     <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" x:Uid="IconExit">
                         <MenuFlyoutItem.Icon>

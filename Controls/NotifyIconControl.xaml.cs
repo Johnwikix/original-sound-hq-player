@@ -3,6 +3,7 @@ using H.NotifyIcon;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Diagnostics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 
@@ -16,6 +17,7 @@ namespace WinUIMusicPlayer.Controls
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
+        public event EventHandler<string> playModeEvent;
         public NotifyIconControl()
         {
             this.InitializeComponent();
@@ -71,6 +73,68 @@ namespace WinUIMusicPlayer.Controls
                 }
             }
 
+        }
+
+        private void PlayMode_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as ToggleMenuFlyoutItem;
+            Debug.WriteLine(menuItem?.Name.ToString());
+            if (menuItem != null && menuItem.IsChecked == true)
+            {
+                UncheckOtherItems(menuItem);
+
+                // 触发事件通知播放模式变更
+                switch (menuItem.Name)
+                {
+                    case "IconRepeatAll":
+                        playModeEvent?.Invoke(this, "IconRepeatAll");
+                        break;
+                    case "IconRepeatOne":
+                        playModeEvent?.Invoke(this, "IconRepeatOne");
+                        break;
+                    case "IconRepeatOff":
+                        playModeEvent?.Invoke(this, "IconRepeatOff");
+                        break;
+                    case "IconShuffle":
+                        playModeEvent?.Invoke(this, "IconShuffle");
+                        break;
+                }
+            }
+            else
+            {
+                // 如果点击已选中的项，保持选中状态
+                menuItem.IsChecked = true;
+            }
+        }
+
+        private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)
+        {
+            if (PlayModeFlyout != null)
+            {
+                // 遍历所有子项，取消其他 ToggleMenuFlyoutItem 的选中状态
+                foreach (var item in PlayModeFlyout.Items)
+                {
+                    if (item is ToggleMenuFlyoutItem toggleItem && item != currentItem)
+                    {
+                        toggleItem.IsChecked = false;
+                    }
+                }
+            }
+            
+        }
+
+        public void UpdatePlayMode(string name) {
+            if (PlayModeFlyout != null)
+            {
+                // 遍历所有子项，取消其他 ToggleMenuFlyoutItem 的选中状态
+                foreach (var item in PlayModeFlyout.Items)
+                {
+                    if (item is ToggleMenuFlyoutItem toggleItem)
+                    {
+                        toggleItem.IsChecked = item.Name.ToString() == name ? true:false;
+                    }
+                }
+            }
         }
     }
 }

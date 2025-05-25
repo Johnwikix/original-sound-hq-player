@@ -79,6 +79,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.playLastSong += PlayLastSong;
                 mainWindow.playStop += PlayNStop;
                 mainWindow.playNextSong += PlayNextSong;
+                mainWindow.changePlayMode += MainWindow_changePlayMode;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -96,6 +97,27 @@ namespace WinUIMusicPlayer.View
             StartWatchingFileFolder();
             OnFileChanged(null, null);
         }
+
+        private void MainWindow_changePlayMode(object? sender, string e)
+        {
+            switch (e)
+            {
+                case "IconRepeatAll":
+                    AppData.currentPlayMode = PlayMode.ListLoop;
+                    break;
+                case "IconRepeatOne":
+                    AppData.currentPlayMode = PlayMode.SingleLoop;
+                    break;
+                case "IconRepeatOff":
+                    AppData.currentPlayMode = PlayMode.RepeatOff;
+                    break;
+                case "IconShuffle":
+                    AppData.currentPlayMode = PlayMode.RandomLoop;
+                    break;
+            }
+            UpdatePlayModeIcon();
+        }
+
         private void StartWatchingUsbStorageDevices()
         {
             // 定义设备选择器以筛选 USB 存储设备
@@ -836,6 +858,11 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.SwitchPlayMode();
             //await musicPlaybackService.SavePlayState();
             UpdatePlayModeIcon();
+            UpdateIconPlayModeMenuFlyout();
+        }
+
+        private void UpdateIconPlayModeMenuFlyout() {
+            mainWindow.UpdateAppNotifyIconControl();
         }
 
         private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)

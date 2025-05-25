@@ -17,6 +17,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -37,6 +38,7 @@ namespace WinUIMusicPlayer
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
+        public event EventHandler<string> changePlayMode;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
@@ -47,6 +49,7 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
+
 
         public MainWindow()
         {
@@ -74,6 +77,7 @@ namespace WinUIMusicPlayer
                 AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
                 AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
                 AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
+                AppNotifyIconControl.playModeEvent += (s, e) => changePlayMode?.Invoke(this, e);
             }
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             WindowExtensions.Hide(this, enableEfficiencyMode: false);
@@ -90,6 +94,25 @@ namespace WinUIMusicPlayer
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        public void UpdateAppNotifyIconControl() {            
+            Debug.WriteLine(AppData.currentPlayMode);
+            switch (AppData.currentPlayMode)
+            {
+                case PlayMode.SingleLoop:
+                    AppNotifyIconControl.UpdatePlayMode("IconRepeatOne");
+                    break;
+                case PlayMode.ListLoop:
+                    AppNotifyIconControl.UpdatePlayMode("IconRepeatAll");
+                    break;
+                case PlayMode.RandomLoop:
+                    AppNotifyIconControl.UpdatePlayMode("IconShuffle");
+                    break;
+                case PlayMode.RepeatOff:
+                    AppNotifyIconControl.UpdatePlayMode("IconRepeatOff");
+                    break;
+            }
         }
 
         private void SaveMainWindowHandle(IntPtr handle)
@@ -186,6 +209,7 @@ namespace WinUIMusicPlayer
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
+                UpdateAppNotifyIconControl();
                 //await AutoRescanService.AutoScan();
             }
             catch (Exception ex)
