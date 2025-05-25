@@ -42,7 +42,7 @@
                     </MenuFlyoutItem>
                     <MenuFlyoutSubItem x:Name="PlayModeFlyout" Text="播放模式">
                         <MenuFlyoutSubItem.Icon>
-                            <FontIcon Glyph="&#xECE9;"></FontIcon>
+                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="&#xECE9;"></FontIcon>
                         </MenuFlyoutSubItem.Icon>
                         <ToggleMenuFlyoutItem x:Name="IconRepeatAll" Text="列表循环" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>

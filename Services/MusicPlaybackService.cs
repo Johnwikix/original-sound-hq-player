@@ -565,7 +565,7 @@ namespace WinUIMusicPlayer.Services
             {
                 progressTimer.Stop();
             }
-            switch (AppData.currentPlayMode)
+            switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
                     playingMusic?.Invoke(this, currentPlayingMusic);
@@ -838,24 +838,24 @@ namespace WinUIMusicPlayer.Services
                 multiTypeAudioReader.Dispose();
                 multiTypeAudioReader = null;
             }
-            await MusicDatabaseService.SavePlayState(currentPlayingList, AppData.currentPlayMode, currentPlayingMusic?.Id, volume);
+            await MusicDatabaseService.SavePlayState(currentPlayingList, AppData.PlayMode, currentPlayingMusic?.Id, volume);
         }
 
         public void SwitchPlayMode()
         {
-            switch (AppData.currentPlayMode)
+            switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
-                    AppData.currentPlayMode = PlayMode.ListLoop;
+                    AppData.PlayMode = PlayMode.ListLoop;
                     break;
                 case PlayMode.ListLoop:
-                    AppData.currentPlayMode = PlayMode.RandomLoop;
+                    AppData.PlayMode = PlayMode.RandomLoop;
                     break;
                 case PlayMode.RandomLoop:
-                    AppData.currentPlayMode = PlayMode.RepeatOff;
+                    AppData.PlayMode = PlayMode.RepeatOff;
                     break;
                 case PlayMode.RepeatOff:
-                    AppData.currentPlayMode = PlayMode.SingleLoop;
+                    AppData.PlayMode = PlayMode.SingleLoop;
                     break;
             }
         }

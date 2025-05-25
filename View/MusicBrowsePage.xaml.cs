@@ -98,24 +98,10 @@ namespace WinUIMusicPlayer.View
             OnFileChanged(null, null);
         }
 
-        private void MainWindow_changePlayMode(object? sender, string e)
-        {
-            switch (e)
-            {
-                case "IconRepeatAll":
-                    AppData.currentPlayMode = PlayMode.ListLoop;
-                    break;
-                case "IconRepeatOne":
-                    AppData.currentPlayMode = PlayMode.SingleLoop;
-                    break;
-                case "IconRepeatOff":
-                    AppData.currentPlayMode = PlayMode.RepeatOff;
-                    break;
-                case "IconShuffle":
-                    AppData.currentPlayMode = PlayMode.RandomLoop;
-                    break;
-            }
-            UpdatePlayModeIcon();
+        private void MainWindow_changePlayMode(object? sender, PlayMode mode)
+        {    
+           AppData.PlayMode = mode;
+           UpdatePlayModeIcon();
         }
 
         private void StartWatchingUsbStorageDevices()
@@ -812,7 +798,7 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadPlayState()
         {
-            AppData.currentPlayMode = AppData.PlayMode;
+            //AppData.currentPlayMode = AppData.PlayMode;
             musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
             musicPlaybackService.volume = AppData.Volume;
             VolumeSlider.Value = musicPlaybackService.volume * 100;
@@ -958,7 +944,7 @@ namespace WinUIMusicPlayer.View
 
         private void UpdatePlayModeIcon()
         {
-            switch (AppData.currentPlayMode)
+            switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
                     PlayModeIcon.Glyph = "\ue8ed"; // µ¥ÇúÑ­»·Í¼±ê

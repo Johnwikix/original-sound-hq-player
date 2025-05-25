@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
-        public event EventHandler<string> changePlayMode;
+        public event EventHandler<PlayMode> changePlayMode;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
@@ -97,22 +97,8 @@ namespace WinUIMusicPlayer
         }
 
         public void UpdateAppNotifyIconControl() {            
-            Debug.WriteLine(AppData.currentPlayMode);
-            switch (AppData.currentPlayMode)
-            {
-                case PlayMode.SingleLoop:
-                    AppNotifyIconControl.UpdatePlayMode("IconRepeatOne");
-                    break;
-                case PlayMode.ListLoop:
-                    AppNotifyIconControl.UpdatePlayMode("IconRepeatAll");
-                    break;
-                case PlayMode.RandomLoop:
-                    AppNotifyIconControl.UpdatePlayMode("IconShuffle");
-                    break;
-                case PlayMode.RepeatOff:
-                    AppNotifyIconControl.UpdatePlayMode("IconRepeatOff");
-                    break;
-            }
+            Debug.WriteLine(AppData.PlayMode);
+            AppNotifyIconControl.UpdatePlayMode();            
         }
 
         private void SaveMainWindowHandle(IntPtr handle)
