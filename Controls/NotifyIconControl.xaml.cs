@@ -91,22 +91,22 @@ namespace WinUIMusicPlayer.Controls
                     case "IconRepeatAll":
                         playModeEvent?.Invoke(this,PlayMode.ListLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8EE";
-                        PlayModeFlyout.Text = "列表循环";
+                        PlayModeFlyout.Text = GetString("IconListLoop");
                         break;
                     case "IconRepeatOne":
                         playModeEvent?.Invoke(this, PlayMode.SingleLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8ED";
-                        PlayModeFlyout.Text = "单曲循环";
+                        PlayModeFlyout.Text = GetString("IconSingleTuneCirculation");
                         break;
                     case "IconRepeatOff":
                         playModeEvent?.Invoke(this, PlayMode.RepeatOff);
                         PlayModeFlyoutIcon.Glyph = "\uF5E7";
-                        PlayModeFlyout.Text = "单曲播放";
+                        PlayModeFlyout.Text = GetString("IconSinglePlayback");
                         break;
                     case "IconShuffle":
                         playModeEvent?.Invoke(this, PlayMode.RandomLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8B1";
-                        PlayModeFlyout.Text = "随机循环";
+                        PlayModeFlyout.Text = GetString("IconRandomLoop");
                         break;
                 }
             }
@@ -136,28 +136,28 @@ namespace WinUIMusicPlayer.Controls
         public void UpdatePlayMode() {
             var name = "IconRepeatOne";
             var iconStr = "\uE8EE";
-            var flyoutText = "单曲循环";
+            var flyoutText = GetString("IconSingleTuneCirculation");
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
                     name = "IconRepeatOne";
                     iconStr = "\uE8ED";
-                    flyoutText = "单曲循环";
+                    flyoutText = GetString("IconSingleTuneCirculation");
                     break;
                 case PlayMode.ListLoop:
                     name = "IconRepeatAll";
                     iconStr = "\uE8EE";
-                    flyoutText = "列表循环";
+                    flyoutText = GetString("IconListLoop");
                     break;
                 case PlayMode.RandomLoop:
                     name = "IconShuffle";
                     iconStr = "\uE8B1";
-                    flyoutText = "随机循环";
+                    flyoutText = GetString("IconRandomLoop");
                     break;
                 case PlayMode.RepeatOff:
                     name = "IconRepeatOff";
                     iconStr = "\uF5E7";
-                    flyoutText = "单曲播放";
+                    flyoutText = GetString("IconSinglePlayback");
                     break;
             }
             PlayModeFlyoutIcon.Glyph = iconStr;

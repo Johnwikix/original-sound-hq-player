@@ -40,26 +40,26 @@
                             <FontIcon Glyph="&#xE893;"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
-                    <MenuFlyoutSubItem x:Name="PlayModeFlyout" Text="播放模式">
+                    <MenuFlyoutSubItem x:Name="PlayModeFlyout" x:Uid="IconListLoopValue">
                         <MenuFlyoutSubItem.Icon>
                             <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="&#xECE9;"></FontIcon>
                         </MenuFlyoutSubItem.Icon>
-                        <ToggleMenuFlyoutItem x:Name="IconRepeatAll" Text="列表循环" Click="PlayMode_Click">
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatAll" x:Uid="IconListLoopValue" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8EE;"></FontIcon>
                             </ToggleMenuFlyoutItem.Icon>
                         </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem x:Name="IconRepeatOne" Text="单曲循环" Click="PlayMode_Click">
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatOne" x:Uid="IconSingleTuneCirculationValue" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8ED;"></FontIcon>
                             </ToggleMenuFlyoutItem.Icon>
                         </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem x:Name="IconRepeatOff" Text="单曲播放" Click="PlayMode_Click">
+                        <ToggleMenuFlyoutItem x:Name="IconRepeatOff" x:Uid="IconSinglePlaybackValue" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xF5E7;"></FontIcon>
                             </ToggleMenuFlyoutItem.Icon>
                         </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem x:Name="IconShuffle" Text="随机循环" Click="PlayMode_Click">
+                        <ToggleMenuFlyoutItem x:Name="IconShuffle" x:Uid="IconRandomLoopValue" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8B1;"></FontIcon>
                             </ToggleMenuFlyoutItem.Icon>

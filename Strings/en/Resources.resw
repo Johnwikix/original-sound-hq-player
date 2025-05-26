@@ -552,4 +552,28 @@
   <data name="Warning" xml:space="preserve">
     <value>Warning</value>
   </data>
+  <data name="IconListLoop" xml:space="preserve">
+    <value>List Loop</value>
+  </data>
+  <data name="IconRandomLoop" xml:space="preserve">
+    <value>Random Loop</value>
+  </data>
+  <data name="IconSinglePlayback" xml:space="preserve">
+    <value>Single playback</value>
+  </data>
+  <data name="IconSingleTuneCirculation" xml:space="preserve">
+    <value>Single tune circulation</value>
+  </data>
+  <data name="IconSinglePlaybackValue.Text" xml:space="preserve">
+    <value>Single playback</value>
+  </data>
+  <data name="IconRandomLoopValue.Text" xml:space="preserve">
+    <value>Random Loop</value>
+  </data>
+  <data name="IconListLoopValue.Text" xml:space="preserve">
+    <value>List Loop</value>
+  </data>
+  <data name="IconSingleTuneCirculationValue.Text" xml:space="preserve">
+    <value>Single tune circulation</value>
+  </data>
 </root>

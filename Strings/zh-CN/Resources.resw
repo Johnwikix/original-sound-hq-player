@@ -552,4 +552,28 @@
   <data name="Warning" xml:space="preserve">
     <value>警告</value>
   </data>
+  <data name="IconListLoop" xml:space="preserve">
+    <value>列表循环</value>
+  </data>
+  <data name="IconRandomLoop" xml:space="preserve">
+    <value>随机循环</value>
+  </data>
+  <data name="IconSinglePlayback" xml:space="preserve">
+    <value>单曲播放</value>
+  </data>
+  <data name="IconSingleTuneCirculation" xml:space="preserve">
+    <value>单曲循环</value>
+  </data>
+  <data name="IconSinglePlaybackValue.Text" xml:space="preserve">
+    <value>单曲播放</value>
+  </data>
+  <data name="IconRandomLoopValue.Text" xml:space="preserve">
+    <value>随机循环</value>
+  </data>
+  <data name="IconListLoopValue.Text" xml:space="preserve">
+    <value>列表循环</value>
+  </data>
+  <data name="IconSingleTuneCirculationValue.Text" xml:space="preserve">
+    <value>单曲循环</value>
+  </data>
 </root>
