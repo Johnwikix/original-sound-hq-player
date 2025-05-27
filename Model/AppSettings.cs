@@ -16,8 +16,8 @@ namespace WinUIMusicPlayer.Model
         public static List<string> outputDeviceList = new List<string>();
 
         public static string DeviceName = "Default";
-        public static string DefualtEntry { get; set; } = "文件夹选择";
-        public static string DefualtPlayList { get; set; } = "歌曲";
+        public static string DefualtEntry { get; set; } = "AddFolder";
+        public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;
         public static string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public static string LrcAPIAuth { get; set; }

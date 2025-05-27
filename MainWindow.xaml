@@ -37,7 +37,13 @@
             <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
             <TextBlock x:Uid="LoadingText" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
         </Grid>
-        <NavigationView Visibility="Collapsed" PaneDisplayMode="LeftCompact" x:Name="NavigationViewControl" IsBackButtonVisible="Collapsed" ItemInvoked="NavigationView_ItemInvoked">
+        <NavigationView 
+            Visibility="Collapsed" 
+            PaneDisplayMode="LeftCompact" 
+            x:Name="NavigationViewControl" 
+            IsBackButtonVisible="Collapsed" 
+            ItemInvoked="NavigationView_ItemInvoked"
+            >
             <NavigationView.MenuItems >
                 <NavigationViewItem Tag="AddFolder" Icon="NewFolder">
                     <NavigationViewItem.Content>

@@ -246,6 +246,13 @@ namespace WinUIMusicPlayer
                     break;
             }
         }
+
+        public void NavigateToSettingsPage()
+        {
+            NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
+            ContentFrame.Navigate(typeof(SettingsPage), this);
+        }
+
         public async Task LoadFoldersAsync()
         {
             var folderList = await MusicDatabaseService.GetFoldersAsync();

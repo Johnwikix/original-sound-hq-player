@@ -66,6 +66,12 @@
                         </ToggleMenuFlyoutItem>
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem x:Name="Settings" x:Uid="IconSettings" Click="Settings_Click">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE713;"/>
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSeparator/>
                     <MenuFlyoutItem Command="{x:Bind ExitApplicationCommand}" x:Name="Exit" x:Uid="IconExit">
                         <MenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE89F;"/>

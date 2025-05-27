@@ -50,31 +50,8 @@ namespace WinUIMusicPlayer.Controls
         [RelayCommand]
         public void ShowHideWindow()
         {
-            if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
-            {
-                // 如果窗口最小化，则恢复它
-                if (WindowHelper.IsIconic(AppData.m_hWnd))
-                {
-                    WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
-                }
-                // 将窗口置于前台
-                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
-            }
-            else
-            {
-                var window = App.MainWindow;
-                if (window == null)
-                {
-                    return;
-                }
-
-                if (!window.Visible)
-                {
-                    window.Show();
-                    window.InitializeTaskbarHelper();
-                }
-            }
-
+            MainWindow window = App.MainWindow;
+            ShowWindow(window);
         }
 
         private void PlayMode_Click(object sender, RoutedEventArgs e)
@@ -173,5 +150,40 @@ namespace WinUIMusicPlayer.Controls
                 }
             }
         }
+
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow window = App.MainWindow;
+            ShowWindow(window);
+            if (window != null)
+            {
+                window.NavigateToSettingsPage();
+            }
+        }
+
+        private void ShowWindow(MainWindow window) {
+            if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
+            {
+                // 如果窗口最小化，则恢复它
+                if (WindowHelper.IsIconic(AppData.m_hWnd))
+                {
+                    WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
+                }
+                // 将窗口置于前台
+                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
+            }
+            else
+            {
+                if (window == null)
+                {
+                    return;
+                }
+                if (!window.Visible)
+                {
+                    window.Show();
+                    window.InitializeTaskbarHelper();
+                }
+            }
+        }        
     }
 }
