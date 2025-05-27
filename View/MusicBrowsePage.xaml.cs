@@ -1001,6 +1001,7 @@ namespace WinUIMusicPlayer.View
                 if (mainWindow != null)
                 {
                     mainWindow.UpdateTaskbarIcon();
+                    mainWindow.UpdateIconControl();
                 }
             });
         }

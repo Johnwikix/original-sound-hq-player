@@ -40,6 +40,20 @@ namespace WinUIMusicPlayer.Controls
         private void PlayNPause_Click(object sender, RoutedEventArgs e)
         {
             playStop?.Invoke(this, EventArgs.Empty);
+            UpdatePlayNPause();
+        }
+
+        public void UpdatePlayNPause() {
+            if (AppSettings.isPlaying)
+            {
+                PlayNPauseIcon.Glyph = "\uE769"; // ≤•∑≈Õº±Í
+                PlayNPause.Text = GetString("IconPause");
+            }
+            else
+            {
+                PlayNPauseIcon.Glyph = "\uE768"; // ‘›Õ£Õº±Í
+                PlayNPause.Text = GetString("IconPlay");
+            }
         }
 
         private void LastSong_Click(object sender, RoutedEventArgs e)

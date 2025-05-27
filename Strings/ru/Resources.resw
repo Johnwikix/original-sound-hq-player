@@ -541,7 +541,7 @@
     <value>Следующая</value>
   </data>
   <data name="IconPlayNPause.Text" xml:space="preserve">
-    <value>Воспроизвести/Пауза</value>
+    <value>Трансляция</value>
   </data>
   <data name="IconExit.Text" xml:space="preserve">
     <value>Выход</value>
@@ -578,5 +578,11 @@
   </data>
   <data name="IconSettings.Text" xml:space="preserve">
     <value>Настройки</value>
+  </data>
+  <data name="IconPlay" xml:space="preserve">
+    <value>Трансляция</value>
+  </data>
+  <data name="IconPause" xml:space="preserve">
+    <value>Пауза</value>
   </data>
 </root>

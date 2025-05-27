@@ -212,6 +212,15 @@ namespace WinUIMusicPlayer
             }
         }
 
+        public void UpdateIconControl()
+        {
+            if (AppNotifyIconControl != null)
+            {
+                AppNotifyIconControl.UpdatePlayNPause();
+            }
+        }
+
+
         public void SetAppStyle()
         {
             themeStyleHelper.SetAppStyle();

@@ -541,7 +541,7 @@
     <value>次の曲</value>
   </data>
   <data name="IconPlayNPause.Text" xml:space="preserve">
-    <value>再生/一時停止</value>
+    <value>再生</value>
   </data>
   <data name="IconExit.Text" xml:space="preserve">
     <value>終了</value>
@@ -578,5 +578,11 @@
   </data>
   <data name="IconSettings.Text" xml:space="preserve">
     <value>設定</value>
+  </data>
+  <data name="IconPlay" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="IconPause" xml:space="preserve">
+    <value>パウズ</value>
   </data>
 </root>

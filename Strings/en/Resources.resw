@@ -541,7 +541,7 @@
     <value>Next Song</value>
   </data>
   <data name="IconPlayNPause.Text" xml:space="preserve">
-    <value>Play/Pause</value>
+    <value>Play</value>
   </data>
   <data name="IconExit.Text" xml:space="preserve">
     <value>Exit</value>
@@ -578,5 +578,11 @@
   </data>
   <data name="IconSettings.Text" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="IconPlay" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="IconPause" xml:space="preserve">
+    <value>Pause</value>
   </data>
 </root>
