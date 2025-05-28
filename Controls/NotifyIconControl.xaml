@@ -25,6 +25,7 @@
                             <FontIcon Glyph="&#xE7F4;"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
+                    <MenuFlyoutSeparator/>
                     <MenuFlyoutItem x:Name="LastSong" x:Uid="IconLastSong" Click="LastSong_Click">
                         <MenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE892;"/>
