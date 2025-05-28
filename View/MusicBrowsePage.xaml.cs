@@ -527,7 +527,10 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicPlaybackService_playingMusic(object? sender, Music music)
         {
-            await PlayMusic(music);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _ = PlayMusic(music);
+            });            
         }
 
         public async void LoadPlayListSong(PlayList playList)
@@ -1135,14 +1138,13 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicPlaybackService.currentPlayingMusic = music;
-                DispatcherQueue.TryEnqueue(() =>
-                {
+ 
                     LoadLyricsToUI();
                     UpdatePlayBar(music);
                     UpdateViewList(music);
                     UpdateCurrentPlayList();
-                    _=musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                });
+                    await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                
             }
             catch (Exception ex)
             {
