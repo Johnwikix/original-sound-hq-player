@@ -1225,7 +1225,7 @@ namespace WinUIMusicPlayer.View
                 }
                 if (musicPlaybackService.multiTypeAudioReader != null)
                 {
-                    musicPlaybackService.multiTypeAudioReader.Volume = 0;
+                    musicPlaybackService.waveOut.Volume = 0;
                 }
             }
             else
@@ -1236,9 +1236,9 @@ namespace WinUIMusicPlayer.View
                 {
                     musicPlaybackService.wasapiOut.Volume = (float)VolumeSlider.Value / 100;
                 }
-                if (musicPlaybackService.multiTypeAudioReader != null)
+                if (musicPlaybackService.waveOut != null)
                 {
-                    musicPlaybackService.multiTypeAudioReader.Volume = (float)VolumeSlider.Value / 100;
+                    musicPlaybackService.waveOut.Volume = (float)VolumeSlider.Value / 100;
                 }
             }
         }
@@ -1250,9 +1250,9 @@ namespace WinUIMusicPlayer.View
             {
                 musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
             }
-            if (musicPlaybackService.multiTypeAudioReader != null)
+            if (musicPlaybackService.waveOut != null)
             {
-                musicPlaybackService.multiTypeAudioReader.Volume = musicPlaybackService.volume;
+                musicPlaybackService.waveOut.Volume = musicPlaybackService.volume;
             }
             VolumeIconChange((int)e.NewValue);
             //_ = musicPlaybackService.SavePlayState();

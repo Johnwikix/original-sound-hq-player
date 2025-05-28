@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Adapter;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
@@ -25,6 +26,7 @@ namespace WinUIMusicPlayer.Services
         public List<Music> currentPlayingList;
         public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
+        public IWaveProvider adapter;
         public CSCore.SoundOut.WasapiOut wasapiOut;
         private MMDevice selectedDevice = null;
         private CSCore.CoreAudioAPI.MMDevice csCoreMMdevice = null;
@@ -626,8 +628,9 @@ namespace WinUIMusicPlayer.Services
                         SelectOutputDevice();
                         multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                         multiTypeAudioReader.CurrentTime = currentPos;
-                        multiTypeAudioReader.Volume = volume;
+                        //multiTypeAudioReader.Volume = volume;
                         waveOut.Init(multiTypeAudioReader);
+                        waveOut.Volume = volume;
                     }
                     catch (Exception e)
                     {
@@ -642,10 +645,14 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        SelectCSCoreOutputDevice();
+                        //SelectCSCoreOutputDevice();
+                        SelectOutputDevice();
                         ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        wasapiOut.Device = csCoreMMdevice;
-                        wasapiOut.Initialize(ffmpegDecoder);
+                        adapter = new CSCoreToNAudioAdapter(ffmpegDecoder);                      
+                        waveOut.Init(adapter);
+                        waveOut.Volume = volume;
+                        //wasapiOut.Device = csCoreMMdevice;
+                        //wasapiOut.Initialize(ffmpegDecoder);
                     }
                     catch (Exception e)
                     {
@@ -740,12 +747,14 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
-                        wasapiOut.Volume = volume;
-                        wasapiOut.Play();
-                        wasapiOut.Stopped += wasapiOut_Stopped;
-                        AppSettings.isDsd = true;
-                        AppSettings.isPlaying = true;
-                        //_ = Task.Run(() => SavePlayState());
+                        waveOut.Play();
+                        waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                        AppSettings.isDsd = false;
+                        //wasapiOut.Volume = volume;
+                        //wasapiOut.Play();
+                        //wasapiOut.Stopped += wasapiOut_Stopped;
+                        //AppSettings.isDsd = true;
+                        //AppSettings.isPlaying = true;
                     }
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
