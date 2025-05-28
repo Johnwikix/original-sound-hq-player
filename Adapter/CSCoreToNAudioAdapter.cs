@@ -25,10 +25,11 @@ namespace WinUIMusicPlayer.Adapter
             {
                 sampleRate = source.WaveFormat.SampleRate / 4;
             }
+            _source = source.ChangeSampleRate(sampleRate);
             // 转换 CSCore WaveFormat 到 NAudio WaveFormat
             _waveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(
-                sampleRate,
-                source.WaveFormat.Channels);
+                _source.WaveFormat.SampleRate,
+                _source.WaveFormat.Channels);
         }
 
         public NAudio.Wave.WaveFormat WaveFormat => _waveFormat;

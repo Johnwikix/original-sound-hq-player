@@ -970,7 +970,7 @@ namespace WinUIMusicPlayer.View
                 //await LoadMusic();
                 PlayTimeTextBlock.Text = "00:00/00:00";
                 musicPlaybackService.OutputDeviceChange();
-                musicPlaybackService.CScoreOutputDevice();
+                //musicPlaybackService.CScoreOutputDevice();
             }
             catch (Exception ex)
             {
@@ -1219,26 +1219,26 @@ namespace WinUIMusicPlayer.View
             {
                 VolumeSliderIcon.Glyph = "\ue74f";
                 musicPlaybackService.volume = 0;
-                if (musicPlaybackService.wasapiOut != null)
+                //if (musicPlaybackService.wasapiOut != null)
+                //{
+                //    musicPlaybackService.wasapiOut.Volume = 0;
+                //}
+                if (musicPlaybackService.waveChannel != null)
                 {
-                    musicPlaybackService.wasapiOut.Volume = 0;
-                }
-                if (musicPlaybackService.multiTypeAudioReader != null)
-                {
-                    musicPlaybackService.waveOut.Volume = 0;
+                    musicPlaybackService.waveChannel.Volume = 0;
                 }
             }
             else
             {
                 VolumeIconChange((int)VolumeSlider.Value);
                 musicPlaybackService.volume = (float)VolumeSlider.Value / 100;
-                if (musicPlaybackService.wasapiOut != null)
+                //if (musicPlaybackService.wasapiOut != null)
+                //{
+                //    musicPlaybackService.wasapiOut.Volume = (float)VolumeSlider.Value / 100;
+                //}
+                if (musicPlaybackService.waveChannel != null)
                 {
-                    musicPlaybackService.wasapiOut.Volume = (float)VolumeSlider.Value / 100;
-                }
-                if (musicPlaybackService.waveOut != null)
-                {
-                    musicPlaybackService.waveOut.Volume = (float)VolumeSlider.Value / 100;
+                    musicPlaybackService.waveChannel.Volume = (float)VolumeSlider.Value / 100;
                 }
             }
         }
@@ -1246,13 +1246,13 @@ namespace WinUIMusicPlayer.View
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             musicPlaybackService.volume = (float)e.NewValue / 100;
-            if (musicPlaybackService.wasapiOut != null)
+            //if (musicPlaybackService.wasapiOut != null)
+            //{
+            //    musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
+            //}
+            if (musicPlaybackService.waveChannel != null)
             {
-                musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
-            }
-            if (musicPlaybackService.waveOut != null)
-            {
-                musicPlaybackService.waveOut.Volume = musicPlaybackService.volume;
+                musicPlaybackService.waveChannel.Volume = musicPlaybackService.volume;
             }
             VolumeIconChange((int)e.NewValue);
             //_ = musicPlaybackService.SavePlayState();
@@ -1366,16 +1366,16 @@ namespace WinUIMusicPlayer.View
 
             if (AppSettings.isPlaying)
             {
-                if (musicPlaybackService.multiTypeAudioReader != null)
+                if (musicPlaybackService.waveChannel != null)
                 {
-                    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.multiTypeAudioReader.TotalTime.TotalSeconds));
-                    musicPlaybackService.multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
+                    musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
-                else if (musicPlaybackService.ffmpegDecoder != null)
-                {
-                    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, (double)musicPlaybackService.ffmpegDecoder.Length / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond));
-                    musicPlaybackService.ffmpegDecoder.Position = (long)(newPosition * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
-                }
+                //else if (musicPlaybackService.ffmpegDecoder != null)
+                //{
+                //    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, (double)musicPlaybackService.ffmpegDecoder.Length / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond));
+                //    musicPlaybackService.ffmpegDecoder.Position = (long)(newPosition * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
+                //}
             }
         }
 
@@ -1386,22 +1386,22 @@ namespace WinUIMusicPlayer.View
                 if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
                 {
                     double currentPlayPosition = 0;
-                    if (musicPlaybackService.multiTypeAudioReader != null)
+                    if (musicPlaybackService.waveChannel != null)
                     {
-                        currentPlayPosition = musicPlaybackService.multiTypeAudioReader.CurrentTime.TotalSeconds;
+                        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                         {
-                            musicPlaybackService.multiTypeAudioReader.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                         }
                     }
-                    else if (musicPlaybackService.ffmpegDecoder != null)
-                    {
-                        currentPlayPosition = (double)musicPlaybackService.ffmpegDecoder.Position / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond;
-                        if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
-                        {
-                            musicPlaybackService.ffmpegDecoder.Position = (long)(e.NewValue * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
-                        }
-                    }
+                    //else if (musicPlaybackService.ffmpegDecoder != null)
+                    //{
+                    //    currentPlayPosition = (double)musicPlaybackService.ffmpegDecoder.Position / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond;
+                    //    if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
+                    //    {
+                    //        musicPlaybackService.ffmpegDecoder.Position = (long)(e.NewValue * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
+                    //    }
+                    //}
                 }
             }
         }

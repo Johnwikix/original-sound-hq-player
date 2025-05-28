@@ -26,8 +26,9 @@ namespace WinUIMusicPlayer.Services
         public List<Music> currentPlayingList;
         public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
-        public IWaveProvider adapter;
-        public CSCore.SoundOut.WasapiOut wasapiOut;
+        public WaveStream adapter;
+        //public CSCore.SoundOut.WasapiOut wasapiOut;
+        public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
         private CSCore.CoreAudioAPI.MMDevice csCoreMMdevice = null;
         public IWaveSource ffmpegDecoder;
@@ -222,16 +223,16 @@ namespace WinUIMusicPlayer.Services
                     double currentTimeSeconds = 0;
                     double totalSeconds = 0;
 
-                    if (multiTypeAudioReader != null)
+                    if (waveChannel != null)
                     {
-                        currentTimeSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
-                        totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
+                        currentTimeSeconds = waveChannel.CurrentTime.TotalSeconds;
+                        totalSeconds = waveChannel.TotalTime.TotalSeconds;
                     }
-                    else if (ffmpegDecoder != null)
-                    {
-                        currentTimeSeconds = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond;
-                        totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
-                    }
+                    //else if (ffmpegDecoder != null)
+                    //{
+                    //    currentTimeSeconds = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                    //    totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
+                    //}
                     updateProgressSliders?.Invoke(this, currentTimeSeconds);
 
                     // 格式化显示时间
@@ -323,12 +324,12 @@ namespace WinUIMusicPlayer.Services
                         waveOut.Dispose();
                         waveOut = null;
                     }
-                    if (wasapiOut != null)
-                    {
-                        wasapiOut.Stop();
-                        wasapiOut.Dispose();
-                        wasapiOut = null;
-                    }
+                    //if (wasapiOut != null)
+                    //{
+                    //    wasapiOut.Stop();
+                    //    wasapiOut.Dispose();
+                    //    wasapiOut = null;
+                    //}
                     if (selectedDevice != null)
                     {
                         selectedDevice.Dispose();
@@ -346,7 +347,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                    CScoreOutputDevice();
+                    //CScoreOutputDevice();
                     if (ffmpegDecoder != null)
                     {
                         ResumeMusic();
@@ -368,7 +369,7 @@ namespace WinUIMusicPlayer.Services
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
                     OutputDeviceChange();
-                    CScoreOutputDevice();
+                    //CScoreOutputDevice();
 
                 }
             }
@@ -382,31 +383,40 @@ namespace WinUIMusicPlayer.Services
 
         public void ResumeMusic()
         {
-            if (multiTypeAudioReader != null)
+            if (waveChannel != null)
             {
                 SelectOutputDevice();
-                waveOut.Init(multiTypeAudioReader);
-                waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                //waveChannel = new WaveChannel32(multiTypeAudioReader);
+                //waveChannel.Volume = volume;
+                waveOut.Init(waveChannel);
+                waveOut.PlaybackStopped += WaveOut_PlaybackStopped;                
                 waveOut.Play();
-                AppSettings.isDsd = false;
+                //AppSettings.isDsd = false;
             }
-            else if (ffmpegDecoder != null)
-            {
-                try
-                {
-                    SelectCSCoreOutputDevice();
-                    wasapiOut.Device = csCoreMMdevice;
-                    wasapiOut.Initialize(ffmpegDecoder);
-                    wasapiOut.Volume = volume;
-                    wasapiOut.Stopped += wasapiOut_Stopped;
-                    wasapiOut.Play();
-                }
-                catch (Exception e)
-                {
-                    notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
-                }
-                AppSettings.isDsd = true;
-            }
+            //else if (ffmpegDecoder != null)
+            //{
+            //    try
+            //    {
+            //        //SelectCSCoreOutputDevice();
+            //        SelectOutputDevice();
+            //        adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
+            //        waveChannel = new WaveChannel32(adapter);
+            //        waveChannel.Volume = volume;
+            //        waveOut.Init(waveChannel);
+            //        //waveOut.Volume = volume;
+            //        waveOut.Play();
+            //        //wasapiOut.Device = csCoreMMdevice;
+            //        //wasapiOut.Initialize(ffmpegDecoder);
+            //        //wasapiOut.Volume = volume;
+            //        //wasapiOut.Stopped += wasapiOut_Stopped;
+            //        //wasapiOut.Play();
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
+            //    }
+            //    AppSettings.isDsd = true;
+            //}
             AppSettings.isPlaying = true;
             progressTimer.Start();
         }
@@ -449,34 +459,34 @@ namespace WinUIMusicPlayer.Services
         }
 
 
-        public void CScoreOutputDevice()
-        {
-            csCoreMMdevice = null;
-            using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
-            {
-                using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
-                {
-                    if (AppSettings.DeviceName != null)
-                    {
-                        foreach (var device in devices)
-                        {
-                            if (device.FriendlyName == AppSettings.DeviceName)
-                            {
-                                csCoreMMdevice = device;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (selectedDevice == null)
-                {
-                    csCoreMMdevice = csCoreEnumerator.GetDefaultAudioEndpoint(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.Role.Multimedia);
-                    AppSettings.DeviceName = csCoreMMdevice.FriendlyName;
-                }
-            }
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-        }
+        //public void CScoreOutputDevice()
+        //{
+        //    csCoreMMdevice = null;
+        //    using (var csCoreEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator())
+        //    {
+        //        using (var devices = csCoreEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.DeviceState.Active))
+        //        {
+        //            if (AppSettings.DeviceName != null)
+        //            {
+        //                foreach (var device in devices)
+        //                {
+        //                    if (device.FriendlyName == AppSettings.DeviceName)
+        //                    {
+        //                        csCoreMMdevice = device;
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        if (selectedDevice == null)
+        //        {
+        //            csCoreMMdevice = csCoreEnumerator.GetDefaultAudioEndpoint(CSCore.CoreAudioAPI.DataFlow.Render, CSCore.CoreAudioAPI.Role.Multimedia);
+        //            AppSettings.DeviceName = csCoreMMdevice.FriendlyName;
+        //        }
+        //    }
+        //    GC.Collect();
+        //    GC.WaitForPendingFinalizers();
+        //}
 
         public void SelectOutputDevice()
         {
@@ -509,24 +519,24 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void SelectCSCoreOutputDevice()
-        {
-            switch (AppSettings.OutputMode)
-            {
-                case "WasapiShared":
-                    wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, AppSettings.Latency);
-                    break;
-                case "WasapiExclusivePush":
-                    wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
-                    break;
-                case "WasapiExclusiveEvent":
-                    wasapiOut = new CSCore.SoundOut.WasapiOut(true, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
-                    break;
-                default:
-                    wasapiOut = new CSCore.SoundOut.WasapiOut();
-                    break;
-            }
-        }
+        //public void SelectCSCoreOutputDevice()
+        //{
+        //    switch (AppSettings.OutputMode)
+        //    {
+        //        case "WasapiShared":
+        //            wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, AppSettings.Latency);
+        //            break;
+        //        case "WasapiExclusivePush":
+        //            wasapiOut = new CSCore.SoundOut.WasapiOut(false, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+        //            break;
+        //        case "WasapiExclusiveEvent":
+        //            wasapiOut = new CSCore.SoundOut.WasapiOut(true, CSCore.CoreAudioAPI.AudioClientShareMode.Exclusive, AppSettings.Latency);
+        //            break;
+        //        default:
+        //            wasapiOut = new CSCore.SoundOut.WasapiOut();
+        //            break;
+        //    }
+        //}
 
         public async void WaveOut_PlaybackStopped(object sender, NAudio.Wave.StoppedEventArgs e)
         {
@@ -628,16 +638,18 @@ namespace WinUIMusicPlayer.Services
                         SelectOutputDevice();
                         multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                         multiTypeAudioReader.CurrentTime = currentPos;
+                        waveChannel = new WaveChannel32(multiTypeAudioReader);
+                        waveChannel.Volume = volume;
                         //multiTypeAudioReader.Volume = volume;
-                        waveOut.Init(multiTypeAudioReader);
-                        waveOut.Volume = volume;
+                        waveOut.Init(waveChannel);
+                        //waveOut.Volume = volume;
                     }
                     catch (Exception e)
                     {
                         Debug.WriteLine(e.Message);
                         Reset();
                         OutputDeviceChange();
-                        CScoreOutputDevice();
+                        //CScoreOutputDevice();
                         return false;
                     }
                 }
@@ -648,9 +660,11 @@ namespace WinUIMusicPlayer.Services
                         //SelectCSCoreOutputDevice();
                         SelectOutputDevice();
                         ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        adapter = new CSCoreToNAudioAdapter(ffmpegDecoder);                      
-                        waveOut.Init(adapter);
-                        waveOut.Volume = volume;
+                        adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
+                        waveChannel = new WaveChannel32(adapter);
+                        waveChannel.Volume = volume;
+                        waveOut.Init(waveChannel);
+                        //waveOut.Volume = volume;
                         //wasapiOut.Device = csCoreMMdevice;
                         //wasapiOut.Initialize(ffmpegDecoder);
                     }
@@ -665,7 +679,7 @@ namespace WinUIMusicPlayer.Services
                         notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
                         Reset();
                         OutputDeviceChange();
-                        CScoreOutputDevice();
+                        //CScoreOutputDevice();
                         return false;
                     }
                 }
@@ -739,23 +753,25 @@ namespace WinUIMusicPlayer.Services
                     {
                         updateProgressSliders?.Invoke(this, 0);
                     }
-                    if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
-                    {
-                        waveOut.Play();
-                        waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
-                        AppSettings.isDsd = false;
-                    }
-                    else
-                    {
-                        waveOut.Play();
-                        waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
-                        AppSettings.isDsd = false;
-                        //wasapiOut.Volume = volume;
-                        //wasapiOut.Play();
-                        //wasapiOut.Stopped += wasapiOut_Stopped;
-                        //AppSettings.isDsd = true;
-                        //AppSettings.isPlaying = true;
-                    }
+                    waveOut.Play();
+                    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    //if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
+                    //{
+                    //    waveOut.Play();
+                    //    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    //    //AppSettings.isDsd = false;
+                    //}
+                    //else
+                    //{
+                    //    waveOut.Play();
+                    //    waveOut.PlaybackStopped += WaveOut_PlaybackStopped;
+                    //    //AppSettings.isDsd = false;
+                    //    //wasapiOut.Volume = volume;
+                    //    //wasapiOut.Play();
+                    //    //wasapiOut.Stopped += wasapiOut_Stopped;
+                    //    //AppSettings.isDsd = true;
+                    //    //AppSettings.isPlaying = true;
+                    //}
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
                     //_ = Task.Run(() => SavePlayState());
@@ -772,7 +788,7 @@ namespace WinUIMusicPlayer.Services
             {
                 Reset();
                 OutputDeviceChange();
-                CScoreOutputDevice();
+                //CScoreOutputDevice();
             }
         }
 
@@ -788,11 +804,10 @@ namespace WinUIMusicPlayer.Services
                 waveOut = null;
             }
 
-            if (wasapiOut != null)
+            if (waveChannel != null)
             {
-                wasapiOut.Stop();
-                wasapiOut.Dispose();
-                wasapiOut = null;
+                waveChannel.Dispose();
+                waveChannel = null;
             }
 
             if (multiTypeAudioReader != null)
@@ -825,15 +840,14 @@ namespace WinUIMusicPlayer.Services
             if (waveOut != null)
             {
                 waveOut.Stop();
-                waveOut.Dispose();
+                waveOut.Dispose();                
                 waveOut = null;
             }
 
-            if (wasapiOut != null)
+            if (waveChannel != null)
             {
-                wasapiOut.Stop();
-                wasapiOut.Dispose();
-                wasapiOut = null;
+                waveChannel.Dispose();
+                waveChannel = null;
             }
 
             if (ffmpegDecoder != null)
@@ -878,12 +892,12 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Stop();
             }
 
-            if (wasapiOut != null)
-            {
-                wasapiOut.Stop();
-                AppSettings.isPlaying = false;
-                progressTimer.Stop();
-            }
+            //if (wasapiOut != null)
+            //{
+            //    wasapiOut.Stop();
+            //    AppSettings.isPlaying = false;
+            //    progressTimer.Stop();
+            //}
         }
 
         public void PlayButton()
@@ -907,13 +921,13 @@ namespace WinUIMusicPlayer.Services
                         progressTimer.Stop();
                     }
                 }
-                if (wasapiOut != null)
-                {
-                    isPausing = true;
-                    wasapiOut.Pause();
-                    AppSettings.isPlaying = false;
-                    progressTimer.Stop();
-                }
+                //if (wasapiOut != null)
+                //{
+                //    isPausing = true;
+                //    wasapiOut.Pause();
+                //    AppSettings.isPlaying = false;
+                //    progressTimer.Stop();
+                //}
             }
             else
             {
@@ -934,14 +948,14 @@ namespace WinUIMusicPlayer.Services
                     }
 
                 }
-                else if (wasapiOut != null)
-                {
-                    isPausing = false;
-                    wasapiOut.Play();
-                    AppSettings.isPlaying = true;
-                    progressTimer.Start();
+                //else if (wasapiOut != null)
+                //{
+                //    isPausing = false;
+                //    wasapiOut.Play();
+                //    AppSettings.isPlaying = true;
+                //    progressTimer.Start();
 
-                }
+                //}
                 else
                 {
                     if (currentPlayingMusic != null)
