@@ -21,7 +21,8 @@ namespace WinUIMusicPlayer.Model
         public static bool isPlaying { get; set; } = false;
         public static string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public static string LrcAPIAuth { get; set; }
-        //public static bool isDsd { get; set; } = false;
+        public static bool isDsd { get; set; } = false;
+        public static float dsdGain { get; set; } = 6f;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;

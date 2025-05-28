@@ -513,6 +513,9 @@ namespace WinUIMusicPlayer.Services
                 case "DirectSound":
                     waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
                     break;
+                case "ASIO":
+                    waveOut = new NAudio.Wave.AsioOut();
+                    break;
                 default:
                     waveOut = new WaveOutEvent();
                     break;
@@ -543,38 +546,38 @@ namespace WinUIMusicPlayer.Services
         //    }
         //}
 
-        public async void WaveOut_PlaybackStopped(object sender, NAudio.Wave.StoppedEventArgs e)
-        {
-            bool isNaturalEnd = false;
-            if (waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
-            {
-                double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
-                double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
-                isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
-            }
+        //public async void WaveOut_PlaybackStopped(object sender, NAudio.Wave.StoppedEventArgs e)
+        //{
+        //    bool isNaturalEnd = false;
+        //    if (waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
+        //    {
+        //        double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
+        //        double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
+        //        isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
+        //    }
 
-            if (isPausing)
-            {
-                return;
-            }
+        //    if (isPausing)
+        //    {
+        //        return;
+        //    }
 
-            if (isManualSelect)
-            {
-                isManualSelect = false;
-                return;
-            }
+        //    if (isManualSelect)
+        //    {
+        //        isManualSelect = false;
+        //        return;
+        //    }
 
-            if (isSettingsChangeStop)
-            {
-                isSettingsChangeStop = false;
-                return;
-            }
+        //    if (isSettingsChangeStop)
+        //    {
+        //        isSettingsChangeStop = false;
+        //        return;
+        //    }
 
-            if (isNaturalEnd)
-            {
-                AutoPlayNextTrack();
-            }
-        }
+        //    if (isNaturalEnd)
+        //    {
+        //        AutoPlayNextTrack();
+        //    }
+        //}
 
 
         public void AutoPlayNextTrack()
@@ -638,16 +641,17 @@ namespace WinUIMusicPlayer.Services
                     return false;
                 }
                 Reset();
+                SelectOutputDevice();
                 if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
                 {
                     try
                     {
-                        SelectOutputDevice();
+                        AppSettings.isDsd = false;                        
                         var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                         multiTypeAudioReader.CurrentTime = currentPos;
                         waveChannel = new WaveChannel32(multiTypeAudioReader);
                         waveChannel.Volume = volume;
-                        waveOut.Init(waveChannel);
+                        waveOut.Init(waveChannel);                        
                         //waveOut.Volume = volume;
                     }
                     catch (Exception e)
@@ -664,11 +668,11 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         //SelectCSCoreOutputDevice();
-                        SelectOutputDevice();
+                        AppSettings.isDsd = true;
                         var ffmpegDecoder = new FfmpegDecoder(music.Path);
                         var adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
                         waveChannel = new WaveChannel32(adapter);
-                        waveChannel.Volume = volume;
+                        waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                         waveOut.Init(waveChannel);
                         //waveOut.Volume = volume;
                         //wasapiOut.Device = csCoreMMdevice;

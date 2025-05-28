@@ -1243,7 +1243,7 @@ namespace WinUIMusicPlayer.View
                 //}
                 if (musicPlaybackService.waveChannel != null)
                 {
-                    musicPlaybackService.waveChannel.Volume = (float)VolumeSlider.Value / 100;
+                    musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? ((float)VolumeSlider.Value / 100) * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : (float)VolumeSlider.Value / 100;
                 }
             }
         }
@@ -1257,7 +1257,7 @@ namespace WinUIMusicPlayer.View
             //}
             if (musicPlaybackService.waveChannel != null)
             {
-                musicPlaybackService.waveChannel.Volume = musicPlaybackService.volume;
+                musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : musicPlaybackService.volume;
             }
             VolumeIconChange((int)e.NewValue);
             //_ = musicPlaybackService.SavePlayState();
