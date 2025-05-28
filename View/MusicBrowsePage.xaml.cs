@@ -1135,11 +1135,14 @@ namespace WinUIMusicPlayer.View
             try
             {
                 musicPlaybackService.currentPlayingMusic = music;
-                LoadLyricsToUI();
-                UpdatePlayBar(music);
-                UpdateViewList(music);
-                UpdateCurrentPlayList();
-                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    LoadLyricsToUI();
+                    UpdatePlayBar(music);
+                    UpdateViewList(music);
+                    UpdateCurrentPlayList();
+                    _=musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                });
             }
             catch (Exception ex)
             {
