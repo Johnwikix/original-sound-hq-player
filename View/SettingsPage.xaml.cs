@@ -443,7 +443,7 @@ namespace WinUIMusicPlayer.View
             if (!isInitializing)
             {
                 AppSettings.Latency = (int)LatencyNumberBox.Value;
-                AppSettings.OnOutputSettingsChanged();
+                //AppSettings.OnOutputSettingsChanged();
                 _ = SaveSetting();
             }
         }
