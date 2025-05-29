@@ -505,10 +505,10 @@
     <value>Error</value>
   </data>
   <data name="DSDPlaybackFailed" xml:space="preserve">
-    <value>DSD exclusive playback failed</value>
+    <value>DSD playback failed</value>
   </data>
   <data name="SwitchingToSharedMode" xml:space="preserve">
-    <value>Please try switching to shared mode</value>
+    <value>Please try switching the output mode</value>
   </data>
   <data name="FileDoNotExist" xml:space="preserve">
     <value>File does not exist</value>
@@ -584,5 +584,8 @@
   </data>
   <data name="IconPause" xml:space="preserve">
     <value>Pause</value>
+  </data>
+  <data name="SettingDSDGain.Text" xml:space="preserve">
+    <value>DSD gain (+db)</value>
   </data>
 </root>

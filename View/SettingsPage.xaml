@@ -42,6 +42,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -63,6 +64,10 @@
                             <!-- 缓冲区大小输入 -->
                             <TextBlock x:Uid="SettingBufferSize" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
                             <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" ValueChanged="LatencyNumberBox_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+
+                            <!-- DSD增益设置 -->
+                            <TextBlock x:Uid="SettingDSDGain" FontSize="14"  Grid.Column="0" Grid.Row="3" Margin="10" VerticalAlignment="Center"/>
+                            <NumberBox x:Name="DSDGainNumberBox"  Grid.Column="1" Grid.Row="3" Margin="10" ValueChanged="DSDGain_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>

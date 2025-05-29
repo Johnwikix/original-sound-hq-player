@@ -505,10 +505,10 @@
     <value>错误</value>
   </data>
   <data name="DSDPlaybackFailed" xml:space="preserve">
-    <value>DSD独占播放失败</value>
+    <value>DSD播放失败</value>
   </data>
   <data name="SwitchingToSharedMode" xml:space="preserve">
-    <value>请尝试切换至共享模式</value>
+    <value>请尝试切换输出模式</value>
   </data>
   <data name="FileDoNotExist" xml:space="preserve">
     <value>文件不存在</value>
@@ -584,5 +584,8 @@
   </data>
   <data name="IconPause" xml:space="preserve">
     <value>暂停</value>
+  </data>
+  <data name="SettingDSDGain.Text" xml:space="preserve">
+    <value>DSD增益(+db)</value>
   </data>
 </root>

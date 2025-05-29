@@ -20,5 +20,6 @@ namespace WinUIMusicPlayer.Model
         public int maxCoverPreLoadNum { get; set; } = 100;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
+        public float dsdGain { get; set; } = 6f;
     }
 }

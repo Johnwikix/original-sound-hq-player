@@ -68,6 +68,7 @@ namespace WinUIMusicPlayer.View
             newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+            newSettings.dsdGain = AppSettings.dsdGain;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -127,6 +128,7 @@ namespace WinUIMusicPlayer.View
             LatencyNumberBox.Value = AppSettings.Latency;
             LrcAPITextBox.Text = AppSettings.LrcAPISource;
             LrcAPIAuthTextBox.Text = AppSettings.LrcAPIAuth;
+            DSDGainNumberBox.Value = AppSettings.dsdGain;
             // 设置初始的默认播放列表
             foreach (ComboBoxItem item in DefualtPlayListComboBox.Items)
             {
@@ -479,6 +481,15 @@ namespace WinUIMusicPlayer.View
             if (!isInitializing)
             {
                 AppSettings.isAutoLyricsEnabled = AutoLyricsToggle.IsOn;
+                _ = SaveSetting();
+            }
+        }
+
+        private void DSDGain_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+        {
+            if (!isInitializing)
+            {
+                AppSettings.dsdGain = (float) DSDGainNumberBox.Value;
                 _ = SaveSetting();
             }
         }

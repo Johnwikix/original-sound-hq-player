@@ -505,10 +505,10 @@
     <value>Ошибка</value>
   </data>
   <data name="DSDPlaybackFailed" xml:space="preserve">
-    <value>Ошибка воспроизведения DSD в esclusивном режиме</value>
+    <value>Ошибка воспроизведения DSD</value>
   </data>
   <data name="SwitchingToSharedMode" xml:space="preserve">
-    <value>Попробуйте переключиться на общий режим</value>
+    <value>Попробуйте переключить режим вывода</value>
   </data>
   <data name="FileDoNotExist" xml:space="preserve">
     <value>Файл не существует</value>
@@ -584,5 +584,8 @@
   </data>
   <data name="IconPause" xml:space="preserve">
     <value>Пауза</value>
+  </data>
+  <data name="SettingDSDGain.Text" xml:space="preserve">
+    <value>Усиление DSD (+db)</value>
   </data>
 </root>

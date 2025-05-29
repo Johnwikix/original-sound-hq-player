@@ -505,10 +505,10 @@
     <value>エラー</value>
   </data>
   <data name="DSDPlaybackFailed" xml:space="preserve">
-    <value>DSD独占再生に失敗しました</value>
+    <value>DSD再生に失敗しました</value>
   </data>
   <data name="SwitchingToSharedMode" xml:space="preserve">
-    <value>共有モードに切り替えてみてください</value>
+    <value>出力モードを切り替えてみてください</value>
   </data>
   <data name="FileDoNotExist" xml:space="preserve">
     <value>ファイルが存在しません</value>
@@ -584,5 +584,8 @@
   </data>
   <data name="IconPause" xml:space="preserve">
     <value>パウズ</value>
+  </data>
+  <data name="SettingDSDGain.Text" xml:space="preserve">
+    <value>DSDゲイン(+db)</value>
   </data>
 </root>

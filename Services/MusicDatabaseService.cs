@@ -646,6 +646,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.maxCoverPreLoadNum = settings.maxCoverPreLoadNum;
                 AppSettings.isRunningBackend = settings.isRunningBackend;
                 AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
+                AppSettings.dsdGain = settings.dsdGain;
             }
         }
 
