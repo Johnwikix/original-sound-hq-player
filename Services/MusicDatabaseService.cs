@@ -647,6 +647,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.isRunningBackend = settings.isRunningBackend;
                 AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
                 AppSettings.dsdGain = settings.dsdGain;
+                AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
             }
         }
 

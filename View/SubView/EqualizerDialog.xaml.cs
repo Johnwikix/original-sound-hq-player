@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using WinUIMusicPlayer.Model;
 using System.Diagnostics;
+using WinUIMusicPlayer.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -42,6 +43,17 @@ namespace WinUIMusicPlayer.View.SubView
                 Slider32Hz, Slider64Hz, Slider125Hz, Slider250Hz, Slider500Hz,
                 Slider1kHz, Slider2kHz, Slider4kHz, Slider8kHz, Slider16kHz
             };
+            ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
+            Slider32Hz.Value = AppSettings.equalizer["32Hz"];
+            Slider64Hz.Value = AppSettings.equalizer["64Hz"];
+            Slider125Hz.Value = AppSettings.equalizer["125Hz"];
+            Slider250Hz.Value = AppSettings.equalizer["250Hz"];
+            Slider500Hz.Value = AppSettings.equalizer["500Hz"];
+            Slider1kHz.Value = AppSettings.equalizer["1kHz"];
+            Slider2kHz.Value = AppSettings.equalizer["2kHz"];
+            Slider4kHz.Value = AppSettings.equalizer["4kHz"];
+            Slider8kHz.Value = AppSettings.equalizer["8kHz"];
+            Slider16kHz.Value = AppSettings.equalizer["16kHz"];
         }
 
         private void InitializePresets()
@@ -63,9 +75,9 @@ namespace WinUIMusicPlayer.View.SubView
             if (sender is Slider slider)
             {
                 string frequency = slider.Tag?.ToString() ?? "Unknown";
-                double value = Math.Round(slider.Value, 1);                
-                AppData.equalizer[frequency] = value;
-                Debug.WriteLine($"Slider {frequency} changed to {AppData.equalizer[frequency]}");
+                double value = Math.Round(slider.Value, 1);
+                AppSettings.equalizer[frequency] = value;
+                Debug.WriteLine($"Slider {frequency} changed to {AppSettings.equalizer[frequency]}");
                 // 这里可以添加实际的均衡器逻辑
                 // ApplyEqualizerSettings();
             }
@@ -75,7 +87,6 @@ namespace WinUIMusicPlayer.View.SubView
         public Dictionary<string, double> GetEqualizerSettings()
         {
             var settings = new Dictionary<string, double>();
-
             foreach (var slider in _sliders)
             {
                 if (slider.Tag?.ToString() is string frequency)
@@ -83,7 +94,6 @@ namespace WinUIMusicPlayer.View.SubView
                     settings[frequency] = Math.Round(slider.Value, 1);
                 }
             }
-
             return settings;
         }
 
@@ -103,11 +113,16 @@ namespace WinUIMusicPlayer.View.SubView
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine($"Equalizer toggled: {ToggleSwitchEqualizer.IsOn}");
-            AppData.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
+            AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
+            SaveSettings settings = await MusicDatabaseService.GetSettings();
+            if (settings != null) { 
+                settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+                await MusicDatabaseService.UpdateSettings(settings);
+            }
             this.Hide();
         }
     }

@@ -13,6 +13,8 @@ namespace WinUIMusicPlayer.Model
 
         public static event EventHandler OutputSettingsChanged;
 
+        public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
+
         public static List<string> outputDeviceList = new List<string>();
 
         public static string DeviceName = "Default";
@@ -30,9 +32,29 @@ namespace WinUIMusicPlayer.Model
         public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
+
+        public static Dictionary<string, double> equalizer = new Dictionary<string, double>
+        {
+            {"32Hz", 0},   // 32Hz 初始增益 0dB
+            {"64Hz", 0},   // 64Hz 初始增益 0dB
+            {"125Hz", 0},  // 125Hz 初始增益 0dB
+            {"250Hz", 0},  // 250Hz 初始增益 0dB
+            {"500Hz", 0},  // 500Hz 初始增益 0dB
+            {"1kHz", 0},   // 1kHz 初始增益 0dB
+            {"2kHz", 0},   // 2kHz 初始增益 0dB
+            {"4kHz", 0},   // 4kHz 初始增益 0dB
+            {"8kHz", 0},   // 8kHz 初始增益 0dB
+            {"16kHz", 0}   // 16kHz 初始增益 0dB
+        };
+        public static bool IsEqualizerEnabled { get; set; } = false;  
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        public static void EqualizerChanged()
+        {
+            EqualizerChangedEvent?.Invoke(null, equalizer);
         }
     }
 }
