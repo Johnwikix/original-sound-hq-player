@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Graphics.Imaging;
@@ -508,6 +509,71 @@ namespace WinUIMusicPlayer.Utils
 
             }
             return buffer;
+        }
+
+        // 将字典转换为JSON字符串的方法
+        public static string ConvertToJson(Dictionary<string, double> dict)
+        {
+            if (dict == null)
+            {
+                throw new ArgumentNullException(nameof(dict), "字典不能为空");
+            }
+
+            try
+            {
+                // 使用System.Text.Json进行序列化
+                return JsonSerializer.Serialize(dict);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"序列化时出错: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 将JSON字符串转回字典的方法
+        public static Dictionary<string, double> ConvertToDictionary(string jsonString)
+        {
+            if (string.IsNullOrEmpty(jsonString))
+            {
+                return new Dictionary<string, double>
+               {
+                   {"32Hz", 0},
+                   {"64Hz", 0},
+                   {"125Hz", 0},
+                   {"250Hz", 0},
+                   {"500Hz", 0},
+                   {"1kHz", 0},
+                   {"2kHz", 0},
+                   {"4kHz", 0},
+                   {"8kHz", 0},
+                   {"16kHz", 0}
+               };
+            }
+
+            try
+            {
+                // 使用System.Text.Json进行反序列化  
+                return JsonSerializer.Deserialize<Dictionary<string, double>>(jsonString);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"反序列化时出错: {ex.Message}");
+                return new Dictionary<string, double>
+               {
+                   {"32Hz", 0},
+                   {"64Hz", 0},
+                   {"125Hz", 0},
+                   {"250Hz", 0},
+                   {"500Hz", 0},
+                   {"1kHz", 0},
+                   {"2kHz", 0},
+                   {"4kHz", 0},
+                   {"8kHz", 0},
+                   {"16kHz", 0}
+               };
+            }
+            
         }
 
     }

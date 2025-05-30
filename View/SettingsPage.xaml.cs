@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -53,7 +54,7 @@ namespace WinUIMusicPlayer.View
 
         private async Task SaveSetting()
         {
-            var settings = await MusicDatabaseService.GetSettings();
+            SaveSettings settings = await MusicDatabaseService.GetSettings();
             SaveSettings newSettings = new SaveSettings();
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
@@ -69,6 +70,8 @@ namespace WinUIMusicPlayer.View
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;
+            newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

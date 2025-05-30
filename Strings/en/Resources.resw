@@ -588,4 +588,7 @@
   <data name="SettingDSDGain.Text" xml:space="preserve">
     <value>DSD gain (+db)</value>
   </data>
+  <data name="EqualizerDialogTitle.Text" xml:space="preserve">
+    <value>Equalizer (db)</value>
+  </data>
 </root>

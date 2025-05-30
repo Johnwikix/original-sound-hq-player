@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using WinUIMusicPlayer.Model;
 using System.Diagnostics;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -120,6 +121,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             SaveSettings settings = await MusicDatabaseService.GetSettings();
             if (settings != null) { 
+                settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
                 await MusicDatabaseService.UpdateSettings(settings);
             }

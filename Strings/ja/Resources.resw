@@ -588,4 +588,7 @@
   <data name="SettingDSDGain.Text" xml:space="preserve">
     <value>DSDゲイン(+db)</value>
   </data>
+  <data name="EqualizerDialogTitle.Text" xml:space="preserve">
+    <value>イコライザ (db)</value>
+  </data>
 </root>

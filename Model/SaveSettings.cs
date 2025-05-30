@@ -22,6 +22,7 @@ namespace WinUIMusicPlayer.Model
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
         public float dsdGain { get; set; } = 6f;
+        public string equalizerStr { get; set; }
         public bool IsEqualizerEnabled { get; set; } = false;
     }
 }
