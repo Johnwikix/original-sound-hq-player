@@ -63,26 +63,12 @@ namespace WinUIMusicPlayer.View.SubView
             if (sender is Slider slider)
             {
                 string frequency = slider.Tag?.ToString() ?? "Unknown";
-                double value = Math.Round(slider.Value, 1);
-
+                double value = Math.Round(slider.Value, 1);                
+                AppData.equalizer[frequency] = value;
+                Debug.WriteLine($"Slider {frequency} changed to {AppData.equalizer[frequency]}");
                 // 这里可以添加实际的均衡器逻辑
                 // ApplyEqualizerSettings();
             }
-        }
-
-        private void OnPresetChanged(object sender, SelectionChangedEventArgs e)
-        {
-            //if (PresetComboBox.SelectedItem is ComboBoxItem selectedItem &&
-            //    selectedItem.Tag?.ToString() is string presetName &&
-            //    _presets.ContainsKey(presetName))
-            //{
-            //    var values = _presets[presetName];
-
-            //    for (int i = 0; i < _sliders.Count && i < values.Length; i++)
-            //    {
-            //        _sliders[i].Value = values[i];
-            //    }
-            //}
         }
 
         // 获取当前均衡器设置
@@ -108,21 +94,10 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 if (slider.Tag?.ToString() is string frequency &&
                     settings.ContainsKey(frequency))
-                {
-                    slider.Value = settings[frequency];
-                }
+                    {
+                        slider.Value = settings[frequency];
+                    }
             }
-        }
-
-        // 重置所有滑块到0
-        private void ResetSliders()
-        {
-            foreach (var slider in _sliders)
-            {
-                slider.Value = 0;
-            }
-
-            //PresetComboBox.SelectedIndex = 0; // 选择"平坦"预设
         }
 
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
