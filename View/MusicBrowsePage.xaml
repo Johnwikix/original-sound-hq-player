@@ -343,6 +343,10 @@
 
             </Grid>
             <StackPanel Grid.Row="1" HorizontalAlignment="Right"  Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 0">
+                <Button x:Name="EqualizerButton" Click="EqualizerButton_Click" Margin="10 0 0 0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;"/>
+                </Button>
                 <Button x:Name="CurrentPlayListButton" Click="CurrentPlayListButton_Click" Margin="10 0 0 0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;"/>

@@ -21,6 +21,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View.SubView;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
@@ -64,6 +65,7 @@ namespace WinUIMusicPlayer.View
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
         private int _lastLyricIndex = -1;
+        private EqualizerDialog equalizerDialog;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -89,6 +91,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
             musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
             LyricsListView.ItemsSource = _uiLyrics;
+            equalizerDialog = new EqualizerDialog();
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
@@ -1495,6 +1498,13 @@ namespace WinUIMusicPlayer.View
                 package.SetText(author);
                 Clipboard.SetContent(package);
             }
+        }
+
+        private void EqualizerButton_Click(object sender, RoutedEventArgs e)
+        {
+            equalizerDialog.RequestedTheme = AppSettings.elementTheme;
+            equalizerDialog.XamlRoot = this.XamlRoot;
+            _=equalizerDialog.ShowAsync();
         }
     }
 }

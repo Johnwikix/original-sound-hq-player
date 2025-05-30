@@ -30,6 +30,7 @@
     <None Remove="View\SongCollectionPage.xaml" />
     <None Remove="View\SongListPage.xaml" />
     <None Remove="View\SubView\AlbumDetailWindow.xaml" />
+    <None Remove="View\SubView\EqualizerDialog.xaml" />
     <None Remove="View\SubView\MusicDetailsWindow.xaml" />
     <None Remove="View\SubView\ProgressDialog.xaml" />
   </ItemGroup>
@@ -105,6 +106,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\SubView\EqualizerDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\NotifyIconControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -151,6 +155,9 @@
     <Page Update="View\SongListPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ViewModel\" />
   </ItemGroup>
 
   <!--
