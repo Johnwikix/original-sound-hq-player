@@ -1396,10 +1396,10 @@ namespace WinUIMusicPlayer.View
                     double currentPlayPosition = 0;
                     if (musicPlaybackService.waveChannel != null)
                     {
-                        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+                        currentPlayPosition = (double)musicPlaybackService.waveChannel.Position / musicPlaybackService.waveChannel.WaveFormat.SampleRate;
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                         {
-                            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                            musicPlaybackService.waveChannel.Position = (long)(e.NewValue * musicPlaybackService.waveChannel.WaveFormat.SampleRate * 8);
                         }
                     }
                     //else if (musicPlaybackService.ffmpegDecoder != null)
