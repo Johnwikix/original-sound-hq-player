@@ -581,6 +581,7 @@ namespace WinUIMusicPlayer.Services
             // 如果音频正在播放，需要重新初始化
             if (AppSettings.IsEqualizerEnabled &&!isEnableEq)
             {
+                progressTimer.Stop();
                 var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
                 if (waveOut != null) {
                     waveOut.Stop();
@@ -589,6 +590,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 await InitializeAudioResources(currentPlayingMusic, currentPos);
                 waveOut.Play();
+                progressTimer.Start();
             }
         }
 
@@ -637,8 +639,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         AppSettings.isDsd = false;                        
                         var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
-                        multiTypeAudioReader.CurrentTime = currentPos;
                         waveChannel = new WaveChannel32(multiTypeAudioReader);
+                        waveChannel.CurrentTime = currentPos;
                         waveChannel.Volume = volume;
                         //waveOut.Init(waveChannel);                        
                         //waveOut.Volume = volume;
@@ -659,6 +661,7 @@ namespace WinUIMusicPlayer.Services
                         var ffmpegDecoder = new FfmpegDecoder(music.Path);
                         var adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
                         waveChannel = new WaveChannel32(adapter);
+                        waveChannel.CurrentTime = currentPos;
                         waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                         //waveOut.Init(waveChannel);
                     }
