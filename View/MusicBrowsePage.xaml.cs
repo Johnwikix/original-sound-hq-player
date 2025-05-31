@@ -92,6 +92,19 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
             LyricsListView.ItemsSource = _uiLyrics;
             equalizerDialog = new EqualizerDialog();
+            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
+            {
+                float feq= FrequencyMap[frequency];
+                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            };
+            equalizerDialog.clearEqualizer += (s, e) =>
+            {
+                if (!AppSettings.IsEqualizerEnabled) {
+                    musicPlaybackService.ClearEqualizer();
+                } else {
+                    musicPlaybackService.SetEqualizer();
+                }                
+            };
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();
@@ -1399,7 +1412,9 @@ namespace WinUIMusicPlayer.View
                         currentPlayPosition = (double)musicPlaybackService.waveChannel.Position / musicPlaybackService.waveChannel.WaveFormat.SampleRate;
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                         {
+                            DateTime startTime = DateTime.Now;
                             musicPlaybackService.waveChannel.Position = (long)(e.NewValue * musicPlaybackService.waveChannel.WaveFormat.SampleRate * 8);
+                            Debug.WriteLine($"ProgressSlider_ValueChangedÍê³É,ºÄÊ±:{(DateTime.Now - startTime).TotalMilliseconds}ms");
                         }
                     }
                     //else if (musicPlaybackService.ffmpegDecoder != null)
@@ -1505,6 +1520,7 @@ namespace WinUIMusicPlayer.View
             equalizerDialog.RequestedTheme = AppSettings.elementTheme;
             equalizerDialog.XamlRoot = this.XamlRoot;
             _=equalizerDialog.ShowAsync();
+           
         }
     }
 }

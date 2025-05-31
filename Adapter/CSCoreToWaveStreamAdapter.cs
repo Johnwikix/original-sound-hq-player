@@ -23,23 +23,21 @@ namespace WinUIMusicPlayer.Adapter
             _source = source;
             _ownsSource = ownsSource;
 
-            // 处理超高采样率
-            int sampleRate = source.WaveFormat.SampleRate; // 使用 CSCore 的 WaveFormat
-            if (sampleRate > 384000 && sampleRate <= 768000)
+            // 只在超高采样率下进行转换，并缓存结果
+            int originalSampleRate = source.WaveFormat.SampleRate;
+            if (originalSampleRate > 384000)
             {
-                sampleRate = sampleRate / 2;
-                _source = _source.ChangeSampleRate(sampleRate);
-            }
-            else if (sampleRate > 768000 && sampleRate <= 1536000)
-            {
-                sampleRate = sampleRate / 4;
-                _source = _source.ChangeSampleRate(sampleRate);
+                int targetSampleRate;
+                if (originalSampleRate <= 768000)
+                    targetSampleRate = originalSampleRate / 2;
+                else
+                    targetSampleRate = originalSampleRate / 4;
+                _source = _source.ToSampleSource().ChangeSampleRate(targetSampleRate).ToWaveSource();
             }
 
-            // 转换 CSCore WaveFormat 到 NAudio WaveFormat
             _waveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(
-                _source.WaveFormat.SampleRate, // 使用 CSCore 的 WaveFormat
-                _source.WaveFormat.Channels);  // 使用 CSCore 的 WaveFormat
+                _source.WaveFormat.SampleRate,
+                _source.WaveFormat.Channels);
         }
 
         public override NAudio.Wave.WaveFormat WaveFormat => _waveFormat; // 明确返回类型
@@ -64,21 +62,10 @@ namespace WinUIMusicPlayer.Adapter
                 // 确保位置在有效范围内
                 value = Math.Max(0, Math.Min(value, Length));
 
-                // 计算样本位置
-                long samplePosition = value / (_waveFormat.BitsPerSample / 8 * _waveFormat.Channels);
-
-                // 设置 CSCore 源的位置
                 if (_source.CanSeek)
                 {
-                    // 计算样本数
-                    long sampleCount = value / (_waveFormat.BitsPerSample / 8 * _waveFormat.Channels);
-
-                    // 计算对应的时间跨度
-                    double totalSeconds = (double)sampleCount / _waveFormat.SampleRate;
-                    TimeSpan timePosition = TimeSpan.FromSeconds(totalSeconds);
-
-                    // 设置 CSCore 源的位置
-                    _source.SetPosition(timePosition);
+                    // 直接设置字节位置（避免时间转换）
+                    _source.Position = value;
                     _position = value;
                 }
                 else

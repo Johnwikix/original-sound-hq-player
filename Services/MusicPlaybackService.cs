@@ -1,5 +1,6 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
+using CSCore.Streams.Effects;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System;
@@ -10,8 +11,10 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Media.Audio;
 using WinUIMusicPlayer.Adapter;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Provider;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
@@ -51,6 +54,20 @@ namespace WinUIMusicPlayer.Services
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
         private CancellationTokenSource _lyricsCancellationTokenSource;
+        private CustomEqualizer equalizer;
+        private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
+        {
+            new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 64, Gain = (float)AppSettings.equalizer["64Hz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 125, Gain = (float)AppSettings.equalizer["125Hz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 250, Gain = (float)AppSettings.equalizer["250Hz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 500, Gain = (float)AppSettings.equalizer["500Hz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 1000, Gain = (float)AppSettings.equalizer["1kHz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 2000, Gain = (float)AppSettings.equalizer["2kHz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 4000, Gain = (float)AppSettings.equalizer["4kHz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 8000, Gain = (float)AppSettings.equalizer["8kHz"], Bandwidth = 1.0f},
+            new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
+        };
 
         public MusicPlaybackService()
         {
@@ -341,10 +358,6 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                    //if (ffmpegDecoder != null)
-                    //{
-                    //    ResumeMusic();
-                    //}
                 }
                 else
                 {
@@ -370,15 +383,17 @@ namespace WinUIMusicPlayer.Services
 
         public void ResumeMusic()
         {
-            if (waveChannel != null)
+            if (waveChannel != null && equalizer != null)
             {
                 SelectOutputDevice();
-                //waveChannel = new WaveChannel32(multiTypeAudioReader);
-                //waveChannel.Volume = volume;
-                waveOut.Init(waveChannel);
-                //waveOut.PlaybackStopped += WaveOut_PlaybackStopped;                
+                waveOut.Init(equalizer);               
                 waveOut.Play();
-                //AppSettings.isDsd = false;
+                
+            } else if (waveChannel != null)
+            {
+                SelectOutputDevice();
+                waveOut.Init(waveChannel);             
+                waveOut.Play();
             }
             AppSettings.isPlaying = true;
             progressTimer.Start();
@@ -540,6 +555,51 @@ namespace WinUIMusicPlayer.Services
             playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
         }
 
+        public void UpdateEqualizerSettings()
+        {
+            equalizerBands = new CustomEqualizerBand[]
+            {
+                    new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 64, Gain = (float)AppSettings.equalizer["64Hz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 125, Gain = (float)AppSettings.equalizer["125Hz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 250, Gain = (float)AppSettings.equalizer["250Hz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 500, Gain = (float)AppSettings.equalizer["500Hz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 1000, Gain = (float)AppSettings.equalizer["1kHz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 2000, Gain = (float)AppSettings.equalizer["2kHz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 4000, Gain = (float)AppSettings.equalizer["4kHz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 8000, Gain = (float)AppSettings.equalizer["8kHz"], Bandwidth = 1.0f},
+                    new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
+            };
+        }
+
+        public void SetEqualizerGain(float frequency, float gainDb)
+        {
+            if (equalizer == null) return;
+            // 找到最接近的频段
+            var band = equalizerBands.OrderBy(b => Math.Abs(b.Frequency - frequency)).First();
+            band.Gain = gainDb;
+            equalizer.Update();
+        }
+
+        public void ClearEqualizer() {
+            if (equalizer == null) return;
+            foreach (var band in equalizerBands)
+            {
+                band.Gain = 0f; // 重置增益                
+            }
+            equalizer.Update();
+        }
+
+        public void SetEqualizer()
+        {
+            if (equalizer == null) return;
+            foreach (var band in equalizerBands)
+            {
+                band.Gain = (float)AppSettings.equalizer[FloatToString[band.Frequency]];
+            }
+            equalizer.Update();
+        }
+
         public async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
         {
             try
@@ -560,7 +620,7 @@ namespace WinUIMusicPlayer.Services
                         multiTypeAudioReader.CurrentTime = currentPos;
                         waveChannel = new WaveChannel32(multiTypeAudioReader);
                         waveChannel.Volume = volume;
-                        waveOut.Init(waveChannel);                        
+                        //waveOut.Init(waveChannel);                        
                         //waveOut.Volume = volume;
                     }
                     catch (Exception e)
@@ -580,7 +640,7 @@ namespace WinUIMusicPlayer.Services
                         var adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
                         waveChannel = new WaveChannel32(adapter);
                         waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
-                        waveOut.Init(waveChannel);
+                        //waveOut.Init(waveChannel);
                     }
                     catch (Exception e)
                     {
@@ -590,7 +650,19 @@ namespace WinUIMusicPlayer.Services
                         return false;
                     }
                 }
+
+                if (AppSettings.IsEqualizerEnabled)
+                {
+                    var sampleProvider = waveChannel.ToSampleProvider();
+                    equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
+                    waveOut.Init(equalizer);
+                }
+                else
+                {
+                    waveOut.Init(waveChannel);
+                }
                 return true;
+
             }
             catch (Exception ex)
             {
@@ -604,6 +676,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
+            UpdateEqualizerSettings();
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
@@ -662,6 +735,10 @@ namespace WinUIMusicPlayer.Services
             {
                 waveChannel.Dispose();
                 waveChannel = null;
+            }
+
+            if (equalizer != null) {                
+                equalizer = null;
             }
 
             //if (multiTypeAudioReader != null)

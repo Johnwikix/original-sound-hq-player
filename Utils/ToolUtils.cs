@@ -23,6 +23,33 @@ namespace WinUIMusicPlayer.Utils
     public class ToolUtils
     {
         private ResourceLoader resourceLoader = new ResourceLoader();
+        public static readonly Dictionary<string, float> FrequencyMap = new Dictionary<string, float>
+        {
+            ["32Hz"] = 32f,
+            ["64Hz"] = 64f,
+            ["125Hz"] = 125f,
+            ["250Hz"] = 250f,
+            ["500Hz"] = 500f,
+            ["1kHz"] = 1000f,
+            ["2kHz"] = 2000f,
+            ["4kHz"] = 4000f,
+            ["8kHz"] = 8000f,
+            ["16kHz"] = 16000f
+        };
+
+        public static readonly Dictionary<float, string> FloatToString = new Dictionary<float, string>
+        {
+            [32f] = "32Hz",
+            [64f] = "64Hz",
+            [125f] = "125Hz",
+            [250f] = "250Hz",
+            [500f] = "500Hz",
+            [1000f] = "1kHz",
+            [2000f] = "2kHz",
+            [4000f] = "4kHz",
+            [8000f] = "8kHz",
+            [16000f] = "16kHz"
+        };
 
         public static string GetString(string key)
         {

@@ -26,6 +26,8 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Dictionary<string, double[]> _presets;
         private List<Slider> _sliders;
+        public EventHandler<string> EqualizerGainChanged;
+        public EventHandler clearEqualizer;
 
         public EqualizerDialog()
         {
@@ -79,6 +81,7 @@ namespace WinUIMusicPlayer.View.SubView
                 double value = Math.Round(slider.Value, 1);
                 AppSettings.equalizer[frequency] = value;
                 Debug.WriteLine($"Slider {frequency} changed to {AppSettings.equalizer[frequency]}");
+                EqualizerGainChanged?.Invoke(this, frequency);
                 // 这里可以添加实际的均衡器逻辑
                 // ApplyEqualizerSettings();
             }
@@ -115,6 +118,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             Debug.WriteLine($"Equalizer toggled: {ToggleSwitchEqualizer.IsOn}");
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
+            clearEqualizer?.Invoke(this, EventArgs.Empty);
         }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
