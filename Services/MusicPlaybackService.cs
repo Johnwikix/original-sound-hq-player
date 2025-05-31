@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.Services
         public MusicPlaybackService()
         {
             notificationService = new NotificationService();
-            progressTimer = new System.Timers.Timer(1000);
+            progressTimer = new System.Timers.Timer(200);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
         }

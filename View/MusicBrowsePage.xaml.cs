@@ -1409,11 +1409,11 @@ namespace WinUIMusicPlayer.View
                     double currentPlayPosition = 0;
                     if (musicPlaybackService.waveChannel != null)
                     {
-                        currentPlayPosition = (double)musicPlaybackService.waveChannel.Position / musicPlaybackService.waveChannel.WaveFormat.SampleRate;
+                        currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                         {
                             DateTime startTime = DateTime.Now;
-                            musicPlaybackService.waveChannel.Position = (long)(e.NewValue * musicPlaybackService.waveChannel.WaveFormat.SampleRate * 8);
+                            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
                             Debug.WriteLine($"ProgressSlider_ValueChangedÍê³É,ºÄÊ±:{(DateTime.Now - startTime).TotalMilliseconds}ms");
                         }
                     }
