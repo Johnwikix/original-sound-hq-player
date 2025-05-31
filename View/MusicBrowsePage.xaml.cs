@@ -103,7 +103,8 @@ namespace WinUIMusicPlayer.View
                     musicPlaybackService.ClearEqualizer();
                 } else {
                     musicPlaybackService.SetEqualizer();
-                }                
+                    musicPlaybackService.ToggleEqualizer();
+                }
             };
             InitializeTimer();
             InitializeSystemMediaControls();

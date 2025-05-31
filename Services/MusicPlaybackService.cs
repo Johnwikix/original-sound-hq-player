@@ -68,6 +68,7 @@ namespace WinUIMusicPlayer.Services
             new CustomEqualizerBand {Frequency = 8000, Gain = (float)AppSettings.equalizer["8kHz"], Bandwidth = 1.0f},
             new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
         };
+        private bool isEnableEq = false;
 
         public MusicPlaybackService()
         {
@@ -385,12 +386,14 @@ namespace WinUIMusicPlayer.Services
         {
             if (waveChannel != null && equalizer != null)
             {
+                isEnableEq = true;
                 SelectOutputDevice();
                 waveOut.Init(equalizer);               
                 waveOut.Play();
                 
             } else if (waveChannel != null)
             {
+                isEnableEq = false;
                 SelectOutputDevice();
                 waveOut.Init(waveChannel);             
                 waveOut.Play();
@@ -572,6 +575,23 @@ namespace WinUIMusicPlayer.Services
             };
         }
 
+        // 切换均衡器开关
+        public async void ToggleEqualizer()
+        {
+            // 如果音频正在播放，需要重新初始化
+            if (AppSettings.IsEqualizerEnabled &&!isEnableEq)
+            {
+                var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
+                if (waveOut != null) {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
+                await InitializeAudioResources(currentPlayingMusic, currentPos);
+                waveOut.Play();
+            }
+        }
+
         public void SetEqualizerGain(float frequency, float gainDb)
         {
             if (equalizer == null) return;
@@ -653,12 +673,14 @@ namespace WinUIMusicPlayer.Services
 
                 if (AppSettings.IsEqualizerEnabled)
                 {
+                    isEnableEq = true;
                     var sampleProvider = waveChannel.ToSampleProvider();
                     equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
                     waveOut.Init(equalizer);
                 }
                 else
                 {
+                    isEnableEq = false;
                     waveOut.Init(waveChannel);
                 }
                 return true;
@@ -724,6 +746,7 @@ namespace WinUIMusicPlayer.Services
             isManualSelect = false;
             isPausing = false;
             isSettingsChangeStop = false;
+            isEnableEq = false;
             if (waveOut != null)
             {
                 waveOut.Stop();
