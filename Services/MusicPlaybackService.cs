@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Services
         public List<Music> currentPlayingList;
         //public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
-        public LightweightCSCoreAdapter adapter;
+        //public LightweightCSCoreAdapter adapter;
         //public CSCore.SoundOut.WasapiOut wasapiOut;
         public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.Services
                     double currentTimeSeconds = 0;
                     double totalSeconds = 0;
 
-                    if (waveChannel != null && adapter == null)
+                    if (waveChannel != null)
                     {
                         currentTimeSeconds = waveChannel.CurrentTime.TotalSeconds;
                         totalSeconds = waveChannel.TotalTime.TotalSeconds;
@@ -251,11 +251,11 @@ namespace WinUIMusicPlayer.Services
                             AutoPlayNextTrack();
                         }
                     }
-                    else if (adapter != null)
-                    {
-                        currentTimeSeconds = adapter.CurrentTime.TotalSeconds;
-                        totalSeconds = adapter.TotalTime.TotalSeconds;
-                    }
+                    //else if (adapter != null)
+                    //{
+                    //    currentTimeSeconds = adapter.CurrentTime.TotalSeconds;
+                    //    totalSeconds = adapter.TotalTime.TotalSeconds;
+                    //}
                     updateProgressSliders?.Invoke(this, currentTimeSeconds);
 
                     // 格式化显示时间
@@ -584,9 +584,9 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Dispose();
                     waveOut = null;
                 }
-                if (AppSettings.isDsd) {
-                    currentPos = adapter?.CurrentTime ?? TimeSpan.Zero;
-                }
+                //if (AppSettings.isDsd) {
+                //    currentPos = adapter?.CurrentTime ?? TimeSpan.Zero;
+                //}
                 await InitializeAudioResources(currentPlayingMusic, currentPos);
                 waveOut.Play();
                 progressTimer.Start();
@@ -658,9 +658,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         AppSettings.isDsd = true;
                         var ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
+                        var adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
                         waveChannel = new WaveChannel32(adapter);
-                        adapter.SetCurrentTime(currentPos);
+                        waveChannel.CurrentTime = currentPos;
                         waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                         //waveOut.Init(waveChannel);
                     }
@@ -766,10 +766,10 @@ namespace WinUIMusicPlayer.Services
                 equalizer = null;
             }
 
-            if (adapter != null) {
-                adapter.Dispose();
-                adapter = null;
-            }
+            //if (adapter != null) {
+            //    adapter.Dispose();
+            //    adapter = null;
+            //}
 
             //if (multiTypeAudioReader != null)
             //{
@@ -816,10 +816,10 @@ namespace WinUIMusicPlayer.Services
                 equalizer = null;
             }
 
-            if (adapter != null) {
-                adapter.Dispose();
-                adapter = null;
-            }
+            //if (adapter != null) {
+            //    adapter.Dispose();
+            //    adapter = null;
+            //}
             //if (ffmpegDecoder != null)
             //{
             //    ffmpegDecoder.Dispose();

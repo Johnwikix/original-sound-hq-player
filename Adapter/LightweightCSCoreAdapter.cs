@@ -109,6 +109,11 @@ namespace WinUIMusicPlayer.Adapter
             return TimeSpan.FromSeconds((double)Position / _waveFormat.AverageBytesPerSecond);
         }
 
+        public TimeSpan GetTotalTime()
+        {
+            return TimeSpan.FromSeconds((double)Length / _waveFormat.AverageBytesPerSecond);
+        }
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             // 确保请求的字节数是样本的整数倍

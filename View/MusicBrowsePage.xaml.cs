@@ -1391,8 +1391,17 @@ namespace WinUIMusicPlayer.View
             {
                 if (musicPlaybackService.waveChannel != null)
                 {
-                    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
-                    musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                   
+                    //if (AppSettings.isDsd)
+                    //{
+                    //    double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.adapter.TotalTime.TotalSeconds));
+                    //    musicPlaybackService.adapter.SetCurrentTime(TimeSpan.FromSeconds(newPosition));
+                    //}
+                    //else
+                    //{
+                        double newPosition = Math.Max(0, Math.Min(ProgressSlider.Value, musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
+                        musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                    //}
                 }
                 //else if (musicPlaybackService.ffmpegDecoder != null)
                 //{
@@ -1412,20 +1421,20 @@ namespace WinUIMusicPlayer.View
                     if (musicPlaybackService.waveChannel != null)
                     {
                         currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-                        if (AppSettings.isDsd)
-                        {
-                            currentPlayPosition = musicPlaybackService.adapter.CurrentTime.TotalSeconds;
-                        }
-                        if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
+                        //if (AppSettings.isDsd)
+                        //{
+                        //    currentPlayPosition = musicPlaybackService.adapter.GetCurrentTime().TotalSeconds;
+                        //}
+                        if (Math.Abs(e.NewValue - currentPlayPosition) > 4.0)
                         {
                             DateTime startTime = DateTime.Now;
-                            if (AppSettings.isDsd)
-                            {
-                                musicPlaybackService.adapter.SetCurrentTime(TimeSpan.FromSeconds(e.NewValue));
-                            }
-                            else {
+                            //if (AppSettings.isDsd)
+                            //{
+                            //    musicPlaybackService.adapter.SetCurrentTime(TimeSpan.FromSeconds(e.NewValue));
+                            //}
+                            //else {
                                 musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-                            }                                
+                            //}                                
                             Debug.WriteLine($"ProgressSlider_ValueChangedÍê³É,ºÄÊ±:{(DateTime.Now - startTime).TotalMilliseconds}ms");
                         }
                     }
