@@ -22,6 +22,7 @@ using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
+using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
@@ -1411,10 +1412,20 @@ namespace WinUIMusicPlayer.View
                     if (musicPlaybackService.waveChannel != null)
                     {
                         currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+                        if (AppSettings.isDsd)
+                        {
+                            currentPlayPosition = musicPlaybackService.adapter.CurrentTime.TotalSeconds;
+                        }
                         if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
                         {
                             DateTime startTime = DateTime.Now;
-                            musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                            if (AppSettings.isDsd)
+                            {
+                                musicPlaybackService.adapter.SetCurrentTime(TimeSpan.FromSeconds(e.NewValue));
+                            }
+                            else {
+                                musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
+                            }                                
                             Debug.WriteLine($"ProgressSlider_ValueChangedÍê³É,ºÄÊ±:{(DateTime.Now - startTime).TotalMilliseconds}ms");
                         }
                     }

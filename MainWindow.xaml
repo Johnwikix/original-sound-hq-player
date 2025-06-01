@@ -4,7 +4,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:WinUIMusicPlayer"
-    xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:view="using:WinUIMusicPlayer.View"
     xmlns:controls="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"

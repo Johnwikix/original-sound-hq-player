@@ -1,5 +1,5 @@
-﻿using Microsoft.Toolkit.Uwp.Notifications;
-using Windows.UI.Notifications;
+﻿using Microsoft.Windows.AppNotifications.Builder;
+using Microsoft.Windows.AppNotifications;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -7,37 +7,11 @@ namespace WinUIMusicPlayer.Services
     {
         public void SendNotification(string title, string content)
         {
-            // 创建 Toast 内容
-            var toastContent = new ToastContent()
-            {
-                Visual = new ToastVisual()
-                {
-                    BindingGeneric = new ToastBindingGeneric()
-                    {
-                        Children =
-                        {
-                            new AdaptiveText()
-                            {
-                                Text = title
-                            },
-                            new AdaptiveText()
-                            {
-                                Text = content
-                            }
-                        }
-                    }
-                },
-                Actions = new ToastActionsCustom()
-                {
-                    Buttons =
-                    {
-                        new ToastButton("关闭", "action=close")
-                           .SetBackgroundActivation()
-                    }
-                }
-            };
-            var toast = new ToastNotification(toastContent.GetXml());
-            ToastNotificationManager.CreateToastNotifier().Show(toast);
+            AppNotification notification = new AppNotificationBuilder()
+                .AddText(title)
+                .AddText(content)
+                .BuildNotification();
+            AppNotificationManager.Default.Show(notification);            
         }
     }
 }

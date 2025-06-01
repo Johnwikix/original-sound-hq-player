@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Services
         public List<Music> currentPlayingList;
         //public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
-        //public WaveStream adapter;
+        public LightweightCSCoreAdapter adapter;
         //public CSCore.SoundOut.WasapiOut wasapiOut;
         public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.Services
                     double currentTimeSeconds = 0;
                     double totalSeconds = 0;
 
-                    if (waveChannel != null)
+                    if (waveChannel != null && adapter == null)
                     {
                         currentTimeSeconds = waveChannel.CurrentTime.TotalSeconds;
                         totalSeconds = waveChannel.TotalTime.TotalSeconds;
@@ -251,11 +251,11 @@ namespace WinUIMusicPlayer.Services
                             AutoPlayNextTrack();
                         }
                     }
-                    //else if (ffmpegDecoder != null)
-                    //{
-                    //    currentTimeSeconds = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond;
-                    //    totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
-                    //}
+                    else if (adapter != null)
+                    {
+                        currentTimeSeconds = adapter.CurrentTime.TotalSeconds;
+                        totalSeconds = adapter.TotalTime.TotalSeconds;
+                    }
                     updateProgressSliders?.Invoke(this, currentTimeSeconds);
 
                     // 格式化显示时间
@@ -307,14 +307,10 @@ namespace WinUIMusicPlayer.Services
             {
                 if (waveChannel != null)
                 {
-                    // 对于FLAC文件，计算新位置
                     double currentTimeSeconds = waveChannel.CurrentTime.TotalSeconds;
                     double totalSeconds = waveChannel.TotalTime.TotalSeconds;
-
                     newPosition = currentTimeSeconds + seconds;
                     newPosition = Math.Max(0, Math.Min(newPosition, totalSeconds));
-
-                    // 设置新位置
                     waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
                 //else if (ffmpegDecoder != null)
@@ -588,6 +584,9 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Dispose();
                     waveOut = null;
                 }
+                if (AppSettings.isDsd) {
+                    currentPos = adapter?.CurrentTime ?? TimeSpan.Zero;
+                }
                 await InitializeAudioResources(currentPlayingMusic, currentPos);
                 waveOut.Play();
                 progressTimer.Start();
@@ -659,9 +658,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         AppSettings.isDsd = true;
                         var ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        var adapter = new CSCoreToWaveStreamAdapter(ffmpegDecoder);
+                        adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
                         waveChannel = new WaveChannel32(adapter);
-                        waveChannel.CurrentTime = currentPos;
+                        adapter.SetCurrentTime(currentPos);
                         waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                         //waveOut.Init(waveChannel);
                     }
@@ -767,6 +766,11 @@ namespace WinUIMusicPlayer.Services
                 equalizer = null;
             }
 
+            if (adapter != null) {
+                adapter.Dispose();
+                adapter = null;
+            }
+
             //if (multiTypeAudioReader != null)
             //{
             //    multiTypeAudioReader.Dispose();
@@ -807,6 +811,15 @@ namespace WinUIMusicPlayer.Services
                 waveChannel = null;
             }
 
+            if(equalizer != null)
+            {                
+                equalizer = null;
+            }
+
+            if (adapter != null) {
+                adapter.Dispose();
+                adapter = null;
+            }
             //if (ffmpegDecoder != null)
             //{
             //    ffmpegDecoder.Dispose();
