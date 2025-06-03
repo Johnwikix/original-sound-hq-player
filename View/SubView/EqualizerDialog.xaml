@@ -54,11 +54,25 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                 <TextBlock x:Uid="EqualizerDialogTitle" FontSize="20" FontWeight="SemiBold" 
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
+                <ComboBox x:Name="ComboBoxPresets" 
+                        Margin="0,8,0,0"
+                        Width="100"
+                        IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
+                        SelectionChanged="ComboBoxPresets_SelectionChanged">
+                    <ComboBoxItem x:Uid="EqCustom" Tag="Custom"/>
+                    <ComboBoxItem x:Uid="EqFlat" Tag="Flat"/>
+                    <ComboBoxItem x:Uid="EqRock" Tag="Rock"/>
+                    <ComboBoxItem x:Uid="EqPop" Tag="Pop"/>
+                    <ComboBoxItem x:Uid="EqJazz" Tag="Jazz"/>
+                    <ComboBoxItem x:Uid="EqClassical" Tag="Classical"/>
+                    <ComboBoxItem x:Uid="EqElectronic" Tag="Electronic"/>
+                    <ComboBoxItem x:Uid="EqVocal" Tag="Vocal"/>
+                </ComboBox>
                 <ToggleSwitch x:Name="ToggleSwitchEqualizer" 
                               Margin="8,5,0,0" 
                               Toggled="ToggleSwitchEqualizer_Toggled"
                               VerticalAlignment="Center"
-                              />
+                />                
             </StackPanel>
 
             <!-- 右上角关闭按钮 -->
@@ -69,7 +83,7 @@
                     BorderThickness="0"
                     Click="CloseButton_Click">
                 <FontIcon Glyph="&#xE894;"/>
-            </Button>
+            </Button>           
         </Grid>
 
         <!-- 均衡器滑块区域 -->

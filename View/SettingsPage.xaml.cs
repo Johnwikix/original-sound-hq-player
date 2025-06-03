@@ -72,6 +72,7 @@ namespace WinUIMusicPlayer.View
             newSettings.dsdGain = AppSettings.dsdGain;
             newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

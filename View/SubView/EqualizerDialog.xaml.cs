@@ -28,25 +28,41 @@ namespace WinUIMusicPlayer.View.SubView
         private List<Slider> _sliders;
         public EventHandler<string> EqualizerGainChanged;
         public EventHandler clearEqualizer;
+        private bool _isInitialized = false;
 
         public EqualizerDialog()
         {
             this.InitializeComponent();
+            _isInitialized = true;
             InitializePresets();
-            InitializeSliders();
-
+            InitializingSettings();
+            _isInitialized = false;
             // 设置默认预设
             //PresetComboBox.SelectedIndex = 0;
         }
 
-        private void InitializeSliders()
+        private void InitializingSettings()
         {
             _sliders = new List<Slider>
             {
                 Slider32Hz, Slider64Hz, Slider125Hz, Slider250Hz, Slider500Hz,
                 Slider1kHz, Slider2kHz, Slider4kHz, Slider8kHz, Slider16kHz
             };
+            foreach (ComboBoxItem item in ComboBoxPresets.Items)
+            {
+                if (item.Tag?.ToString() == AppSettings.EqualizerPreset)
+                {
+                    ComboBoxPresets.SelectedItem = item;
+                    break;
+                }
+            }
+            InitializeSliders();            
             ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
+        }
+
+        private void InitializeSliders()
+        {
+            // 初始化滑块列表
             Slider32Hz.Value = AppSettings.equalizer["32Hz"];
             Slider64Hz.Value = AppSettings.equalizer["64Hz"];
             Slider125Hz.Value = AppSettings.equalizer["125Hz"];
@@ -73,17 +89,26 @@ namespace WinUIMusicPlayer.View.SubView
             };
         }
 
-        private void OnSliderValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        private async void OnSliderValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
             if (sender is Slider slider)
             {
-                string frequency = slider.Tag?.ToString() ?? "Unknown";
-                double value = Math.Round(slider.Value, 1);
-                AppSettings.equalizer[frequency] = value;
-                Debug.WriteLine($"Slider {frequency} changed to {AppSettings.equalizer[frequency]}");
-                EqualizerGainChanged?.Invoke(this, frequency);
-                // 这里可以添加实际的均衡器逻辑
-                // ApplyEqualizerSettings();
+                if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
+                {
+                    string frequency = slider.Tag?.ToString() ?? "Unknown";
+                    double value = Math.Round(slider.Value, 1);
+                    AppSettings.equalizer[frequency] = value;
+                    Debug.WriteLine($"Slider {frequency} changed to {AppSettings.equalizer[frequency]}");                    
+                    string? presetName = selectedItem.Tag.ToString();
+                    if (presetName == "Custom")
+                    {
+                        SaveSettings settings = await MusicDatabaseService.GetSettings();
+                        settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+                        settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+                        await MusicDatabaseService.UpdateSettings(settings);
+                    }
+                    EqualizerGainChanged?.Invoke(this, frequency);
+                }                
             }
         }
 
@@ -124,12 +149,49 @@ namespace WinUIMusicPlayer.View.SubView
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             SaveSettings settings = await MusicDatabaseService.GetSettings();
-            if (settings != null) { 
-                settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+            //if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem) {
+            //    string? presetName = selectedItem.Tag.ToString();
+            //    if (presetName == "Custom") {                    
+            //        if (settings != null)
+            //        {
+            //            settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+                                              
+            //        }
+            //    }
+            //}
+            if (settings != null)
+            {
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+                settings.EqualizerPreset = AppSettings.EqualizerPreset;
                 await MusicDatabaseService.UpdateSettings(settings);
-            }
+            }           
             this.Hide();
+        }
+
+        private async void ComboBoxPresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
+            {
+                string? presetName = selectedItem.Tag.ToString();
+                AppSettings.EqualizerPreset = presetName ?? "Custom";
+                if (_presets.ContainsKey(presetName))
+                {
+                    var presetValues = _presets[presetName];
+                    for (int i = 0; i < _sliders.Count; i++)
+                    {
+                        _sliders[i].Value = presetValues[i];
+                        string frequency = _sliders[i].Tag?.ToString() ?? "Unknown";
+                        AppSettings.equalizer[frequency] = presetValues[i];
+                    }
+                    Debug.WriteLine($"Preset {presetName} applied.");
+                }
+                else if (presetName == "Custom") {
+                    SaveSettings settings = await MusicDatabaseService.GetSettings();
+                    AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
+                    InitializeSliders();
+                    Debug.WriteLine($"Preset {presetName} applied.");
+                }
+            }
         }
     }
 }

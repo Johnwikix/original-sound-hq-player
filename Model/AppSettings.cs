@@ -47,6 +47,7 @@ namespace WinUIMusicPlayer.Model
             {"16kHz", 0}   // 16kHz 初始增益 0dB
         };
         public static bool IsEqualizerEnabled { get; set; } = false;  
+        public static string EqualizerPreset { get; set; } = "Flat";
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

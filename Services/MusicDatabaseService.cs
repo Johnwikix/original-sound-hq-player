@@ -649,6 +649,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.dsdGain = settings.dsdGain;
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
+                AppSettings.EqualizerPreset = settings.EqualizerPreset;
             }
         }
 

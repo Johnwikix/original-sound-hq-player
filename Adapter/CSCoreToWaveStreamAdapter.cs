@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Adapter
     public class CSCoreToWaveStreamAdapter : WaveStream
     {
         private readonly IWaveSource _source;
-        private readonly NAudio.Wave.WaveFormat _waveFormat; // 明确使用 NAudio 的 WaveFormat
+        private readonly NAudio.Wave.WaveFormat _waveFormat;
         private long _position;
         private readonly bool _ownsSource;
 

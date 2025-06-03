@@ -24,5 +24,7 @@ namespace WinUIMusicPlayer.Model
         public float dsdGain { get; set; } = 6f;
         public string equalizerStr { get; set; }
         public bool IsEqualizerEnabled { get; set; } = false;
+
+        public string EqualizerPreset { get; set; } = "Flat";
     }
 }

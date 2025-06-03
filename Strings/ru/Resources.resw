@@ -591,4 +591,28 @@
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
     <value>Равновесие (db)</value>
   </data>
+  <data name="EqCustom.Content" xml:space="preserve">
+    <value>Пользовательский</value>
+  </data>
+  <data name="EqFlat.Content" xml:space="preserve">
+    <value>Плоский</value>
+  </data>
+  <data name="EqRock.Content" xml:space="preserve">
+    <value>Рок</value>
+  </data>
+  <data name="EqPop.Content" xml:space="preserve">
+    <value>Поп</value>
+  </data>
+  <data name="EqJazz.Content" xml:space="preserve">
+    <value>Джаз</value>
+  </data>
+  <data name="EqClassical.Content" xml:space="preserve">
+    <value>Классика</value>
+  </data>
+  <data name="EqElectronic.Content" xml:space="preserve">
+    <value>Электроника</value>
+  </data>
+  <data name="EqVocal.Content" xml:space="preserve">
+    <value>Вокал</value>
+  </data>
 </root>
