@@ -4,6 +4,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -23,6 +24,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
+using static System.Net.Mime.MediaTypeNames;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
@@ -1114,9 +1116,19 @@ namespace WinUIMusicPlayer.View
                 }
                 if (isInPlayingDetailMode)
                 {
-                    PlayingDetailTitleTextBlock.Text = music.Title;
-                    PlayingDetailAlbumTextBlock.Text = music.Album;
-                    PlayingDetailArtistTextBlock.Text = music.Author;
+                    //PlayingDetailTitleTextBlock.Paragraph = music.Title;
+                    PlayingDetailTitleTextBlock.Blocks.Clear();
+                    PlayingDetailAlbumTextBlock.Blocks.Clear();
+                    PlayingDetailArtistTextBlock.Blocks.Clear();
+                    Paragraph titleParagraph = new Paragraph();
+                    titleParagraph.Inlines.Add(new Run { Text = music.Title });
+                    PlayingDetailTitleTextBlock.Blocks.Add(titleParagraph);
+                    Paragraph albumParagraph = new Paragraph();
+                    albumParagraph.Inlines.Add(new Run { Text = music.Album });
+                    PlayingDetailAlbumTextBlock.Blocks.Add(albumParagraph);
+                    Paragraph artistParagraph = new Paragraph();
+                    artistParagraph.Inlines.Add(new Run { Text = music.Author });
+                    PlayingDetailArtistTextBlock.Blocks.Add(artistParagraph);
                     PlayingDetailMusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     PlayingDetailAlbumCoverImage.Source = await GetImageFromMusic(music, 0);
                 }
@@ -1457,9 +1469,20 @@ namespace WinUIMusicPlayer.View
             BitmapImage cover = await GetImageFromMusic(musicPlaybackService.currentPlayingMusic, 0);
             PlayingDetailAlbumCoverImage.Source = cover;
 
-            PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
-            PlayingDetailArtistTextBlock.Text = musicPlaybackService.currentPlayingMusic.Author;
-            PlayingDetailAlbumTextBlock.Text = musicPlaybackService.currentPlayingMusic.Album;
+            //PlayingDetailTitleTextBlock.Text = musicPlaybackService.currentPlayingMusic.Title;
+            PlayingDetailTitleTextBlock.Blocks.Clear();
+            PlayingDetailAlbumTextBlock.Blocks.Clear();
+            PlayingDetailArtistTextBlock.Blocks.Clear();
+            Paragraph titleParagraph = new Paragraph();
+            titleParagraph.Inlines.Add(new Run { Text = musicPlaybackService.currentPlayingMusic.Title });
+            PlayingDetailTitleTextBlock.Blocks.Add(titleParagraph);
+            Paragraph albumParagraph = new Paragraph();
+            albumParagraph.Inlines.Add(new Run { Text = musicPlaybackService.currentPlayingMusic.Album });
+            PlayingDetailAlbumTextBlock.Blocks.Add(albumParagraph);
+            Paragraph artistParagraph = new Paragraph();
+            artistParagraph.Inlines.Add(new Run { Text = musicPlaybackService.currentPlayingMusic.Author });
+            PlayingDetailArtistTextBlock.Blocks.Add(artistParagraph);
+
             PlayingDetailHRImage.Source = null;
             if ((musicPlaybackService.currentPlayingMusic.SampleRate >= 48000 &&
                 musicPlaybackService.currentPlayingMusic.BitDepth >= 24) ||
@@ -1503,38 +1526,38 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void PlayingDetailTitleTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string title = textBlock.Text;
-                var package = new DataPackage();
-                package.SetText(title);
-                Clipboard.SetContent(package);
-            }
-        }
+        //private void PlayingDetailTitleTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        //{
+        //    if (sender is TextBlock textBlock)
+        //    {
+        //        string title = textBlock.Text;
+        //        var package = new DataPackage();
+        //        package.SetText(title);
+        //        Clipboard.SetContent(package);
+        //    }
+        //}
 
-        private void PlayingDetailAlbumTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string album = textBlock.Text;
-                var package = new DataPackage();
-                package.SetText(album);
-                Clipboard.SetContent(package);
-            }
-        }
+        //private void PlayingDetailAlbumTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        //{
+        //    if (sender is TextBlock textBlock)
+        //    {
+        //        string album = textBlock.Text;
+        //        var package = new DataPackage();
+        //        package.SetText(album);
+        //        Clipboard.SetContent(package);
+        //    }
+        //}
 
-        private void PlayingDetailArtistTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string author = textBlock.Text;
-                var package = new DataPackage();
-                package.SetText(author);
-                Clipboard.SetContent(package);
-            }
-        }
+        //private void PlayingDetailArtistTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        //{
+        //    if (sender is TextBlock textBlock)
+        //    {
+        //        string author = textBlock.Text;
+        //        var package = new DataPackage();
+        //        package.SetText(author);
+        //        Clipboard.SetContent(package);
+        //    }
+        //}
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
