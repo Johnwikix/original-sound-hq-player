@@ -134,6 +134,8 @@ namespace testDemo.Taskbar
                 _taskbarList = (ITaskbarList3)new TaskbarList();
                 _taskbarList.HrInit();
 
+                _isCurrentPlaying = AppSettings.isPlaying; // 初始化当前播放状态
+
                 // 创建3个任务栏按钮
                 _buttons = new ThumbButton[3];
 
