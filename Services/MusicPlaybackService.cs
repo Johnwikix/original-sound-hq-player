@@ -410,8 +410,8 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                }
-                await InitializeAudioResources(currentPlayingMusic, currentPos);                
+                    await InitializeAudioResources(currentPlayingMusic, currentPos);
+                }                               
             }            
         }
 
@@ -600,8 +600,9 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
+                    await InitializeAudioResources(currentPlayingMusic, currentPos);
                 }
-                await InitializeAudioResources(currentPlayingMusic, currentPos);
+                
                 if (AppSettings.isPlaying)
                 {
                     waveOut.Play();
