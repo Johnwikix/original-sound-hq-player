@@ -2,6 +2,7 @@
 using CSCore.Ffmpeg;
 using CSCore.Streams.Effects;
 using NAudio.CoreAudioApi;
+using NAudio.Dsp;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,7 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler<double> updateProgressMax;
         public event EventHandler<string> showMessage;
         public event EventHandler<string> updatePlayPauseButton;
+        public event EventHandler<float[]> updateSpectrumData;
         //public List<Music> musicList;
         public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
@@ -54,6 +56,13 @@ namespace WinUIMusicPlayer.Services
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
         private CancellationTokenSource _lyricsCancellationTokenSource;
+        private float[] _fftBuffer;
+        private Complex[] _complexBuffer;
+        private int _fftPosition;
+        private int _fftLength = 1024; // FFT点数
+        private int _m; // FFT阶数
+        private int _barCount = 16; // 柱状图数量
+        private float[] _spectrumData;
         private CustomEqualizer equalizer;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
         {
@@ -73,9 +82,14 @@ namespace WinUIMusicPlayer.Services
         public MusicPlaybackService()
         {
             notificationService = new NotificationService();
-            progressTimer = new System.Timers.Timer(200);
+            progressTimer = new System.Timers.Timer(250);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
+            _m = (int)Math.Log(_fftLength, 2);
+            _fftBuffer = new float[_fftLength];
+            _complexBuffer = new NAudio.Dsp.Complex[_fftLength];
+            _spectrumData = new float[_barCount];
+            
         }
 
         private async void InitializingData()
@@ -643,6 +657,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
+                progressTimer.Stop();
                 if (!File.Exists(music.Path))
                 {
                     notificationService.SendNotification(ToolUtils.GetString("FileDoNotExist"), music.Path);
@@ -694,6 +709,7 @@ namespace WinUIMusicPlayer.Services
                 if (AppSettings.IsEqualizerEnabled)
                 {
                     isEnableEq = true;
+                    waveChannel.Sample += WaveChannel_Sample;
                     var sampleProvider = waveChannel.ToSampleProvider();
                     equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
                     waveOut.Init(equalizer);
@@ -714,7 +730,66 @@ namespace WinUIMusicPlayer.Services
                 updateProgressSliders?.Invoke(this, 0);
                 return false;
             }
-        }        
+        }
+
+        private void WaveChannel_Sample(object? sender, SampleEventArgs e)
+        {
+            float sample = e.Left;
+            _fftBuffer[_fftPosition] = sample * (float)FastFourierTransform.HannWindow(_fftPosition, _fftLength);
+            _fftPosition++;
+            if (_fftPosition >= _fftLength)
+            {
+                _fftPosition = 0;
+                CalculateSpectrum();
+            }
+        }
+
+        // 计算频谱
+        private void CalculateSpectrum()
+        {
+            // 填充NAudio的Complex缓冲区
+            for (int i = 0; i < _fftLength; i++)
+            {
+                _complexBuffer[i].X = _fftBuffer[i]; // 实部
+                _complexBuffer[i].Y = 0;             // 虚部（初始为0）
+            }
+
+            // 执行FFT变换
+            FastFourierTransform.FFT(true, _m, _complexBuffer);
+
+            // 计算频谱数据
+            int spectrumSize = _barCount;
+            int pointsPerBin = _fftLength / 2 / spectrumSize;
+
+            for (int i = 0; i < spectrumSize; i++)
+            {
+                float sum = 0;
+                int startIndex = i * pointsPerBin;
+                int endIndex = Math.Min(startIndex + pointsPerBin, _fftLength / 2);
+
+                // 合并多个FFT点为一个频谱点
+                for (int j = startIndex; j < endIndex; j++)
+                {
+                    // 计算幅度 (使用NAudio的Complex结构)
+                    float magnitude = (float)Math.Sqrt(
+                        _complexBuffer[j].X * _complexBuffer[j].X +
+                        _complexBuffer[j].Y * _complexBuffer[j].Y);
+                    sum += magnitude;
+                }
+
+                // 平均并转换为dB
+                float average = sum / (endIndex - startIndex);
+                float dbValue = 20 * (float)Math.Log10(average + 0.0001f);
+
+                // 归一化到0-1范围
+                float normalizedValue = Math.Max(0, Math.Min(1, (dbValue + 90) / 90));
+                //Debug.WriteLine($"频谱点 {i}: 原始值 {dbValue}, 归一化值 {normalizedValue}");
+                // 应用平滑效果
+                _spectrumData[i] = normalizedValue;
+                updateSpectrumData?.Invoke(this, _spectrumData);
+            }
+        }
+
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {

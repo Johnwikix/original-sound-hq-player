@@ -93,6 +93,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
             musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
+            musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
             LyricsListView.ItemsSource = _uiLyrics;
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
@@ -116,6 +117,14 @@ namespace WinUIMusicPlayer.View
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
+        }
+
+        private void MusicPlaybackService_updateSpectrumData(object? sender, float[] e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                //fft1.Height = e[0] * 100;
+            });
         }
 
         private void MainWindow_changePlayMode(object? sender, PlayMode mode)
