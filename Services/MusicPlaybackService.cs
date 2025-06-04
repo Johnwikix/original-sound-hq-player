@@ -851,6 +851,7 @@ namespace WinUIMusicPlayer.Services
 
             if (waveChannel != null)
             {
+                waveChannel.Sample -= WaveChannel_Sample; // 取消事件订阅
                 waveChannel.Dispose();
                 waveChannel = null;
             }
@@ -900,6 +901,7 @@ namespace WinUIMusicPlayer.Services
 
             if (waveChannel != null)
             {
+                waveChannel.Sample -= WaveChannel_Sample;
                 waveChannel.Dispose();
                 waveChannel = null;
             }
