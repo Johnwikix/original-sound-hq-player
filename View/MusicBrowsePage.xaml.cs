@@ -103,12 +103,18 @@ namespace WinUIMusicPlayer.View
             };
             equalizerDialog.clearEqualizer += (s, e) =>
             {
-                if (!AppSettings.IsEqualizerEnabled) {
-                    musicPlaybackService.ClearEqualizer();
-                } else {
-                    musicPlaybackService.SetEqualizer();
-                    musicPlaybackService.ToggleEqualizer();
-                }
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!AppSettings.IsEqualizerEnabled)
+                    {
+                        musicPlaybackService.ClearEqualizer();
+                    }
+                    else
+                    {
+                        musicPlaybackService.SetEqualizer();
+                        musicPlaybackService.ToggleEqualizer();
+                    }
+                });                
             };
             InitializeTimer();
             InitializeSystemMediaControls();

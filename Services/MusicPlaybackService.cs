@@ -786,7 +786,7 @@ namespace WinUIMusicPlayer.Services
                 //Debug.WriteLine($"频谱点 {i}: 原始值 {dbValue}, 归一化值 {normalizedValue}");
                 // 应用平滑效果
                 _spectrumData[i] = normalizedValue;
-                updateSpectrumData?.Invoke(this, _spectrumData);
+                //updateSpectrumData?.Invoke(this, _spectrumData);
             }
         }
 

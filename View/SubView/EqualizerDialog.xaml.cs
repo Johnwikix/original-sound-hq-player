@@ -140,7 +140,11 @@ namespace WinUIMusicPlayer.View.SubView
         {
             Debug.WriteLine($"Equalizer toggled: {ToggleSwitchEqualizer.IsOn}");
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
-            clearEqualizer?.Invoke(this, EventArgs.Empty);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                clearEqualizer?.Invoke(this, EventArgs.Empty);
+            });
+            
         }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
