@@ -367,7 +367,10 @@ namespace WinUIMusicPlayer.Services
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
                     OutputDeviceChange();
-
+                    if (waveChannel != null)
+                    {
+                        ResumeMusic();
+                    }
                 }
             }
             catch (Exception ex)
@@ -378,24 +381,38 @@ namespace WinUIMusicPlayer.Services
 
         }
 
-        public void ResumeMusic()
+        public async void ResumeMusic()
         {
-            if (waveChannel != null && equalizer != null)
+            if (AppSettings.isPlaying)
             {
-                isEnableEq = true;
-                SelectOutputDevice();
-                waveOut.Init(equalizer);               
-                waveOut.Play();
-                
-            } else if (waveChannel != null)
-            {
-                isEnableEq = false;
-                SelectOutputDevice();
-                waveOut.Init(waveChannel);             
-                waveOut.Play();
+                if (waveChannel != null && equalizer != null)
+                {
+                    isEnableEq = true;
+                    SelectOutputDevice();
+                    waveOut.Init(equalizer);
+                    waveOut.Play();
+
+                }
+                else if (waveChannel != null)
+                {
+                    isEnableEq = false;
+                    SelectOutputDevice();
+                    waveOut.Init(waveChannel);
+                    waveOut.Play();
+                }
+                AppSettings.isPlaying = true;
+                progressTimer.Start();
             }
-            AppSettings.isPlaying = true;
-            progressTimer.Start();
+            else {
+                var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
+                if (waveOut != null)
+                {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
+                await InitializeAudioResources(currentPlayingMusic, currentPos);                
+            }            
         }
 
         public void OutputDeviceChange()
@@ -574,22 +591,22 @@ namespace WinUIMusicPlayer.Services
         // 切换均衡器开关
         public async void ToggleEqualizer()
         {
-            // 如果音频正在播放，需要重新初始化
-            if (AppSettings.IsEqualizerEnabled &&!isEnableEq)
+            // 只有在启用状态变化且音频播放时才需要重新初始化
+            if (AppSettings.IsEqualizerEnabled && !isEnableEq)
             {
-                progressTimer.Stop();
                 var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
-                if (waveOut != null) {
+                if (waveOut != null)
+                {
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
                 }
-                //if (AppSettings.isDsd) {
-                //    currentPos = adapter?.CurrentTime ?? TimeSpan.Zero;
-                //}
                 await InitializeAudioResources(currentPlayingMusic, currentPos);
-                waveOut.Play();
-                progressTimer.Start();
+                if (AppSettings.isPlaying)
+                {
+                    waveOut.Play();
+                    progressTimer.Start();
+                }
             }
         }
 
