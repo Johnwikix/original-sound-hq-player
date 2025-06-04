@@ -102,10 +102,7 @@ namespace WinUIMusicPlayer.View.SubView
                     string? presetName = selectedItem.Tag.ToString();
                     if (presetName == "Custom")
                     {
-                        SaveSettings settings = await MusicDatabaseService.GetSettings();
-                        settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
-                        settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-                        await MusicDatabaseService.UpdateSettings(settings);
+                        await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
                     }
                     EqualizerGainChanged?.Invoke(this, frequency);
                 }                
@@ -149,16 +146,6 @@ namespace WinUIMusicPlayer.View.SubView
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             SaveSettings settings = await MusicDatabaseService.GetSettings();
-            //if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem) {
-            //    string? presetName = selectedItem.Tag.ToString();
-            //    if (presetName == "Custom") {                    
-            //        if (settings != null)
-            //        {
-            //            settings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
-                                              
-            //        }
-            //    }
-            //}
             if (settings != null)
             {
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;

@@ -476,6 +476,15 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.UpdateAsync(settings);
         }
+
+        public static async Task UpdateEqualizerSettings(string equalizerStr, bool isEnabled)
+        {
+            await _dbConnection.ExecuteAsync(
+                "UPDATE SaveSettings SET equalizerStr = ?, IsEqualizerEnabled = ? WHERE Id = 1",
+                equalizerStr,
+                isEnabled
+            );
+        }
         public static async Task GetPlayListMusic()
         {
             AppData.allPlayListMusics.Clear();
