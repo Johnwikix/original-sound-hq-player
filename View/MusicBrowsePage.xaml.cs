@@ -73,7 +73,8 @@ namespace WinUIMusicPlayer.View
         private EqualizerDialog equalizerDialog;
         private CanvasControl _spectrumCanvas;
         private float[] _spectrumData = new float[16];
-        private readonly DispatcherTimer _forceDrawTimer;
+        private readonly System.Timers.Timer _forceDrawTimer;
+        private readonly object _lockObject = new object(); // 锁对象
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -130,19 +131,21 @@ namespace WinUIMusicPlayer.View
             OnFileChanged(null, null);
             _spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
             _spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
-            _forceDrawTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
-            _forceDrawTimer.Tick += (s, e) => _spectrumCanvas.Invalidate();
-            _forceDrawTimer.Start();
+            _forceDrawTimer = new System.Timers.Timer(16);
+            _forceDrawTimer.Elapsed += (s, e) => _spectrumCanvas.Invalidate();           
         }
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
             // 添加调试信息
-            //Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
-
+            float[] data;
+            lock (_lockObject)
+            {
+                // 复制数据到局部变量，减少锁持有时间
+                data = new float[_spectrumData.Length];
+                Array.Copy(_spectrumData, data, _spectrumData.Length);
+            }
+            //Debug.WriteLine($"绘制时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", data)}]");
             var ds = args.DrawingSession;
             float width = (float)sender.ActualWidth;
             float height = (float)sender.ActualHeight;
@@ -170,9 +173,12 @@ namespace WinUIMusicPlayer.View
         }
 
         private void MusicPlaybackService_updateSpectrumData(object? sender, float[] spectrumData)
-        {              
-           Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
-           Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+        {
+            lock (_lockObject)
+            {
+                Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
+                //Debug.WriteLine($"更新时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+            }
         }
 
 
@@ -1062,6 +1068,13 @@ namespace WinUIMusicPlayer.View
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
+            if (AppSettings.isPlaying)
+            {
+                _forceDrawTimer.Stop();
+            }
+            else {
+                _forceDrawTimer.Start();
+            }
             musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
             systemMediaControlsService.UpdateSystemMediaControlsState();
@@ -1089,6 +1102,7 @@ namespace WinUIMusicPlayer.View
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
+            _forceDrawTimer.Stop();
             musicPlaybackService.StopPlaying();
             UpdatePlayPauseButtonIcon();
             musicPlaybackService.Reset();
@@ -1225,13 +1239,13 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
+                _forceDrawTimer.Start();
                 musicPlaybackService.currentPlayingMusic = music;
- 
-                    LoadLyricsToUI();
-                    UpdatePlayBar(music);
-                    UpdateViewList(music);
-                    UpdateCurrentPlayList();
-                    await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                LoadLyricsToUI();
+                UpdatePlayBar(music);
+                UpdateViewList(music);
+                UpdateCurrentPlayList();
+                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 
             }
             catch (Exception ex)
