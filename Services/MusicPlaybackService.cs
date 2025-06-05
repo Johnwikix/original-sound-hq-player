@@ -63,6 +63,8 @@ namespace WinUIMusicPlayer.Services
         private int _m; // FFT阶数
         private int _barCount = 16; // 柱状图数量
         private float[] _spectrumData;
+        private readonly object _spectrumDataLock = new object();
+        private volatile bool _hasNewData = false;
         private CustomEqualizer equalizer;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
         {
@@ -82,7 +84,7 @@ namespace WinUIMusicPlayer.Services
         public MusicPlaybackService()
         {
             notificationService = new NotificationService();
-            progressTimer = new System.Timers.Timer(250);
+            progressTimer = new System.Timers.Timer(33);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
             _m = (int)Math.Log(_fftLength, 2);
@@ -280,11 +282,17 @@ namespace WinUIMusicPlayer.Services
                     updatePlayTimeText?.Invoke(this, $"{currentTimeText}/{totalTimeText}");
                     UpdateLyrics(currentTime);
                 }
+                //UpdateSpectrumCallback();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
+        }
+
+        private void UpdateSpectrumCallback()
+        {            
+            if (!_hasNewData) return;            
         }
 
         private void UpdateLyrics(TimeSpan currentPosition)
@@ -736,58 +744,94 @@ namespace WinUIMusicPlayer.Services
         {
             float sample = e.Left;
             _fftBuffer[_fftPosition] = sample * (float)FastFourierTransform.HannWindow(_fftPosition, _fftLength);
-            _fftPosition++;
+            _fftPosition++;            
             if (_fftPosition >= _fftLength)
-            {
+            {                
                 _fftPosition = 0;
-                CalculateSpectrum();
-            }
+                //Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+                lock (_spectrumDataLock)
+                {
+                    CalculateSpectrum();
+                    // 异步通知UI更新
+                    Task.Run(() => updateSpectrumData?.Invoke(this, _spectrumData));
+                }
+            }           
         }
 
         // 计算频谱
         private void CalculateSpectrum()
         {
-            // 填充NAudio的Complex缓冲区
-            for (int i = 0; i < _fftLength; i++)
+            Parallel.For(0, _fftLength, i =>
             {
-                _complexBuffer[i].X = _fftBuffer[i]; // 实部
-                _complexBuffer[i].Y = 0;             // 虚部（初始为0）
-            }
+                _complexBuffer[i].X = _fftBuffer[i];
+                _complexBuffer[i].Y = 0;
+            });
 
-            // 执行FFT变换
             FastFourierTransform.FFT(true, _m, _complexBuffer);
 
-            // 计算频谱数据
             int spectrumSize = _barCount;
             int pointsPerBin = _fftLength / 2 / spectrumSize;
 
-            for (int i = 0; i < spectrumSize; i++)
+            // 并行计算频谱数据
+            Parallel.For(0, spectrumSize, i =>
             {
                 float sum = 0;
                 int startIndex = i * pointsPerBin;
                 int endIndex = Math.Min(startIndex + pointsPerBin, _fftLength / 2);
 
-                // 合并多个FFT点为一个频谱点
                 for (int j = startIndex; j < endIndex; j++)
                 {
-                    // 计算幅度 (使用NAudio的Complex结构)
                     float magnitude = (float)Math.Sqrt(
                         _complexBuffer[j].X * _complexBuffer[j].X +
                         _complexBuffer[j].Y * _complexBuffer[j].Y);
                     sum += magnitude;
                 }
 
-                // 平均并转换为dB
                 float average = sum / (endIndex - startIndex);
                 float dbValue = 20 * (float)Math.Log10(average + 0.0001f);
-
-                // 归一化到0-1范围
                 float normalizedValue = Math.Max(0, Math.Min(1, (dbValue + 90) / 90));
-                //Debug.WriteLine($"频谱点 {i}: 原始值 {dbValue}, 归一化值 {normalizedValue}");
-                // 应用平滑效果
-                _spectrumData[i] = normalizedValue;
-                //updateSpectrumData?.Invoke(this, _spectrumData);
-            }
+
+                // 添加平滑处理，避免频谱跳跃
+                _spectrumData[i] = _spectrumData[i] * 0.7f + normalizedValue * 0.3f;
+            });
+            //// 填充NAudio的Complex缓冲区
+            //for (int i = 0; i < _fftLength; i++)
+            //{
+            //    _complexBuffer[i].X = _fftBuffer[i]; // 实部
+            //    _complexBuffer[i].Y = 0;             // 虚部（初始为0）
+            //}
+
+            //// 执行FFT变换
+            //FastFourierTransform.FFT(true, _m, _complexBuffer);
+
+            //// 计算频谱数据
+            //int spectrumSize = _barCount;
+            //int pointsPerBin = _fftLength / 2 / spectrumSize;
+
+            //for (int i = 0; i < spectrumSize; i++)
+            //{
+            //    float sum = 0;
+            //    int startIndex = i * pointsPerBin;
+            //    int endIndex = Math.Min(startIndex + pointsPerBin, _fftLength / 2);
+
+            //    // 合并多个FFT点为一个频谱点
+            //    for (int j = startIndex; j < endIndex; j++)
+            //    {
+            //        // 计算幅度 (使用NAudio的Complex结构)
+            //        float magnitude = (float)Math.Sqrt(
+            //            _complexBuffer[j].X * _complexBuffer[j].X +
+            //            _complexBuffer[j].Y * _complexBuffer[j].Y);
+            //        sum += magnitude;
+            //    }
+
+            //    // 平均并转换为dB
+            //    float average = sum / (endIndex - startIndex);
+            //    float dbValue = 20 * (float)Math.Log10(average + 0.0001f);
+
+            //    float normalizedValue = Math.Max(0, Math.Min(1, (dbValue + 90) / 90));
+            //    _spectrumData[i] = normalizedValue;
+            //    Task.Run(() => updateSpectrumData?.Invoke(this, _spectrumData));
+            //}
         }
 
 

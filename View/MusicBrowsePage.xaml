@@ -8,6 +8,7 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     mc:Ignorable="d"
     IsTabStop="True"
     TabIndex="0"
@@ -125,11 +126,23 @@
                     HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="FullScreenIcon"  VerticalAlignment="Center" Glyph="&#xe740;" Margin="0" Grid.Column="0"/>
                 </Button>
-            </StackPanel>
-            <!-- 专辑封面 -->
-            <Border Grid.Row="1" Grid.Column="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Image x:Name="PlayingDetailAlbumCoverImage" />
-            </Border>
+            </StackPanel>            
+            <Grid Grid.Row="1" Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <!-- 专辑封面 -->
+                <Border Grid.Row="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image x:Name="PlayingDetailAlbumCoverImage" />
+                </Border>
+                <canvas:CanvasControl
+                    Margin="50 10 10 10"
+                    x:Name="SpectrumCanvas"
+                    Background="Transparent"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch" />
+            </Grid>
             <Grid Grid.Row="1" Grid.Column="1" >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

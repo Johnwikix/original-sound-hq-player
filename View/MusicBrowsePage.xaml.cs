@@ -1,3 +1,5 @@
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -69,6 +71,9 @@ namespace WinUIMusicPlayer.View
         public event EventHandler refreshUsbDeviceMusicList;
         private int _lastLyricIndex = -1;
         private EqualizerDialog equalizerDialog;
+        private CanvasControl _spectrumCanvas;
+        private float[] _spectrumData = new float[16];
+        private readonly DispatcherTimer _forceDrawTimer;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -123,15 +128,53 @@ namespace WinUIMusicPlayer.View
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
+            _spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
+            _spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
+            _forceDrawTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _forceDrawTimer.Tick += (s, e) => _spectrumCanvas.Invalidate();
+            _forceDrawTimer.Start();
         }
 
-        private void MusicPlaybackService_updateSpectrumData(object? sender, float[] e)
+        private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            DispatcherQueue.TryEnqueue(() =>
+            // 添加调试信息
+            //Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+
+            var ds = args.DrawingSession;
+            float width = (float)sender.ActualWidth;
+            float height = (float)sender.ActualHeight;
+            float barWidth = width / _spectrumData.Length * 0.8f;
+            float spacing = width / _spectrumData.Length * 0.2f;
+
+            // 优化的绘制代码（不使用CanvasGeometry）
+            for (int i = 0; i < _spectrumData.Length; i++)
             {
-                //fft1.Height = e[0] * 100;
-            });
+                float barHeight = _spectrumData[i] * height;
+                if (barHeight < 1) continue; // 跳过太小的条
+
+                float x = i * (barWidth + spacing);
+                float y = height - barHeight;
+
+                // 直接绘制，最高效
+                ds.FillRectangle(x, y, barWidth, barHeight, Colors.Blue);
+
+                // 顶部高亮
+                if (barHeight > 2)
+                {
+                    ds.FillRectangle(x, y, barWidth, 2, Colors.White);
+                }
+            }
         }
+
+        private void MusicPlaybackService_updateSpectrumData(object? sender, float[] spectrumData)
+        {              
+           Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
+           Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+        }
+
 
         private void MainWindow_changePlayMode(object? sender, PlayMode mode)
         {    
