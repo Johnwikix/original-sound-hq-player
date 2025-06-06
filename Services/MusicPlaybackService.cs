@@ -713,7 +713,8 @@ namespace WinUIMusicPlayer.Services
                         return false;
                     }
                 }
-                waveChannel.Sample += WaveChannel_Sample;
+                //TO DO 波形可视化
+                //waveChannel.Sample += WaveChannel_Sample;
                 if (AppSettings.IsEqualizerEnabled)
                 {
                     isEnableEq = true;                    

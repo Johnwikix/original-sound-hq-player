@@ -99,7 +99,8 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.showMessage += ShowMessage;
             musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
             musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
-            musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
+            //TODO 波形可视化
+            //musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
             LyricsListView.ItemsSource = _uiLyrics;
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
@@ -129,10 +130,11 @@ namespace WinUIMusicPlayer.View
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
-            _spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
-            _spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
-            _forceDrawTimer = new System.Timers.Timer(16);
-            _forceDrawTimer.Elapsed += (s, e) => _spectrumCanvas.Invalidate();           
+            //TODO 波形可视化
+            //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
+            //_spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
+            //_forceDrawTimer = new System.Timers.Timer(16);
+            //_forceDrawTimer.Elapsed += (s, e) => _spectrumCanvas.Invalidate();           
         }
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -1068,13 +1070,13 @@ namespace WinUIMusicPlayer.View
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.isPlaying)
-            {
-                _forceDrawTimer.Stop();
-            }
-            else {
-                _forceDrawTimer.Start();
-            }
+            //if (AppSettings.isPlaying)
+            //{
+            //    _forceDrawTimer.Stop();
+            //}
+            //else {
+            //    _forceDrawTimer.Start();
+            //}
             musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
             systemMediaControlsService.UpdateSystemMediaControlsState();
@@ -1239,7 +1241,7 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                _forceDrawTimer.Start();
+                //_forceDrawTimer.Start();
                 musicPlaybackService.currentPlayingMusic = music;
                 LoadLyricsToUI();
                 UpdatePlayBar(music);
