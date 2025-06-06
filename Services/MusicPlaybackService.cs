@@ -84,7 +84,7 @@ namespace WinUIMusicPlayer.Services
         public MusicPlaybackService()
         {
             notificationService = new NotificationService();
-            progressTimer = new System.Timers.Timer(33);
+            progressTimer = new System.Timers.Timer(250);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
             _m = (int)Math.Log(_fftLength, 2);
@@ -741,29 +741,32 @@ namespace WinUIMusicPlayer.Services
 
         private void WaveChannel_Sample(object? sender, SampleEventArgs e)
         {
-            float sample = e.Left;
+            float sample = (e.Left + e.Right)/2;
             _fftBuffer[_fftPosition] = sample * (float)FastFourierTransform.HannWindow(_fftPosition, _fftLength);
             _fftPosition++;            
             if (_fftPosition >= _fftLength)
             {                
                 _fftPosition = 0;
-                Debug.WriteLine($"sample：{sample}");
-                Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+                //Debug.WriteLine($"sample：{sample}");
+                //Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
                 lock (_spectrumDataLock)
-                {
-                    CalculateSpectrum();
+                {                    
                     // 异步通知UI更新
-                    Task.Run(() => updateSpectrumData?.Invoke(this, _spectrumData));
+                    Task.Run(() => {
+                        CalculateSpectrum(_fftBuffer);
+                        updateSpectrumData?.Invoke(this, _spectrumData);
+                    });
                 }
             }           
         }
 
         // 计算频谱
-        private void CalculateSpectrum()
+        private void CalculateSpectrum(float[] fftBuffer)
         {
+            Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", fftBuffer)}]");
             Parallel.For(0, _fftLength, i =>
             {
-                _complexBuffer[i].X = _fftBuffer[i];
+                _complexBuffer[i].X = fftBuffer[i];
                 _complexBuffer[i].Y = 0;
             });
 
