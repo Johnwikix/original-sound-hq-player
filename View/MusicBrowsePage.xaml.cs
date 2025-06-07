@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.View
         private EqualizerDialog equalizerDialog;
         private CanvasControl _spectrumCanvas;
         private float[] _spectrumData = new float[16];
-        private readonly System.Timers.Timer _forceDrawTimer;
+        //private readonly System.Timers.Timer _forceDrawTimer;
         private readonly object _lockObject = new object(); // Ëø¶ÔÏó
         public MusicBrowsePage()
         {
@@ -1104,7 +1104,7 @@ namespace WinUIMusicPlayer.View
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            _forceDrawTimer.Stop();
+            //_forceDrawTimer.Stop();
             musicPlaybackService.StopPlaying();
             UpdatePlayPauseButtonIcon();
             musicPlaybackService.Reset();
