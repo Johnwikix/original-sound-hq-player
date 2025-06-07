@@ -962,9 +962,9 @@ namespace WinUIMusicPlayer.Services
         {
             if (waveOut != null)
             {
-                waveOut.Stop();
-                AppSettings.isPlaying = false;
                 progressTimer.Stop();
+                waveOut.Stop();
+                AppSettings.isPlaying = false;                
             }
 
         }
