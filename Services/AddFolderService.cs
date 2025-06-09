@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
@@ -237,25 +239,65 @@ namespace WinUIMusicPlayer.Services
 
         public async Task GetMusicFilesRecursive(StorageFolder folder, List<Music> musicFiles)
         {
+            DateTime startTime = DateTime.Now;
             var files = await folder.GetFilesAsync();
-            foreach (StorageFile file in files)
+
+            // 筛选出音乐文件
+            var musicFilesList = files.Where(file => ToolUtils.IsMusicFile(file.FileType)).ToList();
+
+            // 并行处理音乐文件
+            var tasks = musicFilesList.Select(async file =>
             {
-                if (ToolUtils.IsMusicFile(file.FileType))
+                try
                 {
                     Music music = await getMusicInfo(file, folder.Path);
-                    if (music != null)
-                    {
-                        musicFiles.Add(music);
-                    }
+                    return music;
+                }
+                catch (Exception ex)
+                {
+                    // 记录错误但不中断整个过程
+                    System.Diagnostics.Debug.WriteLine($"处理文件 {file.Name} 时出错: {ex.Message}");
+                    return null;
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            // 添加有效结果到列表（线程安全）
+            lock (musicFiles)
+            {
+                foreach (var music in results.Where(m => m != null))
+                {
+                    musicFiles.Add(music);
                 }
             }
 
-            // 递归扫描子文件夹
+            // 递归扫描子文件夹 - 也可以并行处理
             var subfolders = await folder.GetFoldersAsync();
-            foreach (var subfolder in subfolders)
-            {
-                await GetMusicFilesRecursive(subfolder, musicFiles);
-            }
+            var subfolderTasks = subfolders.Select(subfolder =>
+                GetMusicFilesRecursive(subfolder, musicFiles));
+
+            await Task.WhenAll(subfolderTasks);
+            //var files = await folder.GetFilesAsync();
+            //foreach (StorageFile file in files)
+            //{
+            //    if (ToolUtils.IsMusicFile(file.FileType))
+            //    {
+            //        Music music = await getMusicInfo(file, folder.Path);
+            //        if (music != null)
+            //        {
+            //            musicFiles.Add(music);
+            //        }
+            //    }
+            //}
+
+            //// 递归扫描子文件夹
+            //var subfolders = await folder.GetFoldersAsync();
+            //foreach (var subfolder in subfolders)
+            //{
+            //    await GetMusicFilesRecursive(subfolder, musicFiles);
+            //}
+            Debug.WriteLine($"扫描文件夹 {folder.Path} 完成，耗时: {(DateTime.Now - startTime).TotalSeconds} 秒");
         }
     }
 }
