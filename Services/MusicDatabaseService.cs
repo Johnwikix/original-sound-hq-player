@@ -912,7 +912,9 @@ namespace WinUIMusicPlayer.Services
             existingMusic.BitRate = newMusic.BitRate;
             existingMusic.SampleRate = newMusic.SampleRate;
             existingMusic.Channel = newMusic.Channel;
-            existingMusic.Lyrics = newMusic.Lyrics;
+            if (string.IsNullOrEmpty(existingMusic.Lyrics)) {
+                existingMusic.Lyrics = newMusic.Lyrics;
+            }
             existingMusic.TrackNumber = newMusic.TrackNumber;
             await _dbConnection.UpdateAsync(existingMusic);
         }
