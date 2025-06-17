@@ -537,7 +537,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (music != null)
                 {
-                    ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
+                    ((FontIcon)button.Content).Glyph = !music.IsFavorite ? "\ueb52" : "\ueb51";
                     await parentPage.AddToFavourite(music);
                     AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }

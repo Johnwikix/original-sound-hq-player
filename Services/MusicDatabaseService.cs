@@ -227,7 +227,7 @@ namespace WinUIMusicPlayer.Services
                             BitDepth = m.BitDepth,
                             BitRate = m.BitRate,
                             SampleRate = m.SampleRate,
-                            isFavorite = m.isFavorite,
+                            IsFavorite = m.IsFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
                             PlayListOrder = plm.Order
@@ -266,7 +266,7 @@ namespace WinUIMusicPlayer.Services
                             BitDepth = m.BitDepth,
                             BitRate = m.BitRate,
                             SampleRate = m.SampleRate,
-                            isFavorite = m.isFavorite,
+                            IsFavorite = m.IsFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
                             PlayListOrder = plm.Order
@@ -334,12 +334,12 @@ namespace WinUIMusicPlayer.Services
             var maxOrder = await GetMaxOrder();
             foreach (var music in musics)
             {
-                var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Id == music.Id && m.isFavorite == true).FirstOrDefaultAsync();
+                var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Id == music.Id && m.IsFavorite == true).FirstOrDefaultAsync();
                 if (existingMusic != null)
                 {
                     continue; // 如果已经是收藏音乐，则跳过
                 }
-                music.isFavorite = true;
+                music.IsFavorite = true;
                 music.Order = maxOrder + 1;
                 await _dbConnection.UpdateAsync(music);
             }
@@ -409,7 +409,7 @@ namespace WinUIMusicPlayer.Services
         private static async Task<int> GetMaxOrder()
         {
             Music lastFavouriteMusic = await _dbConnection.Table<Music>()
-                                          .Where(m => m.isFavorite)
+                                          .Where(m => m.IsFavorite)
                                           .OrderByDescending(m => m.Order)
                                           .FirstOrDefaultAsync();
             int maxOrder = 0;
@@ -539,7 +539,7 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task<List<Music>> GetFavoriteMusicAsync(string search = null)
         {
-            var query = _dbConnection.Table<Music>().Where(m => m.isFavorite == true);
+            var query = _dbConnection.Table<Music>().Where(m => m.IsFavorite == true);
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(m =>
@@ -553,7 +553,7 @@ namespace WinUIMusicPlayer.Services
 
         public static List<Music> GetFavoriteMusicFromMem(string search = null)
         {
-            var query = AppData.allSongs.Where(m => m.isFavorite == true);
+            var query = AppData.allSongs.Where(m => m.IsFavorite == true);
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(m =>
@@ -708,12 +708,12 @@ namespace WinUIMusicPlayer.Services
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)
         {
             Music lastFavouriteMusic = await _dbConnection.Table<Music>()
-                                          .Where(m => m.isFavorite)
+                                          .Where(m => m.IsFavorite)
                                           .OrderByDescending(m => m.Order)
                                           .FirstOrDefaultAsync();
             if (lastFavouriteMusic != null)
             {
-                if (music.isFavorite)
+                if (music.IsFavorite)
                 {
                     music.Order = lastFavouriteMusic.Order + 1;
                 }

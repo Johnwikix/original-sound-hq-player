@@ -167,7 +167,7 @@ namespace WinUIMusicPlayer.View
 
         public void UpdateFavouriteMusic(Music music)
         {
-            if (music.isFavorite)
+            if (music.IsFavorite)
             {
                 AddMusicToTop(music);
             }
@@ -277,7 +277,7 @@ namespace WinUIMusicPlayer.View
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    if (item.isFavorite)
+                    if (item.IsFavorite)
                     {
                         musicList.Remove(item);
                     }
@@ -289,7 +289,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (MusicListView.SelectedItem is Music selectedMusic)
                 {
-                    if (selectedMusic.isFavorite)
+                    if (selectedMusic.IsFavorite)
                     {
                         musicList.Remove(selectedMusic);
                     }
@@ -600,8 +600,8 @@ namespace WinUIMusicPlayer.View
             {
                 if (music != null)
                 {
-                    ((FontIcon)button.Content).Glyph = !music.isFavorite ? "\ueb52" : "\ueb51";
-                    if (music.isFavorite)
+                    ((FontIcon)button.Content).Glyph = !music.IsFavorite ? "\ueb52" : "\ueb51";
+                    if (music.IsFavorite)
                     {
                         musicList.Remove(music);
                     }

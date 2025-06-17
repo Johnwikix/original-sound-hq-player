@@ -702,14 +702,14 @@ namespace WinUIMusicPlayer.View
 
         public async Task AddToFavourite(Music music)
         {
-            music.isFavorite = !music.isFavorite;
+            music.IsFavorite = !music.IsFavorite;
             await MusicDatabaseService.AddToFavourite(music, musicPlaybackService.currentPlayingMusic);
             if (musicPlaybackService.currentPlayingMusic != null)
             {
                 if (musicPlaybackService.currentPlayingMusic.Id == music.Id)
                 {
-                    musicPlaybackService.currentPlayingMusic.isFavorite = music.isFavorite;
-                    ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.isFavorite ? "\ueb52" : "\ueb51";
+                    musicPlaybackService.currentPlayingMusic.IsFavorite = music.IsFavorite;
+                    ((FontIcon)PlayBarFavouriteButton.Content).Glyph = music.IsFavorite ? "\ueb52" : "\ueb51";
                 }
             }
             //AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -1115,7 +1115,7 @@ namespace WinUIMusicPlayer.View
         {
             if (musicPlaybackService.currentPlayingMusic != null)
             {
-                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = !musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
+                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = !musicPlaybackService.currentPlayingMusic.IsFavorite ? "\ueb52" : "\ueb51";
                 await AddToFavourite(musicPlaybackService.currentPlayingMusic);
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 NotifySubPageUpdateFavouriteState();
@@ -1176,7 +1176,7 @@ namespace WinUIMusicPlayer.View
                 MusicAlbumTextBlock.Text = music.Album;
                 MusicAuthorTextBlock.Text = music.Author;
                 MusicInfoTextBlock.Text = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.isFavorite ? "\ueb52" : "\ueb51";
+                ((FontIcon)PlayBarFavouriteButton.Content).Glyph = musicPlaybackService.currentPlayingMusic.IsFavorite ? "\ueb52" : "\ueb51";
                 HRImage.Source = null;
                 PlayingDetailHRImage.Source = null;
                 if ((music.SampleRate >= 48000 && music.BitDepth >= 24) || (music.SampleRate >= 2822400 && music.BitDepth == 1))

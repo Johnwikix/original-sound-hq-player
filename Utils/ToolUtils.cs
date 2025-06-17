@@ -336,7 +336,7 @@ namespace WinUIMusicPlayer.Utils
                 var index = musicList.FindIndex(m => m.Id == music.Id);
                 if (index != -1)
                 {
-                    musicList[index].isFavorite = music.isFavorite;
+                    musicList[index].IsFavorite = music.IsFavorite;
                 }
             }
             return musicList;
