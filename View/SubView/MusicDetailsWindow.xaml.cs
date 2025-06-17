@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.View.SubView
             uint dpi = GetDpiForWindow(hwnd);
             scaleFactor = dpi / 96.0;
             int originalWidth = 650;
-            int originalHeight = 650;
+            int originalHeight = 750;
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
 
