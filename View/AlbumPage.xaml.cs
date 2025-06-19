@@ -108,13 +108,6 @@ namespace WinUIMusicPlayer.View
                     musicList.Add(item);
                 }
                 //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
-                //Parallel.ForEach(_allMusic, async (music) =>
-                //{
-                //    DispatcherQueue.TryEnqueue(async () =>
-                //    {
-                //        await AlbumCoverService.LoadSingleCover(music);
-                //    });                    
-                //});
                 // 页面已经显示，现在开始异步加载封面
                 // 使用 Task.Run 避免阻塞 UI 线程
                 _ = Task.Run(async () =>
