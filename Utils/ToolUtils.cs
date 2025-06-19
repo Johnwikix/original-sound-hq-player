@@ -13,7 +13,9 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TagLib;
+using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
+using Windows.Media.Devices;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -69,6 +71,26 @@ namespace WinUIMusicPlayer.Utils
             ListLoop,
             RandomLoop,
             RepeatOff
+        }
+
+        public static async Task RefreshDevice()
+        {
+            try
+            {
+                string selector = MediaDevice.GetAudioRenderSelector();
+                DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
+                AppSettings.outputDeviceList.Clear();
+                foreach (DeviceInformation device in devices)
+                {
+                    AppSettings.outputDeviceList.Add(device.Name);
+                }                
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
+            }
         }
 
         public static Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
@@ -139,7 +161,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<BitmapImage> GetAlbumCover(Music album)
+        public static async Task<BitmapImage> GetAlbumCover(Music album,int coverSize = 150)
         {
             BitmapImage newCover = album.Cover;
             List<Music> musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
@@ -158,7 +180,7 @@ namespace WinUIMusicPlayer.Utils
                             if (file.Tag.Pictures.Length > 0)
                             {
                                 var picture = file.Tag.Pictures[0];
-                                newCover = await ReadBitmapImageAsync(picture, 150);
+                                newCover = await ReadBitmapImageAsync(picture, coverSize);
                             }
                             else
                             {

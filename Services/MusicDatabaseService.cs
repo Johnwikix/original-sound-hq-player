@@ -660,6 +660,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
+                AppSettings.CoverSize = settings.CoverSize;
             }
         }
 

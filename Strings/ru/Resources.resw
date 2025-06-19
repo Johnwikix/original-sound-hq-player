@@ -615,4 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Вокал</value>
   </data>
+  <data name="CoverSize.Text" xml:space="preserve">
+    <value>Размер крышки</value>
+  </data>
+  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+    <value>0 Первоначальный размер.</value>
+  </data>
 </root>

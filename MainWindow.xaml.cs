@@ -175,6 +175,7 @@ namespace WinUIMusicPlayer
             _taskbarHelper?.Dispose();
             _taskbarHelper = null;
             WindowClosed?.Invoke(this, EventArgs.Empty);
+            AppNotifyIconControl.ExitApplication();
         }
 
         private async void InitializeApp()
@@ -284,13 +285,14 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                string selector = MediaDevice.GetAudioRenderSelector();
-                DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
-                AppSettings.outputDeviceList.Clear();
-                foreach (DeviceInformation device in devices)
-                {
-                    AppSettings.outputDeviceList.Add(device.Name);
-                }
+                //string selector = MediaDevice.GetAudioRenderSelector();
+                //DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
+                //AppSettings.outputDeviceList.Clear();
+                //foreach (DeviceInformation device in devices)
+                //{
+                //    AppSettings.outputDeviceList.Add(device.Name);
+                //}
+                await ToolUtils.RefreshDevice();
                 if (SettingLoaded != null)
                 {
                     DispatcherQueue.TryEnqueue(() =>
@@ -298,8 +300,8 @@ namespace WinUIMusicPlayer
                         SettingLoaded?.Invoke(this, EventArgs.Empty);
                     });
                 }
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+                //GC.Collect();
+                //GC.WaitForPendingFinalizers();
             }
             catch (Exception ex)
             {

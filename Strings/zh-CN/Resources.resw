@@ -615,4 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>人声</value>
   </data>
+  <data name="CoverSize.Text" xml:space="preserve">
+    <value>封面尺寸</value>
+  </data>
+  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+    <value>0为原始尺寸</value>
+  </data>
 </root>

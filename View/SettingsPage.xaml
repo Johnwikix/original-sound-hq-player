@@ -8,9 +8,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
     >
 
-    
+    <Page.Resources>
+        <converters:BooleanNegationConverter  x:Key="BooleanNegationConverter"/>
+        <converters:RadioButtonTagToBoolConverter x:Key="RadioTagConverter"/>
+    </Page.Resources>
     <Grid Margin="0 32 0 32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -49,7 +53,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Uid="SettingOutputMode" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="OutputModeComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="OutputModeComboBox_SelectionChanged" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <ComboBox x:Name="OutputModeComboBox" SelectedValue="{Binding ViewModel.OutputModeTag, Mode=TwoWay}" SelectedValuePath="Tag" Grid.Column="1" Grid.Row="0" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush"/>
                                 <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent"/>
                                 <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared"/>
@@ -59,15 +63,15 @@
 
                             <!-- 输出设备选择 -->
                             <TextBlock x:Uid="SettingOutputDevice" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
-                            <ComboBox x:Name="OutputDeviceComboBox"  Grid.Column="1" Grid.Row="1" Margin="10" SelectionChanged="OutputDeviceComboBox_SelectionChanged" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <ComboBox x:Name="OutputDeviceComboBox" SelectedItem="{Binding ViewModel.DeviceName, Mode=TwoWay}" ItemsSource="{Binding ViewModel.OutputDevices,Mode=OneWay}"  Grid.Column="1" Grid.Row="1" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
                             <!-- 缓冲区大小输入 -->
                             <TextBlock x:Uid="SettingBufferSize" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" ValueChanged="LatencyNumberBox_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" Width="300" Value="{Binding ViewModel.Latency,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
                             <!-- DSD增益设置 -->
                             <TextBlock x:Uid="SettingDSDGain" FontSize="14"  Grid.Column="0" Grid.Row="3" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="DSDGainNumberBox"  Grid.Column="1" Grid.Row="3" Margin="10" ValueChanged="DSDGain_ValueChanged" Width="300" Value="200" Minimum="0" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <NumberBox x:Name="DSDGainNumberBox" Value="{Binding ViewModel.DsdGain,Mode=TwoWay}"  Grid.Column="1" Grid.Row="3" Margin="10" Width="300" Minimum="0" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>
@@ -84,12 +88,12 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Uid="DefaultEntryInterface" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="DefualtEntryComboBox"  Grid.Column="1" Grid.Row="0" SelectionChanged="DefualtEntryComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <ComboBox x:Name="DefaultEntryComboBox" Grid.Column="1" Grid.Row="0" SelectedValue="{Binding ViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}" SelectedValuePath="Tag" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder"/>
                                 <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse"/>
                             </ComboBox>
                             <TextBlock x:Uid="DefaultMusicEntryInterface" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="DefualtPlayListComboBox"  Grid.Column="1" Grid.Row="1" SelectionChanged="DefualtPlayListComboBox_SelectionChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <ComboBox x:Name="DefualtPlayListComboBox" SelectedValue="{Binding ViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}" SelectedValuePath="Tag" Grid.Column="1" Grid.Row="1" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <ComboBoxItem x:Uid="SongCombox" Tag="song"/>
                                 <ComboBoxItem x:Uid="AlbumCombox" Tag="album"/>
                                 <ComboBoxItem x:Uid="ArtistCombox" Tag="artist"/>
@@ -109,6 +113,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -121,10 +126,10 @@
                                         <ToolTip x:Uid="CoverServiceLrcAPISourceDoc" VerticalOffset="10"/>
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
-                            </StackPanel>                            
-                            <TextBox x:Name="LrcAPITextBox"  Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" TextChanged="LrcAPITextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                            <TextBox x:Name="LrcAPITextBox" Text="{Binding ViewModel.LrcAPISource,Mode=TwoWay}" Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             <TextBlock x:Uid="CoverServiceLrcAPISourceAuthCode"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                            <TextBox x:Name="LrcAPIAuthTextBox"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" TextChanged="LrcAPIAuthTextBox_TextChanged" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBox x:Name="LrcAPIAuthTextBox" Text="{Binding ViewMode.LrcAPIAuth,Mode=TwoWay}"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal">
                                 <TextBlock x:Uid="CoverCache"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <!--<FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
@@ -133,10 +138,19 @@
                                     </ToolTipService.ToolTip>
                                 </FontIcon>-->
                             </StackPanel>
-                            <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" Toggled="CoverCacheToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
+                            <ToggleSwitch FlowDirection="RightToLeft" IsOn="{Binding ViewModel.IsCoverCacheEnabled,Mode=TwoWay}"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" HorizontalAlignment="Right" Margin="10"/>
                             <TextBlock x:Uid="MaximumNumberOfPreLoadedCovers"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="MaxCoverPreLoadNumberBox" ValueChanged="MaxCoverPreLoadNumberBox_ValueChanged" Grid.Column="1" Grid.Row="2" Value="50" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
+                            <NumberBox x:Name="MaxCoverPreLoadNumberBox" Grid.Column="1" Grid.Row="2" Value="{Binding ViewModel.MaxCoverPreLoadNum,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
                             <StackPanel Grid.Column="0" Grid.Row="4" Orientation="Horizontal">
+                                <TextBlock x:Uid="CoverSize"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center" Tapped="ToolTip_Tapped">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="CoverSizeToolTip" VerticalOffset="10"/>
+                                    </ToolTipService.ToolTip>
+                                </FontIcon>
+                            </StackPanel>
+                            <NumberBox x:Name="CoverSize" Value="{Binding ViewModel.CoverSize, Mode=TwoWay}" Grid.Column="1" Grid.Row="4" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
+                            <StackPanel Grid.Column="0" Grid.Row="5" Orientation="Horizontal">
                                 <TextBlock x:Uid="AutoLyricMatching"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
                                     <ToolTipService.ToolTip>
@@ -144,7 +158,7 @@
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>
-                            <ToggleSwitch FlowDirection="RightToLeft"  Grid.Column="1" Grid.Row="4" x:Name="AutoLyricsToggle" Toggled="AutoLyricsToggle_Toggled"  HorizontalAlignment="Right" Margin="10"/>
+                            <ToggleSwitch FlowDirection="RightToLeft" IsOn="{Binding ViewModel.IsAutoLyricsEnabled,Mode=TwoWay}"  Grid.Column="1" Grid.Row="5" x:Name="AutoLyricsToggle" HorizontalAlignment="Right" Margin="10"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>
@@ -159,14 +173,18 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
                                 <RadioButton x:Name="CloseAppRadioButton" x:Uid="CloseApp" 
-                                        Checked="ClosedRadioButton_Checked" 
+                                        Command="{Binding ViewModel.BackgroundRunningChangedCommand,Mode=OneWay}"
+                                        CommandParameter="Closed"
                                         Tag="Closed"
                                         GroupName="ClosedGroup"
+                                         IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
                                         Margin="0,5,0,5"/>
                                 <RadioButton x:Name="RunningBackendRadioButton" x:Uid="Backgrounder" 
-                                        Checked="ClosedRadioButton_Checked" 
                                         Tag="RunningBackend"
+                                        Command="{Binding ViewModel.BackgroundRunningChangedCommand,Mode=OneWay}"
+                                        CommandParameter="RunningBackend"
                                         GroupName="ClosedGroup"
+                                        IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay}"
                                         Margin="0,5,0,5"/>
                             </StackPanel>
                         </Grid>
@@ -189,18 +207,24 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
                                 <RadioButton x:Name="MicaRadioButton" x:Uid="MicaStyle" 
-                                    Checked="BackdropRadioButton_Checked" 
-                                    Tag="Mica"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Mica}"
+                                    Tag="Mica" 
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Mica"
                                     GroupName="BackdropGroup"
                                     Margin="0,5,0,5"/>
                                 <RadioButton x:Name="AcrylicRadioButton" x:Uid="AcrylicStyle" 
-                                    Checked="BackdropRadioButton_Checked" 
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Acrylic}" 
                                     Tag="Acrylic"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Acrylic"
                                     GroupName="BackdropGroup"
                                     Margin="0,5,0,5"/>
                                 <RadioButton x:Name="TransparentAcrylicRadioButton" x:Uid="TransparentAcrylicStyle" 
-                                    Checked="BackdropRadioButton_Checked" 
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=TransparentAcrylic}" 
                                     Tag="TransparentAcrylic"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="TransparentAcrylic"
                                     GroupName="BackdropGroup"
                                     Margin="0,5,0,5"/>                                
                             </StackPanel>
@@ -223,18 +247,24 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
                                 <RadioButton x:Name="DefaultRadioButton" x:Uid="SystemDefaultTheme" 
-                                    Checked="ThemeRadioButton_Checked" 
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Default}"
                                     Tag="Default"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Default"
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
                                 <RadioButton x:Name="DarkRadioButton" x:Uid="Dark" 
-                                    Checked="ThemeRadioButton_Checked" 
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Dark}"
                                     Tag="Dark"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Dark"
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
                                 <RadioButton x:Name="LightRadioButton" x:Uid="Light" 
-                                    Checked="ThemeRadioButton_Checked" 
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Light}"
                                     Tag="Light"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Light"
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
                             </StackPanel>

@@ -8,8 +8,8 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static MMDeviceCollection OutputDevices { get; set; }
-        public static string OutputMode { get; set; } = "DirectSound";
-        public static int Latency { get; set; } = 400;
+        public static string OutputMode { get; set; } = "WaveOut";
+        public static int Latency { get; set; } = 300;
 
         public static event EventHandler OutputSettingsChanged;
 
@@ -32,6 +32,7 @@ namespace WinUIMusicPlayer.Model
         public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
+        public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
 
         public static Dictionary<string, double> equalizer = new Dictionary<string, double>
         {

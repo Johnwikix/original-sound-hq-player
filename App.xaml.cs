@@ -1,8 +1,11 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -16,6 +19,7 @@ namespace WinUIMusicPlayer
     {
         public static MainWindow MainWindow { get; private set; }
         private Window _tempWindow = null;
+        public static IServiceProvider Services { get; private set; }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -24,6 +28,14 @@ namespace WinUIMusicPlayer
         public App()
         {
             this.InitializeComponent();
+            var host = Host.CreateDefaultBuilder()
+             .ConfigureServices((context, services) =>
+             {
+                 services.AddSingleton<SettingsViewModel>();
+                 // 其他服务...
+             })
+             .Build();
+            Services = host.Services; // 赋值给静态属性
             var systemLanguages = GlobalizationPreferences.Languages;
             if (systemLanguages[0].StartsWith("zh"))
             {
@@ -47,7 +59,6 @@ namespace WinUIMusicPlayer
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
-
         /// <summary>
         /// Invoked when the application is launched.
         /// </summary>

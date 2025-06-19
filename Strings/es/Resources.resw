@@ -615,4 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Vocal</value>
   </data>
+  <data name="CoverSize.Text" xml:space="preserve">
+    <value>Tamaño de la cubierta</value>
+  </data>
+  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+    <value>0 es el tamaño original</value>
+  </data>
 </root>

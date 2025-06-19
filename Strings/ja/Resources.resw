@@ -615,4 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>ボーカル</value>
   </data>
+  <data name="CoverSize.Text" xml:space="preserve">
+    <value>カバーサイズ</value>
+  </data>
+  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+    <value>0は元の寸法</value>
+  </data>
 </root>

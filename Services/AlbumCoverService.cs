@@ -24,7 +24,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
-                        BitmapImage cover = await ToolUtils.GetAlbumCover(album);
+                        BitmapImage cover = await ToolUtils.GetAlbumCover(album,AppSettings.CoverSize);
                         album.Cover = cover;
                         if (AppSettings.isCoverCacheEnabled)
                         {
@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    BitmapImage cover = await ToolUtils.GetAlbumCover(music);
+                    BitmapImage cover = await ToolUtils.GetAlbumCover(music,AppSettings.CoverSize);
                     music.Cover = cover;
                     if (AppSettings.isCoverCacheEnabled)
                     {
@@ -74,7 +74,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (!AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
                     {
-                        AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album);
+                        AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album, AppSettings.CoverSize);
                     }
                 }
             }
