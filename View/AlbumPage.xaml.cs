@@ -146,7 +146,14 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(item);
                 }
-                await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
+                //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
+                Parallel.ForEach(_allMusic, async (music) =>
+                {
+                    DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        await AlbumCoverService.LoadSingleCover(music);
+                    });                    
+                });
             }
             catch (Exception ex)
             {

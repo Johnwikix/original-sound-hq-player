@@ -39,6 +39,28 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task LoadSingleCover(Music music) {
+            try
+            {
+                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+                {
+                    music.Cover = cachedCover;
+                }
+                else
+                {
+                    BitmapImage cover = await ToolUtils.GetAlbumCover(music);
+                    music.Cover = cover;
+                    if (AppSettings.isCoverCacheEnabled)
+                    {
+                        AppData.albumCoverCache[music.Album] = cover;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"加载单个专辑封面失败: {ex.Message}");
+            }
+        }
+
         public static async Task LoadAlbumCoversInCacheAsync(List<Music> musics)
         {
             try
