@@ -664,6 +664,38 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task SaveSettingAsync()
+        {
+            SaveSettings settings = await GetSettings();
+            SaveSettings newSettings = new SaveSettings();
+            newSettings.OutputMode = AppSettings.OutputMode;
+            newSettings.Latency = AppSettings.Latency;
+            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+            newSettings.DefualtEntry = AppSettings.DefualtEntry;
+            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
+            newSettings.LrcAPISource = AppSettings.LrcAPISource;
+            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
+            newSettings.AppStyle = AppSettings.AppStyle;
+            newSettings.AppTheme = AppSettings.AppTheme;
+            newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
+            newSettings.isRunningBackend = AppSettings.isRunningBackend;
+            newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+            newSettings.dsdGain = AppSettings.dsdGain;
+            newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
+            newSettings.CoverSize = AppSettings.CoverSize;
+            if (settings == null)
+            {
+                await MusicDatabaseService.InsertSettings(newSettings);
+            }
+            else
+            {
+                await MusicDatabaseService.UpdateSettings(newSettings);
+            }
+        }
+
         public static async Task SavePlayStateAsync(SavePlayState playState)
         {
             await _dbConnection.InsertOrReplaceAsync(playState);

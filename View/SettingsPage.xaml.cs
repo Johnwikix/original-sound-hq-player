@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
-            InitializeSettings();            
+            //InitializeSettings();            
             //mainWindow = (App.MainWindow as MainWindow);
             //if (mainWindow != null)
             //{
@@ -129,8 +129,14 @@ namespace WinUIMusicPlayer.View
             //}
         }
 
-        private void InitializeSettings()
+        private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
+            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
+            await Launcher.LaunchUriAsync(uri);
+        }
+
+        //private void InitializeSettings()
+        //{
             //isInitializing = true;
             //isDefaultComplete = false;
             //OutputModeComboBox.SelectedIndex = 3;
@@ -215,7 +221,7 @@ namespace WinUIMusicPlayer.View
             //}
             //isInitializing = false;
 
-        }
+        //}
 
         //private void OutputModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         //{
@@ -401,11 +407,7 @@ namespace WinUIMusicPlayer.View
         //    //}
         //}
 
-        private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
-            await Launcher.LaunchUriAsync(uri);
-        }
+        
 
         //private void LatencyNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
         //{

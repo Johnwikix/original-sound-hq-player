@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.dsdGain = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.isAutoLyricsEnabled = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.Latency = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.maxCoverPreLoadNum = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.isCoverCacheEnabled = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -130,7 +130,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.DefualtPlayList = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.LrcAPIAuth = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.LrcAPISource = string.IsNullOrEmpty(value) ? "https://api.lrc.cx" : value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.OutputMode = value;
                     // 保存设置
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                     if (_isInitized) {
                         AppSettings.OnOutputSettingsChanged();
                     }                    
@@ -207,7 +207,7 @@ namespace WinUIMusicPlayer.ViewModel
                         // 更新应用设置
                         AppSettings.DeviceName = value;
                         // 保存设置
-                        _ = SaveSetting();
+                        _ = MusicDatabaseService.SaveSettingAsync();
                         if (IsRealDevceChange)
                         {
                             if (_isInitized) {
@@ -233,7 +233,7 @@ namespace WinUIMusicPlayer.ViewModel
                     Debug.WriteLine($"BackdropType changed to: {value}");
                     // 保存设置
                     AppSettings.AppStyle = value;
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -250,7 +250,7 @@ namespace WinUIMusicPlayer.ViewModel
                     Debug.WriteLine($"ThemeType changed to: {value}");
                     // 保存设置
                     AppSettings.AppTheme = value;
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -321,7 +321,7 @@ namespace WinUIMusicPlayer.ViewModel
                             break;
                     }
                     mainWindow.SetAppStyle();
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             } catch (Exception ex) {
                 Debug.WriteLine($"Error setting backdrop type: {ex.Message}");
@@ -355,7 +355,7 @@ namespace WinUIMusicPlayer.ViewModel
                             break;
                     }
                     mainWindow.SetAppTheme();
-                    _ = SaveSetting();
+                    _ = MusicDatabaseService.SaveSettingAsync();
                 }
             }
             catch (Exception ex)
@@ -377,7 +377,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.isRunningBackend = true;
                     break;
             }
-            _ = SaveSetting();
+            _ = MusicDatabaseService.SaveSettingAsync();
         }
 
         private void OnCoverSizeChanged(int value)
@@ -385,7 +385,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 更新应用设置
             AppSettings.CoverSize = value;
             // 保存设置
-            _ = SaveSetting();
+            _ = MusicDatabaseService.SaveSettingAsync();
         }
 
         private void OnDefaultEntryComboBoxTagChanged(string value)
@@ -393,39 +393,39 @@ namespace WinUIMusicPlayer.ViewModel
             // 更新应用设置
             AppSettings.DefualtEntry = value;
             // 保存设置
-            _ = SaveSetting();
+            _ = MusicDatabaseService.SaveSettingAsync();
         }
 
-        public async Task SaveSetting()
-        {
-            SaveSettings settings = await MusicDatabaseService.GetSettings();
-            SaveSettings newSettings = new SaveSettings();
-            newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppSettings.Latency;
-            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-            newSettings.DefualtEntry = AppSettings.DefualtEntry;
-            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-            newSettings.LrcAPISource = AppSettings.LrcAPISource;
-            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
-            newSettings.AppStyle = AppSettings.AppStyle;
-            newSettings.AppTheme = AppSettings.AppTheme;
-            newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-            newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
-            newSettings.isRunningBackend = AppSettings.isRunningBackend;
-            newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            newSettings.dsdGain = AppSettings.dsdGain;
-            newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
-            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
-            newSettings.CoverSize = AppSettings.CoverSize;
-            if (settings == null)
-            {
-                await MusicDatabaseService.InsertSettings(newSettings);
-            }
-            else
-            {
-                await MusicDatabaseService.UpdateSettings(newSettings);
-            }
-        }
+        //public async Task SaveSetting()
+        //{
+        //    SaveSettings settings = await MusicDatabaseService.GetSettings();
+        //    SaveSettings newSettings = new SaveSettings();
+        //    newSettings.OutputMode = AppSettings.OutputMode;
+        //    newSettings.Latency = AppSettings.Latency;
+        //    newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+        //    newSettings.DefualtEntry = AppSettings.DefualtEntry;
+        //    newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
+        //    newSettings.LrcAPISource = AppSettings.LrcAPISource;
+        //    newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
+        //    newSettings.AppStyle = AppSettings.AppStyle;
+        //    newSettings.AppTheme = AppSettings.AppTheme;
+        //    newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+        //    newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
+        //    newSettings.isRunningBackend = AppSettings.isRunningBackend;
+        //    newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+        //    newSettings.dsdGain = AppSettings.dsdGain;
+        //    newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+        //    newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+        //    newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
+        //    newSettings.CoverSize = AppSettings.CoverSize;
+        //    if (settings == null)
+        //    {
+        //        await MusicDatabaseService.InsertSettings(newSettings);
+        //    }
+        //    else
+        //    {
+        //        await MusicDatabaseService.UpdateSettings(newSettings);
+        //    }
+        //}
     }
 }
