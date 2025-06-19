@@ -1,12 +1,14 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -66,50 +68,9 @@ namespace WinUIMusicPlayer.View
                     };
             }
             Debug.WriteLine($"专辑列表加载耗时: {(DateTime.Now - startTime).TotalMilliseconds} ms");
-
-            //AlbumGridView.Loaded += async (s, e) =>
-            //{
-            //    _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(AlbumGridView);
-            //    if (_gridViewScrollViewer != null)
-            //    {
-            //        _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
-            //    }
-            //};
+            
         }
-
-        //private void RefreshIcon() {
-        //    foreach (var item in musicList)
-        //    {
-        //        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
-        //        {
-        //            item.IsExistOnDevice = 1;
-        //            var albumSongs = AppData.allSongs.Where(m => m.Album == item.Album).ToList();
-        //            bool allSongsExist = true;
-        //            // 遍历专辑中的每首歌曲
-        //            foreach (var song in albumSongs)
-        //            {
-        //                bool songExists = AppData.musicOnUsbDevice.Any(usbMusic =>
-        //                    usbMusic.Title == song.Title &&
-        //                    usbMusic.Album == song.Album &&
-        //                    usbMusic.Author == song.Author &&
-        //                    usbMusic.Extension == song.Extension);
-        //                if (!songExists)
-        //                {
-        //                    allSongsExist = false;
-        //                    break;
-        //                }
-        //            }
-        //            if (allSongsExist && albumSongs.Count > 0)
-        //            {
-        //                item.IsExistOnDevice = 2;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            item.IsExistOnDevice = 0;
-        //        }
-        //    }
-        //}
+       
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
@@ -147,45 +108,57 @@ namespace WinUIMusicPlayer.View
                     musicList.Add(item);
                 }
                 //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
-                Parallel.ForEach(_allMusic, async (music) =>
+                //Parallel.ForEach(_allMusic, async (music) =>
+                //{
+                //    DispatcherQueue.TryEnqueue(async () =>
+                //    {
+                //        await AlbumCoverService.LoadSingleCover(music);
+                //    });                    
+                //});
+                // 页面已经显示，现在开始异步加载封面
+                // 使用 Task.Run 避免阻塞 UI 线程
+                _ = Task.Run(async () =>
                 {
-                    DispatcherQueue.TryEnqueue(async () =>
+                    // 创建一个任务列表来控制并发数量
+                    var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2); // 限制并发数
+                    var tasks = _allMusic.Select(async music =>
                     {
-                        await AlbumCoverService.LoadSingleCover(music);
-                    });                    
+                        await semaphore.WaitAsync();
+                        try
+                        {
+                            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+                            {
+                                music.Cover = cachedCover;
+                            }
+                            else
+                            {
+                                BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+                                DispatcherQueue.TryEnqueue( () =>
+                                {
+                                    music.Cover = cover;
+                                });
+                                
+                                if (AppSettings.isCoverCacheEnabled)
+                                {
+                                    AppData.albumCoverCache[music.Album] = cover;
+                                }
+                            } 
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    }).ToArray();
+
+                    await Task.WhenAll(tasks);
+                    semaphore.Dispose();
                 });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-        }
-
-        // GridView 滚动事件处理
-        //private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        //{
-        //    var scrollViewer = sender as ScrollViewer;
-        //    if (scrollViewer == null) return;
-
-        //    if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
-        //    {
-        //        _ = LoadMoreAlbumsAsync();
-        //    }
-        //}
-
-        // 修改LoadAlbumsAsync方法为异步清空重新加载
-        //public async Task LoadAlbumsAsync(List<Music> musics)
-        //{
-        //    try
-        //    {
-        //        _allMusic = musics;
-        //        await LoadMoreAlbumsAsync(true);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-        //    }
-        //}
+        }       
 
         private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
