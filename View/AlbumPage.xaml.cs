@@ -142,7 +142,6 @@ namespace WinUIMusicPlayer.View
                             semaphore.Release();
                         }
                     }).ToArray();
-
                     await Task.WhenAll(tasks);
                     semaphore.Dispose();
                 });

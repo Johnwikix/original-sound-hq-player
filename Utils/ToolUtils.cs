@@ -366,7 +366,7 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
-        public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 100)
+        public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 150)
         {
             try
             {

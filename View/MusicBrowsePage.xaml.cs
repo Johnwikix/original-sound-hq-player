@@ -1149,12 +1149,8 @@ namespace WinUIMusicPlayer.View
             }
             else
             {
-                BitmapImage cover = await GetImageFromMusic(music);
+                BitmapImage cover = await ToolUtils.GetAlbumCover(music);
                 AlbumCoverImage.Source = cover;
-                if (AppSettings.isCoverCacheEnabled)
-                {
-                    AppData.albumCoverCache[music.Album] = cover;
-                }
             }
             systemMediaControlsService.UpdateSystemMediaControlsState();
             await Task.Delay(300);
