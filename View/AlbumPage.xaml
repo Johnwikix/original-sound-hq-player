@@ -16,6 +16,7 @@
     <Grid Margin="0">
         <GridView x:Name="AlbumGridView"   
                   IsItemClickEnabled="True"
+                  ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
                   ItemClick="AlbumGridView_ItemClick"
                   IsRightTapEnabled="True"
                   RightTapped="Album_RightTapped"

@@ -32,6 +32,7 @@ namespace WinUIMusicPlayer
              .ConfigureServices((context, services) =>
              {
                  services.AddSingleton<SettingsViewModel>();
+                 services.AddSingleton<AlbumViewModel>();
                  // 其他服务...
              })
              .Build();

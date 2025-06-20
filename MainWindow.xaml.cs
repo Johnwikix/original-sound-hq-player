@@ -8,8 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using testDemo.Taskbar;
-using Windows.Devices.Enumeration;
-using Windows.Media.Devices;
 using Windows.UI.ViewManagement;
 using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
@@ -42,7 +40,6 @@ namespace WinUIMusicPlayer
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
-        private NotifyIconHelper notifyIconHelper;
         private UISettings uiSettings;
         // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
@@ -64,14 +61,6 @@ namespace WinUIMusicPlayer
             themeStyleHelper = new ThemeStyleHelper(this, m_AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
-
-            // 初始化系统托盘图标辅助类
-            //notifyIconHelper = new NotifyIconHelper(this, m_AppWindow);
-            //notifyIconHelper.PlayLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
-            //notifyIconHelper.PlayNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
-            //notifyIconHelper.PlayStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
-            //notifyIconHelper.Initialize();
-            //InitializeNotifyIcon();
             if (AppNotifyIconControl != null)
             {
                 AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);

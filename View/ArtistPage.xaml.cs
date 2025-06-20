@@ -67,15 +67,6 @@ namespace WinUIMusicPlayer.View
                         ToolUtils.RefreshIcon(musicList, "album");
                     };
             }
-
-            //ArtistsGridView.Loaded += (s, e) =>
-            //{
-            //    _gridViewScrollViewer = ToolUtils.FindVisualChild<ScrollViewer>(ArtistsGridView);
-            //    if (_gridViewScrollViewer != null)
-            //    {
-            //        _gridViewScrollViewer.ViewChanged += GridViewScrollViewer_ViewChanged;
-            //    }
-            //};
         }
 
         private void RefreshArtist(object? sender, EventArgs e)
@@ -113,7 +104,6 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadMoreArtistAsync(bool isFirstLoad = false)
         {
-            //if (_isLoading) return;
 
             try
             {
@@ -121,49 +111,12 @@ namespace WinUIMusicPlayer.View
                 {
                     musicList.Add(item);
                 }
-                //_isLoading = true;
-
-                //if (isFirstLoad)
-                //{
-                //    musicList.Clear();
-                //    _currentPage = 0;
-                //}
-
-                //int startIndex = _currentPage * _itemsPerPage;
-                //if (startIndex >= _allMusic.Count)
-                //{
-                //    _isLoading = false;
-                //    return;
-                //}
-                //var itemsToAdd = _allMusic.Skip(startIndex)
-                //                              .Take(_itemsPerPage).ToList();
-                //foreach (var item in itemsToAdd)
-                //{
-                //    musicList.Add(item);
-                //}
-                //_currentPage++;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }
-            //finally
-            //{
-            //    _isLoading = false;
-            //}
         }
-
-        // GridView 滚动事件处理
-        //private void GridViewScrollViewer_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        //{
-        //    var scrollViewer = sender as ScrollViewer;
-        //    if (scrollViewer == null) return;
-
-        //    if (scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight * 0.7 && !e.IsIntermediate && !_isLoading)
-        //    {
-        //        _ = LoadMoreArtistAsync();
-        //    }
-        //}
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
@@ -232,21 +185,6 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        //private async void AddToFavourite_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var menuItem = sender as MenuFlyoutItem;
-        //    var music = menuItem?.DataContext as Music;
-        //    Debug.WriteLine($"专辑名称: {music.Album}, 艺术家: {music.Author}");
-        //    if (music != null)
-        //    {
-        //        List<Music> musicList = await MusicDatabaseService.FindMusicListByArtist(music.Author);
-        //        if (musicList != null)
-        //        {
-        //            _ = MusicDatabaseService.AddMusicListToFavour(musicList);
-        //        }
-        //    }
-        //}
     }
 
 }

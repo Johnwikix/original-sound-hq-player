@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -24,16 +26,18 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class AlbumPage : Page
     {
-        private ObservableCollection<Music> musicList;
+        //private ObservableCollection<Music> musicList;
         private MusicBrowsePage parentPage;
-        private List<Music> _allMusic;
-        private ScrollViewer _gridViewScrollViewer;
-        private string _lastSearchText = "";
+        //private List<Music> _allMusic;
+        //private string _lastSearchText = "";
+        public AlbumViewModel ViewModel { get; }
         public AlbumPage()
         {
             this.InitializeComponent();
-            musicList = new ObservableCollection<Music>();
-            AlbumGridView.ItemsSource = musicList;
+            ViewModel = App.Services.GetRequiredService<AlbumViewModel>();
+            DataContext = this;
+            //musicList = new ObservableCollection<Music>();
+            //AlbumGridView.ItemsSource = musicList;
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -46,142 +50,133 @@ namespace WinUIMusicPlayer.View
                 parentPage.pageType = null;
                 parentPage.DisableBackButton();
                 parentPage.refreshPage += RefreshAlbum;
-                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
-                {
-                    _lastSearchText = AppData.searchText;
-                    InitializeDatabase();
-                }
-                else
-                {
-                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                }
-                ToolUtils.RefreshIcon(musicList, "album");
+                ViewModel.Entance();
                 parentPage.refreshUsbDeviceMusicList +=
                     (s, e) =>
                     {
-                        ToolUtils.RefreshIcon(musicList, "album");
+                        ToolUtils.RefreshIcon(ViewModel.MusicList, "album");
                     };
                 parentPage.clearUsbDeviceMusicList +=
                     (s, e) =>
                     {
-                        ToolUtils.RefreshIcon(musicList, "album");
+                        ToolUtils.RefreshIcon(ViewModel.MusicList, "album");
                     };
-            }
-            Debug.WriteLine($"专辑列表加载耗时: {(DateTime.Now - startTime).TotalMilliseconds} ms");
-            
+            }            
         }
        
 
         private async void RefreshAlbum(object? sender, EventArgs e)
         {
-            InitializeDatabase();
+            ViewModel.InitializeData();
         }
 
 
         public async void SortMusicList(string sortOrder = "DefaultOrder")
         {
-            if (_allMusic.Count > 0)
-            {
-                musicList.Clear();
-                _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic.ToList());
-                await LoadMoreAlbumsAsync(true);
-            }
+            await ViewModel.SortMusicList(sortOrder);
+            //if (_allMusic.Count > 0)
+            //{
+            //    ViewModel.MusicList.Clear();
+            //    _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic.ToList());
+            //    await LoadMoreAlbumsAsync(true);
+            //}
         }
 
-        private async void InitializeDatabase()
-        {
-            musicList.Clear();
-            if (parentPage != null)
-            {
-                _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
-                await LoadMoreAlbumsAsync(true);
-            }
-        }
+        //private async void InitializeDatabase()
+        //{
+        //    ViewModel.InitializeData();
+        //    //ViewModel.MusicList.Clear();
+        //    //if (parentPage != null)
+        //    //{
+        //    //    _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
+        //    //    await LoadMoreAlbumsAsync(true);
+        //    //}
+        //}
 
-        private async Task LoadMoreAlbumsAsync(bool isFirstLoad = false)
-        {
+        //private async Task LoadMoreAlbumsAsync(bool isFirstLoad = false)
+        //{
 
-            try
-            {
-                foreach (var item in _allMusic)
-                {
-                    musicList.Add(item);
-                }
-                //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
-                // 页面已经显示，现在开始异步加载封面
-                // 使用 Task.Run 避免阻塞 UI 线程
-                var options = new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = Environment.ProcessorCount * 2
-                };
-                _ = Task.Run(async () =>
-                {
-                    Parallel.ForEach(musicList, options, async music =>
-                    {
-                        try
-                        {
-                            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-                            {
-                                music.Cover = cachedCover;
-                            }
-                            else
-                            {
-                                BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                                DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    music.Cover = cover;
-                                });
+        //    try
+        //    {
+        //        foreach (var item in _allMusic)
+        //        {
+        //            ViewModel.MusicList.Add(item);
+        //        }
+        //        //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
+        //        // 页面已经显示，现在开始异步加载封面
+        //        // 使用 Task.Run 避免阻塞 UI 线程
+        //        var options = new ParallelOptions
+        //        {
+        //            MaxDegreeOfParallelism = Environment.ProcessorCount * 2
+        //        };
+        //        _ = Task.Run(async () =>
+        //        {
+        //            Parallel.ForEach(ViewModel.MusicList, options, async music =>
+        //            {
+        //                try
+        //                {
+        //                    if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+        //                    {
+        //                        music.Cover = cachedCover;
+        //                    }
+        //                    else
+        //                    {
+        //                        BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+        //                        DispatcherQueue.TryEnqueue(() =>
+        //                        {
+        //                            music.Cover = cover;
+        //                        });
 
-                                if (AppSettings.isCoverCacheEnabled)
-                                {
-                                    AppData.albumCoverCache[music.Album] = cover;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-                        }
-                    });
-                    //var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2); // 限制并发数
-                    //var tasks = _allMusic.Select(async music =>
-                    //{
+        //                        if (AppSettings.isCoverCacheEnabled)
+        //                        {
+        //                            AppData.albumCoverCache[music.Album] = cover;
+        //                        }
+        //                    }
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+        //                }
+        //            });
+        //            //var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2); // 限制并发数
+        //            //var tasks = _allMusic.Select(async music =>
+        //            //{
 
-                    //    await semaphore.WaitAsync();
-                    //    try
-                    //    {
-                    //        if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-                    //        {
-                    //            music.Cover = cachedCover;
-                    //        }
-                    //        else
-                    //        {
-                    //            BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                    //            DispatcherQueue.TryEnqueue( () =>
-                    //            {
-                    //                music.Cover = cover;
-                    //            });
+        //            //    await semaphore.WaitAsync();
+        //            //    try
+        //            //    {
+        //            //        if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+        //            //        {
+        //            //            music.Cover = cachedCover;
+        //            //        }
+        //            //        else
+        //            //        {
+        //            //            BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+        //            //            DispatcherQueue.TryEnqueue( () =>
+        //            //            {
+        //            //                music.Cover = cover;
+        //            //            });
                                 
-                    //            if (AppSettings.isCoverCacheEnabled)
-                    //            {
-                    //                AppData.albumCoverCache[music.Album] = cover;
-                    //            }
-                    //        } 
-                    //    }
-                    //    finally
-                    //    {
-                    //        semaphore.Release();
-                    //    }
-                    //}).ToArray();
-                    //await Task.WhenAll(tasks);
-                    //semaphore.Dispose();
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            }
-        }       
+        //            //            if (AppSettings.isCoverCacheEnabled)
+        //            //            {
+        //            //                AppData.albumCoverCache[music.Album] = cover;
+        //            //            }
+        //            //        } 
+        //            //    }
+        //            //    finally
+        //            //    {
+        //            //        semaphore.Release();
+        //            //    }
+        //            //}).ToArray();
+        //            //await Task.WhenAll(tasks);
+        //            //semaphore.Dispose();
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+        //    }
+        //}       
 
         private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -240,7 +235,7 @@ namespace WinUIMusicPlayer.View
 
         public async void OnAlbumDetailChanged(object sender, Music cover)
         {
-            foreach (var music in musicList)
+            foreach (var music in ViewModel.MusicList)
             {
                 if (music.Album == cover.Album)
                 {

@@ -20,12 +20,6 @@
           IsRightTapEnabled="True"
           RightTapped="Artist_RightTapped"
           >
-            <!--<GridView.ItemContainerTransitions>
-                <TransitionCollection>
-                    <AddDeleteThemeTransition />
-                    <EntranceThemeTransition />
-                </TransitionCollection>
-            </GridView.ItemContainerTransitions>-->
             <GridView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <ItemsWrapGrid Orientation="Horizontal"/>
