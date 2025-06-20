@@ -110,13 +110,14 @@ namespace WinUIMusicPlayer.View
                 //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
                 // 页面已经显示，现在开始异步加载封面
                 // 使用 Task.Run 避免阻塞 UI 线程
+                var options = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = Environment.ProcessorCount * 2
+                };
                 _ = Task.Run(async () =>
                 {
-                    // 创建一个任务列表来控制并发数量
-                    var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2); // 限制并发数
-                    var tasks = _allMusic.Select(async music =>
+                    Parallel.ForEach(musicList, options, async music =>
                     {
-                        await semaphore.WaitAsync();
                         try
                         {
                             if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
@@ -126,24 +127,54 @@ namespace WinUIMusicPlayer.View
                             else
                             {
                                 BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                                DispatcherQueue.TryEnqueue( () =>
+                                DispatcherQueue.TryEnqueue(() =>
                                 {
                                     music.Cover = cover;
                                 });
-                                
+
                                 if (AppSettings.isCoverCacheEnabled)
                                 {
                                     AppData.albumCoverCache[music.Album] = cover;
                                 }
-                            } 
+                            }
                         }
-                        finally
+                        catch (Exception ex)
                         {
-                            semaphore.Release();
+                            Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
                         }
-                    }).ToArray();
-                    await Task.WhenAll(tasks);
-                    semaphore.Dispose();
+                    });
+                    //var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2); // 限制并发数
+                    //var tasks = _allMusic.Select(async music =>
+                    //{
+
+                    //    await semaphore.WaitAsync();
+                    //    try
+                    //    {
+                    //        if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+                    //        {
+                    //            music.Cover = cachedCover;
+                    //        }
+                    //        else
+                    //        {
+                    //            BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+                    //            DispatcherQueue.TryEnqueue( () =>
+                    //            {
+                    //                music.Cover = cover;
+                    //            });
+                                
+                    //            if (AppSettings.isCoverCacheEnabled)
+                    //            {
+                    //                AppData.albumCoverCache[music.Album] = cover;
+                    //            }
+                    //        } 
+                    //    }
+                    //    finally
+                    //    {
+                    //        semaphore.Release();
+                    //    }
+                    //}).ToArray();
+                    //await Task.WhenAll(tasks);
+                    //semaphore.Dispose();
                 });
             }
             catch (Exception ex)
