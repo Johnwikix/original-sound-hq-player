@@ -17,6 +17,7 @@
         <GridView x:Name="AlbumGridView"   
                   IsItemClickEnabled="True"
                   ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
+                  VirtualizingStackPanel.VirtualizationMode="Recycling"
                   ItemClick="AlbumGridView_ItemClick"
                   IsRightTapEnabled="True"
                   RightTapped="Album_RightTapped"
