@@ -49,8 +49,7 @@ namespace WinUIMusicPlayer.View
                 parentPage.currentAlbumName = null;
                 parentPage.pageType = null;
                 parentPage.DisableBackButton();
-                parentPage.refreshPage += RefreshAlbum;
-                ViewModel.Entance();
+                parentPage.refreshPage += RefreshAlbum;                
                 parentPage.refreshUsbDeviceMusicList +=
                     (s, e) =>
                     {
@@ -61,6 +60,7 @@ namespace WinUIMusicPlayer.View
                     {
                         ToolUtils.RefreshIcon(ViewModel.MusicList, "album");
                     };
+                ViewModel.Entance();
             }            
         }
        

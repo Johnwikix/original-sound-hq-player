@@ -97,6 +97,8 @@ namespace WinUIMusicPlayer.ViewModel
                             Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
                         }
                     });
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                 });
             }
             catch (Exception ex)
