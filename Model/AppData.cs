@@ -7,7 +7,8 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppData
     {
-        public static Dictionary<string, BitmapImage> albumCoverCache = new Dictionary<string, BitmapImage>();
+        //public static Dictionary<string, BitmapImage> albumCoverCache = new Dictionary<string, BitmapImage>();
+        public static WeakImageCache albumCoverCache = new WeakImageCache();
 
         public static List<Music> allSongs = new List<Music>();
 
