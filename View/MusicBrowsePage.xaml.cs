@@ -75,6 +75,8 @@ namespace WinUIMusicPlayer.View
         private float[] _spectrumData = new float[16];
         //private readonly System.Timers.Timer _forceDrawTimer;
         private readonly object _lockObject = new object(); // À¯∂‘œÛ
+        private bool isSearching = false;
+        private string lastSearchText = string.Empty;
         public MusicBrowsePage()
         {
             this.InitializeComponent();
@@ -740,11 +742,40 @@ namespace WinUIMusicPlayer.View
         private async void TypingTimer_Tick(object sender, object e)
         {
             typingTimer.Stop();
-            AppData.searchText = SearchTextBox.Text;
-            if (ContentFrame != null && ContentFrame.Content != null)
+
+            // ∑¿÷π÷ÿ»Î
+            if (isSearching)
             {
-                refreshPage?.Invoke(this, EventArgs.Empty);
-                refreshSong?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            var currentText = SearchTextBox.Text;
+
+            // ∑¿÷π÷ÿ∏¥À—À˜
+            if (currentText == lastSearchText)
+            {
+                return;
+            }
+
+            isSearching = true;
+            lastSearchText = currentText;
+
+            try
+            {
+                AppData.searchText = currentText;
+                if (ContentFrame?.Content != null)
+                {
+                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    refreshSong?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
+            }
+            finally
+            {
+                isSearching = false;
             }
         }
 

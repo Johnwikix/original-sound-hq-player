@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -60,11 +61,13 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (var item in _allMusic)
                 {
                     MusicList.Add(item);
-                }
+                }                
                 _ = Task.Run(async () =>
-                {                    
+                {
+                    using var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
                     var visibleTasks = MusicList.Select(music => Task.Run(async () =>
                     {
+                        await semaphore.WaitAsync();
                         try
                         {
                             if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
@@ -81,7 +84,7 @@ namespace WinUIMusicPlayer.ViewModel
                                 {
                                     music.Cover = cover;
                                 });
-                                if (AppSettings.isCoverCacheEnabled)
+                                if (AppSettings.isCoverCacheEnabled && cover !=null)
                                 {
                                     AppData.albumCoverCache[music.Album] = cover;
                                 }
@@ -90,69 +93,23 @@ namespace WinUIMusicPlayer.ViewModel
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+                        }finally
+                        {
+                            semaphore.Release(); // 释放信号量
                         }
                     })).ToArray();
                     await Task.WhenAll(visibleTasks);
-                    _ = Task.Delay(5000).ContinueWith(_ =>
-                    {
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                    });
+                    //_ = Task.Delay(5000).ContinueWith(_ =>
+                    //{
+                    //    GC.Collect();
+                    //    GC.WaitForPendingFinalizers();
+                    //});
                 });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            }           
-            //try
-            //{
-            //    foreach (var item in _allMusic)
-            //    {
-            //        MusicList.Add(item);
-            //    }
-            //    //await AlbumCoverService.LoadAlbumCoversAsync(_allMusic);
-            //    // 页面已经显示，现在开始异步加载封面
-            //    // 使用 Task.Run 避免阻塞 UI 线程
-            //    var options = new ParallelOptions
-            //    {
-            //        MaxDegreeOfParallelism = Environment.ProcessorCount * 2
-            //    };
-            //    _ = Task.Run(async () =>
-            //    {
-            //        Parallel.ForEach(MusicList, options, async music =>
-            //        {
-            //            try
-            //            {
-            //                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-            //                {
-            //                    music.Cover = cachedCover;
-            //                }
-            //                else
-            //                {
-            //                    BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-            //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            //                    {
-            //                        music.Cover = cover;
-            //                    });
-            //                    if (AppSettings.isCoverCacheEnabled)
-            //                    {
-            //                        AppData.albumCoverCache[music.Album] = cover;
-            //                    }
-            //                }
-            //            }
-            //            catch (Exception ex)
-            //            {
-            //                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-            //            }
-            //        });
-            //        GC.Collect();
-            //        GC.WaitForPendingFinalizers();
-            //    });
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            //}
+            }
         }
     }
 }
