@@ -100,13 +100,11 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {
-            //SetAppStyle();
             themeStyleHelper.SetAppStyle();
         }
 
         private void MainWindow_themeChanged(object? sender, EventArgs e)
         {
-            //SetAppTheme();
             themeStyleHelper.SetAppTheme();
         }
 

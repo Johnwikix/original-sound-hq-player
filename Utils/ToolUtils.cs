@@ -126,8 +126,10 @@ namespace WinUIMusicPlayer.Utils
                 {
                     var uri = new Uri("ms-appx:///Assets/Album.png");
                     var bitmapImage = new BitmapImage(uri);
-                    bitmapImage.DecodePixelWidth = size;
-                    bitmapImage.DecodePixelHeight = size;
+                    if (size != 0) {
+                        bitmapImage.DecodePixelWidth = size;
+                        bitmapImage.DecodePixelHeight = size;
+                    }                    
                     tcs.SetResult(bitmapImage);
                 }
                 catch (Exception ex)
@@ -135,7 +137,6 @@ namespace WinUIMusicPlayer.Utils
                     tcs.SetException(ex);
                 }
             });
-
             return await tcs.Task;
         }
 
@@ -226,7 +227,7 @@ namespace WinUIMusicPlayer.Utils
             return newCover;
         }
 
-        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
+        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0,int defaultImgSize = 150)
         {
             //using (var ms = new MemoryStream(picture.Data.Data))
             //{
@@ -241,11 +242,11 @@ namespace WinUIMusicPlayer.Utils
             byte[] imageData = picture.Data.Data.ToArray();
             if (picture?.Data?.Data == null)
             {
-                return await DefaultAlbumCover();
+                return await DefaultAlbumCover(defaultImgSize);
             }
             if (!IsValidImageData(imageData))
             {
-                return await DefaultAlbumCover();
+                return await DefaultAlbumCover(defaultImgSize);
             }
             var tcs = new TaskCompletionSource<BitmapImage>();
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
@@ -391,7 +392,7 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 if (imageData == null || imageData.Length == 0)
-                    return await DefaultAlbumCover();
+                    return await DefaultAlbumCover(0);
                 using (var stream = new InMemoryRandomAccessStream())
                 {
                     using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
@@ -410,7 +411,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                return await DefaultAlbumCover();
+                return await DefaultAlbumCover(0);
             }
         }
 
@@ -454,11 +455,11 @@ namespace WinUIMusicPlayer.Utils
                     if (file.Tag.Pictures.Length > 0)
                     {
                         IPicture picture = file.Tag.Pictures[0];
-                        return await ReadBitmapImageAsync(picture, size);
+                        return await ReadBitmapImageAsync(picture, size,0);
                     }
                     else
                     {
-                        var uri = new Uri("ms-appx:///Assets/Music.png");
+                        var uri = new Uri("ms-appx:///Assets/Album.png");
                         var bitmapImage = new BitmapImage(uri);
                         return bitmapImage;
                     }
@@ -467,7 +468,7 @@ namespace WinUIMusicPlayer.Utils
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
-                var uri = new Uri("ms-appx:///Assets/Music.png");
+                var uri = new Uri("ms-appx:///Assets/Album.png");
                 var bitmapImage = new BitmapImage(uri);
                 return bitmapImage;
             }
