@@ -883,6 +883,10 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             previousSelectedIndex = currentSelectedIndex;
             DisableBackButton();
+            //_=Task.Run(() => {
+            //    GC.Collect();
+            //    GC.WaitForPendingFinalizers();
+            //});
         }
 
         private async Task LoadPlayState()
