@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -9,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -109,7 +111,7 @@ namespace WinUIMusicPlayer.Utils
             return parentAsT ?? FindParent<T>(parent);
         }
 
-        private static async Task<BitmapImage> DefaultAlbumCover()
+        private static async Task<BitmapImage> DefaultAlbumCover(int size = 150)
         {
             //var uri = new Uri("ms-appx:///Assets/Album.png");
             //var bitmapImage = new BitmapImage(uri);
@@ -124,8 +126,8 @@ namespace WinUIMusicPlayer.Utils
                 {
                     var uri = new Uri("ms-appx:///Assets/Album.png");
                     var bitmapImage = new BitmapImage(uri);
-                    bitmapImage.DecodePixelWidth = 125;
-                    bitmapImage.DecodePixelHeight = 125;
+                    bitmapImage.DecodePixelWidth = size;
+                    bitmapImage.DecodePixelHeight = size;
                     tcs.SetResult(bitmapImage);
                 }
                 catch (Exception ex)
@@ -237,7 +239,14 @@ namespace WinUIMusicPlayer.Utils
             //    return bitmapImage;
             //}
             byte[] imageData = picture.Data.Data.ToArray();
-            // 在 UI 线程上创建和设置 BitmapImage
+            if (picture?.Data?.Data == null)
+            {
+                return await DefaultAlbumCover();
+            }
+            if (!IsValidImageData(imageData))
+            {
+                return await DefaultAlbumCover();
+            }
             var tcs = new TaskCompletionSource<BitmapImage>();
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
@@ -254,12 +263,82 @@ namespace WinUIMusicPlayer.Utils
                         tcs.SetResult(bitmapImage);
                     }
                 }
+                catch (COMException ex)
+                {
+                    tcs.SetException(new InvalidOperationException("图片格式无效或已损坏", ex));
+                }
+                catch (TaskCanceledException)
+                {
+                    tcs.SetCanceled();
+                }
                 catch (Exception ex)
                 {
                     tcs.SetException(ex);
                 }
             });
             return await tcs.Task;
+        }
+
+        private static bool IsValidImageData(byte[] data)
+        {
+            if (data == null || data.Length < 10) return false;
+
+            // 检查常见图像文件头
+            return IsPng(data) || IsJpeg(data) || IsGif(data) || IsBmp(data) || IsWebP(data) || IsTiff(data);
+        }
+
+        private static bool IsTiff(byte[] data)
+        {
+            // II* or MM*
+            return data.Length >= 4 &&
+                  ((data[0] == 0x49 && data[1] == 0x49 && data[2] == 0x2A && data[3] == 0x00) ||
+                   (data[0] == 0x4D && data[1] == 0x4D && data[2] == 0x00 && data[3] == 0x2A));
+        }
+
+        private static bool IsWebP(byte[] data)
+        {
+            // RIFF....WEBP
+            return data.Length >= 12 &&
+                   data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
+                   data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50;
+        }
+
+        private static bool IsPng(byte[] data)
+        {
+            return data.Length >= 8 &&
+                   data[0] == 0x89 &&
+                   data[1] == 0x50 &&
+                   data[2] == 0x4E &&
+                   data[3] == 0x47 &&
+                   data[4] == 0x0D &&
+                   data[5] == 0x0A &&
+                   data[6] == 0x1A &&
+                   data[7] == 0x0A;
+        }
+
+        private static bool IsJpeg(byte[] data)
+        {
+            return data.Length >= 2 &&
+                   data[0] == 0xFF &&
+                   data[1] == 0xD8;
+        }
+
+        private static bool IsGif(byte[] data)
+        {
+            return data.Length >= 6 &&
+                   data[0] == 0x47 &&
+                   data[1] == 0x49 &&
+                   data[2] == 0x46 &&
+                   data[3] == 0x38 &&
+                  (data[4] == 0x37 || data[4] == 0x39) &&
+                   data[5] == 0x61;
+        }
+
+        private static bool IsBmp(byte[] data)
+        {
+            return data.Length >= 2 &&
+                   data[0] == 0x42 &&
+                   data[1] == 0x4D;
         }
 
         private static void setBitmapSize(BitmapImage bitmapImage, int maxSize)

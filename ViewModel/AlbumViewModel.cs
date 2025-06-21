@@ -24,6 +24,9 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private List<Music> _allMusic = [];
         private string _lastSearchText = "";
+        // 在类级别添加 CancellationTokenSource 字段
+        private CancellationTokenSource _loadCancellationTokenSource;
+        private readonly object _loadLock = new object();
 
         public void Entance()
         {
@@ -61,54 +64,128 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (var item in _allMusic)
                 {
                     MusicList.Add(item);
-                }                
-                _ = Task.Run(async () =>
+                }
+
+                // 创建一个不会被提前释放的信号量
+                var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
+
+                var visibleTasks = MusicList.Select(music => LoadSingleAlbumCoverAsync(music, semaphore)).ToArray();
+
+                try
                 {
-                    using var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
-                    var visibleTasks = MusicList.Select(music => Task.Run(async () =>
-                    {
-                        await semaphore.WaitAsync();
-                        try
-                        {
-                            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-                            {
-                                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    music.Cover = cachedCover;
-                                });
-                            }
-                            else
-                            {
-                                BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    music.Cover = cover;
-                                });
-                                if (AppSettings.isCoverCacheEnabled && cover !=null)
-                                {
-                                    AppData.albumCoverCache[music.Album] = cover;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-                        }finally
-                        {
-                            semaphore.Release(); // 释放信号量
-                        }
-                    })).ToArray();
                     await Task.WhenAll(visibleTasks);
-                    //_ = Task.Delay(5000).ContinueWith(_ =>
-                    //{
-                    //    GC.Collect();
-                    //    GC.WaitForPendingFinalizers();
-                    //});
+                }
+                finally
+                {
+                    // 确保所有任务完成后再释放信号量
+                    semaphore.Dispose();
+                }
+
+                _ = Task.Delay(5000).ContinueWith(_ =>
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                 });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+            }
+            //try
+            //{
+            //    foreach (var item in _allMusic)
+            //    {
+            //        MusicList.Add(item);
+            //    }
+            //    //MusicList = new ObservableCollection<Music>(_allMusic);
+            //    _ = Task.Run(async () =>
+            //    {
+            //        using var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
+            //        var visibleTasks = MusicList.Select(music => Task.Run(async () =>
+            //        {
+            //            await semaphore.WaitAsync();
+            //            try
+            //            {
+            //                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+            //                {
+            //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            //                    {
+            //                        music.Cover = cachedCover;
+            //                    });
+            //                }
+            //                else
+            //                {
+            //                    BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+            //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            //                    {
+            //                        music.Cover = cover;
+            //                    });
+            //                    if (AppSettings.isCoverCacheEnabled && cover !=null)
+            //                    {
+            //                        AppData.albumCoverCache[music.Album] = cover;
+            //                    }
+            //                }
+            //            }
+            //            catch (Exception ex)
+            //            {
+            //                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+            //            }finally
+            //            {
+            //                semaphore.Release(); // 释放信号量
+            //            }
+            //        })).ToArray();
+            //        await Task.WhenAll(visibleTasks);
+            //        _ = Task.Delay(5000).ContinueWith(_ =>
+            //        {
+            //            GC.Collect();
+            //            GC.WaitForPendingFinalizers();
+            //        });
+            //    });
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+            //}
+        }
+        private async Task LoadSingleAlbumCoverAsync(Music music, SemaphoreSlim semaphore)
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+                {
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        music.Cover = cachedCover;
+                    });
+                }
+                else
+                {
+                    BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        music.Cover = cover;
+                    });
+                    if (AppSettings.isCoverCacheEnabled && cover != null)
+                    {
+                        AppData.albumCoverCache[music.Album] = cover;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+            }
+            finally
+            {
+                try
+                {
+                    semaphore.Release();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 信号量已被释放，忽略此异常
+                }
             }
         }
     }

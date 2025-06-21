@@ -129,7 +129,7 @@
                             </StackPanel>
                             <TextBox x:Name="LrcAPITextBox" Text="{Binding ViewModel.LrcAPISource,Mode=TwoWay}" Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             <TextBlock x:Uid="CoverServiceLrcAPISourceAuthCode"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                            <TextBox x:Name="LrcAPIAuthTextBox" Text="{Binding ViewMode.LrcAPIAuth,Mode=TwoWay}"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBox x:Name="LrcAPIAuthTextBox" Text="{Binding ViewModel.LrcAPIAuth,Mode=TwoWay}"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal">
                                 <TextBlock x:Uid="CoverCache"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
                                 <!--<FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
