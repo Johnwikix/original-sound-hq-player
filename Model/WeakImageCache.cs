@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Model
         {
             // 每5分钟清理一次失效的弱引用
             _cleanupTimer = new Timer(CleanupExpiredReferences, null,
-                TimeSpan.FromMinutes(20), TimeSpan.FromMinutes(20));
+                TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
         }
 
         public bool TryGetValue(string key, out BitmapImage value)
