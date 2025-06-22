@@ -13,20 +13,14 @@ namespace WinUIMusicPlayer.Model
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public string Path { get; set; }
-        [ObservableProperty]
+        
         private string _title;
-        //public string Title
-        //{
-        //    get { return title; }
-        //    set
-        //    {
-        //        if (title != value)
-        //        {
-        //            title = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
+        public string Title
+        {
+            get => _title;
+            set => SetProperty(ref _title, value);
+        }
+
         private BitmapImage _cover = null;
         [Ignore]
         public BitmapImage Cover
@@ -34,53 +28,31 @@ namespace WinUIMusicPlayer.Model
             get => _cover;
             set => SetProperty(ref _cover, value);
         }
-        [ObservableProperty]
+
         private string _author;
+        public string Author
+        {
+            get => _author;
+            set => SetProperty(ref _author, value);
+        }
 
-        //public string Author
-        //{
-        //    get { return author; }
-        //    set
-        //    {
-        //        if (author != value)
-        //        {
-        //            author = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
+
         public TimeSpan Duration { get; set; }
-        [ObservableProperty]
         private string _album;
+        public string Album
+        {
+            get => _album;
+            set => SetProperty(ref _album, value);
+        }
 
-        //public string Album
-        //{
-        //    get { return album; }
-        //    set
-        //    {
-        //        if (album != value)
-        //        {
-        //            album = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
         public string FolderPath { get; set; }
-        [ObservableProperty]
         public string _lastLevelFolderPath;
+        public string LastLevelFolderPath
+        {
+            get => _lastLevelFolderPath;
+            set => SetProperty(ref _lastLevelFolderPath, value);
+        }
 
-        //public string LastLevelFolderPath
-        //{
-        //    get { return lastLevelFolderPath; }
-        //    set
-        //    {
-        //        if (lastLevelFolderPath != value)
-        //        {
-        //            lastLevelFolderPath = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
         public string Extension { get; set; }
         public int Order { get; set; }
         public int BitDepth { get; set; }
@@ -90,37 +62,33 @@ namespace WinUIMusicPlayer.Model
         public int PlayListOrder { get; set; }
         public int Channel { get; set; }
         public int Year { get; set; }
-        [ObservableProperty]
         private bool _isFavorite = false;
-        //public bool isFavorite
-        //{
-        //    get { return _isFavorite; }
-        //    set
-        //    {
-        //        if (_isFavorite != value)
-        //        {
-        //            _isFavorite = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
-        [ObservableProperty]
-        private int _trackNumber;
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set => SetProperty(ref _isFavorite, value);
+        }
 
-        //public int TrackNumber
-        //{
-        //    get { return _trackNumber; }
-        //    set
-        //    {
-        //        if (_trackNumber != value)
-        //        {
-        //            _trackNumber = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
-        [ObservableProperty]
+        private int _trackNumber;
+        public int TrackNumber
+        {
+            get => _trackNumber;
+            set => SetProperty(ref _trackNumber, value);
+        }
+
         private string _lyrics;
+        public string Lyrics
+        {
+            get => _lyrics;
+            set => SetProperty(ref _lyrics, value);
+        }
+
+        private int _playCount = 0;
+        public int PlayCount
+        {
+            get => _playCount;
+            set => SetProperty(ref _playCount, value);
+        }
 
         //public string Lyrics
         //{
@@ -140,36 +108,7 @@ namespace WinUIMusicPlayer.Model
         {
             get => _isExistOnDevice;
             set => SetProperty(ref _isExistOnDevice, value);
-            //get { return _isExistOnDevice; }
-            //set
-            //{
-            //    if (_isExistOnDevice != value)
-            //    {
-            //        _isExistOnDevice = value;
-            //        OnPropertyChanged();
-            //    }
-            //}
         }
 
-        //public override bool Equals(object obj)
-        //{
-        //    if (obj == null || GetType() != obj.GetType())
-        //        return false;
-
-        //    Music other = (Music)obj;
-        //    return Id == other.Id;
-        //}
-
-        //public override int GetHashCode()
-        //{
-        //    return Id.GetHashCode();
-        //}
-
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        //protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        //{
-        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
     }
 }

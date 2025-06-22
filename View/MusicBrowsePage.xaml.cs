@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
@@ -989,14 +990,23 @@ namespace WinUIMusicPlayer.View
         {
             if (musicPlaybackService.currentPlayingList != null)
             {
-                if (musicPlaybackService.currentPlayingList.Contains(musicPlaybackService.currentPlayingMusic))
+                if (musicPlaybackService.currentPlayingMusic != null)
                 {
-                    CurrentPlayListView.SelectedItem = musicPlaybackService.currentPlayingMusic;
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        CurrentPlayListView.ScrollIntoView(musicPlaybackService.currentPlayingMusic);
-                    });
-                }
+                    var selectedMusic = musicPlaybackService.currentPlayingList.FirstOrDefault(music =>
+                    music.Id == musicPlaybackService.currentPlayingMusic.Id);
+
+                    if (selectedMusic != null)
+                    {                        
+                        _ = Task.Delay(100).ContinueWith(_ =>
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                CurrentPlayListView.SelectedItem = selectedMusic;
+                                CurrentPlayListView.ScrollIntoView(selectedMusic);
+                            });
+                        }); 
+                    }
+                }                
             }
         }
 

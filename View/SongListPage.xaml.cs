@@ -152,19 +152,17 @@ namespace WinUIMusicPlayer.View
             {
                 if (parentPage != null)
                 {
-                    if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
+                    if (parentPage.musicPlaybackService.currentPlayingMusic !=null)
                     {
-                        Music selectedMusic = null;
-                        foreach (var music in musicList)
+                        var selectedMusic = musicList.FirstOrDefault(music =>
+                        music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id);
+
+                        if (selectedMusic != null)
                         {
-                            if (music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id)
-                            {
-                                selectedMusic = music;
-                            }
+                            MusicListView.SelectedItem = selectedMusic;
+                            MusicListView.ScrollIntoView(selectedMusic);
                         }
-                        MusicListView.SelectedItem = selectedMusic;
-                        MusicListView.ScrollIntoView(selectedMusic);
-                    }
+                    }                    
                 }
             }
             catch (Exception ex)
