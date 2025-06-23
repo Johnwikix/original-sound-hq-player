@@ -42,6 +42,7 @@
     <ListView x:Name="MusicListView" 
           SelectionMode="Extended"
           DoubleTapped="MusicListView_DoubleTapped" 
+          ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
           ItemContainerStyle="{StaticResource ListViewItemStyle}" 
           RightTapped="MusicListView_RightTapped"
           CanDragItems="True"

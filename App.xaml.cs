@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -33,6 +34,8 @@ namespace WinUIMusicPlayer
              {
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
+                 services.AddSingleton<FavouritePlayListViewModel>();
+                 services.AddSingleton<MusicPlaybackService>();
                  // 其他服务...
              })
              .Build();

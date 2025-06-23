@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -41,7 +42,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {
-        public MusicPlaybackService musicPlaybackService = new MusicPlaybackService();
+        public MusicPlaybackService musicPlaybackService;
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
@@ -78,9 +79,12 @@ namespace WinUIMusicPlayer.View
         private readonly object _lockObject = new object(); // 锁对象
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
+        private bool isInitialized = false;
         public MusicBrowsePage()
         {
-            this.InitializeComponent();
+            isInitialized = false;
+            musicPlaybackService = App.Services.GetRequiredService<MusicPlaybackService>();
+            this.InitializeComponent();            
             InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
@@ -133,6 +137,7 @@ namespace WinUIMusicPlayer.View
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
+            isInitialized = true;
             //TODO 波形可视化
             //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
             //_spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
@@ -1395,17 +1400,19 @@ namespace WinUIMusicPlayer.View
 
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            musicPlaybackService.volume = (float)e.NewValue / 100;
-            //if (musicPlaybackService.wasapiOut != null)
-            //{
-            //    musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
-            //}
-            if (musicPlaybackService.waveChannel != null)
-            {
-                musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : musicPlaybackService.volume;
+            if (isInitialized) {
+                musicPlaybackService.volume = (float)e.NewValue / 100;
+                //if (musicPlaybackService.wasapiOut != null)
+                //{
+                //    musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
+                //}
+                if (musicPlaybackService.waveChannel != null)
+                {
+                    musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : musicPlaybackService.volume;
+                }
+                VolumeIconChange((int)e.NewValue);
+                //_ = musicPlaybackService.SavePlayState();
             }
-            VolumeIconChange((int)e.NewValue);
-            //_ = musicPlaybackService.SavePlayState();
         }
 
         private void VolumeIconChange(int volume)
