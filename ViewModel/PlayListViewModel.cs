@@ -38,13 +38,13 @@ namespace WinUIMusicPlayer.ViewModel
             _parentPage = parent;
             _parentPage.currentPlayList = null;
             _parentPage.DisableBackButton();
-            _parentPage.refreshPage += RefreshPlayList;
+            _parentPage.addPlayListEvent += RefreshPlayList;
             InitializingData();
         }
 
-        private void RefreshPlayList(object? sender, EventArgs e)
+        private void RefreshPlayList(object? sender, PlayList playList)
         {
-            InitializingData();
+            PlayLists.Add(playList);
         }
 
         public async void InitializingData()
@@ -100,7 +100,11 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await MusicDatabaseService.UpdatePlayList(playList);
-                InitializingData();
+                var existingPlayList = PlayLists.FirstOrDefault(p => p.Id == playList.Id);
+                if (existingPlayList != null)
+                {
+                    existingPlayList.Name = newName;
+                }
             }
         }
 

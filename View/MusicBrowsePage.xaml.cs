@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.View
         private NotificationService notificationService = new NotificationService();
         public EventHandler refreshSong;
         public EventHandler refreshPage;
+        public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
         private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
@@ -961,9 +962,9 @@ namespace WinUIMusicPlayer.View
                 string playlistName = textBox.Text;
                 if (!string.IsNullOrEmpty(playlistName))
                 {
-                    var newPlaylist = new PlayList { Name = playlistName };
+                    PlayList newPlaylist = new PlayList { Name = playlistName };
                     await MusicDatabaseService.InsertPlayList(newPlaylist);
-                    refreshPage?.Invoke(this, EventArgs.Empty);
+                    addPlayListEvent?.Invoke(this, newPlaylist);
                     //await LoadPlayList();
                 }
             }

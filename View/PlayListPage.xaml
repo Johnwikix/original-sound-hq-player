@@ -22,9 +22,9 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="0" Tag="{Binding}" Orientation="Horizontal">
+                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="0" Orientation="Horizontal">
                                 <FontIcon Glyph="&#xe90b;" Margin="0 0 10 0" VerticalAlignment="Center"/>
-                                <TextBlock Text="{x:Bind Name}" FontSize="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Name,Mode=TwoWay}" FontSize="18" VerticalAlignment="Center"/>
                             </StackPanel>
                             <Button x:Name="EditPlayListNameButton" Click="EditPlayListNameButton_Click" Grid.Column="1" Tag="{Binding}" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
                                 <FontIcon Glyph="&#xeb7e;"/>
