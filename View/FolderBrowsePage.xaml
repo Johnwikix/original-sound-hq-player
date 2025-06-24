@@ -16,6 +16,7 @@
         <GridView x:Name="FolderGridView"                       
                   IsItemClickEnabled="True"
                   ItemClick="FolderGridView_ItemClick"
+                  ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
                   IsRightTapEnabled="True"
                   RightTapped="Folder_RightTapped"
                   >

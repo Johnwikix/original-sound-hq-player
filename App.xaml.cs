@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
@@ -6,6 +7,7 @@ using System.Diagnostics;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -32,10 +34,16 @@ namespace WinUIMusicPlayer
             var host = Host.CreateDefaultBuilder()
              .ConfigureServices((context, services) =>
              {
+                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
+                 services.AddSingleton<ArtistViewModel>();
+                 services.AddSingleton<FolderViewModel>();
+                 services.AddSingleton<PlayListViewModel>();
                  services.AddSingleton<MusicPlaybackService>();
+                 services.AddSingleton<ContextMenuService>();
+                 services.AddSingleton<AudioConverterService>();
                  // 其他服务...
              })
              .Build();

@@ -26,13 +26,13 @@ namespace WinUIMusicPlayer.Services
             albumPage = page;
         }
 
-        public static EventHandler<Music> playingAlbumMusic;
-        public static EventHandler<Music> playingArtistMusic;
-        public static EventHandler<Music> playingFolderMusic;
+        public EventHandler<Music> playingAlbumMusic;
+        public EventHandler<Music> playingArtistMusic;
+        public EventHandler<Music> playingFolderMusic;
         //public static EventHandler rescanFolderStart;
-        public static EventHandler rescanFolderEnd;
-        public static EventHandler hideTransmission;
-        public static EventHandler showTransmission;
+        public EventHandler rescanFolderEnd;
+        public EventHandler hideTransmission;
+        public EventHandler showTransmission;
 
         /// <summary>
         /// 创建并显示右键菜单
@@ -236,7 +236,10 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (!string.IsNullOrEmpty(item.FolderPath))
                     {
-                        await MusicDatabaseService.RescanFolderByPath(item.FolderPath);
+                        await Task.Run(async() =>
+                        {
+                            await MusicDatabaseService.RescanFolderByPath(item.FolderPath);
+                        });
                     }
                 }
             }

@@ -1,4 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -11,6 +14,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -24,6 +28,45 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private List<Music> _allMusic = [];
         private string _lastSearchText = "";
+
+        private MusicBrowsePage? parentPage;
+        private AlbumPage? currentPage;
+        private ContextMenuService _contextMenuService;
+
+        public AlbumViewModel(ContextMenuService contextMenuService)
+        {
+            _contextMenuService = contextMenuService;
+        }
+
+        public void SetCurrentPage(AlbumPage page)
+        {
+            currentPage = page;
+        }
+
+        public void SetParentPage(MusicBrowsePage parent)
+        {
+            parentPage = parent;
+            parentPage.currentAlbumName = null;
+            parentPage.pageType = null;
+            parentPage.DisableBackButton();
+            parentPage.refreshPage += RefreshAlbum;
+            parentPage.refreshUsbDeviceMusicList +=
+                (s, e) =>
+                {
+                    ToolUtils.RefreshIcon(MusicList, "album");
+                };
+            parentPage.clearUsbDeviceMusicList +=
+                (s, e) =>
+                {
+                    ToolUtils.RefreshIcon(MusicList, "album");
+                };
+            Entance();
+        }
+
+        private void RefreshAlbum(object? sender, EventArgs e)
+        {
+            InitializeData();
+        }
 
         public void Entance()
         {
@@ -104,11 +147,6 @@ namespace WinUIMusicPlayer.ViewModel
                     finally
                     {
                         semaphore.Dispose();
-                        //_ = Task.Delay(5000).ContinueWith(_ =>
-                        //{
-                        //    GC.Collect();
-                        //    GC.WaitForPendingFinalizers();
-                        //});
                     }                    
                 });
             }
@@ -116,6 +154,87 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
             }            
-        }        
+        }
+
+        public async void OnAlbumDetailChanged(object sender, Music cover)
+        {
+            var musicToUpdate = MusicList
+                .FirstOrDefault(music => music.Album == cover.Album);
+            if (musicToUpdate != null)
+            {
+                musicToUpdate.Cover = cover.Cover;
+                musicToUpdate.Year = cover.Year;
+                musicToUpdate.Album = cover.Album;
+            }
+        }
+
+        public void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            var gridView = sender as GridView;
+            var item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            if (item != null)
+            {
+                Music album = item.Content as Music;
+                if (parentPage != null)
+                {
+                    parentPage.LoadAlbumMusic(album.Album);
+                }
+            }
+        }
+
+        public async void PlayingAlbum(object? sender, Music e)
+        {
+            List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).OrderBy(m => m.Album).ToList();
+            if (albums != null && albums.Count > 0)
+            {
+                if (parentPage != null)
+                {
+                    parentPage.musicPlaybackService.currentPlayingList = albums;
+                    await parentPage.PlayMusic(albums[0]);
+                }
+            }
+        }
+
+        public async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var originalSource = e.OriginalSource as FrameworkElement;
+
+            // 向上遍历查找 GridViewItem
+            GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
+
+            if (clickedItem != null)
+            {
+                // 从 GridViewItem 获取数据项
+                var album = clickedItem.Content as Music;
+
+                if (album != null)
+                {
+                    _contextMenuService.SetAlbumPage(currentPage);
+                    // 显示专辑右键菜单
+                    await _contextMenuService.ShowAlbumContextMenu(
+                        album,
+                        originalSource,
+                        e.GetPosition(originalSource),
+                        "album"
+                    );
+                    _contextMenuService.playingAlbumMusic += PlayingAlbum;
+                    _contextMenuService.showTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.ShowTransmission();
+                        }
+                    };
+                    _contextMenuService.hideTransmission += (s, e) =>
+                    {
+                        if (parentPage != null)
+                        {
+                            parentPage.HideTransmission();
+                        }
+                    };
+                }
+            }
+            e.Handled = true;
+        }
     }
 }

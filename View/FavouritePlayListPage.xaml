@@ -44,6 +44,7 @@
           DoubleTapped="MusicListView_DoubleTapped" 
           ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
           ItemContainerStyle="{StaticResource ListViewItemStyle}" 
+          SelectedItem="{Binding ViewModel.SelectedMusic,Mode=TwoWay}"
           RightTapped="MusicListView_RightTapped"
           CanDragItems="True"
           CanReorderItems="True"

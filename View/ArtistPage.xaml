@@ -17,6 +17,7 @@
         <GridView x:Name="ArtistsGridView"                       
           IsItemClickEnabled="True"
           ItemClick="ArtistGridView_ItemClick"
+          ItemsSource="{Binding ViewModel.MusicList,Mode=TwoWay}"
           IsRightTapEnabled="True"
           RightTapped="Artist_RightTapped"
           >

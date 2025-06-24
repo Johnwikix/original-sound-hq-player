@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -22,169 +24,148 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class ArtistPage : Page
     {
-        private MusicBrowsePage parentPage;
-        private ObservableCollection<Music> musicList;
-        private List<Music> _allMusic;
-        private int _itemsPerPage = 100; // 每页加载的项目数
-        private int _currentPage = 0;
-        private bool _isLoading = false;
-        private ScrollViewer _gridViewScrollViewer;
-        private string _lastSearchText = "";
+        //private MusicBrowsePage parentPage;
+        //private ObservableCollection<Music> musicList;
+        //private List<Music> _allMusic;
+        //private string _lastSearchText = "";
+        public ArtistViewModel ViewModel { get; }
         public ArtistPage()
         {
+            ViewModel = App.Services.GetRequiredService<ArtistViewModel>();
+            ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
-            musicList = new ObservableCollection<Music>();
-            ArtistsGridView.ItemsSource = musicList;
+            DataContext = this;
+            //musicList = new ObservableCollection<Music>();
+            //ArtistsGridView.ItemsSource = musicList;
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
-                this.parentPage = parentPage;
-                parentPage.currentArtistName = null;
-                parentPage.pageType = null;
-                parentPage.DisableBackButton();
-                parentPage.refreshPage += RefreshArtist;
-                if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
-                {
-                    _lastSearchText = AppData.searchText;
-                    InitializeData();
-                }
-                else
-                {
-                    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                }
-                ToolUtils.RefreshIcon(musicList, "artist");
-                parentPage.refreshUsbDeviceMusicList +=
-                    (s, e) =>
-                    {
-                        ToolUtils.RefreshIcon(musicList, "album");
-                    };
-                parentPage.clearUsbDeviceMusicList +=
-                    (s, e) =>
-                    {
-                        ToolUtils.RefreshIcon(musicList, "album");
-                    };
+                ViewModel.SetParentPage(parentPage);                
             }
         }
 
-        private void RefreshArtist(object? sender, EventArgs e)
+        //private void RefreshArtist(object? sender, EventArgs e)
+        //{
+        //    //_currentPage = 0;
+        //    InitializeData();
+        //}
+
+        public void SortMusicList(string sortOrder)
         {
-            //_currentPage = 0;
-            InitializeData();
+            ViewModel.SortMusicList(sortOrder);
+            //if (_allMusic.Count > 0)
+            //{
+            //    musicList.Clear();
+            //    _allMusic = ToolUtils.SortMusicList("artistCover", sortOrder, _allMusic.ToList());
+            //    await LoadMoreArtistAsync(true);
+            //}
         }
 
-        public async void SortMusicList(string sortOrder)
-        {
-            if (_allMusic.Count > 0)
-            {
-                musicList.Clear();
-                _allMusic = ToolUtils.SortMusicList("artistCover", sortOrder, _allMusic.ToList());
-                await LoadMoreArtistAsync(true);
-            }
-        }
+        //private async void InitializeData()
+        //{
+        //    try
+        //    {
+        //        musicList.Clear();
+        //        if (parentPage != null)
+        //        {
+        //            _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
+        //            await LoadMoreArtistAsync(true);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"初始化艺术家页面时出错: {ex.Message}");
+        //    }
+        //}
 
-        private async void InitializeData()
-        {
-            try
-            {
-                musicList.Clear();
-                if (parentPage != null)
-                {
-                    _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
-                    await LoadMoreArtistAsync(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"初始化艺术家页面时出错: {ex.Message}");
-            }
-        }
+        //private async Task LoadMoreArtistAsync(bool isFirstLoad = false)
+        //{
 
-        private async Task LoadMoreArtistAsync(bool isFirstLoad = false)
-        {
-
-            try
-            {
-                foreach (var item in _allMusic)
-                {
-                    musicList.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            }
-        }
+        //    try
+        //    {
+        //        foreach (var item in _allMusic)
+        //        {
+        //            musicList.Add(item);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
+        //    }
+        //}
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            var gridView = sender as GridView;
-            var item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
-            if (item != null)
-            {
-                Music artist = item.Content as Music;
-                if (parentPage != null)
-                {
-                    parentPage.LoadArtistMusic(artist.Author);
-                }
-            }
+            ViewModel.ArtistGridView_ItemClick(sender, e);
+            //var gridView = sender as GridView;
+            //GridViewItem item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            //if (item != null)
+            //{
+            //    Music artist = item.Content as Music;
+            //    if (parentPage != null)
+            //    {
+            //        parentPage.LoadArtistMusic(artist.Author);
+            //    }
+            //}
         }
 
-        private async void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var originalSource = e.OriginalSource as FrameworkElement;
+            ViewModel.Artist_RightTapped(sender, e);
+            //var originalSource = e.OriginalSource as FrameworkElement;
 
-            // 向上遍历查找 GridViewItem
-            GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
+            //// 向上遍历查找 GridViewItem
+            //GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
 
-            if (clickedItem != null)
-            {
-                // 从 GridViewItem 获取数据项
-                var artist = clickedItem.Content as Music;
+            //if (clickedItem != null)
+            //{
+            //    // 从 GridViewItem 获取数据项
+            //    var artist = clickedItem.Content as Music;
 
-                if (artist != null)
-                {
-                    // 显示专辑右键菜单
-                    await ContextMenuService.Instance.ShowAlbumContextMenu(
-                        artist,
-                        originalSource,
-                        e.GetPosition(originalSource),
-                        "artist"
-                    );
-                    ContextMenuService.playingArtistMusic += PlayingArtist;
-                    ContextMenuService.showTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.ShowTransmission();
-                        }
-                    };
-                    ContextMenuService.hideTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.HideTransmission();
-                        }
-                    };
-                }
-            }
-            e.Handled = true;
+            //    if (artist != null)
+            //    {
+            //        // 显示专辑右键菜单
+            //        await ContextMenuService.Instance.ShowAlbumContextMenu(
+            //            artist,
+            //            originalSource,
+            //            e.GetPosition(originalSource),
+            //            "artist"
+            //        );
+            //        ContextMenuService.Instance.playingArtistMusic += PlayingArtist;
+            //        ContextMenuService.Instance.showTransmission += (s, e) =>
+            //        {
+            //            if (parentPage != null)
+            //            {
+            //                parentPage.ShowTransmission();
+            //            }
+            //        };
+            //        ContextMenuService.Instance.hideTransmission += (s, e) =>
+            //        {
+            //            if (parentPage != null)
+            //            {
+            //                parentPage.HideTransmission();
+            //            }
+            //        };
+            //    }
+            //}
+            //e.Handled = true;
         }
 
-        private async void PlayingArtist(object? sender, Music e)
-        {
-            List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
-            if (artists != null && artists.Count > 0)
-            {
-                if (parentPage != null)
-                {
-                    parentPage.musicPlaybackService.currentPlayingList = artists;
-                    await parentPage.PlayMusic(artists[0]);
-                }
-            }
-        }
+        //private void PlayingArtist(object? sender, Music e)
+        //{
+            //List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
+            //if (artists != null && artists.Count > 0)
+            //{
+            //    if (parentPage != null)
+            //    {
+            //        parentPage.musicPlaybackService.currentPlayingList = artists;
+            //        await parentPage.PlayMusic(artists[0]);
+            //    }
+            //}
+        //}
     }
 
 }

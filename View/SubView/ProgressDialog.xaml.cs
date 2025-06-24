@@ -28,6 +28,11 @@ namespace WinUIMusicPlayer.View.SubView
             });
         }
 
+        public void SetStatusMessage(string title)
+        {
+            statusText.Text = title;
+        }
+
         private void ContentDialog_Closing(ContentDialog sender, ContentDialogClosingEventArgs args)
         {
             // 这里可以添加取消操作的逻辑

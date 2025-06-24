@@ -13,7 +13,7 @@
 
     <Grid>
         <Grid Margin="0" x:Name="PlayList">
-            <ListView x:Name="PlayListView" SelectionChanged="PlayListView_SelectionChanged">
+            <ListView x:Name="PlayListView" ItemsSource="{Binding ViewModel.PlayLists,Mode=TwoWay}" SelectionChanged="PlayListView_SelectionChanged">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayList">
                         <Grid>
