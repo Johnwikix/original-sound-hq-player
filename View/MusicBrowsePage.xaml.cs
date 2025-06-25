@@ -99,6 +99,7 @@ namespace WinUIMusicPlayer.View
                 mainWindow.playStop += PlayNStop;
                 mainWindow.playNextSong += PlayNextSong;
                 mainWindow.changePlayMode += MainWindow_changePlayMode;
+                mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
             musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
@@ -133,17 +134,22 @@ namespace WinUIMusicPlayer.View
             };
             InitializeTimer();
             InitializeSystemMediaControls();
-            InitializeAppWindow();
-            SelectBarItem(AppSettings.DefualtPlayList);
+            InitializeAppWindow();           
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
+            //SelectBarItem(AppSettings.DefualtPlayList);
             isInitialized = true;
             //TODO 波形可视化
             //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
             //_spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
             //_forceDrawTimer = new System.Timers.Timer(16);
             //_forceDrawTimer.Elapsed += (s, e) => _spectrumCanvas.Invalidate();           
+        }
+
+        private void MainWindow_updateSelectSection(object? sender, EventArgs e)
+        {
+            SelectBarItem(AppSettings.DefualtPlayList);
         }
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)

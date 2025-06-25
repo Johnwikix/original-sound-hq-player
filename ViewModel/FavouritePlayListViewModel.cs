@@ -58,8 +58,9 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly IMessenger _messenger;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
-        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger)
+        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger, MusicBrowsePage musicBrowsePage)
         {
+            parentPage = musicBrowsePage;
             _musicPlaybackService = musicPlaybackService;
             _messenger = messenger;
             _converterService = converterService;
@@ -74,7 +75,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SetParentPage(MusicBrowsePage parent)
         {
-            parentPage = parent;
+            //parentPage = parent;
             parentPage.refreshPage += RefreshMusicList;
             parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
             parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
@@ -403,7 +404,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music != null)
             {
-                //((FontIcon)button.Content).Glyph = !music.IsFavorite ? "\ueb52" : "\ueb51";
                 if (music.IsFavorite)
                 {
                     MusicList.Remove(music);

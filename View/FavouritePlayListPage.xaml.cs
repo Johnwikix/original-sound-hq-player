@@ -37,7 +37,7 @@ namespace WinUIMusicPlayer.View
         public FavouritePlayListPage()
         {
             ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
-            ViewModel.SetCurrentPage(this);
+            //ViewModel.SetCurrentPage(this);
             _messenger = App.Services.GetRequiredService<IMessenger>();
 
             // 注册消息接收器

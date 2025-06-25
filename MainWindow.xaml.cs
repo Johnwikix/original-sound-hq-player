@@ -36,6 +36,7 @@ namespace WinUIMusicPlayer
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
+        public event EventHandler updateSelectSection;
         public event EventHandler<PlayMode> changePlayMode;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
         private TaskbarIcon notifyIcon;
@@ -186,6 +187,7 @@ namespace WinUIMusicPlayer
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
+                updateSelectSection?.Invoke(this, EventArgs.Empty);
                 //await AutoRescanService.AutoScan();
             }
             catch (Exception ex)

@@ -376,7 +376,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music != null)
             {
-                // 通过事件通知视图更新图标（如：RaisePropertyChanged(nameof(Music.IsFavorite))）
                 await _parentPage.AddToFavourite(music);
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
