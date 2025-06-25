@@ -48,20 +48,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 ContentFrame?.Navigate(pageType, parameter);
             }
         }
-        //public void Navigate(Type pageType, object parameter = null)
-        //{
-        //    if (_registeredPages.TryGetValue(pageType, out var resolvedType))
-        //    {
-        //        // 从服务容器中获取页面实例（单例）
-        //        var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
-        //        ContentFrame?.Navigate(pageInstance.GetType(), parameter);
-        //    }
-        //    else
-        //    {
-        //        // 如果未注册，使用默认方式导航（可能会创建新实例）
-        //        ContentFrame?.Navigate(pageType, parameter);
-        //    }
-        //}
 
         public void GoBack()
         {
