@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,27 +29,168 @@ namespace WinUIMusicPlayer.Services.NavigationService
         {
             _registeredPages[typeof(T)] = typeof(T);
         }
-        public void Navigate(Type pageType, object parameter = null)
+
+        public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null)
         {
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
-                // 从服务容器中获取页面实例（单例）
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
 
-                // 直接设置 Content，绕过 Navigate 方法
-                ContentFrame.Content = pageInstance;
+                // 使用默认的滑动动画，如果没有指定
+                transitionInfo ??= new EntranceNavigationTransitionInfo();
 
-                // 如果需要传递参数，可以通过页面的属性或方法
-                //if (parameter != null && pageInstance is INavigationAware navigationAware)
-                //{
-                //    navigationAware.OnNavigatedTo(parameter);
-                //}
+                // 创建动画故事板
+                AnimatePageTransition(pageInstance, transitionInfo);
             }
             else
             {
-                // 如果未注册，使用默认方式导航
-                ContentFrame?.Navigate(pageType, parameter);
+                ContentFrame?.Navigate(pageType, parameter, transitionInfo);
             }
+        }
+
+        private void AnimatePageTransition(Page newPage, NavigationTransitionInfo transitionInfo)
+        {
+            var currentContent = ContentFrame.Content as FrameworkElement;
+
+            // 设置新页面
+            ContentFrame.Content = newPage;
+
+            // 根据过渡信息类型执行不同动画
+            if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
+            {
+                ExecuteSlideAnimation(newPage, slideInfo.Effect);
+            }
+            else if (transitionInfo is DrillInNavigationTransitionInfo)
+            {
+                ExecuteDrillInAnimation(newPage);
+            }
+            else if (transitionInfo is EntranceNavigationTransitionInfo)
+            {
+                ExecuteEntranceAnimation(newPage);
+            }
+        }
+
+        private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect)
+        {
+            var storyboard = new Storyboard();
+            var translateTransform = new TranslateTransform();
+            page.RenderTransform = translateTransform;
+
+            var animation = new DoubleAnimation()
+            {
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+            };
+
+            // 根据效果设置起始位置
+            switch (effect)
+            {
+                case SlideNavigationTransitionEffect.FromRight:
+                    translateTransform.X = ContentFrame.ActualWidth;
+                    animation.From = ContentFrame.ActualWidth;
+                    animation.To = 0;
+                    Storyboard.SetTarget(animation, translateTransform);
+                    Storyboard.SetTargetProperty(animation, "X");
+                    break;
+                case SlideNavigationTransitionEffect.FromLeft:
+                    translateTransform.X = -ContentFrame.ActualWidth;
+                    animation.From = -ContentFrame.ActualWidth;
+                    animation.To = 0;
+                    Storyboard.SetTarget(animation, translateTransform);
+                    Storyboard.SetTargetProperty(animation, "X");
+                    break;
+                case SlideNavigationTransitionEffect.FromBottom:
+                    translateTransform.Y = ContentFrame.ActualHeight;
+                    animation.From = ContentFrame.ActualHeight;
+                    animation.To = 0;
+                    Storyboard.SetTarget(animation, translateTransform);
+                    Storyboard.SetTargetProperty(animation, "Y");
+                    break;
+            }
+
+            storyboard.Children.Add(animation);
+            storyboard.Begin();
+        }
+
+        private void ExecuteDrillInAnimation(Page page)
+        {
+            var storyboard = new Storyboard();
+            var compositeTransform = new CompositeTransform() { ScaleX = 1.1, ScaleY = 1.1 };
+            page.RenderTransform = compositeTransform;
+            page.Opacity = 0;
+
+            // X轴缩放动画
+            var scaleXAnimation = new DoubleAnimation()
+            {
+                From = 1.1,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+            };
+
+            // Y轴缩放动画（手动创建新实例）
+            var scaleYAnimation = new DoubleAnimation()
+            {
+                From = 1.1,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+            };
+
+            // 透明度动画
+            var opacityAnimation = new DoubleAnimation()
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(200)
+            };
+
+            Storyboard.SetTarget(scaleXAnimation, compositeTransform);
+            Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
+
+            Storyboard.SetTarget(scaleYAnimation, compositeTransform);
+            Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
+
+            Storyboard.SetTarget(opacityAnimation, page);
+            Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+
+            storyboard.Children.Add(scaleXAnimation);
+            storyboard.Children.Add(scaleYAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Begin();
+        }
+
+        private void ExecuteEntranceAnimation(Page page)
+        {
+            var storyboard = new Storyboard();
+            var translateTransform = new TranslateTransform() { Y = 50 };
+            page.RenderTransform = translateTransform;
+            page.Opacity = 0;
+
+            var translateAnimation = new DoubleAnimation()
+            {
+                From = 500,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+            };
+
+            var opacityAnimation = new DoubleAnimation()
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(200)
+            };
+
+            Storyboard.SetTarget(translateAnimation, translateTransform);
+            Storyboard.SetTargetProperty(translateAnimation, "Y");
+
+            Storyboard.SetTarget(opacityAnimation, page);
+            Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+
+            storyboard.Children.Add(translateAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Begin();
         }
 
         public void GoBack()

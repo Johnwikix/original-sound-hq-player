@@ -1,4 +1,5 @@
 ﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
     {
         Frame ContentFrame { get; set; }
         void RegisterPage<T>() where T : Page;
-        void Navigate(Type pageType, object parameter = null);
+        void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null);
         void GoBack();
         bool CanGoBack { get; }
     }
