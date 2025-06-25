@@ -26,21 +26,42 @@ namespace WinUIMusicPlayer.Services.NavigationService
         {
             _registeredPages[typeof(T)] = typeof(T);
         }
-
         public void Navigate(Type pageType, object parameter = null)
         {
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
                 // 从服务容器中获取页面实例（单例）
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
-                ContentFrame?.Navigate(pageInstance.GetType(), parameter);
+
+                // 直接设置 Content，绕过 Navigate 方法
+                ContentFrame.Content = pageInstance;
+
+                // 如果需要传递参数，可以通过页面的属性或方法
+                //if (parameter != null && pageInstance is INavigationAware navigationAware)
+                //{
+                //    navigationAware.OnNavigatedTo(parameter);
+                //}
             }
             else
             {
-                // 如果未注册，使用默认方式导航（可能会创建新实例）
+                // 如果未注册，使用默认方式导航
                 ContentFrame?.Navigate(pageType, parameter);
             }
         }
+        //public void Navigate(Type pageType, object parameter = null)
+        //{
+        //    if (_registeredPages.TryGetValue(pageType, out var resolvedType))
+        //    {
+        //        // 从服务容器中获取页面实例（单例）
+        //        var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
+        //        ContentFrame?.Navigate(pageInstance.GetType(), parameter);
+        //    }
+        //    else
+        //    {
+        //        // 如果未注册，使用默认方式导航（可能会创建新实例）
+        //        ContentFrame?.Navigate(pageType, parameter);
+        //    }
+        //}
 
         public void GoBack()
         {

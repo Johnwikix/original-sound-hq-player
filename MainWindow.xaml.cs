@@ -49,16 +49,16 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
-        //private readonly INavigationService _navigationService;
+        private readonly INavigationService _navigationService;
 
         public MainWindow()
         {
             InitializeComponent();
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
-            //_navigationService = App.Services.GetRequiredService<INavigationService>();
-            //_navigationService.ContentFrame = ContentFrame;
-            //_navigationService.RegisterPage<MusicBrowsePage>();
+            _navigationService = App.Services.GetRequiredService<INavigationService>();
+            _navigationService.ContentFrame = ContentFrame;
+            _navigationService.RegisterPage<MusicBrowsePage>();
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
@@ -246,8 +246,8 @@ namespace WinUIMusicPlayer
                     ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
-                    //_navigationService.Navigate(typeof(MusicBrowsePage));
-                    ContentFrame.Navigate(typeof(MusicBrowsePage));
+                    _navigationService.Navigate(typeof(MusicBrowsePage));
+                    //ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
                     ContentFrame.Navigate(typeof(AddFolderPage));
@@ -371,7 +371,8 @@ namespace WinUIMusicPlayer
                         ContentFrame.Navigate(typeof(AddFolderPage));
                         break;
                     case "MusicBrowse":
-                        ContentFrame.Navigate(typeof(MusicBrowsePage));
+                        _navigationService.Navigate(typeof(MusicBrowsePage));
+                        //ContentFrame.Navigate(typeof(MusicBrowsePage));
                         break;
                 }
             }
