@@ -7,6 +7,7 @@ using System.Diagnostics;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
@@ -35,8 +36,9 @@ namespace WinUIMusicPlayer
             var host = Host.CreateDefaultBuilder()
              .ConfigureServices((context, services) =>
              {
-                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();
-                 services.AddSingleton<MusicBrowsePage>();
+                 // 注册导航服务为单例
+                 services.AddSingleton<INavigationService, NavigationService>();
+                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();                 
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();

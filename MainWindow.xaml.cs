@@ -1,5 +1,6 @@
 using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,6 +14,7 @@ using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -47,13 +49,16 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
-
+        //private readonly INavigationService _navigationService;
 
         public MainWindow()
         {
             InitializeComponent();
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
+            //_navigationService = App.Services.GetRequiredService<INavigationService>();
+            //_navigationService.ContentFrame = ContentFrame;
+            //_navigationService.RegisterPage<MusicBrowsePage>();
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
@@ -226,6 +231,7 @@ namespace WinUIMusicPlayer
 
         private void NavigateToDefaultPage()
         {
+
             foreach (var item in NavigationViewControl.MenuItems)
             {
                 if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == AppSettings.DefualtEntry)
@@ -240,6 +246,7 @@ namespace WinUIMusicPlayer
                     ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
+                    //_navigationService.Navigate(typeof(MusicBrowsePage));
                     ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
