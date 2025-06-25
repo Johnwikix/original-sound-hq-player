@@ -41,6 +41,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<ArtistViewModel>();
                  services.AddSingleton<FolderViewModel>();
                  services.AddSingleton<PlayListViewModel>();
+                 services.AddSingleton<SongListViewModel>();
+                 services.AddSingleton<SongCollectionViewModel>();
+                 services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<MusicPlaybackService>();
                  services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();

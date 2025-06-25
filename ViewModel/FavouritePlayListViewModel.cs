@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _selectedMusic, value))
                 {
-                    Debug.WriteLine($"SelectedMusic changed: {value?.Title}");
+                    //Debug.WriteLine($"SelectedMusic changed: {value?.Title}");
                 }
             }
         }
@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private MusicBrowsePage parentPage;
         private FavouritePlayListPage currentPage;
-        public MusicPlaybackService _musicPlaybackService;
+        private MusicPlaybackService _musicPlaybackService;
         private readonly IMessenger _messenger;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
@@ -145,13 +145,14 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage != null)
                 {
-                    if (parentPage.musicPlaybackService.currentPlayingMusic != null)
+                    if (_musicPlaybackService.currentPlayingMusic != null)
                     {
                         var selectedMusic = MusicList.FirstOrDefault(music =>
                         music.Id == _musicPlaybackService.currentPlayingMusic.Id);
 
                         if (selectedMusic != null)
                         {
+                            SelectedMusic = selectedMusic;
                             _messenger.Send(new ScrollToMusicMessageHepler(selectedMusic));
                             //MusicListView.SelectedItem = selectedMusic;
                             //MusicListView.ScrollIntoView(selectedMusic);
@@ -280,12 +281,12 @@ namespace WinUIMusicPlayer.ViewModel
         {            
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                parentPage.musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
+                _musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
                 await parentPage.PlayMusic(uniqueSelectedMusics[0]);
             }
             else
             {
-                parentPage.musicPlaybackService.currentPlayingList = MusicList.ToList();
+                _musicPlaybackService.currentPlayingList = MusicList.ToList();
                 await parentPage.PlayMusic(SelectedMusic);                
             }
         }

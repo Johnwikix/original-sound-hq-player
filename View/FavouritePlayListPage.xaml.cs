@@ -77,7 +77,6 @@ namespace WinUIMusicPlayer.View
             // 在UI线程上执行
             DispatcherQueue.TryEnqueue(() =>
             {
-                MusicListView.SelectedItem = message.SelectedMusic;
                 MusicListView.ScrollIntoView(message.SelectedMusic);
             });
         }
