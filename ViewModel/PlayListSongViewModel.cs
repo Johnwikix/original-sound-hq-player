@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.ViewModel
             InitizeData();
         }
 
-        private async void InitizeData()
+        private void InitizeData()
         {
             if (_parentPage != null)
             {

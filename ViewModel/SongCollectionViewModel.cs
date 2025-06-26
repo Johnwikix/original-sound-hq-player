@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.ViewModel
             RefreshPage();
         }
 
-        public async void RefreshPage()
+        public void RefreshPage()
         {
             if (_parentPage != null)
             {
@@ -130,19 +130,19 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null));
-                    await LoadMusicAsync(musics, _currentPageType);
+                     LoadMusicAsync(musics, _currentPageType);
                 }
                 else if (_currentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null));
-                    await LoadMusicAsync(musics, _currentPageType);
+                     LoadMusicAsync(musics, _currentPageType);
                 }
                 else if (_currentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText));
-                    await LoadMusicAsync(musics, _currentPageType);
+                     LoadMusicAsync(musics, _currentPageType);
                 }
             }
         }
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task LoadMusicAsync(ObservableCollection<Music> musics, string type = null)
+        public void LoadMusicAsync(ObservableCollection<Music> musics, string type = null)
         {
             try
             {

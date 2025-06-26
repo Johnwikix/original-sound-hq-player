@@ -18,9 +18,9 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AlbumPage : Page, INavigatable
     {
         public AlbumViewModel ViewModel { get; }
-        public AlbumPage()
+        public AlbumPage(AlbumViewModel viewModel)
         {
-            ViewModel = App.Services.GetRequiredService<AlbumViewModel>();
+            ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
             this.InitializeComponent();            
             DataContext = this;
@@ -47,45 +47,7 @@ namespace WinUIMusicPlayer.View
 
         private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            ViewModel.Album_RightTapped(sender, e);
-            //var originalSource = e.OriginalSource as FrameworkElement;
-
-            //// 向上遍历查找 GridViewItem
-            //GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-
-            //if (clickedItem != null)
-            //{
-            //    // 从 GridViewItem 获取数据项
-            //    var album = clickedItem.Content as Music;
-
-            //    if (album != null)
-            //    {
-            //        ContextMenuService.Instance.SetAlbumPage(this);
-            //        // 显示专辑右键菜单
-            //        await ContextMenuService.Instance.ShowAlbumContextMenu(
-            //            album,
-            //            originalSource,
-            //            e.GetPosition(originalSource),
-            //            "album"
-            //        );
-            //        ContextMenuService.playingAlbumMusic += PlayingAlbum;
-            //        ContextMenuService.showTransmission += (s, e) =>
-            //        {
-            //            if (parentPage != null)
-            //            {
-            //                parentPage.ShowTransmission();
-            //            }
-            //        };
-            //        ContextMenuService.hideTransmission += (s, e) =>
-            //        {
-            //            if (parentPage != null)
-            //            {
-            //                parentPage.HideTransmission();
-            //            }
-            //        };
-            //    }
-            //}
-            //e.Handled = true;
+            ViewModel.Album_RightTapped(sender, e);            
         }
 
         public async void OnAlbumDetailChanged(object sender, Music cover)

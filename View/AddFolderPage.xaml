@@ -31,7 +31,7 @@
             <Button x:Name="AddFolder" Click="AddFolderButton_Click" Margin="25 10 10 10"  BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
                 <FontIcon Glyph="&#xe8f4;"/>
             </Button>
-            <ListView x:Name="FolderListView" Grid.Row="1">
+            <ListView x:Name="FolderListView" ItemsSource="{Binding ViewModel.FolderList,Mode=TwoWay}" Grid.Row="1">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Folder">
                         <Grid>

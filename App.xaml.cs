@@ -52,6 +52,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListSongPage>();
                  services.AddSingleton<SongListPage>();
                  services.AddSingleton<SongCollectionPage>();
+                 services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
@@ -63,7 +64,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<MusicPlaybackService>();
                  services.AddSingleton<ContextMenuService>();
-                 services.AddSingleton<AudioConverterService>();                 
+                 services.AddSingleton<AudioConverterService>();    
+                 services.AddSingleton<NotificationService>();
                  // 其他服务...
              })
              .Build();

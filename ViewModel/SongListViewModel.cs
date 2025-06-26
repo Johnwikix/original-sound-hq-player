@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private async void InitializeDatabase()
+        private void InitializeDatabase()
         {
             ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetMusicListFromMem(AppData.searchText));
             LoadMusicAsync(musics);
@@ -202,8 +202,6 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         SelectedMusic = selectedMusic;
                         _messenger.Send(new ScrollToMusicMessageHepler(selectedMusic));
-                        // 这里需要通过事件或附加属性通知视图滚动，而不是直接操作ListView
-                        // 可以使用消息传递或定义事件
                     }
                 }
             }

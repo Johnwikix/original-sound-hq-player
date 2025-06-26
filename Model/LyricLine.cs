@@ -7,44 +7,21 @@ namespace WinUIMusicPlayer.Model
 {
     public partial class LyricLine : ObservableObject
     {
-        [ObservableProperty]
         private string _text;
-        [ObservableProperty]
-        private bool _isCurrent;
+        public string Text
+        {
+            get => _text;
+            set => SetProperty(ref _text, value);
+        }
 
-        //public string Text
-        //{
-        //    get => _text;
-        //    set
-        //    {
-        //        if (_text != value)
-        //        {
-        //            _text = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
+        private bool _isCurrent;
+        public bool IsCurrent
+        {
+            get => _isCurrent;
+            set => SetProperty(ref _isCurrent, value);
+        }
 
         public TimeSpan Time { get; set; }
 
-        //public bool IsCurrent
-        //{
-        //    get => _isCurrent;
-        //    set
-        //    {
-        //        if (_isCurrent != value)
-        //        {
-        //            _isCurrent = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
-
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        //protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        //{
-        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
     }
 }

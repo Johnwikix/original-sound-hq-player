@@ -28,28 +28,17 @@ namespace WinUIMusicPlayer.View
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class PlayListSongPage : Page, INavigatable
-    {
-        //private ObservableCollection<Music> musicList;
-        //private MusicBrowsePage parentPage;
-        //private string _lastSearchText = "";
-        //private AudioConverterService converterService;
-        //private ProgressDialog progressDialog;
+    {       
         public PlayListSongViewModel ViewModel { get; }
         private readonly IMessenger _messenger;
-        public PlayListSongPage()
+        public PlayListSongPage(PlayListSongViewModel viewModel, IMessenger messenger)
         {
             this.InitializeComponent();
-            ViewModel = App.Services.GetRequiredService<PlayListSongViewModel>();
+            ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
-            _messenger = App.Services.GetRequiredService<IMessenger>();
+            _messenger = messenger;
             _messenger.Register<ScrollToMusicMessageHepler>(this, OnScrollToMusic);
-            //MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            //converterService = new AudioConverterService();
-            //progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            //progressDialog.Title = ToolUtils.GetString("Processing");
-            //musicList = new ObservableCollection<Music>();
-            //MusicListView.ItemsSource = musicList;
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -60,30 +49,7 @@ namespace WinUIMusicPlayer.View
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.ReceiveNavigation();
-                //this.parentPage = parentPage;
-                //parentPage.DisableBackButton();
-                //parentPage.refreshPage += RefreshPlayList;
-                //PlayListName.Text = parentPage.currentPlayList.Name;
-                //initizeData();
-                //clearUsbDeviceMusicList(null, null);
-                //refreshUsbDeviceMusicList(null, null);
-                //parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
-                //parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
-                //if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0 || PlayListName.Text!= parentPage.currentPlayList.Name)
-                //{
-                //    PlayListName.Text = parentPage.currentPlayList.Name;
-                //    _lastSearchText = AppData.searchText;
-                //    initizeData();
-                //}
-                //else
-                //{
-                //    UpdateMusicListView();
-                //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-                //}                
-            }
+            ViewModel.ReceiveNavigation();
         }
 
         private void OnScrollToMusic(object recipient, ScrollToMusicMessageHepler message)
@@ -95,141 +61,20 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        //private void clearUsbDeviceMusicList(object? sender, EventArgs e)
-        //{
-        //    foreach (var music in musicList)
-        //    {
-        //        music.IsExistOnDevice = 0;
-        //    }
-        //}
-
-        //private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
-        //{
-        //    var usbMusicGroups = AppData.musicOnUsbDevice
-        //                    .GroupBy(u => u.Title)
-        //                    .ToDictionary(g => g.Key, g => g.ToList());
-        //    foreach (var music in musicList)
-        //    {
-        //        music.IsExistOnDevice = 0;
-
-        //        if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-        //        {
-        //            music.IsExistOnDevice = 1;
-        //            foreach (var usbMusic in matchingItems)
-        //            {
-        //                if (music.Author == usbMusic.Author &&
-        //                    music.Album == usbMusic.Album &&
-        //                    music.Extension == usbMusic.Extension)
-        //                {
-        //                    music.IsExistOnDevice = 2;
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
-
-        //private void RefreshPlayList(object? sender, EventArgs e)
-        //{
-        //    initizeData();
-        //}
-
-        //private async void initizeData()
-        //{
-        //    if (parentPage != null)
-        //    {
-        //        var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(parentPage.currentPlayListId, AppData.searchText);
-        //        LoadMusicAsync(musicList);
-        //    }
-        //}
-
-        private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        
+        private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             ViewModel.MusicListView_DragItemsCompleted();
-            //if (parentPage != null)
-            //{
-            //    for (int i = 0; i < musicList.Count; i++)
-            //    {
-            //        musicList[i].PlayListOrder = musicList.Count - i;
-            //        await MusicDatabaseService.UpdatePlayListMusicOrder(parentPage.currentPlayList.Id, musicList[i]);
-            //    }
-            //    await MusicDatabaseService.GetPlayListMusic();
-            //}
         }
-
-        //public void LoadMusicAsync(List<Music> musics)
-        //{
-        //    try
-        //    {
-
-        //        musicList.Clear();
-        //        foreach (var music in musics)
-        //        {
-        //            musicList.Add(music);
-        //        }
-        //        SortMusicList(AppData.sortOrder);
-        //        UpdateMusicListView();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载音乐列表失败: {ex.Message}");
-        //    }
-        //}
 
         public void SortMusicList(string sortOrder)
         {
             ViewModel.SortMusicList(sortOrder);
-            //var order = "DefaultOrder";
-            //List<Music> musics = new List<Music>();
-            //if (!string.IsNullOrEmpty(sortOrder))
-            //{
-            //    order = sortOrder;
-            //}
-            //if (musicList.Count > 0)
-            //{
-            //    musics = ToolUtils.SortMusicList("playList", order, musicList.ToList());
-            //}
-            //musicList.Clear();
-            //foreach (var music in musics)
-            //{
-            //    musicList.Add(music);
-            //}
         }
 
         public void UpdateMusicListView()
         {
             ViewModel.UpdateMusicListView();
-            //try
-            //{
-            //    if (parentPage.musicPlaybackService.currentPlayingMusic != null)
-            //    {
-            //        var selectedMusic = musicList.FirstOrDefault(music =>
-            //        music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id);
-
-            //        if (selectedMusic != null)
-            //        {
-            //            MusicListView.SelectedItem = selectedMusic;
-            //            MusicListView.ScrollIntoView(selectedMusic);
-            //        }
-            //    }
-            //    //if (musicList.Contains(parentPage.musicPlaybackService.currentPlayingMusic))
-            //    //{
-            //    //    Music selectedMusic = null;
-            //    //    foreach (var music in musicList)
-            //    //    {
-            //    //        if (music.Id == parentPage.musicPlaybackService.currentPlayingMusic.Id)
-            //    //        {
-            //    //            selectedMusic = music;
-            //    //        }
-            //    //    }
-            //    //    MusicListView.SelectedItem = selectedMusic;
-            //    //    MusicListView.ScrollIntoView(selectedMusic);
-            //    //}
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine($"滚动音乐失败: {ex.Message}");
-            //}
         }
 
         private List<Music> GetUniqueSelectedItems()
@@ -248,13 +93,7 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            ViewModel.MusicListView_DoubleTapped();
-            //var selectedMusic = MusicListView.SelectedItem as Music;
-            //if (selectedMusic != null && parentPage != null)
-            //{
-            //    parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
-            //    await parentPage.PlayMusic(selectedMusic);
-            //}
+            await ViewModel.MusicListView_DoubleTapped();
         }
 
 
@@ -262,157 +101,33 @@ namespace WinUIMusicPlayer.View
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             await ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
-            //if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
-            //{
-            //    parentPage.musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
-            //    await parentPage.PlayMusic(uniqueSelectedMusics[0]);
-            //}
-            //else
-            //{
-            //    if (MusicListView.SelectedItem is Music selectedMusic)
-            //    {
-            //        parentPage.musicPlaybackService.currentPlayingList = musicList.ToList();
-            //        await parentPage.PlayMusic(selectedMusic);
-            //    }
-            //}
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
-            //if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
-            //{
-            //    foreach (Music item in uniqueSelectedMusics)
-            //    {
-            //        await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, item.Id);
-            //        musicList.Remove(item);
-            //    }
-            //}
-            //else
-            //{
-            //    if (MusicListView.SelectedItem is Music selectedMusic)
-            //    {
-            //        await MusicDatabaseService.RemoveMusicFromPlayList(parentPage.currentPlayListId, selectedMusic.Id);
-            //        musicList.Remove(selectedMusic);
-            //    }
-            //}
+            await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
-            //if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
-            //{
-            //    foreach (Music item in uniqueSelectedMusics)
-            //    {
-            //        await parentPage.AddToFavourite(item);
-            //    }
-            //}
-            //else
-            //{
-            //    if (MusicListView.SelectedItem is Music selectedMusic)
-            //    {
-            //        await parentPage.AddToFavourite(selectedMusic);
-            //    }
-            //}
-            //AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    await parentPage.AddToFavourite(selectedMusic);
-            //}
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.OpenInExplorer_Click();
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    var filePath = selectedMusic.Path;
-            //    if (File.Exists(filePath))
-            //    {
-            //        try
-            //        {
-            //            Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
-            //        }
-            //    }
-            //    else
-            //    {
-            //        Debug.WriteLine($"文件不存在: {filePath}");
-            //    }
-            //}
         }
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
-            //if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
-            //{
-            //    var menuItem = sender as MenuFlyoutItem;
-            //    if (menuItem != null && menuItem.Tag.ToString() != null)
-            //    {
-            //        int progressBarValue = 0;
-            //        progressDialog.RequestedTheme = AppSettings.elementTheme;
-            //        await progressDialog.UpdateProgress(progressBarValue);
-            //        converterService.updateProgress += (sender, progress) =>
-            //        {
-            //            if (progressBarValue < (int)progress)
-            //            {
-            //                progressBarValue = (int)progress;
-            //            }
-            //            if (progressBarValue < 100)
-            //            {
-            //                _ = progressDialog.UpdateProgress(progressBarValue);
-            //            }
-            //        };
-            //        progressDialog.XamlRoot = this.XamlRoot;
-            //        _ = progressDialog.ShowAsync();
-
-            //        List<Task> conversionTasks = new List<Task>();
-            //        foreach (Music item in uniqueSelectedMusics)
-            //        {
-            //            Task conversionTask = converterService.ConvertAudio2Wav(item, menuItem.Tag.ToString());
-            //            conversionTasks.Add(conversionTask);
-            //        }
-            //        await Task.WhenAll(conversionTasks);
-            //        _ = progressDialog.UpdateProgress(100);
-            //    }
-            //}
-            //else
-            //{
-            //    var menuItem = sender as MenuFlyoutItem;
-            //    if (menuItem != null && menuItem.Tag.ToString() != null)
-            //    {
-            //        if (MusicListView.SelectedItem is Music selectedMusic)
-            //        {
-            //            int progressBarValue = 0;
-            //            progressDialog.RequestedTheme = AppSettings.elementTheme;
-            //            _ = progressDialog.UpdateProgress(progressBarValue);
-            //            _ = converterService.ConvertAudio2Wav(selectedMusic, menuItem.Tag.ToString());
-            //            converterService.updateProgress += (sender, progress) =>
-            //            {
-            //                progressBarValue = (int)progress;
-            //                _ = progressDialog.UpdateProgress(progressBarValue);
-            //            };
-            //            if (progressBarValue < 100)
-            //            {
-            //                progressDialog.XamlRoot = this.XamlRoot;
-            //                _ = progressDialog.ShowAsync();
-            //            }
-
-            //        }
-            //    }
-            //}
+            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
         }
 
-        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
@@ -531,12 +246,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string albumName = textBlock.Text;
-                // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
                 ViewModel.AlbumTextBlock_Tapped(albumName);
-                //if (parentPage != null)
-                //{
-                //    parentPage.SelectBarAlbum(albumName);
-                //}
             }
         }
 
@@ -546,39 +256,12 @@ namespace WinUIMusicPlayer.View
             {
                 string artist = textBlock.Text;
                 ViewModel.AuthorTextBlock_Tapped(artist);
-                //if (parentPage != null)
-                //{
-                //    parentPage.SelectBarArtist(artist);
-                //}
             }
         }
         private void MusicDetail_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.MusicDetail_Click();
-            //if (MusicListView.SelectedItem is Music selectedMusic)
-            //{
-            //    var musicDetailsWindow = new MusicDetailsWindow(selectedMusic);
-            //    musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
-            //    musicDetailsWindow.Activate();
-            //}
         }
-
-        //private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
-        //{
-        //    foreach (var music in musicList)
-        //    {
-        //        if (music.Path == musicItem.Path)
-        //        {
-        //            music.Title = musicItem.Title;
-        //            music.Author = musicItem.Author;
-        //            music.Album = musicItem.Album;
-        //            music.Year = musicItem.Year;
-        //            music.TrackNumber = musicItem.TrackNumber;
-        //            music.Lyrics = musicItem.Lyrics;
-        //            break;
-        //        }
-        //    }
-        //}
 
         private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
         {
@@ -586,12 +269,6 @@ namespace WinUIMusicPlayer.View
             if (button != null && button.Tag is Music music)
             {
                 await ViewModel.IsFavouriteIconButton_Click(music);
-                //if (music != null)
-                //{
-                //    ((FontIcon)button.Content).Glyph = !music.IsFavorite ? "\ueb52" : "\ueb51";
-                //    await parentPage.AddToFavourite(music);
-                //    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-                //}
             }
         }
     }

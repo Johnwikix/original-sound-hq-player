@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -95,7 +96,7 @@ namespace WinUIMusicPlayer.View.SubView
             int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
 
             musicDetailAppWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
-            notificationService = new NotificationService();
+            notificationService = App.Services.GetRequiredService<NotificationService>();
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {

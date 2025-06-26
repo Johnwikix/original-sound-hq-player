@@ -262,7 +262,7 @@ namespace WinUIMusicPlayer.ViewModel
             musicDetailsWindow.Activate();
         }
 
-        private async void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
+        private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
         {
             foreach (var music in MusicList)
             {

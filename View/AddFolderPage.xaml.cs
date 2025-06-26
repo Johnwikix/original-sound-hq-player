@@ -12,6 +12,7 @@ using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -23,92 +24,33 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class AddFolderPage : Page
     {
-        private AddFolderService addFolderService = new AddFolderService();
         private NotificationService notificationService;
-        public AddFolderPage()
+        public AddFolderViewModel ViewModel { get;}
+        public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel)
         {
             this.InitializeComponent();
-            notificationService = new NotificationService();
-            var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
-            {
-                mainWindow.FoldersLoaded += MainWindow_FoldersLoaded;
-                mainWindow.LoadFoldersAsync();
-            }
-        }
-
-        private void MainWindow_FoldersLoaded(object sender, IEnumerable<Folder> folderList)
-        {
-            try
-            {
-                FolderListView.ItemsSource = folderList;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"更新文件夹列表时出错: {ex.Message}");
-            }
-        }
-
-        private async Task LoadFoldersAsync()
-        {
-            try
-            {
-                var folderList = await MusicDatabaseService.GetFolders();
-                FolderListView.ItemsSource = folderList;
-            }
-            catch (SQLiteException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
-            }
+            ViewModel = viewModel;
+            DataContext = this;
+            this.notificationService = notificationService;
         }
 
         private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
-        { // This is the correct method signature
+        { 
             var button = sender as Button;
             if (button != null && button.Tag is int folderId)
             {
-                var folderToOpen = await MusicDatabaseService.GetFolder(folderId);
-                if (folderToOpen != null)
-                {
-                    var folder = await StorageFolder.GetFolderFromPathAsync(folderToOpen.Path);
-                    var options = new FolderLauncherOptions
-                    {
-                        DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-                    };
-                    await Launcher.LaunchFolderAsync(folder, options);
-                }
+                ViewModel.OpenFolderButton_Click(folderId);
             }
         }
 
 
         private async void AddFolderButton_Click(object sender, RoutedEventArgs e)
         {
-
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-            //var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
-            var folder = await folderPicker.PickSingleFolderAsync();
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
-            await AddFolderMusic(folder);
+            await ViewModel.AddFolderButton_Click();
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
-        }
-
-        private async Task AddFolderMusic(StorageFolder folder)
-        {
-            if (folder != null)
-            {
-                await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
-                await LoadFoldersAsync();
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
-                {
-                    mainWindow.UpdateMusicList();
-                }
-            }
         }
 
 
@@ -125,22 +67,14 @@ namespace WinUIMusicPlayer.View
             AddFolderGrid.Visibility = Visibility.Visible;
         }
 
-        private async void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
+        private void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
             var button = sender as Button;
             if (button != null && button.Tag is int folderId)
             {
-                await MusicDatabaseService.RemoveFolder(folderId);
-                await LoadFoldersAsync();
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
-                {
-                    mainWindow.UpdateMusicList();
-                    //await mainWindow.LoadMusicList();
-                    //await mainWindow.LoadFavourMusicList();
-                }
+                ViewModel.RemoveFolderButton_Click(folderId);
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
@@ -167,19 +101,13 @@ namespace WinUIMusicPlayer.View
                 {
                     var items = await e.DataView.GetStorageItemsAsync();
                     // 筛选出文件夹
-                    var folders = items.Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
+                    IEnumerable<IStorageItem> folders = items.Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
 
                     if (folders.Any())
                     {
                         LoadingGrid.Visibility = Visibility.Visible;
                         AddFolderGrid.Visibility = Visibility.Collapsed;
-                        foreach (var item in folders)
-                        {
-                            string folderPath = item.Path;
-                            Debug.WriteLine($"路径: {folderPath}");
-                            StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-                            await AddFolderMusic(folder);
-                        }
+                        ViewModel.Grid_Drop(folders);
                         LoadingGrid.Visibility = Visibility.Collapsed;
                         AddFolderGrid.Visibility = Visibility.Visible;
                     }

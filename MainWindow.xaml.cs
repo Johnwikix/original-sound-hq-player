@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer
     /// </summary>
     public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
     {
-        public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
+        //public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
         public event EventHandler WindowClosed;
@@ -187,7 +187,7 @@ namespace WinUIMusicPlayer
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
                         MusicDatabaseService.GetPlayStateAsync(),
-                        LoadFoldersAsync(),
+                        //LoadFoldersAsync(),
                         LoadMusicList(),
                         RefreshDevice(),
                 };
@@ -268,11 +268,10 @@ namespace WinUIMusicPlayer
             //ContentFrame.Navigate(typeof(SettingsPage), this);
         }
 
-        public async Task LoadFoldersAsync()
-        {
-            var folderList = await MusicDatabaseService.GetFoldersAsync();
-            FoldersLoaded?.Invoke(this, folderList);
-        }
+        //public async Task LoadFoldersAsync()
+        //{
+        //    LoadFolders?.Invoke(this, EventArgs.Empty);
+        //}
 
         public void UpdateMusicList()
         {

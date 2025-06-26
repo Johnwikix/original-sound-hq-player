@@ -81,9 +81,9 @@ namespace WinUIMusicPlayer.Services
         };
         private bool isEnableEq = false;
 
-        public MusicPlaybackService()
+        public MusicPlaybackService(NotificationService notificationService)
         {
-            notificationService = new NotificationService();
+            this.notificationService = notificationService;
             progressTimer = new System.Timers.Timer(250);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();

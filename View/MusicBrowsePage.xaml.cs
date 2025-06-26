@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.View
         private AppWindow appWindow;
         private WindowId windowId;
         private bool isMouseOverProgressBar = false;
-        private NotificationService notificationService = new NotificationService();
+        private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
@@ -83,7 +83,7 @@ namespace WinUIMusicPlayer.View
         private string lastSearchText = string.Empty;
         private bool isInitialized = false;
         private readonly INavigationService _navigationService;
-        public MusicBrowsePage(MusicPlaybackService musicPlaybackService)
+        public MusicBrowsePage(MusicPlaybackService musicPlaybackService,NotificationService notificationService)
         {
             isInitialized = false;            
             this.InitializeComponent();
@@ -147,6 +147,7 @@ namespace WinUIMusicPlayer.View
                     }
                 });                
             };
+            this.notificationService = notificationService;
             InitializeTimer();
             InitializeSystemMediaControls();
             InitializeAppWindow();           
