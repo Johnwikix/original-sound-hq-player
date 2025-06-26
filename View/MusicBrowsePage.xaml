@@ -235,7 +235,7 @@
             </Grid>
         </Grid>
         <!-- 底部控制区域 -->
-        <Grid Grid.Row="2" Margin="10" Height="150">
+        <Grid Grid.Row="2" Margin="10,0,10,10" Height="150">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
