@@ -25,6 +25,7 @@ using Windows.Devices.Portable;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
@@ -81,11 +82,25 @@ namespace WinUIMusicPlayer.View
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
         private bool isInitialized = false;
-        public MusicBrowsePage()
+        private readonly INavigationService _navigationService;
+        public MusicBrowsePage(MusicPlaybackService musicPlaybackService)
         {
-            isInitialized = false;
-            musicPlaybackService = App.Services.GetRequiredService<MusicPlaybackService>();
-            this.InitializeComponent();            
+            isInitialized = false;            
+            this.InitializeComponent();
+            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
+
+            // 为特定Frame创建导航服务
+            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            _navigationService.ContentFrame = ContentFrame;
+            _navigationService.RegisterPage<FavouritePlayListPage>();
+            _navigationService.RegisterPage<SongCollectionPage>();
+            _navigationService.RegisterPage<AlbumPage>();
+            _navigationService.RegisterPage<ArtistPage>();
+            _navigationService.RegisterPage<FolderBrowsePage>();
+            _navigationService.RegisterPage<PlayListPage>();
+            _navigationService.RegisterPage<PlayListSongPage>();
+            _navigationService.RegisterPage<SongListPage>();
+            this.musicPlaybackService = musicPlaybackService;
             InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
@@ -641,7 +656,8 @@ namespace WinUIMusicPlayer.View
             currentPlayList = playList;
             currentPlayListId = playList.Id;
             currentPage = typeof(PlayListSongPage);
-            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         public async void LoadAlbumMusic(string Album)
@@ -650,7 +666,8 @@ namespace WinUIMusicPlayer.View
             paramName = Album;
             currentAlbumName = Album;
             currentPage = typeof(SongCollectionPage);
-            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         public void SelectBarAlbum(string Album)
@@ -663,7 +680,8 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -678,7 +696,8 @@ namespace WinUIMusicPlayer.View
             paramName = artist;
             currentArtistName = artist;
             currentPage = typeof(SongCollectionPage);
-            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         public void SelectBarArtist(string artist)
@@ -691,7 +710,8 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -706,7 +726,8 @@ namespace WinUIMusicPlayer.View
             paramName = folder;
             currentFolderName = folder;
             currentPage = typeof(SongCollectionPage);
-            ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         //public async Task RemoveMusic(int musicId)
@@ -825,15 +846,18 @@ namespace WinUIMusicPlayer.View
                 {
                     case "album":
                         currentPage = typeof(AlbumPage);
-                        ContentFrame.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
+                        //ContentFrame.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "artist":
                         currentPage = typeof(ArtistPage);
-                        ContentFrame.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
+                        //ContentFrame.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "folder":
                         currentPage = typeof(AlbumPage);
-                        ContentFrame.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
+                        //ContentFrame.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
                         break;
                     default:
                         break;
@@ -842,7 +866,8 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is PlayListSongPage)
             {
                 currentPage = typeof(PlayListPage);
-                ContentFrame.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
+                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
+                //ContentFrame.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
             }
             DisableBackButton();
         }
@@ -924,7 +949,8 @@ namespace WinUIMusicPlayer.View
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            ContentFrame.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            //ContentFrame.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             previousSelectedIndex = currentSelectedIndex;
             DisableBackButton();
             //_=Task.Run(() => {

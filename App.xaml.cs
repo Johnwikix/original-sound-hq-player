@@ -37,9 +37,21 @@ namespace WinUIMusicPlayer
              .ConfigureServices((context, services) =>
              {
                  // 注册导航服务为单例
-                 services.AddSingleton<INavigationService, NavigationService>();
+                 services.AddTransient<INavigationService, NavigationService>();
+                 // 注册导航服务工厂
+                 services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<IMessenger, WeakReferenceMessenger>();   
+                 services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
+                 services.AddSingleton<SettingsPage>();
+                 services.AddSingleton<FavouritePlayListPage>();
+                 services.AddSingleton<AlbumPage>();
+                 services.AddSingleton<ArtistPage>();
+                 services.AddSingleton<FolderBrowsePage>();
+                 services.AddSingleton<PlayListPage>();
+                 services.AddSingleton<PlayListSongPage>();
+                 services.AddSingleton<SongListPage>();
+                 services.AddSingleton<SongCollectionPage>();
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();

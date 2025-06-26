@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
@@ -19,7 +20,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class PlayListPage : Page
+    public sealed partial class PlayListPage : Page, INavigatable
     {
         //private ObservableCollection<PlayList> playLists;
         //private MusicBrowsePage parentPage;
@@ -32,12 +33,17 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
         }
 
+        public void ReceiveNavigationParameter(object parameter)
+        {
+            ViewModel.ReceiveNavigation();
+        }
+
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
-                ViewModel.SetParentPage(parentPage);
+                ViewModel.ReceiveNavigation();
                 //this.parentPage = parentPage;
                 //parentPage.currentPlayList = null;
                 //parentPage.DisableBackButton();

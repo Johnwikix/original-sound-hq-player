@@ -56,9 +56,13 @@ namespace WinUIMusicPlayer
             InitializeComponent();
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
-            _navigationService = App.Services.GetRequiredService<INavigationService>();
-            _navigationService.ContentFrame = ContentFrame;
+            // 在需要使用导航服务的地方获取工厂
+            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
+            // 为特定Frame创建导航服务
+            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
+            _navigationService.RegisterPage<SettingsPage>();
             SetTitleBar(AppTitleBar);
             InitializeApp();
             this.Closed += MainWindow_Closed;
@@ -243,14 +247,16 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
-                    ContentFrame.Navigate(typeof(AddFolderPage));
+                    _navigationService.Navigate(typeof(AddFolderPage));
+                    //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
                     _navigationService.Navigate(typeof(MusicBrowsePage));
                     //ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
-                    ContentFrame.Navigate(typeof(AddFolderPage));
+                    _navigationService.Navigate(typeof(AddFolderPage));
+                    //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
             }
         }
@@ -258,7 +264,8 @@ namespace WinUIMusicPlayer
         public void NavigateToSettingsPage()
         {
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            ContentFrame.Navigate(typeof(SettingsPage), this);
+            _navigationService.Navigate(typeof(SettingsPage), this);
+            //ContentFrame.Navigate(typeof(SettingsPage), this);
         }
 
         public async Task LoadFoldersAsync()
@@ -283,13 +290,6 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //string selector = MediaDevice.GetAudioRenderSelector();
-                //DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
-                //AppSettings.outputDeviceList.Clear();
-                //foreach (DeviceInformation device in devices)
-                //{
-                //    AppSettings.outputDeviceList.Add(device.Name);
-                //}
                 await ToolUtils.RefreshDevice();
                 if (SettingLoaded != null)
                 {
@@ -298,8 +298,6 @@ namespace WinUIMusicPlayer
                         SettingLoaded?.Invoke(this, EventArgs.Empty);
                     });
                 }
-                //GC.Collect();
-                //GC.WaitForPendingFinalizers();
             }
             catch (Exception ex)
             {
@@ -360,7 +358,8 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                ContentFrame.Navigate(typeof(SettingsPage), this);
+                //ContentFrame.Navigate(typeof(SettingsPage), this);
+                _navigationService.Navigate(typeof(SettingsPage), this);
             }
             else
             {
@@ -368,7 +367,8 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        ContentFrame.Navigate(typeof(AddFolderPage));
+                        _navigationService.Navigate(typeof(AddFolderPage));
+                        //ContentFrame.Navigate(typeof(AddFolderPage));
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage));

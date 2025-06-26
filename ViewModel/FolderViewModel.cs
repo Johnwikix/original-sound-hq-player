@@ -31,21 +31,9 @@ namespace WinUIMusicPlayer.ViewModel
         private FolderBrowsePage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public FolderViewModel(ContextMenuService contextMenuService)
-        {
-            _contextMenuService = contextMenuService;
-        }
-
-        public void SetCurrentPage(FolderBrowsePage page)
-        {
-            currentPage = page;
-        }
-
-        public void SetParentPage(MusicBrowsePage parent)
+        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
         {
             parentPage = parent;
-            parentPage.currentFolderName = null;
-            parentPage.pageType = null;
             parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshFolder;
             parentPage.refreshUsbDeviceMusicList +=
@@ -58,6 +46,19 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     ToolUtils.RefreshIcon(MusicList, "album");
                 };
+            _contextMenuService = contextMenuService;
+        }
+
+        public void SetCurrentPage(FolderBrowsePage page)
+        {
+            currentPage = page;
+        }
+
+        public void ReceiveNavigation()
+        {
+           
+            parentPage.currentFolderName = null;
+            parentPage.pageType = null;         
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {

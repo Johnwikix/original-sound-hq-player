@@ -24,8 +24,10 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage? _parentPage;
         private PlayListPage? _currentPage;
 
-        public PlayListViewModel()
+        public PlayListViewModel(MusicBrowsePage parent)
         {
+            _parentPage = parent;            
+            _parentPage.addPlayListEvent += RefreshPlayList;
         }
 
         public void SetCurrentPage(PlayListPage page)
@@ -33,12 +35,10 @@ namespace WinUIMusicPlayer.ViewModel
             _currentPage = page;
         }
 
-        public void SetParentPage(MusicBrowsePage parent)
+        public void ReceiveNavigation()
         {
-            _parentPage = parent;
             _parentPage.currentPlayList = null;
             _parentPage.DisableBackButton();
-            _parentPage.addPlayListEvent += RefreshPlayList;
             InitializingData();
         }
 

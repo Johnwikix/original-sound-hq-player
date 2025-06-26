@@ -30,22 +30,9 @@ namespace WinUIMusicPlayer.ViewModel
         private ArtistPage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public ArtistViewModel(ContextMenuService contextMenuService)
-        {
-            _contextMenuService = contextMenuService;
-        }
-
-        public void SetCurrentPage(ArtistPage page)
-        {
-            currentPage = page;
-        }
-
-        public void SetParentPage(MusicBrowsePage parent)
+        public ArtistViewModel(MusicBrowsePage parent,ContextMenuService contextMenuService)
         {
             parentPage = parent;
-            parentPage.currentArtistName = null;
-            parentPage.pageType = null;
-            parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshArtist;
             parentPage.refreshUsbDeviceMusicList +=
                 (s, e) =>
@@ -57,6 +44,19 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     ToolUtils.RefreshIcon(MusicList, "album");
                 };
+            _contextMenuService = contextMenuService;
+        }
+
+        public void SetCurrentPage(ArtistPage page)
+        {
+            currentPage = page;
+        }
+
+        public void ReceiveNavigation()
+        {            
+            parentPage.currentArtistName = null;
+            parentPage.pageType = null;
+            parentPage.DisableBackButton();            
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {
                 _lastSearchText = AppData.searchText;

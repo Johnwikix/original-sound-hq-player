@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml.Navigation;
+using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Services.NavigationService
 {
@@ -23,6 +25,12 @@ namespace WinUIMusicPlayer.Services.NavigationService
         public NavigationService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+        }
+
+        // 添加初始化方法
+        public void Initialize(Frame frame)
+        {
+            ContentFrame = frame;
         }
 
         public void RegisterPage<T>() where T : Page
@@ -41,6 +49,11 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
                 // 创建动画故事板
                 AnimatePageTransition(pageInstance, transitionInfo);
+
+                if (pageInstance is INavigatable navigatablePage)
+                {
+                    navigatablePage.ReceiveNavigationParameter(parameter);
+                }
             }
             else
             {
@@ -78,7 +91,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             var animation = new DoubleAnimation()
             {
-                Duration = TimeSpan.FromMilliseconds(200),
+                Duration = TimeSpan.FromMilliseconds(300),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -115,7 +128,11 @@ namespace WinUIMusicPlayer.Services.NavigationService
         private void ExecuteDrillInAnimation(Page page)
         {
             var storyboard = new Storyboard();
-            var compositeTransform = new CompositeTransform() { ScaleX = 1.1, ScaleY = 1.1 };
+            var compositeTransform = new CompositeTransform() { 
+                ScaleX = 1.1, 
+                ScaleY = 1.1,
+            };
+            page.RenderTransformOrigin = new Point(0.5, 0.5);
             page.RenderTransform = compositeTransform;
             page.Opacity = 0;
 
@@ -124,7 +141,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 1.1,
                 To = 1.0,
-                Duration = TimeSpan.FromMilliseconds(200),
+                Duration = TimeSpan.FromMilliseconds(400),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -133,7 +150,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 1.1,
                 To = 1.0,
-                Duration = TimeSpan.FromMilliseconds(200),
+                Duration = TimeSpan.FromMilliseconds(400),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -142,7 +159,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromMilliseconds(200)
+                Duration = TimeSpan.FromMilliseconds(400)
             };
 
             Storyboard.SetTarget(scaleXAnimation, compositeTransform);

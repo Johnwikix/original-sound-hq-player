@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
@@ -26,7 +27,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SongCollectionPage : Page
+    public sealed partial class SongCollectionPage : Page, INavigatable
     {
         //private ObservableCollection<Music> musicList;
         //private MusicBrowsePage parentPage;
@@ -49,13 +50,18 @@ namespace WinUIMusicPlayer.View
 
         }
 
+        public void ReceiveNavigationParameter(object parameter)
+        {
+            ViewModel.ReceiveNavigation();
+        }
+
         // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
-                ViewModel.SetParentPage(parentPage);
+                ViewModel.ReceiveNavigation();
                 //this.parentPage = parentPage;
                 //parentPage.DisableBackButton();
                 //parentPage.refreshSong += RefreshSong;

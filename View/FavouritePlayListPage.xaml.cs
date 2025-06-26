@@ -11,6 +11,7 @@ using System.Linq;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
@@ -22,7 +23,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class FavouritePlayListPage : Page
+    public sealed partial class FavouritePlayListPage : Page, INavigatable
     {
         //private ObservableCollection<Music> musicList;
         //private MusicBrowsePage parentPage;
@@ -86,12 +87,16 @@ namespace WinUIMusicPlayer.View
             _messenger.UnregisterAll(this);
         }
 
+        public void ReceiveNavigationParameter(object parameter)
+        {
+            ViewModel.ReceiveNavigation();   
+        }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.SetParentPage(parentPage);
+            ViewModel.ReceiveNavigation();
+            //if (e.Parameter is MusicBrowsePage parentPage)
+            //{
                 //this.parentPage = parentPage;
                 
                 //if (_lastSearchText != AppData.searchText || musicList == null || musicList.Count == 0)
@@ -104,7 +109,7 @@ namespace WinUIMusicPlayer.View
                 //    UpdateMusicListView();
                 //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
                 //}
-            }
+            //}
         }
         //private void clearUsbDeviceMusicList(object? sender, EventArgs e)
         //{
@@ -652,5 +657,6 @@ namespace WinUIMusicPlayer.View
                 //}
             }
         }
+        
     }
 }

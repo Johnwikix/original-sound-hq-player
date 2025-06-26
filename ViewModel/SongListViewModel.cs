@@ -42,8 +42,12 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly IMessenger _messenger;
         private MusicPlaybackService _musicPlaybackService;
 
-        public SongListViewModel(MusicPlaybackService musicPlaybackService,AudioConverterService converterService, IMessenger messenger)
+        public SongListViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService,AudioConverterService converterService, IMessenger messenger)
         {
+            _parentPage = parent;
+            _parentPage.refreshPage += RefreshPage;
+            _parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
+            _parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
@@ -57,12 +61,8 @@ namespace WinUIMusicPlayer.ViewModel
             currentPage = page;
         }
 
-        public void SetParentPage(MusicBrowsePage parent)
-        {
-            _parentPage = parent;
-            _parentPage.refreshPage += RefreshPage;
-            _parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
-            _parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
+        public void ReceiveNavigation()
+        {            
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {

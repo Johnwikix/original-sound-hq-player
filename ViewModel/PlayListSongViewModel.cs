@@ -50,8 +50,12 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly IMessenger _messenger;
         private MusicPlaybackService _musicPlaybackService;
 
-        public PlayListSongViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger)
+        public PlayListSongViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger)
         {
+            _parentPage = parent;          
+            _parentPage.refreshPage += RefreshPlayList;
+            _parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
+            _parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
             _converterService = converterService;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
@@ -65,17 +69,13 @@ namespace WinUIMusicPlayer.ViewModel
             _currentPage = page;
         }
 
-        public void SetParentPage(MusicBrowsePage parent)
+        public void ReceiveNavigation()
         {
-            _parentPage = parent;
             _parentPage.DisableBackButton();
-            _parentPage.refreshPage += RefreshPlayList;
-            PlayListName = parent.currentPlayList.Name;
+            PlayListName = _parentPage.currentPlayList.Name;
             InitizeData();
             ClearUsbDeviceMusicList(null, null);
-            RefreshUsbDeviceMusicList(null, null);
-            _parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
-            _parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
+            RefreshUsbDeviceMusicList(null, null);            
         }
 
         public void ShowTransmission()

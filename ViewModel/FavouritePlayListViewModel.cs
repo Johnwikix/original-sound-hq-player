@@ -61,6 +61,9 @@ namespace WinUIMusicPlayer.ViewModel
         public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger, MusicBrowsePage musicBrowsePage)
         {
             parentPage = musicBrowsePage;
+            parentPage.refreshPage += RefreshMusicList;
+            parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
+            parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
             _messenger = messenger;
             _converterService = converterService;
@@ -73,12 +76,9 @@ namespace WinUIMusicPlayer.ViewModel
             currentPage = page;
         }
 
-        public void SetParentPage(MusicBrowsePage parent)
+        public void ReceiveNavigation()
         {
-            //parentPage = parent;
-            parentPage.refreshPage += RefreshMusicList;
-            parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
-            parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
+            //parentPage = parent;            
             InitializeData();
             ClearUsbDeviceMusicList();
             RefreshUsbDeviceMusicList();

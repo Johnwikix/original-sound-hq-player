@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -14,7 +15,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class AlbumPage : Page
+    public sealed partial class AlbumPage : Page, INavigatable
     {
         public AlbumViewModel ViewModel { get; }
         public AlbumPage()
@@ -24,12 +25,17 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();            
             DataContext = this;
         }
+
+        public void ReceiveNavigationParameter(object parameter)
+        {
+            ViewModel.ReceiveNavigation();
+        }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
-                ViewModel.SetParentPage(parentPage);                
+                ViewModel.ReceiveNavigation();                
             }            
         }
 
