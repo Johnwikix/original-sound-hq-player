@@ -1,6 +1,7 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
 using CSCore.Streams.Effects;
+using Microsoft.Extensions.DependencyInjection;
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -18,6 +19,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Provider;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -80,10 +82,12 @@ namespace WinUIMusicPlayer.Services
             new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
         };
         private bool isEnableEq = false;
+        public MusicBrowseViewModel MusicBrowseViewModel { get;}
 
         public MusicPlaybackService(NotificationService notificationService)
         {
             this.notificationService = notificationService;
+            MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             progressTimer = new System.Timers.Timer(250);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
@@ -423,6 +427,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Play();
                 }
                 AppSettings.isPlaying = true;
+                MusicBrowseViewModel.IsPlaying = true;
                 progressTimer.Start();
             }
             else {
@@ -583,6 +588,7 @@ namespace WinUIMusicPlayer.Services
             //}
             updateProgressSliders?.Invoke(this, 0);            
             AppSettings.isPlaying = false;
+            MusicBrowseViewModel.IsPlaying = false;
             updatePlayPauseButton?.Invoke(this, "\uE768");
         }
 
@@ -830,6 +836,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Play();
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
+                    MusicBrowseViewModel.IsPlaying = true;
                     updatePlayPauseButton?.Invoke(this, "\uE769");
                 }
                 catch (Exception ex)
@@ -964,7 +971,8 @@ namespace WinUIMusicPlayer.Services
             {
                 progressTimer.Stop();
                 waveOut.Stop();
-                AppSettings.isPlaying = false;                
+                AppSettings.isPlaying = false;
+                MusicBrowseViewModel.IsPlaying = false;
             }
 
         }
@@ -980,6 +988,7 @@ namespace WinUIMusicPlayer.Services
                         isPausing = true;
                         waveOut.Stop();
                         AppSettings.isPlaying = false;
+                        MusicBrowseViewModel.IsPlaying = false;
                         progressTimer.Stop();
                     }
                     else
@@ -987,6 +996,7 @@ namespace WinUIMusicPlayer.Services
                         isPausing = true;
                         waveOut.Pause();
                         AppSettings.isPlaying = false;
+                        MusicBrowseViewModel.IsPlaying = false;
                         progressTimer.Stop();
                     }
                 }
@@ -1000,12 +1010,14 @@ namespace WinUIMusicPlayer.Services
                     {
                         waveOut.Play();
                         AppSettings.isPlaying = true;
+                        MusicBrowseViewModel.IsPlaying = true;
                         progressTimer.Start();
                     }
                     else
                     {
                         waveOut.Play();
                         AppSettings.isPlaying = true;
+                        MusicBrowseViewModel.IsPlaying = true;
                         progressTimer.Start();
                     }
 

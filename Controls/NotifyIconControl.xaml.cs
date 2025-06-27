@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using H.NotifyIcon;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -7,6 +8,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -19,7 +22,7 @@ namespace WinUIMusicPlayer.Controls
         public event EventHandler playLastSong;
         public event EventHandler playNextSong;
         public event EventHandler playStop;
-        public event EventHandler<PlayMode> playModeEvent;
+        //public event EventHandler<PlayMode> playModeEvent;
         public NotifyIconControl()
         {
             this.InitializeComponent();
@@ -80,22 +83,23 @@ namespace WinUIMusicPlayer.Controls
                 switch (menuItem.Name)
                 {
                     case "IconRepeatAll":
-                        playModeEvent?.Invoke(this,PlayMode.ListLoop);
+
+                        UpdatePlayModeIcon(PlayMode.ListLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8EE";
                         PlayModeFlyout.Text = GetString("IconListLoop");
                         break;
                     case "IconRepeatOne":
-                        playModeEvent?.Invoke(this, PlayMode.SingleLoop);
+                        UpdatePlayModeIcon(PlayMode.SingleLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8ED";
                         PlayModeFlyout.Text = GetString("IconSingleTuneCirculation");
                         break;
                     case "IconRepeatOff":
-                        playModeEvent?.Invoke(this, PlayMode.RepeatOff);
+                        UpdatePlayModeIcon(PlayMode.RepeatOff);
                         PlayModeFlyoutIcon.Glyph = "\uF5E7";
                         PlayModeFlyout.Text = GetString("IconSinglePlayback");
                         break;
                     case "IconShuffle":
-                        playModeEvent?.Invoke(this, PlayMode.RandomLoop);
+                        UpdatePlayModeIcon(PlayMode.RandomLoop);
                         PlayModeFlyoutIcon.Glyph = "\uE8B1";
                         PlayModeFlyout.Text = GetString("IconRandomLoop");
                         break;
@@ -106,6 +110,11 @@ namespace WinUIMusicPlayer.Controls
                 // 如果点击已选中的项，保持选中状态
                 menuItem.IsChecked = true;
             }
+        }
+
+        private void UpdatePlayModeIcon(PlayMode playMode) {
+            AppData.PlayMode = playMode;
+            App.Services.GetRequiredService<MusicBrowseViewModel>().CurrentPlayMode = playMode;
         }
 
         private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)

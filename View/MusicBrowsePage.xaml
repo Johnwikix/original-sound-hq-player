@@ -5,6 +5,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:WinUIMusicPlayer.View"
+    xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -20,6 +21,11 @@
         <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter"/>
         <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
         <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+        <converters:FavouriteIconConverter x:Key="FavouriteIconConverter"/>
+        <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter"/>
+        <converters:VolumeToIconConverter x:Key="VolumeToIconConverter"/>
+        <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter"/>
+        <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter"/>
     </Page.Resources>
     <Grid Margin="0 32 0 0">
         <Grid.RowDefinitions>
@@ -134,7 +140,7 @@
                 </Grid.RowDefinitions>
                 <!-- 专辑封面 -->
                 <Border Grid.Row="0" CornerRadius="10" Margin="50 10 10 10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image x:Name="PlayingDetailAlbumCoverImage" />
+                    <Image x:Name="PlayingDetailAlbumCoverImage" Source="{Binding ViewModel.MusicDetailCover,Mode=OneWay}" />
                 </Border>
                 <canvas:CanvasControl
                     Margin="50 10 10 10"
@@ -155,21 +161,21 @@
                             <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
                         </TransitionCollection>
                     </StackPanel.Transitions>
-                    <RichTextBlock x:Name="PlayingDetailTitleTextBlock" Margin="5 0 5 5" FontSize="36" FontWeight="Bold" TextWrapping="WrapWholeWords">
+                    <RichTextBlock x:Name="PlayingDetailTitleTextBlock" helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" Margin="5 0 5 5" FontSize="36" FontWeight="Bold" TextWrapping="WrapWholeWords">
                         <RichTextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                             </TransitionCollection>
                         </RichTextBlock.Transitions>
                     </RichTextBlock>
-                    <RichTextBlock x:Name="PlayingDetailAlbumTextBlock" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
+                    <RichTextBlock x:Name="PlayingDetailAlbumTextBlock" helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
                         <RichTextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                             </TransitionCollection>
                         </RichTextBlock.Transitions>
                     </RichTextBlock>
-                    <RichTextBlock x:Name="PlayingDetailArtistTextBlock" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
+                    <RichTextBlock x:Name="PlayingDetailArtistTextBlock" helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}" Margin="5" FontSize="22" TextWrapping="WrapWholeWords">
                         <RichTextBlock.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -181,14 +187,14 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="PlayingDetailMusicInfoTextBlock" FontSize="15" Margin="0,0,10,0">
+                        <TextBlock Grid.Column="0" x:Name="PlayingDetailMusicInfoTextBlock" Text="{Binding ViewModel.MusicInfo,Mode=OneWay}" FontSize="15" Margin="0,0,10,0">
                             <TextBlock.Transitions>
                                 <TransitionCollection>
                                     <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
                                 </TransitionCollection>
                             </TextBlock.Transitions>
                         </TextBlock>
-                        <Image x:Name="PlayingDetailHRImage" Height="13" Grid.Column="1">
+                        <Image x:Name="PlayingDetailHRImage"  Source="{Binding ViewModel.CurrentPlayingMusic,Converter={StaticResource MusicStatusToHRimgConverter},Mode=OneWay}"  Height="13" Grid.Column="1">
                             <Image.Transitions>
                                 <TransitionCollection>
                                     <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -267,7 +273,7 @@
                         <EntranceThemeTransition/>
                     </TransitionCollection>
                 </StackPanel.Transitions>
-                <Image x:Name="AlbumCoverImage" Width="100" Height="100" Margin="10" Tapped="AlbumCoverImage_Tapped"/>
+                <Image x:Name="AlbumCoverImage" Source="{Binding ViewModel.CurrentPlayingMusic.Cover,Mode=OneWay}"  Width="100" Height="100" Margin="10" Tapped="AlbumCoverImage_Tapped"/>
                 <Grid Width="Auto" Height="100" MaxWidth="300">
                     <Grid.Transitions>
                         <TransitionCollection>
@@ -285,19 +291,20 @@
                    x:Name="MusicTitleTextBlock" 
                    TextWrapping="WrapWholeWords" 
                    TextTrimming="WordEllipsis" 
+                   Text="{Binding ViewModel.CurrentPlayingMusic.Title,Mode=OneWay}"
                    FontWeight="Bold" 
                    MaxHeight="50"
                    FontSize="18" 
                    Margin="10,0,10,0"/>
-                    <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
-                    <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" TextTrimming="WordEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="1" x:Name="MusicAlbumTextBlock" Text="{Binding ViewModel.CurrentPlayingMusic.Album,Mode=OneWay}" TextTrimming="WordEllipsis" FontSize="12" Tapped="AlbumTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Bottom" />
+                    <TextBlock Grid.Row="2" x:Name="MusicAuthorTextBlock" Text="{Binding ViewModel.CurrentPlayingMusic.Author,Mode=OneWay}" TextTrimming="WordEllipsis" FontSize="12" Tapped="AuthorTextBlock_Tapped" Margin="10,0,10,0" VerticalAlignment="Center" />
                     <Grid Grid.Row="3" VerticalAlignment="Bottom">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="MusicInfoTextBlock" FontSize="12" Margin="10,0,10,0"/>
-                        <Image x:Name="HRImage" Height="10" Grid.Column="1"></Image>
+                        <TextBlock Grid.Column="0" x:Name="MusicInfoTextBlock" Text="{Binding ViewModel.MusicInfo,Mode=OneWay}" FontSize="12" Margin="10,0,10,0"/>
+                        <Image x:Name="HRImage" Source="{Binding ViewModel.CurrentPlayingMusic,Converter={StaticResource MusicStatusToHRimgConverter},Mode=OneWay}" Height="10" Grid.Column="1"></Image>
                     </Grid>
                 </Grid>
             </StackPanel>
@@ -319,7 +326,7 @@
 
                 <Button x:Name="PlayBarFavouriteButton" Click="PlayBarFavouriteButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xeb51;" Foreground="Red"/>
+                    <FontIcon Glyph="{x:Bind ViewModel.CurrentPlayingMusic.IsFavorite,Mode=TwoWay,Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
                 </Button>
 
                 <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
@@ -335,7 +342,7 @@
                 <!-- 播放按钮 -->
                 <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE768;" Width="50" Height="50" FontSize="36"/>
+                    <FontIcon Glyph="{Binding ViewModel.IsPlaying,Converter={StaticResource PlayStatusToIconConverter},Mode=OneWay}" Width="50" Height="50" FontSize="36"/>
                 </Button>
 
                 <Button x:Name="NextMusicButton" Click="NextMusicButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
@@ -383,13 +390,13 @@
                     </TeachingTip.Content>
                 </TeachingTip>
                 <!-- 播放模式按钮 -->
-                <Button x:Name="PlayModeButton" Click="PlayModeButton_Click" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="PlayModeButton" Command="{Binding ViewModel.PlayModeChangedCommand,Mode=OneWay}" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <FontIcon x:Name="PlayModeIcon" Glyph="&#xe8ee;"/>
+                    <FontIcon x:Name="PlayModeIcon" Glyph="{Binding ViewModel.CurrentPlayMode,Converter={StaticResource PlayModeToIconConverter},Mode=TwoWay}"/>
                 </Button>
                 <Button Click="VolumeSliderIconButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <FontIcon x:Name="VolumeSliderIcon"  VerticalAlignment="Center" Glyph="&#xe995;" Margin="0" Grid.Column="0"/>
+                    <FontIcon x:Name="VolumeSliderIcon"  VerticalAlignment="Center" Glyph="{Binding ViewModel.Volume,Converter={StaticResource VolumeToIconConverter},Mode=OneWay}" Margin="0" Grid.Column="0"/>
                 </Button>                
                 <Slider
                     x:Name="VolumeSlider"
