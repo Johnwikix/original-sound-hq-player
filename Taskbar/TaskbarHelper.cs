@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Runtime.InteropServices;
+using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 
 namespace testDemo.Taskbar
 {
@@ -72,11 +75,13 @@ namespace testDemo.Taskbar
 
 
         // 缩略图按钮点击事件
-        public event EventHandler<ThumbButtonClickedEventArgs> ThumbButtonClicked;
+        //public event EventHandler<ThumbButtonClickedEventArgs> ThumbButtonClicked;
+        private MusicBrowseViewModel _musicBrowseViewModel;
 
         public TaskbarHelper(IntPtr hwnd)
         {
             _hwnd = hwnd;
+            _musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
         }
 
 
@@ -251,6 +256,18 @@ namespace testDemo.Taskbar
         private void HandleThumbButtonClick(int buttonId)
         {
             System.Diagnostics.Debug.WriteLine($"任务栏按钮点击：按钮ID {buttonId}");
+            if (buttonId == 0)
+            {
+                _musicBrowseViewModel.LastMusicButton_Click();
+            }
+            else if (buttonId == 1)
+            {
+                _musicBrowseViewModel.PlayButton_Click();
+            }
+            else if (buttonId == 2)
+            {
+                _musicBrowseViewModel.NextMusicButton_Click();
+            }
 
             if (buttonId == 1) // 按钮1的ID是0
             {
@@ -261,7 +278,8 @@ namespace testDemo.Taskbar
             }
 
             // 触发事件
-            ThumbButtonClicked?.Invoke(this, new ThumbButtonClickedEventArgs(buttonId));
+            //ThumbButtonClicked?.Invoke(this, new ThumbButtonClickedEventArgs(buttonId));
+            
         }
 
         public void UpdateTaskbarButtonIcon()
@@ -290,11 +308,11 @@ namespace testDemo.Taskbar
             if (_isDisposed)
                 return;
 
-            if (disposing)
-            {
-                // 释放托管资源
-                ThumbButtonClicked = null;
-            }
+            //if (disposing)
+            //{
+            //    // 释放托管资源
+            //    ThumbButtonClicked = null;
+            //}
 
             // 释放非托管资源
             Uninitialize();

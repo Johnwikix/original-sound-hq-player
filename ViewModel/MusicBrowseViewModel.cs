@@ -62,15 +62,12 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isPlaying;
             set => SetProperty(ref _isPlaying, value);
         }
-
-        private MainWindow _mainWindow;
         private MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
 
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {            
-            _mainWindow = App.MainWindow;
             CurrentPlayMode = AppData.PlayMode;
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
@@ -144,7 +141,7 @@ namespace WinUIMusicPlayer.ViewModel
                     CurrentPlayMode = PlayMode.SingleLoop;
                     break;
             }
-            _mainWindow.UpdateAppNotifyIconControl();
+            App.MainWindow.UpdateAppNotifyIconControl();
         }
         [RelayCommand]
         public void OnPlayButtonChanged()
@@ -161,14 +158,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdatePlayPauseButtonIcon()
         {
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                if (_mainWindow != null)
-                {
-                    _mainWindow.UpdateTaskbarIcon();
-                    _mainWindow.UpdateIconControl();
-                }
-            });
+            App.MainWindow.UpdateTaskbarIcon();
+            App.MainWindow.UpdateIconControl();
         }
 
         [RelayCommand]

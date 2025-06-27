@@ -35,9 +35,9 @@ namespace WinUIMusicPlayer
         public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
-        public event EventHandler playLastSong;
-        public event EventHandler playNextSong;
-        public event EventHandler playStop;
+        //public event EventHandler playLastSong;
+        //public event EventHandler playNextSong;
+        //public event EventHandler playStop;
         public event EventHandler updateSelectSection;
         //public event EventHandler<PlayMode> changePlayMode;
         private Microsoft.UI.Windowing.AppWindow m_AppWindow;
@@ -73,9 +73,9 @@ namespace WinUIMusicPlayer
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             if (AppNotifyIconControl != null)
             {
-                AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
-                AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
-                AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
+                //AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
+                //AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
+                //AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
                 //AppNotifyIconControl.playModeEvent += (s, e) => changePlayMode?.Invoke(this, e);
             }
             EfficiencyModeUtilities.SetEfficiencyMode(false);
@@ -329,7 +329,7 @@ namespace WinUIMusicPlayer
                 _taskbarHelper.InitializeThumbButtons();
 
                 // 注册按钮点击事件
-                _taskbarHelper.ThumbButtonClicked += TaskbarHelper_ThumbButtonClicked;
+                //_taskbarHelper.ThumbButtonClicked += TaskbarHelper_ThumbButtonClicked;
             }
             catch (Exception ex)
             {
@@ -337,21 +337,21 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private void TaskbarHelper_ThumbButtonClicked(object sender, ThumbButtonClickedEventArgs e)
-        {
-            if (e.ButtonId == 0)
-            {
-                playLastSong?.Invoke(this, EventArgs.Empty);
-            }
-            else if (e.ButtonId == 1)
-            {
-                playStop?.Invoke(this, EventArgs.Empty);
-            }
-            else if (e.ButtonId == 2)
-            {
-                playNextSong?.Invoke(this, EventArgs.Empty);
-            }
-        }
+        //private void TaskbarHelper_ThumbButtonClicked(object sender, ThumbButtonClickedEventArgs e)
+        //{
+        //    if (e.ButtonId == 0)
+        //    {
+        //        playLastSong?.Invoke(this, EventArgs.Empty);
+        //    }
+        //    else if (e.ButtonId == 1)
+        //    {
+        //        playStop?.Invoke(this, EventArgs.Empty);
+        //    }
+        //    else if (e.ButtonId == 2)
+        //    {
+        //        playNextSong?.Invoke(this, EventArgs.Empty);
+        //    }
+        //}
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {

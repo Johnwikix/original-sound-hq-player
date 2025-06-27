@@ -129,14 +129,10 @@ namespace WinUIMusicPlayer.Services
                     if (changeCount > 0)
                     {
                         AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-                        var mainWindow = (App.MainWindow as MainWindow);
-                        if (mainWindow != null)
+                        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
                         {
-                            mainWindow.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                mainWindow.UpdateMusicList();
-                            });
-                        }
+                            App.MainWindow.UpdateMusicList();
+                        });
                     }
                 }
             }

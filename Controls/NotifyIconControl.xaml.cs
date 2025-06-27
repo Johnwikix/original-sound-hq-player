@@ -19,13 +19,15 @@ namespace WinUIMusicPlayer.Controls
 {
     public sealed partial class NotifyIconControl : UserControl
     {
-        public event EventHandler playLastSong;
-        public event EventHandler playNextSong;
-        public event EventHandler playStop;
+        //public event EventHandler playLastSong;
+        //public event EventHandler playNextSong;
+        //public event EventHandler playStop;
         //public event EventHandler<PlayMode> playModeEvent;
+        private MusicBrowseViewModel _musicBrowseViewModel;
         public NotifyIconControl()
         {
             this.InitializeComponent();
+            _musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
         }
 
         [RelayCommand]
@@ -37,12 +39,14 @@ namespace WinUIMusicPlayer.Controls
 
         private void NextSong_Click(object sender, RoutedEventArgs e)
         {
-            playNextSong?.Invoke(this, EventArgs.Empty);
+            //playNextSong?.Invoke(this, EventArgs.Empty);
+            _musicBrowseViewModel.NextMusicButton_Click();
         }
 
         private void PlayNPause_Click(object sender, RoutedEventArgs e)
         {
-            playStop?.Invoke(this, EventArgs.Empty);
+            //playStop?.Invoke(this, EventArgs.Empty);
+            _musicBrowseViewModel.PlayButton_Click();
             UpdatePlayNPause();
         }
 
@@ -61,7 +65,8 @@ namespace WinUIMusicPlayer.Controls
 
         private void LastSong_Click(object sender, RoutedEventArgs e)
         {
-            playLastSong?.Invoke(this, EventArgs.Empty);
+            _musicBrowseViewModel.LastMusicButton_Click();
+            //playLastSong?.Invoke(this, EventArgs.Empty);
         }
 
         [RelayCommand]

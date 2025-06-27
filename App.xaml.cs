@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
+using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;

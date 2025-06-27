@@ -75,7 +75,6 @@ namespace WinUIMusicPlayer.View
         private EqualizerDialog equalizerDialog;
         private CanvasControl _spectrumCanvas;
         private float[] _spectrumData = new float[16];
-        //private readonly System.Timers.Timer _forceDrawTimer;
         private readonly object _lockObject = new object(); // 锁对象
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
@@ -95,7 +94,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            // 为特定Frame创建导航服务
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.ContentFrame = ContentFrame;
             _navigationService.RegisterPage<FavouritePlayListPage>();
@@ -117,9 +115,9 @@ namespace WinUIMusicPlayer.View
             {
                 mainWindow.WindowClosed += MainWindow_Closed;
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
-                mainWindow.playLastSong += PlayLastSong;
-                mainWindow.playStop += PlayNStop;
-                mainWindow.playNextSong += PlayNextSong;
+                //mainWindow.playLastSong += PlayLastSong;
+                //mainWindow.playStop += PlayNStop;
+                //mainWindow.playNextSong += PlayNextSong;
                 //mainWindow.changePlayMode += MainWindow_changePlayMode;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
@@ -421,9 +419,9 @@ namespace WinUIMusicPlayer.View
             {
                 mainWindow.WindowClosed -= MainWindow_Closed;
                 mainWindow.updateMusicList -= MainWindow_updateMusicList;
-                mainWindow.playLastSong -= PlayLastSong;
-                mainWindow.playStop -= PlayNStop;
-                mainWindow.playNextSong -= PlayNextSong;
+                //mainWindow.playLastSong -= PlayLastSong;
+                //mainWindow.playStop -= PlayNStop;
+                //mainWindow.playNextSong -= PlayNextSong;
             }
             musicPlaybackService.playingMusic -= MusicPlaybackService_playingMusic;
             musicPlaybackService.updatePlayTimeText -= MusicPlaybackService_updatePlayTimeText;
@@ -949,6 +947,7 @@ namespace WinUIMusicPlayer.View
             musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
             musicPlaybackService.volume = AppData.Volume;
             VolumeSlider.Value = musicPlaybackService.volume * 100;
+            ViewModel.Volume = (int)AppData.Volume * 100;
             musicPlaybackService.currentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             ViewModel.CurrentPlayingMusic = musicPlaybackService.currentPlayingMusic;
             if (musicPlaybackService.currentPlayingMusic != null)
