@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -61,14 +64,64 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private MainWindow _mainWindow;
+        private MusicPlaybackService _musicPlaybackService;
+        private SystemMediaControlsService _systemMediaControlsService;
+        private MusicBrowsePage _musicBrowsePage;
 
-        public MusicBrowseViewModel()
-        {
-            // Initialize any necessary properties or services here
-            // For example, you might want to set up a service for managing music playback
+        public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
+        {            
             _mainWindow = App.MainWindow;
             CurrentPlayMode = AppData.PlayMode;
+            _systemMediaControlsService = systemMediaControlsService;
+            InitializeSystemMediaControls();
         }
+
+        private void InitializeSystemMediaControls()
+        {
+
+            // 订阅事件
+            _systemMediaControlsService.PlayRequested += (s, e) =>
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    PlayButton_Click();
+                });
+            };
+
+            _systemMediaControlsService.PauseRequested += (s, e) =>
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    PlayButton_Click();
+                });
+            };
+
+            _systemMediaControlsService.NextTrackRequested += (s, e) =>
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    NextMusicButton_Click();
+                });
+            };
+
+            _systemMediaControlsService.PreviousTrackRequested += (s, e) =>
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    LastMusicButton_Click();
+                });
+            };
+        }
+
+        public void SetMusicService(MusicPlaybackService musicPlaybackService) {
+            _musicPlaybackService = musicPlaybackService;
+        }
+
+        public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
+        {
+            _musicBrowsePage = musicBrowsePage;
+        }
+
         [RelayCommand]
         public void OnPlayModeChanged()
         {
@@ -92,6 +145,70 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             _mainWindow.UpdateAppNotifyIconControl();
+        }
+        [RelayCommand]
+        public void OnPlayButtonChanged()
+        {
+            PlayButton_Click();
+        }
+
+        public void PlayButton_Click()
+        {
+            _musicPlaybackService.PlayButton();
+            UpdatePlayPauseButtonIcon();
+            _systemMediaControlsService.UpdateSystemMediaControlsState();
+        }
+
+        public void UpdatePlayPauseButtonIcon()
+        {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_mainWindow != null)
+                {
+                    _mainWindow.UpdateTaskbarIcon();
+                    _mainWindow.UpdateIconControl();
+                }
+            });
+        }
+
+        [RelayCommand]
+        public void OnNextMusicButtonChanged()
+        {
+            NextMusicButton_Click();
+        }
+
+        [RelayCommand]
+        public void OnLastMusicButtonChanged()
+        {
+            LastMusicButton_Click();
+        }
+
+        public void NextMusicButton_Click()
+        {
+            _musicPlaybackService.isManualSelect = true;
+            _musicPlaybackService.PlayNextTrack();
+            _musicPlaybackService.isManualSelect = false;
+        }
+
+        public async void LastMusicButton_Click()
+        {
+            _musicPlaybackService.isManualSelect = true;
+            await PlayLastTrack();
+            _musicPlaybackService.isManualSelect = false;
+        }
+
+        private async Task PlayLastTrack()
+        {
+            int index = _musicPlaybackService.currentPlayingList.IndexOf(_musicPlaybackService.currentPlayingMusic);
+            if (index > 0)
+            {
+                await _musicBrowsePage.PlayMusic(_musicPlaybackService.currentPlayingList[index - 1]);
+            }
+            else if (index == 0 && _musicPlaybackService.currentPlayingList.Count > 1)
+            {
+                await _musicBrowsePage.PlayMusic(_musicPlaybackService.currentPlayingList[_musicPlaybackService.currentPlayingList.Count - 1]);
+
+            }
         }
     }
 }

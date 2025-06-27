@@ -273,7 +273,7 @@
                         <EntranceThemeTransition/>
                     </TransitionCollection>
                 </StackPanel.Transitions>
-                <Image x:Name="AlbumCoverImage" Source="{Binding ViewModel.CurrentPlayingMusic.Cover,Mode=OneWay}"  Width="100" Height="100" Margin="10" Tapped="AlbumCoverImage_Tapped"/>
+                <Image x:Name="AlbumCoverImage" Source="{Binding ViewModel.MusicDetailCover ,Mode=OneWay}"  Width="100" Height="100" Margin="10" Tapped="AlbumCoverImage_Tapped"/>
                 <Grid Width="Auto" Height="100" MaxWidth="300">
                     <Grid.Transitions>
                         <TransitionCollection>
@@ -334,18 +334,18 @@
                     <FontIcon Glyph="&#xeb9e;" FontSize="18"/>
                 </Button>
 
-                <Button x:Name="LastMusicButton" Click="LastMusicButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="LastMusicButton" Command="{Binding ViewModel.LastMusicButtonChangedCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe892;" FontSize="26"/>
                 </Button>
 
                 <!-- 播放按钮 -->
-                <Button x:Name="PlayPauseButton" Click="PlayButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="PlayPauseButton" Command="{Binding ViewModel.PlayButtonChangedCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="{Binding ViewModel.IsPlaying,Converter={StaticResource PlayStatusToIconConverter},Mode=OneWay}" Width="50" Height="50" FontSize="36"/>
                 </Button>
 
-                <Button x:Name="NextMusicButton" Click="NextMusicButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="NextMusicButton" Command="{Binding ViewModel.NextMusicButtonChangedCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe893;" FontSize="26"/>
                 </Button>
