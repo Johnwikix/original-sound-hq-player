@@ -255,15 +255,14 @@
                 </Grid.ColumnDefinitions>
                 <Slider x:Name="ProgressSlider"
                         Minimum="0"
-                        Maximum="100"
-                        Value="0"
+                        Maximum="{Binding ViewModel.ProgressSliderMax,Mode=TwoWay}"
                         Margin="0"
+                        Value="{Binding ViewModel.ProgressSlider,Mode=TwoWay}"
                         PointerEntered="ProgressSlider_PointerEntered"
                         PointerExited="ProgressSlider_PointerExited"
-                        ValueChanged="ProgressSlider_ValueChanged"
                         Grid.Column="0"
                         VerticalAlignment="Center"/>
-                <TextBlock x:Name="PlayTimeTextBlock" Grid.Column="1" Margin="10 0 0 0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="PlayTimeTextBlock" Text="{Binding ViewModel.PlayTimeText,Mode=TwoWay}" Grid.Column="1" Margin="10 0 0 0" VerticalAlignment="Center"/>
             </Grid>
 
             <!-- 封面、标题、作者组件 -->
@@ -324,7 +323,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Button x:Name="PlayBarFavouriteButton" Click="PlayBarFavouriteButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="PlayBarFavouriteButton" Command="{Binding ViewModel.PlayBarFavouriteButtonChangedCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="{x:Bind ViewModel.CurrentPlayingMusic.IsFavorite,Mode=TwoWay,Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
                 </Button>

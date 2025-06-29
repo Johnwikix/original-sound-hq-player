@@ -167,6 +167,26 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public void UpdateFavouriteMusic(Music music)
+        {
+            if (MusicList != null && MusicList.Count > 0)
+            {
+                Music? currentMusic = MusicList.FirstOrDefault(m => m.Id == music.Id);
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (currentMusic != null && !music.IsFavorite)
+                    {
+                        MusicList.Remove(currentMusic);
+                    }
+                    if (currentMusic == null && music.IsFavorite)
+                    {
+                        MusicList.Insert(0, music);
+                    }
+                });
+                
+            }
+        }
+
         public async Task DragItems()
         {
             for (int i = 0; i < MusicList.Count; i++)

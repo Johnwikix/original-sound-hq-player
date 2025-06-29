@@ -44,14 +44,14 @@ namespace WinUIMusicPlayer.Services
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
         public event EventHandler<Music> playingMusic;
-        public event EventHandler<string> updatePlayTimeText;
-        public event EventHandler<double> updateProgressSliders;
-        public event EventHandler<double> updateProgressMax;
+        //public event EventHandler<string> updatePlayTimeText;
+        //public event EventHandler<double> updateProgressSliders;
+        //public event EventHandler<double> updateProgressMax;
         public event EventHandler<string> showMessage;
         public event EventHandler<string> updatePlayPauseButton;
         public event EventHandler<float[]> updateSpectrumData;
         //public List<Music> musicList;
-        public bool isUserDraggingProgressSlider = false;
+        //public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService;
         public event EventHandler<int> updateCurrentLyricIndex;
@@ -256,7 +256,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (AppSettings.isPlaying && !isUserDraggingProgressSlider)
+                if (AppSettings.isPlaying && !MusicBrowseViewModel.IsUserDraggingProgressSlider)
                 {
                     double currentTimeSeconds = 0;
                     double totalSeconds = 0;
@@ -276,14 +276,18 @@ namespace WinUIMusicPlayer.Services
                     //    currentTimeSeconds = adapter.CurrentTime.TotalSeconds;
                     //    totalSeconds = adapter.TotalTime.TotalSeconds;
                     //}
-                    updateProgressSliders?.Invoke(this, currentTimeSeconds);
+                    //updateProgressSliders?.Invoke(this, currentTimeSeconds);                   
 
                     // 格式化显示时间
                     TimeSpan currentTime = TimeSpan.FromSeconds(currentTimeSeconds);
                     TimeSpan totalTime = TimeSpan.FromSeconds(totalSeconds);
                     string currentTimeText = currentTime.ToString(@"mm\:ss");
                     string totalTimeText = totalTime.ToString(@"mm\:ss");
-                    updatePlayTimeText?.Invoke(this, $"{currentTimeText}/{totalTimeText}");
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        MusicBrowseViewModel.ProgressSlider = currentTimeSeconds;
+                        MusicBrowseViewModel.PlayTimeText = $"{currentTimeText}/{totalTimeText}";
+                    });                    
                     UpdateLyrics(currentTime);
                 }
                 //UpdateSpectrumCallback();
@@ -586,7 +590,8 @@ namespace WinUIMusicPlayer.Services
             //{
             //    ffmpegDecoder.Position = 0;
             //}
-            updateProgressSliders?.Invoke(this, 0);            
+            //updateProgressSliders?.Invoke(this, 0);
+            MusicBrowseViewModel.ProgressSlider = 0;
             AppSettings.isPlaying = false;            
             MusicBrowseViewModel.IsPlaying = false;
             updatePlayPauseButton?.Invoke(this, "\uE768");
@@ -741,7 +746,8 @@ namespace WinUIMusicPlayer.Services
                 showMessage?.Invoke(this, $"播放失败{ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                 Reset();
-                updateProgressSliders?.Invoke(this, 0);
+                //updateProgressSliders?.Invoke(this, 0);
+                MusicBrowseViewModel.ProgressSlider = 0;
                 return false;
             }
         }
@@ -824,14 +830,17 @@ namespace WinUIMusicPlayer.Services
                     //{
                     //    totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
                     //}
-                    updateProgressMax?.Invoke(this, totalSeconds);
+                    //updateProgressMax?.Invoke(this, totalSeconds);
+                    MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
                     if (isSettingChanged)
                     {
-                        updateProgressSliders?.Invoke(this, currentPos.TotalSeconds);
+                        //updateProgressSliders?.Invoke(this, currentPos.TotalSeconds);
+                        MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
                     }
                     else
                     {
-                        updateProgressSliders?.Invoke(this, 0);
+                        //updateProgressSliders?.Invoke(this, 0);
+                        MusicBrowseViewModel.ProgressSlider = 0;
                     }
                     waveOut.Play();
                     progressTimer.Start();

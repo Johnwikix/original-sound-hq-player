@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,65 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _musicDetailCover, value);
         }
 
+        private bool _isUserDraggingProgressSlider = false;
+        public bool IsUserDraggingProgressSlider
+        {
+            get => _isUserDraggingProgressSlider;
+            set
+            {
+                if (SetProperty(ref _isUserDraggingProgressSlider, value))
+                {                   
+                }
+            }
+        }
+
+        private double _progressSlider = 0;
+        public double ProgressSlider
+        {
+            get => _progressSlider;
+            set
+            {
+                if (SetProperty(ref _progressSlider, value))
+                {
+                    if (IsMouseOverProgressBar)
+                    {
+                        if (!IsUserDraggingProgressSlider)
+                        {
+                            double currentPlayPosition = 0;
+                            if (_musicPlaybackService.waveChannel != null)
+                            {
+                                currentPlayPosition = _musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+         
+                                if (Math.Abs(value - currentPlayPosition) > 4.0)
+                                {        
+                                    _musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(value);                               
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private string _playTimeText = "00:00/00:00";
+        public string PlayTimeText
+        {
+            get => _playTimeText;
+            set => SetProperty(ref _playTimeText, value);
+        }
+
+        private double _progressSliderMax = 100;
+        public double ProgressSliderMax
+        {
+            get => _progressSliderMax;
+            set
+            {
+                if (SetProperty(ref _progressSliderMax, value))
+                {
+                }
+            }
+        }
+
         private int _volume = 50;
         public int Volume
         {
@@ -61,6 +121,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             get => _isPlaying;
             set => SetProperty(ref _isPlaying, value);
+        }
+        private bool _isMouseOverProgressBar = false;
+        public bool IsMouseOverProgressBar
+        {
+            get => _isMouseOverProgressBar;
+            set => SetProperty(ref _isMouseOverProgressBar, value);
         }
         private MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
@@ -111,7 +177,8 @@ namespace WinUIMusicPlayer.ViewModel
             };
         }
 
-        public void SetMusicService(MusicPlaybackService musicPlaybackService) {
+        public void SetMusicService(MusicPlaybackService musicPlaybackService)
+        {
             _musicPlaybackService = musicPlaybackService;
         }
 
@@ -201,6 +268,27 @@ namespace WinUIMusicPlayer.ViewModel
                 await _musicBrowsePage.PlayMusic(_musicPlaybackService.currentPlayingList[_musicPlaybackService.currentPlayingList.Count - 1]);
 
             }
+        }
+        [RelayCommand]
+        private async Task OnPlayBarFavouriteButtonChanged()
+        {
+            await _musicBrowsePage.AddToFavourite(CurrentPlayingMusic);            
+            NotifySubPageUpdateFavouriteState();
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+        }
+
+        private void NotifySubPageUpdateFavouriteState()
+        {
+            var songCollectionPage = App.Services.GetRequiredService<SongCollectionViewModel>();
+            var songListPage = App.Services.GetRequiredService<SongListViewModel>();
+            var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
+            var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
+            Task.WhenAll(
+                Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
+                Task.Run(() => songListPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
+                Task.Run(() => songCollectionPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
+                Task.Run(() => playListSongPage.UpdateFavouriteMusic(CurrentPlayingMusic))
+            );
         }
     }
 }

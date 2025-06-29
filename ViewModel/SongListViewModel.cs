@@ -224,11 +224,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (MusicList != null && MusicList.Count > 0)
             {
-                var index = MusicList.IndexOf(MusicList.FirstOrDefault(m => m.Id == music.Id));
-                if (index != -1)
+                Music? currentMusic = MusicList.FirstOrDefault(m => m.Id == music.Id);
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    MusicList[index].IsFavorite = music.IsFavorite;
-                }
+                    if (currentMusic != null)
+                    {
+                        currentMusic.IsFavorite = music.IsFavorite;
+                    }
+                });                
             }
         }
 
