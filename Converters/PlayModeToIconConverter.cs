@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Converters
                         return "\ue8ee"; // 默认问号图标
                 }
             }
-            return DependencyProperty.UnsetValue;
+            return "\ue8ee";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Converters
                         return PlayMode.ListLoop;
                 }
             }
-            return DependencyProperty.UnsetValue;
+            return PlayMode.ListLoop;
         }
     }
 }

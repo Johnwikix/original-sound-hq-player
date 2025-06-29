@@ -63,21 +63,21 @@ namespace WinUIMusicPlayer
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
-            SetTitleBar(AppTitleBar);
-            InitializeApp();
+            SetTitleBar(AppTitleBar);            
             this.Closed += MainWindow_Closed;
             m_AppWindow = ToolUtils.GetAppWindowForCurrentWindow(this);
             m_AppWindow.SetIcon("Assets/icon.ico");
             themeStyleHelper = new ThemeStyleHelper(this, m_AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
-            if (AppNotifyIconControl != null)
-            {
+            InitializeApp();
+            //if (AppNotifyIconControl != null)
+            //{
                 //AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
                 //AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
                 //AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
                 //AppNotifyIconControl.playModeEvent += (s, e) => changePlayMode?.Invoke(this, e);
-            }
+            //}
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             WindowExtensions.Hide(this, enableEfficiencyMode: false);
             WindowExtensions.Show(this, disableEfficiencyMode: true);
@@ -181,12 +181,12 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                await MusicDatabaseService.Initialize();
-                await MusicDatabaseService.GetSettingsAsync();
+                //await MusicDatabaseService.Initialize();
+                //await MusicDatabaseService.GetSettingsAsync();
                 themeStyleHelper.SetAppStyle();
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
-                        MusicDatabaseService.GetPlayStateAsync(),
+                        //MusicDatabaseService.GetPlayStateAsync(),
                         //LoadFoldersAsync(),
                         LoadMusicList(),
                         RefreshDevice(),

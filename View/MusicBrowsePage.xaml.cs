@@ -943,11 +943,11 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadPlayState()
         {
-            //AppData.currentPlayMode = AppData.PlayMode;
+            //var volume = AppData.Volume;
             musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
             musicPlaybackService.volume = AppData.Volume;
             VolumeSlider.Value = musicPlaybackService.volume * 100;
-            ViewModel.Volume = (int)AppData.Volume * 100;
+            ViewModel.Volume = (int)VolumeSlider.Value;
             musicPlaybackService.currentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             ViewModel.CurrentPlayingMusic = musicPlaybackService.currentPlayingMusic;
             if (musicPlaybackService.currentPlayingMusic != null)

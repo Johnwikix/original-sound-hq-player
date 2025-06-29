@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
+using Microsoft.VisualBasic.ApplicationServices;
 using System;
 using System.Diagnostics;
 using testDemo.Taskbar;
@@ -26,22 +27,17 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; private set; }
         private Window _tempWindow = null;
         public static IServiceProvider Services { get; private set; }
-
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            this.InitializeComponent();
-            var host = Host.CreateDefaultBuilder()
+        private static readonly IHost _host = Host.CreateDefaultBuilder()
              .ConfigureServices((context, services) =>
              {
+                 services.AddSingleton<DatabaseInitializerService>();
+                 services.AddHostedService<DatabaseInitializerService>(provider =>
+                     provider.GetRequiredService<DatabaseInitializerService>());
                  // 注册导航服务为单例
                  services.AddTransient<INavigationService, NavigationService>();
                  // 注册导航服务工厂
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
-                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();   
+                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
                  services.AddSingleton<SettingsPage>();
@@ -67,12 +63,18 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<MusicPlaybackService>();
                  services.AddSingleton<ContextMenuService>();
-                 services.AddSingleton<AudioConverterService>();    
+                 services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
-                 // 其他服务...
-             })
-             .Build();
-            Services = host.Services; // 赋值给静态属性
+             }).Build();
+
+        /// <summary>
+        /// Initializes the singleton application object.  This is the first line of authored code
+        /// executed, and as such is the logical equivalent of main() or WinMain().
+        /// </summary>
+        public App()
+        {
+            this.InitializeComponent();
+            Services = _host.Services; // 赋值给静态属性
             var systemLanguages = GlobalizationPreferences.Languages;
             if (systemLanguages[0].StartsWith("zh"))
             {
@@ -96,14 +98,16 @@ namespace WinUIMusicPlayer
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
+
         /// <summary>
         /// Invoked when the application is launched.
         /// </summary>
         /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected async override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
             {
+                await _host.StartAsync();
                 // 检查应用程序是否已经在运行
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {

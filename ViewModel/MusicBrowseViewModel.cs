@@ -67,7 +67,8 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage _musicBrowsePage;
 
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
-        {            
+        {
+            var mode = AppData.PlayMode;
             CurrentPlayMode = AppData.PlayMode;
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();

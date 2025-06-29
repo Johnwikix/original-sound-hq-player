@@ -88,7 +88,7 @@ namespace WinUIMusicPlayer.Services
         {
             this.notificationService = notificationService;
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            progressTimer = new System.Timers.Timer(250);
+            progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
             _m = (int)Math.Log(_fftLength, 2);
@@ -587,7 +587,7 @@ namespace WinUIMusicPlayer.Services
             //    ffmpegDecoder.Position = 0;
             //}
             updateProgressSliders?.Invoke(this, 0);            
-            AppSettings.isPlaying = false;
+            AppSettings.isPlaying = false;            
             MusicBrowseViewModel.IsPlaying = false;
             updatePlayPauseButton?.Invoke(this, "\uE768");
         }
