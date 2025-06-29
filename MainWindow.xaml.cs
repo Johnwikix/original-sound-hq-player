@@ -175,6 +175,7 @@ namespace WinUIMusicPlayer
             _taskbarHelper = null;
             WindowClosed?.Invoke(this, EventArgs.Empty);
             AppNotifyIconControl.ExitApplication();
+            App.Current_Exit();
         }
 
         private async void InitializeApp()

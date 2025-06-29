@@ -106,8 +106,7 @@ namespace WinUIMusicPlayer
         protected async override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
-            {
-                await _host.StartAsync();
+            {                
                 // 检查应用程序是否已经在运行
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {
@@ -116,7 +115,7 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
-
+                await _host.StartAsync();
                 // 创建并激活主窗口
                 MainWindow = new MainWindow();
                 MainWindow.Activate();
@@ -129,5 +128,11 @@ namespace WinUIMusicPlayer
             }
         }
 
+        /// <summary>
+        public static async void Current_Exit()
+        {
+            await _host.StopAsync();
+            Debug.WriteLine("桌面应用已退出");
+        }
     }
 }
