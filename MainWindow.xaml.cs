@@ -358,7 +358,6 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                //ContentFrame.Navigate(typeof(SettingsPage), this);
                 _navigationService.Navigate(typeof(SettingsPage), this);
             }
             else
@@ -368,14 +367,20 @@ namespace WinUIMusicPlayer
                 {
                     case "AddFolder":
                         _navigationService.Navigate(typeof(AddFolderPage));
-                        //ContentFrame.Navigate(typeof(AddFolderPage));
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage));
-                        //ContentFrame.Navigate(typeof(MusicBrowsePage));
                         break;
                 }
             }
+        }
+
+        public void NavigateToMusicBrowsePage()
+        {
+            if (!(ContentFrame.Content is MusicBrowsePage)) {
+                NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
+                _navigationService.Navigate(typeof(MusicBrowsePage));
+            }            
         }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
@@ -62,7 +63,12 @@ namespace WinUIMusicPlayer.Controls
         {
             MainWindow window = App.MainWindow;
             ShowWindow(window);
-            MusicBrowseViewModel.ShowPlayingDetail();
+            window.NavigateToMusicBrowsePage();
+            _ = Task.Delay(250).ContinueWith(_ => {
+                window.DispatcherQueue.TryEnqueue(() => {
+                    MusicBrowseViewModel.ShowPlayingDetail();
+                });                
+            });            
         }
 
         private void PlayMode_Click(object sender, RoutedEventArgs e)
