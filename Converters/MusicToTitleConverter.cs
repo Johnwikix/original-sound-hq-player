@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Converters
@@ -19,7 +20,7 @@ namespace WinUIMusicPlayer.Converters
                     return music.Title;
                 }
             }
-            return "";
+            return ToolUtils.GetString("AppMainTitle");
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

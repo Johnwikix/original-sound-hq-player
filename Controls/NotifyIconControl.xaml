@@ -24,7 +24,8 @@
             LeftClickCommand="{x:Bind ShowHideWindowCommand}"
             DataContext="{Binding}" 
             NoLeftClickDelay="True"
-            x:Uid="AppMainTitleIcon">
+            ToolTipText="{Binding MusicBrowseViewModel.CurrentPlayingMusic,Converter={StaticResource MusicToTitleConverter},Mode=OneWay}"
+            >
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem Command="{x:Bind ShowHideWindowCommand}" x:Name="Display" x:Uid="IconDisplay">
