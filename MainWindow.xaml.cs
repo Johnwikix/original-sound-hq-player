@@ -214,15 +214,6 @@ namespace WinUIMusicPlayer
             }
         }
 
-        //public void UpdateIconControl()
-        //{
-        //    if (AppNotifyIconControl != null)
-        //    {
-        //        AppNotifyIconControl.UpdatePlayNPause();
-        //    }
-        //}
-
-
         public void SetAppStyle()
         {
             themeStyleHelper.SetAppStyle();
@@ -248,15 +239,15 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
                     //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 150);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                     //ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
                     //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
             }
@@ -265,8 +256,7 @@ namespace WinUIMusicPlayer
         public void NavigateToSettingsPage()
         {
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this,null, 0);
-            //ContentFrame.Navigate(typeof(SettingsPage), this);
+            _navigationService.Navigate(typeof(SettingsPage), this,null, 100);
         }
 
         //public async Task LoadFoldersAsync()
@@ -358,7 +348,7 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, 150);
+                _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
             }
             else
             {
@@ -366,10 +356,10 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
+                        _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 150);
+                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                         break;
                 }
             }

@@ -661,6 +661,9 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
                 AppSettings.CoverSize = settings.CoverSize;
+                AppSettings.EntranceAnimationTime = settings.EntranceAnimationTime;
+                AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
+                AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
             }
         }
 
@@ -686,6 +689,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.CoverSize = AppSettings.CoverSize;
+            newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
+            newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
+            newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

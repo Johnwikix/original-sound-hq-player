@@ -487,7 +487,7 @@ namespace WinUIMusicPlayer.View
             currentPlayList = playList;
             currentPlayListId = playList.Id;
             currentPage = typeof(PlayListSongPage);
-            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
         }
 
         public async void LoadAlbumMusic(string Album)
@@ -496,7 +496,7 @@ namespace WinUIMusicPlayer.View
             paramName = Album;
             currentAlbumName = Album;
             currentPage = typeof(SongCollectionPage);
-            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
         }
 
         public void SelectBarAlbum(string Album)
@@ -509,7 +509,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else
                 {
@@ -524,7 +524,7 @@ namespace WinUIMusicPlayer.View
             paramName = artist;
             currentArtistName = artist;
             currentPage = typeof(SongCollectionPage);
-            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
         }
 
         public void SelectBarArtist(string artist)
@@ -537,7 +537,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+                    _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else
                 {
@@ -552,7 +552,7 @@ namespace WinUIMusicPlayer.View
             paramName = folder;
             currentFolderName = folder;
             currentPage = typeof(SongCollectionPage);
-            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
+            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
         }
 
 
@@ -639,15 +639,15 @@ namespace WinUIMusicPlayer.View
                 {
                     case "album":
                         currentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     case "artist":
                         currentPage = typeof(ArtistPage);
-                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     case "folder":
                         currentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
+                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     default:
                         break;
@@ -656,7 +656,7 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is PlayListSongPage)
             {
                 currentPage = typeof(PlayListPage);
-                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
+                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }
             DisableBackButton();
         }
@@ -738,7 +738,7 @@ namespace WinUIMusicPlayer.View
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect },AppSettings.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
             DisableBackButton();
         }
