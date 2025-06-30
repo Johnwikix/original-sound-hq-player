@@ -1084,18 +1084,21 @@ namespace WinUIMusicPlayer.View
         public async Task ShowPlayingDetail() {
             if (!isInPlayingDetailMode) {
                 isInPlayingDetailMode = true;
-                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
-                ViewModel.MusicDetailCover = await GetImageFromMusic(ViewModel.CurrentPlayingMusic, 0);
-                TopPanel.Visibility = Visibility.Collapsed;
-                ContentFrame.Visibility = Visibility.Collapsed;
-                AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
-                PlayingDetail.Visibility = Visibility.Visible;
-                ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
-                if (animation != null)
+                if (ViewModel.CurrentPlayingMusic!=null && AlbumCoverImage!=null)
                 {
-                    animation.Configuration = new DirectConnectedAnimationConfiguration();
-                    animation.TryStart(PlayingDetailAlbumCoverImage);
-                }
+                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
+                    ViewModel.MusicDetailCover = await GetImageFromMusic(ViewModel.CurrentPlayingMusic, 0);
+                    TopPanel.Visibility = Visibility.Collapsed;
+                    ContentFrame.Visibility = Visibility.Collapsed;
+                    AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+                    PlayingDetail.Visibility = Visibility.Visible;
+                    ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
+                    if (animation != null)
+                    {
+                        animation.Configuration = new DirectConnectedAnimationConfiguration();
+                        animation.TryStart(PlayingDetailAlbumCoverImage);
+                    }
+                }                
             }            
         }
 

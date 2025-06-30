@@ -248,15 +248,15 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage));
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
                     //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage));
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 150);
                     //ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
-                    _navigationService.Navigate(typeof(AddFolderPage));
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
                     //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
             }
@@ -265,7 +265,7 @@ namespace WinUIMusicPlayer
         public void NavigateToSettingsPage()
         {
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this);
+            _navigationService.Navigate(typeof(SettingsPage), this,null, 0);
             //ContentFrame.Navigate(typeof(SettingsPage), this);
         }
 
@@ -358,7 +358,7 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this);
+                _navigationService.Navigate(typeof(SettingsPage), this, null, 150);
             }
             else
             {
@@ -366,10 +366,10 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage));
+                        _navigationService.Navigate(typeof(AddFolderPage), null, null, 150);
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage));
+                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 150);
                         break;
                 }
             }
@@ -379,7 +379,7 @@ namespace WinUIMusicPlayer
         {
             if (!(ContentFrame.Content is MusicBrowsePage)) {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                _navigationService.Navigate(typeof(MusicBrowsePage));
+                _navigationService.Navigate(typeof(MusicBrowsePage),null,null,0);
             }            
         }
     }

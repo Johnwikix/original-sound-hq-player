@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer.Controls
             MainWindow window = App.MainWindow;
             ShowWindow(window);
             window.NavigateToMusicBrowsePage();
-            _ = Task.Delay(250).ContinueWith(_ => {
+            _ = Task.Delay(100).ContinueWith(_ => {
                 window.DispatcherQueue.TryEnqueue(() => {
                     MusicBrowseViewModel.ShowPlayingDetail();
                 });                

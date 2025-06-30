@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             _registeredPages[typeof(T)] = typeof(T);
         }
 
-        public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null)
+        public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300)
         {
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 transitionInfo ??= new EntranceNavigationTransitionInfo();
 
                 // 创建动画故事板
-                AnimatePageTransition(pageInstance, transitionInfo);
+                AnimatePageTransition(pageInstance, transitionInfo, animeTime);
 
                 if (pageInstance is INavigatable navigatablePage)
                 {
@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
         }
 
-        private void AnimatePageTransition(Page newPage, NavigationTransitionInfo transitionInfo)
+        private void AnimatePageTransition(Page newPage, NavigationTransitionInfo transitionInfo, int animeTime)
         {
             var currentContent = ContentFrame.Content as FrameworkElement;
 
@@ -71,19 +71,19 @@ namespace WinUIMusicPlayer.Services.NavigationService
             // 根据过渡信息类型执行不同动画
             if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
             {
-                ExecuteSlideAnimation(newPage, slideInfo.Effect);
+                ExecuteSlideAnimation(newPage, slideInfo.Effect, animeTime);
             }
             else if (transitionInfo is DrillInNavigationTransitionInfo)
             {
-                ExecuteDrillInAnimation(newPage);
+                ExecuteDrillInAnimation(newPage, animeTime);
             }
             else if (transitionInfo is EntranceNavigationTransitionInfo)
             {
-                ExecuteEntranceAnimation(newPage);
+                ExecuteEntranceAnimation(newPage, animeTime);
             }
         }
 
-        private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect)
+        private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect, int animeTime)
         {
             var storyboard = new Storyboard();
             var translateTransform = new TranslateTransform();
@@ -91,7 +91,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             var animation = new DoubleAnimation()
             {
-                Duration = TimeSpan.FromMilliseconds(300),
+                Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -125,7 +125,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             storyboard.Begin();
         }
 
-        private void ExecuteDrillInAnimation(Page page)
+        private void ExecuteDrillInAnimation(Page page, int animeTime)
         {
             var storyboard = new Storyboard();
             var compositeTransform = new CompositeTransform() { 
@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 1.1,
                 To = 1.0,
-                Duration = TimeSpan.FromMilliseconds(400),
+                Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -150,7 +150,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 1.1,
                 To = 1.0,
-                Duration = TimeSpan.FromMilliseconds(400),
+                Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromMilliseconds(400)
+                Duration = TimeSpan.FromMilliseconds(animeTime)
             };
 
             Storyboard.SetTarget(scaleXAnimation, compositeTransform);
@@ -177,7 +177,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             storyboard.Begin();
         }
 
-        private void ExecuteEntranceAnimation(Page page)
+        private void ExecuteEntranceAnimation(Page page, int animeTime)
         {
             var storyboard = new Storyboard();
             var translateTransform = new TranslateTransform() { Y = 50 };
@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 500,
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(200),
+                Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
             };
 
@@ -196,7 +196,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromMilliseconds(200)
+                Duration = TimeSpan.FromMilliseconds(animeTime)
             };
 
             Storyboard.SetTarget(translateAnimation, translateTransform);
