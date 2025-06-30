@@ -1078,19 +1078,25 @@ namespace WinUIMusicPlayer.View
 
         private async void AlbumCoverImage_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            isInPlayingDetailMode = true;
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
-            ViewModel.MusicDetailCover = await GetImageFromMusic(ViewModel.CurrentPlayingMusic, 0);
-            TopPanel.Visibility = Visibility.Collapsed;
-            ContentFrame.Visibility = Visibility.Collapsed;
-            AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
-            PlayingDetail.Visibility = Visibility.Visible;
-            ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
-            if (animation != null)
-            {
-                animation.Configuration = new DirectConnectedAnimationConfiguration();
-                animation.TryStart(PlayingDetailAlbumCoverImage);
-            }
+            await ShowPlayingDetail();
+        }
+
+        public async Task ShowPlayingDetail() {
+            if (!isInPlayingDetailMode) {
+                isInPlayingDetailMode = true;
+                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
+                ViewModel.MusicDetailCover = await GetImageFromMusic(ViewModel.CurrentPlayingMusic, 0);
+                TopPanel.Visibility = Visibility.Collapsed;
+                ContentFrame.Visibility = Visibility.Collapsed;
+                AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+                PlayingDetail.Visibility = Visibility.Visible;
+                ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
+                if (animation != null)
+                {
+                    animation.Configuration = new DirectConnectedAnimationConfiguration();
+                    animation.TryStart(PlayingDetailAlbumCoverImage);
+                }
+            }            
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)

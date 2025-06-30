@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class PlayStatusToIconConverter : IValueConverter
+    public class PlayStatusToStringConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -16,15 +17,16 @@ namespace WinUIMusicPlayer.Converters
             {
                 if (IsPlaying)
                 {
-                    return "\uE769";
+                    return ToolUtils.GetString("IconPause");
                 }
                 else
                 {
-                    return "\uE768";
-                }               
+                    return ToolUtils.GetString("IconPlay");
+                }
             }
             return DependencyProperty.UnsetValue;
         }
+
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
             throw new NotImplementedException();

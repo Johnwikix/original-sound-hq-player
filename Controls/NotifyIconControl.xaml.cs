@@ -57,6 +57,14 @@ namespace WinUIMusicPlayer.Controls
             ShowWindow(window);
         }
 
+        [RelayCommand]
+        public void ShowPlayingDetail()
+        {
+            MainWindow window = App.MainWindow;
+            ShowWindow(window);
+            MusicBrowseViewModel.ShowPlayingDetail();
+        }
+
         private void PlayMode_Click(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as ToggleMenuFlyoutItem;

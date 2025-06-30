@@ -395,6 +395,10 @@ namespace WinUIMusicPlayer.ViewModel
                 await _musicBrowsePage.PlayMusic(music);
             });
         }
+
+        public async void ShowPlayingDetail() {
+            await _musicBrowsePage.ShowPlayingDetail();
+        }
            
 
         private async Task PlayLastTrack()
