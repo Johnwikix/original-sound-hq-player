@@ -55,7 +55,7 @@ namespace WinUIMusicPlayer.Services
         //public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService;
-        public event EventHandler<int> updateCurrentLyricIndex;
+        //public event EventHandler<int> updateCurrentLyricIndex;
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
         private CancellationTokenSource _lyricsCancellationTokenSource;
@@ -327,7 +327,8 @@ namespace WinUIMusicPlayer.Services
             // 触发事件通知UI更新
             if (currentIndex >= 0)
             {
-                updateCurrentLyricIndex?.Invoke(this, currentIndex);
+                MusicBrowseViewModel.UpdateLyricsToUI(currentIndex);
+                //updateCurrentLyricIndex?.Invoke(this, currentIndex);
             }
         }
 

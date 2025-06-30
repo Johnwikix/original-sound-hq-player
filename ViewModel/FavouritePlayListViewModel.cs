@@ -37,13 +37,7 @@ namespace WinUIMusicPlayer.ViewModel
         public Music SelectedMusic
         {
             get => _selectedMusic;
-            set
-            {
-                if (SetProperty(ref _selectedMusic, value))
-                {
-                    //Debug.WriteLine($"SelectedMusic changed: {value?.Title}");
-                }
-            }
+            set => SetProperty(ref _selectedMusic, value);
         }
 
         private ObservableCollection<Music> _selectedMusicItems;
@@ -55,17 +49,15 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage parentPage;
         private FavouritePlayListPage currentPage;
         private MusicPlaybackService _musicPlaybackService;
-        private readonly IMessenger _messenger;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
-        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger, MusicBrowsePage musicBrowsePage)
+        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService,MusicBrowsePage musicBrowsePage)
         {
             parentPage = musicBrowsePage;
             parentPage.refreshPage += RefreshMusicList;
             parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
             parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
-            _messenger = messenger;
             _converterService = converterService;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
             _progressDialog.Title = ToolUtils.GetString("Processing");
@@ -154,7 +146,7 @@ namespace WinUIMusicPlayer.ViewModel
                         if (selectedMusic != null)
                         {
                             SelectedMusic = selectedMusic;
-                            _messenger.Send(new ScrollToMusicMessageHepler(selectedMusic));
+                            currentPage.OnScrollToMusic(selectedMusic);
                             //MusicListView.SelectedItem = selectedMusic;
                             //MusicListView.ScrollIntoView(selectedMusic);
                         }

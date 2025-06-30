@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -26,15 +27,11 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FavouritePlayListPage : Page, INavigatable
     {
         public FavouritePlayListViewModel ViewModel { get; }
-        private readonly IMessenger _messenger;
 
-        public FavouritePlayListPage(FavouritePlayListViewModel viewModel, IMessenger messenger)
+        public FavouritePlayListPage(FavouritePlayListViewModel viewModel)
         {
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
-            _messenger = messenger;
-            // 注册消息接收器
-            _messenger.Register<ScrollToMusicMessageHepler>(this, OnScrollToMusic);
             this.InitializeComponent();           
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
@@ -45,18 +42,15 @@ namespace WinUIMusicPlayer.View
             await ViewModel.DragItems();            
         }
 
-        private void OnScrollToMusic(object recipient, ScrollToMusicMessageHepler message)
+        public void OnScrollToMusic(Music selectedMusic)
         {
-            // 在UI线程上执行
-            DispatcherQueue.TryEnqueue(() =>
+            _ = Task.Delay(100).ContinueWith(_ =>
             {
-                MusicListView.ScrollIntoView(message.SelectedMusic);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicListView.ScrollIntoView(selectedMusic);
+                });
             });
-        }
-
-        private void Page_Unloaded(object sender, RoutedEventArgs e)
-        {
-            _messenger.UnregisterAll(this);
         }
 
         public void ReceiveNavigationParameter(object parameter)

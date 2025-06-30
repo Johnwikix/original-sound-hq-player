@@ -37,7 +37,6 @@ namespace WinUIMusicPlayer
                  services.AddTransient<INavigationService, NavigationService>();
                  // 注册导航服务工厂
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
-                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
                  services.AddSingleton<SettingsPage>();
@@ -73,6 +72,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
+            this.UnhandledException += App_UnhandledException;
             this.InitializeComponent();
             Services = _host.Services; // 赋值给静态属性
             var systemLanguages = GlobalizationPreferences.Languages;
@@ -98,6 +98,14 @@ namespace WinUIMusicPlayer
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
+        private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+        {
+            // 记录异常信息
+            System.Diagnostics.Debug.WriteLine($"Unhandled Exception: {e.Message}");
+            System.Diagnostics.Debug.WriteLine(e.Exception.StackTrace);
+            // 可以选择设置 Handled 为 true 以防止应用程序崩溃
+            e.Handled = true;
+        }
 
         /// <summary>
         /// Invoked when the application is launched.
@@ -119,7 +127,6 @@ namespace WinUIMusicPlayer
                 // 创建并激活主窗口
                 MainWindow = new MainWindow();
                 MainWindow.Activate();
-
             }
             catch (Exception ex)
             {

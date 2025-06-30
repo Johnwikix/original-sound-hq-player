@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -106,12 +107,7 @@ namespace WinUIMusicPlayer.ViewModel
         public double ProgressSliderMax
         {
             get => _progressSliderMax;
-            set
-            {
-                if (SetProperty(ref _progressSliderMax, value))
-                {
-                }
-            }
+            set => SetProperty(ref _progressSliderMax, value);
         }
 
         private double _tempVolume = 50;
@@ -170,7 +166,19 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private MusicPlaybackService _musicPlaybackService;
+        private ObservableCollection<LyricLine> _uiLyrics;
+        public ObservableCollection<LyricLine> UILyrics
+        {
+            get => _uiLyrics;
+            set => SetProperty(ref _uiLyrics, value);
+        }
+        private int _lastLyricIndex = -1;
+        public int LastLyricIndex
+        {
+            get => _lastLyricIndex;
+            set => SetProperty(ref _lastLyricIndex, value);
+        }
+        public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
 
@@ -178,12 +186,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var mode = AppData.PlayMode;
             CurrentPlayMode = AppData.PlayMode;
+            UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
             Volume = (double)(AppData.Volume * 100);
             _tempVolume = (double)(AppData.Volume * 100);
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-        }
+        }       
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
@@ -230,6 +239,67 @@ namespace WinUIMusicPlayer.ViewModel
         public void SetMusicService(MusicPlaybackService musicPlaybackService)
         {
             _musicPlaybackService = musicPlaybackService;
+            InitializeDatabase();
+        }
+
+        private async void InitializeDatabase()
+        {
+            try
+            {
+                _musicPlaybackService.isInitializing = true;
+                await LoadPlayState();
+                _musicPlaybackService.OutputDeviceChange();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                //notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+            }
+        }
+
+        private async Task LoadPlayState()
+        {
+            _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
+            _musicPlaybackService.volume = AppData.Volume;
+            CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
+            if (CurrentPlayingMusic != null)
+            {
+                UpdatePlayBar(CurrentPlayingMusic);
+                LoadLyricsToUI();
+            }
+            _musicPlaybackService.isInitializing = false;
+        }
+
+        public async void LoadLyricsToUI()
+        {
+            LastLyricIndex = -1;
+            UILyrics.Clear();
+            // 设置播放服务中的歌词
+            await _musicPlaybackService.SetLyrics();
+            // 解析歌词并添加到UI集合
+            List<LyricLine> parsedLyrics = _musicPlaybackService._lyrics;
+            UILyrics.Clear();
+            foreach (var lyric in parsedLyrics)
+            {
+                UILyrics.Add(lyric);
+            }
+        }
+
+        public void UpdateLyricsToUI(int index) {
+            _musicBrowsePage.UpdateCurrentLyricIndex(index);
+        }
+
+        public async void UpdatePlayBar(Music music)
+        {
+            BitmapImage DetailCover = await GetImageFromMusic(music, 0);
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+                MusicDetailCover = DetailCover;
+            });
+            _systemMediaControlsService.UpdateSystemMediaControlsState();
+            await Task.Delay(300);
+            _musicBrowsePage.UpdateSytemMediaControl(music);
         }
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)

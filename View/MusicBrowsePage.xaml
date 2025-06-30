@@ -210,6 +210,7 @@
                         VerticalAlignment="Stretch"
                         IsItemClickEnabled="False"
                         SelectionMode="None"
+                        ItemsSource="{Binding ViewModel.UILyrics,Mode=TwoWay}"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">

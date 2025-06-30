@@ -1,12 +1,9 @@
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,7 +13,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -30,12 +26,9 @@ namespace WinUIMusicPlayer.View
     public sealed partial class SongListPage : Page, INavigatable
     {
         public SongListViewModel ViewModel { get;}
-        private readonly IMessenger _messenger;
-        public SongListPage(SongListViewModel viewModel,IMessenger messenger)
+        public SongListPage(SongListViewModel viewModel)
         {
-            InitializeComponent();
-            _messenger = messenger;
-            _messenger.Register<ScrollToMusicMessageHepler>(this, OnScrollToMusic);            
+            InitializeComponent();         
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);            
             DataContext = this;
@@ -52,13 +45,15 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
-        private void OnScrollToMusic(object recipient, ScrollToMusicMessageHepler message)
+        public void OnScrollToMusic(Music selectedMusic)
         {
-            // 在UI线程上执行
-            DispatcherQueue.TryEnqueue(() =>
+            _ = Task.Delay(100).ContinueWith(_ =>
             {
-                MusicListView.ScrollIntoView(message.SelectedMusic);
-            });
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicListView.ScrollIntoView(selectedMusic);
+                });
+            });            
         }       
 
         public void SortMusicList(string sortOrder)

@@ -41,10 +41,9 @@ namespace WinUIMusicPlayer.ViewModel
         private string? _currentAlbumName;
         private string? _currentArtistName;
         private string? _currentFolderName;
-        private readonly IMessenger _messenger;
         MusicPlaybackService _musicPlaybackService;
 
-        public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService, IMessenger messenger)
+        public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
             _parentPage = parent;           
             _parentPage.refreshSong += RefreshSong;
@@ -55,7 +54,6 @@ namespace WinUIMusicPlayer.ViewModel
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
             _progressDialog.Title = ToolUtils.GetString("Processing");
             _converterService.updateProgress += OnConverterProgressUpdated;
-            _messenger = messenger;
         }
         public void SetCurrentPage(SongCollectionPage page)
         {
@@ -214,7 +212,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (selectedMusic != null)
                     {
                         SelectedMusic = selectedMusic;
-                        _messenger.Send(new ScrollToMusicMessageHepler(selectedMusic));
+                        _currentPage.OnScrollToMusic(selectedMusic);
                     }
                 }
             }

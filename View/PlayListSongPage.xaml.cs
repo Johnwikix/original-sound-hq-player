@@ -30,15 +30,12 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayListSongPage : Page, INavigatable
     {       
         public PlayListSongViewModel ViewModel { get; }
-        private readonly IMessenger _messenger;
-        public PlayListSongPage(PlayListSongViewModel viewModel, IMessenger messenger)
+        public PlayListSongPage(PlayListSongViewModel viewModel)
         {
             this.InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
-            _messenger = messenger;
-            _messenger.Register<ScrollToMusicMessageHepler>(this, OnScrollToMusic);
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -52,16 +49,18 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        private void OnScrollToMusic(object recipient, ScrollToMusicMessageHepler message)
+        public void OnScrollToMusic(Music selectedMusic)
         {
-            // 在UI线程上执行
-            DispatcherQueue.TryEnqueue(() =>
+            _ = Task.Delay(100).ContinueWith(_ =>
             {
-                MusicListView.ScrollIntoView(message.SelectedMusic);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicListView.ScrollIntoView(selectedMusic);
+                });
             });
         }
 
-        
+
         private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             ViewModel.MusicListView_DragItemsCompleted();

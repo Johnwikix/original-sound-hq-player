@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {
-        public MusicPlaybackService musicPlaybackService;
+        //public MusicPlaybackService musicPlaybackService;
         public MainWindow mainWindow;
         public string paramName = "defualt";
         public string pageType = "MusicBrowsePage";
@@ -52,25 +52,23 @@ namespace WinUIMusicPlayer.View
         public string currentFolderName;
         public PlayList currentPlayList;
         public int currentPlayListId;
-        //private bool isMuted = false;
         private DispatcherTimer typingTimer;
         private SystemMediaControlsService systemMediaControlsService;
         private bool isFullScreen = false;
-        private AppWindow appWindow;
-        //private WindowId windowId;        
+        private AppWindow appWindow;      
         private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
-        private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
+        //private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
         private DeviceWatcher deviceWatcher;
         private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
         private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
-        private int _lastLyricIndex = -1;
+        //private int _lastLyricIndex = -1;
         private EqualizerDialog equalizerDialog;
         private CanvasControl _spectrumCanvas;
         private float[] _spectrumData = new float[16];
@@ -85,8 +83,7 @@ namespace WinUIMusicPlayer.View
             MusicBrowseViewModel viewModel,
             SystemMediaControlsService systemMediaControlsService
             )
-        {
-            //isInitialized = false;            
+        {           
             this.InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetMusicService(musicPlaybackService);
@@ -104,9 +101,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            this.musicPlaybackService = musicPlaybackService;
             this.systemMediaControlsService = systemMediaControlsService;
-            InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
             mainWindow = (App.MainWindow as MainWindow);
@@ -116,10 +111,9 @@ namespace WinUIMusicPlayer.View
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
-            musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
             //TODO 波形可视化
             //musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
-            LyricsListView.ItemsSource = _uiLyrics;
+            //LyricsListView.ItemsSource = _uiLyrics;
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
             {
@@ -289,30 +283,30 @@ namespace WinUIMusicPlayer.View
             // 设备枚举完成时触发
             System.Diagnostics.Debug.WriteLine("设备枚举已完成");
         }
-        private void MusicPlaybackService_updateCurrentLyricIndex(object? sender, int currentIndex)
+        public void UpdateCurrentLyricIndex(int currentIndex)
         {
-            if (_lastLyricIndex == currentIndex || !isInPlayingDetailMode)
+            if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
                 return;
             this.DispatcherQueue.TryEnqueue(async () =>
             {
                 try
                 {
                     // 创建当前歌词的副本
-                    for (int i = 0; i < _uiLyrics.Count; i++)
+                    for (int i = 0; i < ViewModel.UILyrics.Count; i++)
                     {
                         // 获取旧歌词
-                        var lyric = _uiLyrics[i];
-                        _uiLyrics[i].IsCurrent = (i == currentIndex);
+                        var lyric = ViewModel.UILyrics[i];
+                        ViewModel.UILyrics[i].IsCurrent = (i == currentIndex);
                     }
                     // 滚动到当前歌词
-                    if (currentIndex >= 0 && currentIndex < _uiLyrics.Count)
+                    if (currentIndex >= 0 && currentIndex < ViewModel.UILyrics.Count)
                     {
-                        LyricsListView.ScrollIntoView(_uiLyrics[currentIndex]);
+                        LyricsListView.ScrollIntoView(ViewModel.UILyrics[currentIndex]);
                         await Task.Delay(50);
                         // 获取目标项的容器
-                        if (currentIndex >= 0 && currentIndex < _uiLyrics.Count)
+                        if (currentIndex >= 0 && currentIndex < ViewModel.UILyrics.Count)
                         {
-                            var container = LyricsListView.ContainerFromItem(_uiLyrics[currentIndex]) as ListViewItem;
+                            var container = LyricsListView.ContainerFromItem(ViewModel.UILyrics[currentIndex]) as ListViewItem;
                             if (container != null)
                             {
                                 // 计算需要滚动的位置，使项目居中
@@ -331,7 +325,7 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
-                    _lastLyricIndex = currentIndex;
+                    ViewModel.LastLyricIndex = currentIndex;
                 }
                 catch (Exception ex)
                 {
@@ -340,20 +334,20 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        private async void LoadLyricsToUI()
-        {
-            _lastLyricIndex = -1;
-            _uiLyrics.Clear();
-            // 设置播放服务中的歌词
-            await musicPlaybackService.SetLyrics();
-            // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = musicPlaybackService._lyrics;
-            _uiLyrics.Clear();
-            foreach (var lyric in parsedLyrics)
-            {
-                _uiLyrics.Add(lyric);
-            }
-        }
+        //private async void LoadLyricsToUI()
+        //{
+        //    _lastLyricIndex = -1;
+        //    _uiLyrics.Clear();
+        //    // 设置播放服务中的歌词
+        //    await ViewModel._musicPlaybackService.SetLyrics();
+        //    // 解析歌词并添加到UI集合
+        //    List<LyricLine> parsedLyrics = ViewModel._musicPlaybackService._lyrics;
+        //    _uiLyrics.Clear();
+        //    foreach (var lyric in parsedLyrics)
+        //    {
+        //        _uiLyrics.Add(lyric);
+        //    }
+        //}
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
@@ -379,7 +373,7 @@ namespace WinUIMusicPlayer.View
 
         private async void MainWindow_Closed(object? sender, EventArgs e)
         {
-            await musicPlaybackService.DisposeAudio();
+            await ViewModel._musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
                 mainWindow.WindowClosed -= MainWindow_Closed;
@@ -663,7 +657,6 @@ namespace WinUIMusicPlayer.View
             {
                 currentPage = typeof(PlayListPage);
                 _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
-                //ContentFrame.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo());
             }
             DisableBackButton();
         }
@@ -750,18 +743,18 @@ namespace WinUIMusicPlayer.View
             DisableBackButton();
         }
 
-        private async Task LoadPlayState()
-        {
-            musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            musicPlaybackService.volume = AppData.Volume;        
-            ViewModel.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
-            if (ViewModel.CurrentPlayingMusic != null)
-            {
-                UpdatePlayBar(ViewModel.CurrentPlayingMusic);              
-                LoadLyricsToUI();
-            }
-            musicPlaybackService.isInitializing = false;
-        }
+        //private async Task LoadPlayState()
+        //{
+        //    ViewModel._musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
+        //    ViewModel._musicPlaybackService.volume = AppData.Volume;        
+        //    ViewModel.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
+        //    if (ViewModel.CurrentPlayingMusic != null)
+        //    {
+        //        UpdatePlayBar(ViewModel.CurrentPlayingMusic);              
+        //        LoadLyricsToUI();
+        //    }
+        //    ViewModel._musicPlaybackService.isInitializing = false;
+        //}
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {
             ContentDialog contentDialog = new ContentDialog
@@ -784,7 +777,6 @@ namespace WinUIMusicPlayer.View
                     PlayList newPlaylist = new PlayList { Name = playlistName };
                     await MusicDatabaseService.InsertPlayList(newPlaylist);
                     addPlayListEvent?.Invoke(this, newPlaylist);
-                    //await LoadPlayList();
                 }
             }
         }
@@ -847,32 +839,43 @@ namespace WinUIMusicPlayer.View
 
         }
 
-        private async void InitializeDatabase()
-        {
-            try
-            {
-                musicPlaybackService.isInitializing = true;
-                await LoadPlayState();
-                //PlayTimeTextBlock.Text = "00:00/00:00";
-                musicPlaybackService.OutputDeviceChange();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-            }
-        }            
+        //private async void InitializeDatabase()
+        //{
+        //    try
+        //    {
+        //        ViewModel._musicPlaybackService.isInitializing = true;
+        //        await LoadPlayState();
+        //        ViewModel._musicPlaybackService.OutputDeviceChange();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+        //        notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+        //    }
+        //}            
 
-        private async void UpdatePlayBar(Music music)
+        //private async void UpdatePlayBar(Music music)
+        //{
+        //    BitmapImage DetailCover = await GetImageFromMusic(music, 0);
+        //    DispatcherQueue.TryEnqueue(() =>
+        //    {
+        //        ViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";                   
+        //        ViewModel.MusicDetailCover = DetailCover;
+        //    });            
+        //    systemMediaControlsService.UpdateSystemMediaControlsState();
+        //    await Task.Delay(300);
+        //    if (isInPlayingDetailMode)
+        //    {
+        //        _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
+        //    }
+        //    else
+        //    {
+        //        _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
+        //    }
+        //}
+
+        public void UpdateSytemMediaControl(Music music)
         {
-            BitmapImage DetailCover = await GetImageFromMusic(music, 0);
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                ViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";                   
-                ViewModel.MusicDetailCover = DetailCover;
-            });            
-            systemMediaControlsService.UpdateSystemMediaControlsState();
-            await Task.Delay(300);
             if (isInPlayingDetailMode)
             {
                 _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
@@ -915,13 +918,12 @@ namespace WinUIMusicPlayer.View
             try
             {
                 //_forceDrawTimer.Start();
-                //musicPlaybackService.currentPlayingMusic = music;
                 ViewModel.CurrentPlayingMusic = music;
-                LoadLyricsToUI();
-                UpdatePlayBar(ViewModel.CurrentPlayingMusic);
+                ViewModel.LoadLyricsToUI();
+                ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
-                await musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                await ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 
             }
             catch (Exception ex)
@@ -1067,10 +1069,10 @@ namespace WinUIMusicPlayer.View
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.IsUserDraggingProgressSlider = false;
-            if (musicPlaybackService.waveChannel != null)
+            if (ViewModel._musicPlaybackService.waveChannel != null)
             {
-                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
-                musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
+                ViewModel._musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
             }
         }
 
