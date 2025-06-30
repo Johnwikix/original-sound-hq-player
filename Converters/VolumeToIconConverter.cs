@@ -13,7 +13,7 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is int volume)
+            if (value is double volume)
             {
                 if (volume > 75)
                 {

@@ -7,6 +7,7 @@ using NAudio.Dsp;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -27,9 +28,9 @@ namespace WinUIMusicPlayer.Services
 {
     public class MusicPlaybackService
     {
-        public Music currentPlayingMusic;
+        //public Music currentPlayingMusic;
         private System.Timers.Timer progressTimer;
-        public List<Music> currentPlayingList;
+        //public List<Music> currentPlayingList;
         //public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
         //public LightweightCSCoreAdapter adapter;
@@ -43,12 +44,12 @@ namespace WinUIMusicPlayer.Services
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
-        public event EventHandler<Music> playingMusic;
+        //public event EventHandler<Music> playingMusic;
         //public event EventHandler<string> updatePlayTimeText;
         //public event EventHandler<double> updateProgressSliders;
         //public event EventHandler<double> updateProgressMax;
-        public event EventHandler<string> showMessage;
-        public event EventHandler<string> updatePlayPauseButton;
+        //public event EventHandler<string> showMessage;
+        //public event EventHandler<string> updatePlayPauseButton;
         public event EventHandler<float[]> updateSpectrumData;
         //public List<Music> musicList;
         //public bool isUserDraggingProgressSlider = false;
@@ -100,14 +101,14 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            currentPlayingList = await MusicDatabaseService.LoadPlayList();
+            MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
         }
 
         public async Task SetLyrics()
         {
             CancelPreviousLyricsTask();
             _lyrics.Clear();
-            string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id)?.Lyrics;
+            string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
             var lyricsContent = await ParseLrcLyrics(lrcContent);
             if (lyricsContent != null)
             {
@@ -127,19 +128,19 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         var autoLyrics = await lrcService.GetLyricsAsync(
-                            currentPlayingMusic.Title,
-                            currentPlayingMusic.Album,
-                            currentPlayingMusic.Author,
+                            MusicBrowseViewModel.CurrentPlayingMusic.Title,
+                            MusicBrowseViewModel.CurrentPlayingMusic.Album,
+                            MusicBrowseViewModel.CurrentPlayingMusic.Author,
                             cancellationToken);
 
                         if (autoLyrics != null)
                         {
                             lrcContent = autoLyrics;
-                            currentPlayingMusic.Lyrics = lrcContent;
+                            MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
                             //AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic.Id).Lyrics = lrcContent;
                             cancellationToken.ThrowIfCancellationRequested();
-                            await MusicDatabaseService.UpdateMusicInfo(currentPlayingMusic);
-                            AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic?.Id).Lyrics = lrcContent;
+                            await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
+                            AppData.allSongs.FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id).Lyrics = lrcContent;
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }
@@ -405,7 +406,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                showMessage?.Invoke(this, $"播放失败{ex.Message}");
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
             }
 
@@ -441,7 +442,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                    await InitializeAudioResources(currentPlayingMusic, currentPos);
+                    await InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                 }                               
             }            
         }
@@ -560,17 +561,20 @@ namespace WinUIMusicPlayer.Services
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
-                    playingMusic?.Invoke(this, currentPlayingMusic);
+                    //playingMusic?.Invoke(this, currentPlayingMusic);
+                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    int currentIndex = currentPlayingList.FindIndex(m => m.Id == currentPlayingMusic.Id);
-                    int nextIndex = (currentIndex + 1) % currentPlayingList.Count;
-                    playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
+                    int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+                    //playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
+                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
                     Random random = new Random();
-                    int randomIndex = random.Next(currentPlayingList.Count);
-                    playingMusic?.Invoke(this, currentPlayingList[randomIndex]);
+                    int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
+                    //playingMusic?.Invoke(this, currentPlayingList[randomIndex]);
+                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();                    
@@ -591,17 +595,22 @@ namespace WinUIMusicPlayer.Services
             //    ffmpegDecoder.Position = 0;
             //}
             //updateProgressSliders?.Invoke(this, 0);
-            MusicBrowseViewModel.ProgressSlider = 0;
-            AppSettings.isPlaying = false;            
-            MusicBrowseViewModel.IsPlaying = false;
-            updatePlayPauseButton?.Invoke(this, "\uE768");
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                MusicBrowseViewModel.ProgressSlider = 0;
+                AppSettings.isPlaying = false;
+                MusicBrowseViewModel.IsPlaying = false;
+                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+            });
+            //updatePlayPauseButton?.Invoke(this, "\uE768");
         }
 
         public void PlayNextTrack()
         {
-            int currentIndex = currentPlayingList.FindIndex(m => m.Id == currentPlayingMusic.Id);
-            int nextIndex = (currentIndex + 1) % currentPlayingList.Count;
-            playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
+            int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+            int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+            //playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
+            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
         }
 
         public void UpdateEqualizerSettings()
@@ -633,7 +642,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                    await InitializeAudioResources(currentPlayingMusic, currentPos);
+                    await InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                 }
                 
                 if (AppSettings.isPlaying)
@@ -718,7 +727,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     catch (Exception e)
                     {
-                        notificationService.SendNotification(ToolUtils.GetString("DSDPlaybackFailed"), ToolUtils.GetString("SwitchingToSharedMode"));
+                        notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("SwitchingToSharedMode"));
                         Reset();
                         OutputDeviceChange();
                         return false;
@@ -743,7 +752,8 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                showMessage?.Invoke(this, $"播放失败{ex.Message}");
+                //showMessage?.Invoke(this, $"播放失败{ex.Message}");
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                 Reset();
                 //updateProgressSliders?.Invoke(this, 0);
@@ -846,11 +856,13 @@ namespace WinUIMusicPlayer.Services
                     progressTimer.Start();
                     AppSettings.isPlaying = true;
                     MusicBrowseViewModel.IsPlaying = true;
-                    updatePlayPauseButton?.Invoke(this, "\uE769");
+                    MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                    //updatePlayPauseButton?.Invoke(this, "\uE769");
                 }
                 catch (Exception ex)
                 {
-                    showMessage?.Invoke(this, $"播放失败{ex.Message}");
+                    //showMessage?.Invoke(this, $"播放失败{ex.Message}");
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                     System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                     Reset();
                 }
@@ -952,7 +964,7 @@ namespace WinUIMusicPlayer.Services
             //    multiTypeAudioReader.Dispose();
             //    multiTypeAudioReader = null;
             //}
-            await MusicDatabaseService.SavePlayState(currentPlayingList, AppData.PlayMode, currentPlayingMusic?.Id, volume);
+            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
         }
 
         public void SwitchPlayMode()
@@ -1033,17 +1045,20 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    if (currentPlayingMusic != null)
+                    if (MusicBrowseViewModel.CurrentPlayingMusic != null)
                     {
-                        playingMusic?.Invoke(this, currentPlayingMusic);
+                        //playingMusic?.Invoke(this, currentPlayingMusic);
+                        MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     }
-                    else if (currentPlayingList != null && currentPlayingList.Count > 0)
+                    else if (MusicBrowseViewModel.CurrentPlayingList != null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
                     {
-                        playingMusic?.Invoke(this, currentPlayingList[0]);
+                        //playingMusic?.Invoke(this, currentPlayingList[0]);
+                        MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
                     }
                     else
                     {
-                        showMessage?.Invoke(this, "没有可播放的音乐");
+                        //showMessage?.Invoke(this, "没有可播放的音乐");
+                        notificationService.SendNotification(ToolUtils.GetString("Error"),"没有可播放的音乐");
                         return;
                     }
                 }

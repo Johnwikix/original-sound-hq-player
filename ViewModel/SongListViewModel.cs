@@ -193,10 +193,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (_parentPage != null && _musicPlaybackService.currentPlayingMusic != null)
+                if (_parentPage != null && _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic != null)
                 {
                     var selectedMusic = MusicList.FirstOrDefault(music =>
-                        music.Id == _musicPlaybackService.currentPlayingMusic.Id);
+                        music.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic != null)
                     {
@@ -215,7 +215,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic != null && _parentPage != null)
             {
-               _musicPlaybackService.currentPlayingList = MusicList.ToList();
+               _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
                 await _parentPage.PlayMusic(SelectedMusic);
             }
         }
@@ -239,12 +239,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
-                _musicPlaybackService.currentPlayingList = uniqueSelectedMusics;
+                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
                 await _parentPage.PlayMusic(uniqueSelectedMusics[0]);
             }
             else
             {
-                _musicPlaybackService.currentPlayingList = MusicList.ToList();
+                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
                 await _parentPage.PlayMusic(SelectedMusic);               
             }
         }

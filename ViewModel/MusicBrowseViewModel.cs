@@ -3,8 +3,10 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
+using NAudio.Gui;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -31,6 +33,14 @@ namespace WinUIMusicPlayer.ViewModel
             get => _currentPlayingMusic;
             set => SetProperty(ref _currentPlayingMusic, value);
         }
+
+        private ObservableCollection<Music> _currentPlayingList;
+        public ObservableCollection<Music> CurrentPlayingList
+        {
+            get => _currentPlayingList;
+            set => SetProperty(ref _currentPlayingList, value);
+        }
+
         private string _musicInfo;
         public string MusicInfo
         {
@@ -104,14 +114,29 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private int _volume = 50;
-        public int Volume
+        private double _tempVolume = 50;
+        private double _volume = 50;
+        public double Volume
         {
             get => _volume;
             set
             {
                 if (SetProperty(ref _volume, value))
                 {
+                    if (IsInitialized)
+                    {
+                        if (value > 0) {
+                            IsMuted = false;
+                        }
+                        if (!IsMuted) {
+                            _tempVolume = value;
+                        }                        
+                        _musicPlaybackService.volume = (float) value / 100;
+                        if (_musicPlaybackService.waveChannel != null)
+                        {
+                            _musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
+                        }
+                    }
                 }
             }
         }
@@ -128,6 +153,23 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isMouseOverProgressBar;
             set => SetProperty(ref _isMouseOverProgressBar, value);
         }
+        private bool _isMuted = false;
+        public bool IsMuted
+            {
+            get => _isMuted;
+            set => SetProperty(ref _isMuted, value);
+        }
+        private bool _isInitialized = false;
+        public bool IsInitialized
+        {
+            get => _isInitialized;
+            set
+            {
+                if (SetProperty(ref _isInitialized, value))
+                {
+                }
+            }
+        }
         private MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -138,6 +180,14 @@ namespace WinUIMusicPlayer.ViewModel
             CurrentPlayMode = AppData.PlayMode;
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
+            Volume = (double)(AppData.Volume * 100);
+            _tempVolume = (double)(AppData.Volume * 100);
+            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+        }
+
+        private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
+        {
+            _musicPlaybackService.ChangingSetting();
         }
 
         private void InitializeSystemMediaControls()
@@ -221,13 +271,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
-            _systemMediaControlsService.UpdateSystemMediaControlsState();
         }
+            
 
         public void UpdatePlayPauseButtonIcon()
         {
             App.MainWindow.UpdateTaskbarIcon();
             App.MainWindow.UpdateIconControl();
+            _systemMediaControlsService.UpdateSystemMediaControlsState();        
         }
 
         [RelayCommand]
@@ -256,16 +307,25 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.isManualSelect = false;
         }
 
+        public void PlayMusic(Music music)
+        {
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                await _musicBrowsePage.PlayMusic(music);
+            });
+        }
+           
+
         private async Task PlayLastTrack()
         {
-            int index = _musicPlaybackService.currentPlayingList.IndexOf(_musicPlaybackService.currentPlayingMusic);
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(CurrentPlayingMusic);
             if (index > 0)
             {
-                await _musicBrowsePage.PlayMusic(_musicPlaybackService.currentPlayingList[index - 1]);
+                await _musicBrowsePage.PlayMusic(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList[index - 1]);
             }
-            else if (index == 0 && _musicPlaybackService.currentPlayingList.Count > 1)
+            else if (index == 0 && _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Count > 1)
             {
-                await _musicBrowsePage.PlayMusic(_musicPlaybackService.currentPlayingList[_musicPlaybackService.currentPlayingList.Count - 1]);
+                await _musicBrowsePage.PlayMusic(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList[_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Count - 1]);
 
             }
         }
@@ -289,6 +349,41 @@ namespace WinUIMusicPlayer.ViewModel
                 Task.Run(() => songCollectionPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
                 Task.Run(() => playListSongPage.UpdateFavouriteMusic(CurrentPlayingMusic))
             );
+        }
+        [RelayCommand]
+        private void OnStopButtonChanged()
+        {
+            _musicPlaybackService.StopPlaying();
+            UpdatePlayPauseButtonIcon();
+            _musicPlaybackService.Reset();
+            ProgressSlider = 0;
+        }
+        [RelayCommand]
+        private void OnFastForwardButton()
+        {
+            AdjustPlaybackPosition(5);
+        }
+        [RelayCommand]
+        private void OnFastBackwardButton()
+        {
+            AdjustPlaybackPosition(-5);
+        }
+        public void AdjustPlaybackPosition(int seconds)
+        {
+            ProgressSlider = _musicPlaybackService.AdjustPlaybackPosition(seconds);
+        }
+        [RelayCommand]
+        private void OnVolumeSliderIconButtonChanged()
+        {
+            IsMuted = !IsMuted;
+            Volume = IsMuted ? 0 : _tempVolume;
+        }
+
+        public void AdjustVolume(int delta)
+        {
+            double newVolume = Volume + delta;
+            newVolume = Math.Max(0, Math.Min(newVolume, 100));
+            Volume = newVolume;
         }
     }
 }

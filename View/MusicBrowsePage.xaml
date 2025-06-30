@@ -328,7 +328,7 @@
                     <FontIcon Glyph="{x:Bind ViewModel.CurrentPlayingMusic.IsFavorite,Mode=TwoWay,Converter={StaticResource FavouriteIconConverter}}" Foreground="Red"/>
                 </Button>
 
-                <Button x:Name="FastBackwardButton" Click="FastBackwardButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="FastBackwardButton" Command="{Binding ViewModel.FastBackwardButtonCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xeb9e;" FontSize="18"/>
                 </Button>
@@ -349,12 +349,12 @@
                     <FontIcon Glyph="&#xe893;" FontSize="26"/>
                 </Button>
 
-                <Button x:Name="FastForwardButton" Click="FastForwardButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="FastForwardButton" Command="{Binding ViewModel.FastForwardButtonCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                     Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xeb9d;" FontSize="18"/>
                 </Button>
 
-                <Button x:Name="StopButton" Click="StopButton_Click" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button x:Name="StopButton" Command="{Binding ViewModel.StopButtonChangedCommand,Mode=OneWay}" Margin="5" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xe71a;" FontSize="18"/>
                 </Button>
@@ -378,6 +378,7 @@
                         <ListView x:Name="CurrentPlayListView" 
                                     DoubleTapped="CurrentPlayListView_DoubleTapped" 
                                     MaxHeight="400"
+                                    ItemsSource="{Binding ViewModel.CurrentPlayingList,Mode=TwoWay}"
                                     Width="290"
                                     >
                             <ListView.ItemTemplate>
@@ -393,7 +394,7 @@
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="PlayModeIcon" Glyph="{Binding ViewModel.CurrentPlayMode,Converter={StaticResource PlayModeToIconConverter},Mode=TwoWay}"/>
                 </Button>
-                <Button Click="VolumeSliderIconButton_Click" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
+                <Button Command="{Binding ViewModel.VolumeSliderIconButtonChangedCommand,Mode=OneWay}" Margin="0" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" 
                         HorizontalAlignment="Left" VerticalAlignment="Center">
                     <FontIcon x:Name="VolumeSliderIcon"  VerticalAlignment="Center" Glyph="{Binding ViewModel.Volume,Converter={StaticResource VolumeToIconConverter},Mode=OneWay}" Margin="0" Grid.Column="0"/>
                 </Button>                
@@ -401,11 +402,10 @@
                     x:Name="VolumeSlider"
                     Minimum="0"
                     Maximum="100"
-                    Value="100"
+                    Value="{Binding ViewModel.Volume,Mode=TwoWay}"
                     Grid.Column="1"
                     VerticalAlignment="Center"
                     Width="100"
-                    ValueChanged="VolumeSlider_ValueChanged"
                     PointerEntered="VolumeSlider_PointerEntered"
                     PointerExited="VolumeSlider_PointerExited"
                     PointerWheelChanged="VolumeSlider_PointerWheelChanged"

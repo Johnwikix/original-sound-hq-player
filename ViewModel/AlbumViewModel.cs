@@ -190,7 +190,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage != null)
                 {
-                    parentPage.musicPlaybackService.currentPlayingList = albums;
+                    parentPage.musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(albums);
                     await parentPage.PlayMusic(albums[0]);
                 }
             }
