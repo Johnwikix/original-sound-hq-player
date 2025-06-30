@@ -621,4 +621,7 @@
   <data name="CoverSizeToolTip.Content" xml:space="preserve">
     <value>0 is the original size</value>
   </data>
+  <data name="IconVolume.Text" xml:space="preserve">
+    <value>Volume</value>
+  </data>
 </root>

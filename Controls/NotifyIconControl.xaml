@@ -6,9 +6,15 @@
     xmlns:local="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:tb="using:H.NotifyIcon"
     mc:Ignorable="d">
-
+    <UserControl.Resources>
+        <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter"/>
+        <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter"/>
+        <converters:MusicToTitleConverter x:Key="MusicToTitleConverter"/>
+        <converters:VolumeToIconConverter x:Key="VolumeToIconConverter"/>
+    </UserControl.Resources>
     <Grid>
         <tb:TaskbarIcon
             x:Name="NotifyIcon"
@@ -16,6 +22,7 @@
             ContextMenuMode="SecondWindow"
             IconSource="/Assets/icon.ico"
             LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+            DataContext="{Binding}" 
             NoLeftClickDelay="True"
             x:Uid="AppMainTitleIcon">
             <tb:TaskbarIcon.ContextFlyout>
@@ -26,14 +33,38 @@
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem x:Name="CurrentMusic">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8D6;"/>
+                        </MenuFlyoutItem.Icon>
+                        <MenuFlyoutItem.Template>
+                            <ControlTemplate TargetType="MenuFlyoutItem">
+                                <Grid Width="200" Background="{TemplateBinding Background}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0" 
+                                Content="{TemplateBinding Icon}"
+                                Margin="12,0,12,0"/>
+                                    <TextBlock Grid.Column="1" 
+                                        VerticalAlignment="Center"
+                                        Text="{Binding MusicBrowseViewModel.CurrentPlayingMusic,Converter={StaticResource MusicToTitleConverter},Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Margin="0,0,12,0"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </MenuFlyoutItem.Template>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSeparator/>
                     <MenuFlyoutItem x:Name="LastSong" x:Uid="IconLastSong" Click="LastSong_Click">
                         <MenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE892;"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
-                    <MenuFlyoutItem MinWidth="200" x:Name="PlayNPause" x:Uid="IconPlayNPause" Click="PlayNPause_Click">
+                    <MenuFlyoutItem Width="200" x:Name="PlayNPause" x:Uid="IconPlayNPause" Click="PlayNPause_Click">
                         <MenuFlyoutItem.Icon>
-                            <FontIcon x:Name="PlayNPauseIcon" Glyph="&#xE768;"/>
+                            <FontIcon x:Name="PlayNPauseIcon" Glyph="{Binding MusicBrowseViewModel.IsPlaying,Converter={StaticResource PlayStatusToIconConverter},Mode=OneWay}"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem x:Name="NextSong" x:Uid="IconNextSong" Click="NextSong_Click">
@@ -41,9 +72,9 @@
                             <FontIcon Glyph="&#xE893;"/>
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
-                    <MenuFlyoutSubItem x:Name="PlayModeFlyout" x:Uid="IconListLoopValue">
+                    <MenuFlyoutSubItem x:Name="PlayModeFlyout" Text="{Binding MusicBrowseViewModel.PlayModeFlyoutText,Mode=TwoWay}" x:Uid="IconListLoopValue">
                         <MenuFlyoutSubItem.Icon>
-                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="&#xECE9;"></FontIcon>
+                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="{Binding MusicBrowseViewModel.CurrentPlayMode,Converter={StaticResource PlayModeToIconConverter},Mode=TwoWay}"></FontIcon>
                         </MenuFlyoutSubItem.Icon>
                         <ToggleMenuFlyoutItem x:Name="IconRepeatAll" x:Uid="IconListLoopValue" Click="PlayMode_Click">
                             <ToggleMenuFlyoutItem.Icon>
@@ -65,6 +96,14 @@
                                 <FontIcon Glyph="&#xE8B1;"></FontIcon>
                             </ToggleMenuFlyoutItem.Icon>
                         </ToggleMenuFlyoutItem>
+                    </MenuFlyoutSubItem>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutSubItem x:Name="Volume" x:Uid="IconVolume">
+                        <MenuFlyoutSubItem.Icon>
+                            <FontIcon Glyph="{Binding MusicBrowseViewModel.Volume,Converter={StaticResource VolumeToIconConverter},Mode=OneWay}"/>
+                        </MenuFlyoutSubItem.Icon>
+                        <MenuFlyoutItem x:Name="VolumeUp" Text="+10" Click="VolumeUp_Click"/>
+                        <MenuFlyoutItem x:Name="VolumeDown" Text="-10" Click="VolumeDown_Click"/>
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSeparator/>
                     <MenuFlyoutItem x:Name="Settings" x:Uid="IconSettings" Click="Settings_Click">

@@ -19,15 +19,12 @@ namespace WinUIMusicPlayer.Controls
 {
     public sealed partial class NotifyIconControl : UserControl
     {
-        //public event EventHandler playLastSong;
-        //public event EventHandler playNextSong;
-        //public event EventHandler playStop;
-        //public event EventHandler<PlayMode> playModeEvent;
-        private MusicBrowseViewModel _musicBrowseViewModel;
+        public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public NotifyIconControl()
         {
             this.InitializeComponent();
-            _musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+            MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+            DataContext = this;
         }
 
         [RelayCommand]
@@ -39,34 +36,18 @@ namespace WinUIMusicPlayer.Controls
 
         private void NextSong_Click(object sender, RoutedEventArgs e)
         {
-            //playNextSong?.Invoke(this, EventArgs.Empty);
-            _musicBrowseViewModel.NextMusicButton_Click();
+            MusicBrowseViewModel.NextMusicButton_Click();
         }
 
         private void PlayNPause_Click(object sender, RoutedEventArgs e)
         {
-            //playStop?.Invoke(this, EventArgs.Empty);
-            _musicBrowseViewModel.PlayButton_Click();
-            UpdatePlayNPause();
+            MusicBrowseViewModel.PlayButton_Click();
         }
 
-        public void UpdatePlayNPause() {
-            if (AppSettings.isPlaying)
-            {
-                PlayNPauseIcon.Glyph = "\uE769"; // ≤•∑≈Õº±Í
-                PlayNPause.Text = GetString("IconPause");
-            }
-            else
-            {
-                PlayNPauseIcon.Glyph = "\uE768"; // ‘›Õ£Õº±Í
-                PlayNPause.Text = GetString("IconPlay");
-            }
-        }
 
         private void LastSong_Click(object sender, RoutedEventArgs e)
         {
-            _musicBrowseViewModel.LastMusicButton_Click();
-            //playLastSong?.Invoke(this, EventArgs.Empty);
+            MusicBrowseViewModel.LastMusicButton_Click();
         }
 
         [RelayCommand]
@@ -88,25 +69,20 @@ namespace WinUIMusicPlayer.Controls
                 switch (menuItem.Name)
                 {
                     case "IconRepeatAll":
-
                         UpdatePlayModeIcon(PlayMode.ListLoop);
-                        PlayModeFlyoutIcon.Glyph = "\uE8EE";
-                        PlayModeFlyout.Text = GetString("IconListLoop");
+                        MusicBrowseViewModel.PlayModeFlyoutText = GetString("IconListLoop");
                         break;
                     case "IconRepeatOne":
                         UpdatePlayModeIcon(PlayMode.SingleLoop);
-                        PlayModeFlyoutIcon.Glyph = "\uE8ED";
-                        PlayModeFlyout.Text = GetString("IconSingleTuneCirculation");
+                        MusicBrowseViewModel.PlayModeFlyoutText = GetString("IconSingleTuneCirculation");
                         break;
                     case "IconRepeatOff":
                         UpdatePlayModeIcon(PlayMode.RepeatOff);
-                        PlayModeFlyoutIcon.Glyph = "\uF5E7";
-                        PlayModeFlyout.Text = GetString("IconSinglePlayback");
+                        MusicBrowseViewModel.PlayModeFlyoutText = GetString("IconSinglePlayback");
                         break;
                     case "IconShuffle":
                         UpdatePlayModeIcon(PlayMode.RandomLoop);
-                        PlayModeFlyoutIcon.Glyph = "\uE8B1";
-                        PlayModeFlyout.Text = GetString("IconRandomLoop");
+                        MusicBrowseViewModel.PlayModeFlyoutText = GetString("IconRandomLoop");
                         break;
                 }
             }
@@ -119,7 +95,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdatePlayModeIcon(PlayMode playMode) {
             AppData.PlayMode = playMode;
-            App.Services.GetRequiredService<MusicBrowseViewModel>().CurrentPlayMode = playMode;
+            MusicBrowseViewModel.CurrentPlayMode = playMode;
         }
 
         private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)
@@ -138,42 +114,31 @@ namespace WinUIMusicPlayer.Controls
             
         }
 
-        public void UpdatePlayMode() {
+        public void UpdatePlayMode()
+        {
             var name = "IconRepeatOne";
-            var iconStr = "\uE8EE";
-            var flyoutText = GetString("IconSingleTuneCirculation");
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
                     name = "IconRepeatOne";
-                    iconStr = "\uE8ED";
-                    flyoutText = GetString("IconSingleTuneCirculation");
                     break;
                 case PlayMode.ListLoop:
                     name = "IconRepeatAll";
-                    iconStr = "\uE8EE";
-                    flyoutText = GetString("IconListLoop");
                     break;
                 case PlayMode.RandomLoop:
                     name = "IconShuffle";
-                    iconStr = "\uE8B1";
-                    flyoutText = GetString("IconRandomLoop");
                     break;
                 case PlayMode.RepeatOff:
                     name = "IconRepeatOff";
-                    iconStr = "\uF5E7";
-                    flyoutText = GetString("IconSinglePlayback");
                     break;
             }
-            PlayModeFlyoutIcon.Glyph = iconStr;
-            PlayModeFlyout.Text = flyoutText;
             if (PlayModeFlyout != null)
             {
                 foreach (var item in PlayModeFlyout.Items)
                 {
                     if (item is ToggleMenuFlyoutItem toggleItem)
                     {
-                        toggleItem.IsChecked = item.Name.ToString() == name ? true:false;
+                        toggleItem.IsChecked = item.Name.ToString() == name ? true : false;
                     }
                 }
             }
@@ -212,6 +177,16 @@ namespace WinUIMusicPlayer.Controls
                     window.InitializeTaskbarHelper();
                 }
             }
-        }        
+        }
+
+        private void VolumeUp_Click(object sender, RoutedEventArgs e)
+        {
+            MusicBrowseViewModel.AdjustVolume(10);
+        }
+
+        private void VolumeDown_Click(object sender, RoutedEventArgs e)
+        {
+            MusicBrowseViewModel.AdjustVolume(-10);
+        }
     }
 }

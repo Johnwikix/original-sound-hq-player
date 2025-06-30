@@ -1,0 +1,30 @@
+﻿using Microsoft.UI.Xaml.Data;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
+using static WinUIMusicPlayer.Utils.ToolUtils;
+
+namespace WinUIMusicPlayer.Converters
+{
+    public class MusicToTitleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            if (value is Music music)
+            {
+                if (music != null) {
+                    return music.Title;
+                }
+            }
+            return "";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

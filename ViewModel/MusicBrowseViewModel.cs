@@ -35,6 +35,12 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _currentPlayingMusic, value);
         }
 
+        private string _playModeFlyoutText;
+        public string PlayModeFlyoutText
+        {
+            get => _playModeFlyoutText;
+            set => SetProperty(ref _playModeFlyoutText, value);
+        }
         private ObservableCollection<Music> _currentPlayingList;
         public ObservableCollection<Music> CurrentPlayingList
         {
@@ -184,8 +190,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
-            var mode = AppData.PlayMode;
+            //var mode = AppData.PlayMode;
             CurrentPlayMode = AppData.PlayMode;
+            PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
             UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
@@ -315,18 +322,22 @@ namespace WinUIMusicPlayer.ViewModel
                 case PlayMode.SingleLoop:
                     AppData.PlayMode = PlayMode.ListLoop;
                     CurrentPlayMode = PlayMode.ListLoop;
+                    PlayModeFlyoutText = ToolUtils.GetString("IconListLoop");
                     break;
                 case PlayMode.ListLoop:
                     AppData.PlayMode = PlayMode.RandomLoop;
                     CurrentPlayMode = PlayMode.RandomLoop;
+                    PlayModeFlyoutText = ToolUtils.GetString("IconRandomLoop");
                     break;
                 case PlayMode.RandomLoop:
                     AppData.PlayMode = PlayMode.RepeatOff;
                     CurrentPlayMode = PlayMode.RepeatOff;
+                    PlayModeFlyoutText = ToolUtils.GetString("IconSinglePlayback");
                     break;
                 case PlayMode.RepeatOff:
                     AppData.PlayMode = PlayMode.SingleLoop;
                     CurrentPlayMode = PlayMode.SingleLoop;
+                    PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
             App.MainWindow.UpdateAppNotifyIconControl();
@@ -347,7 +358,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpdatePlayPauseButtonIcon()
         {
             App.MainWindow.UpdateTaskbarIcon();
-            App.MainWindow.UpdateIconControl();
+            //App.MainWindow.UpdateIconControl();
             _systemMediaControlsService.UpdateSystemMediaControlsState();        
         }
 

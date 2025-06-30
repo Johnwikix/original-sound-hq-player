@@ -748,5 +748,20 @@ namespace WinUIMusicPlayer.Utils
             
         }
 
+        public static string GetPlayModeText(PlayMode playMode) {
+            switch (playMode)
+            {
+                case PlayMode.SingleLoop:
+                    return GetString("IconSingleTuneCirculation");
+                case PlayMode.ListLoop:
+                    return GetString("IconListLoop");
+                case PlayMode.RandomLoop:
+                    return GetString("IconRandomLoop");
+                case PlayMode.RepeatOff:
+                    return GetString("IconSinglePlayback");
+                default:
+                    return GetString("IconListLoop");
+            }
+        }
     }
 }
