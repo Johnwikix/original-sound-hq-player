@@ -109,24 +109,13 @@ namespace WinUIMusicPlayer.View
             InitializeDatabase();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
-            //AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged!;
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
                 mainWindow.WindowClosed += MainWindow_Closed;
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
-                //mainWindow.playLastSong += PlayLastSong;
-                //mainWindow.playStop += PlayNStop;
-                //mainWindow.playNextSong += PlayNextSong;
-                //mainWindow.changePlayMode += MainWindow_changePlayMode;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
-            //musicPlaybackService.playingMusic += MusicPlaybackService_playingMusic;
-            //musicPlaybackService.updatePlayTimeText += MusicPlaybackService_updatePlayTimeText;
-            //musicPlaybackService.updateProgressSliders += MusicPlaybackService_updateProgressSliders;
-            //musicPlaybackService.updateProgressMax += MusicPlaybackService_updateProgressMax;
-            //musicPlaybackService.showMessage += ShowMessage;
-            //musicPlaybackService.updatePlayPauseButton += MusicPlaybackService_updatePlayPauseButton;
             musicPlaybackService.updateCurrentLyricIndex += MusicPlaybackService_updateCurrentLyricIndex;
             //TODO 波形可视化
             //musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
@@ -158,7 +147,6 @@ namespace WinUIMusicPlayer.View
             StartWatchingUsbStorageDevices();
             StartWatchingFileFolder();
             OnFileChanged(null, null);
-            //SelectBarItem(AppSettings.DefualtPlayList);
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
             //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
@@ -217,14 +205,6 @@ namespace WinUIMusicPlayer.View
                 //Debug.WriteLine($"更新时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
             }
         }
-
-
-        //private void MainWindow_changePlayMode(object? sender, PlayMode mode)
-        //{    
-        //   AppData.PlayMode = mode;
-        //   ViewModel.CurrentPlayMode = mode;
-        //    //UpdatePlayModeIcon();
-        //}
 
         private void StartWatchingUsbStorageDevices()
         {
@@ -375,21 +355,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void PlayNextSong(object? sender, EventArgs e)
-        //{
-        //    ViewModel.NextMusicButton_Click();
-        //}
-
-        //private void PlayNStop(object? sender, EventArgs e)
-        //{
-        //    ViewModel.PlayButton_Click();
-        //}
-
-        //private void PlayLastSong(object? sender, EventArgs e)
-        //{
-        //    ViewModel.LastMusicButton_Click();
-        //}
-
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -419,16 +384,7 @@ namespace WinUIMusicPlayer.View
             {
                 mainWindow.WindowClosed -= MainWindow_Closed;
                 mainWindow.updateMusicList -= MainWindow_updateMusicList;
-                //mainWindow.playLastSong -= PlayLastSong;
-                //mainWindow.playStop -= PlayNStop;
-                //mainWindow.playNextSong -= PlayNextSong;
             }
-            //musicPlaybackService.playingMusic -= MusicPlaybackService_playingMusic;
-            //musicPlaybackService.updatePlayTimeText -= MusicPlaybackService_updatePlayTimeText;
-            //musicPlaybackService.updateProgressSliders -= MusicPlaybackService_updateProgressSliders;
-            //musicPlaybackService.updateProgressMax -= MusicPlaybackService_updateProgressMax;
-            //musicPlaybackService.showMessage -= ShowMessage;
-            //musicPlaybackService.updatePlayPauseButton -= MusicPlaybackService_updatePlayPauseButton;
         }
 
         private void InitializeAppWindow()
@@ -442,45 +398,6 @@ namespace WinUIMusicPlayer.View
             typingTimer.Interval = TimeSpan.FromMilliseconds(300);
             typingTimer.Tick += TypingTimer_Tick;
         }
-
-        //private void InitializeSystemMediaControls(SystemMediaControlsService systemMediaControlsService)
-        //{
-        //    this.systemMediaControlsService = systemMediaControlsService;
-
-        //    // 订阅事件
-        //    systemMediaControlsService.PlayRequested += (s, e) =>
-        //    {
-        //        this.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            ViewModel.PlayButton_Click();
-        //        });
-        //    };
-
-        //    systemMediaControlsService.PauseRequested += (s, e) =>
-        //    {
-        //        this.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            ViewModel.PlayButton_Click();
-        //        });
-        //    };
-
-        //    systemMediaControlsService.NextTrackRequested += (s, e) =>
-        //    {
-        //        this.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            NextMusicButton_Click(null, null);
-        //        });
-        //    };
-
-        //    systemMediaControlsService.PreviousTrackRequested += (s, e) =>
-        //    {
-        //        this.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            LastMusicButton_Click(null, null);
-        //        });
-        //    };
-        //}
-
         public void ShowTransmission()
         {
             ProcessingRing.Visibility = Visibility.Visible;
@@ -569,86 +486,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void MusicPlaybackService_updateProgressMax(object? sender, double max)
-        //{
-        //    this.DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        if (ProgressSlider != null)
-        //        {
-        //            //ProgressSlider.Maximum = max;
-        //            ViewModel.ProgressSliderMax = max;
-        //        }
-        //    });
-        //}
-
-        //private void MusicPlaybackService_updatePlayPauseButton(object? sender, string e)
-        //{
-        //    ViewModel.UpdatePlayPauseButtonIcon();
-        //}
-
-        //private async void ShowMessage(object? sender, string message)
-        //{
-        //    try
-        //    {
-        //        notificationService.SendNotification(ToolUtils.GetString("Error"), message);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"{ToolUtils.GetString("Error")}: {ex.Message}");
-        //    }
-        //}
-
-        //private void MusicPlaybackService_updateProgressSliders(object? sender, double value)
-        //{
-        //    try
-        //    {
-        //        if (DispatcherQueue != null)
-        //        {
-        //            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
-        //            {
-        //                if (ProgressSlider != null)
-        //                {
-        //                    //ProgressSlider.Value = value;
-        //                    ViewModel.ProgressSlider = value;
-        //                }
-        //            });
-        //        }
-        //    }
-        //    catch (NullReferenceException ex)
-        //    {
-        //        Debug.WriteLine($"更新进度条失败: {ex.Message}");
-        //    }
-        //}
-
-        //private void MusicPlaybackService_updatePlayTimeText(object? sender, string time)
-        //{
-        //    try
-        //    {
-        //        if (DispatcherQueue != null)
-        //        {
-        //            DispatcherQueue.TryEnqueue(() =>
-        //            {
-        //                if (PlayTimeTextBlock != null)
-        //                {
-        //                    PlayTimeTextBlock.Text = time;
-        //                }
-        //            });
-        //        }
-        //    }
-        //    catch (NullReferenceException ex)
-        //    {
-        //        Debug.WriteLine($"更新进度条失败: {ex.Message}");
-        //    }
-        //}
-
-        //private async void MusicPlaybackService_playingMusic(object? sender, Music music)
-        //{
-        //    DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        _ = PlayMusic(music);
-        //    });            
-        //}
-
         public async void LoadPlayListSong(PlayList playList)
         {
             pageType = "playlist";
@@ -679,7 +516,6 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is AlbumPage)
                 {
                     _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
-                    //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -695,7 +531,6 @@ namespace WinUIMusicPlayer.View
             currentArtistName = artist;
             currentPage = typeof(SongCollectionPage);
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
-            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
         public void SelectBarArtist(string artist)
@@ -709,7 +544,6 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is ArtistPage)
                 {
                     _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
-                    //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -725,7 +559,6 @@ namespace WinUIMusicPlayer.View
             currentFolderName = folder;
             currentPage = typeof(SongCollectionPage);
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
-            //ContentFrame.Navigate(currentPage, this, new DrillInNavigationTransitionInfo());
         }
 
 
@@ -747,17 +580,6 @@ namespace WinUIMusicPlayer.View
         {
             typingTimer.Stop();
             typingTimer.Start();
-            //GC.Collect();
-            //GC.WaitForPendingFinalizers();
-            //if (string.IsNullOrEmpty(SearchTextBox.Text))
-            //{
-            //    AppData.searchText = SearchTextBox.Text;
-            //    if (ContentFrame != null && ContentFrame.Content != null)
-            //    {
-            //        refreshPage?.Invoke(this, EventArgs.Empty);
-            //        refreshSong?.Invoke(this, EventArgs.Empty);
-            //    }
-            //}
         }
 
         private async void TypingTimer_Tick(object sender, object e)
@@ -815,17 +637,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void AdjustPlaybackPosition(int seconds)
-        //{
-        //    //ProgressSlider.Value = musicPlaybackService.AdjustPlaybackPosition(seconds);
-        //    ViewModel.ProgressSlider = musicPlaybackService.AdjustPlaybackPosition(seconds);
-        //}
-
-        //private void AppSettings_OutputSettingsChanged(object sender, EventArgs e)
-        //{
-        //    musicPlaybackService.ChangingSetting();
-        //}
-
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
             if (ContentFrame.Content is SongCollectionPage)
@@ -835,17 +646,14 @@ namespace WinUIMusicPlayer.View
                     case "album":
                         currentPage = typeof(AlbumPage);
                         _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
-                        //ContentFrame.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "artist":
                         currentPage = typeof(ArtistPage);
                         _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
-                        //ContentFrame.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo());
                         break;
                     case "folder":
                         currentPage = typeof(AlbumPage);
                         _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
-                        //ContentFrame.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo());
                         break;
                     default:
                         break;
@@ -944,19 +752,14 @@ namespace WinUIMusicPlayer.View
 
         private async Task LoadPlayState()
         {
-            //var volume = AppData.Volume;
             musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            musicPlaybackService.volume = AppData.Volume;
-            //VolumeSlider.Value = musicPlaybackService.volume * 100;            
+            musicPlaybackService.volume = AppData.Volume;        
             ViewModel.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
-            //ViewModel.CurrentPlayingMusic = musicPlaybackService.currentPlayingMusic;
             if (ViewModel.CurrentPlayingMusic != null)
             {
-                UpdatePlayBar(ViewModel.CurrentPlayingMusic);
-                //await LoadCover(musicPlaybackService.currentPlayingMusic);                
+                UpdatePlayBar(ViewModel.CurrentPlayingMusic);              
                 LoadLyricsToUI();
             }
-            //UpdatePlayModeIcon();
             musicPlaybackService.isInitializing = false;
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
@@ -986,13 +789,8 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void UpdateIconPlayModeMenuFlyout() {
-        //    mainWindow.UpdateAppNotifyIconControl();
-        //}
-
         private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
         {
-            //CurrentPlayListView.ItemsSource = musicPlaybackService.currentPlayingList;
             CurrentPlayListTeachingTip.IsOpen = true;
             UpdateCurrentPlayList();
         }
@@ -1049,44 +847,6 @@ namespace WinUIMusicPlayer.View
 
         }
 
-        //private async void NextMusicButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    musicPlaybackService.isManualSelect = true;
-        //    musicPlaybackService.PlayNextTrack();
-        //    musicPlaybackService.isManualSelect = false;
-        //}
-
-        //private async void LastMusicButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    musicPlaybackService.isManualSelect = true;
-        //    await PlayLastTrack();
-        //    musicPlaybackService.isManualSelect = false;
-        //}
-
-        //private void FastForwardButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    AdjustPlaybackPosition(5);
-        //}
-
-        //private void FastBackwardButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    AdjustPlaybackPosition(-5);
-        //}
-
-        //private async Task PlayLastTrack()
-        //{
-        //    int index = musicPlaybackService.currentPlayingList.IndexOf(musicPlaybackService.currentPlayingMusic);
-        //    if (index > 0)
-        //    {
-        //        await PlayMusic(musicPlaybackService.currentPlayingList[index - 1]);
-        //    }
-        //    else if (index == 0 && musicPlaybackService.currentPlayingList.Count > 1)
-        //    {
-        //        await PlayMusic(musicPlaybackService.currentPlayingList[musicPlaybackService.currentPlayingList.Count - 1]);
-
-        //    }
-        //}
-
         private async void InitializeDatabase()
         {
             try
@@ -1101,50 +861,7 @@ namespace WinUIMusicPlayer.View
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
-        }
-
-        //private void PlayButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    //if (AppSettings.isPlaying)
-        //    //{
-        //    //    _forceDrawTimer.Stop();
-        //    //}
-        //    //else {
-        //    //    _forceDrawTimer.Start();
-        //    //}
-        //    musicPlaybackService.PlayButton();
-        //    UpdatePlayPauseButtonIcon();
-        //    systemMediaControlsService.UpdateSystemMediaControlsState();
-        //}
-
-        //private void UpdatePlayPauseButtonIcon()
-        //{
-        //    DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        //if (AppSettings.isPlaying)
-        //        //{
-        //        //    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE769"; // 暂停图标
-        //        //}
-        //        //else
-        //        //{
-        //        //    ((FontIcon)PlayPauseButton.Content).Glyph = "\uE768"; // 播放图标
-        //        //}
-        //        if (mainWindow != null)
-        //        {
-        //            mainWindow.UpdateTaskbarIcon();
-        //            mainWindow.UpdateIconControl();
-        //        }
-        //    });
-        //}
-
-        //private void StopButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    //_forceDrawTimer.Stop();
-        //    musicPlaybackService.StopPlaying();
-        //    ViewModel.UpdatePlayPauseButtonIcon();
-        //    musicPlaybackService.Reset();
-        //    ViewModel.ProgressSlider = 0;   
-        //}        
+        }            
 
         private async void UpdatePlayBar(Music music)
         {
@@ -1277,56 +994,7 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        //private void VolumeSliderIconButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    isMuted = !isMuted;            
-        //    if (isMuted)
-        //    {
-        //        ViewModel.Volume =0;
-        //        musicPlaybackService.volume = 0;
-        //        //if (musicPlaybackService.wasapiOut != null)
-        //        //{
-        //        //    musicPlaybackService.wasapiOut.Volume = 0;
-        //        //}
-        //        if (musicPlaybackService.waveChannel != null)
-        //        {
-        //            musicPlaybackService.waveChannel.Volume = 0;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //VolumeIconChange((int)VolumeSlider.Value);                
-        //        ViewModel.Volume = (int)VolumeSlider.Value;
-        //        musicPlaybackService.volume = (float)VolumeSlider.Value / 100;
-        //        //if (musicPlaybackService.wasapiOut != null)
-        //        //{
-        //        //    musicPlaybackService.wasapiOut.Volume = (float)VolumeSlider.Value / 100;
-        //        //}
-        //        if (musicPlaybackService.waveChannel != null)
-        //        {
-        //            musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? ((float)VolumeSlider.Value / 100) * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : (float)VolumeSlider.Value / 100;
-        //        }
-        //    }
-        //}
-
-        //private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        //{
-        //    if (VisInitialized) {
-        //        musicPlaybackService.volume = (float)e.NewValue / 100;
-        //        //if (musicPlaybackService.wasapiOut != null)
-        //        //{
-        //        //    musicPlaybackService.wasapiOut.Volume = musicPlaybackService.volume;
-        //        //}
-        //        if (musicPlaybackService.waveChannel != null)
-        //        {
-        //            musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : musicPlaybackService.volume;
-        //        }
-        //        ViewModel.Volume = (int)e.NewValue;
-        //        //_ = musicPlaybackService.SavePlayState();
-        //    }
-        //}
-
+        
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             isMouseOverVolumeSlider = true;
@@ -1373,13 +1041,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void AdjustVolume(int delta)
-        //{
-        //    double newVolume = VolumeSlider.Value + delta;
-        //    newVolume = Math.Max(0, Math.Min(newVolume, 100));
-        //    VolumeSlider.Value = newVolume;
-        //}
-
         private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)
@@ -1412,45 +1073,6 @@ namespace WinUIMusicPlayer.View
                 musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
             }
         }
-
-        //private void ProgressSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        //{
-        //    if (isMouseOverProgressBar)
-        //    {
-        //        if (!musicPlaybackService.isUserDraggingProgressSlider && AppSettings.isPlaying)
-        //        {
-        //            double currentPlayPosition = 0;
-        //            if (musicPlaybackService.waveChannel != null)
-        //            {
-        //                currentPlayPosition = musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-        //                //if (AppSettings.isDsd)
-        //                //{
-        //                //    currentPlayPosition = musicPlaybackService.adapter.GetCurrentTime().TotalSeconds;
-        //                //}
-        //                if (Math.Abs(e.NewValue - currentPlayPosition) > 4.0)
-        //                {
-        //                    DateTime startTime = DateTime.Now;
-        //                    //if (AppSettings.isDsd)
-        //                    //{
-        //                    //    musicPlaybackService.adapter.SetCurrentTime(TimeSpan.FromSeconds(e.NewValue));
-        //                    //}
-        //                    //else {
-        //                        musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(e.NewValue);
-        //                    //}                                
-        //                    Debug.WriteLine($"ProgressSlider_ValueChanged完成,耗时:{(DateTime.Now - startTime).TotalMilliseconds}ms");
-        //                }
-        //            }
-        //            //else if (musicPlaybackService.ffmpegDecoder != null)
-        //            //{
-        //            //    currentPlayPosition = (double)musicPlaybackService.ffmpegDecoder.Position / musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond;
-        //            //    if (Math.Abs(e.NewValue - currentPlayPosition) > 2.0)
-        //            //    {
-        //            //        musicPlaybackService.ffmpegDecoder.Position = (long)(e.NewValue * musicPlaybackService.ffmpegDecoder.WaveFormat.BytesPerSecond);
-        //            //    }
-        //            //}
-        //        }
-        //    }
-        //}
 
         private async void AlbumCoverImage_Tapped(object sender, TappedRoutedEventArgs e)
         {
