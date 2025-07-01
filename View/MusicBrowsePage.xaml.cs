@@ -1025,7 +1025,6 @@ namespace WinUIMusicPlayer.View
                 if (ViewModel.CurrentPlayingMusic!=null && AlbumCoverImage!=null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
-                    ViewModel.MusicDetailCover = await GetImageFromMusic(ViewModel.CurrentPlayingMusic, 0);
                     TopPanel.Visibility = Visibility.Collapsed;
                     ContentFrame.Visibility = Visibility.Collapsed;
                     AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
