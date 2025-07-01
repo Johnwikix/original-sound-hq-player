@@ -166,6 +166,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
+                if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
+                    return;
+                }
                 MusicList.Clear();
                 foreach (var music in musics)
                 {
@@ -185,6 +188,33 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public bool CompareMusicCollections(ObservableCollection<Music> collection1, ObservableCollection<Music> collection2)
+        {
+            if (ReferenceEquals(collection1, collection2))
+                return true;
+
+            if (collection1 == null || collection2 == null)
+                return false;
+
+            if (collection1.Count != collection2.Count)
+                return false;
+
+            for (int i = 0; i < collection1.Count; i++)
+            {
+                Music item1 = collection1[i];
+                Music item2 = collection2[i];
+
+                if (item1 == null || item2 == null)
+                {
+                    if (item1 != item2)
+                        return false;
+                    continue;
+                }
+                if (item1.Path != item2.Path)
+                    return false;
+            }
+            return true;
+        }
         public void UpdateFavouriteMusic(Music music)
         {
             if (MusicList != null && MusicList.Count > 0)

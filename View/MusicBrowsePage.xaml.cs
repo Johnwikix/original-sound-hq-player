@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -7,13 +6,10 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -107,7 +103,6 @@ namespace WinUIMusicPlayer.View
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
-                //mainWindow.WindowClosed += MainWindow_Closed;
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
@@ -334,21 +329,6 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        //private async void LoadLyricsToUI()
-        //{
-        //    _lastLyricIndex = -1;
-        //    _uiLyrics.Clear();
-        //    // 设置播放服务中的歌词
-        //    await ViewModel._musicPlaybackService.SetLyrics();
-        //    // 解析歌词并添加到UI集合
-        //    List<LyricLine> parsedLyrics = ViewModel._musicPlaybackService._lyrics;
-        //    _uiLyrics.Clear();
-        //    foreach (var lyric in parsedLyrics)
-        //    {
-        //        _uiLyrics.Add(lyric);
-        //    }
-        //}
-
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -371,18 +351,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private async void MainWindow_Closed(object? sender, EventArgs e)
-        //{
-        //    await ClosePage();
-        //}
-
         public async Task ClosePage() {
             await ViewModel._musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
                 mainWindow.updateSelectSection -= MainWindow_updateSelectSection;
-                mainWindow.updateMusicList -= MainWindow_updateMusicList;
-                //mainWindow.WindowClosed -= MainWindow_Closed;                
+                mainWindow.updateMusicList -= MainWindow_updateMusicList;             
             }
         }
         private void InitializeAppWindow()
@@ -747,18 +721,6 @@ namespace WinUIMusicPlayer.View
             DisableBackButton();
         }
 
-        //private async Task LoadPlayState()
-        //{
-        //    ViewModel._musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-        //    ViewModel._musicPlaybackService.volume = AppData.Volume;        
-        //    ViewModel.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
-        //    if (ViewModel.CurrentPlayingMusic != null)
-        //    {
-        //        UpdatePlayBar(ViewModel.CurrentPlayingMusic);              
-        //        LoadLyricsToUI();
-        //    }
-        //    ViewModel._musicPlaybackService.isInitializing = false;
-        //}
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {
             ContentDialog contentDialog = new ContentDialog
@@ -842,41 +804,6 @@ namespace WinUIMusicPlayer.View
             }
 
         }
-
-        //private async void InitializeDatabase()
-        //{
-        //    try
-        //    {
-        //        ViewModel._musicPlaybackService.isInitializing = true;
-        //        await LoadPlayState();
-        //        ViewModel._musicPlaybackService.OutputDeviceChange();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-        //        notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-        //    }
-        //}            
-
-        //private async void UpdatePlayBar(Music music)
-        //{
-        //    BitmapImage DetailCover = await GetImageFromMusic(music, 0);
-        //    DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        ViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";                   
-        //        ViewModel.MusicDetailCover = DetailCover;
-        //    });            
-        //    systemMediaControlsService.UpdateSystemMediaControlsState();
-        //    await Task.Delay(300);
-        //    if (isInPlayingDetailMode)
-        //    {
-        //        _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
-        //    }
-        //    else
-        //    {
-        //        _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
-        //    }
-        //}
 
         public void UpdateSytemMediaControl(Music music)
         {
