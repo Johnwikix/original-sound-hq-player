@@ -138,8 +138,15 @@ namespace WinUIMusicPlayer
         /// <summary>
         public static async void Current_Exit()
         {
-            await _host.StopAsync();
-            Debug.WriteLine("桌面应用已退出");
+            try
+            {
+                await _host.StopAsync();
+                Debug.WriteLine("桌面应用已退出");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"退出应用时出错: {ex.Message}");
+            }
         }
     }
 }

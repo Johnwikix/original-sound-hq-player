@@ -624,4 +624,25 @@
   <data name="IconVolume.Text" xml:space="preserve">
     <value>音量</value>
   </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>Configuración de animación</value>
+  </data>
+  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+    <value>Hora de animación de entrada(ms)</value>
+  </data>
+  <data name="SlideAnimationTime.Text" xml:space="preserve">
+    <value>Tiempo de animación de diapositivas(ms)</value>
+  </data>
+  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+    <value>Taladro en tiempo de animación(ms)</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>Prioridad del proceso</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>Por encima de lo normal</value>
+  </data>
 </root>

@@ -624,4 +624,25 @@
   <data name="IconVolume.Text" xml:space="preserve">
     <value>Volume</value>
   </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>Animation Settings</value>
+  </data>
+  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+    <value>Entrance Animation Time(ms)</value>
+  </data>
+  <data name="SlideAnimationTime.Text" xml:space="preserve">
+    <value>Slide Animation Time(ms)</value>
+  </data>
+  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+    <value>Drill In Animation Time(ms)</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>Process Priority</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>Above Normal</value>
+  </data>
 </root>

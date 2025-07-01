@@ -107,7 +107,7 @@ namespace WinUIMusicPlayer.View
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
-                mainWindow.WindowClosed += MainWindow_Closed;
+                //mainWindow.WindowClosed += MainWindow_Closed;
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
@@ -371,16 +371,20 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MainWindow_Closed(object? sender, EventArgs e)
-        {
+        //private async void MainWindow_Closed(object? sender, EventArgs e)
+        //{
+        //    await ClosePage();
+        //}
+
+        public async Task ClosePage() {
             await ViewModel._musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
-                mainWindow.WindowClosed -= MainWindow_Closed;
+                mainWindow.updateSelectSection -= MainWindow_updateSelectSection;
                 mainWindow.updateMusicList -= MainWindow_updateMusicList;
+                //mainWindow.WindowClosed -= MainWindow_Closed;                
             }
         }
-
         private void InitializeAppWindow()
         {
             appWindow = ToolUtils.GetAppWindowForCurrentWindow(App.MainWindow);

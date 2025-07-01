@@ -858,6 +858,10 @@ namespace WinUIMusicPlayer.Services
                     AppSettings.isPlaying = true;
                     MusicBrowseViewModel.IsPlaying = true;
                     MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                    //_ = Task.Run(async () =>
+                    //{
+                    //    await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
+                    //});
                     //updatePlayPauseButton?.Invoke(this, "\uE769");
                 }
                 catch (Exception ex)

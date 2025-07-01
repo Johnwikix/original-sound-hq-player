@@ -624,4 +624,25 @@
   <data name="IconVolume.Text" xml:space="preserve">
     <value>Громкость</value>
   </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>Настройки анимации</value>
+  </data>
+  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+    <value>Входное время анимации(ms)</value>
+  </data>
+  <data name="SlideAnimationTime.Text" xml:space="preserve">
+    <value>Время анимации слайда(ms)</value>
+  </data>
+  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+    <value>Сверление во время анимации(ms)</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>Приоритет процесса</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>Нормально.</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>Выше нормального</value>
+  </data>
 </root>

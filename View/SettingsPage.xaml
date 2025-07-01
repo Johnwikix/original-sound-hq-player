@@ -37,6 +37,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>                
                 <TextBlock x:Uid="SettingAudio" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
                 <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True" x:Uid="SettingOutput" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
@@ -162,7 +164,7 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CloseSettings" Margin="10 0 10 10" x:Uid="CloseButtonFunction" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander x:Name="CloseSettings" Margin="10 0 10 0" x:Uid="CloseButtonFunction" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
@@ -177,7 +179,7 @@
                                         CommandParameter="Closed"
                                         Tag="Closed"
                                         GroupName="ClosedGroup"
-                                         IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                        IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
                                         Margin="0,5,0,5"/>
                                 <RadioButton x:Name="RunningBackendRadioButton" x:Uid="Backgrounder" 
                                         Tag="RunningBackend"
@@ -190,11 +192,39 @@
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock x:Uid="Appearance" FontSize="16" Grid.Row="7" Margin="10 10 0 0" />
+                <Expander x:Name="ProcessPriority" Margin="10 0 10 10" x:Uid="ProcessPriorityFunction" Grid.Row="7" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
+                                <RadioButton x:Name="ProcessNormalRadioButton" x:Uid="ProcessPriorityNormal" 
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand,Mode=OneWay}"
+                                    CommandParameter="Normal"
+                                    Tag="Normal"
+                                    GroupName="ProcessPriorityGroup"
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Margin="0,5,0,5"/>
+                                <RadioButton x:Name="ProcessAboveNormalRadioButton" x:Uid="ProcessPriorityAboveNormal" 
+                                    Tag="AboveNormal"
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand,Mode=OneWay}"
+                                    CommandParameter="AboveNormal"
+                                    GroupName="ProcessPriorityGroup"
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal,Mode=TwoWay}"
+                                    Margin="0,5,0,5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <TextBlock x:Uid="Appearance" FontSize="16" Grid.Row="8" Margin="10 10 0 0" />
                 <Expander x:Name="BackdropSettings" 
                         x:Uid="AppStyle" 
                         Margin="10 10 10 0"
-                        Grid.Row="8"
+                        Grid.Row="9"
                         HorizontalAlignment="Stretch" 
                         HorizontalContentAlignment="Stretch">
                     <Expander.Content>
@@ -234,7 +264,7 @@
                 <Expander x:Name="ThemeSettings" 
                         x:Uid="ThemeStyle" 
                         Margin="10 0 10 0"
-                        Grid.Row="9"
+                        Grid.Row="10"
                         HorizontalAlignment="Stretch" 
                         HorizontalContentAlignment="Stretch">
                     <Expander.Content>
@@ -268,6 +298,34 @@
                                     GroupName="ThemeGroup"
                                     Margin="0,5,0,5"/>
                             </StackPanel>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+                <Expander x:Name="AnimeSettings" 
+                        x:Uid="AnimationSettings" 
+                        Margin="10 0 10 0"
+                        Grid.Row="11"
+                        HorizontalAlignment="Stretch" 
+                        HorizontalContentAlignment="Stretch">
+                    <Expander.Content>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Uid="EntranceAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center"/>
+                            <NumberBox x:Name="EntranceAnimationTimeNumberBox" Value="{Binding ViewModel.EntranceAnimationTime,Mode=TwoWay}" Grid.Column="1" Grid.Row="0" Minimum="0" SmallChange="10" LargeChange="100" SpinButtonPlacementMode="Inline"  Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+
+                            <TextBlock x:Uid="SlideAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
+                            <NumberBox x:Name="SlideAnimationTimeNumberBox"  Grid.Column="1" Grid.Row="1" Margin="10" Width="300" Value="{Binding ViewModel.SlideAnimationTime,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+
+                            <TextBlock x:Uid="DrillInAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
+                            <NumberBox x:Name="DrillInAnimationTimeBox" Value="{Binding ViewModel.DrillInAnimationTime,Mode=TwoWay}"  Grid.Column="1" Grid.Row="2" Margin="10" Width="300" Minimum="0" SmallChange="10" LargeChange="100" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                         </Grid>
                     </Expander.Content>
                 </Expander>

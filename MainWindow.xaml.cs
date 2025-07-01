@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer
         //public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
-        public event EventHandler WindowClosed;
+        //public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         //public event EventHandler playLastSong;
@@ -71,16 +71,12 @@ namespace WinUIMusicPlayer
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
-            //if (AppNotifyIconControl != null)
-            //{
-                //AppNotifyIconControl.playLastSong += (s, e) => playLastSong?.Invoke(this, EventArgs.Empty);
-                //AppNotifyIconControl.playStop += (s, e) => playStop?.Invoke(this, EventArgs.Empty);
-                //AppNotifyIconControl.playNextSong += (s, e) => playNextSong?.Invoke(this, EventArgs.Empty);
-                //AppNotifyIconControl.playModeEvent += (s, e) => changePlayMode?.Invoke(this, e);
-            //}
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             WindowExtensions.Hide(this, enableEfficiencyMode: false);
             WindowExtensions.Show(this, disableEfficiencyMode: true);
+            if (AppSettings.IsProcessAboveNormal) {
+                PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+            }
             m_AppWindow.Closing += AppWindow_Closing;
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -159,23 +155,41 @@ namespace WinUIMusicPlayer
                 // 最小化到托盘
                 this.Hide();
                 PowerManagementHelper.DisableEfficiencyMode();
-                PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+                if (AppSettings.IsProcessAboveNormal)
+                {
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+                }
+                else {
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+                }                
             }
         }
 
 
-        private void MainWindow_Closed(object sender, WindowEventArgs args)
+        private async void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            System.Diagnostics.Debug.WriteLine("MainWindow closed.");
-            if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
+            try
             {
-                WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
+                
+                var tasks = new Task[] {
+                    App.Services.GetRequiredService<MusicBrowsePage>().ClosePage()
+                };
+                AppNotifyIconControl?.Dispose();            
+                System.Diagnostics.Debug.WriteLine("MainWindow closed 1");
+                if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
+                {
+                    WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
+                }
+                _taskbarHelper?.Dispose();
+                _taskbarHelper = null;
+                await Task.WhenAll(tasks);
+                System.Diagnostics.Debug.WriteLine("MainWindow closed 2");
+                App.Current_Exit();
+                System.Diagnostics.Debug.WriteLine("MainWindow closed 3");
             }
-            _taskbarHelper?.Dispose();
-            _taskbarHelper = null;
-            WindowClosed?.Invoke(this, EventArgs.Empty);
-            AppNotifyIconControl.ExitApplication();
-            App.Current_Exit();
+            catch (Exception e) {
+                Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
+            }                 
         }
 
         private async void InitializeApp()

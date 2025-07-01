@@ -624,4 +624,25 @@
   <data name="IconVolume.Text" xml:space="preserve">
     <value>Volumen</value>
   </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>アニメーション設定</value>
+  </data>
+  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+    <value>アニメーション時間(ms)</value>
+  </data>
+  <data name="SlideAnimationTime.Text" xml:space="preserve">
+    <value>スライドアニメーション時間(ms)</value>
+  </data>
+  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+    <value>アニメーション時間のドリル(ms)</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>プロセス優先順位</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>通常</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>通常の上に</value>
+  </data>
 </root>

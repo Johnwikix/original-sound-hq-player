@@ -624,4 +624,25 @@
   <data name="IconVolume.Text" xml:space="preserve">
     <value>音量</value>
   </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>动画设置</value>
+  </data>
+  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+    <value>入口动画时间（毫秒）</value>
+  </data>
+  <data name="SlideAnimationTime.Text" xml:space="preserve">
+    <value>滑动动画时间（毫秒）</value>
+  </data>
+  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+    <value>钻入动画时间（毫秒）</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>进程优先级</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>高于正常</value>
+  </data>
 </root>

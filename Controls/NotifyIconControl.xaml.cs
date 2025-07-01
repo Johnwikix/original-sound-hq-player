@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
@@ -18,7 +19,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Controls
 {
-    public sealed partial class NotifyIconControl : UserControl
+    public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl
     {
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public NotifyIconControl()
@@ -31,7 +32,6 @@ namespace WinUIMusicPlayer.Controls
         [RelayCommand]
         public void ExitApplication()
         {
-            NotifyIcon.Dispose();
             App.MainWindow?.Close();
         }
 
@@ -177,7 +177,7 @@ namespace WinUIMusicPlayer.Controls
                     WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
                 }
                 // 将窗口置于前台
-                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
+                WindowHelper.SetForegroundWindow(AppData.m_hWnd);                
             }
             else
             {
@@ -190,6 +190,9 @@ namespace WinUIMusicPlayer.Controls
                     window.Show();
                     window.InitializeTaskbarHelper();
                 }
+                if (AppSettings.IsProcessAboveNormal) {
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+                }                
             }
         }
 
@@ -201,6 +204,26 @@ namespace WinUIMusicPlayer.Controls
         private void VolumeDown_Click(object sender, RoutedEventArgs e)
         {
             MusicBrowseViewModel.AdjustVolume(-10);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (NotifyIcon != null)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        NotifyIcon.Dispose();
+                        NotifyIcon = null;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"NotifyIcon dispose error: {ex}");
+                NotifyIcon = null;
+            }
         }
     }
 }

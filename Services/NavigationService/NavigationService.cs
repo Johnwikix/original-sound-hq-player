@@ -40,6 +40,16 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
         public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300)
         {
+            // 检查是否为相同页面类型，避免重复导航动画
+            if (ContentFrame?.Content?.GetType() == pageType)
+            {
+                // 如果是相同页面但有导航参数，仍然需要传递参数
+                if (ContentFrame.Content is INavigatable navigatablePage && parameter != null)
+                {
+                    navigatablePage.ReceiveNavigationParameter(parameter);
+                }
+                return; // 直接返回，不执行动画
+            }
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;

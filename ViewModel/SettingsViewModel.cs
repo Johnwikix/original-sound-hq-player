@@ -38,7 +38,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.dsdGain = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -52,7 +55,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.isAutoLyricsEnabled = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -63,6 +69,14 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isRunningBackend;
             set => SetProperty(ref _isRunningBackend, value);
         }
+
+        private bool _isProcessAboveNormal = false;
+        public bool IsProcessAboveNormal
+        {
+            get => _isProcessAboveNormal;
+            set => SetProperty(ref _isProcessAboveNormal, value);
+        }
+
         private int _latency = 300;
         public int Latency
         {
@@ -73,7 +87,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.Latency = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -87,7 +104,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.maxCoverPreLoadNum = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -101,7 +121,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.isCoverCacheEnabled = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -130,7 +153,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.DefualtPlayList = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -145,7 +171,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.LrcAPIAuth = value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -159,7 +188,10 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.LrcAPISource = string.IsNullOrEmpty(value) ? "https://api.lrc.cx" : value;
                     // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -174,9 +206,9 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     // 更新应用设置
                     AppSettings.OutputMode = value;
-                    // 保存设置
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    // 保存设置                   
                     if (_isInitized) {
+                        _ = MusicDatabaseService.SaveSettingAsync();
                         AppSettings.OnOutputSettingsChanged();
                     }                    
                 }
@@ -206,11 +238,11 @@ namespace WinUIMusicPlayer.ViewModel
                         Debug.WriteLine($"DeviceName changed to: {value}");
                         // 更新应用设置
                         AppSettings.DeviceName = value;
-                        // 保存设置
-                        _ = MusicDatabaseService.SaveSettingAsync();
+                        // 保存设置                        
                         if (IsRealDevceChange)
                         {
                             if (_isInitized) {
+                                _ = MusicDatabaseService.SaveSettingAsync();
                                 AppSettings.OnOutputSettingsChanged();
                             }
                         }
@@ -233,7 +265,10 @@ namespace WinUIMusicPlayer.ViewModel
                     Debug.WriteLine($"BackdropType changed to: {value}");
                     // 保存设置
                     AppSettings.AppStyle = value;
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -250,7 +285,58 @@ namespace WinUIMusicPlayer.ViewModel
                     Debug.WriteLine($"ThemeType changed to: {value}");
                     // 保存设置
                     AppSettings.AppTheme = value;
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private int _entranceAnimationTime;
+        public int EntranceAnimationTime
+        {
+            get => _entranceAnimationTime;
+            set
+            {
+                if (SetProperty(ref _entranceAnimationTime, value))
+                {
+                    AppSettings.EntranceAnimationTime = value;
+                    if (_isInitized) {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }                    
+                }
+            }
+        }
+        private int _slideAnimationTime;
+        public int SlideAnimationTime
+        {
+            get => _slideAnimationTime;
+            set
+            {
+                if (SetProperty(ref _slideAnimationTime, value))
+                {
+                    AppSettings.SlideAnimationTime = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+        private int _drillInAnimationTime;
+        public int DrillInAnimationTime
+        {
+            get => _drillInAnimationTime;
+            set
+            {
+                if (SetProperty(ref _drillInAnimationTime, value))
+                {
+                    AppSettings.DrillInAnimationTime = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
                 }
             }
         }
@@ -297,6 +383,14 @@ namespace WinUIMusicPlayer.ViewModel
             BackdropType = AppSettings.AppStyle;
             // 初始化主题类型
             ThemeType = AppSettings.AppTheme;
+            // 初始化入口动画时间
+            EntranceAnimationTime = AppSettings.EntranceAnimationTime;
+            // 初始化滑动动画时间
+            SlideAnimationTime = AppSettings.SlideAnimationTime;
+            // 初始化钻入动画时间
+            DrillInAnimationTime = AppSettings.DrillInAnimationTime;
+            // 初始化进程优先级
+            IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             _isInitized = true;
         }
         [RelayCommand]
@@ -375,6 +469,22 @@ namespace WinUIMusicPlayer.ViewModel
 
                 case "RunningBackend":
                     AppSettings.isRunningBackend = true;
+                    break;
+            }
+            _ = MusicDatabaseService.SaveSettingAsync();
+        }
+
+        [RelayCommand]
+        private void OnProcessPriorityChanged(string parameter)
+        {
+            switch (parameter)
+            {
+                case "Normal":
+                    AppSettings.IsProcessAboveNormal = false;
+                    break;
+
+                case "AboveNormal":
+                    AppSettings.IsProcessAboveNormal = true;
                     break;
             }
             _ = MusicDatabaseService.SaveSettingAsync();

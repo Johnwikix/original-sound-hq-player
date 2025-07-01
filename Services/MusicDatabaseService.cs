@@ -6,6 +6,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
@@ -664,6 +665,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
+                AppSettings.IsProcessAboveNormal = settings.IsProcessAboveNormal;
             }
         }
 
@@ -692,6 +694,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
+            newSettings.IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -775,34 +778,40 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
         {
-            await _dbConnection.DeleteAllAsync<LastPlayListState>();
-            var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
+            try
+            {
+                await _dbConnection.DeleteAllAsync<LastPlayListState>();
+                var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
 
-            var playListState = new LastPlayListState
-            {
-                PlayListMusicIds = musicIds
-            };
-            _ = _dbConnection.InsertAsync(playListState);
-            var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
-            if (playState == null)
-            {
-                playState = new SavePlayState
+                var playListState = new LastPlayListState
                 {
-                    Id = 1
+                    PlayListMusicIds = musicIds
                 };
+                _ = _dbConnection.InsertAsync(playListState);
+                var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
+                if (playState == null)
+                {
+                    playState = new SavePlayState
+                    {
+                        Id = 1
+                    };
+                }
+                playState.PlayMode = currentPlayMode;
+                playState.LastPlayedMusicId = currentPlayingMusicId;
+                playState.Volume = volume;
+                if (playState.Id == 0)
+                {
+                    _ = _dbConnection.InsertAsync(playState);
+                }
+                else
+                {
+                    _ = _dbConnection.UpdateAsync(playState);
+                }
             }
-            playState.PlayMode = currentPlayMode;
-            playState.LastPlayedMusicId = currentPlayingMusicId;
-            playState.Volume = volume;
-            if (playState.Id == 0)
-            {
-                _ = _dbConnection.InsertAsync(playState);
+            catch (Exception ex) { 
+                Debug.WriteLine($"保存播放状态时出错: {ex.Message}");
             }
-            else
-            {
-                _ = _dbConnection.UpdateAsync(playState);
-            }
-        }
+        } 
 
         public static async Task<List<Music>> GetMusicListByFolder(StorageFolder folder)
         {

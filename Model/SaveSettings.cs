@@ -29,5 +29,6 @@ namespace WinUIMusicPlayer.Model
         public int EntranceAnimationTime { get; set; } = 200;
         public int SlideAnimationTime { get; set; } = 300;
         public int DrillInAnimationTime { get; set; } = 400;
+        public bool IsProcessAboveNormal { get; set; } = false;
     }
 }
