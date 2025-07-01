@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -481,10 +482,12 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 case "Normal":
                     AppSettings.IsProcessAboveNormal = false;
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
                     break;
 
                 case "AboveNormal":
                     AppSettings.IsProcessAboveNormal = true;
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                     break;
             }
             _ = MusicDatabaseService.SaveSettingAsync();
