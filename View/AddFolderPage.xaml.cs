@@ -37,9 +37,9 @@ namespace WinUIMusicPlayer.View
         private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         { 
             var button = sender as Button;
-            if (button != null && button.Tag is int folderId)
+            if (button != null && button.Tag is string folderPath)
             {
-                ViewModel.OpenFolderButton_Click(folderId);
+                ViewModel.OpenFolderButton_Click(folderPath);
             }
         }
 

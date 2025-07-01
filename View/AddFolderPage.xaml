@@ -41,7 +41,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="OpenFolderButton" Tag="{x:Bind Id}" Click="OpenFolderButton_Click" Grid.Column="0" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
+                            <Button x:Name="OpenFolderButton" Tag="{x:Bind Path}" Click="OpenFolderButton_Click" Grid.Column="0" Margin="10" BorderThickness="0" BorderBrush="Transparent" Background="Transparent" >
                                 <FontIcon Glyph="&#xe838;"/>
                             </Button>
                             <StackPanel Orientation="Vertical" Grid.Column="1" Margin="10">

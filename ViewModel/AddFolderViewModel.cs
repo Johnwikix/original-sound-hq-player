@@ -50,18 +50,14 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void OpenFolderButton_Click(int folderId)
+        public async void OpenFolderButton_Click(string folderPath)
         {
-            var folderToOpen = await MusicDatabaseService.GetFolder(folderId);
-            if (folderToOpen != null)
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            var options = new FolderLauncherOptions
             {
-                var folder = await StorageFolder.GetFolderFromPathAsync(folderToOpen.Path);
-                var options = new FolderLauncherOptions
-                {
-                    DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-                };
-                await Launcher.LaunchFolderAsync(folder, options);
-            }
+                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
+            };
+            await Launcher.LaunchFolderAsync(folder, options);
         }
 
         public async Task AddFolderButton_Click()
