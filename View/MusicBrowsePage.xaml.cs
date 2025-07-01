@@ -558,39 +558,46 @@ namespace WinUIMusicPlayer.View
         {
             typingTimer.Stop();
 
-            // ∑¿÷π÷ÿ»Î
-            if (isSearching)
-            {
-                return;
-            }
-
-            var currentText = SearchTextBox.Text;
-
-            // ∑¿÷π÷ÿ∏¥À—À˜
-            if (currentText == lastSearchText)
-            {
-                return;
-            }
-
-            isSearching = true;
-            lastSearchText = currentText;
-
-            try
-            {
-                AppData.searchText = currentText;
-                if (ContentFrame?.Content != null)
+            try {
+                DispatcherQueue.TryEnqueue(() =>
                 {
-                    refreshPage?.Invoke(this, EventArgs.Empty);
-                    refreshSong?.Invoke(this, EventArgs.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
-            }
-            finally
-            {
-                isSearching = false;
+                    // ∑¿÷π÷ÿ»Î
+                    if (isSearching)
+                    {
+                        return;
+                    }
+
+                    var currentText = SearchTextBox.Text;
+
+                    // ∑¿÷π÷ÿ∏¥À—À˜
+                    if (currentText == lastSearchText)
+                    {
+                        return;
+                    }
+
+                    isSearching = true;
+                    lastSearchText = currentText;
+
+                    try
+                    {
+                        AppData.searchText = currentText;
+                        if (ContentFrame?.Content != null)
+                        {
+                            refreshPage?.Invoke(this, EventArgs.Empty);
+                            refreshSong?.Invoke(this, EventArgs.Empty);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
+                    }
+                    finally
+                    {
+                        isSearching = false;
+                    }
+                });
+            } catch (Exception ex) {
+                Debug.WriteLine($"À—À˜¥¶¿Ì“Ï≥£: {ex.Message}");
             }
         }
 
