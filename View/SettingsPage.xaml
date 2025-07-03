@@ -1,335 +1,654 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.SettingsPage"
-    NavigationCacheMode="Enabled"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:WinUIMusicPlayer.View"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
-    >
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:WinUIMusicPlayer.View"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
+    mc:Ignorable="d">
 
     <Page.Resources>
-        <converters:BooleanNegationConverter  x:Key="BooleanNegationConverter"/>
-        <converters:RadioButtonTagToBoolConverter x:Key="RadioTagConverter"/>
+        <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+        <converters:RadioButtonTagToBoolConverter x:Key="RadioTagConverter" />
     </Page.Resources>
-    <Grid Margin="0 32 0 32">
+    <Grid Margin="0,32,0,32">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Margin="32 0 32 0" Grid.Row="0">
-            <TextBlock x:Uid="Settings" FontSize="28" Margin="10 20 0 20" />
+        <Grid Grid.Row="0" Margin="32,0,32,0">
+            <TextBlock x:Uid="Settings" Margin="10,20,0,20" FontSize="28" />
         </Grid>
         <ScrollView Grid.Row="1">
-            <Grid Margin="32 0 32 0" >
+            <Grid Margin="32,0,32,0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>                
-                <TextBlock x:Uid="SettingAudio" FontSize="16" Grid.Row="1" Margin="10 20 0 0" />
-                <Expander x:Name="AudioSettings" Margin="10 10 10 10" IsExpanded="True" x:Uid="SettingOutput" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="2" >
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    x:Uid="SettingAudio"
+                    Grid.Row="1"
+                    Margin="10,20,0,0"
+                    FontSize="16" />
+                <Expander
+                    x:Name="AudioSettings"
+                    x:Uid="SettingOutput"
+                    Grid.Row="2"
+                    Margin="10,10,10,10"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    IsExpanded="True">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Uid="SettingOutputMode" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="OutputModeComboBox" SelectedValue="{Binding ViewModel.OutputModeTag, Mode=TwoWay}" SelectedValuePath="Tag" Grid.Column="1" Grid.Row="0" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush"/>
-                                <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent"/>
-                                <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared"/>
-                                <ComboBoxItem x:Uid="WaveOut" Tag="WaveOut"/>
-                                <ComboBoxItem x:Uid="DirectSound" Tag="DirectSound"/>
+                            <TextBlock
+                                x:Uid="SettingOutputMode"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                x:Name="OutputModeComboBox"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                SelectedValue="{Binding ViewModel.OutputModeTag, Mode=TwoWay}"
+                                SelectedValuePath="Tag">
+                                <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush" />
+                                <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent" />
+                                <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared" />
+                                <ComboBoxItem x:Uid="WaveOut" Tag="WaveOut" />
+                                <ComboBoxItem x:Uid="DirectSound" Tag="DirectSound" />
                             </ComboBox>
 
-                            <!-- 输出设备选择 -->
-                            <TextBlock x:Uid="SettingOutputDevice" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
-                            <ComboBox x:Name="OutputDeviceComboBox" SelectedItem="{Binding ViewModel.DeviceName, Mode=TwoWay}" ItemsSource="{Binding ViewModel.OutputDevices,Mode=OneWay}"  Grid.Column="1" Grid.Row="1" Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <!--  输出设备选择  -->
+                            <TextBlock
+                                x:Uid="SettingOutputDevice"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                x:Name="OutputDeviceComboBox"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                ItemsSource="{Binding ViewModel.OutputDevices, Mode=OneWay}"
+                                SelectedItem="{Binding ViewModel.DeviceName, Mode=TwoWay}" />
 
-                            <!-- 缓冲区大小输入 -->
-                            <TextBlock x:Uid="SettingBufferSize" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="LatencyNumberBox"  Grid.Column="1" Grid.Row="2" Margin="10" Width="300" Value="{Binding ViewModel.Latency,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <!--  缓冲区大小输入  -->
+                            <TextBlock
+                                x:Uid="SettingBufferSize"
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="LatencyNumberBox"
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                LargeChange="100"
+                                Minimum="0"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.Latency, Mode=TwoWay}" />
 
-                            <!-- DSD增益设置 -->
-                            <TextBlock x:Uid="SettingDSDGain" FontSize="14"  Grid.Column="0" Grid.Row="3" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="DSDGainNumberBox" Value="{Binding ViewModel.DsdGain,Mode=TwoWay}"  Grid.Column="1" Grid.Row="3" Margin="10" Width="300" Minimum="0" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <!--  DSD增益设置  -->
+                            <TextBlock
+                                x:Uid="SettingDSDGain"
+                                Grid.Row="3"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="DSDGainNumberBox"
+                                Grid.Row="3"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Minimum="0"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.DsdGain, Mode=TwoWay}" />
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock x:Uid="SettingFunction" FontSize="16" Grid.Row="3" Margin="10 10 0 0" />
-                <Expander x:Name="UiSettings" Margin="10 10 10 0" x:Uid="SettingInterface" Grid.Row="4" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <TextBlock
+                    x:Uid="SettingFunction"
+                    Grid.Row="3"
+                    Margin="10,10,0,0"
+                    FontSize="16" />
+                <Expander
+                    x:Name="UiSettings"
+                    x:Uid="SettingInterface"
+                    Grid.Row="4"
+                    Margin="10,10,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Uid="DefaultEntryInterface" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="DefaultEntryComboBox" Grid.Column="1" Grid.Row="0" SelectedValue="{Binding ViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}" SelectedValuePath="Tag" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder"/>
-                                <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse"/>
+                            <TextBlock
+                                x:Uid="DefaultEntryInterface"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                x:Name="DefaultEntryComboBox"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                SelectedValue="{Binding ViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
+                                SelectedValuePath="Tag">
+                                <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
+                                <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
                             </ComboBox>
-                            <TextBlock x:Uid="DefaultMusicEntryInterface" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center" />
-                            <ComboBox x:Name="DefualtPlayListComboBox" SelectedValue="{Binding ViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}" SelectedValuePath="Tag" Grid.Column="1" Grid.Row="1" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <ComboBoxItem x:Uid="SongCombox" Tag="song"/>
-                                <ComboBoxItem x:Uid="AlbumCombox" Tag="album"/>
-                                <ComboBoxItem x:Uid="ArtistCombox" Tag="artist"/>
-                                <ComboBoxItem x:Uid="FolderCombox" Tag="folder"/>
-                                <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite"/>
-                                <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList"/>
+                            <TextBlock
+                                x:Uid="DefaultMusicEntryInterface"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                x:Name="DefualtPlayListComboBox"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                SelectedValue="{Binding ViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
+                                SelectedValuePath="Tag">
+                                <ComboBoxItem x:Uid="SongCombox" Tag="song" />
+                                <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
+                                <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
+                                <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
+                                <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
+                                <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList" />
                             </ComboBox>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CoverSettings" Margin="10 0 10 0" x:Uid="SettingCoverLyrics" Grid.Row="5" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander
+                    x:Name="CoverSettings"
+                    x:Uid="SettingCoverLyrics"
+                    Grid.Row="5"
+                    Margin="10,0,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
-                                <TextBlock x:Uid="CoverServiceLrcAPISource" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center" Tapped="ToolTip_Tapped">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock
+                                    x:Uid="CoverServiceLrcAPISource"
+                                    Margin="10"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <FontIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Glyph="&#xE897;"
+                                    Tapped="ToolTip_Tapped">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="CoverServiceLrcAPISourceDoc" VerticalOffset="10"/>
+                                        <ToolTip x:Uid="CoverServiceLrcAPISourceDoc" VerticalOffset="10" />
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>
-                            <TextBox x:Name="LrcAPITextBox" Text="{Binding ViewModel.LrcAPISource,Mode=TwoWay}" Grid.Column="1" Grid.Row="0" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <TextBlock x:Uid="CoverServiceLrcAPISourceAuthCode"  Grid.Column="0" Grid.Row="1" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                            <TextBox x:Name="LrcAPIAuthTextBox" Text="{Binding ViewModel.LrcAPIAuth,Mode=TwoWay}"  Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Width="300" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal">
-                                <TextBlock x:Uid="CoverCache"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
+                            <TextBox
+                                x:Name="LrcAPITextBox"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{Binding ViewModel.LrcAPISource, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Uid="CoverServiceLrcAPISourceAuthCode"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <TextBox
+                                x:Name="LrcAPIAuthTextBox"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{Binding ViewModel.LrcAPIAuth, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+                            <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock
+                                    x:Uid="CoverCache"
+                                    Margin="10"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
                                 <!--<FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="开启后根据专辑封面数量内存占用会有一定上升" VerticalOffset="10"/>
                                     </ToolTipService.ToolTip>
                                 </FontIcon>-->
                             </StackPanel>
-                            <ToggleSwitch FlowDirection="RightToLeft" IsOn="{Binding ViewModel.IsCoverCacheEnabled,Mode=TwoWay}"  Grid.Column="1" Grid.Row="3" x:Name="CoverCacheToggle" HorizontalAlignment="Right" Margin="10"/>
-                            <TextBlock x:Uid="MaximumNumberOfPreLoadedCovers"  Grid.Column="0" Grid.Row="2" FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="MaxCoverPreLoadNumberBox" Grid.Column="1" Grid.Row="2" Value="{Binding ViewModel.MaxCoverPreLoadNum,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
-                            <StackPanel Grid.Column="0" Grid.Row="4" Orientation="Horizontal">
-                                <TextBlock x:Uid="CoverSize"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
+                            <ToggleSwitch
+                                x:Name="CoverCacheToggle"
+                                Grid.Row="3"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                FlowDirection="RightToLeft"
+                                IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
+                            <TextBlock
+                                x:Uid="MaximumNumberOfPreLoadedCovers"
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="MaxCoverPreLoadNumberBox"
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.MaxCoverPreLoadNum, Mode=TwoWay}" />
+                            <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock
+                                    x:Uid="CoverSize"
+                                    Margin="10"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <FontIcon VerticalAlignment="Center" FontSize="14" Glyph="&#xE897;">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="CoverSizeToolTip" VerticalOffset="10"/>
+                                        <ToolTip x:Uid="CoverSizeToolTip" VerticalOffset="10" />
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>
-                            <NumberBox x:Name="CoverSize" Value="{Binding ViewModel.CoverSize, Mode=TwoWay}" Grid.Column="1" Grid.Row="4" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="1" LargeChange="10" Width="300" HorizontalAlignment="Right" Margin="10"/>
-                            <StackPanel Grid.Column="0" Grid.Row="5" Orientation="Horizontal">
-                                <TextBlock x:Uid="AutoLyricMatching"  FontSize="14" Margin="10" VerticalAlignment="Center"/>
-                                <FontIcon FontSize="14" Glyph="&#xE897;" VerticalAlignment="Center">
+                            <NumberBox
+                                x:Name="CoverSize"
+                                Grid.Row="4"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.CoverSize, Mode=TwoWay}" />
+                            <StackPanel Grid.Row="5" Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock
+                                    x:Uid="AutoLyricMatching"
+                                    Margin="10"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <FontIcon VerticalAlignment="Center" FontSize="14" Glyph="&#xE897;">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="NeedConfigureLrcAPIService" VerticalOffset="10"/>
+                                        <ToolTip x:Uid="NeedConfigureLrcAPIService" VerticalOffset="10" />
                                     </ToolTipService.ToolTip>
                                 </FontIcon>
                             </StackPanel>
-                            <ToggleSwitch FlowDirection="RightToLeft" IsOn="{Binding ViewModel.IsAutoLyricsEnabled,Mode=TwoWay}"  Grid.Column="1" Grid.Row="5" x:Name="AutoLyricsToggle" HorizontalAlignment="Right" Margin="10"/>
+                            <ToggleSwitch
+                                x:Name="AutoLyricsToggle"
+                                Grid.Row="5"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                FlowDirection="RightToLeft"
+                                IsOn="{Binding ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="CloseSettings" Margin="10 0 10 0" x:Uid="CloseButtonFunction" Grid.Row="6" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander
+                    x:Name="CloseSettings"
+                    x:Uid="CloseButtonFunction"
+                    Grid.Row="6"
+                    Margin="10,0,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="CloseAppRadioButton" x:Uid="CloseApp" 
-                                        Command="{Binding ViewModel.BackgroundRunningChangedCommand,Mode=OneWay}"
-                                        CommandParameter="Closed"
-                                        Tag="Closed"
-                                        GroupName="ClosedGroup"
-                                        IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
-                                        Margin="0,5,0,5"/>
-                                <RadioButton x:Name="RunningBackendRadioButton" x:Uid="Backgrounder" 
-                                        Tag="RunningBackend"
-                                        Command="{Binding ViewModel.BackgroundRunningChangedCommand,Mode=OneWay}"
-                                        CommandParameter="RunningBackend"
-                                        GroupName="ClosedGroup"
-                                        IsChecked="{Binding ViewModel.IsRunningBackend,Mode=TwoWay}"
-                                        Margin="0,5,0,5"/>
+                            <StackPanel
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                                <RadioButton
+                                    x:Name="CloseAppRadioButton"
+                                    x:Uid="CloseApp"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Closed"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Tag="Closed" />
+                                <RadioButton
+                                    x:Name="RunningBackendRadioButton"
+                                    x:Uid="Backgrounder"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
+                                    CommandParameter="RunningBackend"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay}"
+                                    Tag="RunningBackend" />
                             </StackPanel>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="ProcessPriority" Margin="10 0 10 10" x:Uid="ProcessPriorityFunction" Grid.Row="7" HorizontalContentAlignment="Stretch"  HorizontalAlignment="Stretch">
+                <Expander
+                    x:Name="ProcessPriority"
+                    x:Uid="ProcessPriorityFunction"
+                    Grid.Row="7"
+                    Margin="10,0,10,10"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="ProcessNormalRadioButton" x:Uid="ProcessPriorityNormal" 
-                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand,Mode=OneWay}"
+                            <StackPanel
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                                <RadioButton
+                                    x:Name="ProcessNormalRadioButton"
+                                    x:Uid="ProcessPriorityNormal"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
                                     CommandParameter="Normal"
-                                    Tag="Normal"
                                     GroupName="ProcessPriorityGroup"
-                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal,Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
-                                    Margin="0,5,0,5"/>
-                                <RadioButton x:Name="ProcessAboveNormalRadioButton" x:Uid="ProcessPriorityAboveNormal" 
-                                    Tag="AboveNormal"
-                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand,Mode=OneWay}"
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Tag="Normal" />
+                                <RadioButton
+                                    x:Name="ProcessAboveNormalRadioButton"
+                                    x:Uid="ProcessPriorityAboveNormal"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
                                     CommandParameter="AboveNormal"
                                     GroupName="ProcessPriorityGroup"
-                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal,Mode=TwoWay}"
-                                    Margin="0,5,0,5"/>
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay}"
+                                    Tag="AboveNormal" />
                             </StackPanel>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <TextBlock x:Uid="Appearance" FontSize="16" Grid.Row="8" Margin="10 10 0 0" />
-                <Expander x:Name="BackdropSettings" 
-                        x:Uid="AppStyle" 
-                        Margin="10 10 10 0"
-                        Grid.Row="9"
-                        HorizontalAlignment="Stretch" 
-                        HorizontalContentAlignment="Stretch">
+                <TextBlock
+                    x:Uid="Appearance"
+                    Grid.Row="8"
+                    Margin="10,10,0,0"
+                    FontSize="16" />
+                <Expander
+                    x:Name="BackdropSettings"
+                    x:Uid="AppStyle"
+                    Grid.Row="9"
+                    Margin="10,10,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="MicaRadioButton" x:Uid="MicaStyle" 
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Mica}"
-                                    Tag="Mica" 
-                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                            <StackPanel
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                                <RadioButton
+                                    x:Name="MicaRadioButton"
+                                    x:Uid="MicaStyle"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Mica"
                                     GroupName="BackdropGroup"
-                                    Margin="0,5,0,5"/>
-                                <RadioButton x:Name="AcrylicRadioButton" x:Uid="AcrylicStyle" 
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Acrylic}" 
-                                    Tag="Acrylic"
-                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Mica}"
+                                    Tag="Mica" />
+                                <RadioButton
+                                    x:Name="AcrylicRadioButton"
+                                    x:Uid="AcrylicStyle"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Acrylic"
                                     GroupName="BackdropGroup"
-                                    Margin="0,5,0,5"/>
-                                <RadioButton x:Name="TransparentAcrylicRadioButton" x:Uid="TransparentAcrylicStyle" 
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=TransparentAcrylic}" 
-                                    Tag="TransparentAcrylic"
-                                    Command="{Binding ViewModel.BackdropTypeChangedCommand,Mode=OneWay}"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Acrylic}"
+                                    Tag="Acrylic" />
+                                <RadioButton
+                                    x:Name="TransparentAcrylicRadioButton"
+                                    x:Uid="TransparentAcrylicStyle"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="TransparentAcrylic"
                                     GroupName="BackdropGroup"
-                                    Margin="0,5,0,5"/>                                
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=TransparentAcrylic}"
+                                    Tag="TransparentAcrylic" />
                             </StackPanel>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="ThemeSettings" 
-                        x:Uid="ThemeStyle" 
-                        Margin="10 0 10 0"
-                        Grid.Row="10"
-                        HorizontalAlignment="Stretch" 
-                        HorizontalContentAlignment="Stretch">
+                <Expander
+                    x:Name="ThemeSettings"
+                    x:Uid="ThemeStyle"
+                    Grid.Row="10"
+                    Margin="10,0,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-                                <RadioButton x:Name="DefaultRadioButton" x:Uid="SystemDefaultTheme" 
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Default}"
-                                    Tag="Default"
-                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                            <StackPanel
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="10"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                                <RadioButton
+                                    x:Name="DefaultRadioButton"
+                                    x:Uid="SystemDefaultTheme"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Default"
                                     GroupName="ThemeGroup"
-                                    Margin="0,5,0,5"/>
-                                <RadioButton x:Name="DarkRadioButton" x:Uid="Dark" 
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Dark}"
-                                    Tag="Dark"
-                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Default}"
+                                    Tag="Default" />
+                                <RadioButton
+                                    x:Name="DarkRadioButton"
+                                    x:Uid="Dark"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Dark"
                                     GroupName="ThemeGroup"
-                                    Margin="0,5,0,5"/>
-                                <RadioButton x:Name="LightRadioButton" x:Uid="Light" 
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Light}"
-                                    Tag="Light"
-                                    Command="{Binding ViewModel.ThemeTypeChangedCommand,Mode=OneWay}"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Dark}"
+                                    Tag="Dark" />
+                                <RadioButton
+                                    x:Name="LightRadioButton"
+                                    x:Uid="Light"
+                                    Margin="0,5,0,5"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Light"
                                     GroupName="ThemeGroup"
-                                    Margin="0,5,0,5"/>
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Light}"
+                                    Tag="Light" />
                             </StackPanel>
                         </Grid>
                     </Expander.Content>
                 </Expander>
-                <Expander x:Name="AnimeSettings" 
-                        x:Uid="AnimationSettings" 
-                        Margin="10 0 10 0"
-                        Grid.Row="11"
-                        HorizontalAlignment="Stretch" 
-                        HorizontalContentAlignment="Stretch">
+                <Expander
+                    x:Name="AnimeSettings"
+                    x:Uid="AnimationSettings"
+                    Grid.Row="11"
+                    Margin="10,0,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
                     <Expander.Content>
                         <Grid HorizontalAlignment="Stretch">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Uid="EntranceAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="0" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="EntranceAnimationTimeNumberBox" Value="{Binding ViewModel.EntranceAnimationTime,Mode=TwoWay}" Grid.Column="1" Grid.Row="0" Minimum="0" SmallChange="10" LargeChange="100" SpinButtonPlacementMode="Inline"  Margin="10" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBlock
+                                x:Uid="EntranceAnimationTime"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="EntranceAnimationTimeNumberBox"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                LargeChange="100"
+                                Minimum="0"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.EntranceAnimationTime, Mode=TwoWay}" />
 
-                            <TextBlock x:Uid="SlideAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="1" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="SlideAnimationTimeNumberBox"  Grid.Column="1" Grid.Row="1" Margin="10" Width="300" Value="{Binding ViewModel.SlideAnimationTime,Mode=TwoWay}" Minimum="0" SpinButtonPlacementMode="Inline" SmallChange="10" LargeChange="100" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBlock
+                                x:Uid="SlideAnimationTime"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="SlideAnimationTimeNumberBox"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                LargeChange="100"
+                                Minimum="0"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.SlideAnimationTime, Mode=TwoWay}" />
 
-                            <TextBlock x:Uid="DrillInAnimationTime" FontSize="14"  Grid.Column="0" Grid.Row="2" Margin="10" VerticalAlignment="Center"/>
-                            <NumberBox x:Name="DrillInAnimationTimeBox" Value="{Binding ViewModel.DrillInAnimationTime,Mode=TwoWay}"  Grid.Column="1" Grid.Row="2" Margin="10" Width="300" Minimum="0" SmallChange="10" LargeChange="100" SpinButtonPlacementMode="Inline" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBlock
+                                x:Uid="DrillInAnimationTime"
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="DrillInAnimationTimeBox"
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Width="300"
+                                Margin="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                LargeChange="100"
+                                Minimum="0"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.DrillInAnimationTime, Mode=TwoWay}" />
                         </Grid>
                     </Expander.Content>
                 </Expander>
             </Grid>
         </ScrollView>
-    </Grid>    
+    </Grid>
 </Page>
