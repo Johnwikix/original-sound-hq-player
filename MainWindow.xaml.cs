@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer
         //public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
-        //public event EventHandler WindowClosed;
+        public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         //public event EventHandler playLastSong;
@@ -175,17 +175,15 @@ namespace WinUIMusicPlayer
                     App.Services.GetRequiredService<MusicBrowsePage>().ClosePage()
                 };
                 AppNotifyIconControl?.Dispose();            
-                System.Diagnostics.Debug.WriteLine("MainWindow closed 1");
                 if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
                 {
                     WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
                 }
                 _taskbarHelper?.Dispose();
-                _taskbarHelper = null;
+                _taskbarHelper = null;                
                 await Task.WhenAll(tasks);
-                System.Diagnostics.Debug.WriteLine("MainWindow closed 2");
+                WindowClosed?.Invoke(this, EventArgs.Empty);
                 App.Current_Exit();
-                System.Diagnostics.Debug.WriteLine("MainWindow closed 3");
             }
             catch (Exception e) {
                 Debug.WriteLine($"MainWindow ¹Ø±ÕÊ±³ö´í: {e.Message}");

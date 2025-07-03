@@ -58,6 +58,10 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 mainWindow.themeChanged += MainWindow_themeChanged;
                 mainWindow.styleChanged += MainWindow_styleChanged;
+                mainWindow.WindowClosed += (s, e) =>
+                {
+                    this.Close();
+                };
             }
             Title = ToolUtils.GetString("AlbumDetailTitle");
             this.Closed += AlbumDetailWindow_Closed;
