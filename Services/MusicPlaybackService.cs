@@ -968,8 +968,11 @@ namespace WinUIMusicPlayer.Services
             //{
             //    multiTypeAudioReader.Dispose();
             //    multiTypeAudioReader = null;
-            //}
-            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
+            //
+            App.MainWindow.DispatcherQueue.TryEnqueue(async() =>
+            {
+                await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
+            });           
         }
 
         public void SwitchPlayMode()
