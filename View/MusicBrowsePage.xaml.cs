@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.View
         public PlayList currentPlayList;
         public int currentPlayListId;
         private DispatcherTimer typingTimer;
-        private SystemMediaControlsService systemMediaControlsService;
+        //private SystemMediaControlsService systemMediaControlsService;
         private bool isFullScreen = false;
         private AppWindow appWindow;      
         private NotificationService notificationService;
@@ -76,8 +76,7 @@ namespace WinUIMusicPlayer.View
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
             NotificationService notificationService, 
-            MusicBrowseViewModel viewModel,
-            SystemMediaControlsService systemMediaControlsService
+            MusicBrowseViewModel viewModel
             )
         {           
             this.InitializeComponent();
@@ -97,7 +96,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            this.systemMediaControlsService = systemMediaControlsService;
+            //this.systemMediaControlsService = systemMediaControlsService;
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
             mainWindow = (App.MainWindow as MainWindow);
@@ -812,17 +811,7 @@ namespace WinUIMusicPlayer.View
 
         }
 
-        public void UpdateSytemMediaControl(Music music)
-        {
-            if (isInPlayingDetailMode)
-            {
-                _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, PlayingDetailAlbumCoverImage);
-            }
-            else
-            {
-                _ = systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverImage);
-            }
-        }
+       
 
         private void UpdateViewList(Music music)
         {

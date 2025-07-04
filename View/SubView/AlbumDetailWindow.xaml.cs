@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.View.SubView
             musicDetail = album;
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
-            albumCoverData = ToolUtils.GetRawImage(album);
+            albumCoverData =await ToolUtils.GetRawImage(album);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 

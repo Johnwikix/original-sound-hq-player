@@ -18,6 +18,7 @@ using TagLib;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Devices;
+using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -139,6 +140,8 @@ namespace WinUIMusicPlayer.Utils
             });
             return await tcs.Task;
         }
+
+
 
         public static void RefreshIcon(ObservableCollection<Music> musicList, string type = "album")
         {
@@ -415,7 +418,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static byte[] GetRawImage(Music music)
+        public static async Task<byte[]> GetRawImage(Music music)
         {
             try
             {
@@ -435,7 +438,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        Console.WriteLine("未找到封面图片信息。");
+                        return null;
                     }
                 }
             }
@@ -444,7 +447,7 @@ namespace WinUIMusicPlayer.Utils
                 Console.WriteLine($"发生错误: {ex.Message}");
             }
             return null;
-        }
+        }        
 
         public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 150)
         {

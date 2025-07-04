@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.View.SubView
             YearTextBlock.Text = music.Year.ToString();
             LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
             PathTextBlock.Text = music.Path;
-            albumCoverData = ToolUtils.GetRawImage(music);
+            albumCoverData = await ToolUtils.GetRawImage(music);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 

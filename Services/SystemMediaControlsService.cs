@@ -72,7 +72,33 @@ namespace WinUIMusicPlayer.Services
                 MediaPlaybackStatus.Paused;
         }
 
-        public async Task UpdateMediaInfo(string title, string artist, string album, Image cover = null)
+        //public async Task UpdateMediaInfo(string title, string artist, string album, Image cover = null)
+        //{
+        //    var updater = SystemMediaControls.DisplayUpdater;
+        //    updater.Type = MediaPlaybackType.Music;
+        //    var musicProperties = updater.MusicProperties;
+        //    updater.MusicProperties.Title = title;
+        //    updater.MusicProperties.Artist = artist;
+        //    updater.MusicProperties.AlbumTitle = album;
+        //    if (cover != null)
+        //    {
+        //        try
+        //        {
+        //            updater.Thumbnail = await ImageToRandomAccessStreamReferenceAsync(cover);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            System.Diagnostics.Debug.WriteLine($"设置专辑封面失败: {ex.Message}");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        updater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Music.png"));
+        //    }
+        //    updater.Update();
+        //}
+
+        public async Task UpdateMediaInfo(string title, string artist, string album, byte[] cover = null)
         {
             var updater = SystemMediaControls.DisplayUpdater;
             updater.Type = MediaPlaybackType.Music;
@@ -80,11 +106,11 @@ namespace WinUIMusicPlayer.Services
             updater.MusicProperties.Title = title;
             updater.MusicProperties.Artist = artist;
             updater.MusicProperties.AlbumTitle = album;
-            if (cover != null)
+            if (cover != null && cover.Length > 0)
             {
                 try
                 {
-                    updater.Thumbnail = await ImageToRandomAccessStreamReferenceAsync(cover);
+                    updater.Thumbnail = await ByteArrayToRandomAccessStreamReferenceAsync(cover);
                 }
                 catch (Exception ex)
                 {
@@ -93,42 +119,34 @@ namespace WinUIMusicPlayer.Services
             }
             else
             {
-                updater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Music.png"));
+                updater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Album.png"));
             }
             updater.Update();
         }
 
-        public static async Task<RandomAccessStreamReference> ImageToRandomAccessStreamReferenceAsync(Image image)
+        public static async Task<RandomAccessStreamReference> ByteArrayToRandomAccessStreamReferenceAsync(byte[] imageBytes)
         {
             try
             {
-                // 创建 RenderTargetBitmap 来渲染 Image 控件
-                RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap();
-                await renderTargetBitmap.RenderAsync(image);
-                // 获取像素数据
-                IBuffer pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
-                byte[] pixels = new byte[pixelBuffer.Length];
-                using (DataReader reader = DataReader.FromBuffer(pixelBuffer))
+                // 空值检查
+                if (imageBytes == null || imageBytes.Length == 0)
                 {
-                    reader.ReadBytes(pixels);
+                    Console.WriteLine("输入的字节数组为空或null");
+                    return null;
                 }
                 // 创建内存流
                 InMemoryRandomAccessStream memoryStream = new InMemoryRandomAccessStream();
 
-                // 创建编码器
-                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, memoryStream);
+                // 将字节数组写入内存流
+                using (DataWriter writer = new DataWriter(memoryStream.GetOutputStreamAt(0)))
+                {
+                    writer.WriteBytes(imageBytes);
+                    await writer.StoreAsync();
+                }
 
-                // 设置编码器的像素数据
-                encoder.SetPixelData(
-                    BitmapPixelFormat.Bgra8,
-                    BitmapAlphaMode.Premultiplied,
-                    (uint)renderTargetBitmap.PixelWidth,
-                    (uint)renderTargetBitmap.PixelHeight,
-                    96,
-                    96,
-                    pixels);
-                // 保存编码后的数据到内存流
-                await encoder.FlushAsync();
+                // 重置流位置到开始
+                memoryStream.Seek(0);
+
                 // 创建 RandomAccessStreamReference
                 RandomAccessStreamReference streamReference = RandomAccessStreamReference.CreateFromStream(memoryStream);
                 return streamReference;
@@ -139,5 +157,47 @@ namespace WinUIMusicPlayer.Services
                 return null;
             }
         }
+
+        //public static async Task<RandomAccessStreamReference> ImageToRandomAccessStreamReferenceAsync(Image image)
+        //{
+        //    try
+        //    {
+        //        // 创建 RenderTargetBitmap 来渲染 Image 控件
+        //        RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap();
+        //        await renderTargetBitmap.RenderAsync(image);
+        //        // 获取像素数据
+        //        IBuffer pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
+        //        byte[] pixels = new byte[pixelBuffer.Length];
+        //        using (DataReader reader = DataReader.FromBuffer(pixelBuffer))
+        //        {
+        //            reader.ReadBytes(pixels);
+        //        }
+        //        // 创建内存流
+        //        InMemoryRandomAccessStream memoryStream = new InMemoryRandomAccessStream();
+
+        //        // 创建编码器
+        //        BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, memoryStream);
+
+        //        // 设置编码器的像素数据
+        //        encoder.SetPixelData(
+        //            BitmapPixelFormat.Bgra8,
+        //            BitmapAlphaMode.Premultiplied,
+        //            (uint)renderTargetBitmap.PixelWidth,
+        //            (uint)renderTargetBitmap.PixelHeight,
+        //            96,
+        //            96,
+        //            pixels);
+        //        // 保存编码后的数据到内存流
+        //        await encoder.FlushAsync();
+        //        // 创建 RandomAccessStreamReference
+        //        RandomAccessStreamReference streamReference = RandomAccessStreamReference.CreateFromStream(memoryStream);
+        //        return streamReference;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"转换过程中出现错误: {ex.Message}");
+        //        return null;
+        //    }
+        //}
     }
 }

@@ -837,20 +837,13 @@ namespace WinUIMusicPlayer.Services
                     {
                         totalSeconds = waveChannel.TotalTime.TotalSeconds;
                     }
-                    //if (ffmpegDecoder != null)
-                    //{
-                    //    totalSeconds = (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond;
-                    //}
-                    //updateProgressMax?.Invoke(this, totalSeconds);
                     MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
                     if (isSettingChanged)
                     {
-                        //updateProgressSliders?.Invoke(this, currentPos.TotalSeconds);
                         MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
                     }
                     else
                     {
-                        //updateProgressSliders?.Invoke(this, 0);
                         MusicBrowseViewModel.ProgressSlider = 0;
                     }
                     waveOut.Play();
