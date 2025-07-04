@@ -3,7 +3,6 @@
     x:Class="WinUIMusicPlayer.View.SongListPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:attached="using:WinUIMusicPlayer.AttachedProperties"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View"
@@ -103,19 +102,6 @@
                             Margin="5"
                             VerticalAlignment="Center"
                             Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}">
-                            <!--<attached:MultiValueBindingHelper.Bindings>
-                                <attached:MultiBindingInfo>
-                                    <attached:MultiBindingInfo.Binding1>
-                                        <Binding Path="SampleRate"/>
-                                    </attached:MultiBindingInfo.Binding1>
-                                    <attached:MultiBindingInfo.Binding2>
-                                        <Binding Path="BitDepth"/>
-                                    </attached:MultiBindingInfo.Binding2>
-                                    <attached:MultiBindingInfo.Converter>
-                                        <converters:SampleRateBitDepthConverter/>
-                                    </attached:MultiBindingInfo.Converter>
-                                </attached:MultiBindingInfo>
-                            </attached:MultiValueBindingHelper.Bindings>-->
                         </Image>
                         <TextBlock
                             Grid.Column="5"
