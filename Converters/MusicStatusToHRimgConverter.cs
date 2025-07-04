@@ -21,7 +21,7 @@ namespace WinUIMusicPlayer.Converters
                     return bitmapImage;
                 }                
             }
-            return DependencyProperty.UnsetValue;
+            return null;
         }
 
         object IValueConverter.ConvertBack(object value, Type targetType, object parameter, string language)
