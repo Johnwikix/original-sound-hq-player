@@ -187,7 +187,6 @@ namespace WinUIMusicPlayer.ViewModel
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
-        public byte[] AlbumCoverData;
 
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
@@ -299,20 +298,20 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UpdatePlayBar(Music music)
         {
-            AlbumCoverData =await ToolUtils.GetRawImage(music);
-            BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
+            var albumCoverData =await ToolUtils.GetRawImage(music);
+            BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 MusicDetailCover = DetailCover;
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
-            UpdateSytemMediaControl(music);
+            UpdateSytemMediaControl(music, albumCoverData);
         }
 
-        public void UpdateSytemMediaControl(Music music)
+        public void UpdateSytemMediaControl(Music music, byte[] albumCoverData)
         {
-            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AlbumCoverData);
+            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
         }
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
