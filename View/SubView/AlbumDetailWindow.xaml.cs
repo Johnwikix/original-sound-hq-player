@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -38,10 +39,12 @@ namespace WinUIMusicPlayer.View.SubView
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
-        private AppWindow albumDetailAppWindow;
+        //private AppWindow albumDetailAppWindow;
         private MainWindow mainWindow;
         private BitmapImage albumCoverBitmapImage;
         private ThemeStyleHelper themeStyleHelper;
+        private int MinWindowWidth = 550;
+        private int MinWindowHeight = 700;
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
@@ -51,7 +54,7 @@ namespace WinUIMusicPlayer.View.SubView
             SetTitleBar(AlbumDetailTitleBar);
             setWindow();
             InitalizeData(music);
-            themeStyleHelper = new ThemeStyleHelper(this, albumDetailAppWindow);
+            themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
             if (mainWindow != null)
@@ -79,27 +82,23 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowId id = Win32Interop.GetWindowIdFromWindow(hwnd);
-            albumDetailAppWindow = AppWindow.GetFromWindowId(id);
-            albumDetailAppWindow.SetIcon("Assets/icon.ico");
+            this.AppWindow.SetIcon("Assets/icon.ico");
             uint dpi = GetDpiForWindow(hwnd);
             scaleFactor = dpi / 96.0;
             int originalWidth = 550;
             int originalHeight = 700;
             int adjustedWidth = (int)(originalWidth * scaleFactor);
             int adjustedHeight = (int)(originalHeight * scaleFactor);
-            // 获取主窗口句柄和信息
-            IntPtr mainHwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
-            WindowId mainWindowId = Win32Interop.GetWindowIdFromWindow(mainHwnd);
-            AppWindow mainAppWindow = AppWindow.GetFromWindowId(mainWindowId);
-            PointInt32 mainWindowPosition = mainAppWindow.Position; // 主窗口位置（X,Y）
-            int mainWindowWidth = mainAppWindow.Size.Width;         // 主窗口宽度
-            int mainWindowHeight = mainAppWindow.Size.Height;       // 主窗口高度
-
-            // 计算子窗口在主窗口中心的位置
+            MinWindowWidth = adjustedWidth;
+            MinWindowHeight = adjustedHeight;
+            WindowSizeHelper.SetMinimumSize(hwnd,this, MinWindowWidth, MinWindowHeight);
+            AppWindow mainAppWindow = App.MainWindow.AppWindow;
+            PointInt32 mainWindowPosition = mainAppWindow.Position;
+            int mainWindowWidth = mainAppWindow.Size.Width;         
+            int mainWindowHeight = mainAppWindow.Size.Height;  
             int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;
             int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
-            albumDetailAppWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
+            this.AppWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
             notificationService = App.Services.GetRequiredService<NotificationService>();
         }
 

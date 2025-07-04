@@ -7,8 +7,10 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using testDemo.Taskbar;
+using Windows.Graphics;
 using Windows.UI.ViewManagement;
 using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
@@ -40,8 +42,8 @@ namespace WinUIMusicPlayer
         //public event EventHandler playStop;
         public event EventHandler updateSelectSection;
         //public event EventHandler<PlayMode> changePlayMode;
-        private Microsoft.UI.Windowing.AppWindow m_AppWindow;
-        private TaskbarIcon notifyIcon;
+        //private Microsoft.UI.Windowing.AppWindow m_AppWindow;
+        //private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         // 声明窗口句柄和消息处理相关变量
@@ -50,11 +52,16 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
-
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hwnd);
+        private double scaleFactor = 1f;
+        private int MinWindowWidth = 1280;
+        private int MinWindowHeight = 720;
         public MainWindow()
         {
             InitializeComponent();
             this.Activated += MainWindow_Activated;
+            CenterWindow();
             ExtendsContentIntoTitleBar = true;
             // 在需要使用导航服务的地方获取工厂
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -63,24 +70,29 @@ namespace WinUIMusicPlayer
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
-            SetTitleBar(AppTitleBar);            
+            SetTitleBar(AppTitleBar);
+            //this.AppWindow.Changed += AppWindow_Changed;
             this.Closed += MainWindow_Closed;
-            m_AppWindow = ToolUtils.GetAppWindowForCurrentWindow(this);
-            m_AppWindow.SetIcon("Assets/icon.ico");
-            themeStyleHelper = new ThemeStyleHelper(this, m_AppWindow);
+            this.AppWindow.SetIcon("Assets/icon.ico");
+            themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
-            WindowExtensions.Hide(this, enableEfficiencyMode: false);
-            WindowExtensions.Show(this, disableEfficiencyMode: true);
+            H.NotifyIcon.WindowExtensions.Hide(this, enableEfficiencyMode: false);
+            H.NotifyIcon.WindowExtensions.Show(this, disableEfficiencyMode: true);
             if (AppSettings.IsProcessAboveNormal) {
                 PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
             }
-            m_AppWindow.Closing += AppWindow_Closing;
+            this.AppWindow.Closing += AppWindow_Closing;
             // 获取窗口句柄并设置消息钩子
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             AppData.m_hWnd = m_hwnd;
+            uint dpi = GetDpiForWindow(m_hwnd);
+            scaleFactor = dpi / 96.0;
+            MinWindowWidth = (int)(MinWindowWidth * scaleFactor);
+            MinWindowHeight = (int)(MinWindowHeight * scaleFactor);
+            WindowSizeHelper.SetMinimumSize(m_hwnd,this, MinWindowWidth, MinWindowHeight);
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
@@ -89,6 +101,16 @@ namespace WinUIMusicPlayer
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        private void CenterWindow()
+        {
+            var displayArea = DisplayArea.GetFromWindowId(this.AppWindow.Id, DisplayAreaFallback.Primary);
+            var workArea = displayArea.WorkArea;
+            var windowSize = this.AppWindow.Size;
+            var x = (workArea.Width - windowSize.Width) / 2 + workArea.X;
+            var y = (workArea.Height - windowSize.Height) / 2 + workArea.Y;
+            this.AppWindow.Move(new PointInt32(x, y));
         }
 
         public void UpdateAppNotifyIconControl() {            
@@ -271,11 +293,6 @@ namespace WinUIMusicPlayer
             _navigationService.Navigate(typeof(SettingsPage), this,null, 100);
         }
 
-        //public async Task LoadFoldersAsync()
-        //{
-        //    LoadFolders?.Invoke(this, EventArgs.Empty);
-        //}
-
         public void UpdateMusicList()
         {
             updateMusicList?.Invoke(this, EventArgs.Empty);
@@ -311,7 +328,7 @@ namespace WinUIMusicPlayer
         {
             if (args.WindowActivationState != WindowActivationState.Deactivated)
             {
-                Title = ToolUtils.GetString("AppMainTitle");
+
                 this.Activated -= MainWindow_Activated; // 只执行一次
             }
             if (_taskbarHelper == null)
@@ -339,22 +356,6 @@ namespace WinUIMusicPlayer
                 System.Diagnostics.Debug.WriteLine($"初始化任务栏助手出错: {ex.Message}");
             }
         }
-
-        //private void TaskbarHelper_ThumbButtonClicked(object sender, ThumbButtonClickedEventArgs e)
-        //{
-        //    if (e.ButtonId == 0)
-        //    {
-        //        playLastSong?.Invoke(this, EventArgs.Empty);
-        //    }
-        //    else if (e.ButtonId == 1)
-        //    {
-        //        playStop?.Invoke(this, EventArgs.Empty);
-        //    }
-        //    else if (e.ButtonId == 2)
-        //    {
-        //        playNextSong?.Invoke(this, EventArgs.Empty);
-        //    }
-        //}
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {

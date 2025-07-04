@@ -33,7 +33,6 @@ namespace WinUIMusicPlayer.Helper
                 switch (AppSettings.AppStyle)
                 {
                     case "Acrylic":
-                        //_window.SystemBackdrop = new DesktopAcrylicBackdrop();
                         if (AppSettings.AppTheme == "Default")
                         {
                             if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
@@ -81,7 +80,6 @@ namespace WinUIMusicPlayer.Helper
                         _window.SystemBackdrop = customAcrylic;
                         break;
                     case "Mica":
-                        //_window.SystemBackdrop = new MicaBackdrop();
                         if (AppSettings.AppTheme == "Default")
                         {
                             if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
