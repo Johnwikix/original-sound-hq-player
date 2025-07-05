@@ -379,7 +379,7 @@
                         <ListView x:Name="CurrentPlayListView" 
                                     DoubleTapped="CurrentPlayListView_DoubleTapped" 
                                     MaxHeight="400"
-                                    ItemsSource="{Binding ViewModel.CurrentPlayingList,Mode=TwoWay}"
+                                    ItemsSource="{Binding ViewModel.CurrentPlayingList,Mode=OneWay}"
                                     Width="290"
                                     >
                             <ListView.ItemTemplate>

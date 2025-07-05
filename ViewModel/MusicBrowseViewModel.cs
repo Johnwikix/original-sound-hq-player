@@ -45,7 +45,9 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<Music> CurrentPlayingList
         {
             get => _currentPlayingList;
-            set => SetProperty(ref _currentPlayingList, value);
+            set {
+                SetProperty(ref _currentPlayingList, value);
+            } 
         }
 
         private string _musicInfo;
@@ -86,11 +88,10 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (!IsUserDraggingProgressSlider)
                         {
-                            double currentPlayPosition = 0;
                             if (_musicPlaybackService.waveChannel != null)
                             {
-                                currentPlayPosition = _musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
-         
+                                double currentPlayPosition = _musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+
                                 if (Math.Abs(value - currentPlayPosition) > 4.0)
                                 {        
                                     _musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(value);                               
@@ -408,14 +409,14 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async Task PlayLastTrack()
         {
-            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(CurrentPlayingMusic);
+            int index = CurrentPlayingList.IndexOf(CurrentPlayingMusic);
             if (index > 0)
             {
-                await _musicBrowsePage.PlayMusic(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList[index - 1]);
+                await _musicBrowsePage.PlayMusic(CurrentPlayingList[index - 1]);
             }
-            else if (index == 0 && _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Count > 1)
+            else if (index == 0 && CurrentPlayingList.Count > 1)
             {
-                await _musicBrowsePage.PlayMusic(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList[_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Count - 1]);
+                await _musicBrowsePage.PlayMusic(CurrentPlayingList[CurrentPlayingList.Count - 1]);
 
             }
         }

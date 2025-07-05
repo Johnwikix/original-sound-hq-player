@@ -28,34 +28,18 @@ namespace WinUIMusicPlayer.Services
 {
     public class MusicPlaybackService
     {
-        //public Music currentPlayingMusic;
         private System.Timers.Timer progressTimer;
-        //public List<Music> currentPlayingList;
-        //public MultiTypeAudioReader multiTypeAudioReader;
         public IWavePlayer waveOut;
-        //public LightweightCSCoreAdapter adapter;
-        //public CSCore.SoundOut.WasapiOut wasapiOut;
         public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
-        //private CSCore.CoreAudioAPI.MMDevice csCoreMMdevice = null;
-        //public IWaveSource ffmpegDecoder;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
-        //public event EventHandler<Music> playingMusic;
-        //public event EventHandler<string> updatePlayTimeText;
-        //public event EventHandler<double> updateProgressSliders;
-        //public event EventHandler<double> updateProgressMax;
-        //public event EventHandler<string> showMessage;
-        //public event EventHandler<string> updatePlayPauseButton;
         public event EventHandler<float[]> updateSpectrumData;
-        //public List<Music> musicList;
-        //public bool isUserDraggingProgressSlider = false;
         public bool isInitializing = true;
         private NotificationService notificationService;
-        //public event EventHandler<int> updateCurrentLyricIndex;
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
         private CancellationTokenSource _lyricsCancellationTokenSource;
@@ -66,7 +50,7 @@ namespace WinUIMusicPlayer.Services
         private int _m; // FFT阶数
         private int _barCount = 16; // 柱状图数量
         private float[] _spectrumData;
-        private readonly object _spectrumDataLock = new object();
+        private readonly object _spectrumDataLock = new();
         private volatile bool _hasNewData = false;
         private CustomEqualizer equalizer;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
@@ -308,7 +292,6 @@ namespace WinUIMusicPlayer.Services
         {
             if (_lyrics.Count == 0)
                 return;
-            var ly = _lyrics;
             // 查找当前应显示的歌词
             int currentIndex = -1;
             for (int i = 0; i < _lyrics.Count; i++)
@@ -365,10 +348,7 @@ namespace WinUIMusicPlayer.Services
                 if (AppSettings.isPlaying)
                 {
                     isSettingsChangeStop = true;
-                    if (progressTimer != null)
-                    {
-                        progressTimer.Stop();
-                    }
+                    progressTimer?.Stop();
                     if (waveOut != null)
                     {
                         waveOut.Stop();
@@ -519,46 +499,9 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        //public async void WaveOut_PlaybackStopped(object sender, NAudio.Wave.StoppedEventArgs e)
-        //{
-        //    bool isNaturalEnd = false;
-        //    if (waveChannel != null && !isPausing && !isManualSelect && !isSettingsChangeStop)
-        //    {
-        //        double currentPositionSeconds = waveChannel.CurrentTime.TotalSeconds;
-        //        double totalDurationSeconds = waveChannel.TotalTime.TotalSeconds;
-        //        isNaturalEnd = (totalDurationSeconds - currentPositionSeconds) < 0.5;
-        //    }
-
-        //    if (isPausing)
-        //    {
-        //        return;
-        //    }
-
-        //    if (isManualSelect)
-        //    {
-        //        isManualSelect = false;
-        //        return;
-        //    }
-
-        //    if (isSettingsChangeStop)
-        //    {
-        //        isSettingsChangeStop = false;
-        //        return;
-        //    }
-
-        //    if (isNaturalEnd)
-        //    {
-        //        AutoPlayNextTrack();
-        //    }
-        //}
-
-
         public void AutoPlayNextTrack()
         {
-            if (progressTimer != null)
-            {
-                progressTimer.Stop();
-            }
+            progressTimer?.Stop();
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
@@ -771,8 +714,6 @@ namespace WinUIMusicPlayer.Services
             if (_fftPosition >= _fftLength)
             {                
                 _fftPosition = 0;
-                //Debug.WriteLine($"sample：{sample}");
-                //Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
                 lock (_spectrumDataLock)
                 {                    
                     // 异步通知UI更新
@@ -861,7 +802,6 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    //showMessage?.Invoke(this, $"播放失败{ex.Message}");
                     notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                     System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                     Reset();
@@ -914,10 +854,7 @@ namespace WinUIMusicPlayer.Services
             //    ffmpegDecoder.Dispose();
             //    ffmpegDecoder = null;
             //}
-            if (progressTimer != null)
-            {
-                progressTimer.Stop();
-            }
+            progressTimer?.Stop();
         }
 
         public async Task DisposeAudio()

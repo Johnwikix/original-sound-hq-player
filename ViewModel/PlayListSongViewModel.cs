@@ -238,7 +238,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic != null && _parentPage != null)
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
+                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList =
+                                        new ObservableCollection<Music>(MusicList);
                 await _parentPage.PlayMusic(SelectedMusic);
             }
         }
@@ -254,7 +255,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SelectedMusic != null)
                 {
-                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList =
+                                new ObservableCollection<Music>(MusicList);
                     await _parentPage.PlayMusic(SelectedMusic);
                 }
             }

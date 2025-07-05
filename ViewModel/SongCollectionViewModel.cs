@@ -148,7 +148,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder, string type)
         {
             var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            List<Music> musics = new List<Music>();
+            List<Music> musics = new List<Music>();            
 
             if (MusicList.Count > 0)
             {
@@ -256,7 +256,8 @@ namespace WinUIMusicPlayer.ViewModel
         {            
             if (SelectedMusic != null && _parentPage != null)
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
+                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList =
+                                        new ObservableCollection<Music>(MusicList);
                 await _parentPage.PlayMusic(SelectedMusic);
             }
         }
@@ -272,7 +273,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SelectedMusic != null)
                 {
-                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(MusicList);
                     await _parentPage.PlayMusic(SelectedMusic);
                 }
             }

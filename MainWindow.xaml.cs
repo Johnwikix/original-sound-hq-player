@@ -60,6 +60,7 @@ namespace WinUIMusicPlayer
         public MainWindow()
         {
             InitializeComponent();
+            m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             this.Activated += MainWindow_Activated;
             CenterWindow();
             ExtendsContentIntoTitleBar = true;
@@ -84,9 +85,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsProcessAboveNormal) {
                 PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
             }
-            this.AppWindow.Closing += AppWindow_Closing;
-            // 获取窗口句柄并设置消息钩子
-            m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            this.AppWindow.Closing += AppWindow_Closing;            
             AppData.m_hWnd = m_hwnd;
             uint dpi = GetDpiForWindow(m_hwnd);
             scaleFactor = dpi / 96.0;
@@ -242,10 +241,7 @@ namespace WinUIMusicPlayer
 
         public void UpdateTaskbarIcon()
         {
-            if (_taskbarHelper != null)
-            {
-                _taskbarHelper.UpdateTaskbarButtonIcon();
-            }
+            _taskbarHelper?.UpdateTaskbarButtonIcon();
         }
 
         public void SetAppStyle()
@@ -345,11 +341,8 @@ namespace WinUIMusicPlayer
                 IntPtr hwnd = WindowNative.GetWindowHandle(this);
                 _taskbarHelper?.Dispose();
                 // 创建任务栏助手并初始化
-                _taskbarHelper = new TaskbarHelper(hwnd);
+                _taskbarHelper = new TaskbarHelper(m_hwnd);
                 _taskbarHelper.InitializeThumbButtons();
-
-                // 注册按钮点击事件
-                //_taskbarHelper.ThumbButtonClicked += TaskbarHelper_ThumbButtonClicked;
             }
             catch (Exception ex)
             {
@@ -380,7 +373,7 @@ namespace WinUIMusicPlayer
 
         public void NavigateToMusicBrowsePage()
         {
-            if (!(ContentFrame.Content is MusicBrowsePage)) {
+            if (ContentFrame.Content is not MusicBrowsePage) {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
                 _navigationService.Navigate(typeof(MusicBrowsePage),null,null,0);
             }            
