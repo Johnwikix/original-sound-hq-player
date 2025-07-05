@@ -255,7 +255,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _musicPlaybackService.isInitializing = true;
                 await LoadPlayState();
-                _musicPlaybackService.OutputDeviceChange();
+                //_musicPlaybackService.OutputDeviceChange();
             }
             catch (Exception ex)
             {

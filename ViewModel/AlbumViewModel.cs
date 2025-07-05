@@ -79,22 +79,22 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.RefreshIcon(MusicList, "album");
         }
 
-        public async void InitializeData()
+        public void InitializeData()
         {
             MusicList.Clear();
             _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
-            await LoadMoreAlbumsAsync(true);            
+            LoadMoreAlbumsAsync(true);            
         }
-        public async Task SortMusicList(string sortOrder = "DefaultOrder")
+        public void SortMusicList(string sortOrder = "DefaultOrder")
         {
             if (_allMusic.Count > 0)
             {
                 MusicList.Clear();
                 _allMusic = ToolUtils.SortMusicList("albumCover", sortOrder, _allMusic.ToList());
-                await LoadMoreAlbumsAsync(true);
+                LoadMoreAlbumsAsync(true);
             }
         }
-        private async Task LoadMoreAlbumsAsync(bool isFirstLoad = false)
+        private void LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
             try
             {
@@ -102,7 +102,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     MusicList.Add(item);
                 }
-                //MusicList = new ObservableCollection<Music>(_allMusic);
                 _ = Task.Run(async () =>
                 {
                     var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
@@ -127,7 +126,6 @@ namespace WinUIMusicPlayer.ViewModel
                                 });
                                 if (AppSettings.isCoverCacheEnabled && cover != null)
                                 {
-                                    //AppData.albumCoverCache[music.Album] = cover;
                                     AppData.albumCoverCache.SetValue(music.Album, cover);
                                 }
                             }

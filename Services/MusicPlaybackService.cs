@@ -487,7 +487,7 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
-            var device = selectedDevice;
+            OutputDeviceChange();
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
@@ -836,21 +836,23 @@ namespace WinUIMusicPlayer.Services
                     if (waveChannel != null)
                     {
                         totalSeconds = waveChannel.TotalTime.TotalSeconds;
-                    }
-                    MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
-                    if (isSettingChanged)
-                    {
-                        MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
-                    }
-                    else
-                    {
-                        MusicBrowseViewModel.ProgressSlider = 0;
-                    }
+                    }                                   
                     waveOut.Play();
                     progressTimer.Start();
-                    AppSettings.isPlaying = true;
-                    MusicBrowseViewModel.IsPlaying = true;
-                    MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                        MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
+                        if (isSettingChanged)
+                        {
+                            MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
+                        }
+                        else
+                        {
+                            MusicBrowseViewModel.ProgressSlider = 0;
+                        }
+                        AppSettings.isPlaying = true;
+                        MusicBrowseViewModel.IsPlaying = true;
+                        MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                    });                   
                     //_ = Task.Run(async () =>
                     //{
                     //    await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);

@@ -850,7 +850,11 @@ namespace WinUIMusicPlayer.View
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
-                await ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                _ = Task.Run(async () =>
+                {
+                    await ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                });
+                
                 
             }
             catch (Exception ex)

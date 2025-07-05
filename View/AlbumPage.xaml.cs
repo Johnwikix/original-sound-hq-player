@@ -39,18 +39,18 @@ namespace WinUIMusicPlayer.View
             }            
         }
 
-        public async void SortMusicList(string sortOrder = "DefaultOrder")
+        public void SortMusicList(string sortOrder = "DefaultOrder")
         {
-            await ViewModel.SortMusicList(sortOrder);           
+            ViewModel.SortMusicList(sortOrder);           
         }
         
 
-        private async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             ViewModel.Album_RightTapped(sender, e);            
         }
 
-        public async void OnAlbumDetailChanged(object sender, Music cover)
+        public void OnAlbumDetailChanged(object sender, Music cover)
         {
             ViewModel.OnAlbumDetailChanged(sender, cover);
         }
