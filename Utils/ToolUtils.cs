@@ -473,7 +473,7 @@ namespace WinUIMusicPlayer.Utils
             return musicList;
         }
 
-        public static List<Music> SortMusicList(string type, string sortOrder, List<Music> musicList)
+        public static List<Music> SortMusicList(string type, string sortOrder,  ObservableCollection<Music> musicList)
         {
             if (sortOrder == "A-Z")
             {

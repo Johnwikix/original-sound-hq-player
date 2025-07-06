@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList.Clear();
+                //MusicList.Clear();
                 if (parentPage != null)
                 {
                     _allMusic = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
@@ -103,14 +103,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList.Clear();
-                if (_allMusic != null)
-                {
-                    foreach (var item in _allMusic)
-                    {
-                        MusicList.Add(item);
-                    }
-                }
+                MusicList = new ObservableCollection<Music>(_allMusic);
             }
             catch (Exception ex)
             {
@@ -122,9 +115,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_allMusic != null && _allMusic.Count > 0)
             {
-                MusicList.Clear();
-                _allMusic = ToolUtils.SortMusicList("folderCover", sortOrder, _allMusic.ToList());
-                LoadMoreFolderAsync(true);
+                //MusicList.Clear();
+                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("folderCover", sortOrder, MusicList));
+                //LoadMoreFolderAsync(true);
             }
         }
 

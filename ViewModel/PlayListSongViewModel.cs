@@ -166,11 +166,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList.Clear();
-                foreach (var music in musics)
-                {
-                    MusicList.Add(music);
-                }
+                MusicList = new ObservableCollection<Music>(musics);
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
@@ -183,18 +179,18 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder)
         {
             var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            List<Music> musics = new List<Music>();
+            //List<Music> musics = new List<Music>();
 
             if (MusicList.Count > 0)
             {
-                musics = ToolUtils.SortMusicList("playList", order, MusicList.ToList());
+                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("playList", order, MusicList));
             }
 
-            MusicList.Clear();
-            foreach (var music in musics)
-            {
-                MusicList.Add(music);
-            }
+            //MusicList.Clear();
+            //foreach (var music in musics)
+            //{
+            //    MusicList.Add(music);
+            //}
         }
 
         public void UpdateMusicListView()

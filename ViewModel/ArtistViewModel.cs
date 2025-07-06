@@ -96,10 +96,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             try
             {
-                foreach (var item in _allMusic)
-                {
-                    MusicList.Add(item);
-                }
+                MusicList = new ObservableCollection<Music>(_allMusic);
             }
             catch (Exception ex)
             {
@@ -109,12 +106,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SortMusicList(string sortOrder)
         {
-            if (_allMusic.Count > 0)
-            {
-                MusicList.Clear();
-                _allMusic = ToolUtils.SortMusicList("artistCover", sortOrder, _allMusic.ToList());
-                LoadMoreArtistAsync(true);
-            }
+            //if (_allMusic.Count > 0)
+            //{
+            //    MusicList.Clear();
+            MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("artistCover", sortOrder, MusicList));
+                //LoadMoreArtistAsync(true);
+            //}
         }
 
         public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)

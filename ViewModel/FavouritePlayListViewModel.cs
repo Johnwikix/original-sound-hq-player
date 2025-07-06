@@ -117,13 +117,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList.Clear();
-                foreach (Music music in musics)
-                {
-                    MusicList.Add(music);
-                }
+                MusicList = new ObservableCollection<Music>(musics);
                 SortMusicList(AppData.sortOrder);
-                //MusicListViewUpdated?.Invoke(this, EventArgs.Empty);
                 UpdateMusicListView();
             }
             catch (Exception ex)
@@ -147,8 +142,6 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             SelectedMusic = selectedMusic;
                             currentPage.OnScrollToMusic(selectedMusic);
-                            //MusicListView.SelectedItem = selectedMusic;
-                            //MusicListView.ScrollIntoView(selectedMusic);
                         }
                     }
                 }
@@ -226,20 +219,21 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder)
         {
             var order = "DefaultOrder";
-            List<Music> musics = new List<Music>();
+            //List<Music> musics = new List<Music>();
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 order = sortOrder;
             }
-            if (MusicList.Count > 0)
-            {
-                musics = ToolUtils.SortMusicList("favour", order, MusicList.ToList());
-            }
-            MusicList.Clear();
-            foreach (Music music in musics)
-            {
-                MusicList.Add(music);
-            }
+            MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("favour", order, MusicList));
+            //if (MusicList.Count > 0)
+            //{
+            //    ToolUtils.SortMusicList("favour", order, MusicList);
+            //}
+            //MusicList.Clear();
+            //foreach (Music music in musics)
+            //{
+            //    MusicList.Add(music);
+            //}
         }
 
         public void AddMusicToTop(Music newMusic)

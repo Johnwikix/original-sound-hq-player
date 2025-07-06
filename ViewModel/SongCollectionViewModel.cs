@@ -148,17 +148,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder, string type)
         {
             var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            List<Music> musics = new List<Music>();            
+            //List<Music> musics = new List<Music>();            
 
             if (MusicList.Count > 0)
             {
-                musics = ToolUtils.SortMusicList(type, order, MusicList.ToList());
-            }
-
-            MusicList.Clear();
-            foreach (var music in musics)
-            {
-                MusicList.Add(music);
+                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList(type, order, MusicList));
             }
         }
 
@@ -169,11 +163,12 @@ namespace WinUIMusicPlayer.ViewModel
                 if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
                     return;
                 }
-                MusicList.Clear();
-                foreach (var music in musics)
-                {
-                    MusicList.Add(music);
-                }
+                //MusicList.Clear();
+                //foreach (var music in musics)
+                //{
+                //    MusicList.Add(music);
+                //}
+                MusicList = musics;
 
                 if (!string.IsNullOrEmpty(type))
                 {
