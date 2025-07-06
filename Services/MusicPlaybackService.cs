@@ -628,6 +628,10 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 progressTimer.Stop();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.ProgressSlider = 0;
+                });
                 if (!File.Exists(music.Path))
                 {
                     notificationService.SendNotification(ToolUtils.GetString("FileDoNotExist"), music.Path);
