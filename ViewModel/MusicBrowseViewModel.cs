@@ -299,7 +299,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UpdatePlayBar(Music music)
         {
-            var albumCoverData =await ToolUtils.GetRawImage(music);
+            var albumCoverData = await ToolUtils.GetRawImage(music);
             BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -307,12 +307,7 @@ namespace WinUIMusicPlayer.ViewModel
                 MusicDetailCover = DetailCover;
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
-            UpdateSytemMediaControl(music, albumCoverData);
-        }
-
-        public void UpdateSytemMediaControl(Music music, byte[] albumCoverData)
-        {
-            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
+            await _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
         }
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
@@ -409,7 +404,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async Task PlayLastTrack()
         {
-            int index = CurrentPlayingList.IndexOf(CurrentPlayingMusic);
+            int index = CurrentPlayingList
+                        .Select((music, i) => new { Music = music, Index = i })
+                        .FirstOrDefault(x => x.Music.Id == CurrentPlayingMusic.Id)
+                        ?.Index ?? -1;
             if (index > 0)
             {
                 await _musicBrowsePage.PlayMusic(CurrentPlayingList[index - 1]);

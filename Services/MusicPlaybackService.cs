@@ -546,14 +546,12 @@ namespace WinUIMusicPlayer.Services
                 MusicBrowseViewModel.IsPlaying = false;
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
             });
-            //updatePlayPauseButton?.Invoke(this, "\uE768");
         }
 
         public void PlayNextTrack()
         {
             int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
             int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-            //playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
             MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
         }
 
