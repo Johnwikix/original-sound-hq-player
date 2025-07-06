@@ -1007,7 +1007,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void AlbumCoverImage_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
         {
             await ShowPlayingDetail();
         }

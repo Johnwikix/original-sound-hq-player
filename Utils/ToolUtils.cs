@@ -230,18 +230,9 @@ namespace WinUIMusicPlayer.Utils
             return newCover;
         }
 
+
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0,int defaultImgSize = 150)
         {
-            //using (var ms = new MemoryStream(picture.Data.Data))
-            //{
-            //    var bitmapImage = new BitmapImage();
-            //    if (maxSize != 0)
-            //    {
-            //        setBitmapSize(bitmapImage, maxSize);
-            //    }
-            //    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-            //    return bitmapImage;
-            //}
             byte[] imageData = picture.Data.Data.ToArray();
             if (picture?.Data?.Data == null)
             {
@@ -258,11 +249,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     using (var ms = new MemoryStream(imageData))
                     {
-                        var bitmapImage = new BitmapImage();
-                        if (maxSize != 0)
-                        {
-                            setBitmapSize(bitmapImage, maxSize);
-                        }
+                        var bitmapImage = new BitmapImage { DecodePixelWidth = defaultImgSize };
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                         tcs.SetResult(bitmapImage);
                     }
@@ -345,28 +332,28 @@ namespace WinUIMusicPlayer.Utils
                    data[1] == 0x4D;
         }
 
-        private static void setBitmapSize(BitmapImage bitmapImage, int maxSize)
-        {
-            bitmapImage.ImageOpened += (sender, args) =>
-            {
-                double originalWidth = bitmapImage.PixelWidth;
-                double originalHeight = bitmapImage.PixelHeight;
-                double aspectRatio = originalWidth / originalHeight;
-                int newWidth, newHeight;
-                if (originalWidth > originalHeight)
-                {
-                    newWidth = maxSize;
-                    newHeight = (int)(maxSize / aspectRatio);
-                }
-                else
-                {
-                    newHeight = maxSize;
-                    newWidth = (int)(maxSize * aspectRatio);
-                }
-                bitmapImage.DecodePixelWidth = newWidth;
-                bitmapImage.DecodePixelHeight = newHeight;
-            };
-        }
+        //private static void setBitmapSize(BitmapImage bitmapImage, int maxSize)
+        //{
+        //    bitmapImage.ImageOpened += (sender, args) =>
+        //    {
+        //        double originalWidth = bitmapImage.PixelWidth;
+        //        double originalHeight = bitmapImage.PixelHeight;
+        //        double aspectRatio = originalWidth / originalHeight;
+        //        int newWidth, newHeight;
+        //        if (originalWidth > originalHeight)
+        //        {
+        //            newWidth = maxSize;
+        //            newHeight = (int)(maxSize / aspectRatio);
+        //        }
+        //        else
+        //        {
+        //            newHeight = maxSize;
+        //            newWidth = (int)(maxSize * aspectRatio);
+        //        }
+        //        bitmapImage.DecodePixelWidth = newWidth;
+        //        bitmapImage.DecodePixelHeight = newHeight;
+        //    };
+        //}
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
@@ -403,11 +390,7 @@ namespace WinUIMusicPlayer.Utils
                         dataWriter.WriteBytes(imageData);
                         await dataWriter.StoreAsync();
                     }
-                    var bitmapImage = new BitmapImage();
-                    if (maxSize != 0)
-                    {
-                        setBitmapSize(bitmapImage, maxSize);
-                    }
+                    var bitmapImage = maxSize==0? new BitmapImage():new BitmapImage { DecodePixelWidth = maxSize };
                     await bitmapImage.SetSourceAsync(stream);
                     return bitmapImage;
                 }
