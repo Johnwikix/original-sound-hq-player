@@ -1054,5 +1054,15 @@ namespace WinUIMusicPlayer.View
             equalizerDialog.XamlRoot = this.XamlRoot;
             _=equalizerDialog.ShowAsync();           
         }
+
+        private void AlbumCoverImageBtn_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            AlbumCoverImageChevronUp.Opacity = 1;
+        }
+
+        private void AlbumCoverImageBtn_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            AlbumCoverImageChevronUp.Opacity = 0;
+        }
     }
 }

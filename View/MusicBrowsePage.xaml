@@ -423,15 +423,29 @@
                     </TransitionCollection>
                 </StackPanel.Transitions>
                 <Button
+                    x:Name="AlbumCoverImageBtn"
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Click="AlbumCoverImage_Click">
-                    <Image
-                        x:Name="AlbumCoverImage"
-                        Width="100"
-                        Height="100"
-                        Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                    Click="AlbumCoverImage_Click"
+                    PointerEntered="AlbumCoverImageBtn_PointerEntered"
+                    PointerExited="AlbumCoverImageBtn_PointerExited">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
+                        <Image
+                            x:Name="AlbumCoverImage"
+                            Grid.Row="0"
+                            Width="100"
+                            Height="100"
+                            Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                        <FontIcon
+                            x:Name="AlbumCoverImageChevronUp"
+                            Grid.Row="0"
+                            Glyph="&#xE70E;"
+                            Opacity="0" />
+                    </Grid>
                 </Button>
                 <Grid
                     Width="Auto"
