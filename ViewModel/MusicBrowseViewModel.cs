@@ -1,6 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Gui;
@@ -8,8 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
@@ -188,7 +192,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _lastLyricIndex;
             set => SetProperty(ref _lastLyricIndex, value);
         }
-        private Visibility _usbDeviceVisibility;
+        private Visibility _usbDeviceVisibility=Visibility.Collapsed;
         public Visibility UsbDeviceVisibility
         {
             get => _usbDeviceVisibility;
@@ -206,13 +210,26 @@ namespace WinUIMusicPlayer.ViewModel
             get => _usbSelectedIndex;
             set =>SetProperty(ref _usbSelectedIndex, value);
         }
+        private Visibility _processRingVisibility = Visibility.Collapsed;
+        public Visibility ProcessRingVisibility
+        {
+            get => _processRingVisibility;
+            set => SetProperty(ref _processRingVisibility, value);
+        }
+        private bool _isFullScreen = false;
+        public bool IsFullScreen
+        {
+            get => _isFullScreen;
+            set => SetProperty(ref _isFullScreen, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
         private DeviceWatcher deviceWatcher;
+        private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
+        private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
-            //var mode = AppData.PlayMode;
             CurrentPlayMode = AppData.PlayMode;
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
             UILyrics = new ObservableCollection<LyricLine>();
@@ -220,8 +237,8 @@ namespace WinUIMusicPlayer.ViewModel
             InitializeSystemMediaControls();
             Volume = (double)(AppData.Volume * 100);
             _tempVolume = (double)(AppData.Volume * 100);
-            UsbDeviceVisibility = Visibility.Collapsed;
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+            StartWatchingFileFolder();
             StartWatchingUsbStorageDevices();
         }       
 
@@ -297,6 +314,55 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private async void StartWatchingFileFolder()
+        {
+            List<Folder> folders = await MusicDatabaseService.GetFolders();
+            foreach (var folder in folders)
+            {
+                if (!string.IsNullOrEmpty(folder.Path))
+                {
+                    var watcher = new FileSystemWatcher(folder.Path);
+                    watcher.IncludeSubdirectories = true;
+                    watcher.NotifyFilter = NotifyFilters.FileName |
+                        NotifyFilters.DirectoryName |
+                        NotifyFilters.LastWrite;
+
+                    // 订阅事件
+                    watcher.Changed += OnFileChanged;
+
+                    // 开始监听
+                    watcher.EnableRaisingEvents = true;
+
+                    watchers.Add(watcher);
+                }
+            }
+        }
+
+        public async void OnFileChanged(object sender, FileSystemEventArgs e)
+        {
+            if (!await scanSemaphore.WaitAsync(0))
+            {
+                Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
+                return;
+            }
+            try
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProcessRingVisibility = Visibility.Visible;
+                });
+                await AutoRescanService.AutoScan();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    ProcessRingVisibility = Visibility.Collapsed;
+                });
+            }
+            finally
+            {
+                scanSemaphore.Release();
+            }
+        }
+
         private void InitializeSystemMediaControls()
         {
 
@@ -346,12 +412,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _musicPlaybackService.isInitializing = true;
                 await LoadPlayState();
-                //_musicPlaybackService.OutputDeviceChange();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
-                //notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
@@ -563,6 +627,23 @@ namespace WinUIMusicPlayer.ViewModel
             double newVolume = Volume + delta;
             newVolume = Math.Max(0, Math.Min(newVolume, 100));
             Volume = newVolume;
+        }
+        [RelayCommand]
+        private void OnFullScreenButtonChanged()
+        {
+            if (App.MainWindow.AppWindow != null)
+            {
+                if (IsFullScreen)
+                {
+                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
+                }
+                else
+                {
+                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                }
+                IsFullScreen = !IsFullScreen;
+            }
+
         }
     }
 }

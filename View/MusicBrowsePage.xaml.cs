@@ -25,7 +25,6 @@ using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
-using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -49,26 +48,27 @@ namespace WinUIMusicPlayer.View
         public PlayList currentPlayList;
         public int currentPlayListId;
         private DispatcherTimer typingTimer;
-        private bool isFullScreen = false;
-        private AppWindow appWindow;      
+        //private bool isFullScreen = false;
+        //private AppWindow appWindow = App.MainWindow.AppWindow;      
         private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
+        private readonly INavigationService _navigationService;
         //private DeviceWatcher deviceWatcher;
-        private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
-        private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
+        //private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
+        //private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
         private EqualizerDialog equalizerDialog;
-        private CanvasControl _spectrumCanvas;
-        private float[] _spectrumData = new float[16];
-        private readonly object _lockObject = new object(); // 锁对象
+        //private CanvasControl _spectrumCanvas;
+        //private float[] _spectrumData = new float[16];
+        //private readonly object _lockObject = new object(); // 锁对象
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
-        private readonly INavigationService _navigationService;
+        
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
             NotificationService notificationService, 
@@ -125,11 +125,10 @@ namespace WinUIMusicPlayer.View
                 });                
             };
             this.notificationService = notificationService;
-            InitializeTimer();            
-            InitializeAppWindow();           
+            InitializeTimer();                 
             
-            StartWatchingFileFolder();
-            OnFileChanged(null, null);
+            //StartWatchingFileFolder();
+            ViewModel.OnFileChanged(null, null);
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
             //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
@@ -143,51 +142,51 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
         }
 
-        private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
-        {
-            // 添加调试信息
-            float[] data;
-            lock (_lockObject)
-            {
-                // 复制数据到局部变量，减少锁持有时间
-                data = new float[_spectrumData.Length];
-                Array.Copy(_spectrumData, data, _spectrumData.Length);
-            }
-            //Debug.WriteLine($"绘制时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", data)}]");
-            var ds = args.DrawingSession;
-            float width = (float)sender.ActualWidth;
-            float height = (float)sender.ActualHeight;
-            float barWidth = width / _spectrumData.Length * 0.8f;
-            float spacing = width / _spectrumData.Length * 0.2f;
+        //private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+        //{
+        //    // 添加调试信息
+        //    float[] data;
+        //    lock (_lockObject)
+        //    {
+        //        // 复制数据到局部变量，减少锁持有时间
+        //        data = new float[_spectrumData.Length];
+        //        Array.Copy(_spectrumData, data, _spectrumData.Length);
+        //    }
+        //    //Debug.WriteLine($"绘制时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", data)}]");
+        //    var ds = args.DrawingSession;
+        //    float width = (float)sender.ActualWidth;
+        //    float height = (float)sender.ActualHeight;
+        //    float barWidth = width / _spectrumData.Length * 0.8f;
+        //    float spacing = width / _spectrumData.Length * 0.2f;
 
-            // 优化的绘制代码（不使用CanvasGeometry）
-            for (int i = 0; i < _spectrumData.Length; i++)
-            {
-                float barHeight = _spectrumData[i] * height;
-                if (barHeight < 1) continue; // 跳过太小的条
+        //    // 优化的绘制代码（不使用CanvasGeometry）
+        //    for (int i = 0; i < _spectrumData.Length; i++)
+        //    {
+        //        float barHeight = _spectrumData[i] * height;
+        //        if (barHeight < 1) continue; // 跳过太小的条
 
-                float x = i * (barWidth + spacing);
-                float y = height - barHeight;
+        //        float x = i * (barWidth + spacing);
+        //        float y = height - barHeight;
 
-                // 直接绘制，最高效
-                ds.FillRectangle(x, y, barWidth, barHeight, Colors.Blue);
+        //        // 直接绘制，最高效
+        //        ds.FillRectangle(x, y, barWidth, barHeight, Colors.Blue);
 
-                // 顶部高亮
-                if (barHeight > 2)
-                {
-                    ds.FillRectangle(x, y, barWidth, 2, Colors.White);
-                }
-            }
-        }
+        //        // 顶部高亮
+        //        if (barHeight > 2)
+        //        {
+        //            ds.FillRectangle(x, y, barWidth, 2, Colors.White);
+        //        }
+        //    }
+        //}
 
-        private void MusicPlaybackService_updateSpectrumData(object? sender, float[] spectrumData)
-        {
-            lock (_lockObject)
-            {
-                Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
-                //Debug.WriteLine($"更新时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
-            }
-        }
+        //private void MusicPlaybackService_updateSpectrumData(object? sender, float[] spectrumData)
+        //{
+        //    lock (_lockObject)
+        //    {
+        //        Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
+        //        //Debug.WriteLine($"更新时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
+        //    }
+        //}
 
         //private void StartWatchingUsbStorageDevices()
         //{
@@ -203,54 +202,54 @@ namespace WinUIMusicPlayer.View
         //    deviceWatcher.Start();
         //}
 
-        private async void StartWatchingFileFolder()
-        {
-            List<Folder> folders = await MusicDatabaseService.GetFolders();
-            foreach (var folder in folders)
-            {
-                if (!string.IsNullOrEmpty(folder.Path))
-                {
-                    var watcher = new FileSystemWatcher(folder.Path);
-                    watcher.IncludeSubdirectories = true;
-                    watcher.NotifyFilter = NotifyFilters.FileName |
-                        NotifyFilters.DirectoryName |
-                        NotifyFilters.LastWrite;
+        //private async void StartWatchingFileFolder()
+        //{
+        //    List<Folder> folders = await MusicDatabaseService.GetFolders();
+        //    foreach (var folder in folders)
+        //    {
+        //        if (!string.IsNullOrEmpty(folder.Path))
+        //        {
+        //            var watcher = new FileSystemWatcher(folder.Path);
+        //            watcher.IncludeSubdirectories = true;
+        //            watcher.NotifyFilter = NotifyFilters.FileName |
+        //                NotifyFilters.DirectoryName |
+        //                NotifyFilters.LastWrite;
 
-                    // 订阅事件
-                    watcher.Changed += OnFileChanged;
+        //            // 订阅事件
+        //            watcher.Changed += OnFileChanged;
 
-                    // 开始监听
-                    watcher.EnableRaisingEvents = true;
+        //            // 开始监听
+        //            watcher.EnableRaisingEvents = true;
 
-                    watchers.Add(watcher);
-                }
-            }
-        }
+        //            watchers.Add(watcher);
+        //        }
+        //    }
+        //}
 
-        private async void OnFileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (!await scanSemaphore.WaitAsync(0))
-            {
-                Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
-                return;
-            }
-            try
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    ProcessingRing.Visibility = Visibility.Visible;
-                });
-                await AutoRescanService.AutoScan();
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    ProcessingRing.Visibility = Visibility.Collapsed;
-                });
-            }
-            finally
-            {
-                scanSemaphore.Release();
-            }
-        }
+        //private async void OnFileChanged(object sender, FileSystemEventArgs e)
+        //{
+        //    if (!await scanSemaphore.WaitAsync(0))
+        //    {
+        //        Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
+        //        return;
+        //    }
+        //    try
+        //    {
+        //        DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            ProcessingRing.Visibility = Visibility.Visible;
+        //        });
+        //        await AutoRescanService.AutoScan();
+        //        DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            ProcessingRing.Visibility = Visibility.Collapsed;
+        //        });
+        //    }
+        //    finally
+        //    {
+        //        scanSemaphore.Release();
+        //    }
+        //}
 
         //private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         //{
@@ -353,10 +352,6 @@ namespace WinUIMusicPlayer.View
                 mainWindow.updateMusicList -= MainWindow_updateMusicList;             
             }
         }
-        private void InitializeAppWindow()
-        {
-            appWindow = ToolUtils.GetAppWindowForCurrentWindow(App.MainWindow);
-        }
 
         private void InitializeTimer()
         {
@@ -366,12 +361,12 @@ namespace WinUIMusicPlayer.View
         }
         public void ShowTransmission()
         {
-            ProcessingRing.Visibility = Visibility.Visible;
+            ViewModel.ProcessRingVisibility = Visibility.Visible;
         }
 
         public void HideTransmission()
         {
-            ProcessingRing.Visibility = Visibility.Collapsed;
+            ViewModel.ProcessRingVisibility = Visibility.Collapsed;
         }
 
         //private async Task ReadUsbDevice()
@@ -640,22 +635,22 @@ namespace WinUIMusicPlayer.View
             DisableBackButton();
         }
 
-        private void ResetNavigationButtons()
-        {
-            foreach (var item in selectPage.Items)
-            {
-                if (item is SelectorBarItem selectorBarItem)
-                {
-                    selectorBarItem.FontSize = 20;
-                }
-            }
-        }
+        //private void ResetNavigationButtons()
+        //{
+        //    foreach (var item in selectPage.Items)
+        //    {
+        //        if (item is SelectorBarItem selectorBarItem)
+        //        {
+        //            selectorBarItem.FontSize = 20;
+        //        }
+        //    }
+        //}
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
             DateTime startTime = DateTime.Now;
-            ResetNavigationButtons();
+            //ResetNavigationButtons();
             SelectorBarItem selectedItem = sender.SelectedItem;
-            selectedItem.FontSize = 26;
+            //selectedItem.FontSize = 26;
             int currentSelectedIndex = sender.Items.IndexOf(selectedItem);
             currentPage = typeof(SongListPage);
             switch (selectedItem.Name)
@@ -785,28 +780,7 @@ namespace WinUIMusicPlayer.View
             {
                 await PlayMusic(selectedMusic);
             }
-        }
-
-        private void FullScreenButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (appWindow != null)
-            {
-                if (isFullScreen)
-                {
-                    appWindow.SetPresenter(AppWindowPresenterKind.Default);
-                    FullScreenIcon.Glyph = "\uE740";
-                }
-                else
-                {
-                    appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
-                    FullScreenIcon.Glyph = "\uE73F";
-                }
-                isFullScreen = !isFullScreen;
-            }
-
-        }
-
-       
+        }       
 
         private void UpdateViewList(Music music)
         {

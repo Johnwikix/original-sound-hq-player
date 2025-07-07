@@ -104,7 +104,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     IsActive="True"
-                    Visibility="Collapsed" />
+                    Visibility="{Binding ViewModel.ProcessRingVisibility, Mode=OneWay}" />
                 <ComboBox
                     x:Name="UsbDeviceCombox"
                     x:Uid="USBDevice"
@@ -112,8 +112,8 @@
                     VerticalAlignment="Center"
                     FontSize="12"
                     ItemsSource="{Binding ViewModel.UsbStorageDevices, Mode=OneWay}"
+                    SelectedIndex="{Binding ViewModel.UsbSelectedIndex, Mode=TwoWay}"
                     SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                    SelectedIndex="{Binding ViewModel.UsbSelectedIndex,Mode=TwoWay}"
                     Visibility="{Binding ViewModel.UsbDeviceVisibility, Mode=OneWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:UsbStorageDevice">
@@ -196,13 +196,13 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Click="FullScreenButton_Click">
+                    Command="{Binding ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}">
                     <FontIcon
                         x:Name="FullScreenIcon"
                         Grid.Column="0"
                         Margin="0"
                         VerticalAlignment="Center"
-                        Glyph="&#xe740;" />
+                        Glyph="{Binding ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                 </Button>
             </StackPanel>
             <Grid Grid.Row="1" Grid.Column="0">

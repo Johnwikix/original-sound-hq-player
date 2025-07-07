@@ -18,4 +18,5 @@
     <converters:SampleRateBitDepthConverter x:Key="SampleRateBitDepthConverter" />
     <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
     <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
+    <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
 </ResourceDictionary>
