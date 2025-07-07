@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.VisualBasic.FileIO;
 using Microsoft.Windows.ApplicationModel.Resources;
 using NAudio.Wave;
 using System;
@@ -747,6 +748,34 @@ namespace WinUIMusicPlayer.Utils
                     return GetString("IconSinglePlayback");
                 default:
                     return GetString("IconListLoop");
+            }
+        }
+
+        public static void DeleteFileFromDisk(string path) {
+            try
+            {
+                if (System.IO.File.Exists(path))
+                {
+                    // 删除文件到回收站
+                    FileSystem.DeleteFile(
+                        path,
+                        UIOption.OnlyErrorDialogs,
+                        RecycleOption.SendToRecycleBin
+                    );
+                    Console.WriteLine("文件已移动到回收站！");
+                }
+                else
+                {
+                    Console.WriteLine("文件不存在，无法删除。");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("操作已被用户取消。");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"错误：{ex.Message}");
             }
         }
     }

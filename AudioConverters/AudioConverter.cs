@@ -12,7 +12,7 @@ namespace WinUIMusicPlayer.AudioConverters
 {
     public class AudioConverter
     {
-        public EventHandler<double> progressEvent;
+        public EventHandler<double>? progressEvent;
         public void ConvertMp3(string mp3FilePath, string outputPath, string type = "wav")
         {
             using (Mp3FileReader mp3Reader = new Mp3FileReader(mp3FilePath))

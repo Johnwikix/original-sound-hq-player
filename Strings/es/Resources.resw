@@ -331,7 +331,7 @@
     <value>Propiedades</value>
   </data>
   <data name="FlyoutDeleteItem.Text" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>Eliminar del disco</value>
   </data>
   <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
     <value>Quitar de la lista de reproducción</value>
@@ -622,7 +622,7 @@
     <value>0 es el tamaño original</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
-    <value>音量</value>
+    <value>Volumen</value>
   </data>
   <data name="AnimationSettings.Header" xml:space="preserve">
     <value>Configuración de animación</value>
@@ -644,5 +644,11 @@
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
     <value>Por encima de lo normal</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>Conversión de audio</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>El formato objetivo es el mismo que el original</value>
   </data>
 </root>

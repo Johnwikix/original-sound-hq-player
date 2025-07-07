@@ -331,7 +331,7 @@
     <value>プロパティ</value>
   </data>
   <data name="FlyoutDeleteItem.Text" xml:space="preserve">
-    <value>削除</value>
+    <value>ディスクから削除</value>
   </data>
   <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
     <value>再生リストから削除</value>
@@ -622,7 +622,7 @@
     <value>0は元の寸法</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
-    <value>Volumen</value>
+    <value>音量</value>
   </data>
   <data name="AnimationSettings.Header" xml:space="preserve">
     <value>アニメーション設定</value>
@@ -644,5 +644,11 @@
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
     <value>通常の上に</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>オーディオ変換</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>ターゲットフォーマットは元のフォーマットと同じです</value>
   </data>
 </root>

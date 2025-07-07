@@ -222,6 +222,24 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isFullScreen;
             set => SetProperty(ref _isFullScreen, value);
         }
+        private string _infoBarTitle = string.Empty;
+        public string InfoBarTitle
+        {
+            get => _infoBarTitle;
+            set => SetProperty(ref _infoBarTitle, value);
+        }
+        private bool _infoBarIsOpen = false;
+        public bool InfoBarIsOpen
+        {
+            get => _infoBarIsOpen;
+            set => SetProperty(ref _infoBarIsOpen, value);
+        }
+        private string _infoBarMessage = string.Empty;
+        public string InfoBarMessage
+        {
+            get => _infoBarMessage;
+            set => SetProperty(ref _infoBarMessage, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -280,6 +298,15 @@ namespace WinUIMusicPlayer.ViewModel
         {
             // 设备枚举完成时触发
             System.Diagnostics.Debug.WriteLine("设备枚举已完成");
+        }
+
+        public void UpdateInfoBar(string message) {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                InfoBarIsOpen = true;
+                InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
+                InfoBarMessage = message;
+            });          
         }
 
         private async Task ReadUsbDevice()

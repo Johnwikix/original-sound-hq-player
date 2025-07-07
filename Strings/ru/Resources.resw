@@ -331,7 +331,7 @@
     <value>Свойства</value>
   </data>
   <data name="FlyoutDeleteItem.Text" xml:space="preserve">
-    <value>Удалить</value>
+    <value>Удалить с диска</value>
   </data>
   <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
     <value>Удалить из плейлиста</value>
@@ -644,5 +644,11 @@
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
     <value>Выше нормального</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>Звуковое преобразование</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>Формат цели идентичен первоначальному формату.</value>
   </data>
 </root>

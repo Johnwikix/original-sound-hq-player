@@ -359,20 +359,28 @@ namespace WinUIMusicPlayer.ViewModel
 
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-                    int progressBarValue = 0;
-                    _progressDialog.RequestedTheme = AppSettings.elementTheme;
-                    _ = _progressDialog.UpdateProgress(progressBarValue);
-                    _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                    _converterService.updateProgress += (sender, progress) =>
+                    if (SelectedMusic != null)
                     {
-                        progressBarValue = (int)progress;
+                        if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
+                        {
+                            _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
+                            return;
+                        }
+                        int progressBarValue = 0;
+                        _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
-                    };
-                    if (progressBarValue < 100)
-                    {
-                        _progressDialog.XamlRoot = _currentPage.XamlRoot;
-                        _ = _progressDialog.ShowAsync();
-                    }
+                        _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
+                        _converterService.updateProgress += (sender, progress) =>
+                        {
+                            progressBarValue = (int)progress;
+                            _ = _progressDialog.UpdateProgress(progressBarValue);
+                        };
+                        if (progressBarValue < 100)
+                        {
+                            _progressDialog.XamlRoot = _currentPage.XamlRoot;
+                            _ = _progressDialog.ShowAsync();
+                        }
+                    }                    
                 }
             }
         }

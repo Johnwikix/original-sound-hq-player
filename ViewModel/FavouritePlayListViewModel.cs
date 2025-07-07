@@ -303,14 +303,16 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {
-                    MusicList.Remove(item);
+                {                    
                     await MusicDatabaseService.RemoveMusic(item.Id);
+                    ToolUtils.DeleteFileFromDisk(item.Path);
+                    MusicList.Remove(item);
                 }
             }
             else
             {
                 await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
                 MusicList.Remove(SelectedMusic);
             }
         }
@@ -353,12 +355,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void ConvertAudio_Click(MenuFlyoutItem? menuItem, List<Music> uniqueSelectedMusics)
         {
+            _progressDialog.RequestedTheme = AppSettings.elementTheme;
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-                    int progressBarValue = 0;
-                    _progressDialog.RequestedTheme = AppSettings.elementTheme;
+                    int progressBarValue = 0;                    
                     await _progressDialog.UpdateProgress(progressBarValue);
                     _converterService.updateProgress += (sender, progress) =>
                     {
@@ -388,20 +390,27 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-                    int progressBarValue = 0;
-                    _progressDialog.RequestedTheme = AppSettings.elementTheme;
-                    _ = _progressDialog.UpdateProgress(progressBarValue);
-                    _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                    _converterService.updateProgress += (sender, progress) =>
+                    if (SelectedMusic != null)
                     {
-                        progressBarValue = (int)progress;
+                        if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
+                        {
+                            parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
+                            return;
+                        }
+                        int progressBarValue = 0;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
-                    };
-                    if (progressBarValue < 100)
-                    {
-                        _progressDialog.XamlRoot = currentPage.XamlRoot;
-                        _ = _progressDialog.ShowAsync();
-                    }
+                        _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
+                        _converterService.updateProgress += (sender, progress) =>
+                        {
+                            progressBarValue = (int)progress;
+                            _ = _progressDialog.UpdateProgress(progressBarValue);
+                        };
+                        if (progressBarValue < 100)
+                        {
+                            _progressDialog.XamlRoot = currentPage.XamlRoot;
+                            _ = _progressDialog.ShowAsync();
+                        }
+                    }                    
                 }
             }
         }

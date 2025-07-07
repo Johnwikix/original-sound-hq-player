@@ -282,7 +282,13 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-
+                    if (SelectedMusic != null)
+                    {
+                        if(SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
+                        {
+                            _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
+                            return;
+                        }
                         int progressBarValue = 0;
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
@@ -296,7 +302,8 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             _progressDialog.XamlRoot = currentPage.XamlRoot;
                             _ = _progressDialog.ShowAsync();
-                        }                    
+                        }
+                    }                   
                 }
             }
         }
@@ -306,17 +313,19 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {
-                    MusicList.Remove(item);
+                {                    
                     await MusicDatabaseService.RemoveMusic(item.Id);
+                    ToolUtils.DeleteFileFromDisk(item.Path);
+                    MusicList.Remove(item);
                 }
             }
             else
             {
                 if (SelectedMusic != null)
-                {
-                    MusicList.Remove(SelectedMusic);
+                {                    
                     await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                    ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
+                    MusicList.Remove(SelectedMusic);                    
                 }
             }
         }

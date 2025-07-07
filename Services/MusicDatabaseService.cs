@@ -717,34 +717,34 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task RemoveMusic(int musicId)
         {
-            await _dbConnection.DeleteAsync<Music>(musicId);
-            AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
-            //HashSet<string> usbMusicTitles = new HashSet<string>(AppData.musicOnUsbDevice.Select(u => u.Title));
-            //foreach (var music in AppData.allSongs)
-            //{
-            //    music.IsExistOnDevice = usbMusicTitles.Contains(music.Title);
-            //}
-            var usbMusicGroups = AppData.musicOnUsbDevice
-                .GroupBy(u => u.Title)
-                .ToDictionary(g => g.Key, g => g.ToList());
-            foreach (var music in AppData.allSongs)
+            try
             {
-                music.IsExistOnDevice = 0;
-
-                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+                await _dbConnection.DeleteAsync<Music>(musicId);
+                AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
+                var usbMusicGroups = AppData.musicOnUsbDevice
+                    .GroupBy(u => u.Title)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+                foreach (var music in AppData.allSongs)
                 {
-                    music.IsExistOnDevice = 1;
-                    foreach (var usbMusic in matchingItems)
+                    music.IsExistOnDevice = 0;
+                    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
                     {
-                        if (music.Author == usbMusic.Author &&
-                            music.Album == usbMusic.Album &&
-                            music.Extension == usbMusic.Extension)
+                        music.IsExistOnDevice = 1;
+                        foreach (var usbMusic in matchingItems)
                         {
-                            music.IsExistOnDevice = 2;
-                            break;
+                            if (music.Author == usbMusic.Author &&
+                                music.Album == usbMusic.Album &&
+                                music.Extension == usbMusic.Extension)
+                            {
+                                music.IsExistOnDevice = 2;
+                                break;
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e) {
+                Debug.WriteLine($"删除音乐时出错: {e.Message}");
             }
         }
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)

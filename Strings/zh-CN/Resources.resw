@@ -331,7 +331,7 @@
     <value>属性</value>
   </data>
   <data name="FlyoutDeleteItem.Text" xml:space="preserve">
-    <value>删除</value>
+    <value>从磁盘中删除</value>
   </data>
   <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
     <value>从播放列表中移除</value>
@@ -644,5 +644,11 @@
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
     <value>高于正常</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>音频转换</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>目标格式与原格式相同</value>
   </data>
 </root>

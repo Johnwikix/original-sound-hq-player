@@ -281,15 +281,17 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     await MusicDatabaseService.RemoveMusic(item.Id);
+                    ToolUtils.DeleteFileFromDisk(item.Path);
                     MusicList.Remove(item);
                 }
             }
             else
             {
                 if (SelectedMusic != null)
-                {
-                    MusicList.Remove(SelectedMusic);
+                {                    
                     await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                    ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
+                    MusicList.Remove(SelectedMusic);
                 }
             }
 
@@ -379,7 +381,12 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-
+                    if (SelectedMusic != null) {
+                        if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
+                        {
+                            _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
+                            return;
+                        }
                         int progressBarValue = 0;
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
@@ -394,7 +401,7 @@ namespace WinUIMusicPlayer.ViewModel
                             _progressDialog.XamlRoot = _currentPage.XamlRoot;
                             _ = _progressDialog.ShowAsync();
                         }
-                    
+                    }
                 }
             }
         }

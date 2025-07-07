@@ -331,7 +331,7 @@
     <value>Properties</value>
   </data>
   <data name="FlyoutDeleteItem.Text" xml:space="preserve">
-    <value>Delete</value>
+    <value>Delete From Disk</value>
   </data>
   <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
     <value>Remove from Playlist</value>
@@ -644,5 +644,11 @@
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
     <value>Above Normal</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>Audio Conversion</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>The target format is the same as the original format</value>
   </data>
 </root>

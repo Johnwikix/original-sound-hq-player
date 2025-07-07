@@ -7,7 +7,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class AudioConverterService
     {
-        public EventHandler<double> updateProgress;
+        public EventHandler<double>? updateProgress;
         public async Task ConvertAudio2Wav(Music music, string type = "wav")
         {
             AudioConverter converter = new AudioConverter();
