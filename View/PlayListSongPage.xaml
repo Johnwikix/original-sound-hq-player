@@ -12,13 +12,6 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
-        <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter" />
-        <converters:SampleRateBitDepthConverter x:Key="SampleRateBitDepthConverter" />
-        <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />
-        <converters:FavouriteTextConverter x:Key="FavouriteTextConverter" />
-        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter" />
-        <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter" />
         <Style
             x:Key="ListViewItemStyle"
             BasedOn="{StaticResource DefaultListViewItemStyle}"

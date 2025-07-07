@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -19,7 +20,7 @@ namespace WinUIMusicPlayer.Model
         public static int? LastPlayedMusicId { get; set; }
         public static float Volume { get; set; } = 0.5f;
         public static string searchText = string.Empty;
-        public static List<UsbStorageDevice> usbStorageDevices = new List<UsbStorageDevice>();
+        public static ObservableCollection<UsbStorageDevice> usbStorageDevices = new ObservableCollection<UsbStorageDevice>();
         public static UsbStorageDevice usbStorageDevice = new UsbStorageDevice();
         public static string sortOrder { get; set; } = "DefaultOrder";
         public static IntPtr m_hWnd { get; set; } = IntPtr.Zero;              

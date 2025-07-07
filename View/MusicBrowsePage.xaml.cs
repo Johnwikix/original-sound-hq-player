@@ -49,7 +49,6 @@ namespace WinUIMusicPlayer.View
         public PlayList currentPlayList;
         public int currentPlayListId;
         private DispatcherTimer typingTimer;
-        //private SystemMediaControlsService systemMediaControlsService;
         private bool isFullScreen = false;
         private AppWindow appWindow;      
         private NotificationService notificationService;
@@ -58,20 +57,17 @@ namespace WinUIMusicPlayer.View
         public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
-        //private ObservableCollection<LyricLine> _uiLyrics = new ObservableCollection<LyricLine>();
-        private DeviceWatcher deviceWatcher;
+        //private DeviceWatcher deviceWatcher;
         private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
         private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
-        //private int _lastLyricIndex = -1;
         private EqualizerDialog equalizerDialog;
         private CanvasControl _spectrumCanvas;
         private float[] _spectrumData = new float[16];
         private readonly object _lockObject = new object(); // 锁对象
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
-        //private bool isInitialized = false;
         private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
@@ -96,7 +92,6 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            //this.systemMediaControlsService = systemMediaControlsService;
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
             mainWindow = (App.MainWindow as MainWindow);
@@ -132,7 +127,7 @@ namespace WinUIMusicPlayer.View
             this.notificationService = notificationService;
             InitializeTimer();            
             InitializeAppWindow();           
-            StartWatchingUsbStorageDevices();
+            
             StartWatchingFileFolder();
             OnFileChanged(null, null);
             ViewModel.IsInitialized = true;
@@ -194,19 +189,19 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void StartWatchingUsbStorageDevices()
-        {
-            // 定义设备选择器以筛选 USB 存储设备
-            string deviceSelector = StorageDevice.GetDeviceSelector();
-            // 创建设备监视器
-            deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-            // 注册设备添加、移除和枚举完成事件
-            deviceWatcher.Added += DeviceWatcher_Added;
-            deviceWatcher.Removed += DeviceWatcher_Removed;
-            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-            // 启动设备监视器
-            deviceWatcher.Start();
-        }
+        //private void StartWatchingUsbStorageDevices()
+        //{
+        //    // 定义设备选择器以筛选 USB 存储设备
+        //    string deviceSelector = StorageDevice.GetDeviceSelector();
+        //    // 创建设备监视器
+        //    deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
+        //    // 注册设备添加、移除和枚举完成事件
+        //    deviceWatcher.Added += DeviceWatcher_Added;
+        //    deviceWatcher.Removed += DeviceWatcher_Removed;
+        //    deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
+        //    // 启动设备监视器
+        //    deviceWatcher.Start();
+        //}
 
         private async void StartWatchingFileFolder()
         {
@@ -257,26 +252,26 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
-        {
-            // 当 USB 存储设备插入时触发            
-            System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
-            Task.Delay(1500).Wait(); // 等待设备稳定
-            await ReadUsbDevice();
-        }
+        //private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        //{
+        //    // 当 USB 存储设备插入时触发            
+        //    System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
+        //    Task.Delay(1500).Wait(); // 等待设备稳定
+        //    await ReadUsbDevice();
+        //}
 
-        private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
-        {
-            // 当 USB 存储设备移除时触发            
-            System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
-            await ReadUsbDevice();
-        }
+        //private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        //{
+        //    // 当 USB 存储设备移除时触发            
+        //    System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
+        //    await ReadUsbDevice();
+        //}
 
-        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
-        {
-            // 设备枚举完成时触发
-            System.Diagnostics.Debug.WriteLine("设备枚举已完成");
-        }
+        //private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        //{
+        //    // 设备枚举完成时触发
+        //    System.Diagnostics.Debug.WriteLine("设备枚举已完成");
+        //}
         public void UpdateCurrentLyricIndex(int currentIndex)
         {
             if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
@@ -379,34 +374,34 @@ namespace WinUIMusicPlayer.View
             ProcessingRing.Visibility = Visibility.Collapsed;
         }
 
-        private async Task ReadUsbDevice()
-        {
-            try
-            {
-                AppData.usbStorageDevices.Clear();
-                AppData.usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (AppData.usbStorageDevices.Count > 0)
-                    {
-                        UsbDeviceCombox.Visibility = Visibility.Visible;
-                        UsbDeviceCombox.ItemsSource = AppData.usbStorageDevices;
-                        UsbDeviceCombox.SelectedIndex = 0;
-                    }
-                    else
-                    {
-                        UsbDeviceCombox.Visibility = Visibility.Collapsed;
-                        UsbDeviceCombox.ItemsSource = null;
-                        UsbDeviceCombox.SelectedIndex = -1;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                UsbDeviceCombox.Visibility = Visibility.Collapsed;
-                System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
-            }
-        }
+        //private async Task ReadUsbDevice()
+        //{
+        //    try
+        //    {
+        //        AppData.usbStorageDevices.Clear();
+        //        AppData.usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+        //        DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            if (AppData.usbStorageDevices.Count > 0)
+        //            {
+        //                UsbDeviceCombox.Visibility = Visibility.Visible;
+        //                UsbDeviceCombox.ItemsSource = AppData.usbStorageDevices;
+        //                UsbDeviceCombox.SelectedIndex = 0;
+        //            }
+        //            else
+        //            {
+        //                UsbDeviceCombox.Visibility = Visibility.Collapsed;
+        //                UsbDeviceCombox.ItemsSource = null;
+        //                UsbDeviceCombox.SelectedIndex = -1;
+        //            }
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        UsbDeviceCombox.Visibility = Visibility.Collapsed;
+        //        System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
+        //    }
+        //}
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

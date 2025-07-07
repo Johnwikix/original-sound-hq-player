@@ -9,9 +9,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     mc:Ignorable="d"    >
-    <Page.Resources>
-        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
-    </Page.Resources>
     <Grid Margin="0">
         <GridView x:Name="FolderGridView"                       
                   IsItemClickEnabled="True"

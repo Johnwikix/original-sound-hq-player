@@ -18,6 +18,8 @@
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
     <None Remove="Controls\NotifyIconControl.xaml" />
+    <None Remove="Style\BtnStyle.xaml" />
+    <None Remove="Style\ConverterDictionary.xaml" />
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumPage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
@@ -109,6 +111,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Style\ConverterDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Style\BtnStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\SubView\EqualizerDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

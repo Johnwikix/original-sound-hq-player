@@ -10,10 +10,6 @@
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
-        <converters:RadioButtonTagToBoolConverter x:Key="RadioTagConverter" />
-    </Page.Resources>
     <Grid Margin="0,32,0,32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -489,7 +485,7 @@
                                     Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Mica"
                                     GroupName="BackdropGroup"
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Mica}"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Mica}"
                                     Tag="Mica" />
                                 <RadioButton
                                     x:Name="AcrylicRadioButton"
@@ -498,7 +494,7 @@
                                     Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Acrylic"
                                     GroupName="BackdropGroup"
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Acrylic}"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Acrylic}"
                                     Tag="Acrylic" />
                                 <RadioButton
                                     x:Name="TransparentAcrylicRadioButton"
@@ -507,7 +503,7 @@
                                     Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="TransparentAcrylic"
                                     GroupName="BackdropGroup"
-                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=TransparentAcrylic}"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=TransparentAcrylic}"
                                     Tag="TransparentAcrylic" />
                             </StackPanel>
                         </Grid>
@@ -541,7 +537,7 @@
                                     Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Default"
                                     GroupName="ThemeGroup"
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Default}"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Default}"
                                     Tag="Default" />
                                 <RadioButton
                                     x:Name="DarkRadioButton"
@@ -550,7 +546,7 @@
                                     Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Dark"
                                     GroupName="ThemeGroup"
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Dark}"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Dark}"
                                     Tag="Dark" />
                                 <RadioButton
                                     x:Name="LightRadioButton"
@@ -559,7 +555,7 @@
                                     Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="Light"
                                     GroupName="ThemeGroup"
-                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioTagConverter}, ConverterParameter=Light}"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Light}"
                                     Tag="Light" />
                             </StackPanel>
                         </Grid>

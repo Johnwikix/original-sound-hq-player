@@ -11,7 +11,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Devices.Enumeration;
+using Windows.Devices.Portable;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -185,10 +188,28 @@ namespace WinUIMusicPlayer.ViewModel
             get => _lastLyricIndex;
             set => SetProperty(ref _lastLyricIndex, value);
         }
+        private Visibility _usbDeviceVisibility;
+        public Visibility UsbDeviceVisibility
+        {
+            get => _usbDeviceVisibility;
+            set => SetProperty(ref _usbDeviceVisibility, value);
+        }
+        private ObservableCollection<UsbStorageDevice> _usbStorageDevices;
+        public ObservableCollection<UsbStorageDevice> UsbStorageDevices
+        {
+            get => _usbStorageDevices;
+            set => SetProperty(ref _usbStorageDevices, value);
+        }
+        private int _usbSelectedIndex = 0;
+        public int UsbSelectedIndex
+        {
+            get => _usbSelectedIndex;
+            set =>SetProperty(ref _usbSelectedIndex, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
-
+        private DeviceWatcher deviceWatcher;
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             //var mode = AppData.PlayMode;
@@ -199,12 +220,81 @@ namespace WinUIMusicPlayer.ViewModel
             InitializeSystemMediaControls();
             Volume = (double)(AppData.Volume * 100);
             _tempVolume = (double)(AppData.Volume * 100);
+            UsbDeviceVisibility = Visibility.Collapsed;
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
+            StartWatchingUsbStorageDevices();
         }       
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
             _musicPlaybackService.ChangingSetting();
+        }
+
+        private void StartWatchingUsbStorageDevices()
+        {
+            // 定义设备选择器以筛选 USB 存储设备
+            string deviceSelector = StorageDevice.GetDeviceSelector();
+            // 创建设备监视器
+            deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
+            // 注册设备添加、移除和枚举完成事件
+            deviceWatcher.Added += DeviceWatcher_Added;
+            deviceWatcher.Removed += DeviceWatcher_Removed;
+            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
+            // 启动设备监视器
+            deviceWatcher.Start();
+        }
+
+        private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        {
+            // 当 USB 存储设备插入时触发            
+            System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
+            Task.Delay(1500).Wait(); // 等待设备稳定
+            await ReadUsbDevice();
+        }
+
+        private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            // 当 USB 存储设备移除时触发            
+            System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
+            await ReadUsbDevice();
+        }
+
+        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        {
+            // 设备枚举完成时触发
+            System.Diagnostics.Debug.WriteLine("设备枚举已完成");
+        }
+
+        private async Task ReadUsbDevice()
+        {
+            try
+            {
+                AppData.usbStorageDevices.Clear();
+                AppData.usbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (AppData.usbStorageDevices.Count > 0)
+                    {
+                        UsbDeviceVisibility = Visibility.Visible;
+                        UsbStorageDevices = AppData.usbStorageDevices;
+                        UsbSelectedIndex = 0;
+                    }
+                    else
+                    {
+                        UsbDeviceVisibility = Visibility.Collapsed;
+                        UsbStorageDevices = null;
+                        UsbSelectedIndex = -1;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    UsbDeviceVisibility = Visibility.Collapsed;
+                });                
+                System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
+            }
         }
 
         private void InitializeSystemMediaControls()

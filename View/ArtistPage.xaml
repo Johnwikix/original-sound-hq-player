@@ -10,9 +10,6 @@
     mc:Ignorable="d"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     >
-    <Page.Resources>
-        <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter"/>
-    </Page.Resources>
     <Grid Margin="0">
         <GridView x:Name="ArtistsGridView"                       
           IsItemClickEnabled="True"

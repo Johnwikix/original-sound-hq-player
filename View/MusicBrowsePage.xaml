@@ -15,112 +15,11 @@
     TabIndex="0"
     mc:Ignorable="d">
     <Page.Resources>
-        <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
-        <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter" />
-        <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
-        <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />
-        <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
-        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
-        <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />
-        <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
-        <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
-        <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
-        <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter" />
-        <Style x:Key="SimpleHoverButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="CornflowerBlue" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="16,8" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border
-                            x:Name="RootBorder"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}">
-                            <Grid>
-                                <ContentPresenter
-                                    x:Name="ContentPresenter"
-                                    Margin="{TemplateBinding Padding}"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center" />
-                                <Border
-                                    x:Name="HoverBorder"
-                                    Background="Black"
-                                    CornerRadius="{TemplateBinding CornerRadius}"
-                                    Opacity="0" />
-
-                                <!--  悬停时显示的向上箭头 (居中显示)  -->
-                                <Path
-                                    x:Name="HoverArrow"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Data="M0,8 L8,0 L16,8 L12,8 L8,4 L4,8 Z"
-                                    Fill="White"
-                                    Opacity="0"
-                                    RenderTransformOrigin="0.5,0.5">
-                                    <Path.RenderTransform>
-                                        <TranslateTransform x:Name="ArrowTransform" Y="10" />
-                                    </Path.RenderTransform>
-                                </Path>
-                            </Grid>
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal">
-                                        <Storyboard>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="HoverBorder"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0"
-                                                Duration="0:0:0.2" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="HoverArrow"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0"
-                                                Duration="0:0:0.2" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="ArrowTransform"
-                                                Storyboard.TargetProperty="Y"
-                                                To="10"
-                                                Duration="0:0:0.2" />
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="PointerOver">
-                                        <Storyboard>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="HoverBorder"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0.4"
-                                                Duration="0:0:0.2" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="HoverArrow"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0.9"
-                                                Duration="0:0:0.2" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="ArrowTransform"
-                                                Storyboard.TargetProperty="Y"
-                                                To="0"
-                                                Duration="0:0:0.2" />
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="HoverBorder.Opacity" Value="0.6" />
-                                            <Setter Target="HoverArrow.Opacity" Value="1" />
-                                            <Setter Target="ArrowTransform.Y" Value="-2" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Style/BtnStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Page.Resources>
     <Grid Margin="0,32,0,0">
         <Grid.RowDefinitions>
@@ -128,10 +27,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid
-            x:Name="TopPanel"
-            Grid.Row="0"
-            Visibility="Visible">
+        <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">
             <StackPanel Orientation="Horizontal">
                 <Button
                     x:Name="BackButton"
@@ -215,8 +111,10 @@
                     Margin="10,0,10,0"
                     VerticalAlignment="Center"
                     FontSize="12"
+                    ItemsSource="{Binding ViewModel.UsbStorageDevices, Mode=OneWay}"
                     SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                    Visibility="Collapsed">
+                    SelectedIndex="{Binding ViewModel.UsbSelectedIndex,Mode=TwoWay}"
+                    Visibility="{Binding ViewModel.UsbDeviceVisibility, Mode=OneWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:UsbStorageDevice">
                             <StackPanel Orientation="Horizontal">
@@ -240,22 +138,10 @@
                     FontSize="12"
                     SelectedIndex="0"
                     SelectionChanged="SortByComboBox_SelectionChanged">
-                    <ComboBoxItem
-                        x:Uid="SortOrderDefault"
-                        FontSize="12"
-                        Tag="DefaultOrder" />
-                    <ComboBoxItem
-                        x:Uid="SortOrderA_Z"
-                        FontSize="12"
-                        Tag="A-Z" />
-                    <ComboBoxItem
-                        x:Uid="SortOrderArtist"
-                        FontSize="12"
-                        Tag="Artist" />
-                    <ComboBoxItem
-                        x:Uid="SortOrderAlbum"
-                        FontSize="12"
-                        Tag="Album" />
+                    <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
+                    <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
+                    <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
+                    <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
                 </ComboBox>
                 <TextBox
                     x:Name="SearchTextBox"
@@ -271,10 +157,7 @@
             Margin="10"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
-        <Grid
-            x:Name="PlayingDetail"
-            Grid.Row="1"
-            Visibility="Collapsed">
+        <Grid x:Name="PlayingDetail" Grid.Row="1" Visibility="Collapsed">
             <!--  Define transitions  -->
             <Grid.Transitions>
                 <TransitionCollection>
@@ -291,10 +174,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  返回按钮  -->
-            <StackPanel
-                Grid.Row="0"
-                Grid.Column="0"
-                Orientation="Horizontal">
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
                 <Button
                     x:Name="CancelPlayingDetailButton"
                     Margin="20,10,10,10"
@@ -471,10 +351,7 @@
             </Grid>
         </Grid>
         <!--  底部控制区域  -->
-        <Grid
-            Grid.Row="2"
-            Height="150"
-            Margin="10,0,10,10">
+        <Grid Grid.Row="2" Height="150" Margin="10,0,10,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -543,10 +420,7 @@
                             Opacity="0" />
                     </Grid>
                 </Button>
-                <Grid
-                    Width="Auto"
-                    Height="100"
-                    MaxWidth="300">
+                <Grid Width="Auto" Height="100" MaxWidth="300">
                     <Grid.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -752,10 +626,7 @@
                     Click="CurrentPlayListButton_Click">
                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                 </Button>
-                <TeachingTip
-                    x:Name="CurrentPlayListTeachingTip"
-                    IsLightDismissEnabled="True"
-                    Target="{x:Bind CurrentPlayListButton}">
+                <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
                     <TeachingTip.Content>
                         <ListView
                             x:Name="CurrentPlayListView"
