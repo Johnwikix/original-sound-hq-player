@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,17 +43,11 @@ namespace WinUIMusicPlayer.Services
         private NotificationService notificationService;
         public List<LyricLine> _lyrics = new List<LyricLine>();
         private LrcService lrcService = new LrcService();
-        private CancellationTokenSource _lyricsCancellationTokenSource;
-        private float[] _fftBuffer;
-        private Complex[] _complexBuffer;
-        private int _fftPosition;
-        private int _fftLength = 64; // FFT点数
-        private int _m; // FFT阶数
-        private int _barCount = 16; // 柱状图数量
-        private float[] _spectrumData;
-        private readonly object _spectrumDataLock = new();
-        private volatile bool _hasNewData = false;
+        private CancellationTokenSource _lyricsCancellationTokenSource;       
         private CustomEqualizer equalizer;
+        private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
+        private TimeSpan _cachedCurrentTime;
+        private TimeSpan _cachedTotalTime;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
         {
             new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
@@ -76,10 +71,6 @@ namespace WinUIMusicPlayer.Services
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
-            _m = (int)Math.Log(_fftLength, 2);
-            _fftBuffer = new float[_fftLength];
-            _complexBuffer = new NAudio.Dsp.Complex[_fftLength];
-            _spectrumData = new float[_barCount];
             
         }
 
@@ -243,49 +234,29 @@ namespace WinUIMusicPlayer.Services
             {
                 if (AppSettings.isPlaying && !MusicBrowseViewModel.IsUserDraggingProgressSlider)
                 {
-                    double currentTimeSeconds = 0;
-                    double totalSeconds = 0;
 
                     if (waveChannel != null)
                     {
-                        currentTimeSeconds = waveChannel.CurrentTime.TotalSeconds;
-                        totalSeconds = waveChannel.TotalTime.TotalSeconds;
-                        if (currentTimeSeconds > totalSeconds) {
-                            currentTimeSeconds = 0;
-                            totalSeconds = 0;
+                        if (waveChannel.CurrentTime.TotalSeconds > waveChannel.TotalTime.TotalSeconds) {
                             AutoPlayNextTrack();
                         }
-                    }
-                    //else if (adapter != null)
-                    //{
-                    //    currentTimeSeconds = adapter.CurrentTime.TotalSeconds;
-                    //    totalSeconds = adapter.TotalTime.TotalSeconds;
-                    //}
-                    //updateProgressSliders?.Invoke(this, currentTimeSeconds);                   
-
-                    // 格式化显示时间
-                    TimeSpan currentTime = TimeSpan.FromSeconds(currentTimeSeconds);
-                    TimeSpan totalTime = TimeSpan.FromSeconds(totalSeconds);
-                    string currentTimeText = currentTime.ToString(@"mm\:ss");
-                    string totalTimeText = totalTime.ToString(@"mm\:ss");
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        MusicBrowseViewModel.ProgressSlider = currentTimeSeconds;
-                        MusicBrowseViewModel.PlayTimeText = $"{currentTimeText}/{totalTimeText}";
-                    });                    
-                    UpdateLyrics(currentTime);
+                        // 格式化显示时间
+                        _cachedCurrentTime = TimeSpan.FromSeconds(waveChannel.CurrentTime.TotalSeconds);
+                        _cachedTotalTime = TimeSpan.FromSeconds(waveChannel.TotalTime.TotalSeconds);
+                        _timeStringBuilder.Clear();
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            MusicBrowseViewModel.ProgressSlider = waveChannel.CurrentTime.TotalSeconds;
+                            MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
+                        });
+                        UpdateLyrics(_cachedCurrentTime);
+                    } 
                 }
-                //UpdateSpectrumCallback();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
-        }
-
-        private void UpdateSpectrumCallback()
-        {            
-            if (!_hasNewData) return;            
         }
 
         private void UpdateLyrics(TimeSpan currentPosition)
@@ -311,7 +282,6 @@ namespace WinUIMusicPlayer.Services
             if (currentIndex >= 0)
             {
                 MusicBrowseViewModel.UpdateLyricsToUI(currentIndex);
-                //updateCurrentLyricIndex?.Invoke(this, currentIndex);
             }
         }
 
@@ -328,14 +298,6 @@ namespace WinUIMusicPlayer.Services
                     newPosition = Math.Max(0, Math.Min(newPosition, totalSeconds));
                     waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
                 }
-                //else if (ffmpegDecoder != null)
-                //{
-                //    // 对于其他格式，使用audioFileReader
-
-                //    newPosition = (double)ffmpegDecoder.Position / ffmpegDecoder.WaveFormat.BytesPerSecond + seconds;
-                //    newPosition = Math.Max(0, Math.Min(newPosition, (double)ffmpegDecoder.Length / ffmpegDecoder.WaveFormat.BytesPerSecond));
-                //    ffmpegDecoder.Position = (long)(newPosition * ffmpegDecoder.WaveFormat.BytesPerSecond);
-                //}
             }
             return newPosition;
         }
@@ -360,13 +322,6 @@ namespace WinUIMusicPlayer.Services
                         selectedDevice.Dispose();
                         selectedDevice = null;
                     }
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    OutputDeviceChange();
-                    if (waveChannel != null)
-                    {
-                        ResumeMusic();
-                    }
                 }
                 else
                 {
@@ -375,14 +330,12 @@ namespace WinUIMusicPlayer.Services
                     {
                         selectedDevice.Dispose();
                         selectedDevice = null;
-                    }
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    OutputDeviceChange();
-                    if (waveChannel != null)
-                    {
-                        ResumeMusic();
-                    }
+                    }                    
+                }
+                OutputDeviceChange();
+                if (waveChannel != null)
+                {
+                    ResumeMusic();
                 }
             }
             catch (Exception ex)
@@ -461,8 +414,8 @@ namespace WinUIMusicPlayer.Services
                     selectedDevice = null;
                 }
             }
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            //GC.Collect();
+            //GC.WaitForPendingFinalizers();
         }
 
         public void SelectOutputDevice()
@@ -471,7 +424,9 @@ namespace WinUIMusicPlayer.Services
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
-                    waveOut = new WaveOutEvent();
+                    var waveOutEvent = new WaveOutEvent();
+                    waveOutEvent.DesiredLatency = AppSettings.Latency;
+                    waveOut = waveOutEvent;
                     break;
                 case "WasapiShared":
                     waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
@@ -489,14 +444,16 @@ namespace WinUIMusicPlayer.Services
                     waveOut = new NAudio.Wave.AsioOut();
                     break;
                 default:
-                    waveOut = new WaveOutEvent();
+                    var defaultWaveOutEvent = new WaveOutEvent();
+                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+                    waveOut = defaultWaveOutEvent;
                     break;
             }
-            if (waveOut is WaveOutEvent defaultWaveOutEvent)
-            {
-                defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-                defaultWaveOutEvent.NumberOfBuffers = 3;
-            }
+            //if (waveOut is WaveOutEvent defaultWaveOutEvent)
+            //{
+            //    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+            //    defaultWaveOutEvent.NumberOfBuffers = 2;
+            //}
         }
 
         public void AutoPlayNextTrack()
@@ -505,19 +462,16 @@ namespace WinUIMusicPlayer.Services
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
-                    //playingMusic?.Invoke(this, currentPlayingMusic);
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
                     int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-                    //playingMusic?.Invoke(this, currentPlayingList[nextIndex]);
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
                     Random random = new Random();
                     int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
-                    //playingMusic?.Invoke(this, currentPlayingList[randomIndex]);
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
                     break;
                 case PlayMode.RepeatOff:
@@ -534,11 +488,6 @@ namespace WinUIMusicPlayer.Services
                 waveOut.Stop();
                 waveChannel.CurrentTime = TimeSpan.Zero;                
             }
-            //else if (ffmpegDecoder != null)
-            //{
-            //    ffmpegDecoder.Position = 0;
-            //}
-            //updateProgressSliders?.Invoke(this, 0);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicBrowseViewModel.ProgressSlider = 0;
@@ -648,8 +597,6 @@ namespace WinUIMusicPlayer.Services
                         waveChannel = new WaveChannel32(multiTypeAudioReader);
                         waveChannel.CurrentTime = currentPos;
                         waveChannel.Volume = volume;
-                        //waveOut.Init(waveChannel);                        
-                        //waveOut.Volume = volume;
                     }
                     catch (Exception e)
                     {
@@ -679,8 +626,6 @@ namespace WinUIMusicPlayer.Services
                         return false;
                     }
                 }
-                //TO DO 波形可视化
-                //waveChannel.Sample += WaveChannel_Sample;
                 if (AppSettings.IsEqualizerEnabled)
                 {
                     isEnableEq = true;                    
@@ -698,78 +643,16 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                //showMessage?.Invoke(this, $"播放失败{ex.Message}");
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                 Reset();
-                //updateProgressSliders?.Invoke(this, 0);
                 MusicBrowseViewModel.ProgressSlider = 0;
                 return false;
             }
         }
 
-        private void WaveChannel_Sample(object? sender, SampleEventArgs e)
-        {
-            float sample = (e.Left + e.Right)/2;
-            _fftBuffer[_fftPosition] = sample * (float)FastFourierTransform.HannWindow(_fftPosition, _fftLength);
-            _fftPosition++;            
-            if (_fftPosition >= _fftLength)
-            {                
-                _fftPosition = 0;
-                lock (_spectrumDataLock)
-                {                    
-                    // 异步通知UI更新
-                    Task.Run(() => {
-                        CalculateSpectrum(_fftBuffer);
-                        updateSpectrumData?.Invoke(this, _spectrumData);
-                    });
-                }
-            }           
-        }
-
-        // 计算频谱
-        private void CalculateSpectrum(float[] fftBuffer)
-        {
-            Debug.WriteLine($"时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", fftBuffer)}]");
-            Parallel.For(0, _fftLength, i =>
-            {
-                _complexBuffer[i].X = fftBuffer[i];
-                _complexBuffer[i].Y = 0;
-            });
-
-            FastFourierTransform.FFT(true, _m, _complexBuffer);
-
-            int spectrumSize = _barCount;
-            int pointsPerBin = _fftLength / 2 / spectrumSize;
-
-            // 并行计算频谱数据
-            Parallel.For(0, spectrumSize, i =>
-            {
-                float sum = 0;
-                int startIndex = i * pointsPerBin;
-                int endIndex = Math.Min(startIndex + pointsPerBin, _fftLength / 2);
-
-                for (int j = startIndex; j < endIndex; j++)
-                {
-                    float magnitude = (float)Math.Sqrt(
-                        _complexBuffer[j].X * _complexBuffer[j].X +
-                        _complexBuffer[j].Y * _complexBuffer[j].Y);
-                    sum += magnitude;
-                }
-
-                float average = sum / (endIndex - startIndex);
-                float dbValue = 20 * (float)Math.Log10(average + 0.0001f);
-                float normalizedValue = Math.Max(0, Math.Min(1, (dbValue + 90) / 90));
-
-                // 添加平滑处理，避免频谱跳跃
-                _spectrumData[i] = _spectrumData[i] * 0.7f + normalizedValue * 0.3f;
-            });
-        }
-
-
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
-            UpdateEqualizerSettings();
+            //UpdateEqualizerSettings();
             if (await InitializeAudioResources(music, currentPos))
             {
                 try
@@ -796,11 +679,6 @@ namespace WinUIMusicPlayer.Services
                         MusicBrowseViewModel.IsPlaying = true;
                         MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                     });                   
-                    //_ = Task.Run(async () =>
-                    //{
-                    //    await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
-                    //});
-                    //updatePlayPauseButton?.Invoke(this, "\uE769");
                 }
                 catch (Exception ex)
                 {
@@ -831,7 +709,6 @@ namespace WinUIMusicPlayer.Services
 
             if (waveChannel != null)
             {
-                waveChannel.Sample -= WaveChannel_Sample; // 取消事件订阅
                 waveChannel.Dispose();
                 waveChannel = null;
             }
@@ -839,23 +716,6 @@ namespace WinUIMusicPlayer.Services
             if (equalizer != null) {                
                 equalizer = null;
             }
-
-            //if (adapter != null) {
-            //    adapter.Dispose();
-            //    adapter = null;
-            //}
-
-            //if (multiTypeAudioReader != null)
-            //{
-            //    multiTypeAudioReader.Dispose();
-            //    multiTypeAudioReader = null;
-            //}
-
-            //if (ffmpegDecoder != null)
-            //{
-            //    ffmpegDecoder.Dispose();
-            //    ffmpegDecoder = null;
-            //}
             progressTimer?.Stop();
         }
 
@@ -878,7 +738,6 @@ namespace WinUIMusicPlayer.Services
 
             if (waveChannel != null)
             {
-                waveChannel.Sample -= WaveChannel_Sample;
                 waveChannel.Dispose();
                 waveChannel = null;
             }
@@ -887,22 +746,6 @@ namespace WinUIMusicPlayer.Services
             {                
                 equalizer = null;
             }
-
-            //if (adapter != null) {
-            //    adapter.Dispose();
-            //    adapter = null;
-            //}
-            //if (ffmpegDecoder != null)
-            //{
-            //    ffmpegDecoder.Dispose();
-            //    ffmpegDecoder = null;
-            //}
-
-            //if (multiTypeAudioReader != null)
-            //{
-            //    multiTypeAudioReader.Dispose();
-            //    multiTypeAudioReader = null;
-            //
             App.MainWindow.DispatcherQueue.TryEnqueue(async() =>
             {
                 await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
@@ -989,17 +832,14 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (MusicBrowseViewModel.CurrentPlayingMusic != null)
                     {
-                        //playingMusic?.Invoke(this, currentPlayingMusic);
                         MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     }
                     else if (MusicBrowseViewModel.CurrentPlayingList != null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
                     {
-                        //playingMusic?.Invoke(this, currentPlayingList[0]);
                         MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
                     }
                     else
                     {
-                        //showMessage?.Invoke(this, "没有可播放的音乐");
                         notificationService.SendNotification(ToolUtils.GetString("Error"),"没有可播放的音乐");
                         return;
                     }

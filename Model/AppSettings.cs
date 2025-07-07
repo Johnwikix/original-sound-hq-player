@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Model
     {
         public static MMDeviceCollection OutputDevices { get; set; }
         public static string OutputMode { get; set; } = "WaveOut";
-        public static int Latency { get; set; } = 300;
+        public static int Latency { get; set; } = 400;
 
         public static event EventHandler OutputSettingsChanged;
 

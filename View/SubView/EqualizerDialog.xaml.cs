@@ -97,8 +97,7 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     string frequency = slider.Tag?.ToString() ?? "Unknown";
                     double value = Math.Round(slider.Value, 1);
-                    AppSettings.equalizer[frequency] = value;
-                    Debug.WriteLine($"Slider {frequency} changed to {AppSettings.equalizer[frequency]}");                    
+                    AppSettings.equalizer[frequency] = value;                  
                     string? presetName = selectedItem.Tag.ToString();
                     if (presetName == "Custom")
                     {
@@ -138,7 +137,6 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
-            Debug.WriteLine($"Equalizer toggled: {ToggleSwitchEqualizer.IsOn}");
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -174,13 +172,11 @@ namespace WinUIMusicPlayer.View.SubView
                         string frequency = _sliders[i].Tag?.ToString() ?? "Unknown";
                         AppSettings.equalizer[frequency] = presetValues[i];
                     }
-                    Debug.WriteLine($"Preset {presetName} applied.");
                 }
                 else if (presetName == "Custom") {
                     SaveSettings settings = await MusicDatabaseService.GetSettings();
                     AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                     InitializeSliders();
-                    Debug.WriteLine($"Preset {presetName} applied.");
                 }
             }
         }

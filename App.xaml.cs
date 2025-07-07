@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.VisualBasic.ApplicationServices;
 using System;
 using System.Diagnostics;
+using System.Runtime;
 using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
@@ -72,6 +73,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
             this.UnhandledException += App_UnhandledException;
             this.InitializeComponent();
             Services = _host.Services; // 赋值给静态属性
