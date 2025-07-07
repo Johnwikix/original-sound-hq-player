@@ -153,6 +153,7 @@
             </StackPanel>
         </Grid>
         <InfoBar
+            x:Name="InfoBar"
             Title="{Binding ViewModel.InfoBarTitle, Mode=OneWay}"
             Grid.Row="1"
             IsOpen="{Binding ViewModel.InfoBarIsOpen, Mode=TwoWay}"
@@ -164,7 +165,7 @@
             Margin="10"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
-        <Grid x:Name="PlayingDetail" Grid.Row="1" Visibility="Collapsed">
+        <Grid x:Name="PlayingDetail" Grid.Row="2" Visibility="Collapsed">
             <!--  Define transitions  -->
             <Grid.Transitions>
                 <TransitionCollection>

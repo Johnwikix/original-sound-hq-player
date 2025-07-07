@@ -990,6 +990,7 @@ namespace WinUIMusicPlayer.View
                     TopPanel.Visibility = Visibility.Collapsed;
                     ContentFrame.Visibility = Visibility.Collapsed;
                     AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+                    ViewModel.InfoBarIsOpen = false;
                     PlayingDetail.Visibility = Visibility.Visible;
                     ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
                     if (animation != null)
