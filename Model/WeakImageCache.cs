@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Model
         {
             // 每5分钟清理一次失效的弱引用
             _cleanupTimer = new Timer(CleanupExpiredReferences, null,
-                TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
+                TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
         }
 
         public bool TryGetValue(string key, out BitmapImage value)
@@ -104,13 +104,10 @@ namespace WinUIMusicPlayer.Model
                     keysToRemove.Add(kvp.Key);
                 }
             }
-
             foreach (var key in keysToRemove)
             {
                 _cache.TryRemove(key, out _);
             }
-
-            System.Diagnostics.Debug.WriteLine($"清理缓存：移除 {keysToRemove.Count} 个失效引用，当前缓存数量：{Count}");
         }
 
         public void Clear()
