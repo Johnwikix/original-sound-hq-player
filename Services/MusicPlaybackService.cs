@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.Services
         };
         private bool isEnableEq = false;
         public MusicBrowseViewModel MusicBrowseViewModel { get;}
+        private readonly object _waveOutLock = new object();
 
         public MusicPlaybackService(NotificationService notificationService)
         {
@@ -306,37 +307,40 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                // 如果当前正在播放，停止播放并重新初始化音频资源
-                if (AppSettings.isPlaying)
+                lock (_waveOutLock)
                 {
-                    isSettingsChangeStop = true;
-                    progressTimer?.Stop();
-                    if (waveOut != null)
+                    // 如果当前正在播放，停止播放并重新初始化音频资源
+                    if (AppSettings.isPlaying)
                     {
-                        waveOut.Stop();
-                        waveOut.Dispose();
-                        waveOut = null;
+                        isSettingsChangeStop = true;
+                        progressTimer?.Stop();
+                        if (waveOut != null)
+                        {
+                            waveOut.Stop();
+                            waveOut.Dispose();
+                            waveOut = null;
+                        }
+                        if (selectedDevice != null)
+                        {
+                            selectedDevice.Dispose();
+                            selectedDevice = null;
+                        }
                     }
-                    if (selectedDevice != null)
+                    else
                     {
-                        selectedDevice.Dispose();
-                        selectedDevice = null;
+                        isSettingsChangeStop = true;
+                        if (selectedDevice != null)
+                        {
+                            selectedDevice.Dispose();
+                            selectedDevice = null;
+                        }
                     }
-                }
-                else
-                {
-                    isSettingsChangeStop = true;
-                    if (selectedDevice != null)
+                    OutputDeviceChange();
+                    if (waveChannel != null)
                     {
-                        selectedDevice.Dispose();
-                        selectedDevice = null;
-                    }                    
-                }
-                OutputDeviceChange();
-                if (waveChannel != null)
-                {
-                    ResumeMusic();
-                }
+                        ResumeMusic();
+                    }
+                }                
             }
             catch (Exception ex)
             {
@@ -376,7 +380,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                    await InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
+                    InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                 }                               
             }            
         }
@@ -420,36 +424,46 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
-            if (selectedDevice == null) {
-                OutputDeviceChange();
-            }            
-            switch (AppSettings.OutputMode)
+            try {
+                lock (_waveOutLock)
+                {
+                    if (selectedDevice == null)
+                    {                       
+                        OutputDeviceChange();
+                    }
+                    switch (AppSettings.OutputMode)
+                    {
+                        case "WaveOut":
+                            var waveOutEvent = new WaveOutEvent();
+                            waveOutEvent.DesiredLatency = AppSettings.Latency;
+                            waveOut = waveOutEvent;
+                            break;
+                        case "WasapiShared":
+                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
+                            break;
+                        case "WasapiExclusivePush":
+                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, false, AppSettings.Latency);
+                            break;
+                        case "WasapiExclusiveEvent":
+                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
+                            break;
+                        case "DirectSound":
+                            waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
+                            break;
+                        case "ASIO":
+                            waveOut = new NAudio.Wave.AsioOut();
+                            break;
+                        default:
+                            var defaultWaveOutEvent = new WaveOutEvent();
+                            defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+                            waveOut = defaultWaveOutEvent;
+                            break;
+                    }
+                }                
+            }
+            catch (OperationCanceledException)
             {
-                case "WaveOut":
-                    var waveOutEvent = new WaveOutEvent();
-                    waveOutEvent.DesiredLatency = AppSettings.Latency;
-                    waveOut = waveOutEvent;
-                    break;
-                case "WasapiShared":
-                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
-                    break;
-                case "WasapiExclusivePush":
-                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, false, AppSettings.Latency);
-                    break;
-                case "WasapiExclusiveEvent":
-                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
-                    break;
-                case "DirectSound":
-                    waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
-                    break;
-                case "ASIO":
-                    waveOut = new NAudio.Wave.AsioOut();
-                    break;
-                default:
-                    var defaultWaveOutEvent = new WaveOutEvent();
-                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-                    waveOut = defaultWaveOutEvent;
-                    break;
+                Debug.WriteLine("任务取消。");
             }
             //if (waveOut is WaveOutEvent defaultWaveOutEvent)
             //{
@@ -535,7 +549,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                    await InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
+                    InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                 }
                 
                 if (AppSettings.isPlaying)
@@ -574,7 +588,7 @@ namespace WinUIMusicPlayer.Services
             equalizer.Update();
         }
 
-        public async Task<bool> InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
+        public bool InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
         {
             try
             {
@@ -588,7 +602,7 @@ namespace WinUIMusicPlayer.Services
                     notificationService.SendNotification(ToolUtils.GetString("FileDoNotExist"), music.Path);
                     return false;
                 }
-                Reset();
+                InitializeMusic();
                 SelectOutputDevice();
                 if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
                 {
@@ -627,7 +641,7 @@ namespace WinUIMusicPlayer.Services
                         OutputDeviceChange();
                         return false;
                     }
-                }
+                }                
                 if (AppSettings.IsEqualizerEnabled)
                 {
                     isEnableEq = true;                    
@@ -643,6 +657,11 @@ namespace WinUIMusicPlayer.Services
                 return true;
 
             }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("任务取消。");
+                return false;
+            }
             catch (Exception ex)
             {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
@@ -652,73 +671,90 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
-            //UpdateEqualizerSettings();
-            if (await InitializeAudioResources(music, currentPos))
+            lock (_waveOutLock)
             {
-                try
+                if (InitializeAudioResources(music, currentPos))
                 {
-                    // 根据文件类型获取总时长
-                    double totalSeconds = 0;
-                    if (waveChannel != null)
+                    try
                     {
-                        totalSeconds = waveChannel.TotalTime.TotalSeconds;
-                    }                                   
-                    waveOut.Play();
-                    progressTimer.Start();
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() => {
-                        MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
-                        if (isSettingChanged)
+                        // 根据文件类型获取总时长
+                        double totalSeconds = 0;
+                        if (waveChannel != null)
                         {
-                            MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
+                            totalSeconds = waveChannel.TotalTime.TotalSeconds;
                         }
-                        else
-                        {
-                            MusicBrowseViewModel.ProgressSlider = 0;
-                        }
-                        AppSettings.isPlaying = true;
-                        MusicBrowseViewModel.IsPlaying = true;
-                        MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                    });                   
+                        //cancellationToken.ThrowIfCancellationRequested();
+                        waveOut.Play();
+                        progressTimer.Start();
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                            MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
+                            if (isSettingChanged)
+                            {
+                                MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
+                            }
+                            else
+                            {
+                                MusicBrowseViewModel.ProgressSlider = 0;
+                            }
+                            AppSettings.isPlaying = true;
+                            MusicBrowseViewModel.IsPlaying = true;
+                            MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                        });
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Debug.WriteLine("任务取消。");
+                    }
+                    catch (Exception ex)
+                    {
+                        notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                        System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
+                        Reset();
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                    System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                     Reset();
+                    OutputDeviceChange();
                 }
-            }
-            else
-            {
-                Reset();
-                OutputDeviceChange();
             }
         }
+        private void InitializeMusic() {
+            lock (_waveOutLock)
+            {
+                isManualSelect = false;
+                isPausing = false;                
+                isSettingsChangeStop = false;
+                isEnableEq = false;
+                if (waveOut != null)
+                {
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
 
+                if (waveChannel != null)
+                {
+                    waveChannel.Dispose();
+                    waveChannel = null;
+                }
+
+                if (equalizer != null)
+                {
+                    equalizer = null;
+                }
+                progressTimer?.Stop();
+            }
+        }
         public void Reset()
         {
-            isManualSelect = false;
-            isPausing = false;
-            isSettingsChangeStop = false;
-            isEnableEq = false;
-            if (waveOut != null)
-            {
-                waveOut.Stop();
-                waveOut.Dispose();
-                waveOut = null;
-            }
-
-            if (waveChannel != null)
-            {
-                waveChannel.Dispose();
-                waveChannel = null;
-            }
-
-            if (equalizer != null) {                
-                equalizer = null;
-            }
-            progressTimer?.Stop();
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                MusicBrowseViewModel.IsPlaying = false;
+            });
+            AppSettings.isPlaying = false;
+            InitializeMusic();
         }
 
         public async Task DisposeAudio()

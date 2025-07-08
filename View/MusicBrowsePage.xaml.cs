@@ -57,15 +57,9 @@ namespace WinUIMusicPlayer.View
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
         private readonly INavigationService _navigationService;
-        //private DeviceWatcher deviceWatcher;
-        //private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
-        //private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
         public event EventHandler clearUsbDeviceMusicList;
         public event EventHandler refreshUsbDeviceMusicList;
         private EqualizerDialog equalizerDialog;
-        //private CanvasControl _spectrumCanvas;
-        //private float[] _spectrumData = new float[16];
-        //private readonly object _lockObject = new object(); // 锁对象
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
         
@@ -126,151 +120,17 @@ namespace WinUIMusicPlayer.View
             };
             this.notificationService = notificationService;
             InitializeTimer();                 
-            
-            //StartWatchingFileFolder();
             ViewModel.OnFileChanged(null, null);
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
-            //_spectrumCanvas = SpectrumCanvas; // 保存XAML中定义的CanvasControl
-            //_spectrumCanvas.Draw += Canvas_Draw; // 注册绘制事件
-            //_forceDrawTimer = new System.Timers.Timer(16);
-            //_forceDrawTimer.Elapsed += (s, e) => _spectrumCanvas.Invalidate();           
+         
         }
 
         private void MainWindow_updateSelectSection(object? sender, EventArgs e)
         {
             SelectBarItem(AppSettings.DefualtPlayList);
         }
-
-        //private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
-        //{
-        //    // 添加调试信息
-        //    float[] data;
-        //    lock (_lockObject)
-        //    {
-        //        // 复制数据到局部变量，减少锁持有时间
-        //        data = new float[_spectrumData.Length];
-        //        Array.Copy(_spectrumData, data, _spectrumData.Length);
-        //    }
-        //    //Debug.WriteLine($"绘制时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", data)}]");
-        //    var ds = args.DrawingSession;
-        //    float width = (float)sender.ActualWidth;
-        //    float height = (float)sender.ActualHeight;
-        //    float barWidth = width / _spectrumData.Length * 0.8f;
-        //    float spacing = width / _spectrumData.Length * 0.2f;
-
-        //    // 优化的绘制代码（不使用CanvasGeometry）
-        //    for (int i = 0; i < _spectrumData.Length; i++)
-        //    {
-        //        float barHeight = _spectrumData[i] * height;
-        //        if (barHeight < 1) continue; // 跳过太小的条
-
-        //        float x = i * (barWidth + spacing);
-        //        float y = height - barHeight;
-
-        //        // 直接绘制，最高效
-        //        ds.FillRectangle(x, y, barWidth, barHeight, Colors.Blue);
-
-        //        // 顶部高亮
-        //        if (barHeight > 2)
-        //        {
-        //            ds.FillRectangle(x, y, barWidth, 2, Colors.White);
-        //        }
-        //    }
-        //}
-
-        //private void MusicPlaybackService_updateSpectrumData(object? sender, float[] spectrumData)
-        //{
-        //    lock (_lockObject)
-        //    {
-        //        Array.Copy(spectrumData, _spectrumData, spectrumData.Length);
-        //        //Debug.WriteLine($"更新时间：{DateTime.Now:HH:mm:ss.fff}, data: [{string.Join(", ", _spectrumData)}]");
-        //    }
-        //}
-
-        //private void StartWatchingUsbStorageDevices()
-        //{
-        //    // 定义设备选择器以筛选 USB 存储设备
-        //    string deviceSelector = StorageDevice.GetDeviceSelector();
-        //    // 创建设备监视器
-        //    deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-        //    // 注册设备添加、移除和枚举完成事件
-        //    deviceWatcher.Added += DeviceWatcher_Added;
-        //    deviceWatcher.Removed += DeviceWatcher_Removed;
-        //    deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-        //    // 启动设备监视器
-        //    deviceWatcher.Start();
-        //}
-
-        //private async void StartWatchingFileFolder()
-        //{
-        //    List<Folder> folders = await MusicDatabaseService.GetFolders();
-        //    foreach (var folder in folders)
-        //    {
-        //        if (!string.IsNullOrEmpty(folder.Path))
-        //        {
-        //            var watcher = new FileSystemWatcher(folder.Path);
-        //            watcher.IncludeSubdirectories = true;
-        //            watcher.NotifyFilter = NotifyFilters.FileName |
-        //                NotifyFilters.DirectoryName |
-        //                NotifyFilters.LastWrite;
-
-        //            // 订阅事件
-        //            watcher.Changed += OnFileChanged;
-
-        //            // 开始监听
-        //            watcher.EnableRaisingEvents = true;
-
-        //            watchers.Add(watcher);
-        //        }
-        //    }
-        //}
-
-        //private async void OnFileChanged(object sender, FileSystemEventArgs e)
-        //{
-        //    if (!await scanSemaphore.WaitAsync(0))
-        //    {
-        //        Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
-        //        return;
-        //    }
-        //    try
-        //    {
-        //        DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            ProcessingRing.Visibility = Visibility.Visible;
-        //        });
-        //        await AutoRescanService.AutoScan();
-        //        DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            ProcessingRing.Visibility = Visibility.Collapsed;
-        //        });
-        //    }
-        //    finally
-        //    {
-        //        scanSemaphore.Release();
-        //    }
-        //}
-
-        //private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
-        //{
-        //    // 当 USB 存储设备插入时触发            
-        //    System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
-        //    Task.Delay(1500).Wait(); // 等待设备稳定
-        //    await ReadUsbDevice();
-        //}
-
-        //private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
-        //{
-        //    // 当 USB 存储设备移除时触发            
-        //    System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
-        //    await ReadUsbDevice();
-        //}
-
-        //private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
-        //{
-        //    // 设备枚举完成时触发
-        //    System.Diagnostics.Debug.WriteLine("设备枚举已完成");
-        //}
+        
         public void UpdateCurrentLyricIndex(int currentIndex)
         {
             if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
@@ -368,35 +228,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ProcessRingVisibility = Visibility.Collapsed;
         }
-
-        //private async Task ReadUsbDevice()
-        //{
-        //    try
-        //    {
-        //        AppData.usbStorageDevices.Clear();
-        //        AppData.usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-        //        DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            if (AppData.usbStorageDevices.Count > 0)
-        //            {
-        //                UsbDeviceCombox.Visibility = Visibility.Visible;
-        //                UsbDeviceCombox.ItemsSource = AppData.usbStorageDevices;
-        //                UsbDeviceCombox.SelectedIndex = 0;
-        //            }
-        //            else
-        //            {
-        //                UsbDeviceCombox.Visibility = Visibility.Collapsed;
-        //                UsbDeviceCombox.ItemsSource = null;
-        //                UsbDeviceCombox.SelectedIndex = -1;
-        //            }
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        UsbDeviceCombox.Visibility = Visibility.Collapsed;
-        //        System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
-        //    }
-        //}
+      
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -635,16 +467,6 @@ namespace WinUIMusicPlayer.View
             DisableBackButton();
         }
 
-        //private void ResetNavigationButtons()
-        //{
-        //    foreach (var item in selectPage.Items)
-        //    {
-        //        if (item is SelectorBarItem selectorBarItem)
-        //        {
-        //            selectorBarItem.FontSize = 20;
-        //        }
-        //    }
-        //}
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
             DateTime startTime = DateTime.Now;
@@ -821,7 +643,7 @@ namespace WinUIMusicPlayer.View
                 UpdateCurrentPlayList();
                 _ = Task.Run(async () =>
                 {
-                    await ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 });
                 
                 
