@@ -431,33 +431,13 @@ namespace WinUIMusicPlayer.Services
                     {                       
                         OutputDeviceChange();
                     }
-                    switch (AppSettings.OutputMode)
+                    try
                     {
-                        case "WaveOut":
-                            var waveOutEvent = new WaveOutEvent();
-                            waveOutEvent.DesiredLatency = AppSettings.Latency;
-                            waveOut = waveOutEvent;
-                            break;
-                        case "WasapiShared":
-                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
-                            break;
-                        case "WasapiExclusivePush":
-                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, false, AppSettings.Latency);
-                            break;
-                        case "WasapiExclusiveEvent":
-                            waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
-                            break;
-                        case "DirectSound":
-                            waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
-                            break;
-                        case "ASIO":
-                            waveOut = new NAudio.Wave.AsioOut();
-                            break;
-                        default:
-                            var defaultWaveOutEvent = new WaveOutEvent();
-                            defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-                            waveOut = defaultWaveOutEvent;
-                            break;
+                        SwitchDevice();
+                    }
+                    catch (Exception ex) {
+                        OutputDeviceChange();
+                        SwitchDevice();
                     }
                 }                
             }
@@ -470,6 +450,37 @@ namespace WinUIMusicPlayer.Services
             //    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
             //    defaultWaveOutEvent.NumberOfBuffers = 2;
             //}
+        }
+
+        private void SwitchDevice() {
+            switch (AppSettings.OutputMode)
+            {
+                case "WaveOut":
+                    var waveOutEvent = new WaveOutEvent();
+                    waveOutEvent.DesiredLatency = AppSettings.Latency;
+                    waveOut = waveOutEvent;
+                    break;
+                case "WasapiShared":
+                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Shared, false, AppSettings.Latency);
+                    break;
+                case "WasapiExclusivePush":
+                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, false, AppSettings.Latency);
+                    break;
+                case "WasapiExclusiveEvent":
+                    waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
+                    break;
+                case "DirectSound":
+                    waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
+                    break;
+                case "ASIO":
+                    waveOut = new NAudio.Wave.AsioOut();
+                    break;
+                default:
+                    var defaultWaveOutEvent = new WaveOutEvent();
+                    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
+                    waveOut = defaultWaveOutEvent;
+                    break;
+            }
         }
 
         public void AutoPlayNextTrack()
