@@ -270,15 +270,12 @@ namespace WinUIMusicPlayer
             {
                 case "AddFolder":
                     _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                    //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
                     _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                    //ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
                     _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                    //ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
             }
         }
@@ -297,7 +294,7 @@ namespace WinUIMusicPlayer
         public async Task LoadMusicList(string search = null)
         {
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            _ = AlbumCoverService.LoadAlbumCoversInCacheAsync(AppData.allSongs);
+            //_ = AlbumCoverService.LoadAlbumCoversInCacheAsync(AppData.allSongs);
             await MusicDatabaseService.GetPlayListMusic();
         }
 

@@ -95,23 +95,23 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private int _maxCoverPreLoadNum = 0;
-        public int MaxCoverPreLoadNum
-        {
-            get => _maxCoverPreLoadNum;
-            set {
-                if (SetProperty(ref _maxCoverPreLoadNum, value))
-                {
-                    // 更新应用设置
-                    AppSettings.maxCoverPreLoadNum = value;
-                    // 保存设置
-                    if (_isInitized)
-                    {
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private int _maxCoverPreLoadNum = 0;
+        //public int MaxCoverPreLoadNum
+        //{
+        //    get => _maxCoverPreLoadNum;
+        //    set {
+        //        if (SetProperty(ref _maxCoverPreLoadNum, value))
+        //        {
+        //            // 更新应用设置
+        //            AppSettings.maxCoverPreLoadNum = value;
+        //            // 保存设置
+        //            if (_isInitized)
+        //            {
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
         private bool _isCoverCacheEnabled = false;
         public bool IsCoverCacheEnabled
         {
@@ -363,7 +363,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 初始化延迟  
             Latency = AppSettings.Latency;
             // 初始化最大封面预加载数量  
-            MaxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
+            //MaxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
             // 初始化封面缓存开关  
             IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             // 初始化默认入口  

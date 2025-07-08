@@ -616,10 +616,10 @@
     <value>Vocal</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
-    <value>Tamaño de la cubierta</value>
+    <value>Tamaño de la miniatura de la portada</value>
   </data>
   <data name="CoverSizeToolTip.Content" xml:space="preserve">
-    <value>0 es el tamaño original</value>
+    <value>0 es el tamaño original,Recomendaciones 150 - 200</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
     <value>Volumen</value>

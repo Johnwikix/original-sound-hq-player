@@ -40,29 +40,29 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task LoadAlbumCoversInCacheAsync(List<Music> musics)
-        {
-            try
-            {
-                var groupedAlbums = musics.GroupBy(m => m.Album)
-                                           .Select(g => g.First())
-                                           .OrderBy(m => m.Album)
-                                           .Take(AppSettings.maxCoverPreLoadNum)
-                                           .ToList();
-                foreach (var album in groupedAlbums)
-                {
-                    if (!AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
-                    {
-                        //AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album, AppSettings.CoverSize);
-                        AppData.albumCoverCache.SetValue(album.Album, await ToolUtils.GetAlbumCover(album, AppSettings.CoverSize));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-            }
-        }
+        //public static async Task LoadAlbumCoversInCacheAsync(List<Music> musics)
+        //{
+        //    try
+        //    {
+        //        var groupedAlbums = musics.GroupBy(m => m.Album)
+        //                                   .Select(g => g.First())
+        //                                   .OrderBy(m => m.Album)
+        //                                   .Take(AppSettings.maxCoverPreLoadNum)
+        //                                   .ToList();
+        //        foreach (var album in groupedAlbums)
+        //        {
+        //            if (!AppData.albumCoverCache.TryGetValue(album.Album, out var cachedCover))
+        //            {
+        //                //AppData.albumCoverCache[album.Album] = await ToolUtils.GetAlbumCover(album, AppSettings.CoverSize);
+        //                AppData.albumCoverCache.SetValue(album.Album, await ToolUtils.GetAlbumCover(album, AppSettings.CoverSize));
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+        //    }
+        //}
 
         public static void ClearCache()
         {

@@ -773,12 +773,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void CurrentPlayListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void CurrentPlayListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
             if (selectedMusic != null)
             {
-                await PlayMusic(selectedMusic);
+                PlayMusic(selectedMusic);
             }
         }       
 
@@ -809,7 +809,7 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
             try
             {

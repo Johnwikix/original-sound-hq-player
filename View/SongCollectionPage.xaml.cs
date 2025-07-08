@@ -79,15 +79,15 @@ namespace WinUIMusicPlayer.View
             ViewModel.UpdateMusicListView();            
         }
 
-        private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            await ViewModel.MusicListView_DoubleTapped();            
+            ViewModel.MusicListView_DoubleTapped();            
         }
 
-        private async void PlayMenuItem_Click(object sender, RoutedEventArgs e)
+        private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
             List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);            
+            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);            
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)

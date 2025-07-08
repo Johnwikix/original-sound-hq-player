@@ -309,7 +309,7 @@
                                 HorizontalAlignment="Right"
                                 FlowDirection="RightToLeft"
                                 IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
-                            <TextBlock
+                            <!--<TextBlock
                                 x:Uid="MaximumNumberOfPreLoadedCovers"
                                 Grid.Row="2"
                                 Grid.Column="0"
@@ -327,7 +327,7 @@
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{Binding ViewModel.MaxCoverPreLoadNum, Mode=TwoWay}" />
+                                Value="{Binding ViewModel.MaxCoverPreLoadNum, Mode=TwoWay}" />-->
                             <StackPanel
                                 Grid.Row="4"
                                 Grid.Column="0"

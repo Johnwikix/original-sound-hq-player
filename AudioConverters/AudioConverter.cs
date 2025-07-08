@@ -63,12 +63,11 @@ namespace WinUIMusicPlayer.AudioConverters
                         }
                         memoryStream.Position = 0;
                         ConvertAudioToFlac(outputPath, memoryStream);
-                    }
-                    SaveMetaData(mp3FilePath, outputPath);
-                    progressEvent?.Invoke(this, 100);
+                    }                    
                 }
             }
-
+            SaveMetaData(mp3FilePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertWav(string inputFilePath, string outputPath, string type = "flac")
@@ -236,11 +235,10 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                }
-                SaveMetaData(filePath, outputPath);
-                progressEvent?.Invoke(this, 100);
+                }               
             }
-
+            SaveMetaData(filePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertAudio(string filePath, string outputPath, string type = "wav")
@@ -317,10 +315,10 @@ namespace WinUIMusicPlayer.AudioConverters
                     {
                         MediaFoundationEncoder.EncodeToWma(reader, outputPath);
                     }
-                }
-                SaveMetaData(filePath, outputPath);
-                progressEvent?.Invoke(this, 100);
+                }                
             }
+            SaveMetaData(filePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
@@ -435,10 +433,10 @@ namespace WinUIMusicPlayer.AudioConverters
                     {
                         File.Delete(tempWavFile);
                     }
-                }
-                SaveMetaData(filePath, outputPath);
-                progressEvent?.Invoke(this, 100);
+                }                
             }
+            SaveMetaData(filePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
         public void ConvertOgg(string filePath, string outputPath, string type = "wav")
@@ -508,10 +506,10 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                }
-                SaveMetaData(filePath, outputPath);
-                progressEvent?.Invoke(this, 100);
+                }               
             }
+            SaveMetaData(filePath, outputPath);
+            progressEvent?.Invoke(this, 100);
         }
 
 

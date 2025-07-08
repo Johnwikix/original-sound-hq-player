@@ -420,7 +420,9 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
-            OutputDeviceChange();
+            if (selectedDevice == null) {
+                OutputDeviceChange();
+            }            
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":

@@ -616,10 +616,10 @@
     <value>Vocal</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
-    <value>Cover Size</value>
+    <value>Cover Thumbnail Size</value>
   </data>
   <data name="CoverSizeToolTip.Content" xml:space="preserve">
-    <value>0 is the original size</value>
+    <value>0 is the original size,Suggestion 150-200</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
     <value>Volume</value>

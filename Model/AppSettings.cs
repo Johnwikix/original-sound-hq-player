@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Model
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = true;
-        public static int maxCoverPreLoadNum { get; set; } = 100;
+        //public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素

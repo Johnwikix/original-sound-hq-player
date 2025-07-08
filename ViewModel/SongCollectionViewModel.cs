@@ -42,7 +42,8 @@ namespace WinUIMusicPlayer.ViewModel
         private string? _currentArtistName;
         private string? _currentFolderName;
         MusicPlaybackService _musicPlaybackService;
-
+        private int progressBarValue = 0;
+        private bool isMutiFile = false;
         public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
             _parentPage = parent;           
@@ -69,9 +70,23 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnConverterProgressUpdated(object sender, double progress)
         {
-            if (_progressDialog != null && progress < 100)
+            if (_progressDialog != null)
             {
-                _ = _progressDialog.UpdateProgress((int)progress);
+                if (progressBarValue < (int)progress)
+                {
+                    progressBarValue = (int)progress;
+                }
+                if (isMutiFile)
+                {
+                    if (progressBarValue < 100)
+                    {
+                        _ = _progressDialog.UpdateProgress(progressBarValue);
+                    }
+                }
+                else
+                {
+                    _ = _progressDialog.UpdateProgress(progressBarValue);
+                }
             }
         }
 
@@ -247,29 +262,29 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task MusicListView_DoubleTapped()
+        public void MusicListView_DoubleTapped()
         {            
             if (SelectedMusic != null && _parentPage != null)
             {
                 _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList =
                                         new ObservableCollection<Music>(MusicList);
-                await _parentPage.PlayMusic(SelectedMusic);
+                _parentPage?.PlayMusic(SelectedMusic);
             }
         }
 
-        public async Task PlayMenuItem_Click(List<Music> uniqueSelectedMusics)
+        public void PlayMenuItem_Click(List<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                await _parentPage.PlayMusic(uniqueSelectedMusics[0]);
+                _parentPage?.PlayMusic(uniqueSelectedMusics[0]);
             }
             else
             {
                 if (SelectedMusic != null)
                 {
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(MusicList);
-                    await _parentPage.PlayMusic(SelectedMusic);
+                    _parentPage?.PlayMusic(SelectedMusic);
                 }
             }
         }
@@ -346,24 +361,25 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task ConvertAudio_Click(List<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
         {
+            progressBarValue = 0;
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
             {
+                isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
-                {
-                    int progressBarValue = 0;
+                {    
                     _progressDialog.RequestedTheme = AppSettings.elementTheme;
                     await _progressDialog.UpdateProgress(progressBarValue);
-                    _converterService.updateProgress += (sender, progress) =>
-                    {
-                        if (progressBarValue < (int)progress)
-                        {
-                            progressBarValue = (int)progress;
-                        }
-                        if (progressBarValue < 100)
-                        {
-                            _ = _progressDialog.UpdateProgress(progressBarValue);
-                        }
-                    };
+                    //_converterService.updateProgress += (sender, progress) =>
+                    //{
+                    //    if (progressBarValue < (int)progress)
+                    //    {
+                    //        progressBarValue = (int)progress;
+                    //    }
+                    //    if (progressBarValue < 100)
+                    //    {
+                    //        _ = _progressDialog.UpdateProgress(progressBarValue);
+                    //    }
+                    //};
                     _progressDialog.XamlRoot = _currentPage.XamlRoot;
                     _ = _progressDialog.ShowAsync();
 
@@ -379,6 +395,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else
             {
+                isMutiFile = false;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
                     if (SelectedMusic != null) {
@@ -387,15 +404,15 @@ namespace WinUIMusicPlayer.ViewModel
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
                         }
-                        int progressBarValue = 0;
+                        //int progressBarValue = 0;
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
                         _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                        _converterService.updateProgress += (sender, progress) =>
-                        {
-                            progressBarValue = (int)progress;
-                            _ = _progressDialog.UpdateProgress(progressBarValue);
-                        };
+                        //_converterService.updateProgress += (sender, progress) =>
+                        //{
+                        //    progressBarValue = (int)progress;
+                        //    _ = _progressDialog.UpdateProgress(progressBarValue);
+                        //};
                         if (progressBarValue < 100)
                         {
                             _progressDialog.XamlRoot = _currentPage.XamlRoot;

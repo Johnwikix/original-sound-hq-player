@@ -47,6 +47,22 @@ namespace WinUIMusicPlayer.ViewModel
                     ToolUtils.RefreshIcon(MusicList, "album");
                 };
             _contextMenuService = contextMenuService;
+            _contextMenuService.playingFolderMusic += PlayingFolder;
+            _contextMenuService.rescanFolderEnd += RescanFolderEnd;
+            _contextMenuService.showTransmission += (s, eventArgs) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.ShowTransmission();
+                }
+            };
+            _contextMenuService.hideTransmission += (s, eventArgs) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.HideTransmission();
+                }
+            };
         }
 
         public void SetCurrentPage(FolderBrowsePage page)
@@ -151,23 +167,7 @@ namespace WinUIMusicPlayer.ViewModel
                         originalSource,
                         e.GetPosition(originalSource),
                         "folder"
-                    );
-                    _contextMenuService.playingFolderMusic += PlayingFolder;
-                    _contextMenuService.rescanFolderEnd += RescanFolderEnd;
-                    _contextMenuService.showTransmission += (s, eventArgs) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.ShowTransmission();
-                        }
-                    };
-                    _contextMenuService.hideTransmission += (s, eventArgs) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.HideTransmission();
-                        }
-                    };
+                    );                   
                 }
             }
 
@@ -183,7 +183,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private async void PlayingFolder(object? sender, Music e)
+        private void PlayingFolder(object? sender, Music e)
         {
             List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
             if (folders != null && folders.Count > 0)
@@ -191,7 +191,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null)
                 {
                     parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(folders);
-                    await parentPage.PlayMusic(folders[0]);
+                    parentPage.PlayMusic(folders[0]);
                 }
             }
         }

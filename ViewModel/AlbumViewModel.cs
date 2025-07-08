@@ -48,6 +48,21 @@ namespace WinUIMusicPlayer.ViewModel
                     ToolUtils.RefreshIcon(MusicList, "album");
                 };
             _contextMenuService = contextMenuService;
+            _contextMenuService.playingAlbumMusic += PlayingAlbum;
+            _contextMenuService.showTransmission += (s, e) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.ShowTransmission();
+                }
+            };
+            _contextMenuService.hideTransmission += (s, e) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.HideTransmission();
+                }
+            };
         }
 
         public void SetCurrentPage(AlbumPage page)
@@ -172,7 +187,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void PlayingAlbum(object? sender, Music e)
+        public void PlayingAlbum(object? sender, Music e)
         {
             List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).OrderBy(m => m.Album).ToList();
             if (albums != null && albums.Count > 0)
@@ -180,7 +195,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null)
                 {
                     parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(albums);
-                    await parentPage.PlayMusic(albums[0]);
+                    parentPage.PlayMusic(albums[0]);
                 }
             }
         }
@@ -207,21 +222,6 @@ namespace WinUIMusicPlayer.ViewModel
                         e.GetPosition(originalSource),
                         "album"
                     );
-                    _contextMenuService.playingAlbumMusic += PlayingAlbum;
-                    _contextMenuService.showTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.ShowTransmission();
-                        }
-                    };
-                    _contextMenuService.hideTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.HideTransmission();
-                        }
-                    };
                 }
             }
             e.Handled = true;

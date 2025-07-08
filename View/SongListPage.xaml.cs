@@ -66,9 +66,9 @@ namespace WinUIMusicPlayer.View
             ViewModel.UpdateMusicListView();           
         }
 
-        private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            await ViewModel.MusicListView_DoubleTapped();
+            ViewModel.MusicListView_DoubleTapped();
         }
 
         public void UpdateFavouriteMusic(Music music)

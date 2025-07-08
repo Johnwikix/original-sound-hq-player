@@ -563,18 +563,18 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.isManualSelect = false;
         }
 
-        public async void LastMusicButton_Click()
+        public void LastMusicButton_Click()
         {
             _musicPlaybackService.isManualSelect = true;
-            await PlayLastTrack();
+            PlayLastTrack();
             _musicPlaybackService.isManualSelect = false;
         }
 
         public void PlayMusic(Music music)
         {
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                await _musicBrowsePage.PlayMusic(music);
+                _musicBrowsePage.PlayMusic(music);
             });
         }
 
@@ -583,7 +583,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
            
 
-        private async Task PlayLastTrack()
+        private void PlayLastTrack()
         {
             int index = CurrentPlayingList
                         .Select((music, i) => new { Music = music, Index = i })
@@ -591,11 +591,11 @@ namespace WinUIMusicPlayer.ViewModel
                         ?.Index ?? -1;
             if (index > 0)
             {
-                await _musicBrowsePage.PlayMusic(CurrentPlayingList[index - 1]);
+                _musicBrowsePage.PlayMusic(CurrentPlayingList[index - 1]);
             }
             else if (index == 0 && CurrentPlayingList.Count > 1)
             {
-                await _musicBrowsePage.PlayMusic(CurrentPlayingList[CurrentPlayingList.Count - 1]);
+                _musicBrowsePage.PlayMusic(CurrentPlayingList[CurrentPlayingList.Count - 1]);
 
             }
         }

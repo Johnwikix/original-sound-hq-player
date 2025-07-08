@@ -45,6 +45,20 @@ namespace WinUIMusicPlayer.ViewModel
                     ToolUtils.RefreshIcon(MusicList, "album");
                 };
             _contextMenuService = contextMenuService;
+            _contextMenuService.showTransmission += (s, e) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.ShowTransmission();
+                }
+            };
+            _contextMenuService.hideTransmission += (s, e) =>
+            {
+                if (parentPage != null)
+                {
+                    parentPage.HideTransmission();
+                }
+            };
         }
 
         public void SetCurrentPage(ArtistPage page)
@@ -147,27 +161,13 @@ namespace WinUIMusicPlayer.ViewModel
                         e.GetPosition(originalSource),
                         "artist"
                     );
-                    _contextMenuService.playingArtistMusic += PlayingArtist;
-                    _contextMenuService.showTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.ShowTransmission();
-                        }
-                    };
-                    _contextMenuService.hideTransmission += (s, e) =>
-                    {
-                        if (parentPage != null)
-                        {
-                            parentPage.HideTransmission();
-                        }
-                    };
+                    _contextMenuService.playingArtistMusic += PlayingArtist;                   
                 }
             }
             e.Handled = true;
         }
 
-        private async void PlayingArtist(object? sender, Music e)
+        private void PlayingArtist(object? sender, Music e)
         {
             List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
             if (artists != null && artists.Count > 0)
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null)
                 {
                     parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(artists);
-                    await parentPage.PlayMusic(artists[0]);
+                    parentPage.PlayMusic(artists[0]);
                 }
             }
         }

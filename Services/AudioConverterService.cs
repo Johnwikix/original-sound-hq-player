@@ -8,14 +8,18 @@ namespace WinUIMusicPlayer.Services
     public class AudioConverterService
     {
         public EventHandler<double>? updateProgress;
-        public async Task ConvertAudio2Wav(Music music, string type = "wav")
-        {
-            AudioConverter converter = new AudioConverter();
+        private AudioConverter converter;
+
+        public AudioConverterService() {
+            converter = new AudioConverter();
             converter.progressEvent += (sender, progress) =>
             {
                 // 触发 Service 的事件，将进度传递给 Page
                 OnProgressChanged(progress);
             };
+        }
+        public async Task ConvertAudio2Wav(Music music, string type = "wav")
+        {            
             string outputPath = converter.GenerateOutputPath(music.Path, type);
             switch (music.Extension.ToLower())
             {
