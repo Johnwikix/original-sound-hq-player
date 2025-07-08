@@ -7,14 +7,55 @@ using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {
-    public class UsbWriterHelper
+    public class UsbWriterHelper :IDisposable
     {
         public EventHandler hideTransmission;
+        private bool _disposed = false;
         public UsbWriterHelper()
         {
         }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // 释放托管资源
+                    UnsubscribeEvents();
+                }
+
+                // 释放非托管资源（如果有）
+                // 例如：关闭文件句柄、网络连接等
+
+                _disposed = true;
+            }
+        }
+
+        private void UnsubscribeEvents()
+        {
+            // 取消所有事件订阅，防止内存泄漏
+            if (hideTransmission != null)
+            {
+                foreach (var handler in hideTransmission.GetInvocationList())
+                {
+                    hideTransmission -= (EventHandler)handler;
+                }
+            }
+        }
+
         public async Task WriteToUsb(List<Music> musicList, UsbStorageDevice device)
         {
+            // 检查对象是否已被释放
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(UsbWriterHelper));
+            }
             char[] invalidChars = Path.GetInvalidFileNameChars();
             foreach (var music in musicList)
             {

@@ -244,12 +244,13 @@ namespace WinUIMusicPlayer.View
                                 if (uniqueSelectedMusics.Count > 1)
                                 {
                                     ViewModel.ShowTransmission();
-                                    var usbWriter = new UsbWriterHelper();
-                                    usbWriter.hideTransmission += (sender, args) =>
-                                    {
-                                        ViewModel.HideTransmission();
-                                    };
-                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    using (var usbWriter = new UsbWriterHelper()) {
+                                        usbWriter.hideTransmission += (sender, args) =>
+                                        {
+                                            ViewModel.HideTransmission();
+                                        };
+                                        await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    }                                        
                                     foreach (var music in uniqueSelectedMusics)
                                     {
                                         var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
@@ -270,12 +271,14 @@ namespace WinUIMusicPlayer.View
                                 {
                                     ViewModel.ShowTransmission();
                                     List<Music> musicItems = new List<Music> { musicItem };
-                                    var usbWriter = new UsbWriterHelper();
-                                    usbWriter.hideTransmission += (sender, args) =>
+                                    using (var usbWriter = new UsbWriterHelper())
                                     {
-                                        ViewModel.HideTransmission();
-                                    };
-                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
+                                        usbWriter.hideTransmission += (sender, args) =>
+                                        {
+                                            ViewModel.HideTransmission();
+                                        };
+                                        await usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    }                                    
                                     UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
                                     usbDeviceMusic.Title = musicItem.Title;
                                     usbDeviceMusic.Author = musicItem.Author;

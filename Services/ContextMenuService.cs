@@ -16,8 +16,11 @@ namespace WinUIMusicPlayer.Services
     public class ContextMenuService
     {
         private static ContextMenuService _instance;
+        private MenuFlyout flyout;
         public static ContextMenuService Instance => _instance ??= new ContextMenuService();
-        public ContextMenuService() { }
+        public ContextMenuService() {
+            flyout = new MenuFlyout();
+        }
 
         private AlbumPage albumPage;
 
@@ -40,8 +43,7 @@ namespace WinUIMusicPlayer.Services
         public async Task ShowAlbumContextMenu(object item, UIElement targetElement, Point position, string type)
         {
             // 创建菜单
-            MenuFlyout flyout = new MenuFlyout();
-
+            flyout.Items.Clear();
             MenuFlyoutItem play = new MenuFlyoutItem
             {
                 Text = ToolUtils.GetString("FlyoutPlay"),

@@ -94,9 +94,6 @@ namespace WinUIMusicPlayer.View
                 mainWindow.updateMusicList += MainWindow_updateMusicList;
                 mainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
-            //TODO 波形可视化
-            //musicPlaybackService.updateSpectrumData += MusicPlaybackService_updateSpectrumData;
-            //LyricsListView.ItemsSource = _uiLyrics;
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
             {
@@ -845,6 +842,16 @@ namespace WinUIMusicPlayer.View
             equalizerDialog.RequestedTheme = AppSettings.elementTheme;
             equalizerDialog.XamlRoot = this.XamlRoot;
             _=equalizerDialog.ShowAsync();           
+        }
+
+        private void VolumeSlider_DragEnter(object sender, DragEventArgs e)
+        {
+
+        }
+
+        private void VolumeSlider_DragLeave(object sender, DragEventArgs e)
+        {
+
         }
     }
 }

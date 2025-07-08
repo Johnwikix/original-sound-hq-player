@@ -424,32 +424,22 @@ namespace WinUIMusicPlayer.Services
 
         public void SelectOutputDevice()
         {
-            try {
-                lock (_waveOutLock)
-                {
-                    if (selectedDevice == null)
-                    {                       
-                        OutputDeviceChange();
-                    }
-                    try
-                    {
-                        SwitchDevice();
-                    }
-                    catch (Exception ex) {
-                        OutputDeviceChange();
-                        SwitchDevice();
-                    }
-                }                
-            }
-            catch (OperationCanceledException)
+            lock (_waveOutLock)
             {
-                Debug.WriteLine("任务取消。");
+                if (selectedDevice == null)
+                {
+                    OutputDeviceChange();
+                }
+                try
+                {
+                    SwitchDevice();
+                }
+                catch (Exception ex)
+                {
+                    OutputDeviceChange();
+                    SwitchDevice();
+                }
             }
-            //if (waveOut is WaveOutEvent defaultWaveOutEvent)
-            //{
-            //    defaultWaveOutEvent.DesiredLatency = AppSettings.Latency;
-            //    defaultWaveOutEvent.NumberOfBuffers = 2;
-            //}
         }
 
         private void SwitchDevice() {
@@ -668,11 +658,6 @@ namespace WinUIMusicPlayer.Services
                 return true;
 
             }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine("任务取消。");
-                return false;
-            }
             catch (Exception ex)
             {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
@@ -713,10 +698,6 @@ namespace WinUIMusicPlayer.Services
                             MusicBrowseViewModel.IsPlaying = true;
                             MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                         });
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Debug.WriteLine("任务取消。");
                     }
                     catch (Exception ex)
                     {
