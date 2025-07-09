@@ -1,12 +1,15 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
+using CSCore.Streams;
 using CUETools.Codecs.FLAKE;
 using NAudio.Flac;
 using NAudio.Lame;
 using NAudio.Vorbis;
 using NAudio.Wave;
+using NAudio.Wave.Compression;
 using System;
 using System.IO;
+using System.Text;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -353,19 +356,43 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (type == "mp3")
                 {
 
-                    IWaveSource resampledSource = waveSource.ChangeSampleRate(44100);
-                    IWaveSource convertedSource = resampledSource.ToSampleSource().ToWaveSource(16);
-                    NAudio.Wave.WaveFormat wave = new NAudio.Wave.WaveFormat(convertedSource.WaveFormat.SampleRate,
-                                                                             convertedSource.WaveFormat.BitsPerSample,
-                                                                             convertedSource.WaveFormat.Channels);
-                    long totalBytes = convertedSource.Length;
+                    IWaveSource audio;
+                    if (waveSource.WaveFormat.SampleRate != 44100)
+                    {
+                        // 使用更高质量的重采样算法
+                        var resampler = new CSCore.DSP.DmoResampler(waveSource, 44100)
+                        {
+                            Quality = 60 // 设置高质量
+                        };
+                        ISampleSource sampleSource = resampler.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 16);
+                        audio = sampleSource.ToWaveSource(16);
+                    }
+                    else
+                    {
+                        ISampleSource sampleSource = waveSource.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 16);
+                        audio = sampleSource.ToWaveSource(16);
+                    }
+                    NAudio.Wave.WaveFormat wave = new NAudio.Wave.WaveFormat(audio.WaveFormat.SampleRate,
+                                                                             audio.WaveFormat.BitsPerSample,
+                                                                             audio.WaveFormat.Channels);
+                    long totalBytes = audio.Length;
                     long bytesWritten = 0;
                     DateTime lastUpdate = DateTime.Now;
                     using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, wave, LAMEPreset.INSANE))
                     {
                         byte[] buffer = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = convertedSource.Read(buffer, 0, buffer.Length)) > 0)
+                        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             mp3Writer.Write(buffer, 0, bytesRead);
                             bytesWritten += bytesRead;
@@ -385,60 +412,303 @@ namespace WinUIMusicPlayer.AudioConverters
                     {
                         sampleRate = waveSource.WaveFormat.SampleRate / 4;
                     }
-                    IWaveSource resampledSource = waveSource.ChangeSampleRate(sampleRate);
-                    IWaveSource audio = resampledSource.ToSampleSource().ToWaveSource(24);
+                    IWaveSource audio;
+                    if (waveSource.WaveFormat.SampleRate != sampleRate)
+                    {
+                        // 使用更高质量的重采样算法
+                        var resampler = new CSCore.DSP.DmoResampler(waveSource, sampleRate)
+                        {
+                            Quality = 60 // 设置高质量
+                        };
+                        ISampleSource sampleSource = resampler.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 24);
+                        audio = sampleSource.ToWaveSource(24);
+                    }
+                    else
+                    {
+                        ISampleSource sampleSource = waveSource.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 24);
+                        audio = sampleSource.ToWaveSource(24);
+                    }
                     long totalBytes = audio.Length;
                     long bytesWritten = 0;
                     DateTime lastUpdate = DateTime.Now;
-                    string tempFileName = $"temp_{Guid.NewGuid()}.wav";
-                    string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp", tempFileName);
-                    string directory = Path.GetDirectoryName(tempWavFile);
-                    if (!Directory.Exists(directory))
+                    using (var memoryStream = new MemoryStream())
                     {
-                        Directory.CreateDirectory(directory);
-                    }
-                    try
-                    {
-                        // 使用CSCore的WaveWriter创建临时WAV文件
-                        using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(tempWavFile, audio.WaveFormat))
+                        // 先写入占位符头部
+                        WritePlaceholderWavHeader(memoryStream, audio.WaveFormat);
+                        long dataStartPosition = memoryStream.Position;
+
+                        // 写入音频数据
+                        int bufferSize = audio.WaveFormat.BlockAlign * 4096; // 增大缓冲区
+                        byte[] buffer = new byte[bufferSize];
+                        int bytesRead;
+                        long actualDataSize = 0;
+
+                        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            int bufferSize = audio.WaveFormat.BlockAlign * 1024;
-                            byte[] buffer = new byte[bufferSize];
-                            int bytesRead;
-                            while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                            memoryStream.Write(buffer, 0, bytesRead);
+                            actualDataSize += bytesRead;
+                            bytesWritten += bytesRead;
+
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
                             {
-                                wavWriter.Write(buffer, 0, bytesRead);
-                                bytesWritten += bytesRead;
-                                if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                                double progress = (double)bytesWritten / Math.Max(totalBytes, 1) * 100;
+                                lastUpdate = DateTime.Now;
+                                if (progress < 99)
                                 {
-                                    double progress = (double)bytesWritten / totalBytes * 100;
-                                    lastUpdate = DateTime.Now;
-                                    if (progress < 99)
-                                    {
-                                        progressEvent?.Invoke(this, progress);
-                                    }
+                                    progressEvent?.Invoke(this, progress);
                                 }
                             }
                         }
-                        AudioBuffer buff = WAVReader.ReadAllSamples(tempWavFile, null);
-                        FlakeWriter target;
-                        target = new FlakeWriter(outputPath, null, new FlakeWriterSettings { PCM = buff.PCM, EncoderMode = "7" });
+
+                        // 更新WAV头部信息
+                        UpdateWavHeaderInMemory(memoryStream, actualDataSize);
+
+                        // 重置位置并读取
+                        memoryStream.Position = 0;
+                        AudioBuffer buff = WAVReader.ReadAllSamples(null, memoryStream);
+
+                        FlakeWriter target = new FlakeWriter(outputPath, null, new FlakeWriterSettings
+                        {
+                            PCM = buff.PCM,
+                            EncoderMode = "7"
+                        });
+
                         target.Settings.Padding = 1;
                         target.DoSeekTable = false;
                         target.FinalSampleCount = buff.Length;
                         target.Write(buff);
                         target.Close();
                     }
-                    finally
-                    {
-                        File.Delete(tempWavFile);
-                    }
+                    //DateTime lastUpdate = DateTime.Now;
+                    //string tempFileName = $"temp_{Guid.NewGuid()}.wav";
+                    //string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp", tempFileName);
+                    //string directory = Path.GetDirectoryName(tempWavFile);
+                    //if (!Directory.Exists(directory))
+                    //{
+                    //    Directory.CreateDirectory(directory);
+                    //}
+                    //try
+                    //{
+                    //    // 使用CSCore的WaveWriter创建临时WAV文件
+                    //    using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(tempWavFile, audio.WaveFormat))
+                    //    {
+                    //        int bufferSize = audio.WaveFormat.BlockAlign * 1024;
+                    //        byte[] buffer = new byte[bufferSize];
+                    //        int bytesRead;
+                    //        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                    //        {
+                    //            wavWriter.Write(buffer, 0, bytesRead);
+                    //            bytesWritten += bytesRead;
+                    //            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                    //            {
+                    //                double progress = (double)bytesWritten / totalBytes * 100;
+                    //                lastUpdate = DateTime.Now;
+                    //                if (progress < 99)
+                    //                {
+                    //                    progressEvent?.Invoke(this, progress);
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //    AudioBuffer buff = WAVReader.ReadAllSamples(tempWavFile, null);
+                    //    FlakeWriter target;
+                    //    target = new FlakeWriter(outputPath, null, new FlakeWriterSettings { PCM = buff.PCM, EncoderMode = "7" });
+                    //    target.Settings.Padding = 1;
+                    //    target.DoSeekTable = false;
+                    //    target.FinalSampleCount = buff.Length;
+                    //    target.Write(buff);
+                    //    target.Close();
+                    //}
+                    //finally
+                    //{
+                    //    File.Delete(tempWavFile);
+                    //}
                 }                
             }
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);
         }
 
+        public void FFmpegConverter(string filePath, string outputPath, string type = "wav",int bitDepth = 16)
+        {
+            using (IWaveSource waveSource = new FfmpegDecoder(filePath))
+            {
+                if (type == "wav")
+                {
+                    //IWaveSource audio = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate / 4);
+                    using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(outputPath, waveSource.WaveFormat))
+                    {
+                        long totalBytes = waveSource.Length;
+                        long bytesWritten = 0;
+                        DateTime lastUpdate = DateTime.Now;
+                        // 确保缓冲区大小是块对齐的倍数
+                        int bufferSize = waveSource.WaveFormat.BlockAlign * 1024; // 使用块对齐的倍数
+                        byte[] buffer = new byte[bufferSize];
+                        int bytesRead;
+                        while ((bytesRead = waveSource.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            wavWriter.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
+                        }
+                    }
+                }
+                if (type == "mp3")
+                {                    
+                    IWaveSource audio;
+                    if (waveSource.WaveFormat.SampleRate != 44100)
+                    {
+                        // 使用更高质量的重采样算法
+                        var resampler = new CSCore.DSP.DmoResampler(waveSource, 44100)
+                        {
+                            Quality = 60 // 设置高质量
+                        };
+                        ISampleSource sampleSource = resampler.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 16);
+                        audio = sampleSource.ToWaveSource(16);
+                    }
+                    else
+                    {
+                        ISampleSource sampleSource = waveSource.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, 16);
+                        audio = sampleSource.ToWaveSource(16);
+                    }
+                    NAudio.Wave.WaveFormat wave = new NAudio.Wave.WaveFormat(audio.WaveFormat.SampleRate,
+                                                                             audio.WaveFormat.BitsPerSample,
+                                                                             audio.WaveFormat.Channels);
+                    long totalBytes = audio.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
+                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, wave, LAMEPreset.INSANE))
+                    {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            mp3Writer.Write(buffer, 0, bytesRead);
+                            bytesWritten += bytesRead;
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / totalBytes * 100;
+                                lastUpdate = DateTime.Now;
+                                progressEvent?.Invoke(this, progress);
+                            }
+                        }
+                    }
+                }
+                if (type == "flac")
+                {
+                    int sampleRate = 176400;
+                    if (waveSource.WaveFormat.SampleRate <= sampleRate)
+                    {
+                        sampleRate = waveSource.WaveFormat.SampleRate;
+                    }
+                    IWaveSource audio;
+                    if (waveSource.WaveFormat.SampleRate != sampleRate)
+                    {
+                        // 使用更高质量的重采样算法
+                        var resampler = new CSCore.DSP.DmoResampler(waveSource, sampleRate)
+                        {
+                            Quality = 60 // 设置高质量
+                        };
+                        ISampleSource sampleSource = resampler.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, bitDepth);
+                        audio = sampleSource.ToWaveSource(bitDepth);
+                    }
+                    else
+                    {
+                        ISampleSource sampleSource = waveSource.ToSampleSource();
+                        var normalizer = new AudioNormalizer(sampleSource);
+                        sampleSource = normalizer;
+                        var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
+                        sampleSource = limiter;
+                        sampleSource = new DitheringProcessor(sampleSource, bitDepth);                        
+                        audio = sampleSource.ToWaveSource(bitDepth);
+                    }
+                    long totalBytes = audio.Length;
+                    long bytesWritten = 0;
+                    DateTime lastUpdate = DateTime.Now;
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        // 先写入占位符头部
+                        WritePlaceholderWavHeader(memoryStream, audio.WaveFormat);
+                        long dataStartPosition = memoryStream.Position;
+
+                        // 写入音频数据
+                        int bufferSize = audio.WaveFormat.BlockAlign * 1024; // 增大缓冲区
+                        byte[] buffer = new byte[bufferSize];
+                        int bytesRead;
+                        long actualDataSize = 0;
+
+                        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            memoryStream.Write(buffer, 0, bytesRead);
+                            actualDataSize += bytesRead;
+                            bytesWritten += bytesRead;
+
+                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                            {
+                                double progress = (double)bytesWritten / Math.Max(totalBytes, 1) * 100;
+                                lastUpdate = DateTime.Now;
+                                if (progress < 99)
+                                {
+                                    progressEvent?.Invoke(this, progress);
+                                }
+                            }
+                        }
+
+                        // 更新WAV头部信息
+                        UpdateWavHeaderInMemory(memoryStream, actualDataSize);
+
+                        // 重置位置并读取
+                        memoryStream.Position = 0;
+                        AudioBuffer buff = WAVReader.ReadAllSamples(null, memoryStream);
+
+                        FlakeWriter target = new FlakeWriter(outputPath, null, new FlakeWriterSettings
+                        {
+                            PCM = buff.PCM,
+                            EncoderMode = "7"
+                        });
+
+                        target.Settings.Padding = 1;
+                        target.DoSeekTable = false;
+                        target.FinalSampleCount = buff.Length;
+                        target.Write(buff);
+                        target.Close();
+                    }
+                }
+            }
+            SaveMetaData(filePath, outputPath);
+            progressEvent?.Invoke(this, 100);
+        }
+       
         public void ConvertOgg(string filePath, string outputPath, string type = "wav")
         {
             using (WaveStream audio = new VorbisWaveReader(filePath))
@@ -537,6 +807,43 @@ namespace WinUIMusicPlayer.AudioConverters
             writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
             writer.Write((int)pcmStream.Length); // 数据块大小
         }
+
+        private static void WritePlaceholderWavHeader(Stream stream, CSCore.WaveFormat format)
+        {
+            using (BinaryWriter writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                writer.Write(Encoding.UTF8.GetBytes("RIFF"));
+                writer.Write((int)0); // 占位符
+                writer.Write(Encoding.UTF8.GetBytes("WAVE"));
+                writer.Write(Encoding.UTF8.GetBytes("fmt "));
+                writer.Write(16);
+                writer.Write((ushort)format.WaveFormatTag);
+                writer.Write((ushort)format.Channels);
+                writer.Write(format.SampleRate);
+                writer.Write(format.BytesPerSecond);
+                writer.Write((ushort)format.BlockAlign);
+                writer.Write((ushort)format.BitsPerSample);
+                writer.Write(Encoding.UTF8.GetBytes("data"));
+                writer.Write((int)0); // 占位符
+            }
+        }
+
+        // 辅助方法：更新内存中的WAV头部
+        private static void UpdateWavHeaderInMemory(MemoryStream stream, long actualDataSize)
+        {
+            long currentPosition = stream.Position;
+
+            // 更新RIFF块大小 (位置4)
+            stream.Position = 4;
+            stream.Write(BitConverter.GetBytes((int)(actualDataSize + 36)), 0, 4);
+
+            // 更新data块大小 (位置40)
+            stream.Position = 40;
+            stream.Write(BitConverter.GetBytes((int)actualDataSize), 0, 4);
+
+            stream.Position = currentPosition;
+        }
+
 
         public void ConvertAudioToFlac(string outputPath, MemoryStream memoryStream)
         {

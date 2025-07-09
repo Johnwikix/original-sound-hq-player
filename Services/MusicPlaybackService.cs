@@ -605,11 +605,11 @@ namespace WinUIMusicPlayer.Services
                 }
                 InitializeMusic();
                 SelectOutputDevice();
-                if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff")
+                if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff" && music.Extension.ToLower() != "opus")
                 {
                     try
                     {
-                        AppSettings.isDsd = false;                        
+                        AppSettings.isDsd = false;
                         var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                         waveChannel = new WaveChannel32(multiTypeAudioReader);
                         waveChannel.CurrentTime = currentPos;
@@ -618,6 +618,23 @@ namespace WinUIMusicPlayer.Services
                     catch (Exception e)
                     {
                         Debug.WriteLine(e.Message);
+                        Reset();
+                        OutputDeviceChange();
+                        return false;
+                    }
+                }
+                else if (music.Extension.ToLower() == "opus") {
+                    try
+                    {
+                        AppSettings.isDsd = false;
+                        var ffmpegDecoder = new FfmpegDecoder(music.Path);
+                        var adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
+                        waveChannel = new WaveChannel32(adapter);
+                        waveChannel.CurrentTime = currentPos;
+                        waveChannel.Volume = volume ;
+                    }
+                    catch (Exception e)
+                    {
                         Reset();
                         OutputDeviceChange();
                         return false;

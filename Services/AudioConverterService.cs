@@ -76,7 +76,7 @@ namespace WinUIMusicPlayer.Services
                     default:
                         await Task.Run(() =>
                         {
-                            converter.ConvertAudio(music.Path, outputPath, type);
+                            converter.FFmpegConverter(music.Path, outputPath, type,music.BitDepth<=16?16: music.BitDepth);
                         });
                         break;
                 }
