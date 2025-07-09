@@ -28,7 +28,10 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">
+        <Grid
+            x:Name="TopPanel"
+            Grid.Row="0"
+            Visibility="Visible">
             <StackPanel Orientation="Horizontal">
                 <Button
                     x:Name="BackButton"
@@ -139,10 +142,22 @@
                     FontSize="12"
                     SelectedIndex="0"
                     SelectionChanged="SortByComboBox_SelectionChanged">
-                    <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
-                    <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
-                    <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
-                    <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
+                    <ComboBoxItem
+                        x:Uid="SortOrderDefault"
+                        FontSize="12"
+                        Tag="DefaultOrder" />
+                    <ComboBoxItem
+                        x:Uid="SortOrderA_Z"
+                        FontSize="12"
+                        Tag="A-Z" />
+                    <ComboBoxItem
+                        x:Uid="SortOrderArtist"
+                        FontSize="12"
+                        Tag="Artist" />
+                    <ComboBoxItem
+                        x:Uid="SortOrderAlbum"
+                        FontSize="12"
+                        Tag="Album" />
                 </ComboBox>
                 <TextBox
                     x:Name="SearchTextBox"
@@ -165,7 +180,10 @@
             Margin="10"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
-        <Grid x:Name="PlayingDetail" Grid.Row="2" Visibility="Collapsed">
+        <Grid
+            x:Name="PlayingDetail"
+            Grid.Row="2"
+            Visibility="Collapsed">
             <!--  Define transitions  -->
             <Grid.Transitions>
                 <TransitionCollection>
@@ -182,7 +200,10 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  返回按钮  -->
-            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                Orientation="Horizontal">
                 <Button
                     x:Name="CancelPlayingDetailButton"
                     Margin="20,10,10,10"
@@ -220,23 +241,39 @@
                 </Grid.RowDefinitions>
                 <!--  专辑封面  -->
                 <Border
+                    x:Name="PlayingDetailAlbumCoverImageGrid"
                     Grid.Row="0"
                     Margin="50,10,10,10"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     CornerRadius="10">
-                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <Image x:Name="PlayingDetailAlbumCoverImage" Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                    <Grid>
+                        <Image
+                            x:Name="PlayingDetailAlbumCoverImage"
+                            Canvas.ZIndex="1"
+                            Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
                         <Grid
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                             Canvas.ZIndex="0">
-                            <FontIcon
-                                Canvas.ZIndex="0"
-                                FontSize="50"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Glyph="&#xE93C;" />
+                            <Viewbox Stretch="Uniform">
+                                <Border
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <!--  图标层  -->
+                                    <FontIcon
+                                        Width="200"
+                                        Height="200"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Canvas.ZIndex="1"
+                                        FontSize="100"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Glyph="&#xE93C;" />
+                                </Border>
+                            </Viewbox>
                         </Grid>
                     </Grid>
                 </Border>
@@ -372,7 +409,10 @@
             </Grid>
         </Grid>
         <!--  底部控制区域  -->
-        <Grid Grid.Row="3" Height="150" Margin="10,0,10,10">
+        <Grid
+            Grid.Row="3"
+            Height="150"
+            Margin="10,0,10,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -428,7 +468,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
                         </Grid.RowDefinitions>
-                        <Grid Grid.Row="0">
+                        <Grid x:Name="AlbumCoverImageGrid" Grid.Row="0">
                             <Image
                                 x:Name="AlbumCoverImage"
                                 Width="100"
@@ -455,7 +495,10 @@
                             Opacity="0" />
                     </Grid>
                 </Button>
-                <Grid Width="Auto" Height="100" MaxWidth="300">
+                <Grid
+                    Width="Auto"
+                    Height="100"
+                    MaxWidth="300">
                     <Grid.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -662,7 +705,10 @@
                     Click="CurrentPlayListButton_Click">
                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                 </Button>
-                <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
+                <TeachingTip
+                    x:Name="CurrentPlayListTeachingTip"
+                    IsLightDismissEnabled="True"
+                    Target="{x:Bind CurrentPlayListButton}">
                     <TeachingTip.Content>
                         <ListView
                             x:Name="CurrentPlayListView"

@@ -805,7 +805,7 @@ namespace WinUIMusicPlayer.View
                 isInPlayingDetailMode = true;
                 if (ViewModel.CurrentPlayingMusic!=null && AlbumCoverImage!=null)
                 {
-                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImage);
+                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
                     TopPanel.Visibility = Visibility.Collapsed;
                     ContentFrame.Visibility = Visibility.Collapsed;
                     AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
@@ -833,7 +833,7 @@ namespace WinUIMusicPlayer.View
             if (animation != null)
             {
                 animation.Configuration = new BasicConnectedAnimationConfiguration();
-                animation.TryStart(AlbumCoverImage);
+                animation.TryStart(AlbumCoverImageGrid);
             }
         }
 
