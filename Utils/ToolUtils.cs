@@ -88,8 +88,6 @@ namespace WinUIMusicPlayer.Utils
                 {
                     AppSettings.outputDeviceList.Add(device.Name);
                 }                
-                //GC.Collect();
-                //GC.WaitForPendingFinalizers();
             }
             catch (Exception ex)
             {
@@ -115,11 +113,6 @@ namespace WinUIMusicPlayer.Utils
 
         private static async Task<BitmapImage> DefaultAlbumCover(int size = 150)
         {
-            //var uri = new Uri("ms-appx:///Assets/Album.png");
-            //var bitmapImage = new BitmapImage(uri);
-            //bitmapImage.DecodePixelWidth = 125;
-            //bitmapImage.DecodePixelHeight = 125;
-            //return bitmapImage;
             var tcs = new TaskCompletionSource<BitmapImage>();
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -332,29 +325,6 @@ namespace WinUIMusicPlayer.Utils
                    data[0] == 0x42 &&
                    data[1] == 0x4D;
         }
-
-        //private static void setBitmapSize(BitmapImage bitmapImage, int maxSize)
-        //{
-        //    bitmapImage.ImageOpened += (sender, args) =>
-        //    {
-        //        double originalWidth = bitmapImage.PixelWidth;
-        //        double originalHeight = bitmapImage.PixelHeight;
-        //        double aspectRatio = originalWidth / originalHeight;
-        //        int newWidth, newHeight;
-        //        if (originalWidth > originalHeight)
-        //        {
-        //            newWidth = maxSize;
-        //            newHeight = (int)(maxSize / aspectRatio);
-        //        }
-        //        else
-        //        {
-        //            newHeight = maxSize;
-        //            newWidth = (int)(maxSize * aspectRatio);
-        //        }
-        //        bitmapImage.DecodePixelWidth = newWidth;
-        //        bitmapImage.DecodePixelHeight = newHeight;
-        //    };
-        //}
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
@@ -603,7 +573,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg",".oga", ".aiff",".aif", ".m4a", ".dsf", ".dff", ".amr" ,".au",".ac3",".ape",".opus",".dts",".wv"};
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg",".oga", ".aiff",".aif", ".m4a", ".dsf", ".dff", ".amr" ,".au",".ape",".opus",".wv"};
             return musicExtensions.Contains(fileType.ToLower());
         }
 

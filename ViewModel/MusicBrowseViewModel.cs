@@ -356,6 +356,7 @@ namespace WinUIMusicPlayer.ViewModel
 
                     // 订阅事件
                     watcher.Changed += OnFileChanged;
+                    watcher.Deleted += OnFileChanged;
 
                     // 开始监听
                     watcher.EnableRaisingEvents = true;
