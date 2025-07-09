@@ -97,8 +97,15 @@ namespace WinUIMusicPlayer.Reader
         private void CreateReaderStream(string fileName)
         {
             if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
-            {
-                readerStream = new VorbisWaveReader(fileName);
+            {                
+                try
+                {
+                    readerStream = new VorbisWaveReader(fileName);
+                }
+                catch (Exception ex)
+                {
+                    readerStream = new FFmpegAudioReader(fileName);
+                }
             }
             else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
             {

@@ -1,9 +1,5 @@
-﻿using CSCore;
-using CSCore.Ffmpeg;
-using CSCore.Streams.Effects;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NAudio.CoreAudioApi;
-using NAudio.Dsp;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
@@ -15,8 +11,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Audio;
-using WinUIMusicPlayer.Adapter;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Provider;
 using WinUIMusicPlayer.Reader;
@@ -418,8 +412,6 @@ namespace WinUIMusicPlayer.Services
                     selectedDevice = null;
                 }
             }
-            //GC.Collect();
-            //GC.WaitForPendingFinalizers();
         }
 
         public void SelectOutputDevice()
@@ -605,64 +597,31 @@ namespace WinUIMusicPlayer.Services
                 }
                 InitializeMusic();
                 SelectOutputDevice();
-                if (music.Extension.ToLower() != "dsf" && music.Extension.ToLower() != "dff" && music.Extension.ToLower() != "opus")
+                try
                 {
-                    try
-                    {
-                        AppSettings.isDsd = false;
-                        var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
-                        waveChannel = new WaveChannel32(multiTypeAudioReader);
-                        waveChannel.CurrentTime = currentPos;
-                        waveChannel.Volume = volume;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e.Message);
-                        Reset();
-                        OutputDeviceChange();
-                        return false;
-                    }
+                    AppSettings.isDsd = false;
+                    var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
+                    waveChannel = new WaveChannel32(multiTypeAudioReader);
+                    waveChannel.CurrentTime = currentPos;                   
                 }
-                else if (music.Extension.ToLower() == "opus") {
-                    try
-                    {
-                        AppSettings.isDsd = false;
-                        var ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        var adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
-                        waveChannel = new WaveChannel32(adapter);
-                        waveChannel.CurrentTime = currentPos;
-                        waveChannel.Volume = volume ;
-                    }
-                    catch (Exception e)
-                    {
-                        Reset();
-                        OutputDeviceChange();
-                        return false;
-                    }
-                }
-                else
+                catch (Exception e)
                 {
-                    try
-                    {
-                        AppSettings.isDsd = true;
-                        var ffmpegDecoder = new FfmpegDecoder(music.Path);
-                        var adapter = new LightweightCSCoreAdapter(ffmpegDecoder);
-                        waveChannel = new WaveChannel32(adapter);
-                        waveChannel.CurrentTime = currentPos;
-                        waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
-                        //waveOut.Init(waveChannel);
-                    }
-                    catch (Exception e)
-                    {
-                        notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("SwitchingToSharedMode"));
-                        Reset();
-                        OutputDeviceChange();
-                        return false;
-                    }
-                }                
+                    Debug.WriteLine(e.Message);
+                    Reset();
+                    OutputDeviceChange();
+                    return false;
+                }
+                if (music.Extension.ToLower() == "dsf" || music.Extension.ToLower() == "dff")
+                {
+                    AppSettings.isDsd = true;
+                    waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
+                }
+                else {
+                    waveChannel.Volume = volume;
+                }
                 if (AppSettings.IsEqualizerEnabled)
                 {
-                    isEnableEq = true;                    
+                    isEnableEq = true;
                     var sampleProvider = waveChannel.ToSampleProvider();
                     equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
                     waveOut.Init(equalizer);

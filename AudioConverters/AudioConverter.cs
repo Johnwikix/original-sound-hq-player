@@ -242,87 +242,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);
-        }
-
-        public void ConvertAudio(string filePath, string outputPath, string type = "wav")
-        {
-            using (WaveStream audioReader = new MediaFoundationReader(filePath))
-            {
-                long totalBytes = audioReader.Length;
-                long bytesWritten = 0;
-                DateTime lastUpdate = DateTime.Now;
-                if (type == "wav")
-                {
-                    using (var wavWriter = new WaveFileWriter(outputPath, audioReader.WaveFormat))
-                    {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            wavWriter.Write(buffer, 0, bytesRead);
-                            bytesWritten += bytesRead;
-                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                            {
-                                double progress = (double)bytesWritten / totalBytes * 100;
-                                lastUpdate = DateTime.Now;
-                                progressEvent?.Invoke(this, progress);
-                            }
-                        }
-                    }
-                }
-                if (type == "mp3")
-                {
-                    var mp3FormatPCMStream = ResampleToMp3Format(audioReader, audioReader.WaveFormat.Channels);
-                    totalBytes = mp3FormatPCMStream.Length;
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
-                    {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            mp3Writer.Write(buffer, 0, bytesRead);
-                            bytesWritten += bytesRead;
-                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                            {
-                                double progress = (double)bytesWritten / totalBytes * 100;
-                                lastUpdate = DateTime.Now;
-                                progressEvent?.Invoke(this, progress);
-                            }
-                        }
-                    }
-                }
-                if (type == "flac")
-                {
-                    var memoryStream = new MemoryStream();
-                    var writer = new BinaryWriter(memoryStream);
-                    WriteWavHeader(writer, memoryStream, audioReader);
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = audioReader.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        writer.Write(buffer, 0, bytesRead);
-                        bytesWritten += bytesRead;
-                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                        {
-                            double progress = (double)bytesWritten / totalBytes * 100;
-                            lastUpdate = DateTime.Now;
-                            progressEvent?.Invoke(this, progress);
-                        }
-                    }
-                    memoryStream.Position = 0;
-                    ConvertAudioToFlac(outputPath, memoryStream);
-                }
-                if (type == "wma")
-                {
-                    using (var reader = new WaveFileReader(filePath))
-                    {
-                        MediaFoundationEncoder.EncodeToWma(reader, outputPath);
-                    }
-                }                
-            }
-            SaveMetaData(filePath, outputPath);
-            progressEvent?.Invoke(this, 100);
-        }
+        }       
 
         public void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
         {
@@ -489,50 +409,6 @@ namespace WinUIMusicPlayer.AudioConverters
                         target.Write(buff);
                         target.Close();
                     }
-                    //DateTime lastUpdate = DateTime.Now;
-                    //string tempFileName = $"temp_{Guid.NewGuid()}.wav";
-                    //string tempWavFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp", tempFileName);
-                    //string directory = Path.GetDirectoryName(tempWavFile);
-                    //if (!Directory.Exists(directory))
-                    //{
-                    //    Directory.CreateDirectory(directory);
-                    //}
-                    //try
-                    //{
-                    //    // 使用CSCore的WaveWriter创建临时WAV文件
-                    //    using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(tempWavFile, audio.WaveFormat))
-                    //    {
-                    //        int bufferSize = audio.WaveFormat.BlockAlign * 1024;
-                    //        byte[] buffer = new byte[bufferSize];
-                    //        int bytesRead;
-                    //        while ((bytesRead = audio.Read(buffer, 0, buffer.Length)) > 0)
-                    //        {
-                    //            wavWriter.Write(buffer, 0, bytesRead);
-                    //            bytesWritten += bytesRead;
-                    //            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                    //            {
-                    //                double progress = (double)bytesWritten / totalBytes * 100;
-                    //                lastUpdate = DateTime.Now;
-                    //                if (progress < 99)
-                    //                {
-                    //                    progressEvent?.Invoke(this, progress);
-                    //                }
-                    //            }
-                    //        }
-                    //    }
-                    //    AudioBuffer buff = WAVReader.ReadAllSamples(tempWavFile, null);
-                    //    FlakeWriter target;
-                    //    target = new FlakeWriter(outputPath, null, new FlakeWriterSettings { PCM = buff.PCM, EncoderMode = "7" });
-                    //    target.Settings.Padding = 1;
-                    //    target.DoSeekTable = false;
-                    //    target.FinalSampleCount = buff.Length;
-                    //    target.Write(buff);
-                    //    target.Close();
-                    //}
-                    //finally
-                    //{
-                    //    File.Delete(tempWavFile);
-                    //}
                 }                
             }
             SaveMetaData(filePath, outputPath);
