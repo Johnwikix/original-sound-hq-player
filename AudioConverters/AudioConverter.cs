@@ -421,7 +421,6 @@ namespace WinUIMusicPlayer.AudioConverters
             {
                 if (type == "wav")
                 {
-                    //IWaveSource audio = waveSource.ChangeSampleRate(waveSource.WaveFormat.SampleRate / 4);
                     using (CSCore.Codecs.WAV.WaveWriter wavWriter = new CSCore.Codecs.WAV.WaveWriter(outputPath, waveSource.WaveFormat))
                     {
                         long totalBytes = waveSource.Length;
@@ -536,8 +535,6 @@ namespace WinUIMusicPlayer.AudioConverters
                         // 先写入占位符头部
                         WritePlaceholderWavHeader(memoryStream, audio.WaveFormat);
                         long dataStartPosition = memoryStream.Position;
-
-                        // 写入音频数据
                         int bufferSize = audio.WaveFormat.BlockAlign * 1024; // 增大缓冲区
                         byte[] buffer = new byte[bufferSize];
                         int bytesRead;
@@ -559,20 +556,14 @@ namespace WinUIMusicPlayer.AudioConverters
                                 }
                             }
                         }
-
-                        // 更新WAV头部信息
                         UpdateWavHeaderInMemory(memoryStream, actualDataSize);
-
-                        // 重置位置并读取
                         memoryStream.Position = 0;
                         AudioBuffer buff = WAVReader.ReadAllSamples(null, memoryStream);
-
                         FlakeWriter target = new FlakeWriter(outputPath, null, new FlakeWriterSettings
                         {
                             PCM = buff.PCM,
                             EncoderMode = "7"
                         });
-
                         target.Settings.Padding = 1;
                         target.DoSeekTable = false;
                         target.FinalSampleCount = buff.Length;
