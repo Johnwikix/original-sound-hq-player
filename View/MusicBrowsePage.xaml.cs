@@ -815,7 +815,7 @@ namespace WinUIMusicPlayer.View
                     if (animation != null)
                     {
                         animation.Configuration = new DirectConnectedAnimationConfiguration();
-                        animation.TryStart(PlayingDetailAlbumCoverImage);
+                        animation.TryStart(PlayingDetailAlbumCoverImageGrid);
                     }
                 }                
             }            
@@ -824,7 +824,7 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             isInPlayingDetailMode = false;
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImage);
+            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
             TopPanel.Visibility = Visibility.Visible;
             ContentFrame.Visibility = Visibility.Visible;
             PlayingDetail.Visibility = Visibility.Collapsed;

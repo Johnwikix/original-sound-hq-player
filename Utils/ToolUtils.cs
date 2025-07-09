@@ -111,29 +111,29 @@ namespace WinUIMusicPlayer.Utils
             return parentAsT ?? FindParent<T>(parent);
         }
 
-        private static async Task<BitmapImage> DefaultAlbumCover(int size = 150)
-        {
-            var tcs = new TaskCompletionSource<BitmapImage>();
+        //private static async Task<BitmapImage> DefaultAlbumCover(int size = 150)
+        //{
+        //    var tcs = new TaskCompletionSource<BitmapImage>();
 
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                try
-                {
-                    var uri = new Uri("ms-appx:///Assets/Album.png");
-                    var bitmapImage = new BitmapImage(uri);
-                    if (size != 0) {
-                        bitmapImage.DecodePixelWidth = size;
-                        bitmapImage.DecodePixelHeight = size;
-                    }                    
-                    tcs.SetResult(bitmapImage);
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            });
-            return await tcs.Task;
-        }
+        //    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //    {
+        //        try
+        //        {
+        //            var uri = new Uri("ms-appx:///Assets/Album.png");
+        //            var bitmapImage = new BitmapImage(uri);
+        //            if (size != 0) {
+        //                bitmapImage.DecodePixelWidth = size;
+        //                bitmapImage.DecodePixelHeight = size;
+        //            }                    
+        //            tcs.SetResult(bitmapImage);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            tcs.SetException(ex);
+        //        }
+        //    });
+        //    return await tcs.Task;
+        //}
 
 
 
@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 if (musics == null || musics.Count() == 0)
                 {
-                    return await DefaultAlbumCover();
+                    return null;
                 }
                 foreach (var song in musics)
                 {
@@ -203,23 +203,23 @@ namespace WinUIMusicPlayer.Utils
                             }
                             else
                             {
-                                newCover = await DefaultAlbumCover();
+                                newCover = null;
                             }
                             return newCover;
                         }
                     }
                     catch (Exception ex)
                     {
-                        newCover = await DefaultAlbumCover();
+                        //newCover = await DefaultAlbumCover();
                         Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-                        return newCover;
+                        return null;
                     }
                 }
             }
             else
             {
-                newCover = await DefaultAlbumCover();
-                return newCover;
+                //newCover = await DefaultAlbumCover();
+                return null;
             }
             return newCover;
         }
@@ -230,11 +230,11 @@ namespace WinUIMusicPlayer.Utils
             byte[] imageData = picture.Data.Data.ToArray();
             if (picture?.Data?.Data == null)
             {
-                return await DefaultAlbumCover(defaultImgSize);
+                return null;
             }
             if (!IsValidImageData(imageData))
             {
-                return await DefaultAlbumCover(defaultImgSize);
+                return null;
             }
             var tcs = new TaskCompletionSource<BitmapImage>();
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
@@ -353,7 +353,7 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 if (imageData == null || imageData.Length == 0)
-                    return await DefaultAlbumCover(0);
+                    return null;
                 using (var stream = new InMemoryRandomAccessStream())
                 {
                     using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
@@ -368,7 +368,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                return await DefaultAlbumCover(0);
+                return null;
             }
         }
 

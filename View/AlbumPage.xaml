@@ -23,13 +23,27 @@
                     <StackPanel Margin="5" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Grid Width="150" Height="150">
                             <!--  图片在下层  -->
-                            <Image
-                                x:Name="AlbumCoverImage"
-                                Width="150"
-                                Height="150"
-                                CacheMode="BitmapCache"
-                                Source="{Binding Cover, FallbackValue='ms-appx:///Assets/Album.png'}"
-                                Stretch="Uniform" />
+                            <Grid>
+                                <Image
+                                    x:Name="AlbumCoverImage"
+                                    Width="150"
+                                    Height="150"
+                                    CacheMode="BitmapCache"
+                                    Canvas.ZIndex="1"
+                                    Source="{Binding Cover}"
+                                    Stretch="Uniform" />
+                                <Grid
+                                    Width="150"
+                                    Height="150"
+                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                    Canvas.ZIndex="0">
+                                    <FontIcon
+                                        Canvas.ZIndex="0"
+                                        FontSize="50"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Glyph="&#xE93C;" />
+                                </Grid>
+                            </Grid>
                             <!--  图标位于右下角  -->
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"

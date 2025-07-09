@@ -225,7 +225,20 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     CornerRadius="10">
-                    <Image x:Name="PlayingDetailAlbumCoverImage" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Image x:Name="PlayingDetailAlbumCoverImage" Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                        <Grid
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                            Canvas.ZIndex="0">
+                            <FontIcon
+                                Canvas.ZIndex="0"
+                                FontSize="50"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="&#xE93C;" />
+                        </Grid>
+                    </Grid>
                 </Border>
                 <canvas:CanvasControl
                     x:Name="SpectrumCanvas"
@@ -415,12 +428,26 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
                         </Grid.RowDefinitions>
-                        <Image
-                            x:Name="AlbumCoverImage"
-                            Grid.Row="0"
-                            Width="100"
-                            Height="100"
-                            Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                        <Grid Grid.Row="0">
+                            <Image
+                                x:Name="AlbumCoverImage"
+                                Width="100"
+                                Height="100"
+                                Canvas.ZIndex="1"
+                                Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                            <Grid
+                                Width="100"
+                                Height="100"
+                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                Canvas.ZIndex="0">
+                                <FontIcon
+                                    Canvas.ZIndex="0"
+                                    FontSize="50"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Glyph="&#xE93C;" />
+                            </Grid>
+                        </Grid>
+
                         <FontIcon
                             x:Name="AlbumCoverImageChevronUp"
                             Grid.Row="0"
