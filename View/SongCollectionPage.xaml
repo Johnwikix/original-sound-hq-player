@@ -46,21 +46,24 @@
                 VerticalAlignment="Center"
                 CornerRadius="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToRadiusConverter}, Mode=OneWay}">
                 <Grid>
-                    <Image
+                    <Grid
                         x:Name="AlbumCoverImage"
                         Width="150"
                         Height="150"
-                        CacheMode="BitmapCache"
                         Canvas.ZIndex="1"
-                        Source="{Binding ViewModel.CurrentMusicObject.Cover, Mode=OneWay}"
-                        Stretch="Uniform"
-                        Visibility="{Binding ViewModel.IsAlbumImageVisible, Mode=OneWay}" />
+                        Visibility="{Binding ViewModel.IsAlbumImageVisible, Mode=OneWay}">
+                        <Image
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            CacheMode="BitmapCache"
+                            Source="{Binding ViewModel.CurrentMusicObject.Cover, Mode=OneWay}"
+                            Stretch="UniformToFill" />
+                    </Grid>
                     <Grid
                         Width="150"
                         Height="150"
                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                        Canvas.ZIndex="0"
-                        Visibility="{Binding ViewModel.CurrentMusicObject.Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                        Canvas.ZIndex="0">
                         <FontIcon
                             Canvas.ZIndex="0"
                             FontSize="50"

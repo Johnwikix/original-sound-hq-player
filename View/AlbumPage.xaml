@@ -33,6 +33,7 @@
                                         <Image
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
+                                            CacheMode="BitmapCache"
                                             Source="{Binding Cover}"
                                             Stretch="UniformToFill" />
                                     </Grid>
