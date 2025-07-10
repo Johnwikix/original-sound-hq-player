@@ -58,6 +58,7 @@ namespace WinUIMusicPlayer.Services
         private bool isEnableEq = false;
         public MusicBrowseViewModel MusicBrowseViewModel { get;}
         private readonly object _waveOutLock = new object();
+        private readonly object _waveChannelLock = new object();
 
         public MusicPlaybackService(NotificationService notificationService)
         {
@@ -241,8 +242,10 @@ namespace WinUIMusicPlayer.Services
                         _timeStringBuilder.Clear();
                         App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                         {
-                            MusicBrowseViewModel.ProgressSlider = waveChannel.CurrentTime.TotalSeconds;
-                            MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
+                            if (!isManualSelect) {
+                                MusicBrowseViewModel.ProgressSlider = waveChannel.CurrentTime.TotalSeconds;
+                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
+                            }                            
                         });
                         UpdateLyrics(_cachedCurrentTime);
                     } 
@@ -291,7 +294,7 @@ namespace WinUIMusicPlayer.Services
                     double totalSeconds = waveChannel.TotalTime.TotalSeconds;
                     newPosition = currentTimeSeconds + seconds;
                     newPosition = Math.Max(0, Math.Min(newPosition, totalSeconds));
-                    waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                    ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
                 }
             }
             return newPosition;
@@ -495,7 +498,7 @@ namespace WinUIMusicPlayer.Services
             if (waveChannel != null)
             {
                 waveOut.Stop();
-                waveChannel.CurrentTime = TimeSpan.Zero;                
+                ChangeWaveChannelTime(TimeSpan.Zero);                
             }
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -602,7 +605,7 @@ namespace WinUIMusicPlayer.Services
                     AppSettings.isDsd = false;
                     var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                     waveChannel = new WaveChannel32(multiTypeAudioReader);
-                    waveChannel.CurrentTime = currentPos;                   
+                    ChangeWaveChannelTime(currentPos);                   
                 }
                 catch (Exception e)
                 {
@@ -756,6 +759,12 @@ namespace WinUIMusicPlayer.Services
             {
                 await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
             });           
+        }
+
+        public void ChangeWaveChannelTime(TimeSpan timeSpan) {
+            lock (_waveChannelLock) {
+                waveChannel.CurrentTime = timeSpan;
+            }            
         }
 
         public void SwitchPlayMode()

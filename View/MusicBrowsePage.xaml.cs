@@ -799,7 +799,12 @@ namespace WinUIMusicPlayer.View
             if (ViewModel._musicPlaybackService.waveChannel != null)
             {
                 double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
-                ViewModel._musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(newPosition);
+                _=Task.Run(() =>
+                {
+                    ViewModel._musicPlaybackService.isManualSelect = true;
+                    ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+                    ViewModel._musicPlaybackService.isManualSelect = false;
+                });                
             }
         }
 
@@ -850,16 +855,6 @@ namespace WinUIMusicPlayer.View
             equalizerDialog.RequestedTheme = AppSettings.elementTheme;
             equalizerDialog.XamlRoot = this.XamlRoot;
             _=equalizerDialog.ShowAsync();           
-        }
-
-        private void VolumeSlider_DragEnter(object sender, DragEventArgs e)
-        {
-
-        }
-
-        private void VolumeSlider_DragLeave(object sender, DragEventArgs e)
-        {
-
         }
     }
 }

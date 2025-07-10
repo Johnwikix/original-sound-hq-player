@@ -100,8 +100,13 @@ namespace WinUIMusicPlayer.ViewModel
                                 double currentPlayPosition = _musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
 
                                 if (Math.Abs(value - currentPlayPosition) > 4.0)
-                                {        
-                                    _musicPlaybackService.waveChannel.CurrentTime = TimeSpan.FromSeconds(value);                               
+                                {     
+                                    Task.Run(() =>
+                                    {
+                                        _musicPlaybackService.isManualSelect = true;
+                                        _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
+                                        _musicPlaybackService.isManualSelect = false;
+                                    });                                                            
                                 }
                             }
                         }
