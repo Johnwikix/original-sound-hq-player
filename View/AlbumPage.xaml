@@ -27,16 +27,20 @@
                         VerticalAlignment="Center">
                         <Grid Width="150" Height="150">
                             <!--  图片在下层  -->
-                            <Border HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="5">
+                            <Border
+                                Width="150"
+                                Height="150"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                CornerRadius="5">
                                 <Grid>
-                                    <Grid Width="150" Height="150" Canvas.ZIndex="1">
-                                        <Image
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            CacheMode="BitmapCache"
-                                            Source="{Binding Cover}"
-                                            Stretch="UniformToFill" />
-                                    </Grid>
+                                    <Image
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        CacheMode="BitmapCache"
+                                        Canvas.ZIndex="1"
+                                        Source="{Binding Cover}"
+                                        Stretch="UniformToFill" />
                                     <Grid
                                         Width="150"
                                         Height="150"
@@ -70,6 +74,7 @@
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="Wrap" />
                         <TextBlock
+                            Width="150"
                             Height="15"
                             Margin="0"
                             FontSize="12"
