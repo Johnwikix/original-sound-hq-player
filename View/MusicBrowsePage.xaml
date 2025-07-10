@@ -434,6 +434,7 @@
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     Click="AlbumCoverImage_Click"
+                    CornerRadius="5"
                     Style="{StaticResource SimpleHoverButtonStyle}">
                     <Grid>
                         <Grid.RowDefinitions>

@@ -91,8 +91,7 @@
                     FontSize="30"
                     FontWeight="Bold"
                     Text="{Binding ViewModel.FirstTitle, Mode=OneWay}"
-                    TextTrimming="CharacterEllipsis"
-                    TextWrapping="WrapWholeWords" />
+                    TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="SecondaryTitleTextBlock"
                     Grid.Row="1"
