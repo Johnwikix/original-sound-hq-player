@@ -539,7 +539,7 @@ namespace WinUIMusicPlayer.View
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect },AppSettings.SlideAnimationTime);
+            _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect },AppSettings.SlideAnimationTime,true);
             previousSelectedIndex = currentSelectedIndex;
             DisableBackButton();
         }

@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             _registeredPages[typeof(T)] = typeof(T);
         }
 
-        public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300)
+        public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300, bool isPlayAnime = false)
         {
             // 检查是否为相同页面类型，避免重复导航动画
             if (ContentFrame?.Content?.GetType() == pageType)
@@ -48,7 +48,10 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 {
                     navigatablePage.ReceiveNavigationParameter(parameter);
                 }
-                return; // 直接返回，不执行动画
+                if (!isPlayAnime) {
+                    return; // 直接返回，不执行动画
+                }
+                    
             }
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
