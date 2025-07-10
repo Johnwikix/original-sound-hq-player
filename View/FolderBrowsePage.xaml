@@ -39,11 +39,27 @@
                             VerticalAlignment="Center">
                             <Grid Width="150" Height="150">
                                 <!--  图片在下层  -->
-                                <FontIcon
+                                <Border
+                                    Grid.Row="0"
                                     Width="150"
                                     Height="150"
-                                    FontSize="100"
-                                    Glyph="&#xf12b;" />
+                                    Margin="0,0,0,0"
+                                    Padding="0"
+                                    CornerRadius="10">
+                                    <Grid>
+                                        <Grid
+                                            Width="150"
+                                            Height="150"
+                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                            Canvas.ZIndex="0">
+                                            <FontIcon
+                                                Canvas.ZIndex="0"
+                                                FontSize="50"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Glyph="&#xf12b;" />
+                                        </Grid>
+                                    </Grid>
+                                </Border>
                                 <!--  图标位于右下角  -->
                                 <FontIcon
                                     x:Name="IsExistOnDeviceIcon"
@@ -57,7 +73,7 @@
                             <TextBlock
                                 Width="150"
                                 Height="60"
-                                Margin="0"
+                                Margin="0,5,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Text="{Binding LastLevelFolderPath}"

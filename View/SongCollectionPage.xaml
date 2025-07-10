@@ -44,7 +44,7 @@
                 Grid.Column="0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                CornerRadius="5">
+                CornerRadius="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToRadiusConverter}, Mode=OneWay}">
                 <Grid>
                     <Image
                         x:Name="AlbumCoverImage"

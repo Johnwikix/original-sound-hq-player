@@ -21,4 +21,5 @@
     <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
     <converters:SongCollectionPageTypeToIconConverter x:Key="SongCollectionPageTypeToIconConverter" />
     <converters:SongCollectionPageTypeToEditVisiableConverter x:Key="SongCollectionPageTypeToEditVisiableConverter" />
+    <converters:SongCollectionPageTypeToRadiusConverter x:Key="SongCollectionPageTypeToRadiusConverter" />
 </ResourceDictionary>

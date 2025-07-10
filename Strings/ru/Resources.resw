@@ -663,4 +663,16 @@
   <data name="Edit.Text" xml:space="preserve">
     <value>Редактирование</value>
   </data>
+  <data name="NumberOfAlbums" xml:space="preserve">
+    <value>альбома</value>
+  </data>
+  <data name="NumberOfArtists" xml:space="preserve">
+    <value>Артисты</value>
+  </data>
+  <data name="Artist" xml:space="preserve">
+    <value>Артисты</value>
+  </data>
+  <data name="Folder" xml:space="preserve">
+    <value>Папки</value>
+  </data>
 </root>

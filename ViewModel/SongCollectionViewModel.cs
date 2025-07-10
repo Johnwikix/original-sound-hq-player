@@ -212,7 +212,7 @@ namespace WinUIMusicPlayer.ViewModel
                         .Where(music => music.Album == CurrentMusicObject.Album)
                         .Select(music => music.Author)
                         .Distinct());
-                    ThirdTitle = $"{(CurrentMusicObject.Year!=0 ? $"{CurrentMusicObject.Year} · ".ToString():"")}{AppData.allSongs.Count(music => music.Album == CurrentMusicObject.Album)}首歌曲";
+                    ThirdTitle = $"{(CurrentMusicObject.Year!=0 ? $"{CurrentMusicObject.Year} · ".ToString():"")}{AppData.allSongs.Count(music => music.Album == CurrentMusicObject.Album)} {ToolUtils.GetString("NumberOfSongs")}";
                     LoadMusicAsync(musics, CurrentPageType);
                 }
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
@@ -227,8 +227,8 @@ namespace WinUIMusicPlayer.ViewModel
                         .Select(music => music.Album)
                         .Distinct()
                         .Count();
-                    SecondTitle = $"{AppData.allSongs.Count(music => music.Author == CurrentMusicObject.Author)} {ToolUtils.GetString("NumberOfSongs")} · {authorAlbums}张专辑";
-                    ThirdTitle = "艺术家";
+                    SecondTitle = $"{AppData.allSongs.Count(music => music.Author == CurrentMusicObject.Author)} {ToolUtils.GetString("NumberOfSongs")} · {authorAlbums} {ToolUtils.GetString("NumberOfAlbums")}";
+                    ThirdTitle = ToolUtils.GetString("Artist");
                     LoadMusicAsync(musics, CurrentPageType);
                 }
                 else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
@@ -237,7 +237,7 @@ namespace WinUIMusicPlayer.ViewModel
                     CurrentMusicObject = _parentPage.CurrentFolder;
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText));
-                    FirstTitle = CurrentMusicObject.LastLevelFolderPath;
+                    FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs
                         .Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
                         .Select(music => music.Album)
@@ -247,8 +247,8 @@ namespace WinUIMusicPlayer.ViewModel
                         .Select(music => music.Author)
                         .Distinct()
                         .Count();
-                    SecondTitle = $"{AppData.allSongs.Count(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums}张专辑 · {authors}个艺术家";
-                    ThirdTitle = "文件夹";
+                    SecondTitle = $"{AppData.allSongs.Count(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
+                    ThirdTitle = ToolUtils.GetString("Folder");
                     LoadMusicAsync(musics, CurrentPageType);
                 }
             }

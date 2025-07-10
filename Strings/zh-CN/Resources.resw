@@ -663,4 +663,16 @@
   <data name="Edit.Text" xml:space="preserve">
     <value>编辑</value>
   </data>
+  <data name="NumberOfAlbums" xml:space="preserve">
+    <value>张专辑</value>
+  </data>
+  <data name="NumberOfArtists" xml:space="preserve">
+    <value>个艺术家</value>
+  </data>
+  <data name="Artist" xml:space="preserve">
+    <value>艺术家</value>
+  </data>
+  <data name="Folder" xml:space="preserve">
+    <value>文件夹</value>
+  </data>
 </root>
