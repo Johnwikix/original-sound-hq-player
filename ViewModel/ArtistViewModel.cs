@@ -68,7 +68,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {            
-            parentPage.currentArtistName = null;
+            parentPage.CurrentArtist = null;
             parentPage.pageType = null;
             parentPage.DisableBackButton();            
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Music artist = item.Content as Music;
                 if (parentPage != null)
                 {
-                    parentPage.LoadArtistMusic(artist.Author);
+                    parentPage.LoadArtistMusic(artist);
                 }
             }
         }

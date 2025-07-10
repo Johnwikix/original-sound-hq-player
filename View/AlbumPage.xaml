@@ -20,30 +20,36 @@
             VirtualizingStackPanel.VirtualizationMode="Recycling">
             <GridView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel
+                        Height="205"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
                         <Grid Width="150" Height="150">
                             <!--  图片在下层  -->
-                            <Grid>
-                                <Image
-                                    x:Name="AlbumCoverImage"
-                                    Width="150"
-                                    Height="150"
-                                    CacheMode="BitmapCache"
-                                    Canvas.ZIndex="1"
-                                    Source="{Binding Cover}"
-                                    Stretch="Uniform" />
-                                <Grid
-                                    Width="150"
-                                    Height="150"
-                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                    Canvas.ZIndex="0">
-                                    <FontIcon
-                                        Canvas.ZIndex="0"
-                                        FontSize="50"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Glyph="&#xE93C;" />
+                            <Border HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="5">
+                                <Grid>
+                                    <Image
+                                        x:Name="AlbumCoverImage"
+                                        Width="150"
+                                        Height="150"
+                                        CacheMode="BitmapCache"
+                                        Canvas.ZIndex="1"
+                                        Source="{Binding Cover}"
+                                        Stretch="Uniform" />
+                                    <Grid
+                                        Width="150"
+                                        Height="150"
+                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                        Canvas.ZIndex="0">
+                                        <FontIcon
+                                            Canvas.ZIndex="0"
+                                            FontSize="50"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Glyph="&#xE93C;" />
+                                    </Grid>
                                 </Grid>
-                            </Grid>
+                            </Border>
                             <!--  图标位于右下角  -->
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"
@@ -55,14 +61,20 @@
                         </Grid>
                         <TextBlock
                             Width="150"
-                            Height="60"
+                            MaxHeight="40"
                             Margin="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
+                            FontWeight="SemiBold"
                             Text="{Binding Album, Mode=OneWay}"
-                            TextAlignment="Center"
+                            TextAlignment="Left"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="Wrap" />
+                        <TextBlock
+                            Height="15"
+                            Margin="0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding Author, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </DataTemplate>
             </GridView.ItemTemplate>

@@ -71,9 +71,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void ReceiveNavigation()
-        {
-           
-            parentPage.currentFolderName = null;
+        {           
+            parentPage.CurrentFolder= null;
             parentPage.pageType = null;         
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
@@ -146,7 +145,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Music folder = item.Content as Music;
                 if (parentPage != null)
                 {
-                    parentPage.LoadFolderMusic(folder.LastLevelFolderPath);
+                    parentPage.LoadFolderMusic(folder);
                 }
             }
         }

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:WinUIMusicPlayer.Converters">
-    <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />    
+    <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
     <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />
     <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
     <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
     <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter" />
-    <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />   
+    <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />
     <converters:FavouriteTextConverter x:Key="FavouriteTextConverter" />
-    <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter" />    
-    <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter" />    
+    <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter" />
+    <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter" />
     <converters:MusicToTitleConverter x:Key="MusicToTitleConverter" />
     <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
     <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
@@ -19,4 +19,6 @@
     <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
     <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
     <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
+    <converters:SongCollectionPageTypeToIconConverter x:Key="SongCollectionPageTypeToIconConverter" />
+    <converters:SongCollectionPageTypeToEditVisiableConverter x:Key="SongCollectionPageTypeToEditVisiableConverter" />
 </ResourceDictionary>

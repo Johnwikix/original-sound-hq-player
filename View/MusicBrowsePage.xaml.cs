@@ -42,9 +42,12 @@ namespace WinUIMusicPlayer.View
         public string pageType = "MusicBrowsePage";
         public System.Type currentPage = typeof(SongListPage);
         private bool isMouseOverVolumeSlider = false;
-        public string currentAlbumName;
-        public string currentArtistName;
-        public string currentFolderName;
+        //public string currentAlbumName;
+        public Music CurrentAlbum;
+        //public string currentArtistName;
+        public Music CurrentArtist;
+        //public string currentFolderName;
+        public Music CurrentFolder;
         public PlayList currentPlayList;
         public int currentPlayListId;
         private DispatcherTimer typingTimer;
@@ -286,11 +289,12 @@ namespace WinUIMusicPlayer.View
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
         }
 
-        public async void LoadAlbumMusic(string Album)
+        public async void LoadAlbumMusic(Music album)
         {
             pageType = "album";
-            paramName = Album;
-            currentAlbumName = Album;
+            paramName = album.Album;
+            //currentAlbumName = album.Album;
+            CurrentAlbum = album;
             currentPage = typeof(SongCollectionPage);
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
         }
@@ -299,7 +303,8 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "album";
             paramName = Album;
-            currentAlbumName = Album;
+            CurrentAlbum = AppData.allSongs.Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            CurrentAlbum.Album = Album;
             currentPage = typeof(SongCollectionPage);
             if (ContentFrame != null && ContentFrame.Content != null)
             {
@@ -314,11 +319,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async void LoadArtistMusic(string artist)
+        public async void LoadArtistMusic(Music artist)
         {
             pageType = "artist";
-            paramName = artist;
-            currentArtistName = artist;
+            paramName = artist.Author;
+            //currentArtistName = artist.Author;
+            CurrentArtist = artist;
             currentPage = typeof(SongCollectionPage);
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
         }
@@ -327,7 +333,8 @@ namespace WinUIMusicPlayer.View
         {
             pageType = "artist";
             paramName = artist;
-            currentArtistName = artist;
+            CurrentArtist = AppData.allSongs.FirstOrDefault(m => m.Author == artist);
+            CurrentArtist.Author = artist;
             currentPage = typeof(SongCollectionPage);
             if (ContentFrame != null && ContentFrame.Content != null)
             {
@@ -342,11 +349,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async void LoadFolderMusic(string folder)
+        public async void LoadFolderMusic(Music folder)
         {
             pageType = "folder";
-            paramName = folder;
-            currentFolderName = folder;
+            paramName = folder.LastLevelFolderPath;
+            //currentFolderName = folder.LastLevelFolderPath;
+            CurrentFolder = folder;
             currentPage = typeof(SongCollectionPage);
             _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
         }
@@ -478,10 +486,10 @@ namespace WinUIMusicPlayer.View
                     currentPage = typeof(SongListPage);
                     break;
                 case "Album":
-                    if (!string.IsNullOrEmpty(currentAlbumName))
+                    if (CurrentAlbum != null && !string.IsNullOrEmpty(CurrentAlbum.Album))
                     {
                         pageType = "album";
-                        paramName = currentAlbumName;
+                        paramName = CurrentAlbum.Album;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
@@ -490,10 +498,10 @@ namespace WinUIMusicPlayer.View
                     }
                     break;
                 case "Artist":
-                    if (!string.IsNullOrEmpty(currentArtistName))
+                    if (CurrentArtist != null && !string.IsNullOrEmpty(CurrentArtist.Author))
                     {
                         pageType = "artist";
-                        paramName = currentArtistName;
+                        paramName = CurrentArtist.Author;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
@@ -502,10 +510,10 @@ namespace WinUIMusicPlayer.View
                     }
                     break;
                 case "Folder":
-                    if (!string.IsNullOrEmpty(currentFolderName))
+                    if (CurrentFolder != null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
                     {
                         pageType = "folder";
-                        paramName = currentFolderName;
+                        paramName = CurrentFolder.LastLevelFolderPath;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else

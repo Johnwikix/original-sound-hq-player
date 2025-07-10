@@ -303,5 +303,25 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
+
+        private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
+        {
+            PlayList.Items.Clear();
+            var playlists = await MusicDatabaseService.GetPlayListAsync();
+            foreach (var playlist in playlists)
+            {
+                var menuItem = new MenuFlyoutItem
+                {
+                    Text = playlist.Name
+                };
+                menuItem.Click += async (s, args) =>
+                {
+                    foreach (var music in ViewModel.MusicList) {
+                        await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
+                    }
+                };
+                PlayList.Items.Add(menuItem);
+            }
+        }
     }
 }

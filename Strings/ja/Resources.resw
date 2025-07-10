@@ -651,4 +651,16 @@
   <data name="InfoBarMessageConverter" xml:space="preserve">
     <value>ターゲットフォーマットは元のフォーマットと同じです</value>
   </data>
+  <data name="NumberOfSongs" xml:space="preserve">
+    <value>曲</value>
+  </data>
+  <data name="PlayAll.Text" xml:space="preserve">
+    <value>すべて再生</value>
+  </data>
+  <data name="AddTo.Text" xml:space="preserve">
+    <value>追加</value>
+  </data>
+  <data name="Edit.Text" xml:space="preserve">
+    <value>編集</value>
+  </data>
 </root>

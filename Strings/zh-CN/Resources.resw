@@ -651,4 +651,16 @@
   <data name="InfoBarMessageConverter" xml:space="preserve">
     <value>目标格式与原格式相同</value>
   </data>
+  <data name="NumberOfSongs" xml:space="preserve">
+    <value>首歌曲</value>
+  </data>
+  <data name="PlayAll.Text" xml:space="preserve">
+    <value>播放全部</value>
+  </data>
+  <data name="AddTo.Text" xml:space="preserve">
+    <value>添加到</value>
+  </data>
+  <data name="Edit.Text" xml:space="preserve">
+    <value>编辑</value>
+  </data>
 </root>

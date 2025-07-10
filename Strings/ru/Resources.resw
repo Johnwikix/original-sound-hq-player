@@ -651,4 +651,16 @@
   <data name="InfoBarMessageConverter" xml:space="preserve">
     <value>Формат цели идентичен первоначальному формату.</value>
   </data>
+  <data name="NumberOfSongs" xml:space="preserve">
+    <value>песен</value>
+  </data>
+  <data name="PlayAll.Text" xml:space="preserve">
+    <value>Показать все</value>
+  </data>
+  <data name="AddTo.Text" xml:space="preserve">
+    <value>Добавить в</value>
+  </data>
+  <data name="Edit.Text" xml:space="preserve">
+    <value>Редактирование</value>
+  </data>
 </root>

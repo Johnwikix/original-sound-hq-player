@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             
-            parentPage.currentAlbumName = null;
+            parentPage.CurrentAlbum = null;
             parentPage.pageType = null;
             parentPage.DisableBackButton();            
             Entance();
@@ -182,7 +182,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Music album = item.Content as Music;
                 if (parentPage != null)
                 {
-                    parentPage.LoadAlbumMusic(album.Album);
+                    parentPage.LoadAlbumMusic(album);
                 }
             }
         }

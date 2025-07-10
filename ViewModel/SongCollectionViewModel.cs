@@ -15,6 +15,9 @@ using CommunityToolkit.Mvvm.Messaging;
 using WinUIMusicPlayer.Helper;
 using System.IO;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -33,11 +36,55 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _selectedMusic, value);
         }
 
+        private Music _currentMusicObject;
+        public Music CurrentMusicObject
+        {
+            get => _currentMusicObject;
+            set => SetProperty(ref _currentMusicObject, value);
+        }
+
+        private string _firstTitle;
+        public string FirstTitle
+        {
+            get => _firstTitle;
+            set => SetProperty(ref _firstTitle, value);
+        }
+        private string _secondTitle;
+        public string SecondTitle
+        {
+            get => _secondTitle;
+            set => SetProperty(ref _secondTitle, value);
+        }
+        private string _thirdTitle;
+        public string ThirdTitle
+        {
+            get => _thirdTitle;
+            set => SetProperty(ref _thirdTitle, value);
+        }
+
+        private Visibility _isAlbumImageVisible = Visibility.Visible;
+        public Visibility IsAlbumImageVisible
+        {
+            get => _isAlbumImageVisible;
+            set => SetProperty(ref _isAlbumImageVisible, value);
+        }
+        private ObservableCollection<PlayList> _playLists;
+        public ObservableCollection<PlayList> PlayLists
+        {
+            get => _playLists;
+            set => SetProperty(ref _playLists, value);
+        }
+
         private MusicBrowsePage? _parentPage;
         private SongCollectionPage _currentPage;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
         private string? _currentPageType;
+        public string? CurrentPageType
+        {
+            get => _currentPageType;
+            set => SetProperty(ref _currentPageType, value);
+        }
         private string? _currentAlbumName;
         private string? _currentArtistName;
         private string? _currentFolderName;
@@ -134,28 +181,75 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage != null)
             {
-                _currentPageType = _parentPage.pageType;
-                _currentAlbumName = _parentPage.currentAlbumName;
-                _currentArtistName = _parentPage.currentArtistName;
-                _currentFolderName = _parentPage.currentFolderName;
+                CurrentPageType = _parentPage.pageType;
+                _currentAlbumName = _parentPage.CurrentAlbum?.Album;
+                _currentArtistName = _parentPage.CurrentArtist?.Author;
+                _currentFolderName = _parentPage.CurrentFolder?.LastLevelFolderPath;
 
-                if (_currentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
+                if (CurrentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
                 {
+                    IsAlbumImageVisible = Visibility.Visible;
+                    CurrentMusicObject = _parentPage.CurrentAlbum;
+                    _ = Task.Run(async () =>
+                    {
+                        if (CurrentMusicObject?.Cover == null)
+                        {
+                            BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
+                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                CurrentMusicObject.Cover = cover;
+                            });
+                            if (AppSettings.isCoverCacheEnabled && cover != null)
+                            {
+                                AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
+                            }
+                        }
+                    });
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null));
-                     LoadMusicAsync(musics, _currentPageType);
+                    FirstTitle = CurrentMusicObject.Album;
+                    SecondTitle = string.Join(" · ", AppData.allSongs
+                        .Where(music => music.Album == CurrentMusicObject.Album)
+                        .Select(music => music.Author)
+                        .Distinct());
+                    ThirdTitle = $"{(CurrentMusicObject.Year!=0 ? $"{CurrentMusicObject.Year} · ".ToString():"")}{AppData.allSongs.Count(music => music.Album == CurrentMusicObject.Album)}首歌曲";
+                    LoadMusicAsync(musics, CurrentPageType);
                 }
-                else if (_currentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
+                else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
+                    IsAlbumImageVisible = Visibility.Collapsed;
+                    CurrentMusicObject = _parentPage.CurrentArtist;
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null));
-                     LoadMusicAsync(musics, _currentPageType);
+                    FirstTitle = CurrentMusicObject.Author;
+                    var authorAlbums = AppData.allSongs
+                        .Where(music => music.Author == CurrentMusicObject.Author)
+                        .Select(music => music.Album)
+                        .Distinct()
+                        .Count();
+                    SecondTitle = $"{AppData.allSongs.Count(music => music.Author == CurrentMusicObject.Author)} {ToolUtils.GetString("NumberOfSongs")} · {authorAlbums}张专辑";
+                    ThirdTitle = "艺术家";
+                    LoadMusicAsync(musics, CurrentPageType);
                 }
-                else if (_currentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
+                else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
+                    IsAlbumImageVisible = Visibility.Collapsed;
+                    CurrentMusicObject = _parentPage.CurrentFolder;
                     ObservableCollection<Music> musics = new ObservableCollection<Music>(
                         MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText));
-                     LoadMusicAsync(musics, _currentPageType);
+                    FirstTitle = CurrentMusicObject.LastLevelFolderPath;
+                    var albums = AppData.allSongs
+                        .Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
+                        .Select(music => music.Album)
+                        .Distinct()
+                        .Count();
+                    var authors = AppData.allSongs.Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
+                        .Select(music => music.Author)
+                        .Distinct()
+                        .Count();
+                    SecondTitle = $"{AppData.allSongs.Count(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums}张专辑 · {authors}个艺术家";
+                    ThirdTitle = "文件夹";
+                    LoadMusicAsync(musics, CurrentPageType);
                 }
             }
         }
@@ -175,9 +269,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
-                    return;
-                }
+                //if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
+                //    return;
+                //}
                 //MusicList.Clear();
                 //foreach (var music in musics)
                 //{
@@ -490,5 +584,31 @@ namespace WinUIMusicPlayer.ViewModel
                 _parentPage.HideTransmission();
             }
         }
+
+        [RelayCommand]
+        private void OnPlayAll()
+        {
+            if (_parentPage != null)
+            {
+                _parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(MusicList);
+                if (MusicList.Count > 0)
+                {
+                    _parentPage.PlayMusic(MusicList[0]);
+                }
+            }
+        }
+        [RelayCommand]
+        private void OnAlbumInfoChanged() {            
+            if (CurrentMusicObject != null)
+            {
+                var albumDetailWindow = new AlbumDetailWindow(CurrentMusicObject);
+                //if (albumPage != null)
+                //{
+                //    albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
+                //}
+                albumDetailWindow.Activate();
+            }
+        }
+
     }
 }
