@@ -29,19 +29,19 @@
                             <!--  图片在下层  -->
                             <Border HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="5">
                                 <Grid>
-                                    <Image
-                                        x:Name="AlbumCoverImage"
-                                        Width="150"
-                                        Height="150"
-                                        CacheMode="BitmapCache"
-                                        Canvas.ZIndex="1"
-                                        Source="{Binding Cover}"
-                                        Stretch="Uniform" />
+                                    <Grid Width="150" Height="150" Canvas.ZIndex="1">
+                                        <Image
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Source="{Binding Cover}"
+                                            Stretch="UniformToFill" />
+                                    </Grid>
                                     <Grid
                                         Width="150"
                                         Height="150"
                                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                        Canvas.ZIndex="0">
+                                        Canvas.ZIndex="0"
+                                        Visibility="{Binding Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                         <FontIcon
                                             Canvas.ZIndex="0"
                                             FontSize="50"

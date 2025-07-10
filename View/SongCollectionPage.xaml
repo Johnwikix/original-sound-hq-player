@@ -59,7 +59,8 @@
                         Width="150"
                         Height="150"
                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                        Canvas.ZIndex="0">
+                        Canvas.ZIndex="0"
+                        Visibility="{Binding ViewModel.CurrentMusicObject.Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                         <FontIcon
                             Canvas.ZIndex="0"
                             FontSize="50"
@@ -143,7 +144,7 @@
                         Grid.Column="2"
                         Margin="10,0,10,0"
                         Command="{Binding ViewModel.AlbumInfoChangedCommand, Mode=OneWay}"
-                        Visibility="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToEditVisiableConverter}, Mode=OneWay}">
+                        Visibility="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToEditVisibleConverter}, Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE70F;" />

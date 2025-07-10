@@ -1,25 +1,26 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class SongCollectionPageTypeToEditVisiableConverter : IValueConverter
+    public class IsCoverExistToVisibleConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is string pageType)
+            if(value is BitmapImage cover)
             {
-                if (pageType == "album")
-                {
-                    return Visibility.Visible;
-                }
+                if (cover != null) {
+                    return Visibility.Collapsed;
+                }                
             }
-            return Visibility.Collapsed;
+            return Visibility.Visible;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

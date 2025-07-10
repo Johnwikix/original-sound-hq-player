@@ -20,6 +20,7 @@
     <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
     <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
     <converters:SongCollectionPageTypeToIconConverter x:Key="SongCollectionPageTypeToIconConverter" />
-    <converters:SongCollectionPageTypeToEditVisiableConverter x:Key="SongCollectionPageTypeToEditVisiableConverter" />
+    <converters:SongCollectionPageTypeToEditVisibleConverter x:Key="SongCollectionPageTypeToEditVisibleConverter" />
     <converters:SongCollectionPageTypeToRadiusConverter x:Key="SongCollectionPageTypeToRadiusConverter" />
+    <converters:IsCoverExistToVisibleConverter x:Key="IsCoverExistToVisibleConverter" />
 </ResourceDictionary>

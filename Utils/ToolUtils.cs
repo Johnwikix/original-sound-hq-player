@@ -225,7 +225,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0,int defaultImgSize = 150)
+        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
             byte[] imageData = picture.Data.Data.ToArray();
             if (picture?.Data?.Data == null)
@@ -243,7 +243,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     using (var ms = new MemoryStream(imageData))
                     {
-                        var bitmapImage = new BitmapImage { DecodePixelWidth = defaultImgSize };
+                        var bitmapImage = new BitmapImage { DecodePixelWidth = maxSize };
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                         tcs.SetResult(bitmapImage);
                     }
@@ -403,33 +403,33 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }        
 
-        public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 150)
-        {
-            try
-            {
-                using (var file = TagLib.File.Create(music.Path))
-                {
-                    if (file.Tag.Pictures.Length > 0)
-                    {
-                        IPicture picture = file.Tag.Pictures[0];
-                        return await ReadBitmapImageAsync(picture, size,0);
-                    }
-                    else
-                    {
-                        var uri = new Uri("ms-appx:///Assets/Album.png");
-                        var bitmapImage = new BitmapImage(uri);
-                        return bitmapImage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
-                var uri = new Uri("ms-appx:///Assets/Album.png");
-                var bitmapImage = new BitmapImage(uri);
-                return bitmapImage;
-            }
-        }
+        //public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 150)
+        //{
+        //    try
+        //    {
+        //        using (var file = TagLib.File.Create(music.Path))
+        //        {
+        //            if (file.Tag.Pictures.Length > 0)
+        //            {
+        //                IPicture picture = file.Tag.Pictures[0];
+        //                return await ReadBitmapImageAsync(picture, size);
+        //            }
+        //            else
+        //            {
+        //                var uri = new Uri("ms-appx:///Assets/Album.png");
+        //                var bitmapImage = new BitmapImage(uri);
+        //                return bitmapImage;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
+        //        var uri = new Uri("ms-appx:///Assets/Album.png");
+        //        var bitmapImage = new BitmapImage(uri);
+        //        return bitmapImage;
+        //    }
+        //}
 
         public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
         {
@@ -589,17 +589,17 @@ namespace WinUIMusicPlayer.Utils
             return musicList;
         }
 
-        public static async Task<BitmapImage> LoadAlbumCover(Music music)
-        {
-            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-            {
-                return cachedCover;
-            }
-            else
-            {
-                return await GetImageFromMusic(music);
-            }
-        }
+        //public static async Task<BitmapImage> LoadAlbumCover(Music music)
+        //{
+        //    if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+        //    {
+        //        return cachedCover;
+        //    }
+        //    else
+        //    {
+        //        return await GetImageFromMusic(music);
+        //    }
+        //}
 
         public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
         {
