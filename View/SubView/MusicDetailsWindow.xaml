@@ -1,216 +1,419 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Window
     x:Class="WinUIMusicPlayer.View.SubView.MusicDetailsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="音乐属性">
+    Title="音乐属性"
+    mc:Ignorable="d">
 
     <Window.SystemBackdrop>
-        <DesktopAcrylicBackdrop/>
+        <DesktopAcrylicBackdrop />
     </Window.SystemBackdrop>
     <Grid>
         <Grid
             x:Name="MusicDetailTitleBar"
             Height="44"
             Margin="0"
-            VerticalAlignment="Top"
-            Padding="0">
+            Padding="0"
+            VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock
-                Margin="18,0,0,0"
+                x:Uid="MusicDetailTitleBar"
                 Grid.Column="1"
-                FontSize="16"
+                Margin="18,0,0,0"
                 VerticalAlignment="Center"
-                Style="{StaticResource CaptionTextBlockStyle}"
-                x:Uid="MusicDetailTitleBar"/>
+                FontSize="16"
+                Style="{StaticResource CaptionTextBlockStyle}" />
         </Grid>
         <Grid x:Name="LoadingGrid" Visibility="Collapsed">
-            <ProgressRing IsActive="True" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="100"/>
-            <TextBlock x:Uid="LoadingGrid" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,180,0,0"/>
+            <ProgressRing
+                Width="100"
+                Height="100"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsActive="True" />
+            <TextBlock
+                x:Uid="LoadingGrid"
+                Margin="0,180,0,0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
         </Grid>
-        <RelativePanel x:Name="MusicDetail"  Margin="10 50 10 10">
-            <ScrollViewer 
-                Margin="0 0 0 50" 
-                VerticalScrollBarVisibility="Auto"
+        <RelativePanel x:Name="MusicDetail" Margin="10,50,10,10">
+            <ScrollViewer
+                Margin="0,0,0,50"
                 RelativePanel.AlignLeftWithPanel="True"
-                RelativePanel.AlignTopWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"
-                >
+                RelativePanel.AlignTopWithPanel="True"
+                VerticalScrollBarVisibility="Auto">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5*"/>
-                        <ColumnDefinition Width="2.5*"/>
+                        <ColumnDefinition Width="5*" />
+                        <ColumnDefinition Width="2.5*" />
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="5*"/>                            
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="5*" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="TitleTextBlock" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="TitleTextBlock" BorderThickness="0"  TextWrapping="Wrap"  Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock
+                            x:Uid="TitleTextBlock"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBox
+                            x:Name="TitleTextBlock"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            TextWrapping="Wrap" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="AuthorTextBlock" FontWeight="Bold" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="AuthorTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock
+                            x:Uid="AuthorTextBlock"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBox
+                            x:Name="AuthorTextBlock"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            TextWrapping="Wrap" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="AlbumTextBlock" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="AlbumTextBlock"  BorderThickness="0" TextWrapping="Wrap"  Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock
+                            x:Uid="AlbumTextBlock"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBox
+                            x:Name="AlbumTextBlock"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            TextWrapping="Wrap" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="YearTextBlock" FontWeight="Bold" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="YearTextBlock" BorderThickness="0" TextWrapping="Wrap"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" />
+                        <TextBlock
+                            x:Uid="YearTextBlock"
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBox
+                            x:Name="YearTextBlock"
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            TextWrapping="Wrap" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="TrackNumberBox" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBox x:Name="TrackNumberBox" BorderThickness="0" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5"/>
+                        <TextBlock
+                            x:Uid="TrackNumberBox"
+                            Grid.Row="4"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBox
+                            x:Name="TrackNumberBox"
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="Lyrics" FontWeight="Bold" Grid.Row="5" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="5"/>
+                        <TextBlock
+                            x:Uid="Lyrics"
+                            Grid.Row="5"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
                         <Grid Grid.Row="5" Grid.Column="1">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="LyricsTextBox" BorderThickness="0" Height="200" TextWrapping="Wrap" Grid.Row="0"  Grid.Column="0" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5"/>
+                            <TextBox
+                                x:Name="LyricsTextBox"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Height="200"
+                                Margin="5"
+                                HorizontalAlignment="Stretch"
+                                BorderThickness="0"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                TextWrapping="Wrap" />
                             <Grid Grid.Row="0" Grid.Column="1" VerticalAlignment="Stretch">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="2*"/>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <Button Grid.Row="1" Click="GetLyricsFromNet_Click" VerticalAlignment="Stretch"  Margin="5">
+                                <Button
+                                    Grid.Row="0"
+                                    Margin="5"
+                                    VerticalAlignment="Stretch"
+                                    Click="OpenFile_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <Grid>
-                                                <FontIcon Glyph="&#xF385;" FontSize="16"/>
-                                                <FontIcon Glyph="&#xF386;" FontSize="16"/>
+                                                <FontIcon FontSize="16" Glyph="&#xE838;" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <Button
+                                    Grid.Row="1"
+                                    Margin="5"
+                                    VerticalAlignment="Stretch"
+                                    Click="SaveLyrics_Click">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid>
+                                                <FontIcon FontSize="16" Glyph="&#xE74E;" />
                                             </Grid>
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="LyricsTextBox">
-                                        </ToolTip>
+                                        <ToolTip x:Uid="SaveLyricsTextBox" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button Click="SaveLyricsToDateBase_Click" Grid.Row="2" VerticalAlignment="Stretch" Margin="5">
+                                <Button
+                                    Grid.Row="2"
+                                    Margin="5"
+                                    VerticalAlignment="Stretch"
+                                    Click="GetLyricsFromNet_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <Grid>
-                                                <FontIcon Glyph="&#xE73E;" FontSize="16"/>
+                                                <FontIcon FontSize="16" Glyph="&#xF385;" />
+                                                <FontIcon FontSize="16" Glyph="&#xF386;" />
                                             </Grid>
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="LyricsSaveToDataBase">
-                                        </ToolTip>
+                                        <ToolTip x:Uid="LyricsTextBox" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                                <Button
+                                    Grid.Row="3"
+                                    Margin="5"
+                                    VerticalAlignment="Stretch"
+                                    Click="SaveLyricsToDateBase_Click">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid>
+                                                <FontIcon FontSize="16" Glyph="&#xE73E;" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Button.Content>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="LyricsSaveToDataBase" />
                                     </ToolTipService.ToolTip>
                                 </Button>
                             </Grid>
                         </Grid>
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="DurationTextBlock" FontWeight="Bold" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock x:Name="DurationTextBlock" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="DurationTextBlock"
+                            Grid.Row="6"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="DurationTextBlock"
+                            Grid.Row="6"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="BitDepthTextBlock" FontWeight="Bold" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock x:Name="BitDepthTextBlock" Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="BitDepthTextBlock"
+                            Grid.Row="7"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="BitDepthTextBlock"
+                            Grid.Row="7"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="BitRateTextBlock" FontWeight="Bold" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock x:Name="BitRateTextBlock" Grid.Row="8" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="BitRateTextBlock"
+                            Grid.Row="8"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="BitRateTextBlock"
+                            Grid.Row="8"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="SampleRateTextBlock" FontWeight="Bold" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock x:Name="SampleRateTextBlock" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="SampleRateTextBlock"
+                            Grid.Row="9"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="SampleRateTextBlock"
+                            Grid.Row="9"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="LastFolderNameTextBlock" FontWeight="Bold" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="LastFolderNameTextBlock" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="LastFolderNameTextBlock"
+                            Grid.Row="10"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="LastFolderNameTextBlock"
+                            Grid.Row="10"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left"
+                            TextTrimming="WordEllipsis"
+                            TextWrapping="WrapWholeWords" />
 
-                        <TextBlock TextWrapping="WrapWholeWords" x:Uid="PathTextBlock" FontWeight="Bold" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Margin="5"/>
-                        <TextBlock TextWrapping="WrapWholeWords" TextTrimming="WordEllipsis" x:Name="PathTextBlock" Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Margin="5"/>
+                        <TextBlock
+                            x:Uid="PathTextBlock"
+                            Grid.Row="11"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="PathTextBlock"
+                            Grid.Row="11"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left"
+                            TextTrimming="WordEllipsis"
+                            TextWrapping="WrapWholeWords" />
                     </Grid>
                     <Grid Grid.Column="1" Margin="10">
                         <StackPanel>
-                            <Image x:Name="AlbumCoverImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"></Image>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Click="GetImageFromNet_Click" Margin="5" HorizontalAlignment="Center">
+                            <Image
+                                x:Name="AlbumCoverImage"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                Stretch="Uniform" />
+                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="GetImageFromNet_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
-                                            <FontIcon Glyph="&#xebd3;" FontSize="16"/>        
+                                            <FontIcon FontSize="16" Glyph="&#xebd3;" />
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="GetImageFromNetButton">
-                                        </ToolTip>
-                                    </ToolTipService.ToolTip>                                    
+                                        <ToolTip x:Uid="GetImageFromNetButton" />
+                                    </ToolTipService.ToolTip>
                                 </Button>
-                                <Button Click="SaveImageButton_Click" Margin="5" HorizontalAlignment="Center">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="SaveImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
-                                            <FontIcon Glyph="&#xe78c;" FontSize="16"/>
+                                            <FontIcon FontSize="16" Glyph="&#xe78c;" />
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="SaveImageButton">
-                                        </ToolTip>
-                                    </ToolTipService.ToolTip>                                    
+                                        <ToolTip x:Uid="SaveImageButton" />
+                                    </ToolTipService.ToolTip>
                                 </Button>
-                                <Button Click="SelectCoverImageButton_Click" Margin="5" HorizontalAlignment="Center">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="SelectCoverImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
-                                            <FontIcon Glyph="&#xe70f;" FontSize="16"/>
+                                            <FontIcon FontSize="16" Glyph="&#xe70f;" />
                                         </StackPanel>
                                     </Button.Content>
                                     <ToolTipService.ToolTip>
-                                        <ToolTip  x:Uid="SelectCoverImageButton">
-                                        </ToolTip>
-                                    </ToolTipService.ToolTip>                                    
+                                        <ToolTip x:Uid="SelectCoverImageButton" />
+                                    </ToolTipService.ToolTip>
                                 </Button>
                             </StackPanel>
                         </StackPanel>
                     </Grid>
                 </Grid>
             </ScrollViewer>
-            <StackPanel
-                RelativePanel.AlignBottomWithPanel="True"
-                RelativePanel.AlignRightWithPanel="True"
-                Orientation="Horizontal"
-            >
-                <Button
-                    x:Uid="SaveButton"
-                    Margin="5">
+            <StackPanel Orientation="Horizontal" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignRightWithPanel="True">
+                <Button x:Uid="SaveButton" Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
-                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="是否确定保存元信息至音乐" Margin="0,0,0,12" />
+                                <TextBlock Margin="0,0,0,12" Style="{ThemeResource BaseTextBlockStyle}" Text="是否确定保存元信息至音乐" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Click="ConfirmButton_Click" x:Uid="ConfirmButton" Margin="0 0 10 0"/>
-                                    <Button x:Uid="CancelButton"  Click="CloseFlyoutButton_Click" Margin="0 0 10 0"/>
+                                    <Button x:Uid="ConfirmButton" Margin="0,0,10,0" Click="ConfirmButton_Click" />
+                                    <Button x:Uid="CancelButton" Margin="0,0,10,0" Click="CloseFlyoutButton_Click" />
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <Button
-                    x:Uid="CloseButtonItem"
-                    Click="CloseButton_Click"
-                    Margin="5"/>
+                <Button x:Uid="CloseButtonItem" Margin="5" Click="CloseButton_Click" />
             </StackPanel>
-           
+
         </RelativePanel>
     </Grid>
 </Window>

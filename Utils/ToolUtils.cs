@@ -15,6 +15,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Devices.Enumeration;
@@ -801,6 +802,61 @@ namespace WinUIMusicPlayer.Utils
 
             // 其他字符（符号等）
             return "#";
+        }
+
+        public static string ConvertLyrics(string lyrics)
+        {
+            Regex timeRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
+            string[] lines = lyrics.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                Match timeMatch = timeRegex.Match(lines[i]);
+                while (timeMatch.Success)
+                {
+                    string timePart = timeMatch.Value;
+                    string minutes = timeMatch.Groups[1].Value;
+                    string seconds = timeMatch.Groups[2].Value;
+                    string milliseconds = timeMatch.Groups[3].Value;
+
+                    if (milliseconds.Length == 3)
+                    {
+                        milliseconds = milliseconds.Substring(0, 2);
+                    }
+
+                    string newTimePart = $"[{minutes}:{seconds}.{milliseconds}]";
+                    lines[i] = lines[i].Replace(timePart, newTimePart);
+                    timeMatch = timeMatch.NextMatch();
+                }
+            }
+
+            return string.Join("\r\n", lines);
+        }
+
+        public static string SanitizeFileName(string name, char[] invalidChars)
+        {
+            foreach (char c in invalidChars)
+            {
+                name = name.Replace(c, '_');
+            }
+            return name;
+        }
+
+        public static void OpenFileInExplorer(string filePath) {
+            if (System.IO.File.Exists(filePath))
+            {
+                try
+                {
+                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"文件不存在: {filePath}");
+            }
         }
     }
 }

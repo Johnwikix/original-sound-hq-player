@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -198,6 +199,25 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
             }
+        }
+
+        private async void SaveLyrics_Click(object sender, RoutedEventArgs e)
+        {
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(musicDetail.Path), invalidChars);
+            string targetBasePath = Path.GetDirectoryName(musicDetail.Path);
+            _=Task.Run(() =>
+            {
+                string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
+                string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
+                System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(musicDetail.Lyrics));
+                ToolUtils.OpenFileInExplorer(lrcFilePath);
+            });
+        }
+
+        private async void OpenFile_Click(object sender, RoutedEventArgs e)
+        {
+            ToolUtils.OpenFileInExplorer(musicDetail.Path);
         }
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)

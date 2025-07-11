@@ -675,4 +675,7 @@
   <data name="Folder" xml:space="preserve">
     <value>フォルダ</value>
   </data>
+  <data name="SaveLyricsTextBox.Content" xml:space="preserve">
+    <value>歌詞lrcをローカルに保存する</value>
+  </data>
 </root>

@@ -675,4 +675,7 @@
   <data name="Folder" xml:space="preserve">
     <value>Folder</value>
   </data>
+  <data name="SaveLyricsTextBox.Content" xml:space="preserve">
+    <value>Save the lyrics LRC to local</value>
+  </data>
 </root>

@@ -44,9 +44,6 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
-        [DllImport("user32.dll")]
-        private static extern uint GetDpiForWindow(IntPtr hwnd);
-        private double scaleFactor = 1f;
         private int MinWindowWidth = 1280;
         private int MinWindowHeight = 720;
         public MainWindow()
@@ -66,7 +63,6 @@ namespace WinUIMusicPlayer
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
             SetTitleBar(AppTitleBar);
-            //this.AppWindow.Changed += AppWindow_Changed;
             this.Closed += MainWindow_Closed;
             this.AppWindow.SetIcon("Assets/icon.ico");
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
@@ -193,13 +189,9 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //await MusicDatabaseService.Initialize();
-                //await MusicDatabaseService.GetSettingsAsync();
                 themeStyleHelper.SetAppStyle();
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
-                        //MusicDatabaseService.GetPlayStateAsync(),
-                        //LoadFoldersAsync(),
                         LoadMusicList(),
                         RefreshDevice(),
                 };
