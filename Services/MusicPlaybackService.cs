@@ -203,12 +203,26 @@ namespace WinUIMusicPlayer.Services
                     if (string.IsNullOrEmpty(text))
                         continue;
 
-                    lyrics.Add(new LyricLine
+                    bool found = false;
+                    foreach (var lyric in lyrics)
                     {
-                        Time = time,
-                        Text = text,
-                        IsCurrent = false
-                    });
+                        if (lyric.Time == time)
+                        {
+                            lyric.Text += "\n" + text;
+                            found = true;
+                            break;
+                        }
+                    }
+                    // 如果没有找到相同时间的歌词，创建新的条目
+                    if (!found)
+                    {
+                        lyrics.Add(new LyricLine
+                        {
+                            Time = time,
+                            Text = text,
+                            IsCurrent = false
+                        });
+                    }
                 }
             }
             if (lyrics.Count == 0)
