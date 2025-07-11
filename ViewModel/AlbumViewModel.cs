@@ -35,7 +35,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
 
-        private List<Music> _allMusic = [];
         private string _lastSearchText = "";
 
         private MusicBrowsePage? parentPage;
@@ -112,8 +111,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void InitializeData()
-        {            
-            _allMusic = MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList();
+        {
+            MusicList = new ObservableCollection<Music>(MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList());
             LoadMoreAlbumsAsync(true);            
         }
         public void SortMusicList(string sortOrder = "DefaultOrder")
@@ -139,59 +138,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
                         .OrderBy(group => group.Key)
                         .Select(group => new MusicGroup(group.Key, group.ToList()))
                         .ToList();
                 GroupedMusicViewSource.Source = groupedByFirstLetter;
-                _ = Task.Run(async () =>
-                {
-                    var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
-                    var visibleTasks = MusicList.Select(music => Task.Run(async () =>
-                    {
-                        await semaphore.WaitAsync();
-                        try
-                        {
-                            if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-                            {
-                                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    music.Cover = cachedCover;
-                                });
-                            }
-                            else
-                            {
-                                BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    music.Cover = cover;
-                                });
-                                if (AppSettings.isCoverCacheEnabled && cover != null)
-                                {
-                                    AppData.albumCoverCache.SetValue(music.Album, cover);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-                        }
-                        finally
-                        {
-                            semaphore.Release(); // 释放信号量
-                        }
-                    })).ToArray();
-                    try
-                    {
-                        await Task.WhenAll(visibleTasks);
-                    }
-                    finally
-                    {
-                        semaphore.Dispose();
-                    }                    
-                });
+                ToolUtils.AlbumPageLoadCoverAsync(groupedByFirstLetter);
             }
             catch (Exception ex)
             {

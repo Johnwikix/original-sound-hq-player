@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Devices.Enumeration;
@@ -908,6 +909,56 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
+        }
+
+        public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter) {
+            _ = Task.Run(async () =>
+            {
+                var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
+                var allMusicItems = groupedByFirstLetter.SelectMany(group => group).ToList();
+                var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
+                {
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+                        {
+                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                music.Cover = cachedCover;
+                            });
+                        }
+                        else
+                        {
+                            BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                music.Cover = cover;
+                            });
+                            if (AppSettings.isCoverCacheEnabled && cover != null)
+                            {
+                                AppData.albumCoverCache.SetValue(music.Album, cover);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+                    }
+                    finally
+                    {
+                        semaphore.Release(); // 释放信号量
+                    }
+                })).ToArray();
+                try
+                {
+                    await Task.WhenAll(visibleTasks);
+                }
+                finally
+                {
+                    semaphore.Dispose();
+                }
+            });
         }
     }
 }

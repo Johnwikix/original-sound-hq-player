@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Gui;
 using System;
@@ -361,6 +362,37 @@ namespace WinUIMusicPlayer.ViewModel
                 ClearAllUsbStatus();
                 System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
             }
+        }
+
+        public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
+        {
+            Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
+            AppData.usbStorageDevice = usbStorageDevice;
+            List<UsbDeviceMusic> usbDeviceMusics = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+            if (usbDeviceMusics != null && usbDeviceMusics.Count > 0)
+            {
+                // 检查是否需要重新扫描
+                DateTime startTime = DateTime.Now;
+                UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
+                await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
+                Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
+                AppData.musicOnUsbDevice = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+                Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
+            }
+            else
+            {
+                // 读取USB设备中的音乐文件
+                string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
+                if (Directory.Exists(folderPath))
+                {
+                    AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
+                }
+                else
+                {
+                    App.Services.GetRequiredService<NotificationService>().SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("NoMusicInUSBDevice"));
+                }
+            }
+            ToolUtils.RefreshAllUsbStatus();
         }
 
         private async void StartWatchingFileFolder()

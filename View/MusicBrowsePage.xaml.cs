@@ -238,38 +238,10 @@ namespace WinUIMusicPlayer.View
         {
             AppData.usbStorageDevice = null;
             AppData.musicOnUsbDevice.Clear();
-            //clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
             ToolUtils.ClearAllUsbStatus();
             if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
             {
-                Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
-                AppData.usbStorageDevice = usbStorageDevice;
-                List<UsbDeviceMusic> usbDeviceMusics = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-                if (usbDeviceMusics != null && usbDeviceMusics.Count > 0)
-                {
-                    // 检查是否需要重新扫描
-                    DateTime startTime = DateTime.Now;
-                    UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
-                    await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
-                    Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-                    AppData.musicOnUsbDevice = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-                    Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-                }
-                else
-                {
-                    // 读取USB设备中的音乐文件
-                    string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
-                    if (Directory.Exists(folderPath))
-                    {
-                        AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
-                    }
-                    else
-                    {
-                        notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("NoMusicInUSBDevice"));
-                    }
-                }
-                ToolUtils.RefreshAllUsbStatus();
-                //refreshUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
+                ViewModel.UsbDeviceComboxSelectionChanged(usbStorageDevice);
             }
         }
 
