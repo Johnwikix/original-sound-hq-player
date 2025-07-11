@@ -60,8 +60,8 @@ namespace WinUIMusicPlayer.View
         public int previousSelectedIndex = 0;
         private bool isInPlayingDetailMode = false;
         private readonly INavigationService _navigationService;
-        public event EventHandler clearUsbDeviceMusicList;
-        public event EventHandler refreshUsbDeviceMusicList;
+        //public event EventHandler clearUsbDeviceMusicList;
+        //public event EventHandler refreshUsbDeviceMusicList;
         private EqualizerDialog equalizerDialog;
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
@@ -229,13 +229,17 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ProcessRingVisibility = Visibility.Collapsed;
         }
-      
+
+        //public void ClearUsbDeviceMusicList() {
+        //    clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
+        //}
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             AppData.usbStorageDevice = null;
             AppData.musicOnUsbDevice.Clear();
-            clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
+            //clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
+            ToolUtils.ClearAllUsbStatus();
             if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
             {
                 Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
@@ -264,7 +268,8 @@ namespace WinUIMusicPlayer.View
                         notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("NoMusicInUSBDevice"));
                     }
                 }
-                refreshUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
+                ToolUtils.RefreshAllUsbStatus();
+                //refreshUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
             }
         }
 

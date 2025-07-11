@@ -82,6 +82,7 @@ namespace WinUIMusicPlayer.Services
 
 
             //List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+            //USB设备相关菜单项
             if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
             {
                 MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
@@ -174,6 +175,7 @@ namespace WinUIMusicPlayer.Services
                         usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                     }
+                    ToolUtils.RefreshAllUsbStatus();
                 }
             }
         }

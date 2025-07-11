@@ -47,16 +47,16 @@ namespace WinUIMusicPlayer.ViewModel
             };
             parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshFolder;
-            parentPage.refreshUsbDeviceMusicList +=
-                (s, e) =>
-                {
-                    ToolUtils.RefreshIcon(MusicList, "album");
-                };
-            parentPage.clearUsbDeviceMusicList +=
-                (s, e) =>
-                {
-                    ToolUtils.RefreshIcon(MusicList, "album");
-                };
+            //parentPage.refreshUsbDeviceMusicList +=
+            //    (s, e) =>
+            //    {
+            //        ToolUtils.RefreshIcon(MusicList, "album");
+            //    };
+            //parentPage.clearUsbDeviceMusicList +=
+            //    (s, e) =>
+            //    {
+            //        ToolUtils.RefreshIcon(MusicList, "album");
+            //    };
             _contextMenuService = contextMenuService;
             _contextMenuService.playingFolderMusic += PlayingFolder;
             _contextMenuService.rescanFolderEnd += RescanFolderEnd;
@@ -74,6 +74,11 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
+        }
+
+        public void UpdateUsbIcon()
+        {
+            ToolUtils.RefreshIcon(MusicList, "folder");
         }
 
         public void SetCurrentPage(FolderBrowsePage page)

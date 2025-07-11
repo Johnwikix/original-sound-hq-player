@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -57,8 +58,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             parentPage = musicBrowsePage;
             parentPage.refreshPage += RefreshMusicList;
-            parentPage.refreshUsbDeviceMusicList += refreshUsbDeviceMusicList;
-            parentPage.clearUsbDeviceMusicList += clearUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
@@ -98,17 +97,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             //parentPage = parent;            
             InitializeData();
-            ClearUsbDeviceMusicList();
-            RefreshUsbDeviceMusicList();
-        }
-
-        private void clearUsbDeviceMusicList(object? sender, EventArgs e)
-        {
-            ClearUsbDeviceMusicList();
-        }
-
-        private void refreshUsbDeviceMusicList(object? sender, EventArgs e)
-        {
+            //ClearUsbDeviceMusicList();
             RefreshUsbDeviceMusicList();
         }
 
@@ -210,36 +199,40 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ClearUsbDeviceMusicList()
         {
-            foreach (var music in MusicList)
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                music.IsExistOnDevice = 0;
-            }
+                foreach (var music in MusicList)
+                {
+                    music.IsExistOnDevice = 0;
+                }
+            });            
         }
 
         public void RefreshUsbDeviceMusicList()
         {
-            var usbMusicGroups = AppData.musicOnUsbDevice
-                            .GroupBy(u => u.Title)
-                            .ToDictionary(g => g.Key, g => g.ToList());
-            foreach (var music in MusicList)
-            {
-                music.IsExistOnDevice = 0;
+            ToolUtils.RefreshUsbDeviceMusicList(MusicList);
+            //var usbMusicGroups = AppData.musicOnUsbDevice
+            //                .GroupBy(u => u.Title)
+            //                .ToDictionary(g => g.Key, g => g.ToList());
+            //foreach (var music in MusicList)
+            //{
+            //    music.IsExistOnDevice = 0;
 
-                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-                {
-                    music.IsExistOnDevice = 1;
-                    foreach (var usbMusic in matchingItems)
-                    {
-                        if (music.Author == usbMusic.Author &&
-                            music.Album == usbMusic.Album &&
-                            music.Extension == usbMusic.Extension)
-                        {
-                            music.IsExistOnDevice = 2;
-                            break;
-                        }
-                    }
-                }
-            }
+            //    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+            //    {
+            //        music.IsExistOnDevice = 1;
+            //        foreach (var usbMusic in matchingItems)
+            //        {
+            //            if (music.Author == usbMusic.Author &&
+            //                music.Album == usbMusic.Album &&
+            //                music.Extension == usbMusic.Extension)
+            //            {
+            //                music.IsExistOnDevice = 2;
+            //                break;
+            //            }
+            //        }
+            //    }
+            //}
         }
 
         public void SortMusicList(string sortOrder)

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -25,6 +26,7 @@ using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -143,42 +145,43 @@ namespace WinUIMusicPlayer.Utils
         {
             foreach (var item in musicList)
             {
-                if (type == "album")
-                {
-                    if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                    if (type == "album")
                     {
-                        item.IsExistOnDevice = 1;
-                    }
-                    else
-                    {
-                        item.IsExistOnDevice = 0;
-                    }
-                }
-                else if (type == "artist")
-                {
-                    if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Author == item.Author))
-                    {
-                        item.IsExistOnDevice = 1;
-                    }
-                    else
-                    {
-                        item.IsExistOnDevice = 0;
-                    }
-                }
-                else if (type == "folder")
-                {
-                    var allSongList = AppData.allSongs.Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath).ToList();
-                    item.IsExistOnDevice = 0;
-                    foreach (var songs in allSongList)
-                    {
-                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
+                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
                         {
                             item.IsExistOnDevice = 1;
-                            break;
+                        }
+                        else
+                        {
+                            item.IsExistOnDevice = 0;
                         }
                     }
-                }
-
+                    else if (type == "artist")
+                    {
+                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Author == item.Author))
+                        {
+                            item.IsExistOnDevice = 1;
+                        }
+                        else
+                        {
+                            item.IsExistOnDevice = 0;
+                        }
+                    }
+                    else if (type == "folder")
+                    {
+                        var allSongList = AppData.allSongs.Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath).ToList();
+                        item.IsExistOnDevice = 0;
+                        foreach (var songs in allSongList)
+                        {
+                            if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
+                            {
+                                item.IsExistOnDevice = 1;
+                                break;
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -857,6 +860,54 @@ namespace WinUIMusicPlayer.Utils
             {
                 Debug.WriteLine($"文件不存在: {filePath}");
             }
+        }
+
+        public static void RefreshUsbDeviceMusicList(ObservableCollection<Music> MusicList)
+        {
+            var usbMusicGroups = AppData.musicOnUsbDevice
+                            .GroupBy(u => u.Title)
+                            .ToDictionary(g => g.Key, g => g.ToList());
+            foreach (var music in MusicList)
+            {
+                music.IsExistOnDevice = 0;
+
+                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+                {
+                    music.IsExistOnDevice = 1;
+                    foreach (var usbMusic in matchingItems)
+                    {
+                        if (music.Author == usbMusic.Author &&
+                            music.Album == usbMusic.Album &&
+                            music.Extension == usbMusic.Extension)
+                        {
+                            music.IsExistOnDevice = 2;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void ClearAllUsbStatus()
+        {
+            App.Services.GetRequiredService<SongCollectionViewModel>().ClearUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<SongListViewModel>().ClearUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<FavouritePlayListViewModel>().ClearUsbDeviceMusicList();
+            App.Services.GetRequiredService<PlayListSongViewModel>().ClearUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
+        }
+
+        public static void RefreshAllUsbStatus()
+        {
+            App.Services.GetRequiredService<SongCollectionViewModel>().RefreshUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<SongListViewModel>().RefreshUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<FavouritePlayListViewModel>().RefreshUsbDeviceMusicList();
+            App.Services.GetRequiredService<PlayListSongViewModel>().RefreshUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
     }
 }

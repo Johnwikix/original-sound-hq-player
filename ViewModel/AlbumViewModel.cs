@@ -50,16 +50,16 @@ namespace WinUIMusicPlayer.ViewModel
                 IsSourceGrouped = true
             };
             parentPage.refreshPage += RefreshAlbum;
-            parentPage.refreshUsbDeviceMusicList +=
-                (s, e) =>
-                {
-                    ToolUtils.RefreshIcon(MusicList, "album");
-                };
-            parentPage.clearUsbDeviceMusicList +=
-                (s, e) =>
-                {
-                    ToolUtils.RefreshIcon(MusicList, "album");
-                };
+            //parentPage.refreshUsbDeviceMusicList +=
+            //    (s, e) =>
+            //    {
+            //        ToolUtils.RefreshIcon(MusicList, "album");
+            //    };
+            //parentPage.clearUsbDeviceMusicList +=
+            //    (s, e) =>
+            //    {
+            //        ToolUtils.RefreshIcon(MusicList, "album");
+            //    };
             _contextMenuService = contextMenuService;
             _contextMenuService.playingAlbumMusic += PlayingAlbum;
             _contextMenuService.showTransmission += (s, e) =>
@@ -76,6 +76,10 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
+        }
+
+        public void UpdateUsbIcon() {
+            ToolUtils.RefreshIcon(MusicList, "album");
         }
 
         public void SetCurrentPage(AlbumPage page)

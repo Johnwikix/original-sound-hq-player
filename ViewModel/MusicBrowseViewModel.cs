@@ -343,9 +343,11 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     else
                     {
-                        UsbDeviceVisibility = Visibility.Collapsed;
-                        UsbStorageDevices = null;
                         UsbSelectedIndex = -1;
+                        UsbDeviceVisibility = Visibility.Collapsed;                        
+                        UsbStorageDevices = null;
+                        AppData.musicOnUsbDevice.Clear();
+                        ClearAllUsbStatus();
                     }
                 });
             }
@@ -354,7 +356,9 @@ namespace WinUIMusicPlayer.ViewModel
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     UsbDeviceVisibility = Visibility.Collapsed;
-                });                
+                });
+                AppData.musicOnUsbDevice.Clear();
+                ClearAllUsbStatus();
                 System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
             }
         }
