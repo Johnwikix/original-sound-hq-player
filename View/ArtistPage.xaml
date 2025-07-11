@@ -28,6 +28,7 @@
                     ItemClick="ArtistGridView_ItemClick"
                     ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Artist_RightTapped"
+                    SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <GridView.GroupStyle>
                         <GroupStyle>

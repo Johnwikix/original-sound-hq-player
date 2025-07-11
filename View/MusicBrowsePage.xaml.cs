@@ -91,6 +91,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<SongListPage>();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
             this.KeyDown += MusicBrowsePage_KeyDown;
+            this.Focus(FocusState.Programmatic);
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
             {
@@ -271,11 +272,11 @@ namespace WinUIMusicPlayer.View
         {
             if (currentPage == typeof(SongCollectionPage) || currentPage == typeof(PlayListSongPage))
             {
-                BackButton.IsEnabled = true;
+                ViewModel.BackBtnEnabled = true;
             }
             else
             {
-                BackButton.IsEnabled = false;
+                ViewModel.BackBtnEnabled = false;
             }
         }
 
@@ -437,6 +438,19 @@ namespace WinUIMusicPlayer.View
                     break;
                 case Windows.System.VirtualKey.Right:
                     ViewModel.AdjustPlaybackPosition(5);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Up:
+                    ViewModel.AdjustVolume(1);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Down:
+                    ViewModel.AdjustVolume(-1);
+                    e.Handled = true;
+                    break;
+                case Windows.System.VirtualKey.Escape:
+                    //ViewModel.AdjustPlaybackPosition(5);
+                    BackButton_Click(null, null);
                     e.Handled = true;
                     break;
             }

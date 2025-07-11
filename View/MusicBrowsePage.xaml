@@ -38,6 +38,7 @@
                     BorderThickness="0"
                     Click="BackButton_Click"
                     FontSize="14"
+                    IsEnabled="{Binding ViewModel.BackBtnEnabled, Mode=OneWay}"
                     Tag="Back">
                     <FontIcon FontSize="14" Glyph="&#xe830;" />
                 </Button>

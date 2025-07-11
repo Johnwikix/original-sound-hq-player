@@ -251,6 +251,13 @@ namespace WinUIMusicPlayer.ViewModel
             get => _pageType;
             set => SetProperty(ref _pageType, value);
         }
+
+        private bool _backBtnEnabled = false;
+        public bool BackBtnEnabled
+        {
+            get => _backBtnEnabled;
+            set => SetProperty(ref _backBtnEnabled, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;

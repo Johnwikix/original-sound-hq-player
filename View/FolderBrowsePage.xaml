@@ -28,6 +28,7 @@
                     ItemClick="FolderGridView_ItemClick"
                     ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"
+                    SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <GridView.GroupStyle>
                         <GroupStyle>

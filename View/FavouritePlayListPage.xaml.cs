@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            await ViewModel.DragItems();            
+            await ViewModel.DragItems();
         }
 
         public void OnScrollToMusic(Music selectedMusic)
