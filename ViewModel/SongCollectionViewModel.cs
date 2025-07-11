@@ -181,7 +181,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage != null)
             {
-                CurrentPageType = _parentPage.pageType;
+                CurrentPageType = _parentPage.ViewModel?.PageType;
                 _currentAlbumName = _parentPage.CurrentAlbum?.Album;
                 _currentArtistName = _parentPage.CurrentArtist?.Author;
                 _currentFolderName = _parentPage.CurrentFolder?.LastLevelFolderPath;

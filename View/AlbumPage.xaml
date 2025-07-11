@@ -9,7 +9,137 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid Margin="0">
+        <SemanticZoom>
+            <!--  详细视图 (ZoomedInView)  -->
+            <SemanticZoom.ZoomedInView>
+                <GridView
+                    x:Name="AlbumGridView"
+                    Margin="10,0,0,0"
+                    IsItemClickEnabled="True"
+                    IsRightTapEnabled="True"
+                    ItemClick="AlbumGridView_ItemClick"
+                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
+                    RightTapped="Album_RightTapped"
+                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <GridView.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Margin="10,0,5,5"
+                                        FontSize="28"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding Key}" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                            <GroupStyle.HeaderContainerStyle>
+                                <StaticResource ResourceKey="NoBorderGridViewHeaderItemStyle" />
+                            </GroupStyle.HeaderContainerStyle>
+                        </GroupStyle>
+                    </GridView.GroupStyle>
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel
+                                Height="205"
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                                <Grid Width="150" Height="150">
+                                    <!--  图片在下层  -->
+                                    <Border
+                                        Width="150"
+                                        Height="150"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        CornerRadius="5">
+                                        <Grid>
+                                            <Image
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                CacheMode="BitmapCache"
+                                                Canvas.ZIndex="1"
+                                                Source="{Binding Cover}"
+                                                Stretch="UniformToFill" />
+                                            <Grid
+                                                Width="150"
+                                                Height="150"
+                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                                Canvas.ZIndex="0"
+                                                Visibility="{Binding Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                <FontIcon
+                                                    Canvas.ZIndex="0"
+                                                    FontSize="50"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Glyph="&#xE93C;" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                    <!--  图标位于右下角  -->
+                                    <FontIcon
+                                        x:Name="IsExistOnDeviceIcon"
+                                        Margin="0,0,5,5"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        FontSize="16"
+                                        Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                                </Grid>
+                                <TextBlock
+                                    Width="150"
+                                    MaxHeight="40"
+                                    Margin="0"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Album, Mode=OneWay}"
+                                    TextAlignment="Left"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    Width="150"
+                                    Height="15"
+                                    Margin="0"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding Author, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </SemanticZoom.ZoomedInView>
+
+            <!--  概览视图 (ZoomedOutView)  -->
+            <SemanticZoom.ZoomedOutView>
+                <GridView
+                    x:Name="ZoomedOutGridView"
+                    MaxWidth="600"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsItemClickEnabled="True"
+                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View.CollectionGroups, Mode=OneWay}"
+                    ScrollViewer.IsHorizontalScrollChainingEnabled="False"
+                    ScrollViewer.IsVerticalScrollChainingEnabled="False"
+                    ScrollViewer.ZoomMode="Disabled">
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="32"
+                                Text="{Binding Group.Key}" />
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </SemanticZoom.ZoomedOutView>
+        </SemanticZoom>
+    </Grid>
+    <!--<Grid Margin="0">
         <GridView
             x:Name="AlbumGridView"
             IsItemClickEnabled="True"
@@ -26,13 +156,10 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                         <Grid Width="150" Height="150">
-                            <!--  图片在下层  -->
-                            <Border
-                                Width="150"
-                                Height="150"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                CornerRadius="5">
+    -->
+    <!--  图片在下层  -->
+    <!--
+                            <Border Width="150" Height="150" CornerRadius="5">
                                 <Grid>
                                     <Image
                                         HorizontalAlignment="Center"
@@ -45,8 +172,7 @@
                                         Width="150"
                                         Height="150"
                                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                        Canvas.ZIndex="0"
-                                        Visibility="{Binding Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                        Canvas.ZIndex="0">
                                         <FontIcon
                                             Canvas.ZIndex="0"
                                             FontSize="50"
@@ -55,7 +181,9 @@
                                     </Grid>
                                 </Grid>
                             </Border>
-                            <!--  图标位于右下角  -->
+    -->
+    <!--  图标位于右下角  -->
+    <!--
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"
                                 Margin="0,0,5,5"
@@ -85,5 +213,5 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
-    </Grid>
+    </Grid>-->
 </Page>

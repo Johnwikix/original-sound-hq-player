@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
         //public MusicPlaybackService musicPlaybackService;
         public MainWindow mainWindow;
         public string paramName = "defualt";
-        public string pageType = "MusicBrowsePage";
+        //public string pageType = "MusicBrowsePage";
         public System.Type currentPage = typeof(SongListPage);
         private bool isMouseOverVolumeSlider = false;
         //public string currentAlbumName;
@@ -281,7 +281,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadPlayListSong(PlayList playList)
         {
-            pageType = "playlist";
+            ViewModel.PageType = "playlist";
             paramName = playList.Name;
             currentPlayList = playList;
             currentPlayListId = playList.Id;
@@ -291,7 +291,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadAlbumMusic(Music album)
         {
-            pageType = "album";
+            ViewModel.PageType = "album";
             paramName = album.Album;
             //currentAlbumName = album.Album;
             CurrentAlbum = album;
@@ -301,7 +301,7 @@ namespace WinUIMusicPlayer.View
 
         public void SelectBarAlbum(string Album)
         {
-            pageType = "album";
+            ViewModel.PageType = "album";
             paramName = Album;
             CurrentAlbum = AppData.allSongs.Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             CurrentAlbum.Album = Album;
@@ -321,7 +321,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadArtistMusic(Music artist)
         {
-            pageType = "artist";
+            ViewModel.PageType = "artist";
             paramName = artist.Author;
             //currentArtistName = artist.Author;
             CurrentArtist = artist;
@@ -331,7 +331,7 @@ namespace WinUIMusicPlayer.View
 
         public void SelectBarArtist(string artist)
         {
-            pageType = "artist";
+            ViewModel.PageType = "artist";
             paramName = artist;
             CurrentArtist = AppData.allSongs.FirstOrDefault(m => m.Author == artist);
             CurrentArtist.Author = artist;
@@ -351,7 +351,7 @@ namespace WinUIMusicPlayer.View
 
         public async void LoadFolderMusic(Music folder)
         {
-            pageType = "folder";
+            ViewModel.PageType = "folder";
             paramName = folder.LastLevelFolderPath;
             //currentFolderName = folder.LastLevelFolderPath;
             CurrentFolder = folder;
@@ -446,7 +446,7 @@ namespace WinUIMusicPlayer.View
         {
             if (ContentFrame.Content is SongCollectionPage)
             {
-                switch (pageType)
+                switch (ViewModel.PageType)
                 {
                     case "album":
                         currentPage = typeof(AlbumPage);
@@ -483,57 +483,63 @@ namespace WinUIMusicPlayer.View
             switch (selectedItem.Name)
             {
                 case "Song":
+                    ViewModel.PageType = "song";
                     currentPage = typeof(SongListPage);
                     break;
                 case "Album":
                     if (CurrentAlbum != null && !string.IsNullOrEmpty(CurrentAlbum.Album))
                     {
-                        pageType = "album";
+                        ViewModel.PageType = "album";
                         paramName = CurrentAlbum.Album;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
+                        ViewModel.PageType = "albumBrowse";
                         currentPage = typeof(AlbumPage);
                     }
                     break;
                 case "Artist":
                     if (CurrentArtist != null && !string.IsNullOrEmpty(CurrentArtist.Author))
                     {
-                        pageType = "artist";
+                        ViewModel.PageType = "artist";
                         paramName = CurrentArtist.Author;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
+                        ViewModel.PageType = "artistBrowse";
                         currentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
                     if (CurrentFolder != null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
                     {
-                        pageType = "folder";
+                        ViewModel.PageType = "folder";
                         paramName = CurrentFolder.LastLevelFolderPath;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
+                        ViewModel.PageType = "folderBrowse";
                         currentPage = typeof(FolderBrowsePage);
                     }
                     break;
                 case "Favourite":
+                    ViewModel.PageType = "favourite";
                     currentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
                     if (currentPlayList != null)
                     {
-                        pageType = "playlist";
+                        ViewModel.PageType = "playlist";
                         paramName = currentPlayList.Name;
                         currentPlayListId = currentPlayList.Id;
                         currentPage = typeof(PlayListSongPage);
                     }
                     else
                     {
+                        ViewModel.PageType = "playlistBrowse";
                         currentPage = typeof(PlayListPage);
                     }
                     break;
@@ -670,7 +676,7 @@ namespace WinUIMusicPlayer.View
                     if (ContentFrame.Content is SongCollectionPage)
                     {
                         var page = ContentFrame.Content as SongCollectionPage;
-                        page.SortMusicList(AppData.sortOrder, pageType);
+                        page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
                     }
                     if (ContentFrame.Content is SongListPage)
                     {

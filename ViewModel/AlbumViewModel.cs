@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -26,6 +27,14 @@ namespace WinUIMusicPlayer.ViewModel
             get => _musicList;
             set => SetProperty(ref _musicList, value);
         }
+        private CollectionViewSource _groupedMusicViewSource;
+        public CollectionViewSource GroupedMusicViewSource
+        {
+            get => _groupedMusicViewSource;
+            set => SetProperty(ref _groupedMusicViewSource, value);
+        }
+        private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
+
         private List<Music> _allMusic = [];
         private string _lastSearchText = "";
 
@@ -36,6 +45,10 @@ namespace WinUIMusicPlayer.ViewModel
         public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
         {
             parentPage = parent;
+            GroupedMusicViewSource = new CollectionViewSource
+            {
+                IsSourceGrouped = true
+            };
             parentPage.refreshPage += RefreshAlbum;
             parentPage.refreshUsbDeviceMusicList +=
                 (s, e) =>
@@ -74,7 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             
             parentPage.CurrentAlbum = null;
-            parentPage.pageType = null;
+            parentPage.ViewModel.PageType = "albumBrowse";
             parentPage.DisableBackButton();            
             Entance();
         }
@@ -101,13 +114,34 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void SortMusicList(string sortOrder = "DefaultOrder")
         {
-            MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("albumCover", sortOrder, MusicList));
+            if (sortOrder == "Artist")
+            {
+                groupedByFirstLetter = MusicList
+                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+                .OrderBy(group => group.Key)
+                .Select(group => new MusicGroup(group.Key, group.ToList()))
+                .ToList();
+            }
+            else {
+                groupedByFirstLetter = MusicList
+                       .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+                       .OrderBy(group => group.Key)
+                       .Select(group => new MusicGroup(group.Key, group.ToList()))
+                       .ToList();
+            }            
+            GroupedMusicViewSource.Source = groupedByFirstLetter;
         }
         private void LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
             try
             {
                 MusicList = new ObservableCollection<Music>(_allMusic);
+                groupedByFirstLetter = MusicList
+                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+                        .OrderBy(group => group.Key)
+                        .Select(group => new MusicGroup(group.Key, group.ToList()))
+                        .ToList();
+                GroupedMusicViewSource.Source = groupedByFirstLetter;
                 _ = Task.Run(async () =>
                 {
                     var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);

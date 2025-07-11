@@ -9,8 +9,116 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid Margin="0">
-        <GridView
+        <SemanticZoom>
+            <!--  详细视图 (ZoomedInView)  -->
+            <SemanticZoom.ZoomedInView>
+                <GridView
+                    x:Name="ArtistsGridView"
+                    Margin="10,0,0,0"
+                    IsItemClickEnabled="True"
+                    IsRightTapEnabled="True"
+                    ItemClick="ArtistGridView_ItemClick"
+                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
+                    RightTapped="Artist_RightTapped"
+                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <GridView.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Margin="10,0,5,5"
+                                        FontSize="28"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding Key}" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                            <GroupStyle.HeaderContainerStyle>
+                                <StaticResource ResourceKey="NoBorderGridViewHeaderItemStyle" />
+                            </GroupStyle.HeaderContainerStyle>
+                        </GroupStyle>
+                    </GridView.GroupStyle>
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid Width="150" Height="150">
+                                    <Border
+                                        Grid.Row="0"
+                                        Width="150"
+                                        Height="150"
+                                        Margin="0,0,0,0"
+                                        Padding="0"
+                                        CornerRadius="75">
+                                        <Grid>
+                                            <Grid
+                                                Width="150"
+                                                Height="150"
+                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                                Canvas.ZIndex="0">
+                                                <FontIcon
+                                                    Canvas.ZIndex="0"
+                                                    FontSize="50"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Glyph="&#xE77B;" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                    <FontIcon
+                                        x:Name="IsExistOnDeviceIcon"
+                                        Margin="0,0,5,5"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        FontSize="16"
+                                        Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                                </Grid>
+                                <TextBlock
+                                    Width="150"
+                                    Height="60"
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Author, Mode=OneWay}"
+                                    TextAlignment="Center"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </SemanticZoom.ZoomedInView>
+
+            <!--  概览视图 (ZoomedOutView)  -->
+            <SemanticZoom.ZoomedOutView>
+                <GridView
+                    x:Name="ZoomedOutGridView"
+                    MaxWidth="600"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsItemClickEnabled="True"
+                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View.CollectionGroups, Mode=OneWay}"
+                    ScrollViewer.IsHorizontalScrollChainingEnabled="False"
+                    ScrollViewer.IsVerticalScrollChainingEnabled="False"
+                    ScrollViewer.ZoomMode="Disabled">
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="32"
+                                Text="{Binding Group.Key}" />
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </SemanticZoom.ZoomedOutView>
+        </SemanticZoom>
+        <!--<GridView
             x:Name="ArtistsGridView"
             IsItemClickEnabled="True"
             IsRightTapEnabled="True"
@@ -64,6 +172,6 @@
                     </StackPanel>
                 </DataTemplate>
             </GridView.ItemTemplate>
-        </GridView>
+        </GridView>-->
     </Grid>
 </Page>

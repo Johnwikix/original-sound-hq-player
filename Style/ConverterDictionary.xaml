@@ -23,4 +23,5 @@
     <converters:SongCollectionPageTypeToEditVisibleConverter x:Key="SongCollectionPageTypeToEditVisibleConverter" />
     <converters:SongCollectionPageTypeToRadiusConverter x:Key="SongCollectionPageTypeToRadiusConverter" />
     <converters:IsCoverExistToVisibleConverter x:Key="IsCoverExistToVisibleConverter" />
+    <converters:PageTypeStringToVisibleConverter x:Key="PageTypeStringToVisibleConverter" />
 </ResourceDictionary>

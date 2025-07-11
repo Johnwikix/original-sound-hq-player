@@ -245,6 +245,12 @@ namespace WinUIMusicPlayer.ViewModel
             get => _infoBarMessage;
             set => SetProperty(ref _infoBarMessage, value);
         }
+        private string _pageType=string.Empty;
+        public string PageType
+        {
+            get => _pageType;
+            set => SetProperty(ref _pageType, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;

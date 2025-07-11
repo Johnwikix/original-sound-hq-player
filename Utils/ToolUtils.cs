@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -541,7 +542,7 @@ namespace WinUIMusicPlayer.Utils
                 default:
                     return musicList.ToList();
             }
-        }
+        }       
 
         public static AudioFileInfo GetAudioFileInfo(string filePath)
         {
@@ -747,6 +748,59 @@ namespace WinUIMusicPlayer.Utils
             {
                 Console.WriteLine($"错误：{ex.Message}");
             }
+        }
+
+        public static string GetFirstLetterAdvanced(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return "#";
+
+            char firstChar = text.Trim()[0];
+
+            // 处理英文字符
+            if (firstChar >= 'A' && firstChar <= 'Z')
+                return firstChar.ToString();
+            if (firstChar >= 'a' && firstChar <= 'z')
+                return firstChar.ToString().ToUpper();
+
+            // 处理数字
+            if (char.IsDigit(firstChar))
+                return "#";
+
+            // 处理中文字符
+            if (ChineseChar.IsValidChar(firstChar))
+            {
+                try
+                {
+                    ChineseChar chineseChar = new ChineseChar(firstChar);
+                    // 获取拼音集合
+                    var pinyinCollection = chineseChar.Pinyins;
+
+                    if (pinyinCollection != null && pinyinCollection.Count > 0)
+                    {
+                        // 获取第一个拼音，去掉声调数字，取首字母
+                        string firstPinyin = pinyinCollection[0];
+                        if (!string.IsNullOrEmpty(firstPinyin))
+                        {
+                            // 去掉声调数字和其他符号，只保留字母
+                            string cleanPinyin = new string(firstPinyin.Where(char.IsLetter).ToArray());
+                            if (!string.IsNullOrEmpty(cleanPinyin))
+                            {
+                                return cleanPinyin[0].ToString().ToUpper();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 如果转换失败，返回默认值
+                    Console.WriteLine($"拼音转换失败: {ex.Message}");
+                    return "中";
+                }
+            }
+
+            // 其他字符（符号等）
+            return "#";
         }
     }
 }

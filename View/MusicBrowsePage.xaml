@@ -126,24 +126,26 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <TextBlock
-                    x:Uid="SortOrder"
-                    Margin="10,0,10,0"
-                    VerticalAlignment="Center"
-                    FontSize="14" />
-                <ComboBox
-                    x:Name="SortByComboBox"
-                    Width="120"
-                    Margin="0,0,20,0"
-                    VerticalAlignment="Center"
-                    FontSize="12"
-                    SelectedIndex="0"
-                    SelectionChanged="SortByComboBox_SelectionChanged">
-                    <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
-                    <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
-                    <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
-                    <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
-                </ComboBox>
+                <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                    <TextBlock
+                        x:Uid="SortOrder"
+                        Margin="10,0,10,0"
+                        VerticalAlignment="Center"
+                        FontSize="14" />
+                    <ComboBox
+                        x:Name="SortByComboBox"
+                        Width="120"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        SelectedIndex="0"
+                        SelectionChanged="SortByComboBox_SelectionChanged">
+                        <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
+                        <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
+                        <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
+                        <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
+                    </ComboBox>
+                </StackPanel>
                 <TextBox
                     x:Name="SearchTextBox"
                     x:Uid="SearchMusic"

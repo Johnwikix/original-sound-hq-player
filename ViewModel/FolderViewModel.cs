@@ -13,6 +13,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using Microsoft.UI.Xaml.Data;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -24,7 +25,13 @@ namespace WinUIMusicPlayer.ViewModel
             get => _musicList;
             set => SetProperty(ref _musicList, value);
         }
-
+        private CollectionViewSource _groupedMusicViewSource;
+        public CollectionViewSource GroupedMusicViewSource
+        {
+            get => _groupedMusicViewSource;
+            set => SetProperty(ref _groupedMusicViewSource, value);
+        }
+        private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
         private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
@@ -34,6 +41,10 @@ namespace WinUIMusicPlayer.ViewModel
         public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
         {
             parentPage = parent;
+            GroupedMusicViewSource = new CollectionViewSource
+            {
+                IsSourceGrouped = true
+            };
             parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshFolder;
             parentPage.refreshUsbDeviceMusicList +=
@@ -73,7 +84,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {           
             parentPage.CurrentFolder= null;
-            parentPage.pageType = null;         
+            parentPage.ViewModel.PageType = "folderBrowse";
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {
@@ -98,15 +109,15 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 //MusicList.Clear();
-                if (parentPage != null)
-                {
+                //if (parentPage != null)
+                //{
                     _allMusic = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
                         .GroupBy(m => m.LastLevelFolderPath)
                         .Select(g => g.First())
                         .OrderBy(m => m.LastLevelFolderPath)
                         .ToList();
                     LoadMoreFolderAsync(true);
-                }
+                //}
             }
             catch (Exception ex)
             {
@@ -119,6 +130,12 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 MusicList = new ObservableCollection<Music>(_allMusic);
+                groupedByFirstLetter = MusicList
+                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+                        .OrderBy(group => group.Key)
+                        .Select(group => new MusicGroup(group.Key, group.ToList()))
+                        .ToList();
+                GroupedMusicViewSource.Source = groupedByFirstLetter;
             }
             catch (Exception ex)
             {

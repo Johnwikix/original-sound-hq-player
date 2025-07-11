@@ -90,18 +90,6 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _playCount, value);
         }
 
-        //public string Lyrics
-        //{
-        //    get { return _lyrics; }
-        //    set
-        //    {
-        //        if (_lyrics != value)
-        //        {
-        //            _lyrics = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
         private int _isExistOnDevice = 0;
         [Ignore]
         public int IsExistOnDevice
