@@ -31,22 +31,14 @@ namespace WinUIMusicPlayer
     /// </summary>
     public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
     {
-        //public event EventHandler<IEnumerable<Folder>> FoldersLoaded;
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
         public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
-        //public event EventHandler playLastSong;
-        //public event EventHandler playNextSong;
-        //public event EventHandler playStop;
         public event EventHandler updateSelectSection;
-        //public event EventHandler<PlayMode> changePlayMode;
-        //private Microsoft.UI.Windowing.AppWindow m_AppWindow;
-        //private TaskbarIcon notifyIcon;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
-        // 声明窗口句柄和消息处理相关变量
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
@@ -61,8 +53,10 @@ namespace WinUIMusicPlayer
         {
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            AppData.m_hWnd = m_hwnd;
+            WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
             this.Activated += MainWindow_Activated;
-            CenterWindow();
+            WindowSizeHelper.CenterInScreen(this.AppWindow);
             ExtendsContentIntoTitleBar = true;
             // 在需要使用导航服务的地方获取工厂
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -85,13 +79,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsProcessAboveNormal) {
                 PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
             }
-            this.AppWindow.Closing += AppWindow_Closing;            
-            AppData.m_hWnd = m_hwnd;
-            uint dpi = GetDpiForWindow(m_hwnd);
-            scaleFactor = dpi / 96.0;
-            MinWindowWidth = (int)(MinWindowWidth * scaleFactor);
-            MinWindowHeight = (int)(MinWindowHeight * scaleFactor);
-            WindowSizeHelper.SetMinimumSize(m_hwnd,this, MinWindowWidth, MinWindowHeight);
+            this.AppWindow.Closing += AppWindow_Closing;
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
@@ -100,16 +88,6 @@ namespace WinUIMusicPlayer
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
-        }
-
-        private void CenterWindow()
-        {
-            var displayArea = DisplayArea.GetFromWindowId(this.AppWindow.Id, DisplayAreaFallback.Primary);
-            var workArea = displayArea.WorkArea;
-            var windowSize = this.AppWindow.Size;
-            var x = (workArea.Width - windowSize.Width) / 2 + workArea.X;
-            var y = (workArea.Height - windowSize.Height) / 2 + workArea.Y;
-            this.AppWindow.Move(new PointInt32(x, y));
         }
 
         public void UpdateAppNotifyIconControl() {            

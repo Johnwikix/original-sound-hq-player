@@ -33,22 +33,15 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Music musicDetail;
         public EventHandler<Music> AlbumDetailChanged;
-        [DllImport("user32.dll")]
-        private static extern uint GetDpiForWindow(IntPtr hwnd);
         private double scaleFactor = 0;
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
-        //private AppWindow albumDetailAppWindow;
-        private MainWindow mainWindow;
-        private BitmapImage albumCoverBitmapImage;
         private ThemeStyleHelper themeStyleHelper;
-        private int MinWindowWidth = 550;
-        private int MinWindowHeight = 700;
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
-            mainWindow = (App.MainWindow as MainWindow);
+            //mainWindow = (App.MainWindow as MainWindow);
             SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AlbumDetailTitleBar);
@@ -57,11 +50,11 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
-            if (mainWindow != null)
+            if (App.MainWindow != null)
             {
-                mainWindow.themeChanged += MainWindow_themeChanged;
-                mainWindow.styleChanged += MainWindow_styleChanged;
-                mainWindow.WindowClosed += (s, e) =>
+                App.MainWindow.themeChanged += MainWindow_themeChanged;
+                App.MainWindow.styleChanged += MainWindow_styleChanged;
+                App.MainWindow.WindowClosed += (s, e) =>
                 {
                     this.Close();
                 };
@@ -72,33 +65,19 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
         {
-            if (mainWindow != null)
+            if (App.MainWindow != null)
             {
-                mainWindow.themeChanged -= MainWindow_themeChanged;
-                mainWindow.styleChanged -= MainWindow_styleChanged;
+                App.MainWindow.themeChanged -= MainWindow_themeChanged;
+                App.MainWindow.styleChanged -= MainWindow_styleChanged;
             }
         }
 
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowSizeHelper.SetMinimumSize(hwnd, this, 550, 700);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 700, 550, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
-            uint dpi = GetDpiForWindow(hwnd);
-            scaleFactor = dpi / 96.0;
-            int originalWidth = 550;
-            int originalHeight = 700;
-            int adjustedWidth = (int)(originalWidth * scaleFactor);
-            int adjustedHeight = (int)(originalHeight * scaleFactor);
-            MinWindowWidth = adjustedWidth;
-            MinWindowHeight = adjustedHeight;
-            WindowSizeHelper.SetMinimumSize(hwnd,this, MinWindowWidth, MinWindowHeight);
-            AppWindow mainAppWindow = App.MainWindow.AppWindow;
-            PointInt32 mainWindowPosition = mainAppWindow.Position;
-            int mainWindowWidth = mainAppWindow.Size.Width;         
-            int mainWindowHeight = mainAppWindow.Size.Height;  
-            int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;
-            int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
-            this.AppWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
             notificationService = App.Services.GetRequiredService<NotificationService>();
         }
 

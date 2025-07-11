@@ -1,10 +1,13 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Graphics;
 using WinRT.Interop;
 
 namespace WinUIMusicPlayer.Helper
@@ -17,6 +20,11 @@ namespace WinUIMusicPlayer.Helper
         public static void SetMinimumSize(IntPtr hwnd,Window window, int minWidth, int minHeight)
         {
             //var hwnd = WindowNative.GetWindowHandle(window);
+            uint dpi = GetDpiForWindow(hwnd);
+            double scaleFactor = dpi / 96.0;
+
+            minWidth = (int)(minWidth * scaleFactor);
+            minHeight = (int)(minHeight * scaleFactor);
 
             // 创建新的窗口过程
             var newWndProc = new WndProcDelegate((hwnd, msg, wParam, lParam) =>
@@ -98,6 +106,39 @@ namespace WinUIMusicPlayer.Helper
             return CallWindowProc(oldWndProc, hwnd, msg, wParam, lParam);
         }
 
+        public static void ResizeWindowAndCenterInMainWindow(IntPtr hwnd,int height,int width, AppWindow mainWindow,AppWindow appWindow) {
+            uint dpi = GetDpiForWindow(hwnd);
+            double scaleFactor = dpi / 96.0;
+            int adjustedWidth = (int)(width * scaleFactor);
+            int adjustedHeight = (int)(height * scaleFactor);
+            PointInt32 mainWindowPosition = mainWindow.Position; 
+            int mainWindowWidth = mainWindow.Size.Width;
+            int mainWindowHeight = mainWindow.Size.Height;
+            int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;
+            int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
+            appWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
+        }
+
+        public static void ResizeWindowAndCenterInScreen(IntPtr hwnd, int height, int width, AppWindow appWindow)
+        {
+            uint dpi = GetDpiForWindow(hwnd);
+            double scaleFactor = dpi / 96.0;
+            int adjustedWidth = (int)(width * scaleFactor);
+            int adjustedHeight = (int)(height * scaleFactor);
+            appWindow.Resize(new SizeInt32(adjustedWidth, adjustedHeight));
+            CenterInScreen(appWindow);
+        }
+
+        public static void CenterInScreen(AppWindow appWindow)
+        {
+            var displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary);
+            var workArea = displayArea.WorkArea;
+            var windowSize = appWindow.Size;
+            var x = (workArea.Width - windowSize.Width) / 2 + workArea.X;
+            var y = (workArea.Height - windowSize.Height) / 2 + workArea.Y;
+            appWindow.Move(new PointInt32(x, y));
+        }
+
         // Win32 API 声明
         private delegate IntPtr WndProcDelegate(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
 
@@ -109,6 +150,9 @@ namespace WinUIMusicPlayer.Helper
 
         [DllImport("user32.dll")]
         private static extern IntPtr DefWindowProc(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hwnd);
 
         private const int GWLP_WNDPROC = -4;
         private const uint WM_SIZING = 0x0214;
