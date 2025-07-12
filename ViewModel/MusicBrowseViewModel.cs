@@ -704,6 +704,17 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = IsMuted ? 0 : _tempVolume;
         }
 
+        [RelayCommand]
+        private void OnVolumeUpChanged()
+        {
+            AdjustVolume(1);
+        }
+        [RelayCommand]
+        private void OnVolumeDownChanged()
+        {
+            AdjustVolume(-1);
+        }
+
         public void AdjustVolume(int delta)
         {
             double newVolume = Volume + delta;

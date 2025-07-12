@@ -90,7 +90,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
             ProgressSlider.Loaded += ProgressSlider_Loaded;
-            this.KeyDown += MusicBrowsePage_KeyDown;
+            //this.KeyDown += MusicBrowsePage_KeyDown;
             this.Focus(FocusState.Programmatic);
             mainWindow = (App.MainWindow as MainWindow);
             if (mainWindow != null)
@@ -405,33 +405,33 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicBrowsePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-        {
-            switch (e.Key)
-            {
-                case Windows.System.VirtualKey.Left:
-                    ViewModel.AdjustPlaybackPosition(-5);
-                    e.Handled = true;
-                    break;
-                case Windows.System.VirtualKey.Right:
-                    ViewModel.AdjustPlaybackPosition(5);
-                    e.Handled = true;
-                    break;
-                case Windows.System.VirtualKey.Up:
-                    ViewModel.AdjustVolume(1);
-                    e.Handled = true;
-                    break;
-                case Windows.System.VirtualKey.Down:
-                    ViewModel.AdjustVolume(-1);
-                    e.Handled = true;
-                    break;
-                case Windows.System.VirtualKey.Escape:
-                    //ViewModel.AdjustPlaybackPosition(5);
-                    BackButton_Click(null, null);
-                    e.Handled = true;
-                    break;
-            }
-        }
+        //private void MusicBrowsePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        //{
+        //    switch (e.Key)
+        //    {
+        //        case Windows.System.VirtualKey.Left:
+        //            ViewModel.AdjustPlaybackPosition(-5);
+        //            e.Handled = true;
+        //            break;
+        //        case Windows.System.VirtualKey.Right:
+        //            ViewModel.AdjustPlaybackPosition(5);
+        //            e.Handled = true;
+        //            break;
+        //        case Windows.System.VirtualKey.Up:
+        //            ViewModel.AdjustVolume(1);
+        //            e.Handled = true;
+        //            break;
+        //        case Windows.System.VirtualKey.Down:
+        //            ViewModel.AdjustVolume(-1);
+        //            e.Handled = true;
+        //            break;
+        //        //case Windows.System.VirtualKey.Escape:
+        //        //    //ViewModel.AdjustPlaybackPosition(5);
+        //        //    BackButton_Click(null, null);
+        //        //    e.Handled = true;
+        //        //    break;
+        //    }
+        //}
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
