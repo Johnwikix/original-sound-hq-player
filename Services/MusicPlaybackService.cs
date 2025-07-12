@@ -262,7 +262,6 @@ namespace WinUIMusicPlayer.Services
                             }                            
                         });
                         UpdateLyrics(_cachedCurrentTime);
-                        //TODO
                         _systemMediaControlsService.UpdateTimelineProperties(waveChannel.CurrentTime, waveChannel.TotalTime);
                     } 
                 }

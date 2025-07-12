@@ -246,50 +246,54 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <!--  专辑封面  -->
-                <Border
-                    x:Name="PlayingDetailAlbumCoverImageGrid"
-                    Grid.Row="0"
-                    Margin="50,10,10,10"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    CornerRadius="10">
-                    <Grid>
-                        <Image
-                            x:Name="PlayingDetailAlbumCoverImage"
-                            Canvas.ZIndex="1"
-                            Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
-                        <Grid
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                            Canvas.ZIndex="0"
-                            Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
-                            <Viewbox Stretch="Uniform">
-                                <Border
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"
-                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                    <!--  图标层  -->
-                                    <FontIcon
-                                        Width="200"
-                                        Height="200"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Canvas.ZIndex="1"
-                                        FontSize="100"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Glyph="&#xE93C;" />
-                                </Border>
-                            </Viewbox>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="6*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="6*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border
+                        x:Name="PlayingDetailAlbumCoverImageGrid"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="50,10,10,10"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        CornerRadius="16">
+                        <Grid>
+                            <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                            <Grid
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                Canvas.ZIndex="0"
+                                Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                <Viewbox Stretch="Uniform">
+                                    <Border
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <!--  图标层  -->
+                                        <FontIcon
+                                            Width="200"
+                                            Height="200"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Canvas.ZIndex="1"
+                                            FontSize="100"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Glyph="&#xE93C;" />
+                                    </Border>
+                                </Viewbox>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                </Border>
-                <canvas:CanvasControl
-                    x:Name="SpectrumCanvas"
-                    Margin="50,10,10,10"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    Background="Transparent" />
+                    </Border>
+                </Grid>
             </Grid>
             <Grid Grid.Row="1" Grid.Column="1">
                 <Grid.RowDefinitions>
@@ -489,14 +493,14 @@
                                     Stretch="UniformToFill" />
                             </Grid>
                             <Grid
-                                Width="100"
-                                Height="100"
+                                Width="80"
+                                Height="80"
                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                 Canvas.ZIndex="0"
                                 Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                 <FontIcon
                                     Canvas.ZIndex="0"
-                                    FontSize="50"
+                                    FontSize="40"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     Glyph="&#xE93C;" />
                             </Grid>
