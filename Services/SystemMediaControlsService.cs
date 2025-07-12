@@ -37,7 +37,16 @@ namespace WinUIMusicPlayer.Services
                     SystemMediaControls.IsPauseEnabled = true;
                     SystemMediaControls.IsNextEnabled = true;
                     SystemMediaControls.IsPreviousEnabled = true;
+
+                    // 启用时间轴控制
+                    SystemMediaControls.IsChannelUpEnabled = false;
+                    SystemMediaControls.IsChannelDownEnabled = false;
+                    SystemMediaControls.IsStopEnabled = false;
+                    SystemMediaControls.IsRecordEnabled = false;
+                    SystemMediaControls.IsFastForwardEnabled = false;
+                    SystemMediaControls.IsRewindEnabled = false;
                     SystemMediaControls.ButtonPressed += SystemMediaControls_ButtonPressed;
+                    SystemMediaControls.PlaybackPositionChangeRequested += SystemMediaControls_PlaybackPositionChangeRequested;
                     UpdateSystemMediaControlsState();
                 }
             }
@@ -45,6 +54,11 @@ namespace WinUIMusicPlayer.Services
             {
                 System.Diagnostics.Debug.WriteLine($"初始化 SMTC 失败: {ex.Message}");
             }
+        }
+
+        private void SystemMediaControls_PlaybackPositionChangeRequested(SystemMediaTransportControls sender, PlaybackPositionChangeRequestedEventArgs args)
+        {
+            throw new NotImplementedException();
         }
 
         private void SystemMediaControls_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
@@ -96,6 +110,28 @@ namespace WinUIMusicPlayer.Services
                 SystemMediaControls.DisplayUpdater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Album.png"));
             }
             SystemMediaControls.DisplayUpdater.Update();
+        }
+
+        public void UpdateTimelineProperties(TimeSpan currentPosition, TimeSpan totalDuration)
+        {
+            try
+            {
+                if (SystemMediaControls == null) return;
+
+                var timelineProperties = new SystemMediaTransportControlsTimelineProperties
+                {
+                    StartTime = TimeSpan.Zero,
+                    EndTime = totalDuration,
+                    Position = currentPosition,
+                    MinSeekTime = TimeSpan.Zero,
+                    MaxSeekTime = totalDuration
+                };
+                SystemMediaControls.UpdateTimelineProperties(timelineProperties);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"更新时间轴失败: {ex.Message}");
+            }
         }
 
         public static async Task<RandomAccessStreamReference> ByteArrayToRandomAccessStreamReferenceAsync(byte[] imageBytes)

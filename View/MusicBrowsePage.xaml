@@ -28,7 +28,10 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">
+        <Grid
+            x:Name="TopPanel"
+            Grid.Row="0"
+            Visibility="Visible">
             <StackPanel Orientation="Horizontal">
                 <Button
                     x:Name="BackButton"
@@ -127,7 +130,10 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                <StackPanel
+                    Margin="0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
                     <TextBlock
                         x:Uid="SortOrder"
                         Margin="10,0,10,0"
@@ -141,10 +147,22 @@
                         FontSize="12"
                         SelectedIndex="0"
                         SelectionChanged="SortByComboBox_SelectionChanged">
-                        <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
-                        <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
-                        <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
-                        <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
+                        <ComboBoxItem
+                            x:Uid="SortOrderDefault"
+                            FontSize="12"
+                            Tag="DefaultOrder" />
+                        <ComboBoxItem
+                            x:Uid="SortOrderA_Z"
+                            FontSize="12"
+                            Tag="A-Z" />
+                        <ComboBoxItem
+                            x:Uid="SortOrderArtist"
+                            FontSize="12"
+                            Tag="Artist" />
+                        <ComboBoxItem
+                            x:Uid="SortOrderAlbum"
+                            FontSize="12"
+                            Tag="Album" />
                     </ComboBox>
                 </StackPanel>
                 <TextBox
@@ -168,7 +186,10 @@
             Margin="10"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
-        <Grid x:Name="PlayingDetail" Grid.Row="2" Visibility="Collapsed">
+        <Grid
+            x:Name="PlayingDetail"
+            Grid.Row="2"
+            Visibility="Collapsed">
             <!--  Define transitions  -->
             <Grid.Transitions>
                 <TransitionCollection>
@@ -185,7 +206,10 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  返回按钮  -->
-            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                Orientation="Horizontal">
                 <Button
                     x:Name="CancelPlayingDetailButton"
                     Margin="20,10,10,10"
@@ -230,7 +254,10 @@
                     VerticalAlignment="Center"
                     CornerRadius="10">
                     <Grid>
-                        <Image x:Name="PlayingDetailAlbumCoverImage" Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                        <Image
+                            x:Name="PlayingDetailAlbumCoverImage"
+                            Canvas.ZIndex="1"
+                            Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
                         <Grid
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -238,7 +265,10 @@
                             Canvas.ZIndex="0"
                             Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                             <Viewbox Stretch="Uniform">
-                                <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                <Border
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                     <!--  图标层  -->
                                     <FontIcon
                                         Width="200"
@@ -386,7 +416,10 @@
             </Grid>
         </Grid>
         <!--  底部控制区域  -->
-        <Grid Grid.Row="3" Height="150" Margin="10,0,10,10">
+        <Grid
+            Grid.Row="3"
+            Height="120"
+            Margin="10,0,10,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -431,7 +464,7 @@
                 </StackPanel.Transitions>
                 <Button
                     x:Name="AlbumCoverImageBtn"
-                    Margin="10"
+                    Margin="5"
                     Padding="0"
                     Background="Transparent"
                     BorderBrush="Transparent"
@@ -446,8 +479,8 @@
                         <Grid x:Name="AlbumCoverImageGrid" Grid.Row="0">
                             <Grid
                                 x:Name="AlbumCoverImage"
-                                Width="100"
-                                Height="100"
+                                Width="80"
+                                Height="80"
                                 Canvas.ZIndex="1">
                                 <Image
                                     HorizontalAlignment="Center"
@@ -476,7 +509,10 @@
                             Opacity="0" />
                     </Grid>
                 </Button>
-                <Grid Width="Auto" Height="100" MaxWidth="300">
+                <Grid
+                    Width="Auto"
+                    Height="80"
+                    MaxWidth="300">
                     <Grid.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -492,13 +528,11 @@
                     <TextBlock
                         x:Name="MusicTitleTextBlock"
                         Grid.Row="0"
-                        MaxHeight="50"
                         Margin="10,0,10,0"
                         FontSize="18"
                         FontWeight="Bold"
                         Text="{Binding ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                        TextTrimming="WordEllipsis"
-                        TextWrapping="WrapWholeWords" />
+                        TextTrimming="WordEllipsis" />
                     <TextBlock
                         x:Name="MusicAlbumTextBlock"
                         Grid.Row="1"
@@ -559,7 +593,7 @@
                 <Button
                     x:Name="PlayBarFavouriteButton"
                     Grid.Column="0"
-                    Margin="5"
+                    Margin="3"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Background="Transparent"
@@ -592,7 +626,7 @@
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     Command="{Binding ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
-                    <FontIcon FontSize="26" Glyph="&#xe892;" />
+                    <FontIcon FontSize="22" Glyph="&#xe892;" />
                 </Button>
 
                 <!--  播放按钮  -->
@@ -610,7 +644,7 @@
                     <FontIcon
                         Width="50"
                         Height="50"
-                        FontSize="36"
+                        FontSize="32"
                         Glyph="{Binding ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                 </Button>
 
@@ -624,7 +658,7 @@
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     Command="{Binding ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
-                    <FontIcon FontSize="26" Glyph="&#xe893;" />
+                    <FontIcon FontSize="22" Glyph="&#xe893;" />
                 </Button>
 
                 <Button
@@ -683,7 +717,10 @@
                     Click="CurrentPlayListButton_Click">
                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                 </Button>
-                <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
+                <TeachingTip
+                    x:Name="CurrentPlayListTeachingTip"
+                    IsLightDismissEnabled="True"
+                    Target="{x:Bind CurrentPlayListButton}">
                     <TeachingTip.Content>
                         <ListView
                             x:Name="CurrentPlayListView"

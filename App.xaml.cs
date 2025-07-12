@@ -1,11 +1,14 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.VisualBasic.ApplicationServices;
 using System;
 using System.Diagnostics;
 using System.Runtime;
+using System.Threading.Tasks;
 using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
@@ -26,7 +29,6 @@ namespace WinUIMusicPlayer
     public partial class App : Application
     {
         public static MainWindow MainWindow { get; private set; }
-        private Window _tempWindow = null;
         public static IServiceProvider Services { get; private set; }
         private static readonly IHost _host = Host.CreateDefaultBuilder()
              .ConfigureServices((context, services) =>
@@ -34,9 +36,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<DatabaseInitializerService>();
                  services.AddHostedService<DatabaseInitializerService>(provider =>
                      provider.GetRequiredService<DatabaseInitializerService>());
-                 // 注册导航服务为单例
                  services.AddTransient<INavigationService, NavigationService>();
-                 // 注册导航服务工厂
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
@@ -73,10 +73,13 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-            this.UnhandledException += App_UnhandledException;
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;            
             this.InitializeComponent();
-            Services = _host.Services; // 赋值给静态属性
+            Services = _host.Services;
+            UnhandledException += App_UnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             var systemLanguages = GlobalizationPreferences.Languages;
             if (systemLanguages[0].StartsWith("zh"))
             {
@@ -100,13 +103,24 @@ namespace WinUIMusicPlayer
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
+
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            // 记录异常信息
-            System.Diagnostics.Debug.WriteLine($"Unhandled Exception: {e.Message}");
-            System.Diagnostics.Debug.WriteLine(e.Exception.StackTrace);
-            // 可以选择设置 Handled 为 true 以防止应用程序崩溃
             e.Handled = true;
+        }
+        private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+        {
+
+        }
+
+        private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+
         }
 
         /// <summary>
@@ -132,7 +146,6 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                // 记录错误信息
                 Debug.WriteLine($"激活窗口时出错: {ex.Message}");
             }
         }

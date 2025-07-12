@@ -59,6 +59,7 @@ namespace WinUIMusicPlayer.Services
         public MusicBrowseViewModel MusicBrowseViewModel { get;}
         private readonly object _waveOutLock = new object();
         private readonly object _waveChannelLock = new object();
+        private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
 
         public MusicPlaybackService(NotificationService notificationService)
         {
@@ -213,7 +214,6 @@ namespace WinUIMusicPlayer.Services
                             break;
                         }
                     }
-                    // 如果没有找到相同时间的歌词，创建新的条目
                     if (!found)
                     {
                         lyrics.Add(new LyricLine
@@ -262,6 +262,8 @@ namespace WinUIMusicPlayer.Services
                             }                            
                         });
                         UpdateLyrics(_cachedCurrentTime);
+                        //TODO
+                        _systemMediaControlsService.UpdateTimelineProperties(waveChannel.CurrentTime, waveChannel.TotalTime);
                     } 
                 }
             }
