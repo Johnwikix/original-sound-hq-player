@@ -221,6 +221,9 @@
                     BorderThickness="0"
                     Click="CancelPlayingDetailButton_Click">
                     <FontIcon Glyph="&#xE70D;" />
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Escape" />
+                    </Button.KeyboardAccelerators>
                     <Button.Transitions>
                         <TransitionCollection>
                             <EntranceThemeTransition FromHorizontalOffset="0" FromVerticalOffset="-20" />
@@ -235,6 +238,14 @@
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     Command="{Binding ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}">
+                    <Button.Transitions>
+                        <TransitionCollection>
+                            <EntranceThemeTransition FromHorizontalOffset="0" FromVerticalOffset="-20" />
+                        </TransitionCollection>
+                    </Button.Transitions>
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F" />
+                    </Button.KeyboardAccelerators>
                     <FontIcon
                         x:Name="FullScreenIcon"
                         Grid.Column="0"
@@ -485,6 +496,9 @@
                         Click="AlbumCoverImage_Click"
                         CornerRadius="5"
                         Style="{StaticResource SimpleHoverButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Q" />
+                        </Button.KeyboardAccelerators>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto" />
@@ -617,6 +631,9 @@
                         BorderBrush="Transparent"
                         BorderThickness="0"
                         Command="{Binding ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="L" />
+                        </Button.KeyboardAccelerators>
                         <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                     </Button>
 
@@ -647,7 +664,7 @@
                         BorderThickness="0"
                         Command="{Binding ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
                         <Button.KeyboardAccelerators>
-                            <KeyboardAccelerator Key="Left" Modifiers="Control" />
+                            <KeyboardAccelerator Key="Up" />
                         </Button.KeyboardAccelerators>
                         <FontIcon FontSize="22" Glyph="&#xe892;" />
                     </Button>
@@ -664,6 +681,9 @@
                         BorderThickness="0"
                         Command="{Binding ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
                         Style="{StaticResource CircularHoverButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Space" />
+                        </Button.KeyboardAccelerators>
                         <FontIcon
                             Width="50"
                             Height="50"
@@ -682,7 +702,7 @@
                         BorderThickness="0"
                         Command="{Binding ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
                         <Button.KeyboardAccelerators>
-                            <KeyboardAccelerator Key="Right" Modifiers="Control" />
+                            <KeyboardAccelerator Key="Down" />
                         </Button.KeyboardAccelerators>
                         <FontIcon FontSize="22" Glyph="&#xe893;" />
                     </Button>
@@ -713,6 +733,9 @@
                         BorderBrush="Transparent"
                         BorderThickness="0"
                         Command="{Binding ViewModel.StopButtonChangedCommand, Mode=OneWay}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="End" />
+                        </Button.KeyboardAccelerators>
                         <FontIcon FontSize="18" Glyph="&#xe71a;" />
                     </Button>
                 </Grid>
@@ -731,7 +754,7 @@
                         IsHitTestVisible="False"
                         Opacity="0">
                         <Button.KeyboardAccelerators>
-                            <KeyboardAccelerator Key="Up" />
+                            <KeyboardAccelerator Key="Add" />
                         </Button.KeyboardAccelerators>
                         <FontIcon Glyph="&#xE9E9;" />
                     </Button>
@@ -744,7 +767,7 @@
                         IsHitTestVisible="False"
                         Opacity="0">
                         <Button.KeyboardAccelerators>
-                            <KeyboardAccelerator Key="Down" />
+                            <KeyboardAccelerator Key="Subtract" />
                         </Button.KeyboardAccelerators>
                         <FontIcon Glyph="&#xE9E9;" />
                     </Button>
