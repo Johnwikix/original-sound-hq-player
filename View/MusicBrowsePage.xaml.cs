@@ -813,21 +813,20 @@ namespace WinUIMusicPlayer.View
         public async Task ShowPlayingDetail() {
             if (!isInPlayingDetailMode) {
                 isInPlayingDetailMode = true;
-                if (ViewModel.CurrentPlayingMusic!=null && AlbumCoverImage!=null)
+                if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
+                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
                     TopPanel.Visibility = Visibility.Collapsed;
                     ContentFrame.Visibility = Visibility.Collapsed;
                     AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
                     ViewModel.InfoBarIsOpen = false;
                     PlayingDetail.Visibility = Visibility.Visible;
-                    ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail");
-                    if (animation != null)
-                    {
-                        animation.Configuration = new DirectConnectedAnimationConfiguration();
-                        animation.TryStart(PlayingDetailAlbumCoverImageGrid);
-                    }
-                }                
+                    ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new BasicConnectedAnimationConfiguration();
+                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new BasicConnectedAnimationConfiguration();
+                    ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
+                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
+                }
             }            
         }
 
@@ -835,16 +834,15 @@ namespace WinUIMusicPlayer.View
         {
             isInPlayingDetailMode = false;
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
+            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
             TopPanel.Visibility = Visibility.Visible;
             ContentFrame.Visibility = Visibility.Visible;
             PlayingDetail.Visibility = Visibility.Collapsed;
             AlbumCoverAuthorTitleModel.Visibility = Visibility.Visible;
-            ConnectedAnimation animation = ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover");
-            if (animation != null)
-            {
-                animation.Configuration = new BasicConnectedAnimationConfiguration();
-                animation.TryStart(AlbumCoverImageGrid);
-            }
+            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").Configuration = new BasicConnectedAnimationConfiguration();
+            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").Configuration = new BasicConnectedAnimationConfiguration();
+            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").TryStart(AlbumCoverImageGrid);
+            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").TryStart(AlbumCoverAuthorTitleModel);
         }
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
