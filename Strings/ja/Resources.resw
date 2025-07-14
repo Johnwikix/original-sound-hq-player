@@ -678,4 +678,7 @@
   <data name="SaveLyricsTextBox.Content" xml:space="preserve">
     <value>歌詞lrcをローカルに保存する</value>
   </data>
+  <data name="RemoveFolderTitle" xml:space="preserve">
+    <value>フォルダを削除しますか</value>
+  </data>
 </root>

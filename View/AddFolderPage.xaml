@@ -49,17 +49,14 @@
                 Click="AddFolderButton_Click">
                 <FontIcon Glyph="&#xe8f4;" />
             </Button>
-            <ListView
-                x:Name="FolderListView"
-                Grid.Row="1"
-                ItemsSource="{Binding ViewModel.FolderList, Mode=TwoWay}">
+            <ListView x:Name="FolderListView" Grid.Row="1" ItemsSource="{Binding ViewModel.FolderList, Mode=TwoWay}">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Folder">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Button
@@ -73,17 +70,9 @@
                                 Tag="{x:Bind Path}">
                                 <FontIcon Glyph="&#xe838;" />
                             </Button>
-                            <StackPanel
-                                Grid.Column="1"
-                                Margin="10"
-                                Orientation="Vertical">
-                                <TextBlock FontSize="16" Text="{x:Bind Name}" />
-                                <TextBlock FontSize="12" Text="{x:Bind Path}" />
-                                <!--<TextBlock Text="{x:Bind Type}" FontSize="12"/>-->
-                            </StackPanel>
                             <Button
                                 x:Name="RescanFolderButton"
-                                Grid.Column="2"
+                                Grid.Column="1"
                                 Margin="10"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
@@ -92,6 +81,11 @@
                                 Tag="{x:Bind Id}">
                                 <FontIcon Glyph="&#xe72c;" />
                             </Button>
+                            <StackPanel Grid.Column="2" Margin="10" Orientation="Vertical">
+                                <TextBlock FontSize="16" Text="{x:Bind Name}" />
+                                <TextBlock FontSize="12" Text="{x:Bind Path}" />
+                                <!--<TextBlock Text="{x:Bind Type}" FontSize="12"/>-->
+                            </StackPanel>
                             <Button
                                 x:Name="RemoveFolderButton"
                                 Grid.Column="3"

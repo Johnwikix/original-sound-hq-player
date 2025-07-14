@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ABI.Microsoft.UI.Xaml;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
@@ -26,8 +27,11 @@ using Windows.Media.Devices;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
+using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
+using Window = Microsoft.UI.Xaml.Window;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -555,25 +559,36 @@ namespace WinUIMusicPlayer.Utils
             {
                 using (var reader = new MediaFoundationReader(filePath))
                 {
-                    int sampleRate = reader.WaveFormat.SampleRate;
-                    int channelCount = reader.WaveFormat.Channels;
-                    int bitDepth = reader.WaveFormat.BitsPerSample;
-                    TimeSpan duration = reader.TotalTime;
-                    int bitRate = (int)(reader.Length * 8 / duration.TotalSeconds / 1000);
                     return new AudioFileInfo
                     {
-                        SampleRate = sampleRate,
-                        ChannelCount = channelCount,
-                        BitRate = bitRate,
-                        BitDepth = bitDepth,
-                        Duration = duration
+                        SampleRate = reader.WaveFormat.SampleRate,
+                        ChannelCount = reader.WaveFormat.Channels,
+                        BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
+                        BitDepth = reader.WaveFormat.BitsPerSample,
+                        Duration = reader.TotalTime
                     };
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"读取 WAV 文件时出错: {ex.Message}");
-                return new AudioFileInfo();
+                try {
+                    using (var reader = new FFmpegAudioReader(filePath))
+                    {
+                        return new AudioFileInfo
+                        {
+                            SampleRate = reader.WaveFormat.SampleRate,
+                            ChannelCount = reader.WaveFormat.Channels,
+                            BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
+                            BitDepth = reader.WaveFormat.BitsPerSample,
+                            Duration = reader.TotalTime
+                        };
+                    }
+                }
+                catch (Exception ex2)
+                {
+                    Debug.WriteLine($"获取音频文件信息失败: {ex.Message} | {ex2.Message}");
+                    return new AudioFileInfo();
+                }                
             }
         }
 

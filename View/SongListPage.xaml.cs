@@ -107,21 +107,6 @@ namespace WinUIMusicPlayer.View
             {
                 var filePath = selectedMusic.Path;
                 ToolUtils.OpenFileInExplorer(filePath);
-                //if (File.Exists(filePath))
-                //{
-                //    try
-                //    {
-                //        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
-                //    }
-                //}
-                //else
-                //{
-                //    Debug.WriteLine($"文件不存在: {filePath}");
-                //}
             }
         }
 

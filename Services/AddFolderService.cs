@@ -135,7 +135,6 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"处理音乐文件时出错: {file.Path}, 错误: {ex.Message}");
                 AudioFileInfo wavFileInfo = new AudioFileInfo();
                 try
                 {

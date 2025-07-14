@@ -67,15 +67,32 @@ namespace WinUIMusicPlayer.View
             AddFolderGrid.Visibility = Visibility.Visible;
         }
 
-        private void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
+        private async void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
         {
+            ContentDialog contentDialog = new ContentDialog
+            {
+                Title = ToolUtils.GetString("RemoveFolderTitle"),               
+                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+                CloseButtonText = ToolUtils.GetString("CloseButton"),
+                XamlRoot = this.XamlRoot
+            };
+            contentDialog.RequestedTheme = AppSettings.elementTheme;
+            ContentDialogResult result = await contentDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                var button = sender as Button;
+                if (button != null && button.Tag is int folderId)
+                {
+                    RemoveFolder(folderId);
+                }
+            }
+        }
+
+        private void RemoveFolder(int folderId) {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
-            var button = sender as Button;
-            if (button != null && button.Tag is int folderId)
-            {
-                ViewModel.RemoveFolderButton_Click(folderId);
-            }
+            ViewModel.RemoveFolderButton_Click(folderId);
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
         }

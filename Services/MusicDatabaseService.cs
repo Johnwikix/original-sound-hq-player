@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Microsoft.UI.Xaml.Controls;
+using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,11 +19,12 @@ namespace WinUIMusicPlayer.Services
     public class MusicDatabaseService
     {
         private static SQLiteAsyncConnection _dbConnection;
-        private static readonly string DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+        private static string DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private static AddFolderService addFolderService = new AddFolderService();
 
         public static async Task Initialize()
         {
+            InitalizeDbPath();
             if (_dbConnection == null)
             {
                 _dbConnection = new SQLiteAsyncConnection(DbPath);
@@ -38,6 +40,53 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
         }
+
+        private static void InitalizeDbPath()
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (userProfilePath != null)
+                {
+                    // 拼接应用文件夹路径，这里假设应用文件夹名为"MyAppFolder"
+                    string appFolderPath = Path.Combine(userProfilePath,"OriginalSoundPlayer", "DataBase");
+                    string dbFilePath = Path.Combine(appFolderPath, "MusicDatabase.db");
+                    string sourceDbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+                    if (!Directory.Exists(appFolderPath))
+                    {
+                        Directory.CreateDirectory(appFolderPath);
+                        CopyFile(sourceDbPath, dbFilePath);
+                        DbPath = dbFilePath;
+                    }
+                    else
+                    {
+                        if (!File.Exists(dbFilePath))
+                        {
+                            CopyFile(sourceDbPath, dbFilePath);
+                        }
+                        DbPath = dbFilePath;
+                    }
+                }
+            }
+            catch (Exception ex) {
+                DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            }            
+        }
+
+        private static async void CopyFile(string sourceFilePath, string targetFilePath) {
+
+            if (File.Exists(sourceFilePath))
+            {
+
+                using (FileStream sourceStream = File.Open(sourceFilePath, FileMode.Open))
+                {
+                    using (FileStream destinationStream = File.Create(targetFilePath))
+                    {
+                        await sourceStream.CopyToAsync(destinationStream);
+                    }
+                }
+            }
+        } 
 
         public static SQLiteAsyncConnection GetDbConnection()
         {
