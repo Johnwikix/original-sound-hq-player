@@ -137,11 +137,12 @@ namespace WinUIMusicPlayer.View
         }
 
         public void SetAcrylicBrushBackground() {
-            var acrylicBrush = new AcrylicBrush { TintOpacity = 0.7 };
+            var acrylicBrush = new AcrylicBrush { TintOpacity = 0.8 };
 
             if (((FrameworkElement)App.MainWindow!.Content).ActualTheme == ElementTheme.Dark)
             {
                 acrylicBrush.TintColor = Colors.Black;
+                acrylicBrush.TintOpacity = 0.5;
             }
             else
             {
