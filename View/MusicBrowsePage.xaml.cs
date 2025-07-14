@@ -822,6 +822,8 @@ namespace WinUIMusicPlayer.View
             {
                 Task.Run(() =>
                 {
+                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.FirstOrDefault(line => line.Time >= lyricLine.Time));
+                    ViewModel.UpdateLyricsToUI(index);
                     ViewModel._musicPlaybackService.isManualSelect = true;
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);
                     ViewModel._musicPlaybackService.isManualSelect = false;
