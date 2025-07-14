@@ -290,7 +290,6 @@ namespace WinUIMusicPlayer.Services
                     break;
                 }
             }
-
             // 触发事件通知UI更新
             if (currentIndex >= 0)
             {

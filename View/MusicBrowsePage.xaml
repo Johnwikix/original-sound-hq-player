@@ -33,10 +33,10 @@
                 <EntranceThemeTransition FromVerticalOffset="100" />
             </TransitionCollection>
         </Grid.Transitions>
-        <Grid
-            x:Name="TopPanel"
-            Grid.Row="0"
-            Visibility="Visible">
+        <!--<Grid.Background>
+            <ImageBrush x:Name="ContentGridBackground" ImageSource="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" Stretch="UniformToFill" />
+        </Grid.Background>-->
+        <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">
             <StackPanel Orientation="Horizontal">
                 <Button
                     x:Name="BackButton"
@@ -138,10 +138,7 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <StackPanel
-                    Margin="0"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
                     <TextBlock
                         x:Uid="SortOrder"
                         Margin="10,0,10,0"
@@ -155,22 +152,10 @@
                         FontSize="12"
                         SelectedIndex="0"
                         SelectionChanged="SortByComboBox_SelectionChanged">
-                        <ComboBoxItem
-                            x:Uid="SortOrderDefault"
-                            FontSize="12"
-                            Tag="DefaultOrder" />
-                        <ComboBoxItem
-                            x:Uid="SortOrderA_Z"
-                            FontSize="12"
-                            Tag="A-Z" />
-                        <ComboBoxItem
-                            x:Uid="SortOrderArtist"
-                            FontSize="12"
-                            Tag="Artist" />
-                        <ComboBoxItem
-                            x:Uid="SortOrderAlbum"
-                            FontSize="12"
-                            Tag="Album" />
+                        <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
+                        <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
+                        <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
+                        <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
                     </ComboBox>
                 </StackPanel>
                 <TextBox
@@ -194,10 +179,7 @@
             Margin="10"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
-        <Grid
-            x:Name="PlayingDetail"
-            Grid.Row="2"
-            Visibility="Collapsed">
+        <Grid x:Name="PlayingDetail" Grid.Row="2" Visibility="Collapsed">
             <!--  定义列和行  -->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -208,10 +190,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <!--  返回按钮  -->
-            <StackPanel
-                Grid.Row="0"
-                Grid.Column="0"
-                Orientation="Horizontal">
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
                 <Button
                     x:Name="CancelPlayingDetailButton"
                     Margin="20,10,10,10"
@@ -280,10 +259,7 @@
                                     Canvas.ZIndex="0"
                                     Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                     <Viewbox Stretch="Uniform">
-                                        <Border
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch"
-                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                             <!--  图标层  -->
                                             <FontIcon
                                                 Width="200"
@@ -299,10 +275,7 @@
                                 </Grid>
                             </Grid>
                         </Border>
-                        <StackPanel
-                            x:Name="MusicInfoPanel"
-                            Grid.Row="1"
-                            Margin="5">
+                        <StackPanel x:Name="MusicInfoPanel" Grid.Row="1" Margin="5">
                             <RichTextBlock
                                 x:Name="PlayingDetailTitleTextBlock"
                                 Margin="2"
@@ -349,189 +322,75 @@
                     </Grid>
                 </Grid>
             </Grid>
-            <!--<Grid Grid.Row="1" Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-            -->
-            <!--  专辑封面  -->
-            <!--
-                <Grid Grid.Row="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="6*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="6*" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Border
-                        x:Name="PlayingDetailAlbumCoverImageGrid"
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="50,10,10,10"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        CornerRadius="16">
-                        <Grid>
-                            <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
-                            <Grid
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                Canvas.ZIndex="0"
-                                Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
-                                <Viewbox Stretch="Uniform">
-                                    <Border
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-            -->
-            <!--  图标层  -->
-            <!--
-                                        <FontIcon
-                                            Width="200"
-                                            Height="200"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Canvas.ZIndex="1"
-                                            FontSize="100"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Glyph="&#xE93C;" />
-                                    </Border>
-                                </Viewbox>
-                            </Grid>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </Grid>-->
             <Grid Grid.Row="1" Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!--  右侧信息面板  -->
-                <!--<StackPanel
-                    Grid.Row="0"
-                    Margin="10,10,50,10"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Orientation="Vertical">
-                    <StackPanel.Transitions>
-                        <TransitionCollection>
-                            <EntranceThemeTransition FromHorizontalOffset="50" FromVerticalOffset="0" />
-                        </TransitionCollection>
-                    </StackPanel.Transitions>
-                    <RichTextBlock
-                        x:Name="PlayingDetailTitleTextBlock"
-                        Margin="5,0,5,5"
-                        helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                        FontSize="36"
-                        FontWeight="Bold"
-                        TextWrapping="WrapWholeWords">
-                        <RichTextBlock.Transitions>
-                            <TransitionCollection>
-                                <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                            </TransitionCollection>
-                        </RichTextBlock.Transitions>
-                    </RichTextBlock>
-                    <RichTextBlock
-                        x:Name="PlayingDetailAlbumTextBlock"
-                        Margin="5"
-                        helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                        FontSize="22"
-                        TextWrapping="WrapWholeWords">
-                        <RichTextBlock.Transitions>
-                            <TransitionCollection>
-                                <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                            </TransitionCollection>
-                        </RichTextBlock.Transitions>
-                    </RichTextBlock>
-                    <RichTextBlock
-                        x:Name="PlayingDetailArtistTextBlock"
-                        Margin="5"
-                        helper:RichTextBlockHelper.Text="{x:Bind ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                        FontSize="22"
-                        TextWrapping="WrapWholeWords">
-                        <RichTextBlock.Transitions>
-                            <TransitionCollection>
-                                <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                            </TransitionCollection>
-                        </RichTextBlock.Transitions>
-                    </RichTextBlock>
-                    <Grid Margin="5,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock
-                            x:Name="PlayingDetailMusicInfoTextBlock"
-                            Grid.Column="0"
-                            Margin="0,0,10,0"
-                            FontSize="15"
-                            Text="{Binding ViewModel.MusicInfo, Mode=OneWay}">
-                            <TextBlock.Transitions>
-                                <TransitionCollection>
-                                    <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                                </TransitionCollection>
-                            </TextBlock.Transitions>
-                        </TextBlock>
-                        <Image
-                            x:Name="PlayingDetailHRImage"
-                            Grid.Column="1"
-                            Height="13"
-                            Source="{Binding ViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}">
-                            <Image.Transitions>
-                                <TransitionCollection>
-                                    <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                                </TransitionCollection>
-                            </Image.Transitions>
-                        </Image>
-                    </Grid>
-                </StackPanel>-->
                 <!--  添加歌词显示列表  -->
-                <ListView
-                    x:Name="LyricsListView"
+                <ScrollViewer
+                    x:Name="LyricViewer"
                     Grid.Row="1"
                     Margin="15,20,5,10"
-                    VerticalAlignment="Stretch"
-                    IsItemClickEnabled="False"
-                    ItemsSource="{Binding ViewModel.UILyrics, Mode=TwoWay}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    SelectionMode="None">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0" />
-                            <Setter Property="MinHeight" Value="0" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="BorderThickness" Value="0" />
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="model:LyricLine">
-                            <TextBlock
-                                Margin="0,8,0,8"
-                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                Text="{x:Bind Text}"
-                                TextWrapping="Wrap">
-                            </TextBlock>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                    VerticalScrollBarVisibility="Hidden">
+                    <StackPanel>
+                        <StackPanel Height="1080" />
+                        <ListView
+                            x:Name="LyricsListView"
+                            Margin="0"
+                            VerticalAlignment="Stretch"
+                            IsItemClickEnabled="True"
+                            ItemClick="LyricsListView_ItemClick"
+                            ItemsSource="{Binding ViewModel.UILyrics, Mode=TwoWay}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="MinHeight" Value="0" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListViewItem">
+                                                <ContentPresenter
+                                                    x:Name="ContentPresenter"
+                                                    Margin="{TemplateBinding Padding}"
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    Background="{TemplateBinding Background}"
+                                                    Content="{TemplateBinding Content}"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                    ContentTransitions="{TemplateBinding ContentTransitions}" />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="model:LyricLine">
+                                    <TextBlock
+                                        Margin="0,8,0,8"
+                                        FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                        FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                        Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                                        SizeChanged="LyricsTextBlock_SizeChanged"
+                                        Text="{x:Bind Text}"
+                                        TextAlignment="Left"
+                                        TextWrapping="WrapWholeWords" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <StackPanel Height="1080" />
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Grid>
         <!--  底部控制区域  -->
-        <Grid
-            Grid.Row="3"
-            Height="120"
-            Margin="10,0,10,10">
+        <Grid Grid.Row="3" Height="120" Margin="10,0,10,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -630,10 +489,7 @@
                                 Opacity="0" />
                         </Grid>
                     </Button>
-                    <Grid
-                        Width="Auto"
-                        Height="80"
-                        MaxWidth="300">
+                    <Grid Width="Auto" Height="80" MaxWidth="300">
                         <Grid.Transitions>
                             <TransitionCollection>
                                 <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
@@ -887,10 +743,7 @@
                         Click="CurrentPlayListButton_Click">
                         <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                     </Button>
-                    <TeachingTip
-                        x:Name="CurrentPlayListTeachingTip"
-                        IsLightDismissEnabled="True"
-                        Target="{x:Bind CurrentPlayListButton}">
+                    <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
                         <TeachingTip.Content>
                             <ListView
                                 x:Name="CurrentPlayListView"

@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
+using Windows.Foundation;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -24,6 +25,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -58,7 +60,7 @@ namespace WinUIMusicPlayer.View
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
-        private bool isInPlayingDetailMode = false;
+        //private bool isInPlayingDetailMode = false;
         private readonly INavigationService _navigationService;
         //public event EventHandler clearUsbDeviceMusicList;
         //public event EventHandler refreshUsbDeviceMusicList;
@@ -132,56 +134,29 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
         }
         
-        public void UpdateCurrentLyricIndex(int currentIndex)
-        {
-            if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
-                return;
-            this.DispatcherQueue.TryEnqueue(async () =>
-            {
-                try
-                {
-                    // 创建当前歌词的副本
-                    for (int i = 0; i < ViewModel.UILyrics.Count; i++)
-                    {
-                        // 获取旧歌词
-                        var lyric = ViewModel.UILyrics[i];
-                        ViewModel.UILyrics[i].IsCurrent = (i == currentIndex);
-                    }
-                    // 滚动到当前歌词
-                    if (currentIndex >= 0 && currentIndex < ViewModel.UILyrics.Count)
-                    {
-                        LyricsListView.ScrollIntoView(ViewModel.UILyrics[currentIndex]);
-                        await Task.Delay(50);
-                        // 获取目标项的容器
-                        if (currentIndex >= 0 && currentIndex < ViewModel.UILyrics.Count)
-                        {
-                            var container = LyricsListView.ContainerFromItem(ViewModel.UILyrics[currentIndex]) as ListViewItem;
-                            if (container != null)
-                            {
-                                // 计算需要滚动的位置，使项目居中
-                                var scrollViewer = FindVisualChild<ScrollViewer>(LyricsListView);
-                                if (scrollViewer != null)
-                                {
-                                    // 计算项目在ListView中的位置
-                                    var transform = container.TransformToVisual(LyricsListView);
-                                    var itemPosition = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
-                                    // 计算目标项目与ListView中心的偏移量
-                                    var itemOffset = itemPosition.Y + (container.ActualHeight / 2);
-                                    var listViewCenter = scrollViewer.ViewportHeight / 2;
-                                    var scrollOffset = itemOffset - listViewCenter;
-                                    scrollViewer.ChangeView(null, scrollViewer.VerticalOffset + scrollOffset, null, false);
-                                }
-                            }
-                        }
-                    }
-                    ViewModel.LastLyricIndex = currentIndex;
-                }
-                catch (Exception ex)
-                {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), $"{ToolUtils.GetString("UpdatingLyricsFailed")}: {ex.Message}");
-                }
-            });
-        }
+        //public void UpdateCurrentLyricIndex(int currentIndex)
+        //{
+        //    if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
+        //        return;
+        //    this.DispatcherQueue.TryEnqueue(async () =>
+        //    {
+        //        try
+        //        {
+        //            // 创建当前歌词的副本
+        //            for (int i = 0; i < ViewModel.UILyrics.Count; i++)
+        //            {
+        //                // 获取旧歌词
+        //                var lyric = ViewModel.UILyrics[i];
+        //                ViewModel.UILyrics[i].IsCurrent = (i == currentIndex);
+        //            }
+        //            ViewModel.LastLyricIndex = currentIndex;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            notificationService.SendNotification(ToolUtils.GetString("Error"), $"{ToolUtils.GetString("UpdatingLyricsFailed")}: {ex.Message}");
+        //        }
+        //    });
+        //}
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
@@ -404,34 +379,6 @@ namespace WinUIMusicPlayer.View
                 Debug.WriteLine($"搜索处理异常: {ex.Message}");
             }
         }
-
-        //private void MusicBrowsePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-        //{
-        //    switch (e.Key)
-        //    {
-        //        case Windows.System.VirtualKey.Left:
-        //            ViewModel.AdjustPlaybackPosition(-5);
-        //            e.Handled = true;
-        //            break;
-        //        case Windows.System.VirtualKey.Right:
-        //            ViewModel.AdjustPlaybackPosition(5);
-        //            e.Handled = true;
-        //            break;
-        //        case Windows.System.VirtualKey.Up:
-        //            ViewModel.AdjustVolume(1);
-        //            e.Handled = true;
-        //            break;
-        //        case Windows.System.VirtualKey.Down:
-        //            ViewModel.AdjustVolume(-1);
-        //            e.Handled = true;
-        //            break;
-        //        //case Windows.System.VirtualKey.Escape:
-        //        //    //ViewModel.AdjustPlaybackPosition(5);
-        //        //    BackButton_Click(null, null);
-        //        //    e.Handled = true;
-        //        //    break;
-        //    }
-        //}
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
@@ -811,8 +758,8 @@ namespace WinUIMusicPlayer.View
         }
 
         public async Task ShowPlayingDetail() {
-            if (!isInPlayingDetailMode) {
-                isInPlayingDetailMode = true;
+            if (!ViewModel.IsInPlayingDetailMode) {
+                ViewModel.IsInPlayingDetailMode = true;
                 if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
@@ -832,7 +779,7 @@ namespace WinUIMusicPlayer.View
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
-            isInPlayingDetailMode = false;
+            ViewModel.IsInPlayingDetailMode = false;
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
             TopPanel.Visibility = Visibility.Visible;
@@ -850,6 +797,39 @@ namespace WinUIMusicPlayer.View
             equalizerDialog.RequestedTheme = AppSettings.elementTheme;
             equalizerDialog.XamlRoot = this.XamlRoot;
             _=equalizerDialog.ShowAsync();           
+        }
+
+        private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var textblock = (TextBlock)sender;
+            if (textblock.FontSize == 28)
+            {
+                var currentScrollPosition = LyricViewer.VerticalOffset;
+                var point = new Point(0, currentScrollPosition);
+
+                // 计算出目标位置并滚动
+                var targetPosition = textblock.TransformToVisual(LyricViewer).TransformPoint(point);
+
+                LyricViewer.ChangeView(
+                    null,
+                    targetPosition.Y - LyricViewer.ActualHeight / 2,
+                    null,
+                    disableAnimation: false
+                );
+            }
+        }
+
+        private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is LyricLine lyricLine)
+            {
+                Task.Run(() =>
+                {
+                    ViewModel._musicPlaybackService.isManualSelect = true;
+                    ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);
+                    ViewModel._musicPlaybackService.isManualSelect = false;
+                });
+            }
         }
     }
 }

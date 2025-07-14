@@ -259,6 +259,11 @@ namespace WinUIMusicPlayer.ViewModel
             get => _backBtnEnabled;
             set => SetProperty(ref _backBtnEnabled, value);
         }
+        private bool _isInPlayingDetailMode = false;
+        public bool IsInPlayingDetailMode {
+            get => _isInPlayingDetailMode;
+            set => SetProperty(ref _isInPlayingDetailMode, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -530,7 +535,24 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void UpdateLyricsToUI(int index) {
-            _musicBrowsePage.UpdateCurrentLyricIndex(index);
+            if (LastLyricIndex == index || !IsInPlayingDetailMode)
+                return;
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    for (int i = 0; i < UILyrics.Count; i++)
+                    {
+                        var lyric = UILyrics[i];
+                        UILyrics[i].IsCurrent = (i == index);
+                    }
+                    LastLyricIndex = index;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"更新歌词失败: {ex.Message}");
+                }
+            });
         }
 
         public async void UpdatePlayBar(Music music)
