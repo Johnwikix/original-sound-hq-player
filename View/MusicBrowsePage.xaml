@@ -27,23 +27,14 @@
                 <EntranceThemeTransition FromVerticalOffset="100" />
             </TransitionCollection>
         </Grid.Transitions>
-        <Image Opacity="{Binding ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}}" Source="{Binding ViewModel.MusicDetailCover}" Stretch="UniformToFill" />
-        <!--<Grid.Background>
+        <Grid.Background>
             <ImageBrush
                 x:Name="ContentGridBackground"
                 ImageSource="{Binding ViewModel.MusicDetailCover, Mode=OneWay}"
                 Opacity="{Binding ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
                 Stretch="UniformToFill" />
-        </Grid.Background>-->
+        </Grid.Background>
         <Grid x:Name="AcrylicBrushBackground" Margin="0">
-            <!--<Grid.Background>
-                <AcrylicBrush
-                    FallbackColor="SkyBlue"
-                    Opacity="{Binding ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
-                    TintColor="SkyBlue"
-                    TintLuminosityOpacity="0"
-                    TintOpacity="0" />
-            </Grid.Background>-->
             <Grid Margin="0,32,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
