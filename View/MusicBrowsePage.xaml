@@ -379,11 +379,14 @@
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:DataType="model:LyricLine">
                                             <TextBlock
+                                                x:Name="LyricsTextBlock"
                                                 Margin="0,8,0,8"
                                                 FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
                                                 FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
                                                 Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
                                                 SizeChanged="LyricsTextBlock_SizeChanged"
+                                                PointerEntered="LyricsTextBlock_PointerEntered"
+                                                PointerExited="LyricsTextBlock_PointerExited"
                                                 Text="{x:Bind Text}"
                                                 TextAlignment="Left"
                                                 TextWrapping="WrapWholeWords" />

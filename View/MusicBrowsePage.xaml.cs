@@ -828,5 +828,31 @@ namespace WinUIMusicPlayer.View
                 });
             }
         }
+
+        private void LyricsTextBlock_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                textBlock.Opacity = 1.0;
+            }
+        }
+
+        private void LyricsTextBlock_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock && textBlock.DataContext is LyricLine lyricLine)
+            {
+                // 鼠标离开时恢复透明度（使用绑定值或默认值）
+                if (!lyricLine.IsCurrent)
+                {
+                    // 如果不是当前歌词，恢复默认透明度
+                    textBlock.Opacity = 0.7; // 默认非当前歌词的透明度
+                }
+                else
+                {
+                    // 如果是当前歌词，确保透明度为1（或使用转换器的值）
+                    textBlock.Opacity = 1.0;
+                }
+            }
+        }
     }
 }
