@@ -39,36 +39,27 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {
-        //public MusicPlaybackService musicPlaybackService;
         public MainWindow mainWindow;
         public string paramName = "defualt";
-        //public string pageType = "MusicBrowsePage";
         public System.Type currentPage = typeof(SongListPage);
         private bool isMouseOverVolumeSlider = false;
-        //public string currentAlbumName;
         public Music CurrentAlbum;
-        //public string currentArtistName;
         public Music CurrentArtist;
-        //public string currentFolderName;
         public Music CurrentFolder;
         public PlayList currentPlayList;
         public int currentPlayListId;
-        private DispatcherTimer typingTimer;
-        //private bool isFullScreen = false;
-        //private AppWindow appWindow = App.MainWindow.AppWindow;      
+        private DispatcherTimer typingTimer;  
         private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
         public int previousSelectedIndex = 0;
-        //private bool isInPlayingDetailMode = false;
         private readonly INavigationService _navigationService;
-        //public event EventHandler clearUsbDeviceMusicList;
-        //public event EventHandler refreshUsbDeviceMusicList;
         private EqualizerDialog equalizerDialog;
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
-        
+        private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
+
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
             NotificationService notificationService, 
@@ -124,7 +115,7 @@ namespace WinUIMusicPlayer.View
             };
             this.notificationService = notificationService;
             InitializeTimer();
-            SetAcrylicBrushBackground();
+            SetAcrylicBrushBackground();            
             ViewModel.OnFileChanged(null, null);
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
@@ -136,8 +127,15 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
         }
 
-        public void SetAcrylicBrushBackground() {
-            var acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
+        private void SetAcrylicBrushBackground() {
+
+            ChangeAcrylicBrushBackground();
+            AcrylicBrushBackground.Background = acrylicBrush;
+            ChangeAcrylicBrushBackgroundOpacity();
+        }
+
+        public void ChangeAcrylicBrushBackground()
+        {
 
             if (((FrameworkElement)App.MainWindow!.Content).ActualTheme == ElementTheme.Dark)
             {
@@ -147,8 +145,6 @@ namespace WinUIMusicPlayer.View
             {
                 acrylicBrush.TintColor = Colors.White;
             }
-            AcrylicBrushBackground.Background = acrylicBrush;
-            ChangeAcrylicBrushBackgroundOpacity();
         }
 
         public void ChangeAcrylicBrushBackgroundOpacity()

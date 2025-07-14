@@ -473,7 +473,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     mainWindow.SetAppTheme();                    
                     _ = MusicDatabaseService.SaveSettingAsync();
-                    App.Services.GetRequiredService<MusicBrowsePage>().SetAcrylicBrushBackground();
+                    App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
                 }
             }
             catch (Exception ex)
