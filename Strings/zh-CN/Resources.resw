@@ -681,4 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>是否要移除文件夹</value>
   </data>
+  <data name="BackgroundCover.Text" xml:space="preserve">
+    <value>封面背景</value>
+  </data>
 </root>

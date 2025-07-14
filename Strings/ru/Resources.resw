@@ -681,4 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
+  <data name="BackgroundCover.Text" xml:space="preserve">
+    <value>Фон обложки</value>
+  </data>
 </root>

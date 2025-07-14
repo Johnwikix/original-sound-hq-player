@@ -681,4 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>フォルダを削除しますか</value>
   </data>
+  <data name="BackgroundCover.Text" xml:space="preserve">
+    <value>表紙の背景</value>
+  </data>
 </root>

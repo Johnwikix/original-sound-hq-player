@@ -715,6 +715,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppSettings.IsProcessAboveNormal = settings.IsProcessAboveNormal;
+                AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
             }
         }
 
@@ -744,6 +745,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
             newSettings.IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
+            newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

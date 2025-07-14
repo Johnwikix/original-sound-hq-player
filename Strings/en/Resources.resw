@@ -681,4 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Do you want to remove the folder</value>
   </data>
+  <data name="BackgroundCover.Text" xml:space="preserve">
+    <value>Cover Background</value>
+  </data>
 </root>

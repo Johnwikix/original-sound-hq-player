@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
@@ -122,7 +123,8 @@ namespace WinUIMusicPlayer.View
                 });                
             };
             this.notificationService = notificationService;
-            InitializeTimer();                 
+            InitializeTimer();
+            SetAcrylicBrushBackground();
             ViewModel.OnFileChanged(null, null);
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
@@ -133,30 +135,27 @@ namespace WinUIMusicPlayer.View
         {
             SelectBarItem(AppSettings.DefualtPlayList);
         }
-        
-        //public void UpdateCurrentLyricIndex(int currentIndex)
-        //{
-        //    if (ViewModel.LastLyricIndex == currentIndex || !isInPlayingDetailMode)
-        //        return;
-        //    this.DispatcherQueue.TryEnqueue(async () =>
-        //    {
-        //        try
-        //        {
-        //            // 创建当前歌词的副本
-        //            for (int i = 0; i < ViewModel.UILyrics.Count; i++)
-        //            {
-        //                // 获取旧歌词
-        //                var lyric = ViewModel.UILyrics[i];
-        //                ViewModel.UILyrics[i].IsCurrent = (i == currentIndex);
-        //            }
-        //            ViewModel.LastLyricIndex = currentIndex;
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            notificationService.SendNotification(ToolUtils.GetString("Error"), $"{ToolUtils.GetString("UpdatingLyricsFailed")}: {ex.Message}");
-        //        }
-        //    });
-        //}
+
+        public void SetAcrylicBrushBackground() {
+            var acrylicBrush = new AcrylicBrush { TintOpacity = 0.7 };
+
+            if (((FrameworkElement)App.MainWindow!.Content).ActualTheme == ElementTheme.Dark)
+            {
+                acrylicBrush.TintColor = Colors.Black;
+            }
+            else
+            {
+                acrylicBrush.TintColor = Colors.White;
+            }
+            AcrylicBrushBackground.Background = acrylicBrush;
+            ChangeAcrylicBrushBackgroundOpacity();
+        }
+
+        public void ChangeAcrylicBrushBackgroundOpacity()
+        {
+            ViewModel.IsAcrylicBrushOpacity = ViewModel.MusicDetailCover != null && ViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
+            AcrylicBrushBackground.Background.Opacity = ViewModel.IsAcrylicBrushOpacity ? 1.0 : 0;
+        }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
@@ -760,6 +759,7 @@ namespace WinUIMusicPlayer.View
         public async Task ShowPlayingDetail() {
             if (!ViewModel.IsInPlayingDetailMode) {
                 ViewModel.IsInPlayingDetailMode = true;
+                ChangeAcrylicBrushBackgroundOpacity();
                 if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
@@ -780,6 +780,7 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.IsInPlayingDetailMode = false;
+            ChangeAcrylicBrushBackgroundOpacity();
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
             TopPanel.Visibility = Visibility.Visible;

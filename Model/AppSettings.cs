@@ -37,6 +37,7 @@ namespace WinUIMusicPlayer.Model
         public static int SlideAnimationTime { get; set; } = 300;
         public static int DrillInAnimationTime { get; set; } = 400;
         public static bool IsProcessAboveNormal { get; set; } = false;
+        public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
 
         public static Dictionary<string, double> equalizer = new Dictionary<string, double>
         {

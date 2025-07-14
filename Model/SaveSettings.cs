@@ -30,5 +30,6 @@ namespace WinUIMusicPlayer.Model
         public int SlideAnimationTime { get; set; } = 300;
         public int DrillInAnimationTime { get; set; } = 400;
         public bool IsProcessAboveNormal { get; set; } = false;
+        public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
     }
 }

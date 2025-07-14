@@ -62,7 +62,7 @@ namespace WinUIMusicPlayer
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
-            SetTitleBar(AppTitleBar);
+            //SetTitleBar(AppTitleBar);
             this.Closed += MainWindow_Closed;
             this.AppWindow.SetIcon("Assets/icon.ico");
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);

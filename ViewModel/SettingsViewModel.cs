@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.ObjectModel;
@@ -9,6 +10,7 @@ using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -342,6 +344,24 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private bool _isIsBackgroundCoverEnabled = false;
+        public bool IsBackgroundCoverEnabled
+        {
+            get => _isIsBackgroundCoverEnabled;
+            set
+            {
+                if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
+                {
+                    AppSettings.IsBackgroundCoverEnabled = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                        App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackgroundOpacity();
+                    }
+                }
+            }
+        }
+
 
 
         public SettingsViewModel()
@@ -392,6 +412,8 @@ namespace WinUIMusicPlayer.ViewModel
             DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             // 初始化进程优先级
             IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
+            // 初始化背景封面开关
+            IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             _isInitized = true;
         }
         [RelayCommand]
@@ -449,8 +471,9 @@ namespace WinUIMusicPlayer.ViewModel
                             AppSettings.elementTheme = ElementTheme.Default;
                             break;
                     }
-                    mainWindow.SetAppTheme();
+                    mainWindow.SetAppTheme();                    
                     _ = MusicDatabaseService.SaveSettingAsync();
+                    App.Services.GetRequiredService<MusicBrowsePage>().SetAcrylicBrushBackground();
                 }
             }
             catch (Exception ex)

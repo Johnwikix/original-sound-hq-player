@@ -264,6 +264,12 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isInPlayingDetailMode;
             set => SetProperty(ref _isInPlayingDetailMode, value);
         }
+        private bool _isAcrylicBrushOpacity = false;
+        public bool IsAcrylicBrushOpacity
+        {
+            get => _isAcrylicBrushOpacity;
+            set => SetProperty(ref _isAcrylicBrushOpacity, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -563,6 +569,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 MusicDetailCover = DetailCover;
+                _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
             await _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
