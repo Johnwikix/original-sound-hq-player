@@ -35,7 +35,7 @@
                 Stretch="UniformToFill" />
         </Grid.Background>
         <Grid x:Name="AcrylicBrushBackground" Margin="0">
-            <Grid Margin="0,32,0,0">
+            <Grid Margin="{Binding ViewModel.IsAcrylicBrushOpacity,Converter={StaticResource BoolToThicknessConverter },Mode=OneWay}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
