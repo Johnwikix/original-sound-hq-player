@@ -684,7 +684,4 @@
   <data name="BackgroundCover.Text" xml:space="preserve">
     <value>Fondo de la portada</value>
   </data>
-  <data name="AppMainWindow.Title" xml:space="preserve">
-    <value>Reproductor HIFI Sonido Original</value>
-  </data>
 </root>
