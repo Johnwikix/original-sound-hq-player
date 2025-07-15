@@ -49,14 +49,13 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-
             <NavigationView
                 x:Name="NavigationViewControl"
                 Grid.Column="0"
                 Width="48"
+                BackRequested="NavigationViewControl_BackRequested"
                 IsBackButtonVisible="Visible"
                 IsBackEnabled="True"
-                BackRequested="NavigationViewControl_BackRequested"
                 IsPaneOpen="False"
                 IsPaneToggleButtonVisible="False"
                 ItemInvoked="NavigationView_ItemInvoked"
