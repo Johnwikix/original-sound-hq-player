@@ -12,28 +12,16 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style
-            x:Key="ListViewItemStyle"
-            BasedOn="{StaticResource DefaultListViewItemStyle}"
-            TargetType="ListViewItem">
+        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertWavItem"
-                                Click="ConvertAudio_Click"
-                                Tag="wav" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertMp3Item"
-                                Click="ConvertAudio_Click"
-                                Tag="mp3" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertFlacItem"
-                                Click="ConvertAudio_Click"
-                                Tag="flac" />
+                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
+                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
+                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
@@ -82,17 +70,15 @@
                             <Button
                                 x:Name="isFavouriteIconButton"
                                 Grid.Column="0"
-                                Margin="5"
+                                Margin="0,5,5,5"
+                                Padding="3"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="IsFavouriteIconButton_Click"
                                 Tag="{x:Bind}">
-                                <FontIcon
-                                    x:Name="IsFavouriteIcon"
-                                    Foreground="Red"
-                                    Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                             </Button>
                             <TextBlock
                                 Grid.Column="1"

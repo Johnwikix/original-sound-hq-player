@@ -57,7 +57,8 @@
                         <Button
                             x:Name="isFavouriteIconButton"
                             Grid.Column="0"
-                            Margin="5"
+                            Margin="0,5,5,5"
+                            Padding="3"
                             VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
@@ -94,8 +95,7 @@
                             Height="10"
                             Margin="5"
                             VerticalAlignment="Center"
-                            Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}">
-                        </Image>
+                            Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                         <TextBlock
                             Grid.Column="5"
                             Margin="5"

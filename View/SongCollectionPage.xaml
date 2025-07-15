@@ -182,7 +182,8 @@
                         <Button
                             x:Name="isFavouriteIconButton"
                             Grid.Column="0"
-                            Margin="5"
+                            Margin="0,5,5,5"
+                            Padding="3"
                             VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"

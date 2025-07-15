@@ -14,13 +14,6 @@
     NavigationCacheMode="Enabled"
     TabIndex="0"
     mc:Ignorable="d">
-    <Page.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Style/BtnStyle.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Page.Resources>
     <Grid Margin="0">
         <Grid.Transitions>
             <TransitionCollection>
@@ -42,7 +35,11 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid x:Name="TopPanel" Grid.Row="0" Visibility="Visible">
+                <Grid
+                    x:Name="TopPanel"
+                    Grid.Row="0"
+                    Margin="5,0,0,0"
+                    Visibility="Visible">
                     <StackPanel Orientation="Horizontal">
                         <SelectorBar x:Name="selectPage" SelectionChanged="SelectPage_SelectionChanged">
                             <SelectorBarItem
@@ -84,7 +81,7 @@
                             Click="AddPlayList_Click"
                             FontSize="20"
                             Tag="PlayListAdd">
-                            <FontIcon Glyph="&#xe948;" />
+                            <FontIcon Margin="0,2,0,0" VerticalAlignment="Bottom" Glyph="&#xe948;" />
                         </Button>
                     </StackPanel>
 
