@@ -253,12 +253,12 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _pageType, value);
         }
 
-        private bool _backBtnEnabled = false;
-        public bool BackBtnEnabled
-        {
-            get => _backBtnEnabled;
-            set => SetProperty(ref _backBtnEnabled, value);
-        }
+        //private bool _backBtnEnabled = false;
+        //public bool BackBtnEnabled
+        //{
+        //    get => _backBtnEnabled;
+        //    set => SetProperty(ref _backBtnEnabled, value);
+        //}
         private bool _isInPlayingDetailMode = false;
         public bool IsInPlayingDetailMode {
             get => _isInPlayingDetailMode;
@@ -758,10 +758,12 @@ namespace WinUIMusicPlayer.ViewModel
                 if (IsFullScreen)
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
+                    App.MainWindow.NavigationViewExpanded();
                 }
                 else
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                    App.MainWindow.NavigationViewCollapsed();
                 }
                 IsFullScreen = !IsFullScreen;
             }

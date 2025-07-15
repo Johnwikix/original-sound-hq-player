@@ -44,25 +44,42 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center" />
         </Grid>
-        <NavigationView
-            x:Name="NavigationViewControl"
-            IsBackButtonVisible="Collapsed"
-            ItemInvoked="NavigationView_ItemInvoked"
-            PaneDisplayMode="LeftCompact"
-            Visibility="Collapsed">
-            <NavigationView.MenuItems>
-                <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
-                    <NavigationViewItem.Content>
-                        <TextBlock x:Uid="AddFolder" />
-                    </NavigationViewItem.Content>
-                </NavigationViewItem>
-                <NavigationViewItem Icon="Audio" Tag="MusicBrowse">
-                    <NavigationViewItem.Content>
-                        <TextBlock x:Uid="MusicBrowse" />
-                    </NavigationViewItem.Content>
-                </NavigationViewItem>
-            </NavigationView.MenuItems>
-            <Frame x:Name="ContentFrame" />
-        </NavigationView>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <NavigationView
+                x:Name="NavigationViewControl"
+                Grid.Column="0"
+                Width="48"
+                IsBackButtonVisible="Visible"
+                IsBackEnabled="True"
+                BackRequested="NavigationViewControl_BackRequested"
+                IsPaneOpen="False"
+                IsPaneToggleButtonVisible="False"
+                ItemInvoked="NavigationView_ItemInvoked"
+                PaneDisplayMode="LeftCompact"
+                Visibility="Collapsed">
+                <NavigationView.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
+                </NavigationView.KeyboardAccelerators>
+                <NavigationView.MenuItems>
+                    <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
+                        <NavigationViewItem.Content>
+                            <TextBlock x:Uid="AddFolder" />
+                        </NavigationViewItem.Content>
+                    </NavigationViewItem>
+                    <NavigationViewItem Icon="Audio" Tag="MusicBrowse">
+                        <NavigationViewItem.Content>
+                            <TextBlock x:Uid="MusicBrowse" />
+                        </NavigationViewItem.Content>
+                    </NavigationViewItem>
+                </NavigationView.MenuItems>
+            </NavigationView>
+
+            <Frame x:Name="ContentFrame" Grid.Column="1" />
+        </Grid>
     </Grid>
 </Window>

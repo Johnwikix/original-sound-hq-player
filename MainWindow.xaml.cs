@@ -345,5 +345,38 @@ namespace WinUIMusicPlayer
                 _navigationService.Navigate(typeof(MusicBrowsePage),null,null,0);
             }            
         }
+
+        public void NavigationViewCollapsed() {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                NavigationViewControl.Visibility = Visibility.Collapsed;
+            });            
+        }
+
+        public void NavigationViewExpanded()
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                NavigationViewControl.Visibility = Visibility.Visible;
+            });            
+        }
+
+        private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+        {
+            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+        }
+
+        public void DisableEnableBackButton(bool isEnable = false)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                NavigationViewControl.IsBackEnabled = isEnable;
+            });            
+        }
+
+        private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+        {
+            NavigationViewControl_BackRequested(null, null);
+        }
     }
 }

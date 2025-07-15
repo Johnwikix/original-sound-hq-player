@@ -217,14 +217,17 @@ namespace WinUIMusicPlayer.View
 
         public void DisableBackButton()
         {
-            if (currentPage == typeof(SongCollectionPage) || currentPage == typeof(PlayListSongPage))
+            if (mainWindow != null)
             {
-                ViewModel.BackBtnEnabled = true;
-            }
-            else
-            {
-                ViewModel.BackBtnEnabled = false;
-            }
+                if (currentPage == typeof(SongCollectionPage) || currentPage == typeof(PlayListSongPage))
+                {
+                    mainWindow.DisableEnableBackButton(true);
+                }
+                else
+                {
+                    mainWindow.DisableEnableBackButton(false);
+                }
+            }            
         }
 
         public async void LoadPlayListSong(PlayList playList)
@@ -375,7 +378,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void BackButton_Click(object sender, RoutedEventArgs e)
+        public void BackButton()
         {
             if (ContentFrame.Content is SongCollectionPage)
             {
