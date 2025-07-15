@@ -50,6 +50,9 @@ namespace WinUIMusicPlayer
         {
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            SetTitleBar(AppTitleBar);
+            this.AppWindow.SetIcon("Assets/icon.ico");
+            Title = ToolUtils.GetString("AppMainTitle");
             AppData.m_hWnd = m_hwnd;
             WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
             this.Activated += MainWindow_Activated;
@@ -61,13 +64,11 @@ namespace WinUIMusicPlayer
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
-            _navigationService.RegisterPage<SettingsPage>();
-            //SetTitleBar(AppTitleBar);
-            this.Closed += MainWindow_Closed;
-            this.AppWindow.SetIcon("Assets/icon.ico");
+            _navigationService.RegisterPage<SettingsPage>();            
+            this.Closed += MainWindow_Closed;            
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
-            themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
+            themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);            
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             H.NotifyIcon.WindowExtensions.Hide(this, enableEfficiencyMode: false);
@@ -377,6 +378,14 @@ namespace WinUIMusicPlayer
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
             NavigationViewControl_BackRequested(null, null);
+        }
+
+        public void AppTitleBarVisibility(bool isVisible)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                AppTitleBar.Opacity = isVisible? 1.0: 0; 
+            });            
         }
     }
 }

@@ -759,6 +759,7 @@ namespace WinUIMusicPlayer.View
             if (!ViewModel.IsInPlayingDetailMode) {
                 ViewModel.IsInPlayingDetailMode = true;
                 ChangeAcrylicBrushBackgroundOpacity();
+                mainWindow?.AppTitleBarVisibility(false);             
                 if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
@@ -780,6 +781,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.IsInPlayingDetailMode = false;
             ChangeAcrylicBrushBackgroundOpacity();
+            mainWindow?.AppTitleBarVisibility(true);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
             TopPanel.Visibility = Visibility.Visible;

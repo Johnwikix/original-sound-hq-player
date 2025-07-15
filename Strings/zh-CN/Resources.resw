@@ -684,4 +684,7 @@
   <data name="BackgroundCover.Text" xml:space="preserve">
     <value>封面背景</value>
   </data>
+  <data name="AppMainWindow.Title" xml:space="preserve">
+    <value>原音HIFI播放器</value>
+  </data>
 </root>
