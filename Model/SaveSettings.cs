@@ -17,8 +17,7 @@ namespace WinUIMusicPlayer.Model
         public string LrcAPIAuth { get; set; }
         public string AppStyle { get; set; } = "TransparentAcrylic";
         public string AppTheme { get; set; } = "Dark";
-        public bool isCoverCacheEnabled { get; set; } = true;
-        //public int maxCoverPreLoadNum { get; set; } = 100;
+        public bool isCoverCacheEnabled { get; set; } = false;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
         public float dsdGain { get; set; } = 6f;
