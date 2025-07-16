@@ -26,4 +26,5 @@
     <converters:PageTypeStringToVisibleConverter x:Key="PageTypeStringToVisibleConverter" />
     <converters:BoolToBackGroundOpacityConverter x:Key="BoolToBackGroundOpacityConverter" />
     <converters:BoolToThicknessConverter  x:Key="BoolToThicknessConverter" />
+    <converters:BoolToNegationVisibleConverter x:Key="BoolToNegationVisibleConverter" />
 </ResourceDictionary>

@@ -381,11 +381,6 @@
                                     </Grid>
                                 </Grid>
                             </Border>
-                            <!--<Image
-                                x:Name="AlbumCoverImage"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                Stretch="Uniform" />-->
                             <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                                 <Button Margin="5" HorizontalAlignment="Center" Click="GetImageFromNet_Click">
                                     <Button.Content>
