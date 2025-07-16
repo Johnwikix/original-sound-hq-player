@@ -880,11 +880,6 @@ namespace WinUIMusicPlayer.View
             UpdateCurrentPlayList();
         }
 
-        private void VolumePlayingDetailBtn_Click(object sender, RoutedEventArgs e)
-        {
-            VolumeTeachingTipPlayingDetail.IsOpen = true;
-        }
-
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;

@@ -242,7 +242,7 @@
                                         <Border
                                             x:Name="PlayingDetailAlbumCoverImageGrid"
                                             Grid.Row="0"
-                                            Margin="0,5,0,5"
+                                            Margin="0"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             CornerRadius="16">
@@ -514,28 +514,29 @@
                                             VerticalAlignment="Center"
                                             Background="Transparent"
                                             BorderBrush="Transparent"
-                                            BorderThickness="0"
-                                            Click="VolumePlayingDetailBtn_Click">
+                                            BorderThickness="0">
                                             <FontIcon
                                                 x:Name="VolumeSliderIconPlayingDetail"
                                                 Grid.Column="0"
                                                 Margin="0"
                                                 VerticalAlignment="Center"
                                                 Glyph="{Binding ViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                            <Button.Flyout>
+                                                <Flyout x:Name="VolumeFlyout" Placement="Right">
+                                                    <Slider
+                                                        x:Name="VolumeSliderPlayingDetail"
+                                                        Width="100"
+                                                        VerticalAlignment="Center"
+                                                        Maximum="100"
+                                                        Minimum="0"
+                                                        Opacity="0.5"
+                                                        PointerEntered="VolumeSlider_PointerEntered"
+                                                        PointerExited="VolumeSlider_PointerExited"
+                                                        PointerWheelChanged="VolumeSlider_PointerWheelChanged"
+                                                        Value="{Binding ViewModel.Volume, Mode=TwoWay}" />
+                                                </Flyout>
+                                            </Button.Flyout>
                                         </Button>
-                                        <TeachingTip x:Name="VolumeTeachingTipPlayingDetail" IsLightDismissEnabled="True" Target="{x:Bind VolumePlayingDetailBtn}">
-                                            <TeachingTip.Content>
-                                                <Slider
-                                                    x:Name="VolumeSliderPlayingDetail"
-                                                    VerticalAlignment="Center"
-                                                    Maximum="100"
-                                                    Minimum="0"
-                                                    PointerEntered="VolumeSlider_PointerEntered"
-                                                    PointerExited="VolumeSlider_PointerExited"
-                                                    PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                                    Value="{Binding ViewModel.Volume, Mode=TwoWay}" />
-                                            </TeachingTip.Content>
-                                        </TeachingTip>
                                     </Grid>
                                     <Grid
                                         Grid.Row="2"
@@ -672,11 +673,6 @@
                             VerticalAlignment="Center"
                             Orientation="Horizontal"
                             Visibility="Visible">
-                            <StackPanel.Transitions>
-                                <TransitionCollection>
-                                    <EntranceThemeTransition />
-                                </TransitionCollection>
-                            </StackPanel.Transitions>
                             <Button
                                 x:Name="AlbumCoverImageBtn"
                                 Margin="5,0,5,0"
@@ -728,11 +724,6 @@
                                 </Grid>
                             </Button>
                             <Grid Width="Auto" Height="80" MaxWidth="300">
-                                <Grid.Transitions>
-                                    <TransitionCollection>
-                                        <EntranceThemeTransition FromHorizontalOffset="30" FromVerticalOffset="0" />
-                                    </TransitionCollection>
-                                </Grid.Transitions>
                                 <!--  Rest of your grid content remains the same  -->
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
