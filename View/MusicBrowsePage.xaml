@@ -561,7 +561,7 @@
                         <ScrollViewer
                             x:Name="LyricViewer"
                             Grid.Row="1"
-                            Margin="15,20,5,30"
+                            Margin="10,20,20,30"
                             VerticalScrollBarVisibility="Hidden">
                             <StackPanel>
                                 <StackPanel Height="1080" />
