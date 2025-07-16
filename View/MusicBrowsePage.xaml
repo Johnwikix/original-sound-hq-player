@@ -238,40 +238,40 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Viewbox Stretch="Uniform">
-                                    <Border
-                                        x:Name="PlayingDetailAlbumCoverImageGrid"
-                                        Grid.Row="0"
-                                        Width="300"
-                                        Height="300"
-                                        Margin="0,10,0,10"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        CornerRadius="16">
-                                        <Grid>
-                                            <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
-                                            <Grid
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                                Canvas.ZIndex="0"
-                                                Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
-                                                <Viewbox Stretch="Uniform">
-                                                    <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                                        <!--  图标层  -->
-                                                        <FontIcon
-                                                            Width="200"
-                                                            Height="200"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            Canvas.ZIndex="1"
-                                                            FontSize="100"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Glyph="&#xE93C;" />
-                                                    </Border>
-                                                </Viewbox>
+                                    <Grid Width="300" Height="300">
+                                        <Border
+                                            x:Name="PlayingDetailAlbumCoverImageGrid"
+                                            Grid.Row="0"
+                                            Margin="0,5,0,5"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            CornerRadius="16">
+                                            <Grid>
+                                                <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                                                <Grid
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                                    Canvas.ZIndex="0"
+                                                    Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                    <Viewbox Stretch="Uniform">
+                                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                                            <!--  图标层  -->
+                                                            <FontIcon
+                                                                Width="200"
+                                                                Height="200"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Canvas.ZIndex="1"
+                                                                FontSize="100"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Glyph="&#xE93C;" />
+                                                        </Border>
+                                                    </Viewbox>
+                                                </Grid>
                                             </Grid>
-                                        </Grid>
-                                    </Border>
+                                        </Border>
+                                    </Grid>
                                 </Viewbox>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions>
@@ -370,6 +370,7 @@
                                         VerticalAlignment="Center"
                                         Maximum="{Binding ViewModel.ProgressSliderMax, Mode=TwoWay}"
                                         Minimum="0"
+                                        Opacity="0.5"
                                         PointerEntered="ProgressSlider_PointerEntered"
                                         PointerExited="ProgressSlider_PointerExited"
                                         Value="{Binding ViewModel.ProgressSlider, Mode=TwoWay}" />
@@ -559,7 +560,7 @@
                         <ScrollViewer
                             x:Name="LyricViewer"
                             Grid.Row="1"
-                            Margin="15,20,5,10"
+                            Margin="15,20,5,30"
                             VerticalScrollBarVisibility="Hidden">
                             <StackPanel>
                                 <StackPanel Height="1080" />
@@ -645,6 +646,7 @@
                             VerticalAlignment="Center"
                             Maximum="{Binding ViewModel.ProgressSliderMax, Mode=TwoWay}"
                             Minimum="0"
+                            Opacity="0.5"
                             PointerEntered="ProgressSlider_PointerEntered"
                             PointerExited="ProgressSlider_PointerExited"
                             Value="{Binding ViewModel.ProgressSlider, Mode=TwoWay}" />
@@ -1035,6 +1037,7 @@
                                 VerticalAlignment="Center"
                                 Maximum="100"
                                 Minimum="0"
+                                Opacity="0.5"
                                 PointerEntered="VolumeSlider_PointerEntered"
                                 PointerExited="VolumeSlider_PointerExited"
                                 PointerWheelChanged="VolumeSlider_PointerWheelChanged"
