@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Graphics;
 using WinRT.Interop;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -22,10 +23,9 @@ namespace WinUIMusicPlayer.Helper
             //var hwnd = WindowNative.GetWindowHandle(window);
             uint dpi = GetDpiForWindow(hwnd);
             double scaleFactor = dpi / 96.0;
-
+            AppData.AppDpiScale = dpi / 96.0;
             minWidth = (int)(minWidth * scaleFactor);
             minHeight = (int)(minHeight * scaleFactor);
-
             // 创建新的窗口过程
             var newWndProc = new WndProcDelegate((hwnd, msg, wParam, lParam) =>
                 WndProc(hwnd, msg, wParam, lParam));
