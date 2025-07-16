@@ -8,6 +8,10 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
+            if (App.MainWindow.AppWindow.Size.Width <= 1280)
+            {
+                return (bool)value ? 26.0 : 22.0;
+            }
             if (App.MainWindow.AppWindow.Size.Width <= 1920) {
                 return (bool)value ? 28.0 : 22.0;
             }

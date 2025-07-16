@@ -245,7 +245,7 @@
                                             Margin="0"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
-                                            CornerRadius="16">
+                                            CornerRadius="10">
                                             <Grid>
                                                 <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
                                                 <Grid
