@@ -34,13 +34,10 @@ public class CloudMusicSearchHelper
     public static async Task<byte[]> GetSongAlbum(string title,string album,string author)
     {
         try {
-            string keyWords = title + " " + album + " " + author;
+            string keyWords = album + " " + author;
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
-            string albumId = root.GetProperty("result")
-                               .GetProperty("songs")[0]
-                               .GetProperty("album")
-                               .GetProperty("id").ToString();
+            string albumId = SearchForAlbumId(root,album,author);
             string albumcoverUrl = await GetAlbumUrl(albumId);
             return await _api.GetImageBytesFromUrlAsync(albumcoverUrl);
         }
@@ -103,6 +100,36 @@ public class CloudMusicSearchHelper
         }
     }
 
+    private static string SearchForAlbumId(JsonElement root, string album, string artist)
+    {
+        try
+        {
+            JsonElement songsArray = root.GetProperty("result").GetProperty("songs");
+            foreach (JsonElement songElement in songsArray.EnumerateArray())
+            {
+                JsonElement albumElement = songElement.GetProperty("album");
+                string albumName = albumElement.GetProperty("name").GetString();
+                if (string.Equals(albumName, album, StringComparison.OrdinalIgnoreCase))
+                {
+                    JsonElement artistsArray = songElement.GetProperty("artists");
+                    foreach (JsonElement artistElement in artistsArray.EnumerateArray())
+                    {
+                        string artistName = artistElement.GetProperty("name").GetString();
+                        if (string.Equals(artistName, artist, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return albumElement.GetProperty("id").ToString();
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
     private static async Task<string> GetLyricsUrl(string songId)
     {
         if (songId != null)
@@ -121,12 +148,18 @@ public class CloudMusicSearchHelper
 
     public static async Task<string> GetAlbumUrl(string albumId)
     {
-        var api = new NeteaseCloudMusicApi();
-        var (_, albumResult) = await api.RequestAsync(
-            CloudMusicApiProviders.Album,
-            new Dictionary<string, string> { { "id", $"{albumId}" } }
-        );
-        return (string)albumResult["album"]!["picUrl"]!;
+        if (albumId != null) {
+            var api = new NeteaseCloudMusicApi();
+            var (_, albumResult) = await api.RequestAsync(
+                CloudMusicApiProviders.Album,
+                new Dictionary<string, string> { { "id", $"{albumId}" } }
+            );
+            return (string)albumResult["album"]!["picUrl"]!;
+        }
+        else
+        {
+            return null;
+        }        
     }
     
 }
