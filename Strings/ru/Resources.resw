@@ -684,4 +684,7 @@
   <data name="BackgroundCover.Text" xml:space="preserve">
     <value>Фон обложки</value>
   </data>
+  <data name="ReGetLyrics.Text" xml:space="preserve">
+    <value>Повторно получить текст песни</value>
+  </data>
 </root>

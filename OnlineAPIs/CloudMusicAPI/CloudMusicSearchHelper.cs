@@ -37,7 +37,7 @@ public class CloudMusicSearchHelper
             string keyWords = album + " " + author;
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
-            string albumId = SearchForAlbumId(root,album,author);
+            string albumId = root.GetProperty("result").GetProperty("songs")[0].GetProperty("album").GetProperty("id").ToString();
             string albumcoverUrl = await GetAlbumUrl(albumId);
             return await _api.GetImageBytesFromUrlAsync(albumcoverUrl);
         }
@@ -54,8 +54,9 @@ public class CloudMusicSearchHelper
             cancellationToken.ThrowIfCancellationRequested();
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
+            Debug.WriteLine(root.ToString());
             cancellationToken.ThrowIfCancellationRequested();
-            string songId = SearchForSongId(root, title, author);
+            string songId = root.GetProperty("result").GetProperty("songs")[0].GetProperty("id").ToString();
             cancellationToken.ThrowIfCancellationRequested();
             var lyrics = await GetLyricsUrl(songId);
             cancellationToken.ThrowIfCancellationRequested();
@@ -81,15 +82,16 @@ public class CloudMusicSearchHelper
                 string songName = songElement.GetProperty("name").GetString();
                 if (string.Equals(songName, title, StringComparison.OrdinalIgnoreCase))
                 {
-                    JsonElement artistsArray = songElement.GetProperty("artists");
-                    foreach (JsonElement artistElement in artistsArray.EnumerateArray())
-                    {
-                        string artistName = artistElement.GetProperty("name").GetString();
-                        if (string.Equals(artistName, artist, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return songElement.GetProperty("id").ToString();
-                        }
-                    }
+                    //JsonElement artistsArray = songElement.GetProperty("artists");
+                    //foreach (JsonElement artistElement in artistsArray.EnumerateArray())
+                    //{
+                    //    string artistName = artistElement.GetProperty("name").GetString();
+                    //    if (string.Equals(artistName, artist, StringComparison.OrdinalIgnoreCase))
+                    //    {
+                    //        return songElement.GetProperty("id").ToString();
+                    //    }
+                    //}
+                    return songElement.GetProperty("id").ToString();
                 }
             }
             return null;
@@ -139,7 +141,13 @@ public class CloudMusicSearchHelper
                  CloudMusicApiProviders.Lyric,
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
-            return (string)lyricResult["lrc"]!["lyric"]!;
+            string lyrics = string.Empty;
+            if (AppData.systemLanguage == "zh") {
+                lyrics = (string)lyricResult["lrc"]!["lyric"]! + (string)lyricResult["tlyric"]!["lyric"]!;
+            } else { 
+                lyrics = (string)lyricResult["lrc"]!["lyric"]!;
+            }
+            return lyrics;
         }
         else { 
             return null;

@@ -684,4 +684,7 @@
   <data name="BackgroundCover.Text" xml:space="preserve">
     <value>Cover Background</value>
   </data>
+  <data name="ReGetLyrics.Text" xml:space="preserve">
+    <value>Retrieve lyrics</value>
+  </data>
 </root>

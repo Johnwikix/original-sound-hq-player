@@ -28,9 +28,11 @@ using Windows.Media.Devices;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.WebService;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
 using Window = Microsoft.UI.Xaml.Window;
 
@@ -976,6 +978,20 @@ namespace WinUIMusicPlayer.Utils
                 }
             });
         }
-        
+
+        public static async Task<string> GetLyricsFromNet(Music musicDetail)
+        {
+            string lyrics = string.Empty;
+            if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+            {
+                lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }
+            else
+            {
+                lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }
+            return lyrics;
+        }
+
     }
 }

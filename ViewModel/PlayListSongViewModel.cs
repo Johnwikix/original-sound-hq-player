@@ -440,5 +440,32 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
+
+        public async void ReGetLyrics_Click(List<Music> uniqueSelectedMusics)
+        {
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            {
+                foreach (Music item in uniqueSelectedMusics)
+                {
+                    string lyrics = await ToolUtils.GetLyricsFromNet(item);
+                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).FirstOrDefault();
+                    if (music != null)
+                    {
+                        music.Lyrics = lyrics;
+                        await MusicDatabaseService.UpdateMusicInfo(music);
+                    }
+                }
+            }
+            else
+            {
+                string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
+                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
+                if (music != null)
+                {
+                    music.Lyrics = lyrics;
+                    await MusicDatabaseService.UpdateMusicInfo(music);
+                }
+            }
+        }
     }
 }

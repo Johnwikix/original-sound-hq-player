@@ -684,4 +684,7 @@
   <data name="BackgroundCover.Text" xml:space="preserve">
     <value>Fondo de la portada</value>
   </data>
+  <data name="ReGetLyrics.Text" xml:space="preserve">
+    <value>Obtener nuevamente la letra de la canción</value>
+  </data>
 </root>

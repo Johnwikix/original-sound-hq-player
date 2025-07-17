@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.View;
@@ -84,22 +85,27 @@ namespace WinUIMusicPlayer
             if (systemLanguages[0].StartsWith("zh"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "zh-CN";
+                AppData.systemLanguage = "zh";
             }
             else if (systemLanguages[0].StartsWith("es"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
+                AppData.systemLanguage = "es";
             }
             else if (systemLanguages[0].StartsWith("ja"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
+                AppData.systemLanguage = "ja";
             }
             else if (systemLanguages[0].StartsWith("ru"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
+                AppData.systemLanguage = "ru";
             }
             else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
+                AppData.systemLanguage = "en";
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }

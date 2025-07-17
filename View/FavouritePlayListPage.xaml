@@ -24,6 +24,7 @@
                             <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
                             <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click" />

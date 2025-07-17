@@ -176,14 +176,13 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
-            LrcService lrcService = new LrcService();
             if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
             {
                 albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
             else
             {
-                albumCoverData = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+                albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }            
             if (albumCoverData != null)
             {
@@ -197,16 +196,15 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            LrcService lrcService = new LrcService();
-            string lyrics = string.Empty;
-            if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-            {
-                lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }
-            else
-            {
-                lyrics = await lrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }            
+            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);
+            //if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+            //{
+            //    lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            //}
+            //else
+            //{
+            //    lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            //}            
             if (lyrics != null)
             {
                 LyricsTextBox.Text = lyrics;

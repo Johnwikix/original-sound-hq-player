@@ -10,20 +10,16 @@ namespace WinUIMusicPlayer.WebService
 
     public class LrcService
     {
-        private readonly HttpClient _httpClient;
-        public LrcService()
-        {
-            _httpClient = new HttpClient();
-            if (!string.IsNullOrEmpty(AppSettings.LrcAPIAuth))
-            {
-                _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
-            }
-        }
+        private static HttpClient _httpClient = new HttpClient();
 
-        public async Task<byte[]> GetCoverImageAsync(string title, string album, string artist)
+        public static async Task<byte[]> GetCoverImageAsync(string title, string album, string artist)
         {
             try
             {
+                if (!string.IsNullOrEmpty(AppSettings.LrcAPIAuth))
+                {
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                }
                 var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
@@ -36,10 +32,14 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public async Task<string> GetLyricsAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
+        public static async Task<string> GetLyricsAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!string.IsNullOrEmpty(AppSettings.LrcAPIAuth))
+                {
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                }
                 var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();

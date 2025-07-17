@@ -145,6 +145,11 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.MusicDetail_Click();           
         }        
+        private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
+        {
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
+        }
 
         private List<Music> GetUniqueSelectedItems()
         {
@@ -224,7 +229,7 @@ namespace WinUIMusicPlayer.View
                         addToPlaylistSubItem.Items.Add(menuItem);
                     }
                     //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                    if (menuFlyout.Items.Count > 7)
+                    if (menuFlyout.Items.Count > 8)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
                         if (fifthItem != null)

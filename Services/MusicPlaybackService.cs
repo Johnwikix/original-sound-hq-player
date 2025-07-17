@@ -37,7 +37,6 @@ namespace WinUIMusicPlayer.Services
         public bool isInitializing = true;
         private NotificationService notificationService;
         public List<LyricLine> _lyrics = new List<LyricLine>();
-        private LrcService lrcService = new LrcService();
         private CancellationTokenSource _lyricsCancellationTokenSource;       
         private CustomEqualizer equalizer;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
@@ -111,7 +110,7 @@ namespace WinUIMusicPlayer.Services
                         }
                         else
                         {
-                            autoLyrics = await lrcService.GetLyricsAsync(
+                            autoLyrics = await LrcService.GetLyricsAsync(
                             MusicBrowseViewModel.CurrentPlayingMusic.Title,
                             MusicBrowseViewModel.CurrentPlayingMusic.Album,
                             MusicBrowseViewModel.CurrentPlayingMusic.Author,
@@ -122,7 +121,6 @@ namespace WinUIMusicPlayer.Services
                         {
                             lrcContent = autoLyrics;
                             MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
-                            //AppData.allSongs.FirstOrDefault(m => m.Id == currentPlayingMusic.Id).Lyrics = lrcContent;
                             cancellationToken.ThrowIfCancellationRequested();
                             await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
                             AppData.allSongs.FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id).Lyrics = lrcContent;
