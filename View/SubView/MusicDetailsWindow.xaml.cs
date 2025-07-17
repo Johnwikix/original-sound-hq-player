@@ -15,6 +15,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
@@ -176,7 +177,14 @@ namespace WinUIMusicPlayer.View.SubView
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
             LrcService lrcService = new LrcService();
-            albumCoverData = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+            {
+                albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }
+            else
+            {
+                albumCoverData = await lrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }            
             if (albumCoverData != null)
             {
                 AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
@@ -190,7 +198,15 @@ namespace WinUIMusicPlayer.View.SubView
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
             LrcService lrcService = new LrcService();
-            string lyrics = await lrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            string lyrics = string.Empty;
+            if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+            {
+                lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }
+            else
+            {
+                lyrics = await lrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            }            
             if (lyrics != null)
             {
                 LyricsTextBox.Text = lyrics;

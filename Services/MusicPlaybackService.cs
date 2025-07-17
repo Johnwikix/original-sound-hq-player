@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Provider;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
@@ -99,11 +100,23 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        var autoLyrics = await lrcService.GetLyricsAsync(
+                        var autoLyrics = string.Empty;
+                        if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+                        {
+                            autoLyrics = await CloudMusicSearchHelper.GetSongLyrics(
                             MusicBrowseViewModel.CurrentPlayingMusic.Title,
                             MusicBrowseViewModel.CurrentPlayingMusic.Album,
                             MusicBrowseViewModel.CurrentPlayingMusic.Author,
                             cancellationToken);
+                        }
+                        else
+                        {
+                            autoLyrics = await lrcService.GetLyricsAsync(
+                            MusicBrowseViewModel.CurrentPlayingMusic.Title,
+                            MusicBrowseViewModel.CurrentPlayingMusic.Album,
+                            MusicBrowseViewModel.CurrentPlayingMusic.Author,
+                            cancellationToken);
+                        }
 
                         if (autoLyrics != null)
                         {
