@@ -142,10 +142,16 @@ public class CloudMusicSearchHelper
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
             string lyrics = string.Empty;
+            lyrics = (string)lyricResult["lrc"]!["lyric"]!;
             if (AppData.systemLanguage == "zh") {
-                lyrics = (string)lyricResult["lrc"]!["lyric"]! + (string)lyricResult["tlyric"]!["lyric"]!;
-            } else { 
-                lyrics = (string)lyricResult["lrc"]!["lyric"]!;
+                try
+                {
+                    lyrics += (string)lyricResult["tlyric"]!["lyric"]!;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("No translated lyrics found.");
+                }
             }
             return lyrics;
         }
