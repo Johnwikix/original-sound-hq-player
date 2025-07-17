@@ -8,7 +8,7 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="SennpaiStudio.528762A6196EF"
+    Name="SennpaiStudio.OriginalSoundPlayer"
     Publisher="CN=CF259542-70C0-4852-9523-066A80212473"
     Version="1.0.54.0" />
 
