@@ -33,7 +33,9 @@ namespace WinUIMusicPlayer.ViewModel
             get => _groupedMusicViewSource;
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
-        private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
+        private List<MusicGroup> _groupedByFirstLetter = new List<MusicGroup>();
+
+        private readonly Queue<MusicGroup> _musicGroupPool = new Queue<MusicGroup>();
 
         private string _lastSearchText = "";
 
@@ -49,6 +51,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 IsSourceGrouped = true
             };
+          
             parentPage.refreshPage += RefreshAlbum;
             _contextMenuService = contextMenuService;
             _contextMenuService.playingAlbumMusic += PlayingAlbum;
@@ -121,34 +124,78 @@ namespace WinUIMusicPlayer.ViewModel
 
             _currentSortOrder = sortOrder;
 
+            foreach (var group in _groupedByFirstLetter)
+            {
+                group.Clear();
+                _musicGroupPool.Enqueue(group);
+            }
+            _groupedByFirstLetter.Clear();
+
+            IEnumerable<IGrouping<string, Music>> groupedMusic;
+
             if (sortOrder == "Artist")
             {
-                groupedByFirstLetter = MusicList
-                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
-                .OrderBy(group => group.Key)
-                .Select(group => new MusicGroup(group.Key, group.ToList()))
-                .ToList();
+                groupedMusic = MusicList
+                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+                    .OrderBy(group => group.Key);
             }
-            else {
-                groupedByFirstLetter = MusicList
-                       .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
-                       .OrderBy(group => group.Key)
-                       .Select(group => new MusicGroup(group.Key, group.ToList()))
-                       .ToList();
-            }            
-            GroupedMusicViewSource.Source = groupedByFirstLetter;
+            else
+            {
+                groupedMusic = MusicList
+                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+                    .OrderBy(group => group.Key);
+            }
+
+            // 重用或创建MusicGroup对象
+            foreach (var group in groupedMusic)
+            {
+                MusicGroup musicGroup;
+
+                if (_musicGroupPool.Count > 0)
+                {
+                    // 从对象池获取并重新初始化
+                    musicGroup = _musicGroupPool.Dequeue();
+                    musicGroup.Key = group.Key;
+                    musicGroup.AddRange(group);
+                }
+                else
+                {
+                    // 创建新对象
+                    musicGroup = new MusicGroup(group.Key, group);
+                }
+
+                _groupedByFirstLetter.Add(musicGroup);
+            }
+
+            GroupedMusicViewSource.Source = _groupedByFirstLetter;
+            //if (sortOrder == "Artist")
+            //{
+            //    _groupedByFirstLetter = MusicList
+            //    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+            //    .OrderBy(group => group.Key)
+            //    .Select(group => new MusicGroup(group.Key, group.ToList()))
+            //    .ToList();
+            //}
+            //else {
+            //    _groupedByFirstLetter = MusicList
+            //           .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+            //           .OrderBy(group => group.Key)
+            //           .Select(group => new MusicGroup(group.Key, group.ToList()))
+            //           .ToList();
+            //}            
+            //GroupedMusicViewSource.Source = _groupedByFirstLetter;
         }
         private void LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
             try
             {
-                groupedByFirstLetter = MusicList
+                _groupedByFirstLetter = MusicList
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
                         .OrderBy(group => group.Key)
                         .Select(group => new MusicGroup(group.Key, group.ToList()))
                         .ToList();
-                GroupedMusicViewSource.Source = groupedByFirstLetter;
-                ToolUtils.AlbumPageLoadCoverAsync(groupedByFirstLetter);
+                GroupedMusicViewSource.Source = _groupedByFirstLetter;
+                ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
             }
             catch (Exception ex)
             {
@@ -220,6 +267,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
             e.Handled = true;
+        }
+
+        public void Dispose()
+        {
+            _musicGroupPool.Clear();
+            _groupedByFirstLetter.Clear();
         }
     }
 }

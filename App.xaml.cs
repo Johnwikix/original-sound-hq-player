@@ -40,11 +40,6 @@ namespace WinUIMusicPlayer
             .ConfigureLogging((context, logging) =>
             {
                 logging.ClearProviders();
-                #if DEBUG
-                // 添加调试日志
-                logging.AddConsole();
-                logging.AddDebug();
-                #endif
                 var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
                 if (!Directory.Exists(logDirectory))
                 {
