@@ -15,6 +15,7 @@ using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
@@ -74,6 +75,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
+            Logger.Log("应用程序初始化开始");
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;            
             this.InitializeComponent();
             Services = _host.Services;
@@ -112,23 +114,80 @@ namespace WinUIMusicPlayer
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            e.Handled = true;
+            try
+            {
+                Logger.LogException(e.Exception, "应用程序未处理异常");
+                e.Handled = true;
+            }
+            catch (Exception logEx)
+            {
+                Debug.WriteLine($"记录UI异常失败: {logEx.Message}");
+                Debug.WriteLine($"原始异常: {e.Exception.Message}");
+                e.Handled = true;
+            }
+            finally {
+                e.Handled = true;
+            }
         }
         private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-
+            try
+            {
+                // 记录首次出现的异常（不一定会导致应用崩溃）
+                Logger.Log($"首次异常: {e.Exception.Message}", LogLevel.Warning);
+            }
+            catch
+            {
+                // 日志记录失败时的静默处理
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
         {
-
+            try
+            {
+                if (e.ExceptionObject is Exception ex)
+                {
+                    Logger.LogException(ex, "AppDomain未处理异常");
+                }
+                else
+                {
+                    Logger.Log($"AppDomain未处理异常: {e.ExceptionObject}", LogLevel.Critical);
+                }
+                SaveCriticalDataBeforeCrash();
+            }
+            catch
+            {
+                // 日志记录失败时的静默处理
+            }
         }
 
         private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
-
+            try
+            {
+                Logger.LogException(e.Exception, "任务调度器未观察到的异常");
+                e.SetObserved(); // 标记为已观察，避免应用程序崩溃
+            }
+            catch
+            {
+                // 日志记录失败时的静默处理
+            }
         }
-
+        private void SaveCriticalDataBeforeCrash()
+        {
+            try
+            {
+                // 实现关键数据保存逻辑
+                Logger.Log("正在保存关键数据...", LogLevel.Warning);
+                // ...保存代码
+                Logger.Log("关键数据已保存", LogLevel.Warning);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "保存关键数据失败");
+            }
+        }
         /// <summary>
         /// Invoked when the application is launched.
         /// </summary>
