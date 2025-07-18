@@ -373,8 +373,9 @@ namespace WinUIMusicPlayer.Services
 
         }
 
-        public async void ResumeMusic()
+        public void ResumeMusic()
         {
+            //出错捕获，待测试
             try
             {
                 if (AppSettings.isPlaying)
