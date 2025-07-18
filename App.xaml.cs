@@ -1,12 +1,16 @@
 ﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.VisualBasic.ApplicationServices;
+using Microsoft.VisualBasic.Logging;
+using Serilog;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime;
 using System.Threading.Tasks;
 using testDemo.Taskbar;
@@ -15,7 +19,6 @@ using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
@@ -32,7 +35,37 @@ namespace WinUIMusicPlayer
     {
         public static MainWindow MainWindow { get; private set; }
         public static IServiceProvider Services { get; private set; }
+        private static ILogger<App> _logger;
         private static readonly IHost _host = Host.CreateDefaultBuilder()
+            .ConfigureLogging((context, logging) =>
+            {
+                logging.ClearProviders();
+                #if DEBUG
+                // 添加调试日志
+                logging.AddConsole();
+                logging.AddDebug();
+                #endif
+                var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
+                if (!Directory.Exists(logDirectory))
+                {
+                    Directory.CreateDirectory(logDirectory);
+                }
+                var logFilePath = Path.Combine(logDirectory, "app-.log");
+                Serilog.Log.Logger = new LoggerConfiguration()
+                     .MinimumLevel.Information()
+                     .WriteTo.File(
+                         logFilePath,
+                         rollingInterval: RollingInterval.Day,
+                         retainedFileCountLimit: 30,
+                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                     .CreateLogger();
+                logging.AddSerilog(Serilog.Log.Logger);
+                // 设置日志级别
+                logging.SetMinimumLevel(LogLevel.Information);
+                logging.AddFilter("Microsoft", LogLevel.Warning);
+                logging.AddFilter("System", LogLevel.Warning);
+                logging.AddFilter("WinUIMusicPlayer", LogLevel.Information);
+            })
              .ConfigureServices((context, services) =>
              {
                  services.AddSingleton<DatabaseInitializerService>();
@@ -75,14 +108,15 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            Logger.Log("应用程序初始化开始");
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;            
             this.InitializeComponent();
             Services = _host.Services;
+            _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+            _logger.LogInformation("应用程序初始化开始");
             var systemLanguages = GlobalizationPreferences.Languages;
             if (systemLanguages[0].StartsWith("zh"))
             {
@@ -114,80 +148,32 @@ namespace WinUIMusicPlayer
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            try
-            {
-                Logger.LogException(e.Exception, "应用程序未处理异常");
-                e.Handled = true;
-            }
-            catch (Exception logEx)
-            {
-                Debug.WriteLine($"记录UI异常失败: {logEx.Message}");
-                Debug.WriteLine($"原始异常: {e.Exception.Message}");
-                e.Handled = true;
-            }
-            finally {
-                e.Handled = true;
-            }
+            _logger.LogError(e.Exception, "应用程序未处理异常: {Message}", e.Exception.Message);
+            e.Handled = true;
         }
         private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            try
-            {
-                // 记录首次出现的异常（不一定会导致应用崩溃）
-                Logger.Log($"首次异常: {e.Exception.Message}", LogLevel.Warning);
-            }
-            catch
-            {
-                // 日志记录失败时的静默处理
-            }
+            _logger.LogWarning(e.Exception, "首次机会异常: {Message}", e.Exception.Message);
         }
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
         {
-            try
+            if (e.ExceptionObject is Exception exception)
             {
-                if (e.ExceptionObject is Exception ex)
-                {
-                    Logger.LogException(ex, "AppDomain未处理异常");
-                }
-                else
-                {
-                    Logger.Log($"AppDomain未处理异常: {e.ExceptionObject}", LogLevel.Critical);
-                }
-                SaveCriticalDataBeforeCrash();
+                _logger.LogCritical(exception, "应用程序域未处理异常: {Message}", exception.Message);
             }
-            catch
+            else
             {
-                // 日志记录失败时的静默处理
+                _logger.LogCritical("应用程序域未处理异常: {ExceptionObject}", e.ExceptionObject);
             }
         }
 
         private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
-            try
-            {
-                Logger.LogException(e.Exception, "任务调度器未观察到的异常");
-                e.SetObserved(); // 标记为已观察，避免应用程序崩溃
-            }
-            catch
-            {
-                // 日志记录失败时的静默处理
-            }
+            _logger.LogError(e.Exception, "任务调度器未观察到的异常: {Message}", e.Exception.Message);
+            e.SetObserved();
         }
-        private void SaveCriticalDataBeforeCrash()
-        {
-            try
-            {
-                // 实现关键数据保存逻辑
-                Logger.Log("正在保存关键数据...", LogLevel.Warning);
-                // ...保存代码
-                Logger.Log("关键数据已保存", LogLevel.Warning);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(ex, "保存关键数据失败");
-            }
-        }
+
         /// <summary>
         /// Invoked when the application is launched.
         /// </summary>
@@ -221,11 +207,11 @@ namespace WinUIMusicPlayer
             try
             {
                 await _host.StopAsync();
-                Debug.WriteLine("桌面应用已退出");
+                _logger?.LogInformation("应用程序退出完成");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"退出应用时出错: {ex.Message}");
+                _logger?.LogError(ex, "退出应用时出错: {Message}", ex.Message);
             }
         }
     }
