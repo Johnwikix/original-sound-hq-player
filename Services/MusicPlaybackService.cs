@@ -375,37 +375,44 @@ namespace WinUIMusicPlayer.Services
 
         public async void ResumeMusic()
         {
-            if (AppSettings.isPlaying)
+            try
             {
-                if (waveChannel != null && equalizer != null)
+                if (AppSettings.isPlaying)
                 {
-                    isEnableEq = true;
-                    SelectOutputDevice();
-                    waveOut.Init(equalizer);
-                    waveOut.Play();
+                    if (waveChannel != null && equalizer != null)
+                    {
+                        isEnableEq = true;
+                        SelectOutputDevice();
+                        waveOut.Init(equalizer);
+                        waveOut.Play();
 
+                    }
+                    else if (waveChannel != null)
+                    {
+                        isEnableEq = false;
+                        SelectOutputDevice();
+                        waveOut.Init(waveChannel);
+                        waveOut.Play();
+                    }
+                    AppSettings.isPlaying = true;
+                    MusicBrowseViewModel.IsPlaying = true;
+                    progressTimer.Start();
                 }
-                else if (waveChannel != null)
+                else
                 {
-                    isEnableEq = false;
-                    SelectOutputDevice();
-                    waveOut.Init(waveChannel);
-                    waveOut.Play();
+                    var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
+                    if (waveOut != null)
+                    {
+                        waveOut.Stop();
+                        waveOut.Dispose();
+                        waveOut = null;
+                        InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
+                    }
                 }
-                AppSettings.isPlaying = true;
-                MusicBrowseViewModel.IsPlaying = true;
-                progressTimer.Start();
             }
-            else {
-                var currentPos = waveChannel?.CurrentTime ?? TimeSpan.Zero;
-                if (waveOut != null)
-                {
-                    waveOut.Stop();
-                    waveOut.Dispose();
-                    waveOut = null;
-                    InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
-                }                               
-            }            
+            catch (Exception ex) {
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+            }
         }
 
         public void OutputDeviceChange()
