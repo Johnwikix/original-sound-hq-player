@@ -189,12 +189,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                _groupedByFirstLetter = MusicList
-                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
-                        .OrderBy(group => group.Key)
-                        .Select(group => new MusicGroup(group.Key, group.ToList()))
-                        .ToList();
-                GroupedMusicViewSource.Source = _groupedByFirstLetter;
+                //_groupedByFirstLetter = MusicList
+                //        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+                //        .OrderBy(group => group.Key)
+                //        .Select(group => new MusicGroup(group.Key, group.ToList()))
+                //        .ToList();
+                //GroupedMusicViewSource.Source = _groupedByFirstLetter;
+                SortMusicList();
                 ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
             }
             catch (Exception ex)
