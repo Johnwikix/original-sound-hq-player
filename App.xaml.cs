@@ -50,7 +50,7 @@ namespace WinUIMusicPlayer
                 {
                     Directory.CreateDirectory(logDirectory);
                 }
-                var logFilePath = Path.Combine(logDirectory, "app-.log");
+                var logFilePath = Path.Combine(logDirectory, "WinUIMusicPlayer-.log");
                 Serilog.Log.Logger = new LoggerConfiguration()
                      .MinimumLevel.Information()
                      .WriteTo.File(
@@ -197,7 +197,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"激活窗口时出错: {ex.Message}");
+                _logger?.LogError(ex, "应用程序启动时出错: {Message}", ex.Message);
             }
         }
 

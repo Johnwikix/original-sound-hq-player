@@ -218,7 +218,7 @@ namespace WinUIMusicPlayer.Services
                     bool found = false;
                     foreach (var lyric in lyrics)
                     {
-                        if (lyric.Time == time)
+                        if (Math.Abs((lyric.Time - time).TotalMilliseconds) <= 100)
                         {
                             lyric.Text += "\n" + text;
                             found = true;
