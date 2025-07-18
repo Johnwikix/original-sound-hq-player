@@ -274,8 +274,8 @@ namespace WinUIMusicPlayer.ViewModel
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
         private DeviceWatcher deviceWatcher;
-        private List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
-        private readonly SemaphoreSlim scanSemaphore = new SemaphoreSlim(1, 1);
+        private List<FileSystemWatcher> watchers = [];
+        private readonly SemaphoreSlim scanSemaphore = new(1, 1);
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;

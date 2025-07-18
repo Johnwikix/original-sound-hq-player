@@ -15,7 +15,7 @@ namespace WinUIMusicPlayer.Model
 
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
 
-        public static List<string> outputDeviceList = new List<string>();
+        public static List<string> outputDeviceList = [];
 
         public static string DeviceName = "Default";
         public static string DefualtEntry { get; set; } = "AddFolder";
@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsProcessAboveNormal { get; set; } = false;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
 
-        public static Dictionary<string, double> equalizer = new Dictionary<string, double>
+        public static Dictionary<string, double> equalizer = new()
         {
             {"32Hz", 0},   // 32Hz 初始增益 0dB
             {"64Hz", 0},   // 64Hz 初始增益 0dB

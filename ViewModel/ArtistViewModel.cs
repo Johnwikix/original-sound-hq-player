@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class ArtistViewModel: ObservableObject
     {
-        private ObservableCollection<Music> _musicList = new ObservableCollection<Music>();
+        private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
             get => _musicList;
@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _groupedMusicViewSource;
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
-        private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
+        private List<MusicGroup> groupedByFirstLetter = [];
         //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;

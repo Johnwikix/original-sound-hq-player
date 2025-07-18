@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 //return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
-                return AppData.allSongs.Where(m => m.Id == musicId).FirstOrDefault();
+                return AppData.allSongs.FirstOrDefault(m => m.Id == musicId);
             }
             catch (SQLiteException ex)
             {
@@ -348,9 +348,6 @@ namespace WinUIMusicPlayer.Services
 
         public static List<Music> FindMusicListByArtist(string artist)
         {
-            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
-            //            where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
-            //            select m;
             var query = from m in AppData.allSongs
                         where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
                         select m;
@@ -359,9 +356,6 @@ namespace WinUIMusicPlayer.Services
 
         public static List<Music> FindMusicListByAlbum(string album)
         {
-            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
-            //            where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
-            //            select m;
             var query = from m in AppData.allSongs
                         where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
                         select m;
@@ -370,9 +364,6 @@ namespace WinUIMusicPlayer.Services
 
         public static List<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
         {
-            //var query = from m in await _dbConnection.Table<Music>().ToListAsync()
-            //            where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
-            //            select m;
             var query = from m in AppData.allSongs
                         where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
                         select m;
@@ -542,11 +533,10 @@ namespace WinUIMusicPlayer.Services
             AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
-        public static async Task<List<Music>> GetMusicListAsync()
+        public static async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
         {
-            var query = _dbConnection.Table<Music>();
-            var musicList = await query.OrderBy(m => m.Title).ToListAsync();
-            Parallel.ForEach(musicList, music =>
+            var musicList = await _dbConnection.Table<Music>().OrderBy(m => m.Title).ToListAsync();
+            foreach(Music music in musicList)
             {
                 if (music.Album == "未知专辑"
                     || music.Album == "Unknown Album"
@@ -564,7 +554,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     music.Author = ToolUtils.GetString("UnknownArtist");
                 }
-            });
+            }
             return musicList;
         }
 
@@ -1158,92 +1148,6 @@ namespace WinUIMusicPlayer.Services
                     });
                 }
             }
-
-            //// 获取StorageFolder对象
-            //var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-            //List<StorageFile> files = null;
-            //List<Music> musicFilesInFolder = null;
-            //if (isSingleFolder)
-            //{
-            //    var currentFiles = await folder.GetFilesAsync();
-            //    files = new List<StorageFile>();
-            //    files.AddRange(currentFiles);
-            //    musicFilesInFolder = AppData.allSongs
-            //        .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
-            //}
-            //else
-            //{
-            //    files = await GetAllFilesInFolderAndSubfolders(folder);
-            //    musicFilesInFolder = await _dbConnection.Table<Music>()
-            //       .Where(m => m.FolderPath.Contains(folderPath))
-            //       .ToListAsync();
-            //}
-            //HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            //// 遍历 IReadOnlyList<StorageFile>，将文件路径添加到 HashSet 中
-            //foreach (var file in files)
-            //{
-            //    try
-            //    {
-            //        if (ToolUtils.IsMusicFile(file.FileType))
-            //        {
-            //            filePaths.Add(file.Path);
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
-            //    }
-            //}
-
-            //// 存储需要删除的 Music 项
-            //var toDelete = new List<Music>();
-
-            //// 检查 Music 列表中的项
-            //foreach (var newMusic in musicFilesInFolder)
-            //{
-            //    if (!filePaths.Contains(newMusic.Path))
-            //    {
-            //        toDelete.Add(newMusic);
-            //    }
-            //    else
-            //    {
-            //        await updateMusic(newMusic, folder.Path);
-            //        filePaths.Remove(newMusic.Path);
-            //    }
-            //}
-
-            //// 执行删除操作
-            //foreach (var music in toDelete)
-            //{
-            //    await _dbConnection.DeleteAsync(music);
-            //    musicFilesInFolder.Remove(music);
-            //}
-
-            //// 执行添加操作
-            //foreach (var path in filePaths)
-            //{
-            //    var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
-            //    if (existingMusic != null)
-            //    {
-            //        continue;
-            //    }
-            //    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-            //    Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-            //    await _dbConnection.InsertAsync(music);
-            //}
-            //// 更新UI和主窗口的音乐列表
-            //if (isUpdate)
-            //{
-            //    var mainWindow = (App.MainWindow as MainWindow);
-            //    if (mainWindow != null)
-            //    {
-            //        mainWindow.DispatcherQueue.TryEnqueue(() =>
-            //        {
-            //            mainWindow.UpdateMusicList();
-            //        });
-            //    }
-            //}
-
 
             Debug.WriteLine($"重新扫描文件夹耗时: {(DateTime.Now - startTime).TotalSeconds}秒");
         }

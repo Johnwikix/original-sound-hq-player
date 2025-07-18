@@ -14,7 +14,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class PlayListViewModel : ObservableObject
     {
-        private ObservableCollection<PlayList> _playLists = new ObservableCollection<PlayList>();
+        private ObservableCollection<PlayList> _playLists = [];
         public ObservableCollection<PlayList> PlayLists
         {
             get => _playLists;

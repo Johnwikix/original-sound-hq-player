@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SongCollectionViewModel : ObservableObject
     {
-        private ObservableCollection<Music> _musicList = new ObservableCollection<Music>();
+        private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
             get => _musicList;
@@ -95,8 +95,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _parentPage = parent;           
             _parentPage.refreshSong += RefreshSong;
-            //_parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
-            //_parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
             _converterService = converterService;
             _musicPlaybackService = musicPlaybackService;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
@@ -110,7 +108,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage.DisableBackButton();
-            //ClearUsbDeviceMusicList(null, null);
             RefreshUsbDeviceMusicList(null, null);            
             RefreshPage();
         }
@@ -235,8 +232,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SortMusicList(string sortOrder, string type)
         {
-            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            //List<Music> musics = new List<Music>();            
+            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;           
 
             if (MusicList.Count > 0)
             {
@@ -248,16 +244,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
-                //    return;
-                //}
                 MusicList.Clear();
                 foreach (var music in musics)
                 {
                     MusicList.Add(music);
                 }
-                //MusicList = musics;
-
                 if (!string.IsNullOrEmpty(type))
                 {
                     SortMusicList("DefaultOrder", type);
@@ -442,17 +433,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {    
                     _progressDialog.RequestedTheme = AppSettings.elementTheme;
                     await _progressDialog.UpdateProgress(progressBarValue);
-                    //_converterService.updateProgress += (sender, progress) =>
-                    //{
-                    //    if (progressBarValue < (int)progress)
-                    //    {
-                    //        progressBarValue = (int)progress;
-                    //    }
-                    //    if (progressBarValue < 100)
-                    //    {
-                    //        _ = _progressDialog.UpdateProgress(progressBarValue);
-                    //    }
-                    //};
                     _progressDialog.XamlRoot = _currentPage.XamlRoot;
                     _ = _progressDialog.ShowAsync();
 
@@ -477,15 +457,9 @@ namespace WinUIMusicPlayer.ViewModel
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
                         }
-                        //int progressBarValue = 0;
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
                         _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                        //_converterService.updateProgress += (sender, progress) =>
-                        //{
-                        //    progressBarValue = (int)progress;
-                        //    _ = _progressDialog.UpdateProgress(progressBarValue);
-                        //};
                         if (progressBarValue < 100)
                         {
                             _progressDialog.XamlRoot = _currentPage.XamlRoot;
@@ -608,10 +582,6 @@ namespace WinUIMusicPlayer.ViewModel
             if (CurrentMusicObject != null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(CurrentMusicObject);
-                //if (albumPage != null)
-                //{
-                //    albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
-                //}
                 albumDetailWindow.Activate();
             }
         }

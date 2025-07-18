@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class FolderViewModel : ObservableObject
     {
-        private ObservableCollection<Music> _musicList = new ObservableCollection<Music>();
+        private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
             get => _musicList;

@@ -21,7 +21,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AlbumViewModel: ObservableObject
     {
-        private ObservableCollection<Music> _musicList = new ObservableCollection<Music>();
+        private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
             get => _musicList;
@@ -33,16 +33,16 @@ namespace WinUIMusicPlayer.ViewModel
             get => _groupedMusicViewSource;
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
-        private List<MusicGroup> _groupedByFirstLetter = new List<MusicGroup>();
+        private List<MusicGroup> _groupedByFirstLetter = [];
 
-        private readonly Queue<MusicGroup> _musicGroupPool = new Queue<MusicGroup>();
+        private readonly Queue<MusicGroup> _musicGroupPool = new();
 
         private string _lastSearchText = "";
 
         private MusicBrowsePage? parentPage;
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
-        private string _currentSortOrder = string.Empty;
+        private string _currentSortOrder = "DefaultOrder";
 
         public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
         {
@@ -117,9 +117,9 @@ namespace WinUIMusicPlayer.ViewModel
             }            
             LoadMoreAlbumsAsync(true);            
         }
-        public void SortMusicList(string sortOrder = "DefaultOrder")
+        public void SortMusicList(string sortOrder = "DefaultOrder",bool isSort = true)
         {
-            if (_currentSortOrder == sortOrder)
+            if (_currentSortOrder == sortOrder && isSort)
                 return;
 
             _currentSortOrder = sortOrder;
@@ -168,34 +168,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
 
             GroupedMusicViewSource.Source = _groupedByFirstLetter;
-            //if (sortOrder == "Artist")
-            //{
-            //    _groupedByFirstLetter = MusicList
-            //    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
-            //    .OrderBy(group => group.Key)
-            //    .Select(group => new MusicGroup(group.Key, group.ToList()))
-            //    .ToList();
-            //}
-            //else {
-            //    _groupedByFirstLetter = MusicList
-            //           .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
-            //           .OrderBy(group => group.Key)
-            //           .Select(group => new MusicGroup(group.Key, group.ToList()))
-            //           .ToList();
-            //}            
-            //GroupedMusicViewSource.Source = _groupedByFirstLetter;
         }
         private void LoadMoreAlbumsAsync(bool isFirstLoad = false)
         {
             try
             {
-                //_groupedByFirstLetter = MusicList
-                //        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
-                //        .OrderBy(group => group.Key)
-                //        .Select(group => new MusicGroup(group.Key, group.ToList()))
-                //        .ToList();
-                //GroupedMusicViewSource.Source = _groupedByFirstLetter;
-                SortMusicList();
+                SortMusicList(_currentSortOrder, false);
                 ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
             }
             catch (Exception ex)

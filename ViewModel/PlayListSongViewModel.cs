@@ -20,7 +20,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class PlayListSongViewModel : ObservableObject
     {
-        private ObservableCollection<Music> _musicList = new ObservableCollection<Music>();
+        private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
             get => _musicList;
@@ -55,8 +55,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _parentPage = parent;          
             _parentPage.refreshPage += RefreshPlayList;
-            //_parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
-            //_parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
             _musicPlaybackService = musicPlaybackService;
             _converterService = converterService;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
@@ -74,7 +72,6 @@ namespace WinUIMusicPlayer.ViewModel
             _parentPage.DisableBackButton();
             PlayListName = _parentPage.currentPlayList.Name;
             InitizeData();
-            //ClearUsbDeviceMusicList(null, null);
             RefreshUsbDeviceMusicList(null, null);            
         }
 
@@ -130,29 +127,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
-            //var usbMusicGroups = AppData.musicOnUsbDevice
-            //                .GroupBy(u => u.Title)
-            //                .ToDictionary(g => g.Key, g => g.ToList());
-
-            //foreach (var music in MusicList)
-            //{
-            //    music.IsExistOnDevice = 0;
-
-            //    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-            //    {
-            //        music.IsExistOnDevice = 1;
-            //        foreach (var usbMusic in matchingItems)
-            //        {
-            //            if (music.Author == usbMusic.Author &&
-            //                music.Album == usbMusic.Album &&
-            //                music.Extension == usbMusic.Extension)
-            //            {
-            //                music.IsExistOnDevice = 2;
-            //                break;
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         private void RefreshPlayList(object? sender, EventArgs e)
