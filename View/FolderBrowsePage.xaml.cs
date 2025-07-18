@@ -44,10 +44,10 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            ViewModel.SortMusicList(sortOrder);
-        }       
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    ViewModel.SortMusicList(sortOrder);
+        //}       
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

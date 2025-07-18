@@ -26,6 +26,7 @@ namespace WinUIMusicPlayer.Services
     {
         private System.Timers.Timer progressTimer;
         public IWavePlayer waveOut;
+        private MultiTypeAudioReader multiTypeAudioReader;
         public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
@@ -628,7 +629,7 @@ namespace WinUIMusicPlayer.Services
                 try
                 {
                     AppSettings.isDsd = false;
-                    var multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
+                    multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
                     waveChannel = new WaveChannel32(multiTypeAudioReader);
                     ChangeWaveChannelTime(currentPos);                   
                 }
@@ -737,6 +738,11 @@ namespace WinUIMusicPlayer.Services
                     waveChannel = null;
                 }
 
+                if (multiTypeAudioReader != null) {
+                    multiTypeAudioReader.Dispose();
+                    multiTypeAudioReader = null;
+                }
+
                 if (equalizer != null)
                 {
                     equalizer = null;
@@ -776,7 +782,13 @@ namespace WinUIMusicPlayer.Services
                 waveChannel = null;
             }
 
-            if(equalizer != null)
+            if (multiTypeAudioReader != null)
+            {
+                multiTypeAudioReader.Dispose();
+                multiTypeAudioReader = null;
+            }
+
+            if (equalizer != null)
             {                
                 equalizer = null;
             }

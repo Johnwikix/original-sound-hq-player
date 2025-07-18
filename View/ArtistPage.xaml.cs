@@ -47,10 +47,10 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            ViewModel.SortMusicList(sortOrder);
-        }      
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    ViewModel.SortMusicList(sortOrder);
+        //}      
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

@@ -255,7 +255,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(music);
         }
 
-        public static List<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
+        public static IEnumerable<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
             var query = from plm in AppData.allPlayListMusics
                         join m in AppData.allSongs on plm.MusicId equals m.Id
@@ -291,7 +291,7 @@ namespace WinUIMusicPlayer.Services
                     m.Author != null && m.Author.ToLower().Contains(search.ToLower())
                 );
             }
-            return query.ToList();
+            return query;
         }
 
         public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
@@ -568,13 +568,13 @@ namespace WinUIMusicPlayer.Services
             return musicList;
         }
 
-        public static List<Music> GetMusicListFromMem(string search)
+        public static IEnumerable<Music> GetMusicListFromMem(string search)
         {
             return AppData.allSongs.Where(m =>
                 m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                 m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
                 m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-            ).OrderBy(m => m.Title).ToList();
+            ).OrderBy(m => m.Title);
         }
 
         public static List<Music> GetMusicListFromMemWithFolderSearchOption(string search)
@@ -601,7 +601,7 @@ namespace WinUIMusicPlayer.Services
             return await query.OrderByDescending(m => m.Order).ToListAsync();
         }
 
-        public static List<Music> GetFavoriteMusicFromMem(string search = null)
+        public static IEnumerable<Music> GetFavoriteMusicFromMem(string search = null)
         {
             var query = AppData.allSongs.Where(m => m.IsFavorite == true);
             if (!string.IsNullOrEmpty(search))
@@ -612,7 +612,7 @@ namespace WinUIMusicPlayer.Services
                     m.Album != null && m.Album.ToLower().Contains(search.ToLower())
                 );
             }
-            return query.OrderByDescending(m => m.Order).ToList();
+            return query.OrderByDescending(m => m.Order);
         }
 
         public static List<Music> GetArtistMusicFromMem(string artist, string search = null)
@@ -650,7 +650,7 @@ namespace WinUIMusicPlayer.Services
             return query.OrderBy(m => m.LastLevelFolderPath).ToList();
         }
 
-        public static List<Music> GetAlbumMusicFromMem(string album, string search = null)
+        public static IEnumerable<Music> GetAlbumMusicFromMem(string album, string search = null)
         {
             var query = AppData.allSongs.AsQueryable();
             if (album != null)
@@ -664,7 +664,7 @@ namespace WinUIMusicPlayer.Services
                     m.Author != null && m.Author.ToLower().Contains(search.ToLower())
                 );
             }
-            return query.OrderBy(m => m.TrackNumber).ToList();
+            return query.OrderBy(m => m.TrackNumber);
         }
 
 

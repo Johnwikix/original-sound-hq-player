@@ -182,11 +182,16 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void LoadMusicAsync(List<Music> musics)
+        public void LoadMusicAsync(IEnumerable<Music> musics)
         {
             try
             {
-                MusicList = new ObservableCollection<Music>(musics);
+                //MusicList = new ObservableCollection<Music>(musics);
+                MusicList.Clear();
+                foreach (var music in musics)
+                {
+                    MusicList.Add(music);
+                }
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
@@ -199,18 +204,10 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder)
         {
             var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            //List<Music> musics = new List<Music>();
-
             if (MusicList.Count > 0)
             {
-                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("playList", order, MusicList));
+                ToolUtils.SortMusicListInPlace("playList", order, MusicList);
             }
-
-            //MusicList.Clear();
-            //foreach (var music in musics)
-            //{
-            //    MusicList.Add(music);
-            //}
         }
 
         public void UpdateMusicListView()

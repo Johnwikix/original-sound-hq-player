@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
         private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
-        private List<Music>? _allMusic;
+        //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
         private FolderBrowsePage? currentPage;
@@ -113,16 +113,16 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //MusicList.Clear();
-                //if (parentPage != null)
-                //{
-                    _allMusic = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
+                MusicList.Clear();
+                var query = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
                         .GroupBy(m => m.LastLevelFolderPath)
                         .Select(g => g.First())
-                        .OrderBy(m => m.LastLevelFolderPath)
-                        .ToList();
-                    LoadMoreFolderAsync(true);
-                //}
+                        .OrderBy(m => m.LastLevelFolderPath);
+                foreach (var music in query)
+                {
+                    MusicList.Add(music);
+                }
+                LoadMoreFolderAsync(true);
             }
             catch (Exception ex)
             {
@@ -134,7 +134,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList = new ObservableCollection<Music>(_allMusic);
+                //MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
                         .OrderBy(group => group.Key)
@@ -148,15 +148,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            if (_allMusic != null && _allMusic.Count > 0)
-            {
-                //MusicList.Clear();
-                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("folderCover", sortOrder, MusicList));
-                //LoadMoreFolderAsync(true);
-            }
-        }
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    if (MusicList != null && MusicList.Count > 0)
+        //    {
+        //        //MusicList.Clear();
+        //        var query = ToolUtils.SortMusicList("folderCover", sortOrder, MusicList);
+        //        MusicList.Clear();
+        //        foreach (var music in query)
+        //        {
+        //            MusicList.Add(music);
+        //        }
+        //        //LoadMoreFolderAsync(true);
+        //    }
+        //}
 
         public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

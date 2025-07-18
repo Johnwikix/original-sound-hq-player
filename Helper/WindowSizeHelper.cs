@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.Helper
             //var hwnd = WindowNative.GetWindowHandle(window);
             uint dpi = GetDpiForWindow(hwnd);
             double scaleFactor = dpi / 96.0;
-            AppData.AppDpiScale = dpi / 96.0;
+            AppData.AppDpiScale = scaleFactor;
             minWidth = (int)(minWidth * scaleFactor);
             minHeight = (int)(minHeight * scaleFactor);
             // 创建新的窗口过程

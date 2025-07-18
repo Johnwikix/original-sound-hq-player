@@ -69,6 +69,36 @@ namespace WinUIMusicPlayer.Utils
             [16000f] = "16kHz"
         };
 
+        private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
+
+        // 预定义的排序策略字典，避免字符串比较
+        private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> SortStrategies =
+            new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
+            {
+                ["A-Z"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
+                ["Artist"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
+                ["Album"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
+                                                  .OrderBy(g => g.Key, StringComparer)
+                                                  .SelectMany(g => g.OrderBy(m => m.TrackNumber))
+            };
+
+        // 预定义的类型默认排序策略
+        private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> TypeDefaultSortStrategies =
+            new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
+            {
+                ["song"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
+                ["folderCover"] = musicList => musicList.OrderBy(m => m.LastLevelFolderPath, StringComparer),
+                ["folder"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
+                                                   .OrderBy(g => g.Key, StringComparer)
+                                                   .SelectMany(g => g.OrderBy(m => m.TrackNumber)),
+                ["artistCover"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
+                ["artist"] = musicList => musicList.OrderBy(m => m.Album, StringComparer),
+                ["albumCover"] = musicList => musicList.OrderBy(m => m.Album, StringComparer),
+                ["album"] = musicList => musicList.OrderBy(m => m.TrackNumber),
+                ["favour"] = musicList => musicList.OrderByDescending(m => m.Order),
+                ["playList"] = musicList => musicList.OrderByDescending(m => m.PlayListOrder)
+            };
+
         public static string GetString(string key)
         {
             try
@@ -123,32 +153,6 @@ namespace WinUIMusicPlayer.Utils
             return parentAsT ?? FindParent<T>(parent);
         }
 
-        //private static async Task<BitmapImage> DefaultAlbumCover(int size = 150)
-        //{
-        //    var tcs = new TaskCompletionSource<BitmapImage>();
-
-        //    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        try
-        //        {
-        //            var uri = new Uri("ms-appx:///Assets/Album.png");
-        //            var bitmapImage = new BitmapImage(uri);
-        //            if (size != 0) {
-        //                bitmapImage.DecodePixelWidth = size;
-        //                bitmapImage.DecodePixelHeight = size;
-        //            }                    
-        //            tcs.SetResult(bitmapImage);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            tcs.SetException(ex);
-        //        }
-        //    });
-        //    return await tcs.Task;
-        //}
-
-
-
         public static void RefreshIcon(ObservableCollection<Music> musicList, string type = "album")
         {
             foreach (var item in musicList)
@@ -196,7 +200,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<BitmapImage> GetAlbumCover(Music album,int coverSize = 150)
         {
             BitmapImage newCover = album.Cover;
-            List<Music> musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
+            var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
             if (album.Album != "未知专辑")
             {
                 if (musics == null || musics.Count() == 0)
@@ -457,104 +461,167 @@ namespace WinUIMusicPlayer.Utils
             return musicList;
         }
 
-        public static List<Music> SortMusicList(string type, string sortOrder,  ObservableCollection<Music> musicList)
+        //public static IEnumerable<Music> SortMusicList(string type, string sortOrder,  ObservableCollection<Music> musicList)
+        //{
+        //    if (sortOrder == "A-Z")
+        //    {
+        //        return musicList.OrderBy(m => m.Title);
+        //    }
+        //    if (sortOrder == "Artist")
+        //    {
+        //        return musicList.OrderBy(m => m.Author);
+        //    }
+        //    if (sortOrder == "Album")
+        //    {
+        //        return musicList.GroupBy(m => m.Album)
+        //                        .OrderBy(g => g.Key)
+        //                        .SelectMany(g => g.OrderBy(m => m.TrackNumber));
+        //    }
+        //    switch (type)
+        //    {
+        //        case "song":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.Title);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "folderCover":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.LastLevelFolderPath).ToList();
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "folder":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.GroupBy(m => m.Album)
+        //                                    .OrderBy(g => g.Key)
+        //                                    .SelectMany(g => g.OrderBy(m => m.TrackNumber));
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "artistCover":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.Author);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "artist":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.Album);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "albumCover":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.Album);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "album":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderBy(m => m.TrackNumber);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "favour":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderByDescending(m => m.Order);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        case "playList":
+        //            switch (sortOrder)
+        //            {
+        //                case "DefaultOrder":
+        //                    return musicList.OrderByDescending(m => m.PlayListOrder);
+        //                default:
+        //                    return musicList;
+        //            }
+        //        default:
+        //            return musicList;
+        //    }
+        //}
+
+        
+
+        public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
         {
-            if (sortOrder == "A-Z")
+            if (musicList == null) return Enumerable.Empty<Music>();
+
+            // 如果没有数据，直接返回空集合，避免不必要的计算
+            if (!musicList.Any()) return musicList;
+
+            // 优先检查通用排序策略
+            if (!string.IsNullOrEmpty(sortOrder) && SortStrategies.TryGetValue(sortOrder, out var sortFunc))
             {
-                return musicList.OrderBy(m => m.Title).ToList();
+                return sortFunc(musicList);
             }
-            if (sortOrder == "Artist")
+
+            // 检查类型默认排序，只有当sortOrder为DefaultOrder或空时才使用
+            if ((string.IsNullOrEmpty(sortOrder) || sortOrder == "DefaultOrder") &&
+                !string.IsNullOrEmpty(type) &&
+                TypeDefaultSortStrategies.TryGetValue(type, out var typeFunc))
             {
-                return musicList.OrderBy(m => m.Author).ToList();
+                return typeFunc(musicList);
             }
-            if (sortOrder == "Album")
+
+            // 如果没有匹配的排序策略，返回原列表
+            return musicList;
+        }
+
+        /// <summary>
+        /// 就地排序ObservableCollection，避免创建新对象
+        /// </summary>
+        /// <param name="type">排序类型</param>
+        /// <param name="sortOrder">排序方式</param>
+        /// <param name="musicList">要排序的ObservableCollection</param>
+        public static void SortMusicListInPlace(string type, string sortOrder, ObservableCollection<Music> musicList)
+        {
+            if (musicList == null || musicList.Count <= 1) return;
+
+            var sortedList = SortMusicList(type, sortOrder, musicList).ToList();
+
+            // 只有当排序结果与原列表不同时才进行更新
+            if (!AreListsEqual(musicList, sortedList))
             {
-                return musicList.GroupBy(m => m.Album)
-                                .OrderBy(g => g.Key)
-                                .SelectMany(g => g.OrderBy(m => m.TrackNumber))
-                                .ToList();
+                musicList.Clear();
+                foreach (var music in sortedList)
+                {
+                    musicList.Add(music);
+                }
             }
-            switch (type)
+        }
+
+        /// <summary>
+        /// 比较两个列表是否相等（顺序相同）
+        /// </summary>
+        private static bool AreListsEqual(IList<Music> list1, IList<Music> list2)
+        {
+            if (list1.Count != list2.Count) return false;
+
+            for (int i = 0; i < list1.Count; i++)
             {
-                case "song":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.Title).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "folderCover":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.LastLevelFolderPath).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "folder":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.GroupBy(m => m.Album)
-                                            .OrderBy(g => g.Key)
-                                            .SelectMany(g => g.OrderBy(m => m.TrackNumber))
-                                            .ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "artistCover":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.Author).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "artist":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.Album).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "albumCover":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.Album).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "album":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderBy(m => m.TrackNumber).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "favour":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderByDescending(m => m.Order).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                case "playList":
-                    switch (sortOrder)
-                    {
-                        case "DefaultOrder":
-                            return musicList.OrderByDescending(m => m.PlayListOrder).ToList();
-                        default:
-                            return musicList.ToList();
-                    }
-                default:
-                    return musicList.ToList();
+                if (!ReferenceEquals(list1[i], list2[i]))
+                    return false;
             }
-        }       
+            return true;
+        }
 
         public static AudioFileInfo GetAudioFileInfo(string filePath)
         {

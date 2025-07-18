@@ -128,11 +128,16 @@ namespace WinUIMusicPlayer.ViewModel
             LoadMusicAsync(musicList);
         }
 
-        public void LoadMusicAsync(List<Music> musics)
+        public void LoadMusicAsync(IEnumerable<Music> musics)
         {
             try
             {
-                MusicList = new ObservableCollection<Music>(musics);
+                //MusicList = new ObservableCollection<Music>(musics);
+                MusicList.Clear();
+                foreach (var music in musics)
+                {
+                    MusicList.Add(music);
+                }
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
@@ -211,48 +216,14 @@ namespace WinUIMusicPlayer.ViewModel
         public void RefreshUsbDeviceMusicList()
         {
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
-            //var usbMusicGroups = AppData.musicOnUsbDevice
-            //                .GroupBy(u => u.Title)
-            //                .ToDictionary(g => g.Key, g => g.ToList());
-            //foreach (var music in MusicList)
-            //{
-            //    music.IsExistOnDevice = 0;
-
-            //    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-            //    {
-            //        music.IsExistOnDevice = 1;
-            //        foreach (var usbMusic in matchingItems)
-            //        {
-            //            if (music.Author == usbMusic.Author &&
-            //                music.Album == usbMusic.Album &&
-            //                music.Extension == usbMusic.Extension)
-            //            {
-            //                music.IsExistOnDevice = 2;
-            //                break;
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         public void SortMusicList(string sortOrder)
         {
-            var order = "DefaultOrder";
-            //List<Music> musics = new List<Music>();
-            if (!string.IsNullOrEmpty(sortOrder))
-            {
-                order = sortOrder;
+            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
+            if (MusicList.Count > 0) {
+                ToolUtils.SortMusicListInPlace("favour", order, MusicList);
             }
-            MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("favour", order, MusicList));
-            //if (MusicList.Count > 0)
-            //{
-            //    ToolUtils.SortMusicList("favour", order, MusicList);
-            //}
-            //MusicList.Clear();
-            //foreach (Music music in musics)
-            //{
-            //    MusicList.Add(music);
-            //}
         }
 
         public void AddMusicToTop(Music newMusic)

@@ -640,22 +640,22 @@ namespace WinUIMusicPlayer.View
                             page.SortMusicList(AppData.sortOrder);
                         }
                     }
-                    if (ContentFrame.Content is ArtistPage)
-                    {
-                        var page = ContentFrame.Content as ArtistPage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
-                    }
-                    if (ContentFrame.Content is FolderBrowsePage)
-                    {
-                        var page = ContentFrame.Content as FolderBrowsePage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
-                    }
+                    //if (ContentFrame.Content is ArtistPage)
+                    //{
+                    //    var page = ContentFrame.Content as ArtistPage;
+                    //    if (page != null)
+                    //    {
+                    //        page.SortMusicList(AppData.sortOrder);
+                    //    }
+                    //}
+                    //if (ContentFrame.Content is FolderBrowsePage)
+                    //{
+                    //    var page = ContentFrame.Content as FolderBrowsePage;
+                    //    if (page != null)
+                    //    {
+                    //        page.SortMusicList(AppData.sortOrder);
+                    //    }
+                    //}
                     if (ContentFrame.Content is PlayListSongPage)
                     {
                         var page = ContentFrame.Content as PlayListSongPage;
@@ -819,7 +819,7 @@ namespace WinUIMusicPlayer.View
         private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var textblock = (TextBlock)sender;
-            if (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 36 || textblock.FontSize == 40)
+            if (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 34 || textblock.FontSize == 36 || textblock.FontSize == 40)
             {
                 var currentScrollPosition = LyricViewer.VerticalOffset;
                 var point = new Point(0, currentScrollPosition);
@@ -829,7 +829,7 @@ namespace WinUIMusicPlayer.View
 
                 LyricViewer.ChangeView(
                     null,
-                    targetPosition.Y - LyricViewer.ActualHeight / 2,
+                    (targetPosition.Y - LyricViewer.ActualHeight / 2) + 30,
                     null,
                     disableAnimation: false
                 );

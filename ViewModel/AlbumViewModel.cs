@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage? parentPage;
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
+        private string _currentSortOrder = string.Empty;
 
         public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
         {
@@ -49,16 +50,6 @@ namespace WinUIMusicPlayer.ViewModel
                 IsSourceGrouped = true
             };
             parentPage.refreshPage += RefreshAlbum;
-            //parentPage.refreshUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
-            //parentPage.clearUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
             _contextMenuService = contextMenuService;
             _contextMenuService.playingAlbumMusic += PlayingAlbum;
             _contextMenuService.showTransmission += (s, e) =>
@@ -112,11 +103,24 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void InitializeData()
         {
-            MusicList = new ObservableCollection<Music>(MusicDatabaseService.GetMusicListFromMem(AppData.searchText).GroupBy(m => m.Album).Select(g => g.First()).OrderBy(m => m.Album).ToList());
+            MusicList.Clear();
+            var query = MusicDatabaseService.GetMusicListFromMem(AppData.searchText)
+                .GroupBy(m => m.Album)
+                .Select(g => g.First())
+                .OrderBy(m => m.Album);
+            foreach (var music in query)
+            {
+                MusicList.Add(music);               
+            }            
             LoadMoreAlbumsAsync(true);            
         }
         public void SortMusicList(string sortOrder = "DefaultOrder")
         {
+            if (_currentSortOrder == sortOrder)
+                return;
+
+            _currentSortOrder = sortOrder;
+
             if (sortOrder == "Artist")
             {
                 groupedByFirstLetter = MusicList

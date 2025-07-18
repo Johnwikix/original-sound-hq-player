@@ -152,29 +152,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
-            //var usbMusicGroups = AppData.musicOnUsbDevice
-            //                .GroupBy(u => u.Title)
-            //                .ToDictionary(g => g.Key, g => g.ToList());
-
-            //foreach (var music in MusicList)
-            //{
-            //    music.IsExistOnDevice = 0;
-
-            //    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-            //    {
-            //        music.IsExistOnDevice = 1;
-            //        foreach (var usbMusic in matchingItems)
-            //        {
-            //            if (music.Author == usbMusic.Author &&
-            //                music.Album == usbMusic.Album &&
-            //                music.Extension == usbMusic.Extension)
-            //            {
-            //                music.IsExistOnDevice = 2;
-            //                break;
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         private void RefreshSong(object? sender, EventArgs e)
@@ -210,8 +187,7 @@ namespace WinUIMusicPlayer.ViewModel
                             }
                         }
                     });
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(
-                        MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null));
+                    var musics = MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
                     FirstTitle = CurrentMusicObject.Album;
                     SecondTitle = string.Join(" · ", AppData.allSongs
                         .Where(music => music.Album == CurrentMusicObject.Album)
@@ -224,8 +200,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     IsAlbumImageVisible = Visibility.Collapsed;
                     CurrentMusicObject = _parentPage.CurrentArtist;
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(
-                        MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null));
+                    var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs
                         .Where(music => music.Author == CurrentMusicObject.Author)
@@ -240,8 +215,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     IsAlbumImageVisible = Visibility.Collapsed;
                     CurrentMusicObject = _parentPage.CurrentFolder;
-                    ObservableCollection<Music> musics = new ObservableCollection<Music>(
-                        MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText));
+                    var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs
                         .Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
@@ -266,23 +240,23 @@ namespace WinUIMusicPlayer.ViewModel
 
             if (MusicList.Count > 0)
             {
-                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList(type, order, MusicList));
+                ToolUtils.SortMusicListInPlace(type, order, MusicList);
             }
         }
 
-        public void LoadMusicAsync(ObservableCollection<Music> musics, string type = null)
+        public void LoadMusicAsync(IEnumerable<Music> musics, string type = null)
         {
             try
             {
                 //if((type== "album" || type== "artist") && CompareMusicCollections(MusicList, musics)){
                 //    return;
                 //}
-                //MusicList.Clear();
-                //foreach (var music in musics)
-                //{
-                //    MusicList.Add(music);
-                //}
-                MusicList = musics;
+                MusicList.Clear();
+                foreach (var music in musics)
+                {
+                    MusicList.Add(music);
+                }
+                //MusicList = musics;
 
                 if (!string.IsNullOrEmpty(type))
                 {

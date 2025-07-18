@@ -165,36 +165,30 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SortMusicList(string sortOrder)
         {
-            var order = "DefaultOrder";
-            //ObservableCollection<Music> musics = new ObservableCollection<Music>();
-
-            if (!string.IsNullOrEmpty(sortOrder))
-            {
-                order = sortOrder;
-            }
+            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
 
             if (MusicList.Count > 0)
             {
-                MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("song", order, MusicList));
+                ToolUtils.SortMusicListInPlace("song", order, MusicList);
             }
         }
 
         private void InitializeDatabase()
         {
-            ObservableCollection<Music> musics = new ObservableCollection<Music>(MusicDatabaseService.GetMusicListFromMem(AppData.searchText));
-            LoadMusicAsync(musics);
+            var query = MusicDatabaseService.GetMusicListFromMem(AppData.searchText);
+            LoadMusicAsync(query);
         }
 
-        public void LoadMusicAsync(ObservableCollection<Music> musics)
+        public void LoadMusicAsync(IEnumerable<Music> musics)
         {
             try
             {
-                //MusicList.Clear();
-                //foreach (var music in musics)
-                //{
-                //    MusicList.Add(music);
-                //}
-                MusicList = musics;
+                MusicList.Clear();
+                foreach (var music in musics)
+                {
+                    MusicList.Add(music);
+                }
+                //MusicList = musics;
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
@@ -273,20 +267,8 @@ namespace WinUIMusicPlayer.ViewModel
                 isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-                    //int progressBarValue = 0;
                     _progressDialog.RequestedTheme = AppSettings.elementTheme;
                     await _progressDialog.UpdateProgress(progressBarValue);
-                    //_converterService.updateProgress += (sender, progress) =>
-                    //{
-                    //    if (progressBarValue < (int)progress)
-                    //    {
-                    //        progressBarValue = (int)progress;
-                    //    }
-                    //    if (progressBarValue < 100)
-                    //    {
-                    //        _ = _progressDialog.UpdateProgress(progressBarValue);
-                    //    }
-                    //};
                     _progressDialog.XamlRoot = currentPage.XamlRoot;
                     _ = _progressDialog.ShowAsync();
 
@@ -312,15 +294,9 @@ namespace WinUIMusicPlayer.ViewModel
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
                         }
-                        //int progressBarValue = 0;
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
                         _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                        //_converterService.updateProgress += (sender, progress) =>
-                        //{
-                        //    progressBarValue = (int)progress;
-                        //    _ = _progressDialog.UpdateProgress(progressBarValue);
-                        //};
                         if (progressBarValue < 100)
                         {
                             _progressDialog.XamlRoot = currentPage.XamlRoot;

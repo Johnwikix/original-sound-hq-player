@@ -58,7 +58,6 @@
                                             <Image
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                CacheMode="BitmapCache"
                                                 Canvas.ZIndex="1"
                                                 Source="{Binding Cover}"
                                                 Stretch="UniformToFill" />

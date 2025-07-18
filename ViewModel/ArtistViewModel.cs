@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
         private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
-        private List<Music>? _allMusic;
+        //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
         private ArtistPage? currentPage;
@@ -109,7 +109,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                _allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
+                //_allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
+                MusicList.Clear();
+                var query = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author);
+                foreach (var music in query)
+                {
+                    MusicList.Add(music);
+                }
                 LoadMoreArtistAsync(true);
             }
             catch (Exception ex)
@@ -122,7 +128,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                MusicList = new ObservableCollection<Music>(_allMusic);
+                //MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
                         .OrderBy(group => group.Key)
@@ -136,15 +142,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            //if (_allMusic.Count > 0)
-            //{
-            //    MusicList.Clear();
-            //MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("artistCover", sortOrder, MusicList));
-                //LoadMoreArtistAsync(true);
-            //}
-        }
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    //if (_allMusic.Count > 0)
+        //    //{
+        //    //    MusicList.Clear();
+        //    //MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("artistCover", sortOrder, MusicList));
+        //        //LoadMoreArtistAsync(true);
+        //    //}
+        //}
 
         public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
