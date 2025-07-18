@@ -687,4 +687,13 @@
   <data name="ReGetLyrics.Text" xml:space="preserve">
     <value>Повторно получить текст песни</value>
   </data>
+  <data name="SettingsAbout.Text" xml:space="preserve">
+    <value>О нас</value>
+  </data>
+  <data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>Компонент третьей стороны</value>
+  </data>
+  <data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>Компонент третьей стороны</value>
+  </data>
 </root>

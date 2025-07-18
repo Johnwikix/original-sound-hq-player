@@ -687,4 +687,13 @@
   <data name="ReGetLyrics.Text" xml:space="preserve">
     <value>Retrieve lyrics</value>
   </data>
+  <data name="SettingsAbout.Text" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>Third Party Components</value>
+  </data>
+  <data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>Third Party Components</value>
+  </data>
 </root>

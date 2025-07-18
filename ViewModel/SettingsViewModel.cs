@@ -362,6 +362,13 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private string _version = string.Empty;
+        public string Version
+        {
+            get => _version;
+            set => SetProperty(ref _version, value);
+        }
+
 
 
         public SettingsViewModel()
@@ -414,6 +421,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             // 初始化背景封面开关
             IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
+            Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             _isInitized = true;
         }
         [RelayCommand]

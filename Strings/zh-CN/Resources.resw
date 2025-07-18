@@ -687,4 +687,13 @@
   <data name="ReGetLyrics.Text" xml:space="preserve">
     <value>重新获取歌词</value>
   </data>
+  <data name="SettingsAbout.Text" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>第三方组件</value>
+  </data>
+  <data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>第三方组件</value>
+  </data>
 </root>

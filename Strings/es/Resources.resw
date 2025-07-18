@@ -687,4 +687,13 @@
   <data name="ReGetLyrics.Text" xml:space="preserve">
     <value>Obtener nuevamente la letra de la canción</value>
   </data>
+  <data name="SettingsAbout.Text" xml:space="preserve">
+    <value>Acerca de</value>
+  </data>
+  <data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>Componentes de terceros</value>
+  </data>
+  <data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>Componentes de terceros</value>
+  </data>
 </root>

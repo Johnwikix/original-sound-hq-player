@@ -39,6 +39,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <TextBlock
                     x:Uid="SettingAudio"
@@ -645,6 +647,62 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.DrillInAnimationTime, Mode=TwoWay}" />
                         </Grid>
+                    </Expander.Content>
+                </Expander>
+                <TextBlock
+                    x:Uid="SettingsAbout"
+                    Grid.Row="12"
+                    Margin="10,10,0,10"
+                    FontSize="16" />
+                <Expander
+                    x:Name="CopyRight"
+                    Grid.Row="13"
+                    Margin="10,0,10,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
+                    <Expander.Header>
+                        <Grid Margin="0,10,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Image
+                                Grid.Column="0"
+                                Width="32"
+                                Height="32"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center"
+                                Source="ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png" />
+                            <StackPanel Grid.Column="1" Orientation="Vertical">
+                                <TextBlock
+                                    x:Uid="AppTitle"
+                                    Margin="2"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <TextBlock
+                                    Margin="2"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="© 2025 Sennpei Studio" />
+                            </StackPanel>
+                            <TextBlock
+                                x:Name="Version"
+                                Grid.Column="3"
+                                Margin="10"
+                                VerticalAlignment="Center"
+                                FontSize="14"
+                                Text="{Binding ViewModel.Version, Mode=OneWay}" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <Button
+                            x:Name="ThirdParty"
+                            x:Uid="ThirdPartyComponents"
+                            Click="ThirdParty_Click"
+                            Style="{StaticResource AccentButtonStyle}" />
                     </Expander.Content>
                 </Expander>
             </Grid>
