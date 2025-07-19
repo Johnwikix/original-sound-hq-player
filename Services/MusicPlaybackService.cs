@@ -331,6 +331,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
+                isManualPlayingNext = true;
                 lock (_waveOutLock)
                 {
                     // 如果当前正在播放，停止播放并重新初始化音频资源
