@@ -96,65 +96,48 @@ namespace WinUIMusicPlayer.Reader
         //     File Name
         private void CreateReaderStream(string fileName)
         {
-            if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
-            {                
-                try
-                {
-                    readerStream = new VorbisWaveReader(fileName);
-                }
-                catch (Exception ex)
-                {
-                    readerStream = new FFmpegAudioReader(fileName);
-                }
-            }
-            else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                try
+                if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                {
+                    readerStream = new WaveFileReader(fileName);
+                    if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                    {
+                        readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                        readerStream = new BlockAlignReductionStream(readerStream);
+                    }
+                }
+                else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
                 {
                     readerStream = new FlacReader(fileName);
                 }
-                catch (Exception ex)
+                else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
                 {
-                    readerStream = new FFmpegAudioReader(fileName);
-                }
-            }
-            else
-            {
-                try
-                {
-                    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                    if (Environment.OSVersion.Version.Major < 6)
                     {
-                        readerStream = new WaveFileReader(fileName);
-                        if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                        {
-                            readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                            readerStream = new BlockAlignReductionStream(readerStream);
-                        }
-                    }
-                    else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (Environment.OSVersion.Version.Major < 6)
-                        {
-                            readerStream = new Mp3FileReader(fileName);
-                        }
-                        else
-                        {
-                            readerStream = new MediaFoundationReader(fileName);
-                        }
-                    }
-                    else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
-                    {
-                        readerStream = new AiffFileReader(fileName);
+                        readerStream = new Mp3FileReader(fileName);
                     }
                     else
                     {
                         readerStream = new MediaFoundationReader(fileName);
                     }
                 }
-                catch (Exception ex)
+                if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                 {
-                    readerStream = new FFmpegAudioReader(fileName);
+                    readerStream = new VorbisWaveReader(fileName);
                 }
+                else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+                {
+                    readerStream = new AiffFileReader(fileName);
+                }
+                else
+                {
+                    readerStream = new MediaFoundationReader(fileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                readerStream = new FFmpegAudioReader(fileName);
             }
         }
 
