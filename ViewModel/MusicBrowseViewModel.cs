@@ -96,9 +96,9 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (!IsUserDraggingProgressSlider)
                         {
-                            if (_musicPlaybackService.waveChannel != null)
+                            if (_musicPlaybackService.multiTypeAudioReader != null)
                             {
-                                double currentPlayPosition = _musicPlaybackService.waveChannel.CurrentTime.TotalSeconds;
+                                double currentPlayPosition = _musicPlaybackService.multiTypeAudioReader.CurrentTime.TotalSeconds;
 
                                 if (Math.Abs(value - currentPlayPosition) > 4.0)
                                 {     
@@ -148,9 +148,9 @@ namespace WinUIMusicPlayer.ViewModel
                             _tempVolume = value;
                         }                        
                         _musicPlaybackService.volume = (float) value / 100;
-                        if (_musicPlaybackService.waveChannel != null)
+                        if (_musicPlaybackService.multiTypeAudioReader != null)
                         {
-                            _musicPlaybackService.waveChannel.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
+                            _musicPlaybackService.multiTypeAudioReader.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
                         }
                     }
                 }

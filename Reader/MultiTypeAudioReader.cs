@@ -122,7 +122,34 @@ namespace WinUIMusicPlayer.Reader
             {
                 try
                 {
-                    readerStream = new AudioFileReader(fileName);
+                    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new WaveFileReader(fileName);
+                        if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                        {
+                            readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                            readerStream = new BlockAlignReductionStream(readerStream);
+                        }
+                    }
+                    else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (Environment.OSVersion.Version.Major < 6)
+                        {
+                            readerStream = new Mp3FileReader(fileName);
+                        }
+                        else
+                        {
+                            readerStream = new MediaFoundationReader(fileName);
+                        }
+                    }
+                    else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new AiffFileReader(fileName);
+                    }
+                    else
+                    {
+                        readerStream = new MediaFoundationReader(fileName);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -740,9 +740,9 @@ namespace WinUIMusicPlayer.View
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.IsUserDraggingProgressSlider = false;
-            if (ViewModel._musicPlaybackService.waveChannel != null)
+            if (ViewModel._musicPlaybackService.multiTypeAudioReader != null)
             {
-                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.waveChannel.TotalTime.TotalSeconds));
+                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.multiTypeAudioReader.TotalTime.TotalSeconds));
                 _=Task.Run(() =>
                 {
                     ViewModel._musicPlaybackService.isManualSelect = true;
