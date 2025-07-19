@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.View
                         menuItem.DataContext = musicItem;
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
-                    addToPlaylistSubItem.Items.Clear();
+                    addToPlaylistSubItem?.Items.Clear();
                     var playlists = await MusicDatabaseService.GetPlayListAsync();
                     foreach (var playlist in playlists)
                     {
@@ -191,9 +191,8 @@ namespace WinUIMusicPlayer.View
                                 Debug.WriteLine($"已添加歌曲 '{musicItem.Title}' 到播放列表: {playlist.Name}");
                             }
                         };
-                        addToPlaylistSubItem.Items.Add(menuItem);
+                        addToPlaylistSubItem?.Items.Add(menuItem);
                     }
-                    //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
                     if (menuFlyout.Items.Count > 8)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
@@ -224,7 +223,6 @@ namespace WinUIMusicPlayer.View
                                 DateTime startTime = DateTime.Now;
                                 if (uniqueSelectedMusics.Count > 1)
                                 {
-                                    Debug.WriteLine($"消耗时间： {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
                                     ViewModel.ShowTransmission();
                                     var usbWriter = new UsbWriterHelper();
                                     usbWriter.hideTransmission += (sender, args) =>
@@ -239,32 +237,35 @@ namespace WinUIMusicPlayer.View
                                         {
                                             continue; // 如果已经存在，则跳过
                                         }
-                                        UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                        usbDeviceMusic.Title = music.Title;
-                                        usbDeviceMusic.Author = music.Author;
-                                        usbDeviceMusic.Album = music.Album;
-                                        usbDeviceMusic.Extension = music.Extension;
-                                        usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+                                        UsbDeviceMusic usbDeviceMusic = new()
+                                        {
+                                            Title = music.Title,
+                                            Author = music.Author,
+                                            Album = music.Album,
+                                            Extension = music.Extension,
+                                            UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                                        };
                                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                     }
                                 }
                                 else if (musicItem != null)
                                 {
-                                    Debug.WriteLine($"消耗时间： {(DateTime.Now - startTime).TotalMilliseconds} 毫秒");
                                     ViewModel.ShowTransmission();
-                                    List<Music> musicItems = new List<Music> { musicItem };
+                                    List<Music> musicItems = [musicItem];
                                     var usbWriter = new UsbWriterHelper();
                                     usbWriter.hideTransmission += (sender, args) =>
                                     {
                                         ViewModel.HideTransmission();
                                     };
                                     await usbWriter.WriteToUsb(musicItems, usbDevice);
-                                    UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                    usbDeviceMusic.Title = musicItem.Title;
-                                    usbDeviceMusic.Author = musicItem.Author;
-                                    usbDeviceMusic.Album = musicItem.Album;
-                                    usbDeviceMusic.Extension = musicItem.Extension;
-                                    usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+                                    UsbDeviceMusic usbDeviceMusic = new()
+                                    {
+                                        Title = musicItem.Title,
+                                        Author = musicItem.Author,
+                                        Album = musicItem.Album,
+                                        Extension = musicItem.Extension,
+                                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                                    };
                                     AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }
                                 ViewModel.RefreshUsbDeviceMusicList(null, null);
