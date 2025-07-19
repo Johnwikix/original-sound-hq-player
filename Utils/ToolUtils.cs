@@ -420,34 +420,6 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }        
 
-        //public static async Task<BitmapImage> GetImageFromMusic(Music music, int size = 150)
-        //{
-        //    try
-        //    {
-        //        using (var file = TagLib.File.Create(music.Path))
-        //        {
-        //            if (file.Tag.Pictures.Length > 0)
-        //            {
-        //                IPicture picture = file.Tag.Pictures[0];
-        //                return await ReadBitmapImageAsync(picture, size);
-        //            }
-        //            else
-        //            {
-        //                var uri = new Uri("ms-appx:///Assets/Album.png");
-        //                var bitmapImage = new BitmapImage(uri);
-        //                return bitmapImage;
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"封面读取失败: {ex.Message}");
-        //        var uri = new Uri("ms-appx:///Assets/Album.png");
-        //        var bitmapImage = new BitmapImage(uri);
-        //        return bitmapImage;
-        //    }
-        //}
-
         public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
         {
             if (musicList != null && musicList.Count > 0)
@@ -459,104 +431,7 @@ namespace WinUIMusicPlayer.Utils
                 }
             }
             return musicList;
-        }
-
-        //public static IEnumerable<Music> SortMusicList(string type, string sortOrder,  ObservableCollection<Music> musicList)
-        //{
-        //    if (sortOrder == "A-Z")
-        //    {
-        //        return musicList.OrderBy(m => m.Title);
-        //    }
-        //    if (sortOrder == "Artist")
-        //    {
-        //        return musicList.OrderBy(m => m.Author);
-        //    }
-        //    if (sortOrder == "Album")
-        //    {
-        //        return musicList.GroupBy(m => m.Album)
-        //                        .OrderBy(g => g.Key)
-        //                        .SelectMany(g => g.OrderBy(m => m.TrackNumber));
-        //    }
-        //    switch (type)
-        //    {
-        //        case "song":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.Title);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "folderCover":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.LastLevelFolderPath).ToList();
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "folder":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.GroupBy(m => m.Album)
-        //                                    .OrderBy(g => g.Key)
-        //                                    .SelectMany(g => g.OrderBy(m => m.TrackNumber));
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "artistCover":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.Author);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "artist":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.Album);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "albumCover":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.Album);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "album":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderBy(m => m.TrackNumber);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "favour":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderByDescending(m => m.Order);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        case "playList":
-        //            switch (sortOrder)
-        //            {
-        //                case "DefaultOrder":
-        //                    return musicList.OrderByDescending(m => m.PlayListOrder);
-        //                default:
-        //                    return musicList;
-        //            }
-        //        default:
-        //            return musicList;
-        //    }
-        //}
+        }       
 
         
 
@@ -680,18 +555,6 @@ namespace WinUIMusicPlayer.Utils
             return musicList;
         }
 
-        //public static async Task<BitmapImage> LoadAlbumCover(Music music)
-        //{
-        //    if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-        //    {
-        //        return cachedCover;
-        //    }
-        //    else
-        //    {
-        //        return await GetImageFromMusic(music);
-        //    }
-        //}
-
         public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
         {
             byte[] buffer = null;
@@ -704,11 +567,9 @@ namespace WinUIMusicPlayer.Utils
                 // 获取像素
                 var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
                 var pixels = pixelBuffer.ToArray();
-
                 // 创建编码器并写入流
                 var stream = new InMemoryRandomAccessStream();
                 var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                Debug.WriteLine($"renderTargetBitmap长宽:{(uint)renderTargetBitmap.PixelHeight} {(uint)renderTargetBitmap.PixelWidth}");
                 // 设置像素数据
                 encoder.SetPixelData(
                     BitmapPixelFormat.Bgra8,
@@ -721,7 +582,6 @@ namespace WinUIMusicPlayer.Utils
 
                 // 刷新编码器
                 await encoder.FlushAsync();
-
                 // 读取流到字节数组
                 stream.Seek(0);
                 buffer = new byte[stream.Size];
@@ -823,20 +683,16 @@ namespace WinUIMusicPlayer.Utils
                         UIOption.OnlyErrorDialogs,
                         RecycleOption.SendToRecycleBin
                     );
-                    Console.WriteLine("文件已移动到回收站！");
                 }
                 else
                 {
-                    Console.WriteLine("文件不存在，无法删除。");
                 }
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine("操作已被用户取消。");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"错误：{ex.Message}");
             }
         }
 

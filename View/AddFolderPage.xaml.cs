@@ -78,7 +78,6 @@ namespace WinUIMusicPlayer.View
             };
             contentDialog.RequestedTheme = AppSettings.elementTheme;
             ContentDialogResult result = await contentDialog.ShowAsync();
-
             if (result == ContentDialogResult.Primary)
             {
                 var button = sender as Button;
@@ -130,13 +129,11 @@ namespace WinUIMusicPlayer.View
                     }
                     else
                     {
-                        Debug.WriteLine("请拖拽文件夹，不是文件");
                         notificationService.SendNotification(ToolUtils.GetString("Warning"), ToolUtils.GetString("PleaseDragFolder"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"错误: {ex.Message}");
                     notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }
