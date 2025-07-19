@@ -642,16 +642,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void NextMusicButton_Click()
         {
-            _musicPlaybackService.isManualSelect = true;
+            //_musicPlaybackService.isManualSelect = true;
             _musicPlaybackService.PlayNextTrack();
-            _musicPlaybackService.isManualSelect = false;
+            //_musicPlaybackService.isManualSelect = false;
         }
 
         public void LastMusicButton_Click()
         {
-            _musicPlaybackService.isManualSelect = true;
+            //_musicPlaybackService.isManualSelect = true;
             PlayLastTrack();
-            _musicPlaybackService.isManualSelect = false;
+            //_musicPlaybackService.isManualSelect = false;
         }
 
         public void PlayMusic(Music music)

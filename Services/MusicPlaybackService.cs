@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.Services
         private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
+        public bool isManualPlayingNext = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
@@ -259,9 +260,9 @@ namespace WinUIMusicPlayer.Services
 
                     if (multiTypeAudioReader != null)
                     {
-                        if (multiTypeAudioReader.CurrentTime.TotalSeconds > multiTypeAudioReader.TotalTime.TotalSeconds) {
-                            AutoPlayNextTrack();
-                        }
+                        //if (multiTypeAudioReader.CurrentTime.TotalSeconds > multiTypeAudioReader.TotalTime.TotalSeconds) {
+                        //    AutoPlayNextTrack();
+                        //}
                         // 格式化显示时间
                         _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
                         _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
@@ -500,6 +501,16 @@ namespace WinUIMusicPlayer.Services
                     waveOut = defaultWaveOutEvent;
                     break;
             }
+            waveOut.PlaybackStopped += WaveOut_Stop;
+        }
+
+        private void WaveOut_Stop(object? sender, StoppedEventArgs e)
+        {
+            if (!isManualPlayingNext) {
+                waveOut.PlaybackStopped -= WaveOut_Stop;
+                AutoPlayNextTrack();
+            }
+            isManualPlayingNext = false;
         }
 
         public void AutoPlayNextTrack()
@@ -523,7 +534,7 @@ namespace WinUIMusicPlayer.Services
                 case PlayMode.RepeatOff:
                     MusicEnd();                    
                     break;
-            }
+            }            
         }
 
         private void MusicEnd()
@@ -686,6 +697,7 @@ namespace WinUIMusicPlayer.Services
         {
             lock (_waveOutLock)
             {
+                isManualPlayingNext = true;
                 if (InitializeAudioResources(music, currentPos))
                 {
                     try
@@ -699,7 +711,8 @@ namespace WinUIMusicPlayer.Services
                         //cancellationToken.ThrowIfCancellationRequested();
                         waveOut.Play();
                         progressTimer.Start();
-                        App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                        {
                             MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
                             if (isSettingChanged)
                             {
@@ -720,12 +733,16 @@ namespace WinUIMusicPlayer.Services
                         System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                         Reset();
                     }
+                    finally {
+                        isManualPlayingNext = false;
+                    }
                 }
                 else
                 {
                     Reset();
                     OutputDeviceChange();
                 }
+                isManualPlayingNext = false;
             }
         }
         private void InitializeMusic() {
@@ -781,7 +798,8 @@ namespace WinUIMusicPlayer.Services
             }
             if (waveOut != null)
             {
-                waveOut.Stop();
+                waveOut.PlaybackStopped -= WaveOut_Stop;
+                waveOut.Stop();                
                 waveOut.Dispose();                
                 waveOut = null;
             }
@@ -837,10 +855,11 @@ namespace WinUIMusicPlayer.Services
         {
             if (waveOut != null)
             {
+                isManualPlayingNext = true;
                 progressTimer.Stop();
                 waveOut.Stop();
                 AppSettings.isPlaying = false;
-                MusicBrowseViewModel.IsPlaying = false;
+                MusicBrowseViewModel.IsPlaying = false;                
             }
 
         }
