@@ -696,4 +696,7 @@
   <data name="ThirdPartyComponentsText" xml:space="preserve">
     <value>サードパーティ製コンポーネント</value>
   </data>
+  <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+    <value>現在のプレイリストに追加</value>
+  </data>
 </root>

@@ -220,7 +220,7 @@ namespace WinUIMusicPlayer.View
                         addToPlaylistSubItem.Items.Add(menuItem);
                     }
                     //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                    if (menuFlyout.Items.Count > 8)
+                    if (menuFlyout.Items.Count > 9)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
                         if (fifthItem != null)
@@ -332,6 +332,11 @@ namespace WinUIMusicPlayer.View
                 ViewModel.IsFavouriteIconButton_Click(music);
             }
         }
-        
+
+        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+        }
     }
 }

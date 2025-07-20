@@ -16,7 +16,7 @@
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
-                        <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
+                        <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />                        
                         <MenuFlyoutItem x:Uid="CancelFavoriteMenuItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
@@ -24,6 +24,7 @@
                             <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
                             <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />

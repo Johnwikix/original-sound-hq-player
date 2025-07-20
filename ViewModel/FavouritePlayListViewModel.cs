@@ -465,5 +465,22 @@ namespace WinUIMusicPlayer.ViewModel
                 parentPage.SelectBarArtist(artist);
             }
         }
+
+        public void AddToCurrentPlayList(List<Music> uniqueSelectedMusics)
+        {
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            // 如果找到匹配项，则在其后插入新列表
+            if (index != -1 && uniqueSelectedMusics != null && uniqueSelectedMusics.Any())
+            {
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
+                var newMusicsToAdd = uniqueSelectedMusics
+                    .Where(music => !existingIds.Contains(music.Id)).ToList();
+                for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
+                {                    
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
+                }
+            }
+        }
+
     }
 }

@@ -696,4 +696,7 @@
   <data name="ThirdPartyComponentsText" xml:space="preserve">
     <value>Componentes de terceros</value>
   </data>
+  <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+    <value>Añadir a la lista de reproducción actual</value>
+  </data>
 </root>
