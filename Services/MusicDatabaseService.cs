@@ -21,7 +21,16 @@ namespace WinUIMusicPlayer.Services
         private static SQLiteAsyncConnection _dbConnection;
         private static string DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private static AddFolderService addFolderService = new AddFolderService();
+        // 作为类的静态只读字段，仅初始化一次，避免每次调用创建新集合
+        private static readonly HashSet<string> _unknownAlbums = [
+                "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"
+         ];
 
+
+        private static readonly HashSet<string> _unknownArtists =
+        [
+            "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
+        ];
         public static async Task Initialize()
         {
             InitalizeDbPath();
@@ -533,30 +542,58 @@ namespace WinUIMusicPlayer.Services
             AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
+
         public static async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
         {
-            var musicList = await _dbConnection.Table<Music>().OrderBy(m => m.Title).ToListAsync();
-            foreach(Music music in musicList)
+            // 提前获取本地化字符串（仅调用两次，避免循环内重复调用）
+            string localizedUnknownAlbum = ToolUtils.GetString("UnknownAlbum");
+            string localizedUnknownArtist = ToolUtils.GetString("UnknownArtist");
+            // 直接获取原始列表（避免中间变量复制）
+            var musicList = await _dbConnection
+                .Table<Music>()
+                .OrderBy(m => m.Title)
+                .ToListAsync();
+            foreach (var music in musicList)
             {
-                if (music.Album == "未知专辑"
-                    || music.Album == "Unknown Album"
-                    || music.Album == "Álbum desconocido"
-                    || music.Album == "不明なアルバム"
-                    || music.Album == "Неизвестный альбом")
+                // 仅在需要时才修改，减少不必要的字符串赋值（字符串是不可变的，赋值会创建新对象）
+                if (_unknownAlbums.Contains(music.Album) && music.Album != localizedUnknownAlbum)
                 {
-                    music.Album = ToolUtils.GetString("UnknownAlbum");
+                    music.Album = localizedUnknownAlbum;
                 }
-                if (music.Author == "未知艺术家"
-                    || music.Author == "Unknown Artist"
-                    || music.Author == "Artista desconocido"
-                    || music.Author == "不明なアーティスト"
-                    || music.Author == "Неизвестный артист")
+
+                if (_unknownArtists.Contains(music.Author) && music.Author != localizedUnknownArtist)
                 {
-                    music.Author = ToolUtils.GetString("UnknownArtist");
+                    music.Author = localizedUnknownArtist;
                 }
             }
+
             return musicList;
         }
+
+        //public static async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
+        //{
+        //    var musicList = await _dbConnection.Table<Music>().OrderBy(m => m.Title).ToListAsync();
+        //    foreach(Music music in musicList)
+        //    {
+        //        if (music.Album == "未知专辑"
+        //            || music.Album == "Unknown Album"
+        //            || music.Album == "Álbum desconocido"
+        //            || music.Album == "不明なアルバム"
+        //            || music.Album == "Неизвестный альбом")
+        //        {
+        //            music.Album = ToolUtils.GetString("UnknownAlbum");
+        //        }
+        //        if (music.Author == "未知艺术家"
+        //            || music.Author == "Unknown Artist"
+        //            || music.Author == "Artista desconocido"
+        //            || music.Author == "不明なアーティスト"
+        //            || music.Author == "Неизвестный артист")
+        //        {
+        //            music.Author = ToolUtils.GetString("UnknownArtist");
+        //        }
+        //    }
+        //    return musicList;
+        //}
 
         public static IEnumerable<Music> GetMusicListFromMem(string search)
         {

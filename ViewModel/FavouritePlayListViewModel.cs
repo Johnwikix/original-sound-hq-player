@@ -274,12 +274,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public void PlayMenuItem_Click(List<Music> uniqueSelectedMusics)
+        public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {            
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                parentPage.PlayMusic(uniqueSelectedMusics[0]);
+                parentPage.PlayMusic(uniqueSelectedMusics.First());
             }
             else
             {
@@ -288,9 +288,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void ReGetLyrics_Click(List<Music> uniqueSelectedMusics)
+        public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
@@ -315,9 +315,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void DeleteMenuItem_Click(List<Music> uniqueSelectedMusics) 
+        public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics) 
         {
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {                    
@@ -334,7 +334,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void SetAsFavoriteMenuItem_Click(List<Music> uniqueSelectedMusics)
+        public async void SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics != null)
             {
@@ -370,27 +370,16 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void ConvertAudio_Click(MenuFlyoutItem? menuItem, List<Music> uniqueSelectedMusics)
+        public async void ConvertAudio_Click(MenuFlyoutItem? menuItem, IEnumerable<Music> uniqueSelectedMusics)
         {
             progressBarValue = 0;
             _progressDialog.RequestedTheme = AppSettings.elementTheme;
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count > 1)
+            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {          
                     await _progressDialog.UpdateProgress(progressBarValue);
-                    //_converterService.updateProgress += (sender, progress) =>
-                    //{
-                    //    if (progressBarValue < (int)progress)
-                    //    {
-                    //        progressBarValue = (int)progress;
-                    //    }
-                    //    if (progressBarValue < 100)
-                    //    {
-                    //        _ = _progressDialog.UpdateProgress(progressBarValue);
-                    //    }
-                    //};
                     _progressDialog.XamlRoot = currentPage.XamlRoot;
                     _ = _progressDialog.ShowAsync();
 
@@ -466,7 +455,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void AddToCurrentPlayList(List<Music> uniqueSelectedMusics)
+        public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
         {
             int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
             // 如果找到匹配项，则在其后插入新列表

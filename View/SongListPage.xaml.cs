@@ -78,26 +78,26 @@ namespace WinUIMusicPlayer.View
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem menuItem = sender as MenuFlyoutItem;
             await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
         }
 
         private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);            
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);            
         }
 
@@ -112,23 +112,35 @@ namespace WinUIMusicPlayer.View
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
         }
 
-        private List<Music> GetUniqueSelectedItems()
+        private IEnumerable<Music> GetUniqueSelectedItems()
         {
-            List<Music> uniqueItems = new List<Music>();
             var selectedItems = MusicListView.SelectedItems;
             foreach (var item in selectedItems)
             {
                 if (item is Music music)
                 {
-                    uniqueItems.Add(music);
+                    yield return music;
                 }
             }
-            return uniqueItems;
         }
+
+        //private List<Music> GetUniqueSelectedItems()
+        //{
+        //    List<Music> uniqueItems = new List<Music>();
+        //    var selectedItems = MusicListView.SelectedItems;
+        //    foreach (var item in selectedItems)
+        //    {
+        //        if (item is Music music)
+        //        {
+        //            uniqueItems.Add(music);
+        //        }
+        //    }
+        //    return uniqueItems;
+        //}
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -154,7 +166,7 @@ namespace WinUIMusicPlayer.View
                     listViewItem.IsSelected = true;
                     MusicListView.SelectedItem = musicItem;
                 }
-                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 // 设置右键菜单
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
@@ -175,14 +187,14 @@ namespace WinUIMusicPlayer.View
                         menuItem.Click += async (s, args) =>
                         {
                             // 多选情况：添加所有选中的歌曲到播放列表
-                            if (uniqueSelectedMusics.Count > 1)
+                            if (uniqueSelectedMusics.Count() > 1)
                             {
                                 foreach (var music in uniqueSelectedMusics)
                                 {
                                     await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                                 }
                                 // 可以添加一个提示通知，表明多个歌曲已添加到播放列表
-                                Debug.WriteLine($"已添加 {uniqueSelectedMusics.Count} 首歌曲到播放列表: {playlist.Name}");
+                                Debug.WriteLine($"已添加 {uniqueSelectedMusics.Count()} 首歌曲到播放列表: {playlist.Name}");
                             }
                             // 单选情况：只添加当前右键点击的歌曲
                             else if (musicItem != null)
@@ -193,7 +205,7 @@ namespace WinUIMusicPlayer.View
                         };
                         addToPlaylistSubItem?.Items.Add(menuItem);
                     }
-                    if (menuFlyout.Items.Count > 8)
+                    if (menuFlyout.Items.Count > 9)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
                         if (fifthItem != null)
@@ -221,7 +233,7 @@ namespace WinUIMusicPlayer.View
                             menuItem.Click += async (s, args) =>
                             {
                                 DateTime startTime = DateTime.Now;
-                                if (uniqueSelectedMusics.Count > 1)
+                                if (uniqueSelectedMusics.Count() > 1)
                                 {
                                     ViewModel.ShowTransmission();
                                     var usbWriter = new UsbWriterHelper();
@@ -308,6 +320,12 @@ namespace WinUIMusicPlayer.View
         private void MusicDetail_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.MusicDetail_Click();
+        }
+
+        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
         }
     }
 }

@@ -79,23 +79,34 @@ namespace WinUIMusicPlayer.View
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
         }
-
-        private List<Music> GetUniqueSelectedItems()
+        private IEnumerable<Music> GetUniqueSelectedItems()
         {
-            List<Music> uniqueItems = new List<Music>();
             var selectedItems = MusicListView.SelectedItems;
             foreach (var item in selectedItems)
             {
                 if (item is Music music)
                 {
-                    uniqueItems.Add(music);
+                    yield return music;
                 }
             }
-            return uniqueItems;
         }
+
+        //private List<Music> GetUniqueSelectedItems()
+        //{
+        //    List<Music> uniqueItems = new List<Music>();
+        //    var selectedItems = MusicListView.SelectedItems;
+        //    foreach (var item in selectedItems)
+        //    {
+        //        if (item is Music music)
+        //        {
+        //            uniqueItems.Add(music);
+        //        }
+        //    }
+        //    return uniqueItems;
+        //}
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
@@ -105,19 +116,19 @@ namespace WinUIMusicPlayer.View
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
         }
 
@@ -128,7 +139,7 @@ namespace WinUIMusicPlayer.View
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
-            List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
             await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
         }
@@ -157,7 +168,7 @@ namespace WinUIMusicPlayer.View
                     listViewItem.IsSelected = true;
                     MusicListView.SelectedItem = musicItem;
                 }
-                List<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 // …Ë÷√”“º¸≤Àµ•
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
                 {
@@ -167,7 +178,7 @@ namespace WinUIMusicPlayer.View
                         menuItem.DataContext = musicItem;
                     }
                     //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                    if (menuFlyout.Items.Count > 7)
+                    if (menuFlyout.Items.Count > 8)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[3] as MenuFlyoutSubItem;
                         if (fifthItem != null)
@@ -194,7 +205,7 @@ namespace WinUIMusicPlayer.View
                             };
                             menuItem.Click += async (s, args) =>
                             {
-                                if (uniqueSelectedMusics.Count > 1)
+                                if (uniqueSelectedMusics.Count() > 1)
                                 {
                                     ViewModel.ShowTransmission();
                                     var usbWriter = new UsbWriterHelper();
@@ -276,6 +287,12 @@ namespace WinUIMusicPlayer.View
             {
                 await ViewModel.IsFavouriteIconButton_Click(music);
             }
+        }
+
+        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
         }
     }
 }

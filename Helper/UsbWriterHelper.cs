@@ -50,7 +50,7 @@ namespace WinUIMusicPlayer.Helper
             }
         }
 
-        public async Task WriteToUsb(List<Music> musicList, UsbStorageDevice device)
+        public async Task WriteToUsb(IEnumerable<Music> musicList, UsbStorageDevice device)
         {
             // 检查对象是否已被释放
             if (_disposed)
