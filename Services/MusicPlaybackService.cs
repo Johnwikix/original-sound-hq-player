@@ -59,8 +59,9 @@ namespace WinUIMusicPlayer.Services
         };
         private bool isEnableEq = false;
         public MusicBrowseViewModel MusicBrowseViewModel { get;}
-        private readonly object _waveOutLock = new object();
-        private readonly object _waveChannelLock = new object();
+        private readonly object _waveOutLock = new();
+        private readonly object _waveChannelLock = new();
+        private readonly object _equalizerLock = new();
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
 
         public MusicPlaybackService(NotificationService notificationService)
@@ -580,34 +581,36 @@ namespace WinUIMusicPlayer.Services
         }
 
         // 切换均衡器开关
-        public async void ToggleEqualizer()
+        public void ToggleEqualizer()
         {
             // 只有在启用状态变化且音频播放时才需要重新初始化
             if (AppSettings.IsEqualizerEnabled && !isEnableEq)
             {
-                var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
-                if (waveOut != null)
-                {
-                    isManualPlayingNext = true;
-                    waveOut.Stop();
-                    waveOut.Dispose();
-                    waveOut = null;
-                    SelectOutputDevice();
-                    if (AppSettings.IsEqualizerEnabled)
+                //var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
+                lock (_waveOutLock) {
+                    if (waveOut != null)
                     {
-                        isEnableEq = true;
-                        var sampleProvider = multiTypeAudioReader.ToSampleProvider();
-                        equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
-                        waveOut.Init(equalizer);
+                        isManualPlayingNext = true;
+                        waveOut.Stop();
+                        waveOut.Dispose();
+                        waveOut = null;
+                        SelectOutputDevice();
+                        if (AppSettings.IsEqualizerEnabled)
+                        {
+                            isEnableEq = true;
+                            var sampleProvider = multiTypeAudioReader.ToSampleProvider();
+                            equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
+                            waveOut.Init(equalizer);
+                        }
+                        //InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                     }
-                    //InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
-                }
-                
-                if (AppSettings.isPlaying)
-                {
-                    waveOut.Play();
-                    progressTimer.Start();
-                }
+
+                    if (AppSettings.isPlaying)
+                    {
+                        waveOut.Play();
+                        progressTimer.Start();
+                    }
+                }                
             }
         }
 
@@ -621,22 +624,27 @@ namespace WinUIMusicPlayer.Services
         }
 
         public void ClearEqualizer() {
-            if (equalizer == null) return;
-            foreach (var band in equalizerBands)
-            {
-                band.Gain = 0f; // 重置增益                
-            }
-            equalizer.Update();
+            lock (_equalizerLock) {
+                if (equalizer == null) return;
+                foreach (var band in equalizerBands)
+                {
+                    band.Gain = 0f; // 重置增益                
+                }
+                equalizer.Update();
+            }           
         }
 
         public void SetEqualizer()
         {
-            if (equalizer == null) return;
-            foreach (var band in equalizerBands)
+            lock (_equalizerLock)
             {
-                band.Gain = (float)AppSettings.equalizer[FloatToString[band.Frequency]];
-            }
-            equalizer.Update();
+                if (equalizer == null) return;
+                foreach (var band in equalizerBands)
+                {
+                    band.Gain = (float)AppSettings.equalizer[FloatToString[band.Frequency]];
+                }
+                equalizer.Update();
+            }            
         }
 
         public bool InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())

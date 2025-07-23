@@ -100,7 +100,7 @@ namespace WinUIMusicPlayer.View
             };
             equalizerDialog.clearEqualizer += (s, e) =>
             {
-                DispatcherQueue.TryEnqueue(() =>
+                Task.Run(() =>
                 {
                     if (!AppSettings.IsEqualizerEnabled)
                     {
@@ -111,7 +111,19 @@ namespace WinUIMusicPlayer.View
                         musicPlaybackService.SetEqualizer();
                         musicPlaybackService.ToggleEqualizer();
                     }
-                });                
+                });
+                //DispatcherQueue.TryEnqueue(() =>
+                //{
+                //    if (!AppSettings.IsEqualizerEnabled)
+                //    {
+                //        musicPlaybackService.ClearEqualizer();
+                //    }
+                //    else
+                //    {
+                //        musicPlaybackService.SetEqualizer();
+                //        musicPlaybackService.ToggleEqualizer();
+                //    }
+                //});                
             };
             this.notificationService = notificationService;
             InitializeTimer();
