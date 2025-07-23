@@ -265,18 +265,7 @@ namespace WinUIMusicPlayer.Services
                         //    AutoPlayNextTrack();
                         //}
                         // 格式化显示时间
-                        _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
-                        _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
-                        _timeStringBuilder.Clear();
-                        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            if (!isManualSelect) {
-                                MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
-                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
-                            }                            
-                        });
-                        UpdateLyrics(_cachedCurrentTime);
-                        _systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
+                        UpdateProgressTimerUI();
                     } 
                 }
             }
@@ -285,6 +274,23 @@ namespace WinUIMusicPlayer.Services
                 System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
         }
+
+        private void UpdateProgressTimerUI() {
+            _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
+            _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
+            _timeStringBuilder.Clear();
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!isManualSelect)
+                {
+                    MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
+                    MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
+                }
+            });
+            UpdateLyrics(_cachedCurrentTime);
+            _systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
+        } 
+        
 
         private void UpdateLyrics(TimeSpan currentPosition)
         {
@@ -726,6 +732,7 @@ namespace WinUIMusicPlayer.Services
                         //cancellationToken.ThrowIfCancellationRequested();
                         waveOut.Play();
                         progressTimer.Start();
+                        UpdateProgressTimerUI();
                         App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                         {
                             MusicBrowseViewModel.ProgressSliderMax = totalSeconds;

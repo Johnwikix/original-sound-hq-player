@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Diagnostics;
@@ -56,9 +57,10 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        // 处理播放位置更改请求
         private void SystemMediaControls_PlaybackPositionChangeRequested(SystemMediaTransportControls sender, PlaybackPositionChangeRequestedEventArgs args)
         {
-            throw new NotImplementedException();
+            App.Services.GetRequiredService<MusicPlaybackService>().ChangeWaveChannelTime(args.RequestedPlaybackPosition);
         }
 
         private void SystemMediaControls_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
@@ -117,7 +119,6 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 if (SystemMediaControls == null) return;
-
                 var timelineProperties = new SystemMediaTransportControlsTimelineProperties
                 {
                     StartTime = TimeSpan.Zero,
