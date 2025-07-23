@@ -588,10 +588,19 @@ namespace WinUIMusicPlayer.Services
                 var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
                 if (waveOut != null)
                 {
+                    isManualPlayingNext = true;
                     waveOut.Stop();
                     waveOut.Dispose();
                     waveOut = null;
-                    InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
+                    SelectOutputDevice();
+                    if (AppSettings.IsEqualizerEnabled)
+                    {
+                        isEnableEq = true;
+                        var sampleProvider = multiTypeAudioReader.ToSampleProvider();
+                        equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
+                        waveOut.Init(equalizer);
+                    }
+                    //InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
                 }
                 
                 if (AppSettings.isPlaying)
@@ -650,8 +659,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     AppSettings.isDsd = false;
                     multiTypeAudioReader = new MultiTypeAudioReader(music.Path);
-                    //waveChannel = new WaveChannel32(multiTypeAudioReader);
-                    ChangeWaveChannelTime(currentPos);                   
+                    ChangeWaveChannelTime(currentPos);
                 }
                 catch (Exception e)
                 {
@@ -664,11 +672,9 @@ namespace WinUIMusicPlayer.Services
                 {
                     AppSettings.isDsd = true;
                     multiTypeAudioReader.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
-                    //waveChannel.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                 }
                 else {
                     multiTypeAudioReader.Volume = volume;
-                    //waveChannel.Volume = volume;
                 }
                 if (AppSettings.IsEqualizerEnabled)
                 {
@@ -681,7 +687,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     isEnableEq = false;
                     waveOut.Init(multiTypeAudioReader);
-                }
+                }                
                 return true;
 
             }

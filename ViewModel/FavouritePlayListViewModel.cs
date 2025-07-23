@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.ViewModel
         private ProgressDialog _progressDialog;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService,MusicBrowsePage musicBrowsePage)
+        public FavouritePlayListViewModel(MusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowsePage musicBrowsePage)
         {
             parentPage = musicBrowsePage;
             parentPage.refreshPage += RefreshMusicList;
@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.ViewModel
                         MusicList.Insert(0, music);
                     }
                 });
-                
+
             }
         }
 
@@ -210,7 +210,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     music.IsExistOnDevice = 0;
                 }
-            });            
+            });
         }
 
         public void RefreshUsbDeviceMusicList()
@@ -221,7 +221,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void SortMusicList(string sortOrder)
         {
             var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-            if (MusicList.Count > 0) {
+            if (MusicList.Count > 0)
+            {
                 ToolUtils.SortMusicListInPlace("favour", order, MusicList);
             }
         }
@@ -275,7 +276,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
-        {            
+        {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
@@ -284,7 +285,7 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
-                parentPage.PlayMusic(SelectedMusic);            
+                parentPage.PlayMusic(SelectedMusic);
             }
         }
 
@@ -315,12 +316,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics) 
+        public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {                    
+                {
                     await MusicDatabaseService.RemoveMusic(item.Id);
                     ToolUtils.DeleteFileFromDisk(item.Path);
                     MusicList.Remove(item);
@@ -347,7 +348,7 @@ namespace WinUIMusicPlayer.ViewModel
                     await parentPage.AddToFavourite(item);
                     AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
-            }          
+            }
         }
 
         public void OpenInExplorer_Click()
@@ -378,7 +379,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
-                {          
+                {
                     await _progressDialog.UpdateProgress(progressBarValue);
                     _progressDialog.XamlRoot = currentPage.XamlRoot;
                     _ = _progressDialog.ShowAsync();
@@ -418,12 +419,13 @@ namespace WinUIMusicPlayer.ViewModel
                             _progressDialog.XamlRoot = currentPage.XamlRoot;
                             _ = _progressDialog.ShowAsync();
                         }
-                    }                    
+                    }
                 }
             }
         }
 
-        public async void IsFavouriteIconButton_Click(Music music)
+        [RelayCommand]
+        private async void IsFavouriteIconButtonChange(Music music)
         {
             if (music != null)
             {
@@ -435,6 +437,19 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
+
+        //public async void IsFavouriteIconButton_Click(Music music)
+        //{
+        //    if (music != null)
+        //    {
+        //        if (music.IsFavorite)
+        //        {
+        //            MusicList.Remove(music);
+        //        }
+        //        await parentPage.AddToFavourite(music);
+        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+        //    }
+        //}
 
         public void AlbumTextBlock_Tapped(TextBlock textBlock)
         {
@@ -465,11 +480,26 @@ namespace WinUIMusicPlayer.ViewModel
                 var newMusicsToAdd = uniqueSelectedMusics
                     .Where(music => !existingIds.Contains(music.Id)).ToList();
                 for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
-                {                    
+                {
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
                 }
             }
         }
 
+        [RelayCommand]
+        public void AddMusicToCurrentPlayList(Music music)
+        {
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            // 如果找到匹配项，则在其后插入新列表
+            if (index != -1 && music != null)
+            {
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
+                if (!existingIds.Contains(music.Id))
+                {
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, music);
+                }
+            }
+
+        }
     }
 }

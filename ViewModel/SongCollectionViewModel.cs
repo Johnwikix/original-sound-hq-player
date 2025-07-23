@@ -470,7 +470,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task IsFavouriteIconButton_Click(Music music)
+        [RelayCommand]
+        private async void IsFavouriteIconButtonChange(Music music)
         {
             if (music != null)
             {
@@ -478,6 +479,15 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
+
+        //public async Task IsFavouriteIconButton_Click(Music music)
+        //{
+        //    if (music != null)
+        //    {
+        //        await _parentPage.AddToFavourite(music);
+        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+        //    }
+        //}
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
@@ -600,6 +610,22 @@ namespace WinUIMusicPlayer.ViewModel
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
                 }
             }
+        }
+
+        [RelayCommand]
+        public void AddMusicToCurrentPlayList(Music music)
+        {
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            // 如果找到匹配项，则在其后插入新列表
+            if (index != -1 && music != null)
+            {
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
+                if (!existingIds.Contains(music.Id))
+                {
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, music);
+                }
+            }
+
         }
 
     }

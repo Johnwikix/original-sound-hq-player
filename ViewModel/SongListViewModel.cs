@@ -1,20 +1,21 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.View;
-using CommunityToolkit.Mvvm.Messaging;
-using WinUIMusicPlayer.Helper;
-using System.IO;
-using Microsoft.UI.Xaml.Controls;
+using WinUIMusicPlayer.View.SubView;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -348,14 +349,14 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task IsFavouriteIconButton_Click(Music music)
-        {
-            if (music != null)
-            {
-                await _parentPage.AddToFavourite(music);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            }
-        }
+        //public async Task IsFavouriteIconButton_Click(Music music)
+        //{
+        //    if (music != null)
+        //    {
+        //        await _parentPage.AddToFavourite(music);
+        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+        //    }
+        //}
 
         public void AuthorTextBlock_Tapped(string artist)
         {
@@ -440,6 +441,32 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
                 }
+            }
+        }
+
+        [RelayCommand]
+        public void AddMusicToCurrentPlayList(Music music)
+        {
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            // 如果找到匹配项，则在其后插入新列表
+            if (index != -1 && music != null)
+            {
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
+                if (!existingIds.Contains(music.Id))
+                {
+                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, music);
+                }
+            }
+
+        }
+
+        [RelayCommand]
+        private async void IsFavouriteIconButtonChange(Music music)
+        {
+            if (music != null)
+            {
+                await _parentPage.AddToFavourite(music);
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
     }

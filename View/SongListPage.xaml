@@ -54,6 +54,7 @@
                             <ColumnDefinition Width="3*" />
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.25*" />
                         </Grid.ColumnDefinitions>
                         <Button
@@ -65,8 +66,8 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Click="IsFavouriteIconButton_Click"
-                            Tag="{x:Bind}">
+                            Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
+                            CommandParameter="{x:Bind}">
                             <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                         </Button>
                         <TextBlock
@@ -103,9 +104,20 @@
                             Margin="5"
                             VerticalAlignment="Center"
                             Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" />
+                        <Button
+                            Grid.Column="6"
+                            Margin="5"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
+                            CommandParameter="{x:Bind}">
+                            <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                        </Button>
                         <FontIcon
                             x:Name="IsExistOnDeviceIcon"
-                            Grid.Column="6"
+                            Grid.Column="7"
                             FontSize="14"
                             Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                     </Grid>

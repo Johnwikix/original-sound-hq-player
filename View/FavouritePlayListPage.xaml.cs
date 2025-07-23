@@ -322,14 +322,14 @@ namespace WinUIMusicPlayer.View
             ViewModel.MusicDetail_Click();
         }       
 
-        private void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null && button.Tag is Music music)
-            {
-                ViewModel.IsFavouriteIconButton_Click(music);
-            }
-        }
+        //private void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var button = sender as Button;
+        //    if (button != null && button.Tag is Music music)
+        //    {
+        //        ViewModel.IsFavouriteIconButton_Click(music);
+        //    }
+        //}
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {

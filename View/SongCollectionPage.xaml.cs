@@ -114,14 +114,14 @@ namespace WinUIMusicPlayer.View
             await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
         }
 
-        private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null && button.Tag is Music music)
-            {
-                await ViewModel.IsFavouriteIconButton_Click(music);                
-            }
-        }
+        //private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var button = sender as Button;
+        //    if (button != null && button.Tag is Music music)
+        //    {
+        //        await ViewModel.IsFavouriteIconButton_Click(music);                
+        //    }
+        //}
 
         private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
