@@ -270,6 +270,13 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isAcrylicBrushOpacity;
             set => SetProperty(ref _isAcrylicBrushOpacity, value);
         }
+
+        private float _topControlsOpacity = 1.0f;
+        public float TopControlsOpacity
+        {
+            get => _topControlsOpacity;
+            set => SetProperty(ref _topControlsOpacity, value);
+        }
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;

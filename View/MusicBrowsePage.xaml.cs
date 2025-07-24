@@ -900,5 +900,15 @@ namespace WinUIMusicPlayer.View
                 PlayMusic(selectedMusic);
             }
         }
+
+        private void TopControl_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.TopControlsOpacity = 1.0f;
+        }
+
+        private void TopControl_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.TopControlsOpacity = 0.0f;
+        }
     }
 }

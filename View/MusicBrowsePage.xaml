@@ -171,7 +171,7 @@
                 <Grid
                     x:Name="PlayingDetail"
                     Grid.Row="2"
-                    Margin="0,5,0,30"
+                    Margin="0,10,0,30"
                     Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -182,7 +182,17 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+                    <StackPanel
+                        x:Name="TopControl"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Opacity="{Binding ViewModel.TopControlsOpacity, Mode=OneWay}"
+                        Orientation="Horizontal"
+                        PointerEntered="TopControl_PointerEntered"
+                        PointerExited="TopControl_PointerExited">
+                        <StackPanel.OpacityTransition>
+                            <ScalarTransition />
+                        </StackPanel.OpacityTransition>
                         <Button
                             x:Name="CancelPlayingDetailButton"
                             Margin="10,0,10,0"
