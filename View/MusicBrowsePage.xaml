@@ -81,10 +81,7 @@
                             Click="AddPlayList_Click"
                             FontSize="20"
                             Tag="PlayListAdd">
-                            <FontIcon
-                                Margin="0,2,0,0"
-                                VerticalAlignment="Bottom"
-                                Glyph="&#xe948;" />
+                            <FontIcon Margin="0,2,0,0" VerticalAlignment="Bottom" Glyph="&#xe948;" />
                         </Button>
                     </StackPanel>
 
@@ -129,10 +126,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <StackPanel
-                            Margin="0"
-                            Orientation="Horizontal"
-                            Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                        <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
                             <TextBlock
                                 x:Uid="SortOrder"
                                 Margin="10,0,10,0"
@@ -146,22 +140,10 @@
                                 FontSize="12"
                                 SelectedIndex="0"
                                 SelectionChanged="SortByComboBox_SelectionChanged">
-                                <ComboBoxItem
-                                    x:Uid="SortOrderDefault"
-                                    FontSize="12"
-                                    Tag="DefaultOrder" />
-                                <ComboBoxItem
-                                    x:Uid="SortOrderA_Z"
-                                    FontSize="12"
-                                    Tag="A-Z" />
-                                <ComboBoxItem
-                                    x:Uid="SortOrderArtist"
-                                    FontSize="12"
-                                    Tag="Artist" />
-                                <ComboBoxItem
-                                    x:Uid="SortOrderAlbum"
-                                    FontSize="12"
-                                    Tag="Album" />
+                                <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
+                                <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
+                                <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
+                                <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
                             </ComboBox>
                         </StackPanel>
                         <TextBox
@@ -191,7 +173,6 @@
                     Grid.Row="2"
                     Margin="0,5,0,30"
                     Visibility="Collapsed">
-                    <!--  定义列和行  -->
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
@@ -201,13 +182,10 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Orientation="Horizontal">
+                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
                         <Button
                             x:Name="CancelPlayingDetailButton"
-                            Margin="20,10,10,10"
+                            Margin="10,0,10,0"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
@@ -218,7 +196,7 @@
                             </Button.KeyboardAccelerators>
                         </Button>
                         <Button
-                            Margin="0"
+                            Margin="0,0,10,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -234,6 +212,24 @@
                                 Margin="0"
                                 VerticalAlignment="Center"
                                 Glyph="{Binding ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
+                        </Button>
+                        <Button
+                            Margin="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding ViewModel.HideNavigationViewButtonChangedCommand, Mode=OneWay}">
+                            <Button.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="H" />
+                            </Button.KeyboardAccelerators>
+                            <FontIcon
+                                x:Name="HideNavigationView"
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                Glyph="{Binding ViewModel.HideNavigationViewButtonVisibility, Converter={StaticResource HideNavigationViewIconConverter}, Mode=OneWay}" />
                         </Button>
                     </StackPanel>
                     <Grid Grid.Row="1" Grid.Column="0">
@@ -276,10 +272,7 @@
                                                     Canvas.ZIndex="0"
                                                     Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                                     <Viewbox Stretch="Uniform">
-                                                        <Border
-                                                            HorizontalAlignment="Stretch"
-                                                            VerticalAlignment="Stretch"
-                                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                                             <!--  图标层  -->
                                                             <FontIcon
                                                                 Width="200"
@@ -303,10 +296,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel
-                                        x:Name="MusicInfoPanel"
-                                        Grid.Column="0"
-                                        Margin="5">
+                                    <StackPanel x:Name="MusicInfoPanel" Grid.Column="0" Margin="5">
                                         <RichTextBlock
                                             x:Name="PlayingDetailTitleTextBlock"
                                             Margin="1"
@@ -456,10 +446,7 @@
                                             Click="CurrentPlayListButtonPlayingDetail_Click">
                                             <FontIcon x:Name="CurrentPlayListIconPlayingDetail" Glyph="&#xE90B;" />
                                         </Button>
-                                        <TeachingTip
-                                            x:Name="CurrentPlayListTeachingTipPlayingDetail"
-                                            IsLightDismissEnabled="True"
-                                            Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
+                                        <TeachingTip x:Name="CurrentPlayListTeachingTipPlayingDetail" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                             <TeachingTip.Content>
                                                 <ListView
                                                     x:Name="CurrentPlayListViewPlayingDetail"
@@ -766,10 +753,7 @@
                                         Opacity="0" />
                                 </Grid>
                             </Button>
-                            <Grid
-                                Width="Auto"
-                                Height="80"
-                                MaxWidth="300">
+                            <Grid Width="Auto" Height="80" MaxWidth="300">
                                 <!--  Rest of your grid content remains the same  -->
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -1018,10 +1002,7 @@
                                 Click="CurrentPlayListButton_Click">
                                 <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                             </Button>
-                            <TeachingTip
-                                x:Name="CurrentPlayListTeachingTip"
-                                IsLightDismissEnabled="True"
-                                Target="{x:Bind CurrentPlayListButton}">
+                            <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
                                 <TeachingTip.Content>
                                     <ListView
                                         x:Name="CurrentPlayListView"

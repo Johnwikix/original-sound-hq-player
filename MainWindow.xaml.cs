@@ -384,7 +384,7 @@ namespace WinUIMusicPlayer
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                AppTitleBar.Opacity = isVisible? 1.0: 0; 
+                AppTitleBar.Visibility = isVisible? Visibility.Visible: Visibility.Collapsed; 
             });            
         }
     }
