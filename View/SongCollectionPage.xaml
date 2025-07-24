@@ -37,7 +37,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid x:Name="DetailInfoBar" Grid.Row="0" Margin="30,0,10,10">
+        <Grid x:Name="DetailInfoBar" Grid.Row="0" Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
