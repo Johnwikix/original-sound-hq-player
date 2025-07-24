@@ -59,11 +59,11 @@ namespace WinUIMusicPlayer.View
             ViewModel.DeviceName = AppSettings.DeviceName;
         }
 
-        private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
-            await Launcher.LaunchUriAsync(uri);
-        }
+        //private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        //{
+        //    Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
+        //    await Launcher.LaunchUriAsync(uri);
+        //}
 
         private void ThirdParty_Click(object sender, RoutedEventArgs e)
         {
@@ -87,6 +87,12 @@ namespace WinUIMusicPlayer.View
                 _thirdPartyDialog.RequestedTheme = AppSettings.elementTheme;
             }
             _thirdPartyDialog?.ShowAsync();
+        }
+
+        private async void LrcAPISource_Click(object sender, RoutedEventArgs e)
+        {
+            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
+            await Launcher.LaunchUriAsync(uri);
         }
     }
 }

@@ -183,7 +183,7 @@
   <data name="SettingOutput.Header" xml:space="preserve">
     <value>Output Settings</value>
   </data>
-  <data name="SettingOutputMode.Text" xml:space="preserve">
+  <data name="SettingOutputMode.Header" xml:space="preserve">
     <value>Output Modes</value>
   </data>
   <data name="WasapiExclusivePush.Content" xml:space="preserve">
@@ -201,16 +201,16 @@
   <data name="DirectSound.Content" xml:space="preserve">
     <value>DirectSound</value>
   </data>
-  <data name="SettingOutputDevice.Text" xml:space="preserve">
+  <data name="SettingOutputDevice.Header" xml:space="preserve">
     <value>Output Device</value>
   </data>
-  <data name="SettingBufferSize.Text" xml:space="preserve">
+  <data name="SettingBufferSize.Header" xml:space="preserve">
     <value>Buffer size (ms)</value>
   </data>
   <data name="SettingFunction.Text" xml:space="preserve">
     <value>Function</value>
   </data>
-  <data name="DefaultEntryInterface.Text" xml:space="preserve">
+  <data name="DefaultEntryInterface.Header" xml:space="preserve">
     <value>Default Entry Interface</value>
   </data>
   <data name="AddFolderCombox.Content" xml:space="preserve">
@@ -237,7 +237,7 @@
   <data name="ArtistCombox.Content" xml:space="preserve">
     <value>Artists</value>
   </data>
-  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+  <data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
     <value>Default Music Entry Interface</value>
   </data>
   <data name="SettingInterface.Header" xml:space="preserve">
@@ -246,25 +246,25 @@
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Cover lyrics settings</value>
   </data>
-  <data name="CoverServiceLrcAPISource.Text" xml:space="preserve">
+  <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>Cover Service LrcAPI Source</value>
   </data>
-  <data name="CoverServiceLrcAPISourceDoc.Content" xml:space="preserve">
+  <data name="CoverServiceLrcAPISourceDoc" xml:space="preserve">
     <value>document:https://docs.lrc.cx/docs/QuickStart/</value>
   </data>
-  <data name="CoverServiceLrcAPISourceAuthCode.Text" xml:space="preserve">
+  <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Cover Service LrcAPI Source Auth Code</value>
   </data>
-  <data name="CoverCache.Text" xml:space="preserve">
+  <data name="CoverCache.Header" xml:space="preserve">
     <value>Cover Cache</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Maximum number of pre loaded covers</value>
   </data>
-  <data name="AutoLyricMatching.Text" xml:space="preserve">
+  <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Auto Lyric Matching</value>
   </data>
-  <data name="NeedConfigureLrcAPIService.Content" xml:space="preserve">
+  <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Need to configure LrcAPI service</value>
   </data>
   <data name="CloseButtonFunction.Header" xml:space="preserve">
@@ -585,7 +585,7 @@
   <data name="IconPause" xml:space="preserve">
     <value>Pause</value>
   </data>
-  <data name="SettingDSDGain.Text" xml:space="preserve">
+  <data name="SettingDSDGain.Header" xml:space="preserve">
     <value>DSD gain (+db)</value>
   </data>
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
@@ -615,10 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Vocal</value>
   </data>
-  <data name="CoverSize.Text" xml:space="preserve">
+  <data name="CoverSize.Header" xml:space="preserve">
     <value>Cover Thumbnail Size</value>
   </data>
-  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+  <data name="CoverSizeToolTip" xml:space="preserve">
     <value>0 is the original size,Suggestion 150-200</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
@@ -627,13 +627,13 @@
   <data name="AnimationSettings.Header" xml:space="preserve">
     <value>Animation Settings</value>
   </data>
-  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+  <data name="EntranceAnimationTime.Header" xml:space="preserve">
     <value>Entrance Animation Time(ms)</value>
   </data>
-  <data name="SlideAnimationTime.Text" xml:space="preserve">
+  <data name="SlideAnimationTime.Header" xml:space="preserve">
     <value>Slide Animation Time(ms)</value>
   </data>
-  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+  <data name="DrillInAnimationTime.Header" xml:space="preserve">
     <value>Drill In Animation Time(ms)</value>
   </data>
   <data name="ProcessPriorityFunction.Header" xml:space="preserve">
@@ -681,7 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Do you want to remove the folder</value>
   </data>
-  <data name="BackgroundCover.Text" xml:space="preserve">
+  <data name="BackgroundCover.Header" xml:space="preserve">
     <value>Cover Background</value>
   </data>
   <data name="ReGetLyrics.Text" xml:space="preserve">
@@ -698,5 +698,11 @@
   </data>
   <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
     <value>Add To Current Playlist</value>
+  </data>
+  <data name="CoverCacheDescription" xml:space="preserve">
+    <value>Cover cache for album pages</value>
+  </data>
+  <data name="AppTitleHeader.Header" xml:space="preserve">
+    <value>OriginalSound HIFI Player</value>
   </data>
 </root>

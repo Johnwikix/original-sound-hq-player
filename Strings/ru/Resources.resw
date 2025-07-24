@@ -183,7 +183,7 @@
   <data name="SettingOutput.Header" xml:space="preserve">
     <value>Настройки вывода</value>
   </data>
-  <data name="SettingOutputMode.Text" xml:space="preserve">
+  <data name="SettingOutputMode.Header" xml:space="preserve">
     <value>Режим вывода</value>
   </data>
   <data name="WasapiExclusivePush.Content" xml:space="preserve">
@@ -201,16 +201,16 @@
   <data name="DirectSound.Content" xml:space="preserve">
     <value>DirectSound</value>
   </data>
-  <data name="SettingOutputDevice.Text" xml:space="preserve">
+  <data name="SettingOutputDevice.Header" xml:space="preserve">
     <value>Устройство вывода</value>
   </data>
-  <data name="SettingBufferSize.Text" xml:space="preserve">
+  <data name="SettingBufferSize.Header" xml:space="preserve">
     <value>Размер буфера (мс)</value>
   </data>
   <data name="SettingFunction.Text" xml:space="preserve">
     <value>Функции</value>
   </data>
-  <data name="DefaultEntryInterface.Text" xml:space="preserve">
+  <data name="DefaultEntryInterface.Header" xml:space="preserve">
     <value>Стартвая страница</value>
   </data>
   <data name="AddFolderCombox.Content" xml:space="preserve">
@@ -237,7 +237,7 @@
   <data name="ArtistCombox.Content" xml:space="preserve">
     <value>Артисты</value>
   </data>
-  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+  <data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
     <value>Стартвая страница музыки</value>
   </data>
   <data name="SettingInterface.Header" xml:space="preserve">
@@ -246,25 +246,25 @@
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Настройки обложки иrics</value>
   </data>
-  <data name="CoverServiceLrcAPISource.Text" xml:space="preserve">
+  <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>Источник CoverServiceLrcAPI</value>
   </data>
-  <data name="CoverServiceLrcAPISourceDoc.Content" xml:space="preserve">
+  <data name="CoverServiceLrcAPISourceDoc" xml:space="preserve">
     <value>Документация: https://docs.lrc.cx/docs/QuickStart/</value>
   </data>
-  <data name="CoverServiceLrcAPISourceAuthCode.Text" xml:space="preserve">
+  <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Код авторизации CoverServiceLrcAPI</value>
   </data>
-  <data name="CoverCache.Text" xml:space="preserve">
+  <data name="CoverCache.Header" xml:space="preserve">
     <value>Кэш обложек</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Макс. количество 미리 загруженных обложек</value>
   </data>
-  <data name="AutoLyricMatching.Text" xml:space="preserve">
+  <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Автоматическое сопоставлениеrics</value>
   </data>
-  <data name="NeedConfigureLrcAPIService.Content" xml:space="preserve">
+  <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Необходимо настроить службуLrcAPI</value>
   </data>
   <data name="CloseButtonFunction.Header" xml:space="preserve">
@@ -585,7 +585,7 @@
   <data name="IconPause" xml:space="preserve">
     <value>Пауза</value>
   </data>
-  <data name="SettingDSDGain.Text" xml:space="preserve">
+  <data name="SettingDSDGain.Header" xml:space="preserve">
     <value>Усиление DSD (+db)</value>
   </data>
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
@@ -615,10 +615,10 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Вокал</value>
   </data>
-  <data name="CoverSize.Text" xml:space="preserve">
+  <data name="CoverSize.Header" xml:space="preserve">
     <value>Размер миниатюры обложки</value>
   </data>
-  <data name="CoverSizeToolTip.Content" xml:space="preserve">
+  <data name="CoverSizeToolTip" xml:space="preserve">
     <value>0 Первоначальный размер.,Рекомендации 150 - 200</value>
   </data>
   <data name="IconVolume.Text" xml:space="preserve">
@@ -627,13 +627,13 @@
   <data name="AnimationSettings.Header" xml:space="preserve">
     <value>Настройки анимации</value>
   </data>
-  <data name="EntranceAnimationTime.Text" xml:space="preserve">
+  <data name="EntranceAnimationTime.Header" xml:space="preserve">
     <value>Входное время анимации(ms)</value>
   </data>
-  <data name="SlideAnimationTime.Text" xml:space="preserve">
+  <data name="SlideAnimationTime.Header" xml:space="preserve">
     <value>Время анимации слайда(ms)</value>
   </data>
-  <data name="DrillInAnimationTime.Text" xml:space="preserve">
+  <data name="DrillInAnimationTime.Header" xml:space="preserve">
     <value>Сверление во время анимации(ms)</value>
   </data>
   <data name="ProcessPriorityFunction.Header" xml:space="preserve">
@@ -681,7 +681,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
-  <data name="BackgroundCover.Text" xml:space="preserve">
+  <data name="BackgroundCover.Header" xml:space="preserve">
     <value>Фон обложки</value>
   </data>
   <data name="ReGetLyrics.Text" xml:space="preserve">
@@ -698,5 +698,11 @@
   </data>
   <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
     <value>Добавить в текущий список воспроизведения</value>
+  </data>
+  <data name="CoverCacheDescription" xml:space="preserve">
+    <value>Кэш обложки страницы альбома</value>
+  </data>
+  <data name="AppTitleHeader.Header" xml:space="preserve">
+    <value>Hi-Fi-плеер Original Sound</value>
   </data>
 </root>
