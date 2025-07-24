@@ -354,11 +354,7 @@
                         Text="{Binding ViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <Button
-                                x:Name="ThirdParty"
-                                x:Uid="ThirdPartyComponents"
-                                Click="ThirdParty_Click"
-                                Style="{StaticResource AccentButtonStyle}" />
+                            <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
