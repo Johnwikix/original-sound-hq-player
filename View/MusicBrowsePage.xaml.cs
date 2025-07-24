@@ -772,6 +772,8 @@ namespace WinUIMusicPlayer.View
         public async Task ShowPlayingDetail() {
             if (!ViewModel.IsInPlayingDetailMode) {
                 ViewModel.IsInPlayingDetailMode = true;
+                App.MainWindow.IsPlayingDetail = true;
+                App.MainWindow.NavigationViewCollapsed();
                 ChangeAcrylicBrushBackgroundOpacity();
                 mainWindow?.AppTitleBarVisibility(false);             
                 if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
@@ -802,6 +804,8 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.IsInPlayingDetailMode = false;
+            App.MainWindow.IsPlayingDetail = false;
+            App.MainWindow.NavigationViewExpanded();
             ChangeAcrylicBrushBackgroundOpacity();
             mainWindow?.AppTitleBarVisibility(true);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);

@@ -27,7 +27,7 @@
                 Opacity="{Binding ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
                 Stretch="UniformToFill" />
         </Grid.Background>
-        <Grid x:Name="AcrylicBrushBackground" Margin="0">
+        <Grid x:Name="AcrylicBrushBackground" Margin="0" Padding="48,0,0,0">
             <Grid Margin="{Binding ViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -223,7 +223,7 @@
                                 VerticalAlignment="Center"
                                 Glyph="{Binding ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                         </Button>
-                        <Button
+                        <!--<Button
                             Margin="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
@@ -240,7 +240,7 @@
                                 Margin="0"
                                 VerticalAlignment="Center"
                                 Glyph="{Binding ViewModel.HideNavigationViewButtonVisibility, Converter={StaticResource HideNavigationViewIconConverter}, Mode=OneWay}" />
-                        </Button>
+                        </Button>-->
                     </StackPanel>
                     <Grid Grid.Row="1" Grid.Column="0">
                         <Grid.RowDefinitions>

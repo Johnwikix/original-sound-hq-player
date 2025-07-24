@@ -13,7 +13,7 @@
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
-    <Grid Margin="0,32,0,32">
+    <Grid Margin="48,32,0,32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -361,7 +361,7 @@
                                 Style="{StaticResource AccentButtonStyle}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>               
+                </controls:SettingsExpander>
             </Grid>
         </ScrollView>
     </Grid>

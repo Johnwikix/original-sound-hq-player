@@ -37,6 +37,7 @@ namespace WinUIMusicPlayer
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler updateSelectSection;
+        public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         private IntPtr m_hwnd;
@@ -350,7 +351,7 @@ namespace WinUIMusicPlayer
         public void NavigationViewCollapsed() {
             DispatcherQueue.TryEnqueue(() =>
             {
-                NavigationViewControl.Visibility = Visibility.Collapsed;
+                NavigationViewControlGrid.Opacity = 0;
             });            
         }
 
@@ -358,7 +359,7 @@ namespace WinUIMusicPlayer
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                NavigationViewControl.Visibility = Visibility.Visible;
+                NavigationViewControlGrid.Opacity = 1.0f;
             });            
         }
 
@@ -386,6 +387,18 @@ namespace WinUIMusicPlayer
             {
                 AppTitleBar.Visibility = isVisible? Visibility.Visible: Visibility.Collapsed; 
             });            
+        }
+
+        private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            NavigationViewControlGrid.Opacity = 1.0f;
+        }
+
+        private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            if (IsPlayingDetail) {
+                NavigationViewControlGrid.Opacity = 0;
+            }            
         }
     }
 }

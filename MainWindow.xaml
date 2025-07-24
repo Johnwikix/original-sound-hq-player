@@ -45,7 +45,56 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center" />
         </Grid>
-        <Grid>
+        <RelativePanel>
+            <!--  Frame 填充整个区域  -->
+            <Frame
+                x:Name="ContentFrame"
+                RelativePanel.AlignBottomWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                RelativePanel.AlignTopWithPanel="True" />
+
+            <!--  NavigationView 浮在左侧  -->
+            <Grid
+                x:Name="NavigationViewControlGrid"
+                PointerEntered="NavigationViewControl_PointerEntered"
+                PointerExited="NavigationViewControl_PointerExited"
+                RelativePanel.AlignBottomWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignTopWithPanel="True">
+                <Grid.OpacityTransition>
+                    <ScalarTransition />
+                </Grid.OpacityTransition>
+                <NavigationView
+                    x:Name="NavigationViewControl"
+                    Width="48"
+                    BackRequested="NavigationViewControl_BackRequested"
+                    IsBackButtonVisible="Visible"
+                    IsBackEnabled="True"
+                    IsPaneOpen="False"
+                    IsPaneToggleButtonVisible="False"
+                    ItemInvoked="NavigationView_ItemInvoked"
+                    PaneDisplayMode="LeftCompact"
+                    Visibility="Collapsed">
+                    <NavigationView.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
+                    </NavigationView.KeyboardAccelerators>
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
+                            <NavigationViewItem.Content>
+                                <TextBlock x:Uid="AddFolder" />
+                            </NavigationViewItem.Content>
+                        </NavigationViewItem>
+                        <NavigationViewItem Icon="Audio" Tag="MusicBrowse">
+                            <NavigationViewItem.Content>
+                                <TextBlock x:Uid="MusicBrowse" />
+                            </NavigationViewItem.Content>
+                        </NavigationViewItem>
+                    </NavigationView.MenuItems>
+                </NavigationView>
+            </Grid>
+        </RelativePanel>
+        <!--<Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -80,6 +129,6 @@
             </NavigationView>
 
             <Frame x:Name="ContentFrame" Grid.Column="1" />
-        </Grid>
+        </Grid>-->
     </Grid>
 </Window>

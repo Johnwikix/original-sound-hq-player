@@ -253,12 +253,12 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _pageType, value);
         }
 
-        private bool _hideNavigationViewButtonVisibility = false;
-        public bool HideNavigationViewButtonVisibility
-        {
-            get => _hideNavigationViewButtonVisibility;
-            set => SetProperty(ref _hideNavigationViewButtonVisibility, value);
-        }
+        //private bool _hideNavigationViewButtonVisibility = false;
+        //public bool HideNavigationViewButtonVisibility
+        //{
+        //    get => _hideNavigationViewButtonVisibility;
+        //    set => SetProperty(ref _hideNavigationViewButtonVisibility, value);
+        //}
         private bool _isInPlayingDetailMode = false;
         public bool IsInPlayingDetailMode {
             get => _isInPlayingDetailMode;
@@ -765,34 +765,32 @@ namespace WinUIMusicPlayer.ViewModel
                 if (IsFullScreen)
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
-                    App.MainWindow.NavigationViewExpanded();
-                    HideNavigationViewButtonVisibility = false;
+                    //HideNavigationViewButtonVisibility = false;
                 }
                 else
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
-                    App.MainWindow.NavigationViewCollapsed();
-                    HideNavigationViewButtonVisibility = true;
+                    //HideNavigationViewButtonVisibility = true;
                 }
                 IsFullScreen = !IsFullScreen;
             }
 
         }
-        [RelayCommand]
-        private void OnHideNavigationViewButtonChanged()
-        {
-            if (App.MainWindow.AppWindow != null)
-            {
-                if (HideNavigationViewButtonVisibility)
-                {
-                    App.MainWindow.NavigationViewExpanded();
-                }
-                else
-                {
-                    App.MainWindow.NavigationViewCollapsed();                    
-                }
-                HideNavigationViewButtonVisibility = !HideNavigationViewButtonVisibility;
-            }
-        }
+        //[RelayCommand]
+        //private void OnHideNavigationViewButtonChanged()
+        //{
+        //    if (App.MainWindow.AppWindow != null)
+        //    {
+        //        if (HideNavigationViewButtonVisibility)
+        //        {
+        //            App.MainWindow.NavigationViewExpanded();
+        //        }
+        //        else
+        //        {
+        //            App.MainWindow.NavigationViewCollapsed();                    
+        //        }
+        //        HideNavigationViewButtonVisibility = !HideNavigationViewButtonVisibility;
+        //    }
+        //}
     }
 }
