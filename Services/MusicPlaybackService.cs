@@ -890,27 +890,23 @@ namespace WinUIMusicPlayer.Services
             {
                 if (waveOut != null)
                 {
-                    isPausing = true;
-                    waveOut.Pause();
-                    AppSettings.isPlaying = false;
-                    MusicBrowseViewModel.IsPlaying = false;
-                    progressTimer.Stop();
-                    //if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-                    //{
-                    //    isPausing = true;
-                    //    waveOut.Stop();
-                    //    AppSettings.isPlaying = false;
-                    //    MusicBrowseViewModel.IsPlaying = false;
-                    //    progressTimer.Stop();
-                    //}
-                    //else
-                    //{
-                    //    isPausing = true;
-                    //    waveOut.Pause();
-                    //    AppSettings.isPlaying = false;
-                    //    MusicBrowseViewModel.IsPlaying = false;
-                    //    progressTimer.Stop();
-                    //}
+                    //必须这样写，不然在某些音频设备上会有bug
+                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
+                    {
+                        isPausing = true;
+                        waveOut.Stop();
+                        AppSettings.isPlaying = false;
+                        MusicBrowseViewModel.IsPlaying = false;
+                        progressTimer.Stop();
+                    }
+                    else
+                    {
+                        isPausing = true;
+                        waveOut.Pause();
+                        AppSettings.isPlaying = false;
+                        MusicBrowseViewModel.IsPlaying = false;
+                        progressTimer.Stop();
+                    }
                 }
             }
             else
