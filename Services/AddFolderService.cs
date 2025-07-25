@@ -74,10 +74,12 @@ namespace WinUIMusicPlayer.Services
                 using (TagLib.File audioFile = TagLib.File.Create(file.Path))
                 {
                     Tag tag = audioFile.Tag;
+                    
                     string title = "未知标题";
                     string artist = "未知艺术家";
                     string album = "未知专辑";
                     int trackNumber = 0;
+                    int diskNumber = 0;
                     int sampleRate = 0;
                     int bitDepth = 0;
                     int bitRate = 0;
@@ -91,6 +93,7 @@ namespace WinUIMusicPlayer.Services
                     string lastLevelFolderPath = directoryInfo.Name;
                     Properties audioProperties = audioFile.Properties;
                     trackNumber = (int)tag.Track;
+                    diskNumber = (int)tag.Disc;
                     title = !string.IsNullOrWhiteSpace(tag.Title) ?
                        tag.Title : Path.GetFileNameWithoutExtension(file.Name);
 
@@ -129,6 +132,7 @@ namespace WinUIMusicPlayer.Services
                         SampleRate = sampleRate,
                         Channel = channelCount,
                         TrackNumber = trackNumber,
+                        DiskNumber = diskNumber,
                         Year = year,
                         Lyrics = lyrics
                     };

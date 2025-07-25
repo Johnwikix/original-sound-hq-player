@@ -714,4 +714,7 @@
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>ライブラリフォルダの待ち受け</value>
   </data>
+  <data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>ディスク番号：</value>
+  </data>
 </root>

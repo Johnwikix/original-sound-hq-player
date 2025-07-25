@@ -180,6 +180,7 @@
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.25*" />
                         </Grid.ColumnDefinitions>
                         <Button
@@ -222,20 +223,25 @@
                             Grid.Column="4"
                             Margin="5"
                             VerticalAlignment="Center"
+                            Text="{x:Bind DiskNumber, Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Column="5"
+                            Margin="5"
+                            VerticalAlignment="Center"
                             Text="{x:Bind TrackNumber, Mode=OneWay}" />
                         <Image
-                            Grid.Column="4"
+                            Grid.Column="6"
                             Height="10"
                             Margin="5"
                             VerticalAlignment="Center"
                             Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                         <TextBlock
-                            Grid.Column="6"
+                            Grid.Column="7"
                             Margin="5"
                             VerticalAlignment="Center"
                             Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" />
                         <Button
-                            Grid.Column="7"
+                            Grid.Column="8"
                             Margin="5"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -247,7 +253,7 @@
                         </Button>
                         <FontIcon
                             x:Name="IsExistOnDeviceIcon"
-                            Grid.Column="8"
+                            Grid.Column="9"
                             FontSize="14"
                             Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                     </Grid>

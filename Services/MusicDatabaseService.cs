@@ -1046,6 +1046,7 @@ namespace WinUIMusicPlayer.Services
                 existingMusic.Lyrics = newMusic.Lyrics;
             }
             existingMusic.TrackNumber = newMusic.TrackNumber;
+            existingMusic.DiskNumber = newMusic.DiskNumber;
             await _dbConnection.UpdateAsync(existingMusic);
         }
 

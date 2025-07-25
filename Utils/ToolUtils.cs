@@ -79,7 +79,10 @@ namespace WinUIMusicPlayer.Utils
                 ["Artist"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
                 ["Album"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
                                                   .OrderBy(g => g.Key, StringComparer)
-                                                  .SelectMany(g => g.OrderBy(m => m.TrackNumber))
+                                                  .SelectMany(g => g
+                                                        .OrderBy(m => m.DiskNumber) 
+                                                        .ThenBy(m => m.TrackNumber)      
+                                                   )
             };
 
         // 预定义的类型默认排序策略
@@ -90,11 +93,17 @@ namespace WinUIMusicPlayer.Utils
                 ["folderCover"] = musicList => musicList.OrderBy(m => m.LastLevelFolderPath, StringComparer),
                 ["folder"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
                                                    .OrderBy(g => g.Key, StringComparer)
-                                                   .SelectMany(g => g.OrderBy(m => m.TrackNumber)),
+                                                   .SelectMany(g => g
+                                                        .OrderBy(m => m.DiskNumber)
+                                                        .ThenBy(m => m.TrackNumber)
+                                                   ),
                 ["artistCover"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
-                ["artist"] = musicList => musicList.OrderBy(m => m.Album, StringComparer),
+                ["artist"] = musicList => musicList.OrderBy(m => m.Album, StringComparer)
+                                                    .ThenBy(m => m.DiskNumber)
+                                                    .ThenBy(m => m.TrackNumber),
                 ["albumCover"] = musicList => musicList.OrderBy(m => m.Album, StringComparer),
-                ["album"] = musicList => musicList.OrderBy(m => m.TrackNumber),
+                ["album"] = musicList => musicList.OrderBy(m => m.DiskNumber)
+                                            .ThenBy(m => m.TrackNumber),
                 ["favour"] = musicList => musicList.OrderByDescending(m => m.Order),
                 ["playList"] = musicList => musicList.OrderByDescending(m => m.PlayListOrder)
             };

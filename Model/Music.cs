@@ -76,6 +76,12 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _trackNumber, value);
         }
 
+        private int _diskNumber;
+        public int DiskNumber {
+            get => _diskNumber;
+            set => SetProperty(ref _diskNumber, value);
+        }
+
         private string _lyrics;
         public string Lyrics
         {

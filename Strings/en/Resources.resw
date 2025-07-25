@@ -714,4 +714,7 @@
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>Music library folder listening</value>
   </data>
+  <data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>Disc number:</value>
+  </data>
 </root>

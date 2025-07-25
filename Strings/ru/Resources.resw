@@ -714,4 +714,7 @@
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>Прослушивание папок библиотеки</value>
   </data>
+  <data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>Диск:</value>
+  </data>
 </root>

@@ -269,6 +269,7 @@ namespace WinUIMusicPlayer.ViewModel
                     music.Author = musicItem.Author;
                     music.Album = musicItem.Album;
                     music.Year = musicItem.Year;
+                    music.DiskNumber = musicItem.DiskNumber;
                     music.TrackNumber = musicItem.TrackNumber;
                     music.Lyrics = musicItem.Lyrics;
                     break;

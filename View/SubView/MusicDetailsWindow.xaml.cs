@@ -97,14 +97,15 @@ namespace WinUIMusicPlayer.View.SubView
             TitleTextBlock.Text = music.Title;
             AuthorTextBlock.Text = music.Author;
             AlbumTextBlock.Text = music.Album;
-            TrackNumberBox.Text = music.TrackNumber.ToString();
+            TrackNumberBox.Value = music.TrackNumber;
             LyricsTextBox.Text = music.Lyrics;
             DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
             BitDepthTextBlock.Text = $"{music.BitDepth}bit";
             BitRateTextBlock.Text = $"{music.BitRate}kbps";
             SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
-            YearTextBlock.Text = music.Year.ToString();
+            YearTextBlock.Value = music.Year;
             LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
+            DiskNumberBox.Value = music.DiskNumber;
             PathTextBlock.Text = music.Path;
             albumCoverData = await ToolUtils.GetRawImage(music);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
@@ -133,8 +134,9 @@ namespace WinUIMusicPlayer.View.SubView
                 tag.Title = TitleTextBlock.Text;
                 tag.Album = AlbumTextBlock.Text;
                 tag.Performers = new string[] { AuthorTextBlock.Text };
-                tag.Track = uint.Parse(TrackNumberBox.Text);
-                tag.Year = uint.Parse(YearTextBlock.Text);
+                tag.Track = (uint)TrackNumberBox.Value;
+                tag.Disc = (uint)DiskNumberBox.Value;
+                tag.Year = (uint)YearTextBlock.Value;
                 tag.Lyrics = LyricsTextBox.Text;
                 LoadingGrid.Visibility = Visibility.Visible;
                 MusicDetail.Visibility = Visibility.Collapsed;
@@ -143,8 +145,9 @@ namespace WinUIMusicPlayer.View.SubView
             music.Title = TitleTextBlock.Text;
             music.Author = AuthorTextBlock.Text;
             music.Album = AlbumTextBlock.Text;
-            music.Year = int.Parse(YearTextBlock.Text);
-            music.TrackNumber = int.Parse(TrackNumberBox.Text);
+            music.Year = (int)YearTextBlock.Value;
+            music.DiskNumber = (int)DiskNumberBox.Value;
+            music.TrackNumber = (int)TrackNumberBox.Value;
             music.Lyrics = LyricsTextBox.Text;
             await MusicDatabaseService.UpdateMusicInfo(music);
             if (AppData.albumCoverCache.ContainsKey(music.Album))

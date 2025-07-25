@@ -714,4 +714,7 @@
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>音乐库文件夹监听</value>
   </data>
+  <data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>碟号：</value>
+  </data>
 </root>
