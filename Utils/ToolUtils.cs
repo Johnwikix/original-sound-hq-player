@@ -925,5 +925,21 @@ namespace WinUIMusicPlayer.Utils
             return lyrics;
         }
 
+        public static string GetLyricsFromFile(string filePath)
+        {
+            try
+            {
+                using (TagLib.File audioFile = TagLib.File.Create(filePath))
+                {
+                    Tag tag = audioFile.Tag;
+                    return tag.Lyrics;
+                }
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
     }
 }

@@ -237,6 +237,18 @@ namespace WinUIMusicPlayer.View.SubView
             ToolUtils.OpenFileInExplorer(musicDetail.Path);
         }
 
+        private  void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            _=Task.Run(() => {
+                var lyrics =ToolUtils.GetLyricsFromFile(musicDetail.Path);
+                if (!string.IsNullOrEmpty(lyrics)) {
+                    DispatcherQueue.TryEnqueue(() => {
+                        LyricsTextBox.Text = lyrics;
+                    });
+                }
+            });            
+        }
+
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
         {
             try

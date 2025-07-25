@@ -717,4 +717,7 @@
   <data name="DiskNumberBox.Text" xml:space="preserve">
     <value>碟号：</value>
   </data>
+  <data name="ReadLyricsFromFile.Content" xml:space="preserve">
+    <value>从文件中重新读取歌词</value>
+  </data>
 </root>

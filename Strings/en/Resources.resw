@@ -717,4 +717,7 @@
   <data name="DiskNumberBox.Text" xml:space="preserve">
     <value>Disc number:</value>
   </data>
+  <data name="ReadLyricsFromFile.Content" xml:space="preserve">
+    <value>Retrieve lyrics from the file again</value>
+  </data>
 </root>
