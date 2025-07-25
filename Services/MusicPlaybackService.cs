@@ -892,22 +892,27 @@ namespace WinUIMusicPlayer.Services
             {
                 if (waveOut != null)
                 {
-                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-                    {
-                        isPausing = true;
-                        waveOut.Stop();
-                        AppSettings.isPlaying = false;
-                        MusicBrowseViewModel.IsPlaying = false;
-                        progressTimer.Stop();
-                    }
-                    else
-                    {
-                        isPausing = true;
-                        waveOut.Pause();
-                        AppSettings.isPlaying = false;
-                        MusicBrowseViewModel.IsPlaying = false;
-                        progressTimer.Stop();
-                    }
+                    isPausing = true;
+                    waveOut.Pause();
+                    AppSettings.isPlaying = false;
+                    MusicBrowseViewModel.IsPlaying = false;
+                    progressTimer.Stop();
+                    //if (AppSettings.OutputMode.Contains("WasapiExclusive"))
+                    //{
+                    //    isPausing = true;
+                    //    waveOut.Stop();
+                    //    AppSettings.isPlaying = false;
+                    //    MusicBrowseViewModel.IsPlaying = false;
+                    //    progressTimer.Stop();
+                    //}
+                    //else
+                    //{
+                    //    isPausing = true;
+                    //    waveOut.Pause();
+                    //    AppSettings.isPlaying = false;
+                    //    MusicBrowseViewModel.IsPlaying = false;
+                    //    progressTimer.Stop();
+                    //}
                 }
             }
             else
@@ -915,20 +920,24 @@ namespace WinUIMusicPlayer.Services
                 if (waveOut != null)
                 {
                     isPausing = false;
-                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-                    {
-                        waveOut.Play();
-                        AppSettings.isPlaying = true;
-                        MusicBrowseViewModel.IsPlaying = true;
-                        progressTimer.Start();
-                    }
-                    else
-                    {
-                        waveOut.Play();
-                        AppSettings.isPlaying = true;
-                        MusicBrowseViewModel.IsPlaying = true;
-                        progressTimer.Start();
-                    }
+                    waveOut.Play();
+                    AppSettings.isPlaying = true;
+                    MusicBrowseViewModel.IsPlaying = true;
+                    progressTimer.Start();
+                    //if (AppSettings.OutputMode.Contains("WasapiExclusive"))
+                    //{
+                    //    waveOut.Play();
+                    //    AppSettings.isPlaying = true;
+                    //    MusicBrowseViewModel.IsPlaying = true;
+                    //    progressTimer.Start();
+                    //}
+                    //else
+                    //{
+                    //    waveOut.Play();
+                    //    AppSettings.isPlaying = true;
+                    //    MusicBrowseViewModel.IsPlaying = true;
+                    //    progressTimer.Start();
+                    //}
 
                 }
                 else
