@@ -260,8 +260,8 @@ namespace WinUIMusicPlayer.Services
                 {
 
                     if (multiTypeAudioReader != null)
-                    {
-                        if (multiTypeAudioReader.CurrentTime.TotalSeconds >= multiTypeAudioReader.TotalTime.TotalSeconds)
+                    {                        
+                        if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
                         {
                             AutoPlayNextTrack();
                         }
