@@ -80,7 +80,7 @@ namespace WinUIMusicPlayer.Services
                 foreach (Folder folder in folders)
                 {
                     //subFolderList.Clear();
-                    List<SubFolder> subFolders = new List<SubFolder>();
+                    List<SubFolder> subFolders = [];
                     await Task.Run(() =>
                     {
                         subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);

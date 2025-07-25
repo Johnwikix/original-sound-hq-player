@@ -705,4 +705,13 @@
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>原音HIFIプレイヤー</value>
   </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>カバーロードスレッド数</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>アルバムページのロードカバーのスレッド数</value>
+  </data>
+  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>ライブラリフォルダの待ち受け</value>
+  </data>
 </root>

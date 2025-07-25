@@ -705,4 +705,13 @@
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>Reproductor HIFI Sonido Original</value>
   </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>Número de hilos cargados en la portada</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>Número de hilos en los que la página del álbum carga la portada</value>
+  </data>
+  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>Escucha de carpetas de la Biblioteca de música</value>
+  </data>
 </root>

@@ -705,4 +705,13 @@
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>Hi-Fi-плеер Original Sound</value>
   </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>Количество потоков, загруженных на обложку</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>Количество потоков на странице альбома для загрузки обложки</value>
+  </data>
+  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>Прослушивание папок библиотеки</value>
+  </data>
 </root>

@@ -54,6 +54,8 @@ namespace WinUIMusicPlayer.Model
         };
         public static bool IsEqualizerEnabled { get; set; } = false;  
         public static string EqualizerPreset { get; set; } = "Flat";
+        public static bool IsFolderWatchEnabled { get; set; } = true;
+        public static int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

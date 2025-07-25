@@ -362,6 +362,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private int _coverLoadThreadCount = 8;
+        public int CoverLoadThreadCount
+        {
+            get => _coverLoadThreadCount;
+            set
+            {
+                if (SetProperty(ref _coverLoadThreadCount, value))
+                {
+                    AppSettings.CoverLoadThreadCount = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
         private string _version = string.Empty;
         public string Version
         {
@@ -369,6 +386,22 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _version, value);
         }
 
+        private bool _isFolderWatchEnabled = true;
+        public bool IsFolderWatchEnabled
+        {
+            get => _isFolderWatchEnabled;
+            set
+            {
+                if (SetProperty(ref _isFolderWatchEnabled, value))
+                {
+                    AppSettings.IsFolderWatchEnabled = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
 
 
         public SettingsViewModel()
@@ -421,6 +454,10 @@ namespace WinUIMusicPlayer.ViewModel
             IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             // 初始化背景封面开关
             IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
+            // 初始化文件夹监视开关
+            IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+            // 初始化封面加载线程数
+            CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             _isInitized = true;
         }

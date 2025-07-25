@@ -705,4 +705,13 @@
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>原音HIFI播放器</value>
   </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>封面加载线程数量</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>专辑页面加载封面的线程数</value>
+  </data>
+  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>音乐库文件夹监听</value>
+  </data>
 </root>

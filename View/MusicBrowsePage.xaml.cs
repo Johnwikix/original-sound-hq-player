@@ -111,19 +111,7 @@ namespace WinUIMusicPlayer.View
                         musicPlaybackService.SetEqualizer();
                         musicPlaybackService.ToggleEqualizer();
                     }
-                });
-                //DispatcherQueue.TryEnqueue(() =>
-                //{
-                //    if (!AppSettings.IsEqualizerEnabled)
-                //    {
-                //        musicPlaybackService.ClearEqualizer();
-                //    }
-                //    else
-                //    {
-                //        musicPlaybackService.SetEqualizer();
-                //        musicPlaybackService.ToggleEqualizer();
-                //    }
-                //});                
+                });             
             };
             this.notificationService = notificationService;
             InitializeTimer();

@@ -252,13 +252,6 @@ namespace WinUIMusicPlayer.ViewModel
             get => _pageType;
             set => SetProperty(ref _pageType, value);
         }
-
-        //private bool _hideNavigationViewButtonVisibility = false;
-        //public bool HideNavigationViewButtonVisibility
-        //{
-        //    get => _hideNavigationViewButtonVisibility;
-        //    set => SetProperty(ref _hideNavigationViewButtonVisibility, value);
-        //}
         private bool _isInPlayingDetailMode = false;
         public bool IsInPlayingDetailMode {
             get => _isInPlayingDetailMode;
@@ -293,7 +286,9 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = (double)(AppData.Volume * 100);
             _tempVolume = (double)(AppData.Volume * 100);
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-            StartWatchingFileFolder();
+            if (AppSettings.IsFolderWatchEnabled) {
+                StartWatchingFileFolder();
+            }            
             StartWatchingUsbStorageDevices();
         }       
 
@@ -440,7 +435,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (!await scanSemaphore.WaitAsync(0))
+            if (!await scanSemaphore.WaitAsync(0) || !AppSettings.IsFolderWatchEnabled)
             {
                 Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
                 return;

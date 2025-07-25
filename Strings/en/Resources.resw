@@ -705,4 +705,13 @@
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>OriginalSound HIFI Player</value>
   </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>Number of cover loading threads</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>The number of threads loading the album cover on the album page</value>
+  </data>
+  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>Music library folder listening</value>
+  </data>
 </root>

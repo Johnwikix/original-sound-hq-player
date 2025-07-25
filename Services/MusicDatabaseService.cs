@@ -743,6 +743,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppSettings.IsProcessAboveNormal = settings.IsProcessAboveNormal;
                 AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
+                AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
+                AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
             }
         }
 
@@ -773,6 +775,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
             newSettings.IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
+            newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+            newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

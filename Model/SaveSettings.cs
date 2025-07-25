@@ -30,5 +30,7 @@ namespace WinUIMusicPlayer.Model
         public int DrillInAnimationTime { get; set; } = 400;
         public bool IsProcessAboveNormal { get; set; } = false;
         public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
+        public bool IsFolderWatchEnabled { get; set; } = true;
+        public int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数
     }
 }

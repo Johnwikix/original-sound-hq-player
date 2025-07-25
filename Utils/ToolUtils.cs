@@ -855,7 +855,7 @@ namespace WinUIMusicPlayer.Utils
         public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter) {
             _ = Task.Run(async () =>
             {
-                var semaphore = new SemaphoreSlim(8, Environment.ProcessorCount);
+                var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
                 var allMusicItems = groupedByFirstLetter.SelectMany(group => group).ToList();
                 var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
                 {
