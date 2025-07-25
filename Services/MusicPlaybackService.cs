@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.Services
         private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
-        public bool isManualPlayingNext = false;
+        //public bool isManualPlayingNext = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
@@ -261,9 +261,10 @@ namespace WinUIMusicPlayer.Services
 
                     if (multiTypeAudioReader != null)
                     {
-                        //if (multiTypeAudioReader.CurrentTime.TotalSeconds > multiTypeAudioReader.TotalTime.TotalSeconds) {
-                        //    AutoPlayNextTrack();
-                        //}
+                        if (multiTypeAudioReader.CurrentTime.TotalSeconds >= multiTypeAudioReader.TotalTime.TotalSeconds)
+                        {
+                            AutoPlayNextTrack();
+                        }
                         // 格式化显示时间
                         UpdateProgressTimerUI();
                     } 
@@ -338,7 +339,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                isManualPlayingNext = true;
+                //isManualPlayingNext = true;
                 lock (_waveOutLock)
                 {
                     // 如果当前正在播放，停止播放并重新初始化音频资源
@@ -509,17 +510,17 @@ namespace WinUIMusicPlayer.Services
                     waveOut = defaultWaveOutEvent;
                     break;
             }
-            waveOut.PlaybackStopped += WaveOut_Stop;
+            //waveOut.PlaybackStopped += WaveOut_Stop;
         }
 
-        private void WaveOut_Stop(object? sender, StoppedEventArgs e)
-        {
-            if (!isManualPlayingNext) {
-                waveOut.PlaybackStopped -= WaveOut_Stop;
-                AutoPlayNextTrack();
-            }
-            isManualPlayingNext = false;
-        }
+        //private void WaveOut_Stop(object? sender, StoppedEventArgs e)
+        //{
+        //    if (!isManualPlayingNext) {
+        //        waveOut.PlaybackStopped -= WaveOut_Stop;
+        //        AutoPlayNextTrack();
+        //    }
+        //    isManualPlayingNext = false;
+        //}
 
         public void AutoPlayNextTrack()
         {
@@ -596,7 +597,7 @@ namespace WinUIMusicPlayer.Services
                 lock (_waveOutLock) {
                     if (waveOut != null)
                     {
-                        isManualPlayingNext = true;
+                        //isManualPlayingNext = true;
                         waveOut.Stop();
                         waveOut.Dispose();
                         waveOut = null;
@@ -718,7 +719,7 @@ namespace WinUIMusicPlayer.Services
         {
             lock (_waveOutLock)
             {
-                isManualPlayingNext = true;
+                //isManualPlayingNext = true;
                 if (InitializeAudioResources(music, currentPos))
                 {
                     try
@@ -755,16 +756,13 @@ namespace WinUIMusicPlayer.Services
                         System.Diagnostics.Debug.WriteLine($"错误: {ex.Message}");
                         Reset();
                     }
-                    finally {
-                        isManualPlayingNext = false;
-                    }
                 }
                 else
                 {
                     Reset();
                     OutputDeviceChange();
                 }
-                isManualPlayingNext = false;
+                //isManualPlayingNext = false;
             }
         }
         private void InitializeMusic() {
@@ -820,7 +818,7 @@ namespace WinUIMusicPlayer.Services
             }
             if (waveOut != null)
             {
-                waveOut.PlaybackStopped -= WaveOut_Stop;
+                //waveOut.PlaybackStopped -= WaveOut_Stop;
                 waveOut.Stop();                
                 waveOut.Dispose();                
                 waveOut = null;
@@ -877,7 +875,7 @@ namespace WinUIMusicPlayer.Services
         {
             if (waveOut != null)
             {
-                isManualPlayingNext = true;
+                //isManualPlayingNext = true;
                 progressTimer.Stop();
                 waveOut.Stop();
                 AppSettings.isPlaying = false;
