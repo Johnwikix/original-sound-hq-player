@@ -224,24 +224,6 @@
                                 VerticalAlignment="Center"
                                 Glyph="{Binding ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                         </Button>
-                        <!--<Button
-                            Margin="0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Command="{Binding ViewModel.HideNavigationViewButtonChangedCommand, Mode=OneWay}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="H" />
-                            </Button.KeyboardAccelerators>
-                            <FontIcon
-                                x:Name="HideNavigationView"
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                Glyph="{Binding ViewModel.HideNavigationViewButtonVisibility, Converter={StaticResource HideNavigationViewIconConverter}, Mode=OneWay}" />
-                        </Button>-->
                     </StackPanel>
                     <Grid Grid.Row="1" Grid.Column="0">
                         <Grid.RowDefinitions>
@@ -249,19 +231,13 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!--  专辑封面  -->
-                        <Grid Grid.Row="0">
+                        <Grid Grid.Row="0" Margin="0,20,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="6*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="10*" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
                             <Grid
-                                Grid.Row="1"
                                 Grid.Column="1"
                                 Margin="10"
                                 HorizontalAlignment="Center"
