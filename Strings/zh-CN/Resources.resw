@@ -720,4 +720,7 @@
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>从文件中重新读取歌词</value>
   </data>
+  <data name="saveConfirm.Text" xml:space="preserve">
+    <value>是否确定写入元信息至音乐文件</value>
+  </data>
 </root>

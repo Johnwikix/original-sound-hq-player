@@ -720,4 +720,7 @@
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>ファイルから歌詞を読み直す</value>
   </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>音楽ファイルにメタ情報を書き込むかどうかを確認</value>
+  </data>
 </root>

@@ -720,4 +720,7 @@
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Retrieve lyrics from the file again</value>
   </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>Are you sure to write metadata to the music file</value>
+  </data>
 </root>

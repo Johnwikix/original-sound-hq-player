@@ -489,7 +489,7 @@
                                 <TextBlock
                                     Margin="0,0,0,12"
                                     Style="{ThemeResource BaseTextBlockStyle}"
-                                    Text="是否确定保存元信息至音乐" />
+                                    x:Uid="SaveConfirm" />
                                 <StackPanel Orientation="Horizontal">
                                     <Button
                                         x:Uid="ConfirmButton"
