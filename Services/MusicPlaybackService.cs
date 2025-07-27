@@ -279,37 +279,33 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void UpdateProgressTimerUI() 
+        private void UpdateProgressTimerUI()
         {
-            try
+            if (multiTypeAudioReader != null)
             {
-                if (multiTypeAudioReader != null) {
-                    _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
-                    _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
-                    _timeStringBuilder.Clear();
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
+                _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
+                _timeStringBuilder.Clear();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!isManualSelect)
                     {
-                        if (!isManualSelect)
+                        try
                         {
-                            try {
-                                MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
-                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine(ex.Message);
-                            }
+                            MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
+                            MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
                         }
-                    });
-                    UpdateLyrics(_cachedCurrentTime);
-                    _systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
-                }               
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
+                    }
+                });
+                UpdateLyrics(_cachedCurrentTime);
+                _systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
             }
-            catch (Exception ex) {
-                Debug.WriteLine(ex.Message);
-            }           
-        } 
-        
+        }
+
 
         private void UpdateLyrics(TimeSpan currentPosition)
         {
