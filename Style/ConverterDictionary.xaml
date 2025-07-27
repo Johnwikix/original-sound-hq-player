@@ -28,5 +28,4 @@
     <converters:BoolToThicknessConverter  x:Key="BoolToThicknessConverter" />
     <converters:BoolToNegationVisibleConverter x:Key="BoolToNegationVisibleConverter" />
     <converters:HideNavigationViewIconConverter x:Key="HideNavigationViewIconConverter" />
-    <converters:SecondsToTimeConverter x:Key="SecondsToTimeConverter" />
 </ResourceDictionary>
