@@ -92,14 +92,7 @@ namespace WinUIMusicPlayer.View.SubView
         }
 
         private async void InitalizeData(Music music)
-        {
-            Debug.WriteLine(GarbledTextFixer.QuickFixUtf8AsGbk(music.Title));
-            Debug.WriteLine(GarbledTextFixer.QuickFixGbkAsUtf8(music.Title));
-            string[] possibleFixes = GarbledTextFixer.TryFix(music.Title);
-            foreach (string possibleFix in possibleFixes) {
-                Debug.WriteLine($"{possibleFix}");
-            }
-
+        {            
             musicDetail = music;
             TitleTextBlock.Text = music.Title;
             AuthorTextBlock.Text = music.Author;

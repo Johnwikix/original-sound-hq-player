@@ -114,6 +114,17 @@ namespace WinUIMusicPlayer.Services
                     duration = audioProperties.Duration;
                     channelCount = audioProperties.AudioChannels;
                     lyrics = tag.Lyrics;
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(title)) {
+                        title = GarbledTextFixer.FixGbkToIso88591(title);
+                    }
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(artist))
+                    {
+                        artist = GarbledTextFixer.FixGbkToIso88591(artist);
+                    }
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(album))
+                    {
+                        album = GarbledTextFixer.FixGbkToIso88591(album);
+                    }
 
 
                     var music = new Music
