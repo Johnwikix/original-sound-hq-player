@@ -83,7 +83,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            ProgressSlider.Loaded += ProgressSlider_Loaded;
+            ProgressSlider.Loaded += ProgressSlider_Loaded;            
             //this.KeyDown += MusicBrowsePage_KeyDown;
             this.Focus(FocusState.Programmatic);
             mainWindow = (App.MainWindow as MainWindow);
@@ -640,22 +640,6 @@ namespace WinUIMusicPlayer.View
                             page.SortMusicList(AppData.sortOrder);
                         }
                     }
-                    //if (ContentFrame.Content is ArtistPage)
-                    //{
-                    //    var page = ContentFrame.Content as ArtistPage;
-                    //    if (page != null)
-                    //    {
-                    //        page.SortMusicList(AppData.sortOrder);
-                    //    }
-                    //}
-                    //if (ContentFrame.Content is FolderBrowsePage)
-                    //{
-                    //    var page = ContentFrame.Content as FolderBrowsePage;
-                    //    if (page != null)
-                    //    {
-                    //        page.SortMusicList(AppData.sortOrder);
-                    //    }
-                    //}
                     if (ContentFrame.Content is PlayListSongPage)
                     {
                         var page = ContentFrame.Content as PlayListSongPage;
@@ -696,6 +680,17 @@ namespace WinUIMusicPlayer.View
                 thumb.DragCompleted += Thumb_DragCompleted;
             }
         }
+        private void ProgressSliderPlayingDetail_Loaded(object sender, RoutedEventArgs e)
+        {
+            var thumb = FindVisualChild<Thumb>(ProgressSliderPlayingDetail);
+            if (thumb != null)
+            {
+                thumb.DragStarted += Thumb_DragStarted;
+                thumb.DragCompleted += Thumb_DragCompleted;
+            }
+        }
+
+
 
         private void VolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
@@ -786,6 +781,7 @@ namespace WinUIMusicPlayer.View
                     ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
                     ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
                 }
+                ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
             }            
         }
 
@@ -811,6 +807,7 @@ namespace WinUIMusicPlayer.View
             ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").TryStart(AlbumCoverImageGrid);
             ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").TryStart(AlbumCoverAuthorTitleModel);
             ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToControlBar").TryStart(BottomControlBar);
+            ProgressSliderPlayingDetail.Loaded -= ProgressSliderPlayingDetail_Loaded;
         }
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
