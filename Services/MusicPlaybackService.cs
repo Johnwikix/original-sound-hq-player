@@ -564,9 +564,17 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayNextTrack()
         {
-            int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
-            int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            if (AppData.PlayMode != PlayMode.RandomLoop)
+            {
+                int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+                int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            }
+            else {
+                Random random = new Random();
+                int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
+                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
+            }            
         }
 
         public void UpdateEqualizerSettings()
