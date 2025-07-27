@@ -471,12 +471,12 @@
                                             IsLightDismissEnabled="True"
                                             Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                             <TeachingTip.Content>
-                                                <Grid Width="290">
+                                                <Grid Width="290" Margin="0">
                                                     <!--  ListView内容，给右上角留出空间  -->
                                                     <ListView
                                                         x:Name="CurrentPlayListViewPlayingDetail"
                                                         MaxHeight="400"
-                                                        Margin="0,28,0,0"
+                                                        Margin="0,24,0,0"
                                                         DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
                                                         ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
                                                         <ListView.ItemTemplate>
@@ -495,7 +495,7 @@
                                                         x:Name="CurrentPlayListTeachingTipCloseButton"
                                                         Width="24"
                                                         Height="24"
-                                                        Margin="0,4,4,0"
+                                                        Margin="0,0,4,0"
                                                         Padding="0"
                                                         HorizontalAlignment="Right"
                                                         VerticalAlignment="Top"
@@ -511,25 +511,6 @@
                                                     </Button>
                                                 </Grid>
                                             </TeachingTip.Content>
-                                            <!--<TeachingTip.Content>
-                                                <ListView
-                                                    x:Name="CurrentPlayListViewPlayingDetail"
-                                                    Width="290"
-                                                    MaxHeight="400"
-                                                    DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
-                                                    ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
-                                                    <ListView.ItemTemplate>
-                                                        <DataTemplate x:DataType="model:Music">
-                                                            <TextBlock
-                                                                Grid.Column="1"
-                                                                Margin="5"
-                                                                VerticalAlignment="Center"
-                                                                Text="{x:Bind Title, Mode=OneWay}"
-                                                                TextTrimming="CharacterEllipsis" />
-                                                        </DataTemplate>
-                                                    </ListView.ItemTemplate>
-                                                </ListView>
-                                            </TeachingTip.Content>-->
                                         </TeachingTip>
 
                                         <Button
@@ -1080,7 +1061,7 @@
                                             x:Name="CurrentPlayListView"
                                             Width="290"
                                             MaxHeight="400"
-                                            Margin="0,28,0,0"
+                                            Margin="0,24,0,0"
                                             DoubleTapped="CurrentPlayListView_DoubleTapped"
                                             ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
                                             <ListView.ItemTemplate>
@@ -1100,7 +1081,7 @@
                                             x:Name="CloseButton"
                                             Width="24"
                                             Height="24"
-                                            Margin="0,4,4,0"
+                                            Margin="0,0,4,0"
                                             Padding="0"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Top"
@@ -1116,25 +1097,6 @@
                                         </Button>
                                     </Grid>
                                 </TeachingTip.Content>
-                                <!--<TeachingTip.Content>
-                                    <ListView
-                                        x:Name="CurrentPlayListView"
-                                        Width="290"
-                                        MaxHeight="400"
-                                        DoubleTapped="CurrentPlayListView_DoubleTapped"
-                                        ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate x:DataType="model:Music">
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    Margin="5"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind Title, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
-                                </TeachingTip.Content>-->
                             </TeachingTip>
                             <!--  播放模式按钮  -->
                             <Button
