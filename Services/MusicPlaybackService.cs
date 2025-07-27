@@ -375,6 +375,12 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
+                        if (waveOut != null)
+                        {
+                            waveOut.Stop();
+                            waveOut.Dispose();
+                            waveOut = null;
+                        }
                         isSettingsChangeStop = true;
                         if (selectedDevice != null)
                         {
@@ -402,38 +408,26 @@ namespace WinUIMusicPlayer.Services
             //出错捕获，待测试
             try
             {
+                if (multiTypeAudioReader != null && equalizer != null)
+                {
+                    isEnableEq = true;
+                    SelectOutputDevice();
+                    waveOut.Init(equalizer);
+
+                }
+                else if (multiTypeAudioReader != null)
+                {
+                    isEnableEq = false;
+                    SelectOutputDevice();
+                    waveOut.Init(multiTypeAudioReader);
+                }
                 if (AppSettings.isPlaying)
                 {
-                    if (multiTypeAudioReader != null && equalizer != null)
-                    {
-                        isEnableEq = true;
-                        SelectOutputDevice();
-                        waveOut.Init(equalizer);
-                        waveOut.Play();
-
-                    }
-                    else if (multiTypeAudioReader != null)
-                    {
-                        isEnableEq = false;
-                        SelectOutputDevice();
-                        waveOut.Init(multiTypeAudioReader);
-                        waveOut.Play();
-                    }
+                    waveOut.Play();
                     AppSettings.isPlaying = true;
                     MusicBrowseViewModel.IsPlaying = true;
                     progressTimer.Start();
-                }
-                else
-                {
-                    var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
-                    if (waveOut != null)
-                    {
-                        waveOut.Stop();
-                        waveOut.Dispose();
-                        waveOut = null;
-                        InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
-                    }
-                }
+                }               
             }
             catch (Exception ex) {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
@@ -514,7 +508,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                     break;
                 case "DirectSound":
-                    waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
+                    waveOut = new NAudio.Wave.DirectSoundOut();
                     break;
                 case "ASIO":
                     waveOut = new NAudio.Wave.AsioOut();
