@@ -410,27 +410,33 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async void StartWatchingFileFolder()
         {
-            List<Folder> folders = await MusicDatabaseService.GetFolders();
-            foreach (var folder in folders)
+            try
             {
-                if (!string.IsNullOrEmpty(folder.Path))
+                List<Folder> folders = await MusicDatabaseService.GetFolders();
+                foreach (var folder in folders)
                 {
-                    var watcher = new FileSystemWatcher(folder.Path);
-                    watcher.IncludeSubdirectories = true;
-                    watcher.NotifyFilter = NotifyFilters.FileName |
-                        NotifyFilters.DirectoryName |
-                        NotifyFilters.LastWrite;
+                    if (!string.IsNullOrEmpty(folder.Path))
+                    {
+                        var watcher = new FileSystemWatcher(folder.Path);
+                        watcher.IncludeSubdirectories = true;
+                        watcher.NotifyFilter = NotifyFilters.FileName |
+                            NotifyFilters.DirectoryName |
+                            NotifyFilters.LastWrite;
 
-                    // 订阅事件
-                    watcher.Changed += OnFileChanged;
-                    watcher.Deleted += OnFileChanged;
+                        // 订阅事件
+                        watcher.Changed += OnFileChanged;
+                        watcher.Deleted += OnFileChanged;
 
-                    // 开始监听
-                    watcher.EnableRaisingEvents = true;
+                        // 开始监听
+                        watcher.EnableRaisingEvents = true;
 
-                    watchers.Add(watcher);
+                        watchers.Add(watcher);
+                    }
                 }
             }
+            catch (Exception ex) {
+                Debug.WriteLine(ex.Message);
+            }            
         }
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
