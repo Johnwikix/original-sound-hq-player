@@ -31,6 +31,8 @@ namespace WinUIMusicPlayer.Services
         [
             "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
         ];
+
+        private static readonly object lockObject = new object();
         public static async Task Initialize()
         {
             InitalizeDbPath();
@@ -1032,22 +1034,79 @@ namespace WinUIMusicPlayer.Services
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
             Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
-            existingMusic.Title = newMusic.Title;
-            existingMusic.Author = newMusic.Author;
-            existingMusic.Duration = newMusic.Duration;
-            existingMusic.Album = newMusic.Album;
-            existingMusic.FolderPath = newMusic.FolderPath;
-            existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
-            existingMusic.BitDepth = newMusic.BitDepth;
-            existingMusic.BitRate = newMusic.BitRate;
-            existingMusic.SampleRate = newMusic.SampleRate;
-            existingMusic.Channel = newMusic.Channel;
-            if (string.IsNullOrEmpty(existingMusic.Lyrics)) {
-                existingMusic.Lyrics = newMusic.Lyrics;
-            }
-            existingMusic.TrackNumber = newMusic.TrackNumber;
-            existingMusic.DiskNumber = newMusic.DiskNumber;
-            await _dbConnection.UpdateAsync(existingMusic);
+            bool hasChanges = false;
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (existingMusic.Title != newMusic.Title) {
+                    existingMusic.Title = newMusic.Title;
+                    hasChanges = true;
+                }
+                if (existingMusic.Author != newMusic.Author) {
+                    existingMusic.Author = newMusic.Author;
+                    hasChanges = true;
+                }
+                if (existingMusic.Duration != newMusic.Duration)
+                {
+                    existingMusic.Duration = newMusic.Duration;
+                    hasChanges = true;
+                }
+                if (existingMusic.Album != newMusic.Album)
+                {
+                    existingMusic.Album = newMusic.Album;
+                    hasChanges = true;
+                }
+                if (existingMusic.FolderPath != newMusic.FolderPath)
+                {
+                    existingMusic.FolderPath = newMusic.FolderPath;
+                    hasChanges = true;
+                }
+                if (existingMusic.LastLevelFolderPath != newMusic.LastLevelFolderPath)
+                {
+                    existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
+                    hasChanges = true;
+                }
+                if (existingMusic.BitDepth != newMusic.BitDepth)
+                {
+                    existingMusic.BitDepth = newMusic.BitDepth;
+                    hasChanges = true;
+                }
+                if (existingMusic.BitRate != newMusic.BitRate)
+                {
+                    existingMusic.BitRate = newMusic.BitRate;
+                    hasChanges = true;
+                }
+                if (existingMusic.SampleRate != newMusic.SampleRate)
+                {
+                    existingMusic.SampleRate = newMusic.SampleRate;
+                    hasChanges = true;
+                }
+                if (existingMusic.Channel != newMusic.Channel)
+                {
+                    existingMusic.Channel = newMusic.Channel;
+                    hasChanges = true;
+                }
+                if (string.IsNullOrEmpty(existingMusic.Lyrics) && !string.IsNullOrEmpty(newMusic.Lyrics))
+                {
+                    existingMusic.Lyrics = newMusic.Lyrics;
+                    hasChanges = true;
+                }
+                if (existingMusic.TrackNumber != newMusic.TrackNumber)
+                {
+                    existingMusic.TrackNumber = newMusic.TrackNumber;
+                    hasChanges = true;
+                }
+                if (existingMusic.Year != newMusic.Year)
+                {
+                    existingMusic.Year = newMusic.Year;
+                    hasChanges = true;
+                }
+                if (existingMusic.DiskNumber != newMusic.DiskNumber)
+                {
+                    existingMusic.DiskNumber = newMusic.DiskNumber;
+                    hasChanges = true;
+                }
+            });
+            await _dbConnection.UpdateAsync(existingMusic);        
         }
 
         public static async Task RescanFolder(int folderId)
@@ -1139,7 +1198,6 @@ namespace WinUIMusicPlayer.Services
                 musicFilesInFolder.Remove(music);
             });
             await Task.WhenAll(deleteTasks);
-
             // 优化4: 并行执行更新操作
             var updateTasks = toUpdate.Select(async music =>
             {
