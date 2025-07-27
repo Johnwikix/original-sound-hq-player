@@ -899,5 +899,15 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.TopControlsOpacity = 0.0f;
         }
+
+        private void CurrentPlayListTeachingTipPlayingDetailCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
+        }
+
+        private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentPlayListTeachingTip.IsOpen = false;
+        }
     }
 }

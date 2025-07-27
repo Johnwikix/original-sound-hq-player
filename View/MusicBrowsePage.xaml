@@ -471,6 +471,47 @@
                                             IsLightDismissEnabled="True"
                                             Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                             <TeachingTip.Content>
+                                                <Grid Width="290">
+                                                    <!--  ListView内容，给右上角留出空间  -->
+                                                    <ListView
+                                                        x:Name="CurrentPlayListViewPlayingDetail"
+                                                        MaxHeight="400"
+                                                        Margin="0,28,0,0"
+                                                        DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
+                                                        ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
+                                                        <ListView.ItemTemplate>
+                                                            <DataTemplate x:DataType="model:Music">
+                                                                <TextBlock
+                                                                    Margin="5"
+                                                                    VerticalAlignment="Center"
+                                                                    Text="{x:Bind Title, Mode=OneWay}"
+                                                                    TextTrimming="CharacterEllipsis" />
+                                                            </DataTemplate>
+                                                        </ListView.ItemTemplate>
+                                                    </ListView>
+
+                                                    <!--  关闭按钮在最上层  -->
+                                                    <Button
+                                                        x:Name="CurrentPlayListTeachingTipCloseButton"
+                                                        Width="24"
+                                                        Height="24"
+                                                        Margin="0,4,4,0"
+                                                        Padding="0"
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Top"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Canvas.ZIndex="999"
+                                                        Click="CurrentPlayListTeachingTipPlayingDetailCloseButton_Click">
+                                                        <FontIcon
+                                                            FontFamily="Segoe MDL2 Assets"
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                            Glyph="&#xE711;" />
+                                                    </Button>
+                                                </Grid>
+                                            </TeachingTip.Content>
+                                            <!--<TeachingTip.Content>
                                                 <ListView
                                                     x:Name="CurrentPlayListViewPlayingDetail"
                                                     Width="290"
@@ -488,7 +529,7 @@
                                                         </DataTemplate>
                                                     </ListView.ItemTemplate>
                                                 </ListView>
-                                            </TeachingTip.Content>
+                                            </TeachingTip.Content>-->
                                         </TeachingTip>
 
                                         <Button
@@ -1033,6 +1074,49 @@
                                 IsLightDismissEnabled="True"
                                 Target="{x:Bind CurrentPlayListButton}">
                                 <TeachingTip.Content>
+                                    <Grid Width="290">
+                                        <!--  ListView内容，给右上角留出空间  -->
+                                        <ListView
+                                            x:Name="CurrentPlayListView"
+                                            Width="290"
+                                            MaxHeight="400"
+                                            Margin="0,28,0,0"
+                                            DoubleTapped="CurrentPlayListView_DoubleTapped"
+                                            ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate x:DataType="model:Music">
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Margin="5"
+                                                        VerticalAlignment="Center"
+                                                        Text="{x:Bind Title, Mode=OneWay}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+
+                                        <!--  关闭按钮在最上层  -->
+                                        <Button
+                                            x:Name="CloseButton"
+                                            Width="24"
+                                            Height="24"
+                                            Margin="0,4,4,0"
+                                            Padding="0"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Canvas.ZIndex="999"
+                                            Click="CurrentPlayListTeachingTipCloseButton_Click">
+                                            <FontIcon
+                                                FontFamily="Segoe MDL2 Assets"
+                                                FontSize="12"
+                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                Glyph="&#xE711;" />
+                                        </Button>
+                                    </Grid>
+                                </TeachingTip.Content>
+                                <!--<TeachingTip.Content>
                                     <ListView
                                         x:Name="CurrentPlayListView"
                                         Width="290"
@@ -1050,7 +1134,7 @@
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
-                                </TeachingTip.Content>
+                                </TeachingTip.Content>-->
                             </TeachingTip>
                             <!--  播放模式按钮  -->
                             <Button
