@@ -120,6 +120,7 @@ namespace WinUIMusicPlayer.ViewModel
                         .OrderBy(m => m.LastLevelFolderPath);
                 foreach (var music in query)
                 {
+                    Debug.WriteLine($"{music.LastLevelFolderPath}");
                     MusicList.Add(music);
                 }
                 LoadMoreFolderAsync(true);
@@ -136,7 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 //MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList
-                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
                         .OrderBy(group => group.Key)
                         .Select(group => new MusicGroup(group.Key, group.ToList()))
                         .ToList();

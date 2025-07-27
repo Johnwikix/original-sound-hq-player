@@ -300,14 +300,19 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async void LoadFolderMusic(Music folder)
+        public void LoadFolderMusic(Music folder)
         {
-            ViewModel.PageType = "folder";
-            paramName = folder.LastLevelFolderPath;
-            //currentFolderName = folder.LastLevelFolderPath;
-            CurrentFolder = folder;
-            currentPage = typeof(SongCollectionPage);
-            _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+            try
+            {
+                ViewModel.PageType = "folder";
+                paramName = folder.LastLevelFolderPath;
+                CurrentFolder = folder;
+                currentPage = typeof(SongCollectionPage);
+                _navigationService.Navigate(currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex.Message);
+            }            
         }
 
 
