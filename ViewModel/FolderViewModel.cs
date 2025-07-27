@@ -120,7 +120,6 @@ namespace WinUIMusicPlayer.ViewModel
                         .OrderBy(m => m.LastLevelFolderPath);
                 foreach (var music in query)
                 {
-                    Debug.WriteLine($"{music.LastLevelFolderPath}");
                     MusicList.Add(music);
                 }
                 LoadMoreFolderAsync(true);
