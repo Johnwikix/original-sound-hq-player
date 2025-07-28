@@ -572,31 +572,6 @@ namespace WinUIMusicPlayer.Services
             return musicList;
         }
 
-        //public static async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
-        //{
-        //    var musicList = await _dbConnection.Table<Music>().OrderBy(m => m.Title).ToListAsync();
-        //    foreach(Music music in musicList)
-        //    {
-        //        if (music.Album == "未知专辑"
-        //            || music.Album == "Unknown Album"
-        //            || music.Album == "Álbum desconocido"
-        //            || music.Album == "不明なアルバム"
-        //            || music.Album == "Неизвестный альбом")
-        //        {
-        //            music.Album = ToolUtils.GetString("UnknownAlbum");
-        //        }
-        //        if (music.Author == "未知艺术家"
-        //            || music.Author == "Unknown Artist"
-        //            || music.Author == "Artista desconocido"
-        //            || music.Author == "不明なアーティスト"
-        //            || music.Author == "Неизвестный артист")
-        //        {
-        //            music.Author = ToolUtils.GetString("UnknownArtist");
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
         public static IEnumerable<Music> GetMusicListFromMem(string search)
         {
             return AppData.allSongs.Where(m =>
@@ -1033,6 +1008,9 @@ namespace WinUIMusicPlayer.Services
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
+            if (existingMusic == null) {
+                return;
+            }
             Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -1054,7 +1032,61 @@ namespace WinUIMusicPlayer.Services
                 existingMusic.DiskNumber = newMusic.DiskNumber;
                 existingMusic.Year = newMusic.Year;
             });
-            await _dbConnection.UpdateAsync(existingMusic);        
+            if (!AreMusicPropertiesEqual(existingMusic, newMusic)) {
+                await _dbConnection.UpdateAsync(existingMusic);
+            }
+            
+        }
+
+        private static bool AreMusicPropertiesEqual(Music existingMusic, Music newMusic)
+        {
+            // 逐一比较各个属性
+            if (existingMusic.Title != newMusic.Title)
+                return false;
+
+            if (existingMusic.Author != newMusic.Author)
+                return false;
+
+            if (existingMusic.Duration != newMusic.Duration)
+                return false;
+
+            if (existingMusic.Album != newMusic.Album)
+                return false;
+
+            if (existingMusic.FolderPath != newMusic.FolderPath)
+                return false;
+
+            if (existingMusic.LastLevelFolderPath != newMusic.LastLevelFolderPath)
+                return false;
+
+            if (existingMusic.BitDepth != newMusic.BitDepth)
+                return false;
+
+            if (existingMusic.BitRate != newMusic.BitRate)
+                return false;
+
+            if (existingMusic.SampleRate != newMusic.SampleRate)
+                return false;
+
+            if (existingMusic.Channel != newMusic.Channel)
+                return false;
+
+            if (existingMusic.TrackNumber != newMusic.TrackNumber)
+                return false;
+
+            if (existingMusic.DiskNumber != newMusic.DiskNumber)
+                return false;
+
+            if (existingMusic.Year != newMusic.Year)
+                return false;
+            // 注意：歌词的处理逻辑特殊，这里只比较newMusic的歌词
+            // 因为现有歌词为空时会被覆盖，所以只要newMusic有歌词就认为可能需要更新
+            if (!string.IsNullOrEmpty(existingMusic.Lyrics) &&
+                existingMusic.Lyrics != newMusic.Lyrics)
+                return false;
+
+            // 所有属性都相等
+            return true;
         }
 
         public static async Task RescanFolder(int folderId)
@@ -1254,14 +1286,6 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    //StorageFile storageFile = await StorageFile.GetFileFromPathAsync(newMusic.Path);
-                    //UsbDeviceMusic existingMusic = usbDeviceMusics.Where(m => m.Path == newMusic.Path).FirstOrDefault();
-                    //Music music = await addFolderService.getMusicInfo(storageFile, folderPath);
-                    //existingMusic.Title = music.Title;
-                    //existingMusic.Author = music.Author;
-                    //existingMusic.Extension = music.Extension;
-                    //existingMusic.Album = music.Album;                    
-                    //await _dbConnection.UpdateAsync(existingMusic);
                     filePaths.Remove(newMusic.Path);
                 }
             }
