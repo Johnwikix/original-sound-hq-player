@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -69,7 +70,9 @@ namespace WinUIMusicPlayer.Utils
             [16000f] = "16kHz"
         };
 
-        private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
+        //private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
+        private static readonly StringComparer StringComparer =
+       StringComparer.Create(CultureInfo.GetCultureInfo("zh-CN"), false);
 
         // 预定义的排序策略字典，避免字符串比较
         private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> SortStrategies =
@@ -77,7 +80,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 ["A-Z"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
                 ["Artist"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
-                ["Album"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
+                ["Album"] = musicList => musicList.GroupBy(m => m.Album)
                                                   .OrderBy(g => g.Key, StringComparer)
                                                   .SelectMany(g => g
                                                         .OrderBy(m => m.DiskNumber) 
@@ -91,7 +94,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 ["song"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
                 ["folderCover"] = musicList => musicList.OrderBy(m => m.LastLevelFolderPath, StringComparer),
-                ["folder"] = musicList => musicList.GroupBy(m => m.Album, StringComparer)
+                ["folder"] = musicList => musicList.GroupBy(m => m.Album)
                                                    .OrderBy(g => g.Key, StringComparer)
                                                    .SelectMany(g => g
                                                         .OrderBy(m => m.DiskNumber)
