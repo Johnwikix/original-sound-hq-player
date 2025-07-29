@@ -689,6 +689,7 @@ namespace WinUIMusicPlayer.Services
             AppData.PlayMode = playState.PlayMode;
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
             AppData.Volume = playState.Volume;
+            AppData.sortOrder = playState.sortOrder;
         }
 
         public static async Task GetSettingsAsync()
@@ -835,7 +836,7 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume)
+        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume,string sortOrder)
         {
             try
             {
@@ -858,6 +859,7 @@ namespace WinUIMusicPlayer.Services
                 playState.PlayMode = currentPlayMode;
                 playState.LastPlayedMusicId = currentPlayingMusicId;
                 playState.Volume = volume;
+                playState.sortOrder = sortOrder;
                 if (playState.Id == 0)
                 {
                     _ = _dbConnection.InsertAsync(playState);

@@ -774,6 +774,7 @@ namespace WinUIMusicPlayer.Services
                             AppSettings.isPlaying = true;
                             MusicBrowseViewModel.IsPlaying = true;
                             MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);                            
                         });
                     }
                     catch (Exception ex)
@@ -868,10 +869,7 @@ namespace WinUIMusicPlayer.Services
             {                
                 equalizer = null;
             }
-            App.MainWindow.DispatcherQueue.TryEnqueue(async() =>
-            {
-                await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume);
-            });           
+            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);      
         }
 
         public void ChangeWaveChannelTime(TimeSpan timeSpan) {
