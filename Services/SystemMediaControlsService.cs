@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.Services
                     SystemMediaControls.IsFastForwardEnabled = false;
                     SystemMediaControls.IsRewindEnabled = false;
                     SystemMediaControls.ButtonPressed += SystemMediaControls_ButtonPressed;
-                    SystemMediaControls.PlaybackPositionChangeRequested += SystemMediaControls_PlaybackPositionChangeRequested;
+                    //SystemMediaControls.PlaybackPositionChangeRequested += SystemMediaControls_PlaybackPositionChangeRequested;
                     UpdateSystemMediaControlsState();
                 }
             }
