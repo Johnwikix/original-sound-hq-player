@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.Utils
 
         //private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
         private static readonly StringComparer StringComparer =
-       StringComparer.Create(CultureInfo.GetCultureInfo("zh-CN"), false);
+       StringComparer.CurrentCultureIgnoreCase;
 
         // 预定义的排序策略字典，避免字符串比较
         private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> SortStrategies =
