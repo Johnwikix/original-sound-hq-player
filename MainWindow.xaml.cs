@@ -52,12 +52,9 @@ namespace WinUIMusicPlayer
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             SetTitleBar(AppTitleBar);
-            this.AppWindow.SetIcon("Assets/icon.ico");
-            Title = ToolUtils.GetString("AppMainTitle");
-            AppData.m_hWnd = m_hwnd;
-            WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
-            this.Activated += MainWindow_Activated;
-            WindowSizeHelper.CenterInScreen(this.AppWindow);
+            setWindow();
+            AppData.m_hWnd = m_hwnd;            
+            this.Activated += MainWindow_Activated;            
             ExtendsContentIntoTitleBar = true;
             // 在需要使用导航服务的地方获取工厂
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -86,6 +83,20 @@ namespace WinUIMusicPlayer
             uiSettings = new UISettings();
             // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        private void setWindow()
+        {
+            WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
+            this.AppWindow.SetIcon("Assets/icon.ico");
+            Title = ToolUtils.GetString("AppMainTitle");
+            if (AppSettings.IsCustomAppSize)
+            {
+                WindowSizeHelper.ResizeWindowAndCenterInScreen(m_hwnd, AppSettings.AppHeight, AppSettings.AppWidth, this.AppWindow);
+            }
+            else {
+                WindowSizeHelper.CenterInScreen(this.AppWindow);
+            }
         }
 
         public void UpdateAppNotifyIconControl() {            

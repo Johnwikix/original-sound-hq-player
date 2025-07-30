@@ -97,23 +97,53 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        //private int _maxCoverPreLoadNum = 0;
-        //public int MaxCoverPreLoadNum
-        //{
-        //    get => _maxCoverPreLoadNum;
-        //    set {
-        //        if (SetProperty(ref _maxCoverPreLoadNum, value))
-        //        {
-        //            // 更新应用设置
-        //            AppSettings.maxCoverPreLoadNum = value;
-        //            // 保存设置
-        //            if (_isInitized)
-        //            {
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
+        private bool _isCustomAppSize = false;
+        public bool IsCustomAppSize
+        {
+            get => _isCustomAppSize;
+            set
+            {
+                if (SetProperty(ref _isCustomAppSize, value))
+                {
+                    AppSettings.IsCustomAppSize = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+        private int _appWidth = 1440;
+        public int AppWidth
+        {
+            get => _appWidth;
+            set
+            {
+                if (SetProperty(ref _appWidth, value))
+                {
+                    AppSettings.AppWidth = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+        private int _appHeight = 810;
+        public int AppHeight {
+            get => _appHeight;
+            set
+            {
+                if (SetProperty(ref _appHeight, value))
+                {
+                    AppSettings.AppHeight = value;
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
         private bool _isCoverCacheEnabled = false;
         public bool IsCoverCacheEnabled
         {
@@ -265,8 +295,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _backdropType, value))
                 {
-                    Debug.WriteLine($"BackdropType changed to: {value}");
-                    // 保存设置
                     AppSettings.AppStyle = value;
                     if (_isInitized)
                     {
@@ -458,6 +486,9 @@ namespace WinUIMusicPlayer.ViewModel
             IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             // 初始化封面加载线程数
             CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
+            IsCustomAppSize = AppSettings.IsCustomAppSize;
+            AppHeight = AppSettings.AppHeight;
+            AppWidth = AppSettings.AppWidth;
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             _isInitized = true;
         }

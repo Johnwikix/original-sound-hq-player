@@ -723,4 +723,28 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>是否确定写入元信息至音乐文件</value>
   </data>
+  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+    <value>主窗口大小设置</value>
+  </data>
+  <data name="IsCustomAppSize.Header" xml:space="preserve">
+    <value>是否启用自定义窗口大小</value>
+  </data>
+  <data name="AppHeight.Header" xml:space="preserve">
+    <value>窗口高度</value>
+  </data>
+  <data name="AppWidth.Header" xml:space="preserve">
+    <value>窗口宽度</value>
+  </data>
+  <data name="CustomAppSizeDescription" xml:space="preserve">
+    <value>宽高会根据屏幕的dpi自适应</value>
+  </data>
+  <data name="CreateTime.Text" xml:space="preserve">
+    <value>创建时间</value>
+  </data>
+  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+    <value>创建时间升序</value>
+  </data>
+  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+    <value>创建时间降序</value>
+  </data>
 </root>

@@ -145,7 +145,9 @@ namespace WinUIMusicPlayer.Services
                         TrackNumber = trackNumber,
                         DiskNumber = diskNumber,
                         Year = year,
-                        Lyrics = lyrics
+                        Lyrics = lyrics,
+                        CreateTime = System.IO.File.GetCreationTime(file.Path),
+                        UpdateTime = System.IO.File.GetLastWriteTimeUtc(file.Path)
                     };
                     return music;
                 }
@@ -179,7 +181,9 @@ namespace WinUIMusicPlayer.Services
                         BitRate = wavFileInfo.BitRate,
                         SampleRate = wavFileInfo.SampleRate,
                         Year = 0,
-                        Channel = wavFileInfo.ChannelCount
+                        Channel = wavFileInfo.ChannelCount,
+                        CreateTime = System.IO.File.GetCreationTime(file.Path),
+                        UpdateTime = System.IO.File.GetLastWriteTimeUtc(file.Path)
                     };
                     return music;
                 }

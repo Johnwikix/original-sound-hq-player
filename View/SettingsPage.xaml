@@ -44,6 +44,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <TextBlock
                     x:Uid="SettingAudio"
@@ -350,16 +351,45 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
+                <!--  窗口大小设置  -->
+                <controls:SettingsExpander x:Uid="MainWindowSizeSettings" Grid.Row="13" Margin="10,0,10,0">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="IsCustomAppSize" Description="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsCustomAppSize, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="AppWidth">
+                            <NumberBox
+                                x:Name="AppWidth"
+                                Width="300"
+                                LargeChange="100"
+                                Minimum="1280"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.AppWidth, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="AppHeight">
+                            <NumberBox
+                                x:Name="AppHeight"
+                                Width="300"
+                                LargeChange="100"
+                                Minimum="720"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.AppHeight, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
 
                 <TextBlock
                     x:Uid="SettingsAbout"
-                    Grid.Row="13"
+                    Grid.Row="14"
                     Margin="10,10,0,10"
                     FontSize="16" />
 
                 <controls:SettingsExpander
                     x:Uid="AppTitleHeader"
-                    Grid.Row="14"
+                    Grid.Row="15"
                     Margin="10,0,10,0"
                     Description="© 2025 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">

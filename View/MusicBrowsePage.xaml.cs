@@ -117,6 +117,7 @@ namespace WinUIMusicPlayer.View
             InitializeTimer();
             SetAcrylicBrushBackground();            
             ViewModel.OnFileChanged(null, null);
+            InitializeSortComboBox();
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
          
@@ -606,6 +607,14 @@ namespace WinUIMusicPlayer.View
             {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
+        }
+
+        private void InitializeSortComboBox()
+        {
+            var matchingItem = SortByComboBox.Items.Cast<ComboBoxItem>()
+                .FirstOrDefault(item => item.Tag?.ToString() == AppData.sortOrder);
+
+            SortByComboBox.SelectedItem = matchingItem ?? SortByComboBox.Items.Cast<ComboBoxItem>().FirstOrDefault();
         }
 
         private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

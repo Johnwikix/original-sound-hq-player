@@ -85,7 +85,9 @@ namespace WinUIMusicPlayer.Utils
                                                   .SelectMany(g => g
                                                         .OrderBy(m => m.DiskNumber) 
                                                         .ThenBy(m => m.TrackNumber)      
-                                                   )
+                                                   ),
+                ["CreateTimeASC"] = musicList => musicList.OrderBy(m => m.CreateTime),
+                ["CreateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.CreateTime),
             };
 
         // 预定义的类型默认排序策略

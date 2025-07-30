@@ -720,7 +720,31 @@
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Перечитать текст из файла</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
+  <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
+  </data>
+  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+    <value>Параметры размера главного окна</value>
+  </data>
+  <data name="IsCustomAppSize.Header" xml:space="preserve">
+    <value>Включить &amp; размер окна</value>
+  </data>
+  <data name="AppHeight.Header" xml:space="preserve">
+    <value>Высота окна</value>
+  </data>
+  <data name="AppWidth.Header" xml:space="preserve">
+    <value>Ширина окна</value>
+  </data>
+  <data name="CustomAppSizeDescription" xml:space="preserve">
+    <value>Ширина адаптируется к DPI экрана.</value>
+  </data>
+  <data name="CreateTime.Text" xml:space="preserve">
+    <value>Время создания</value>
+  </data>
+  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+    <value>Создать временную последовательность</value>
+  </data>
+  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+    <value>Создать временную последовательность</value>
   </data>
 </root>

@@ -70,6 +70,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -214,10 +215,7 @@
                                 BorderThickness="0"
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 TextWrapping="Wrap" />
-                            <Grid
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                VerticalAlignment="Stretch">
+                            <Grid Grid.Row="0" Grid.Column="1" VerticalAlignment="Stretch">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="*" />
@@ -399,13 +397,27 @@
                             HorizontalAlignment="Left"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
+
+                        <TextBlock
+                            x:Uid="CreateTime"
+                            Grid.Row="13"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="CreateTimeBlock"
+                            Grid.Row="13"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left"
+                            TextTrimming="WordEllipsis"
+                            TextWrapping="WrapWholeWords" />
                     </Grid>
                     <Grid Grid.Column="1" Margin="10">
                         <StackPanel>
-                            <Border
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                CornerRadius="5">
+                            <Border HorizontalAlignment="Center" VerticalAlignment="Top" CornerRadius="5">
                                 <Grid>
                                     <Image x:Name="AlbumCoverImage" Canvas.ZIndex="1" />
                                     <Grid
@@ -414,10 +426,7 @@
                                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                         Canvas.ZIndex="0">
                                         <Viewbox Stretch="Uniform">
-                                            <Border
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                                 <!--  图标层  -->
                                                 <FontIcon
                                                     Width="100"
@@ -434,10 +443,7 @@
                                 </Grid>
                             </Border>
                             <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="GetImageFromNet_Click">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="GetImageFromNet_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xebd3;" />
@@ -447,10 +453,7 @@
                                         <ToolTip x:Uid="GetImageFromNetButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="SaveImageButton_Click">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="SaveImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe78c;" />
@@ -460,10 +463,7 @@
                                         <ToolTip x:Uid="SaveImageButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="SelectCoverImageButton_Click">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="SelectCoverImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe70f;" />
@@ -478,36 +478,21 @@
                     </Grid>
                 </Grid>
             </ScrollViewer>
-            <StackPanel
-                Orientation="Horizontal"
-                RelativePanel.AlignBottomWithPanel="True"
-                RelativePanel.AlignRightWithPanel="True">
+            <StackPanel Orientation="Horizontal" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignRightWithPanel="True">
                 <Button x:Uid="SaveButton" Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
-                                <TextBlock
-                                    Margin="0,0,0,12"
-                                    Style="{ThemeResource BaseTextBlockStyle}"
-                                    x:Uid="SaveConfirm" />
+                                <TextBlock x:Uid="SaveConfirm" Margin="0,0,0,12" Style="{ThemeResource BaseTextBlockStyle}" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button
-                                        x:Uid="ConfirmButton"
-                                        Margin="0,0,10,0"
-                                        Click="ConfirmButton_Click" />
-                                    <Button
-                                        x:Uid="CancelButton"
-                                        Margin="0,0,10,0"
-                                        Click="CloseFlyoutButton_Click" />
+                                    <Button x:Uid="ConfirmButton" Margin="0,0,10,0" Click="ConfirmButton_Click" />
+                                    <Button x:Uid="CancelButton" Margin="0,0,10,0" Click="CloseFlyoutButton_Click" />
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <Button
-                    x:Uid="CloseButtonItem"
-                    Margin="5"
-                    Click="CloseButton_Click" />
+                <Button x:Uid="CloseButtonItem" Margin="5" Click="CloseButton_Click" />
             </StackPanel>
 
         </RelativePanel>

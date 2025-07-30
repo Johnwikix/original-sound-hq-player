@@ -77,7 +77,7 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.SetMinimumSize(hwnd,this,650,750);
+            WindowSizeHelper.SetMinimumSize(hwnd,this,650,800);
             WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 750,650,App.MainWindow.AppWindow,this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();
@@ -109,6 +109,7 @@ namespace WinUIMusicPlayer.View.SubView
             PathTextBlock.Text = music.Path;
             albumCoverData = await ToolUtils.GetRawImage(music);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
+            CreateTimeBlock.Text = music.CreateTime.ToString();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

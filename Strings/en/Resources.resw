@@ -720,7 +720,31 @@
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Retrieve lyrics from the file again</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
+  <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
+  </data>
+  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+    <value>Main window size setting</value>
+  </data>
+  <data name="IsCustomAppSize.Header" xml:space="preserve">
+    <value>Do you want to enable custom window size</value>
+  </data>
+  <data name="AppHeight.Header" xml:space="preserve">
+    <value>Window Height</value>
+  </data>
+  <data name="AppWidth.Header" xml:space="preserve">
+    <value>Window Width</value>
+  </data>
+  <data name="CustomAppSizeDescription" xml:space="preserve">
+    <value>The width and height will adapt according to the DPI of the screen</value>
+  </data>
+  <data name="CreateTime.Text" xml:space="preserve">
+    <value>Create Time</value>
+  </data>
+  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+    <value>Create time ASC</value>
+  </data>
+  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+    <value>Create time DESC</value>
   </data>
 </root>

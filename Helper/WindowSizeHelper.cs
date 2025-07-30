@@ -121,12 +121,15 @@ namespace WinUIMusicPlayer.Helper
 
         public static void ResizeWindowAndCenterInScreen(IntPtr hwnd, int height, int width, AppWindow appWindow)
         {
+            var displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary);
             uint dpi = GetDpiForWindow(hwnd);
             double scaleFactor = dpi / 96.0;
-            int adjustedWidth = (int)(width * scaleFactor);
-            int adjustedHeight = (int)(height * scaleFactor);
+            int adjustedWidth = Math.Min((int)(width * scaleFactor), displayArea.WorkArea.Width);
+            int adjustedHeight = Math.Min((int)(height * scaleFactor), displayArea.WorkArea.Height);
             appWindow.Resize(new SizeInt32(adjustedWidth, adjustedHeight));
-            CenterInScreen(appWindow);
+            var x = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2 + displayArea.WorkArea.X;
+            var y = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2 + displayArea.WorkArea.Y;
+            appWindow.Move(new PointInt32(x, y));
         }
 
         public static void CenterInScreen(AppWindow appWindow)

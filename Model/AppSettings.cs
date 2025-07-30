@@ -60,10 +60,12 @@ namespace WinUIMusicPlayer.Model
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
         }
-
         public static void EqualizerChanged()
         {
             EqualizerChangedEvent?.Invoke(null, equalizer);
         }
+        public static bool IsCustomAppSize { get; set; } = false;
+        public static int AppWidth { get; set; } = 1440;
+        public static int AppHeight { get; set; } = 810;
     }
 }

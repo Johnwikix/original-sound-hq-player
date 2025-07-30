@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
@@ -291,7 +292,9 @@ namespace WinUIMusicPlayer.Services
                             IsFavorite = m.IsFavorite,
                             TrackNumber = m.TrackNumber,
                             Lyrics = m.Lyrics,
-                            PlayListOrder = plm.Order
+                            PlayListOrder = plm.Order,
+                            CreateTime = m.CreateTime,
+                            UpdateTime = m.UpdateTime,
                         };
 
             if (!string.IsNullOrEmpty(search))
@@ -723,6 +726,9 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
+                AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
+                AppSettings.AppWidth = settings.AppWidth;
+                AppSettings.AppHeight = settings.AppHeight;
             }
         }
 
@@ -755,6 +761,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
+            newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
+            newSettings.AppHeight = AppSettings.AppHeight;
+            newSettings.AppWidth = AppSettings.AppWidth;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
@@ -1033,6 +1042,8 @@ namespace WinUIMusicPlayer.Services
                 existingMusic.TrackNumber = newMusic.TrackNumber;
                 existingMusic.DiskNumber = newMusic.DiskNumber;
                 existingMusic.Year = newMusic.Year;
+                existingMusic.UpdateTime = newMusic.UpdateTime;
+                existingMusic.CreateTime = newMusic.CreateTime;
             });
             if (!AreMusicPropertiesEqual(existingMusic, newMusic)) {
                 await _dbConnection.UpdateAsync(existingMusic);
@@ -1086,6 +1097,10 @@ namespace WinUIMusicPlayer.Services
             if (!string.IsNullOrEmpty(existingMusic.Lyrics) &&
                 existingMusic.Lyrics != newMusic.Lyrics)
                 return false;
+            if (existingMusic.CreateTime != newMusic.CreateTime)
+                return false;
+            if (existingMusic.UpdateTime != newMusic.UpdateTime)
+                return false;
 
             // 所有属性都相等
             return true;
@@ -1111,6 +1126,7 @@ namespace WinUIMusicPlayer.Services
         public static async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
         {
             DateTime startTime = DateTime.Now;
+            using var semaphore = new SemaphoreSlim(8, 8);
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
             List<StorageFile> files = null;
@@ -1133,33 +1149,71 @@ namespace WinUIMusicPlayer.Services
 
             var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-            // 优化1: 并行处理文件路径收集
-            await Task.Run(() =>
+            //// 优化1: 并行处理文件路径收集
+            //await Task.Run(() =>
+            //{
+            //    Parallel.ForEach(files, file =>
+            //    {
+            //        try
+            //        {
+            //            if (ToolUtils.IsMusicFile(file.FileType))
+            //            {
+            //                filePaths.TryAdd(file.Path, true);
+            //            }
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+            //        }
+            //    });
+            //});
+            // 优化1: 使用信号量限制并行处理文件路径收集
+            var filePathTasks = files.Select(async file =>
             {
-                Parallel.ForEach(files, file =>
+                await semaphore.WaitAsync();
+                try
                 {
-                    try
+                    if (ToolUtils.IsMusicFile(file.FileType))
                     {
-                        if (ToolUtils.IsMusicFile(file.FileType))
-                        {
-                            filePaths.TryAdd(file.Path, true);
-                        }
+                        filePaths.TryAdd(file.Path, true);
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
-                    }
-                });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             });
+            await Task.WhenAll(filePathTasks);
 
             // 存储需要删除的 Music 项
             var toDelete = new ConcurrentBag<Music>();
             var toUpdate = new ConcurrentBag<Music>();
 
-            // 优化2: 并行检查现有音乐文件
-            await Task.Run(() =>
+            //// 优化2: 并行检查现有音乐文件
+            //await Task.Run(() =>
+            //{
+            //    Parallel.ForEach(musicFilesInFolder, newMusic =>
+            //    {
+            //        if (!filePaths.ContainsKey(newMusic.Path))
+            //        {
+            //            toDelete.Add(newMusic);
+            //        }
+            //        else
+            //        {
+            //            toUpdate.Add(newMusic);
+            //            filePaths.TryRemove(newMusic.Path, out _);
+            //        }
+            //    });
+            //});
+            // 优化2: 使用信号量限制并行检查现有音乐文件
+            var checkTasks = musicFilesInFolder.Select(async newMusic =>
             {
-                Parallel.ForEach(musicFilesInFolder, newMusic =>
+                await semaphore.WaitAsync();
+                try
                 {
                     if (!filePaths.ContainsKey(newMusic.Path))
                     {
@@ -1170,19 +1224,38 @@ namespace WinUIMusicPlayer.Services
                         toUpdate.Add(newMusic);
                         filePaths.TryRemove(newMusic.Path, out _);
                     }
-                });
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             });
 
-            // 优化3: 并行执行删除操作
+            await Task.WhenAll(checkTasks);
+            // 优化3: 使用信号量限制并行执行删除操作
             var deleteTasks = toDelete.Select(async music =>
             {
-                await _dbConnection.DeleteAsync(music);
-                musicFilesInFolder.Remove(music);
+                await semaphore.WaitAsync();
+                try
+                {
+                    await _dbConnection.DeleteAsync(music);
+                    musicFilesInFolder.Remove(music);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             });
+
             await Task.WhenAll(deleteTasks);
-            // 优化4: 并行执行更新操作
+            // 优化4: 使用信号量限制并行执行更新操作
             var updateTasks = toUpdate.Select(async music =>
             {
+                await semaphore.WaitAsync();
                 try
                 {
                     await updateMusic(music, folder.Path);
@@ -1191,12 +1264,18 @@ namespace WinUIMusicPlayer.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"更新音乐文件时出错: {ex.Message}");
                 }
+                finally
+                {
+                    semaphore.Release();
+                }
             });
+
             await Task.WhenAll(updateTasks);
 
-            // 优化5: 并行执行添加操作
+            // 优化5: 使用信号量限制并行执行添加操作
             var addTasks = filePaths.Keys.Select(async path =>
             {
+                await semaphore.WaitAsync();
                 try
                 {
                     var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
@@ -1204,6 +1283,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         return;
                     }
+
                     StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
                     Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
                     if (music != null)
@@ -1215,7 +1295,12 @@ namespace WinUIMusicPlayer.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
                 }
+                finally
+                {
+                    semaphore.Release();
+                }
             });
+
             await Task.WhenAll(addTasks);
 
             // 更新UI和主窗口的音乐列表
