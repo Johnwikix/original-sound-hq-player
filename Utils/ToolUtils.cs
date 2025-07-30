@@ -946,5 +946,29 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
+        public static DateTime GetSafeFileCreateTime(string filePath)
+        {
+            try
+            {
+                return System.IO.File.GetCreationTime(filePath);
+            }
+            catch (Exception ex)
+            {
+                return DateTime.Now;
+            }
+        }
+
+        public static DateTime GetSafeFileUpdateTime(string filePath)
+        {
+            try
+            {
+                return System.IO.File.GetLastWriteTime(filePath);
+            }
+            catch (Exception ex)
+            {
+                return DateTime.Now;
+            }
+        }
+
     }
 }

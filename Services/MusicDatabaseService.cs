@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -1015,14 +1016,15 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async static Task updateMusic(Music music, string folderPath)
+        private async static Task<Music> updateMusic(Music music, string folderPath)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
             if (existingMusic == null) {
-                return;
+                return null;
             }
             Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
+            //Debug.WriteLine($"标题：{newMusic.Title}创建时间{newMusic.CreateTime.ToString()}");
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 existingMusic.Title = newMusic.Title;
@@ -1044,11 +1046,8 @@ namespace WinUIMusicPlayer.Services
                 existingMusic.Year = newMusic.Year;
                 existingMusic.UpdateTime = newMusic.UpdateTime;
                 existingMusic.CreateTime = newMusic.CreateTime;
-            });
-            if (!AreMusicPropertiesEqual(existingMusic, newMusic)) {
-                await _dbConnection.UpdateAsync(existingMusic);
-            }
-            
+            });            
+            return existingMusic;
         }
 
         private static bool AreMusicPropertiesEqual(Music existingMusic, Music newMusic)
@@ -1253,26 +1252,29 @@ namespace WinUIMusicPlayer.Services
 
             await Task.WhenAll(deleteTasks);
             // 优化4: 使用信号量限制并行执行更新操作
+            System.Diagnostics.Debug.WriteLine($"开始并行更新 {toUpdate.Count} 个文件");
             var updateTasks = toUpdate.Select(async music =>
             {
                 await semaphore.WaitAsync();
                 try
                 {
-                    await updateMusic(music, folder.Path);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"更新音乐文件时出错: {ex.Message}");
-                }
+                    return await updateMusic(music, folder.Path);
+                }                
                 finally
                 {
                     semaphore.Release();
                 }
-            });
+            }).ToArray();
+            var results = await Task.WhenAll(updateTasks);
+            var validResults = results.Where(r => r != null).ToList();
+            if (validResults.Any())
+            {
+                await _dbConnection.UpdateAllAsync(validResults);
+                Debug.WriteLine($"批量更新完成，共 {validResults.Count} 条记录");
+            }
 
-            await Task.WhenAll(updateTasks);
-
-            // 优化5: 使用信号量限制并行执行添加操作
+            // 方案一：完全批量处理（推荐） 
+            System.Diagnostics.Debug.WriteLine($"开始并行添加 {filePaths.Count} 个文件");
             var addTasks = filePaths.Keys.Select(async path =>
             {
                 await semaphore.WaitAsync();
@@ -1281,27 +1283,59 @@ namespace WinUIMusicPlayer.Services
                     var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
                     if (existingMusic != null)
                     {
-                        return;
+                        return null;
                     }
 
                     StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
                     Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-                    if (music != null)
-                    {
-                        await _dbConnection.InsertAsync(music);
-                    }
+                    return music;
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    return null;
                 }
                 finally
                 {
                     semaphore.Release();
                 }
             });
+            var AddResults = await Task.WhenAll(addTasks);
+            var validMusic = AddResults.Where(m => m != null).ToList();
+            if (validMusic.Any())
+            {
+                await _dbConnection.InsertAllAsync(validMusic);
+            }
+            //// 优化5: 使用信号量限制并行执行添加操作
+            //var addTasks = filePaths.Keys.Select(async path =>
+            //{
+            //    await semaphore.WaitAsync();
+            //    try
+            //    {
+            //        var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
+            //        if (existingMusic != null)
+            //        {
+            //            return;
+            //        }
 
-            await Task.WhenAll(addTasks);
+            //        StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
+            //        Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
+            //        if (music != null)
+            //        {
+            //            await _dbConnection.InsertAsync(music);
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+            //    }
+            //    finally
+            //    {
+            //        semaphore.Release();
+            //    }
+            //});
+
+            //await Task.WhenAll(addTasks);
 
             // 更新UI和主窗口的音乐列表
             if (isUpdate)

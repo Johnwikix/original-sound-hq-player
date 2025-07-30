@@ -67,6 +67,7 @@ namespace WinUIMusicPlayer.Services
             }
             return bitRate;
         }
+
         public async Task<Music> getMusicInfo(StorageFile file, string folderPath)
         {
             try
@@ -146,8 +147,8 @@ namespace WinUIMusicPlayer.Services
                         DiskNumber = diskNumber,
                         Year = year,
                         Lyrics = lyrics,
-                        CreateTime = System.IO.File.GetCreationTime(file.Path),
-                        UpdateTime = System.IO.File.GetLastWriteTimeUtc(file.Path)
+                        CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
+                        UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
                     return music;
                 }
@@ -182,8 +183,8 @@ namespace WinUIMusicPlayer.Services
                         SampleRate = wavFileInfo.SampleRate,
                         Year = 0,
                         Channel = wavFileInfo.ChannelCount,
-                        CreateTime = System.IO.File.GetCreationTime(file.Path),
-                        UpdateTime = System.IO.File.GetLastWriteTimeUtc(file.Path)
+                        CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
+                        UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
                     return music;
                 }
