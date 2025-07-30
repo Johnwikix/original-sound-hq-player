@@ -739,7 +739,7 @@
     <value>宽高会根据屏幕的dpi自适应</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>创建时间</value>
+    <value>创建时间：</value>
   </data>
   <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
     <value>创建时间升序</value>

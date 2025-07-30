@@ -197,8 +197,9 @@ namespace WinUIMusicPlayer.ViewModel
             for (int i = 0; i < MusicList.Count; i++)
             {
                 MusicList[i].Order = MusicList.Count - i;
-                await MusicDatabaseService.UpdateMuisc(MusicList[i]);
+                //await MusicDatabaseService.UpdateMuisc(MusicList[i]);
             }
+            await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 

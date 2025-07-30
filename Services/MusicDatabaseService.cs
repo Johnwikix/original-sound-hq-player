@@ -361,6 +361,40 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task UpdatePlayListMusicOrderBatch(int playListId, List<Music> musicList)
+        {
+            try
+            {
+                // 批量查询所有相关的 PlayListMusic 记录
+                var musicIds = musicList.Select(m => m.Id).ToList();
+                var playListMusics = await _dbConnection.Table<PlayListMusic>()
+                    .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
+                    .ToListAsync();
+
+                // 创建字典以便快速查找
+                var musicOrderDict = musicList.ToDictionary(m => m.Id, m => m.PlayListOrder);
+
+                // 更新 Order 字段
+                foreach (var plm in playListMusics)
+                {
+                    if (musicOrderDict.TryGetValue(plm.MusicId, out var newOrder))
+                    {
+                        plm.Order = newOrder;
+                    }
+                }
+
+                // 批量更新
+                if (playListMusics.Any())
+                {
+                    await _dbConnection.UpdateAllAsync(playListMusics);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"批量更新播放列表音乐排序时出错: {ex.Message}");
+            }
+        }
+
         public static List<Music> FindMusicListByArtist(string artist)
         {
             var query = from m in AppData.allSongs
@@ -514,9 +548,13 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync(playList);
         }
 
-        public static async Task UpdateMuisc(Music music)
+        //public static async Task UpdateMuisc(Music music)
+        //{
+        //    await _dbConnection.UpdateAsync(music);
+        //}
+        public static async Task UpdateAllAsync(List<Music> musicList)
         {
-            await _dbConnection.UpdateAsync(music);
+            await _dbConnection.UpdateAllAsync(musicList);
         }
 
         public static async Task<SaveSettings> GetSettings()
@@ -1046,64 +1084,10 @@ namespace WinUIMusicPlayer.Services
                 existingMusic.Year = newMusic.Year;
                 existingMusic.UpdateTime = newMusic.UpdateTime;
                 existingMusic.CreateTime = newMusic.CreateTime;
-            });            
+            });
             return existingMusic;
-        }
 
-        private static bool AreMusicPropertiesEqual(Music existingMusic, Music newMusic)
-        {
-            // 逐一比较各个属性
-            if (existingMusic.Title != newMusic.Title)
-                return false;
-
-            if (existingMusic.Author != newMusic.Author)
-                return false;
-
-            if (existingMusic.Duration != newMusic.Duration)
-                return false;
-
-            if (existingMusic.Album != newMusic.Album)
-                return false;
-
-            if (existingMusic.FolderPath != newMusic.FolderPath)
-                return false;
-
-            if (existingMusic.LastLevelFolderPath != newMusic.LastLevelFolderPath)
-                return false;
-
-            if (existingMusic.BitDepth != newMusic.BitDepth)
-                return false;
-
-            if (existingMusic.BitRate != newMusic.BitRate)
-                return false;
-
-            if (existingMusic.SampleRate != newMusic.SampleRate)
-                return false;
-
-            if (existingMusic.Channel != newMusic.Channel)
-                return false;
-
-            if (existingMusic.TrackNumber != newMusic.TrackNumber)
-                return false;
-
-            if (existingMusic.DiskNumber != newMusic.DiskNumber)
-                return false;
-
-            if (existingMusic.Year != newMusic.Year)
-                return false;
-            // 注意：歌词的处理逻辑特殊，这里只比较newMusic的歌词
-            // 因为现有歌词为空时会被覆盖，所以只要newMusic有歌词就认为可能需要更新
-            if (!string.IsNullOrEmpty(existingMusic.Lyrics) &&
-                existingMusic.Lyrics != newMusic.Lyrics)
-                return false;
-            if (existingMusic.CreateTime != newMusic.CreateTime)
-                return false;
-            if (existingMusic.UpdateTime != newMusic.UpdateTime)
-                return false;
-
-            // 所有属性都相等
-            return true;
-        }
+        }        
 
         public static async Task RescanFolder(int folderId)
         {
@@ -1148,24 +1132,6 @@ namespace WinUIMusicPlayer.Services
 
             var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-            //// 优化1: 并行处理文件路径收集
-            //await Task.Run(() =>
-            //{
-            //    Parallel.ForEach(files, file =>
-            //    {
-            //        try
-            //        {
-            //            if (ToolUtils.IsMusicFile(file.FileType))
-            //            {
-            //                filePaths.TryAdd(file.Path, true);
-            //            }
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
-            //        }
-            //    });
-            //});
             // 优化1: 使用信号量限制并行处理文件路径收集
             var filePathTasks = files.Select(async file =>
             {
@@ -1187,27 +1153,9 @@ namespace WinUIMusicPlayer.Services
                 }
             });
             await Task.WhenAll(filePathTasks);
-
             // 存储需要删除的 Music 项
             var toDelete = new ConcurrentBag<Music>();
             var toUpdate = new ConcurrentBag<Music>();
-
-            //// 优化2: 并行检查现有音乐文件
-            //await Task.Run(() =>
-            //{
-            //    Parallel.ForEach(musicFilesInFolder, newMusic =>
-            //    {
-            //        if (!filePaths.ContainsKey(newMusic.Path))
-            //        {
-            //            toDelete.Add(newMusic);
-            //        }
-            //        else
-            //        {
-            //            toUpdate.Add(newMusic);
-            //            filePaths.TryRemove(newMusic.Path, out _);
-            //        }
-            //    });
-            //});
             // 优化2: 使用信号量限制并行检查现有音乐文件
             var checkTasks = musicFilesInFolder.Select(async newMusic =>
             {

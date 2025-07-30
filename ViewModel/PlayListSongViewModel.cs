@@ -151,8 +151,9 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = 0; i < MusicList.Count; i++)
                 {
                     MusicList[i].PlayListOrder = MusicList.Count - i;
-                    await MusicDatabaseService.UpdatePlayListMusicOrder(_parentPage.currentPlayList.Id, MusicList[i]);
+                    //await MusicDatabaseService.UpdatePlayListMusicOrder(_parentPage.currentPlayList.Id, MusicList[i]);
                 }
+                await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.currentPlayList.Id, MusicList.ToList());
                 await MusicDatabaseService.GetPlayListMusic();
             }
         }

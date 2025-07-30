@@ -739,7 +739,7 @@
     <value>アスペクトは画面のdpiに応じて適応します</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>作成時間</value>
+    <value>作成時間：</value>
   </data>
   <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
     <value>時間昇順の作成</value>
