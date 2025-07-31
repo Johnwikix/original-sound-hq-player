@@ -159,16 +159,16 @@
   <data name="SortOrder.Text" xml:space="preserve">
     <value>排序方式</value>
   </data>
-  <data name="SortOrderDefault.Content" xml:space="preserve">
+  <data name="SortOrderDefault" xml:space="preserve">
     <value>默认排序</value>
   </data>
-  <data name="SortOrderA_Z.Content" xml:space="preserve">
+  <data name="SortOrderA_Z" xml:space="preserve">
     <value>A-Z</value>
   </data>
-  <data name="SortOrderArtist.Content" xml:space="preserve">
+  <data name="SortOrderArtist" xml:space="preserve">
     <value>艺术家</value>
   </data>
-  <data name="SortOrderAlbum.Content" xml:space="preserve">
+  <data name="SortOrderAlbum" xml:space="preserve">
     <value>专辑</value>
   </data>
   <data name="SearchMusic.PlaceholderText" xml:space="preserve">
@@ -741,10 +741,16 @@
   <data name="CreateTime.Text" xml:space="preserve">
     <value>创建时间：</value>
   </data>
-  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>创建时间升序</value>
   </data>
-  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeDESC" xml:space="preserve">
     <value>创建时间降序</value>
+  </data>
+  <data name="SortOrderUpdateTimeASC" xml:space="preserve">
+    <value>修改日期升序</value>
+  </data>
+  <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
+    <value>修改日期降序</value>
   </data>
 </root>

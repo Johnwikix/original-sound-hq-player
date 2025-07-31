@@ -32,8 +32,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _groupedMusicViewSource;
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
-        private List<MusicGroup> groupedByFirstLetter = new List<MusicGroup>();
-        //private List<Music>? _allMusic;
+        private List<MusicGroup> groupedByFirstLetter = [];
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
@@ -49,16 +48,6 @@ namespace WinUIMusicPlayer.ViewModel
             };
             parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshFolder;
-            //parentPage.refreshUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
-            //parentPage.clearUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
             _contextMenuService = contextMenuService;
             _contextMenuService.playingFolderMusic += PlayingFolder;
             _contextMenuService.rescanFolderEnd += RescanFolderEnd;
@@ -175,7 +164,6 @@ namespace WinUIMusicPlayer.ViewModel
                 Music folder = item.Content as Music;
                 if (parentPage != null && _musicBrowseViewModel!=null)
                 {
-                    //parentPage.LoadFolderMusic(folder);
                     try
                     {
                         _musicBrowseViewModel.PageType = "folder";

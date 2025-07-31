@@ -58,19 +58,20 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
+                            Canvas.ZIndex="1"
                             Source="{Binding ViewModel.CurrentMusicObject.Cover, Mode=OneWay}"
                             Stretch="UniformToFill" />
-                    </Grid>
-                    <Grid
-                        Width="150"
-                        Height="150"
-                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                        Canvas.ZIndex="0">
-                        <FontIcon
-                            Canvas.ZIndex="0"
-                            FontSize="50"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Glyph="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToIconConverter}, Mode=OneWay}" />
+                        <Grid
+                            Width="150"
+                            Height="150"
+                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                            Canvas.ZIndex="0">
+                            <FontIcon
+                                Canvas.ZIndex="0"
+                                FontSize="50"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToIconConverter}, Mode=OneWay}" />
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

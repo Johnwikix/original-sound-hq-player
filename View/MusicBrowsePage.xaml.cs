@@ -109,7 +109,6 @@ namespace WinUIMusicPlayer.View
             InitializeTimer();
             SetAcrylicBrushBackground();            
             ViewModel.OnFileChanged(null, null);
-            InitializeSortComboBox();
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
          
@@ -196,10 +195,6 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ProcessRingVisibility = Visibility.Collapsed;
         }
-
-        //public void ClearUsbDeviceMusicList() {
-        //    clearUsbDeviceMusicList?.Invoke(this, EventArgs.Empty);
-        //}
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -481,62 +476,97 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void InitializeSortComboBox()
-        {
-            var matchingItem = SortByComboBox.Items.Cast<ComboBoxItem>()
-                .FirstOrDefault(item => item.Tag?.ToString() == AppData.sortOrder);
-
-            SortByComboBox.SelectedItem = matchingItem ?? SortByComboBox.Items.Cast<ComboBoxItem>().FirstOrDefault();
-        }
-
-        private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (e.AddedItems.Count > 0)
+        public void SelectSortOptionChanged() {
+            if (ContentFrame != null && ContentFrame.Content != null)
             {
-                ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-                AppData.sortOrder = selectedItem.Tag.ToString();
-                if (ContentFrame != null && ContentFrame.Content != null)
+                if (ContentFrame.Content is SongCollectionPage)
                 {
-                    if (ContentFrame.Content is SongCollectionPage)
+                    var page = ContentFrame.Content as SongCollectionPage;
+                    page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
+                }
+                if (ContentFrame.Content is SongListPage)
+                {
+                    var page = ContentFrame.Content as SongListPage;
+                    if (page != null)
                     {
-                        var page = ContentFrame.Content as SongCollectionPage;
-                        page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
+                        page.SortMusicList(AppData.sortOrder);
                     }
-                    if (ContentFrame.Content is SongListPage)
+                }
+                if (ContentFrame.Content is FavouritePlayListPage)
+                {
+                    var page = ContentFrame.Content as FavouritePlayListPage;
+                    if (page != null)
                     {
-                        var page = ContentFrame.Content as SongListPage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
+                        page.SortMusicList(AppData.sortOrder);
                     }
-                    if (ContentFrame.Content is FavouritePlayListPage)
+                }
+                if (ContentFrame.Content is AlbumPage)
+                {
+                    var page = ContentFrame.Content as AlbumPage;
+                    if (page != null)
                     {
-                        var page = ContentFrame.Content as FavouritePlayListPage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
+                        page.SortMusicList(AppData.sortOrder);
                     }
-                    if (ContentFrame.Content is AlbumPage)
+                }
+                if (ContentFrame.Content is PlayListSongPage)
+                {
+                    var page = ContentFrame.Content as PlayListSongPage;
+                    if (page != null)
                     {
-                        var page = ContentFrame.Content as AlbumPage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
-                    }
-                    if (ContentFrame.Content is PlayListSongPage)
-                    {
-                        var page = ContentFrame.Content as PlayListSongPage;
-                        if (page != null)
-                        {
-                            page.SortMusicList(AppData.sortOrder);
-                        }
+                        page.SortMusicList(AppData.sortOrder);
                     }
                 }
             }
         }
+
+        //private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    if (e.AddedItems.Count > 0)
+        //    {
+        //        ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
+        //        AppData.sortOrder = selectedItem.Tag.ToString();
+        //        if (ContentFrame != null && ContentFrame.Content != null)
+        //        {
+        //            if (ContentFrame.Content is SongCollectionPage)
+        //            {
+        //                var page = ContentFrame.Content as SongCollectionPage;
+        //                page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
+        //            }
+        //            if (ContentFrame.Content is SongListPage)
+        //            {
+        //                var page = ContentFrame.Content as SongListPage;
+        //                if (page != null)
+        //                {
+        //                    page.SortMusicList(AppData.sortOrder);
+        //                }
+        //            }
+        //            if (ContentFrame.Content is FavouritePlayListPage)
+        //            {
+        //                var page = ContentFrame.Content as FavouritePlayListPage;
+        //                if (page != null)
+        //                {
+        //                    page.SortMusicList(AppData.sortOrder);
+        //                }
+        //            }
+        //            if (ContentFrame.Content is AlbumPage)
+        //            {
+        //                var page = ContentFrame.Content as AlbumPage;
+        //                if (page != null)
+        //                {
+        //                    page.SortMusicList(AppData.sortOrder);
+        //                }
+        //            }
+        //            if (ContentFrame.Content is PlayListSongPage)
+        //            {
+        //                var page = ContentFrame.Content as PlayListSongPage;
+        //                if (page != null)
+        //                {
+        //                    page.SortMusicList(AppData.sortOrder);
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
         
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

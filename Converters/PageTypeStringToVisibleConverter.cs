@@ -21,6 +21,9 @@ namespace WinUIMusicPlayer.Converters
                 {
                     return Visibility.Collapsed;
                 }
+                if (pageType == "playlistBrowse") {
+                    return Visibility.Collapsed;
+                }
             }
             return Visibility.Visible;
         }

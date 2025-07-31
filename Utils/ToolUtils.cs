@@ -88,6 +88,8 @@ namespace WinUIMusicPlayer.Utils
                                                    ),
                 ["CreateTimeASC"] = musicList => musicList.OrderBy(m => m.CreateTime),
                 ["CreateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.CreateTime),
+                ["UpdateTimeASC"] = musicList => musicList.OrderBy(m => m.UpdateTime),
+                ["UpdateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.UpdateTime)
             };
 
         // 预定义的类型默认排序策略
@@ -121,7 +123,6 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"获取字符串失败: {ex.Message}");
                 return key;
             }
         }

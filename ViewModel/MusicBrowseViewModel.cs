@@ -1,20 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
-using NAudio.Gui;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
@@ -286,6 +283,37 @@ namespace WinUIMusicPlayer.ViewModel
             get => _topControlsOpacity;
             set => SetProperty(ref _topControlsOpacity, value);
         }
+        private ObservableCollection<SortOption> _allSortOptions = [
+            new SortOption { Tag = "DefaultOrder", UidKey = "SortOrderDefault" },
+            new SortOption { Tag = "A-Z", UidKey = "SortOrderA_Z" },
+            new SortOption { Tag = "Artist", UidKey = "SortOrderArtist" },
+            new SortOption { Tag = "Album", UidKey = "SortOrderAlbum" },
+            new SortOption { Tag = "CreateTimeASC", UidKey = "SortOrderCreateTimeASC" },
+            new SortOption { Tag = "CreateTimeDESC", UidKey = "SortOrderCreateTimeDESC" },
+            new SortOption { Tag = "UpdateTimeASC", UidKey = "SortOrderUpdateTimeASC" },
+            new SortOption { Tag = "UpdateTimeDESC", UidKey = "SortOrderUpdateTimeDESC" }
+        ];
+        private ObservableCollection<SortOption> _albumSortOptions = [
+            new SortOption { Tag = "DefaultOrder", UidKey = "SortOrderDefault" },           
+            new SortOption { Tag = "Artist", UidKey = "SortOrderArtist" },
+        ];
+        private ObservableCollection<SortOption> _sortOptions;
+        public ObservableCollection<SortOption> SortOptions
+        {
+            get => _sortOptions;
+            set => SetProperty(ref _sortOptions, value);
+        }
+        private SortOption _selectedSortOption;
+        public SortOption SelectedSortOption
+        {
+            get => _selectedSortOption;
+            set 
+            {
+                if (SetProperty(ref _selectedSortOption, value)) {
+                    OnSelectSortChanged();
+                }
+            }
+        }
         public System.Type currentPage = typeof(SongListPage);
         public Music CurrentAlbum;
         public Music CurrentArtist;
@@ -312,13 +340,41 @@ namespace WinUIMusicPlayer.ViewModel
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
             if (AppSettings.IsFolderWatchEnabled) {
                 StartWatchingFileFolder();
-            }            
+            }
+            SortOptions = _allSortOptions;
             StartWatchingUsbStorageDevices();
-        }       
+            UpdateDisplayTexts();           
+        }
+
+        public void AllSortOptions() {
+            SortOptions = _allSortOptions;
+            UpdateDisplayTexts();
+            InitializeSortComboBox();
+        }
+        public void AlbumSortOptions() {
+            SortOptions = _albumSortOptions;
+            UpdateDisplayTexts();
+            InitializeSortComboBox();
+        }
+
+        private void InitializeSortComboBox()
+        {
+            var matchingItem = SortOptions.FirstOrDefault(item => item.Tag == AppData.sortOrder);
+            SelectedSortOption = matchingItem ?? SortOptions.FirstOrDefault();
+            AppData.sortOrder = SelectedSortOption.Tag;
+        }
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
             _musicPlaybackService.ChangingSetting();
+        }
+
+        public void UpdateDisplayTexts()
+        {
+            foreach (var option in SortOptions)
+            {
+                option.DisplayText = ToolUtils.GetString(option.UidKey);
+            }
         }
 
         private void StartWatchingUsbStorageDevices()
@@ -610,6 +666,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {
             _musicBrowsePage = musicBrowsePage;
+            InitializeSortComboBox();
         }
 
         [RelayCommand]
@@ -803,7 +860,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void OnSelectionChanged()
         {
-
+            SortOptions = _allSortOptions;
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
             currentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
@@ -835,7 +892,7 @@ namespace WinUIMusicPlayer.ViewModel
                     else
                     {
                         PageType = "artistBrowse";
-                        currentPage = typeof(ArtistPage);
+                        currentPage = typeof(ArtistPage);                        
                     }
                     break;
                 case "Folder":
@@ -870,6 +927,8 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     break;
             }
+            UpdateDisplayTexts();
+            InitializeSortComboBox();
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
             _musicBrowsePage.NavigatePage(currentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
@@ -889,6 +948,19 @@ namespace WinUIMusicPlayer.ViewModel
                 "PlayList" => 5,
                 _ => -1
             };
+        }
+
+        private void OnSelectSortChanged() {
+            try
+            {
+                if (SelectedSortOption != null)
+                {
+                    AppData.sortOrder = SelectedSortOption.Tag;
+                    _musicBrowsePage.SelectSortOptionChanged();
+                }
+            }
+            catch (Exception ex) {
+            }            
         }
     }
 }

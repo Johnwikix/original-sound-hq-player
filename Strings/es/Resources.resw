@@ -159,16 +159,16 @@
   <data name="SortOrder.Text" xml:space="preserve">
     <value>Orden de clasificación</value>
   </data>
-  <data name="SortOrderDefault.Content" xml:space="preserve">
+  <data name="SortOrderDefault" xml:space="preserve">
     <value>Orden predeterminado</value>
   </data>
-  <data name="SortOrderA_Z.Content" xml:space="preserve">
+  <data name="SortOrderA_Z" xml:space="preserve">
     <value>A-Z</value>
   </data>
-  <data name="SortOrderArtist.Content" xml:space="preserve">
+  <data name="SortOrderArtist" xml:space="preserve">
     <value>Artista</value>
   </data>
-  <data name="SortOrderAlbum.Content" xml:space="preserve">
+  <data name="SortOrderAlbum" xml:space="preserve">
     <value>Álbum</value>
   </data>
   <data name="SearchMusic.PlaceholderText" xml:space="preserve">
@@ -741,10 +741,16 @@
   <data name="CreateTime.Text" xml:space="preserve">
     <value>Tiempo de creación:</value>
   </data>
-  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>Tiempo de creación ASC</value>
   </data>
-  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeDESC" xml:space="preserve">
     <value>Tiempo de creación DESC</value>
+  </data>
+  <data name="SortOrderUpdateTimeASC" xml:space="preserve">
+    <value>Modificar el orden ascendente de la fecha</value>
+  </data>
+  <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
+    <value>Modificar el orden descendente de la fecha</value>
   </data>
 </root>

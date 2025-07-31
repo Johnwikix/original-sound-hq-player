@@ -128,24 +128,19 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
-                            <!--<TextBlock
-                                x:Uid="SortOrder"
-                                Margin="10,0,10,0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />-->
                             <ComboBox
                                 x:Name="SortByComboBox"
                                 Width="130"
                                 Margin="0,0,10,0"
                                 VerticalAlignment="Center"
                                 FontSize="12"
-                                SelectionChanged="SortByComboBox_SelectionChanged">
-                                <ComboBoxItem x:Uid="SortOrderDefault" FontSize="12" Tag="DefaultOrder" />
-                                <ComboBoxItem x:Uid="SortOrderA_Z" FontSize="12" Tag="A-Z" />
-                                <ComboBoxItem x:Uid="SortOrderArtist" FontSize="12" Tag="Artist" />
-                                <ComboBoxItem x:Uid="SortOrderAlbum" FontSize="12" Tag="Album" />
-                                <ComboBoxItem x:Uid="SortOrderCreateTimeASC" FontSize="12" Tag="CreateTimeASC" />
-                                <ComboBoxItem x:Uid="SortOrderCreateTimeDESC" FontSize="12" Tag="CreateTimeDESC" />
+                                ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="model:SortOption">
+                                        <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
                         </StackPanel>
                         <TextBox

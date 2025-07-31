@@ -18,6 +18,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -108,6 +109,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage.DisableBackButton();
+            App.Services.GetRequiredService<MusicBrowseViewModel>().AllSortOptions();
             RefreshUsbDeviceMusicList(null, null);            
             RefreshPage();
         }

@@ -159,16 +159,16 @@
   <data name="SortOrder.Text" xml:space="preserve">
     <value>並べ替え方法</value>
   </data>
-  <data name="SortOrderDefault.Content" xml:space="preserve">
+  <data name="SortOrderDefault" xml:space="preserve">
     <value>デフォルトの並び</value>
   </data>
-  <data name="SortOrderA_Z.Content" xml:space="preserve">
+  <data name="SortOrderA_Z" xml:space="preserve">
     <value>A-Z</value>
   </data>
-  <data name="SortOrderArtist.Content" xml:space="preserve">
+  <data name="SortOrderArtist" xml:space="preserve">
     <value>アーティスト</value>
   </data>
-  <data name="SortOrderAlbum.Content" xml:space="preserve">
+  <data name="SortOrderAlbum" xml:space="preserve">
     <value>アルバム</value>
   </data>
   <data name="SearchMusic.PlaceholderText" xml:space="preserve">
@@ -741,10 +741,16 @@
   <data name="CreateTime.Text" xml:space="preserve">
     <value>作成時間：</value>
   </data>
-  <data name="SortOrderCreateTimeASC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>時間昇順の作成</value>
   </data>
-  <data name="SortOrderCreateTimeDESC.Content" xml:space="preserve">
+  <data name="SortOrderCreateTimeDESC" xml:space="preserve">
     <value>時間降順の作成</value>
+  </data>
+  <data name="SortOrderUpdateTimeASC" xml:space="preserve">
+    <value>日付昇順の変更</value>
+  </data>
+  <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
+    <value>日付降順の変更</value>
   </data>
 </root>
