@@ -97,7 +97,24 @@ namespace WinUIMusicPlayer.Reader
         private void CreateReaderStream(string fileName)
         {
             //在CurrentTime修复前全部使用FFmpegAudioReader转成pcm
-            readerStream = new FFmpegAudioReader(fileName);
+            try
+            {
+                if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                {
+                    readerStream = new WaveFileReader(fileName);
+                    if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                    {
+                        readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                        readerStream = new BlockAlignReductionStream(readerStream);
+                    }
+                }
+                else {
+                    readerStream = new FFmpegAudioReader(fileName);
+                }
+            }
+            catch (Exception e) {
+                readerStream = new FFmpegAudioReader(fileName);
+            }            
             //try
             //{
             //    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
