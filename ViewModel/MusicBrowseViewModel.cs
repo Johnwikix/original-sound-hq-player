@@ -5,6 +5,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Gui;
 using System;
@@ -157,6 +158,21 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private SelectorBarItem _selectedPage;
+
+        public SelectorBarItem SelectedPage
+        {
+            get => _selectedPage;
+            set
+            {
+                if (SetProperty(ref _selectedPage, value))
+                {
+                    OnSelectionChanged();
+                }
+            }
+        }
+
+
         private bool _isPlaying = false;
         public bool IsPlaying
         {
@@ -270,6 +286,14 @@ namespace WinUIMusicPlayer.ViewModel
             get => _topControlsOpacity;
             set => SetProperty(ref _topControlsOpacity, value);
         }
+        public System.Type currentPage = typeof(SongListPage);
+        public Music CurrentAlbum;
+        public Music CurrentArtist;
+        public Music CurrentFolder;
+        public PlayList currentPlayList;
+        public string paramName = "defualt";
+        public int previousSelectedIndex = 0;
+        public int currentPlayListId;
         public MusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -777,21 +801,94 @@ namespace WinUIMusicPlayer.ViewModel
             }
 
         }
-        //[RelayCommand]
-        //private void OnHideNavigationViewButtonChanged()
-        //{
-        //    if (App.MainWindow.AppWindow != null)
-        //    {
-        //        if (HideNavigationViewButtonVisibility)
-        //        {
-        //            App.MainWindow.NavigationViewExpanded();
-        //        }
-        //        else
-        //        {
-        //            App.MainWindow.NavigationViewCollapsed();                    
-        //        }
-        //        HideNavigationViewButtonVisibility = !HideNavigationViewButtonVisibility;
-        //    }
-        //}
+        private void OnSelectionChanged()
+        {
+
+            int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
+            currentPage = typeof(SongListPage);
+            switch (SelectedPage.Name)
+            {
+                case "Song":
+                    PageType = "song";
+                    currentPage = typeof(SongListPage);
+                    break;
+                case "Album":
+                    if (CurrentAlbum != null && !string.IsNullOrEmpty(CurrentAlbum.Album))
+                    {
+                        PageType = "album";
+                        paramName = CurrentAlbum.Album;
+                        currentPage = typeof(SongCollectionPage);
+                    }
+                    else
+                    {
+                        PageType = "albumBrowse";
+                        currentPage = typeof(AlbumPage);
+                    }
+                    break;
+                case "Artist":
+                    if (CurrentArtist != null && !string.IsNullOrEmpty(CurrentArtist.Author))
+                    {
+                        PageType = "artist";
+                        paramName = CurrentArtist.Author;
+                        currentPage = typeof(SongCollectionPage);
+                    }
+                    else
+                    {
+                        PageType = "artistBrowse";
+                        currentPage = typeof(ArtistPage);
+                    }
+                    break;
+                case "Folder":
+                    if (CurrentFolder != null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
+                    {
+                        PageType = "folder";
+                        paramName = CurrentFolder.LastLevelFolderPath;
+                        currentPage = typeof(SongCollectionPage);
+                    }
+                    else
+                    {
+                        PageType = "folderBrowse";
+                        currentPage = typeof(FolderBrowsePage);
+                    }
+                    break;
+                case "Favourite":
+                    PageType = "favourite";
+                    currentPage = typeof(FavouritePlayListPage);
+                    break;
+                case "PlayList":
+                    if (currentPlayList != null)
+                    {
+                        PageType = "playlist";
+                        paramName = currentPlayList.Name;
+                        currentPlayListId = currentPlayList.Id;
+                        currentPage = typeof(PlayListSongPage);
+                    }
+                    else
+                    {
+                        PageType = "playlistBrowse";
+                        currentPage = typeof(PlayListPage);
+                    }
+                    break;
+            }
+            var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
+            _musicBrowsePage.NavigatePage(currentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
+            previousSelectedIndex = currentSelectedIndex;
+            _musicBrowsePage.DisableBackButton();
+        }
+
+        private int GetSelectorBarItemIndex(SelectorBarItem item)
+        {
+            if (item == null) return -1;
+            return item.Name switch
+            {
+                "Song" => 0,
+                "Album" => 1,
+                "Artist" => 2,
+                "Folder" => 3,
+                "Favourite" => 4,
+                "PlayList" => 5,
+                _ => -1
+            };
+        }
     }
 }

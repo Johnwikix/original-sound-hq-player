@@ -71,7 +71,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage.DisableBackButton();
-            PlayListName = _parentPage.currentPlayList.Name;
+            PlayListName = _parentPage.ViewModel.currentPlayList.Name;
             InitizeData();
             RefreshUsbDeviceMusicList(null, null);            
         }
@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage != null)
             {
-                var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(_parentPage.currentPlayListId, AppData.searchText);
+                var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(_parentPage.ViewModel.currentPlayListId, AppData.searchText);
                 LoadMusicAsync(musicList);
             }
         }
@@ -153,7 +153,7 @@ namespace WinUIMusicPlayer.ViewModel
                     MusicList[i].PlayListOrder = MusicList.Count - i;
                     //await MusicDatabaseService.UpdatePlayListMusicOrder(_parentPage.currentPlayList.Id, MusicList[i]);
                 }
-                await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.currentPlayList.Id, MusicList.ToList());
+                await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.ToList());
                 await MusicDatabaseService.GetPlayListMusic();
             }
         }

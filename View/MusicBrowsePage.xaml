@@ -41,7 +41,7 @@
                     Margin="5,0,0,0"
                     Visibility="Visible">
                     <StackPanel Orientation="Horizontal">
-                        <SelectorBar x:Name="selectPage" SelectionChanged="SelectPage_SelectionChanged">
+                        <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=TwoWay}">
                             <SelectorBarItem
                                 x:Name="Song"
                                 x:Uid="SongTab"
@@ -128,14 +128,14 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
-                            <TextBlock
+                            <!--<TextBlock
                                 x:Uid="SortOrder"
                                 Margin="10,0,10,0"
                                 VerticalAlignment="Center"
-                                FontSize="14" />
+                                FontSize="14" />-->
                             <ComboBox
                                 x:Name="SortByComboBox"
-                                Width="120"
+                                Width="130"
                                 Margin="0,0,10,0"
                                 VerticalAlignment="Center"
                                 FontSize="12"

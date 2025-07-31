@@ -161,14 +161,14 @@ namespace WinUIMusicPlayer.ViewModel
             if (_parentPage != null)
             {
                 CurrentPageType = _parentPage.ViewModel?.PageType;
-                _currentAlbumName = _parentPage.CurrentAlbum?.Album;
-                _currentArtistName = _parentPage.CurrentArtist?.Author;
-                _currentFolderName = _parentPage.CurrentFolder?.LastLevelFolderPath;
+                _currentAlbumName = _parentPage.ViewModel.CurrentAlbum?.Album;
+                _currentArtistName = _parentPage.ViewModel.CurrentArtist?.Author;
+                _currentFolderName = _parentPage.ViewModel.CurrentFolder?.LastLevelFolderPath;
 
                 if (CurrentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
                 {
                     IsAlbumImageVisible = Visibility.Visible;
-                    CurrentMusicObject = _parentPage.CurrentAlbum;
+                    CurrentMusicObject = _parentPage.ViewModel.CurrentAlbum;
                     _ = Task.Run(async () =>
                     {
                         if (CurrentMusicObject?.Cover == null)
@@ -196,7 +196,7 @@ namespace WinUIMusicPlayer.ViewModel
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
                     IsAlbumImageVisible = Visibility.Collapsed;
-                    CurrentMusicObject = _parentPage.CurrentArtist;
+                    CurrentMusicObject = _parentPage.ViewModel.CurrentArtist;
                     var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs
@@ -211,7 +211,7 @@ namespace WinUIMusicPlayer.ViewModel
                 else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
                     IsAlbumImageVisible = Visibility.Collapsed;
-                    CurrentMusicObject = _parentPage.CurrentFolder;
+                    CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
                     var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs

@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -40,13 +41,15 @@ namespace WinUIMusicPlayer.ViewModel
         private string _lastSearchText = "";
 
         private MusicBrowsePage? parentPage;
+        private MusicBrowseViewModel? _musicBrowseViewModel;
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
         private string _currentSortOrder = "DefaultOrder";
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
+        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel)
         {
             parentPage = parent;
+            _musicBrowseViewModel = musicBrowseViewModel;
             GroupedMusicViewSource = new CollectionViewSource
             {
                 IsSourceGrouped = true
@@ -83,7 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             
-            parentPage.CurrentAlbum = null;
+            parentPage.ViewModel.CurrentAlbum = null;
             parentPage.ViewModel.PageType = "albumBrowse";
             parentPage.DisableBackButton();            
             Entance();
@@ -201,9 +204,16 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music album = item.Content as Music;
-                if (parentPage != null)
+                if (parentPage != null && _musicBrowseViewModel!=null)
                 {
-                    parentPage.LoadAlbumMusic(album);
+                    //parentPage.LoadAlbumMusic(album);
+                    _musicBrowseViewModel.PageType = "album";
+                    _musicBrowseViewModel.paramName = album.Album;
+                    //currentAlbumName = album.Album;
+                    _musicBrowseViewModel.CurrentAlbum = album;
+                    _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
+                    parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+
                 }
             }
         }
@@ -213,9 +223,9 @@ namespace WinUIMusicPlayer.ViewModel
             List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).OrderBy(m => m.Album).ToList();
             if (albums != null && albums.Count > 0)
             {
-                if (parentPage != null)
+                if (parentPage != null && _musicBrowseViewModel != null)
                 {
-                    parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(albums);
+                    _musicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(albums);
                     parentPage.PlayMusic(albums[0]);
                 }
             }

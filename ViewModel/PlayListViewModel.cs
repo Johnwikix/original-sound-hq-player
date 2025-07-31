@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,11 +23,13 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private MusicBrowsePage? _parentPage;
+        private MusicBrowseViewModel? _musicBrowseViewModel;
         private PlayListPage? _currentPage;
 
-        public PlayListViewModel(MusicBrowsePage parent)
+        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel)
         {
             _parentPage = parent;            
+            _musicBrowseViewModel = musicBrowseViewModel;
             _parentPage.addPlayListEvent += RefreshPlayList;
         }
 
@@ -37,7 +40,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            _parentPage.currentPlayList = null;
+            _parentPage.ViewModel.currentPlayList = null;
             _parentPage.DisableBackButton();
             InitializingData();
         }
@@ -110,9 +113,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayListView_SelectionChanged(PlayList? playList)
         {
-            if (playList != null && _parentPage != null)
+            if (playList != null && _parentPage != null && _musicBrowseViewModel!=null)
             {
-                _parentPage.LoadPlayListSong(playList);
+                //_parentPage.LoadPlayListSong(playList);
+                _musicBrowseViewModel.PageType = "playlist";
+                _musicBrowseViewModel.paramName = playList.Name;
+                _musicBrowseViewModel.currentPlayList = playList;
+                _musicBrowseViewModel.currentPlayListId = playList.Id;
+                _musicBrowseViewModel.currentPage = typeof(PlayListSongPage);
+                _parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }
         }
     }

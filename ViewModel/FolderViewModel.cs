@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,7 +15,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using Microsoft.UI.Xaml.Data;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -35,10 +36,11 @@ namespace WinUIMusicPlayer.ViewModel
         //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
+        private MusicBrowseViewModel? _musicBrowseViewModel;
         private FolderBrowsePage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService)
+        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -74,6 +76,7 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
+            _musicBrowseViewModel = musicBrowseViewModel;
         }
 
         public void UpdateUsbIcon()
@@ -88,7 +91,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {           
-            parentPage.CurrentFolder= null;
+            parentPage.ViewModel.CurrentFolder = null;
             parentPage.ViewModel.PageType = "folderBrowse";
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
@@ -170,9 +173,21 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music folder = item.Content as Music;
-                if (parentPage != null)
+                if (parentPage != null && _musicBrowseViewModel!=null)
                 {
-                    parentPage.LoadFolderMusic(folder);
+                    //parentPage.LoadFolderMusic(folder);
+                    try
+                    {
+                        _musicBrowseViewModel.PageType = "folder";
+                        _musicBrowseViewModel.paramName = folder.LastLevelFolderPath;
+                        _musicBrowseViewModel.CurrentFolder = folder;
+                        _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
+                        parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                    }
                 }
             }
         }

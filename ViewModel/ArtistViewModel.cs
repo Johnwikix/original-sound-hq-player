@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -35,10 +36,11 @@ namespace WinUIMusicPlayer.ViewModel
         //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
+        private MusicBrowseViewModel? _musicBrowseViewModel;
         private ArtistPage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public ArtistViewModel(MusicBrowsePage parent,ContextMenuService contextMenuService)
+        public ArtistViewModel(MusicBrowsePage parent,ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -71,6 +73,7 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
+            _musicBrowseViewModel = musicBrowseViewModel;
         }
 
         public void UpdateUsbIcon()
@@ -85,7 +88,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {            
-            parentPage.CurrentArtist = null;
+            parentPage.ViewModel.CurrentArtist = null;
             parentPage.ViewModel.PageType = "artistBrowse";
             parentPage.DisableBackButton();            
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
@@ -159,9 +162,15 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music artist = item.Content as Music;
-                if (parentPage != null)
+                if (parentPage != null && _musicBrowseViewModel!=null)
                 {
-                    parentPage.LoadArtistMusic(artist);
+                    //parentPage.LoadArtistMusic(artist);
+                    _musicBrowseViewModel.PageType = "artist";
+                    _musicBrowseViewModel.paramName = artist.Author;
+                    //currentArtistName = artist.Author;
+                    _musicBrowseViewModel.CurrentArtist = artist;
+                    _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
+                    parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
             }
         }
