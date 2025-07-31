@@ -30,9 +30,9 @@ namespace WinUIMusicPlayer.View
 
         public FavouritePlayListPage(FavouritePlayListViewModel viewModel)
         {
+            this.InitializeComponent();
             ViewModel = viewModel;
-            ViewModel.SetCurrentPage(this);
-            this.InitializeComponent();           
+            ViewModel.SetCurrentPage(this);                   
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
         }

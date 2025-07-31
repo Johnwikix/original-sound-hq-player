@@ -62,8 +62,7 @@ namespace WinUIMusicPlayer.ViewModel
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            _progressDialog.Title = ToolUtils.GetString("Processing");
-            InitializeData();
+            _progressDialog.Title = ToolUtils.GetString("Processing");            
         }
 
         private void OnConverterProgressUpdated(object? sender, double progress)
@@ -91,13 +90,12 @@ namespace WinUIMusicPlayer.ViewModel
         public void SetCurrentPage(FavouritePlayListPage page)
         {
             currentPage = page;
+            //InitializeData();
         }
 
         public void ReceiveNavigation()
-        {
-            //parentPage = parent;            
+        {            
             InitializeData();
-            //ClearUsbDeviceMusicList();
             RefreshUsbDeviceMusicList();
         }
 
@@ -132,7 +130,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //MusicList = new ObservableCollection<Music>(musics);
                 MusicList.Clear();
                 foreach (var music in musics)
                 {
@@ -197,7 +194,6 @@ namespace WinUIMusicPlayer.ViewModel
             for (int i = 0; i < MusicList.Count; i++)
             {
                 MusicList[i].Order = MusicList.Count - i;
-                //await MusicDatabaseService.UpdateMuisc(MusicList[i]);
             }
             await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -408,14 +404,8 @@ namespace WinUIMusicPlayer.ViewModel
                             parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
                         }
-                        //int progressBarValue = 0;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
                         _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                        //_converterService.updateProgress += (sender, progress) =>
-                        //{
-                        //    progressBarValue = (int)progress;
-                        //    _ = _progressDialog.UpdateProgress(progressBarValue);
-                        //};
                         if (progressBarValue < 100)
                         {
                             _progressDialog.XamlRoot = currentPage.XamlRoot;
@@ -439,19 +429,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
-
-        //public async void IsFavouriteIconButton_Click(Music music)
-        //{
-        //    if (music != null)
-        //    {
-        //        if (music.IsFavorite)
-        //        {
-        //            MusicList.Remove(music);
-        //        }
-        //        await parentPage.AddToFavourite(music);
-        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-        //    }
-        //}
 
         public void AlbumTextBlock_Tapped(TextBlock textBlock)
         {
