@@ -53,7 +53,6 @@ namespace WinUIMusicPlayer.Reader
                 int targetSampleRate = originalSampleRate;
                 if (originalSampleRate > 384000)
                 {
-                    // 找到最大的整数除数，使结果不超过384000
                     int divisor = 1;
                     while (originalSampleRate / divisor > 384000)
                     {
@@ -61,7 +60,6 @@ namespace WinUIMusicPlayer.Reader
                     }
                     targetSampleRate = originalSampleRate / divisor;
 
-                    // 如果需要重采样，使用CSCore的重采样器
                     if (targetSampleRate != originalSampleRate)
                     {
                         ffmpegDecoder = new CSCore.DSP.DmoResampler(ffmpegDecoder, targetSampleRate)
@@ -70,10 +68,7 @@ namespace WinUIMusicPlayer.Reader
                         };
                     }
                 }
-
-                // 转换为ISampleSource，这样数据就是float格式
                 sampleSource = ffmpegDecoder.ToSampleSource();
-
                 // 创建32-bit float格式的WaveFormat
                 this.waveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(targetSampleRate, channels);
             }
