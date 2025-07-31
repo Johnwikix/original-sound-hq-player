@@ -283,30 +283,21 @@ namespace WinUIMusicPlayer.ViewModel
             get => _topControlsOpacity;
             set => SetProperty(ref _topControlsOpacity, value);
         }
-        //private IEnumerable<SortOption> _allSortOptions = [
-        //    new SortOption { Tag = "DefaultOrder", UidKey = "SortOrderDefault" },
-        //    new SortOption { Tag = "A-Z", UidKey = "SortOrderA_Z" },
-        //    new SortOption { Tag = "Artist", UidKey = "SortOrderArtist" },
-        //    new SortOption { Tag = "Album", UidKey = "SortOrderAlbum" },
-        //    new SortOption { Tag = "CreateTimeASC", UidKey = "SortOrderCreateTimeASC" },
-        //    new SortOption { Tag = "CreateTimeDESC", UidKey = "SortOrderCreateTimeDESC" },
-        //    new SortOption { Tag = "UpdateTimeASC", UidKey = "SortOrderUpdateTimeASC" },
-        //    new SortOption { Tag = "UpdateTimeDESC", UidKey = "SortOrderUpdateTimeDESC" }
-        //];
-        //private IEnumerable<SortOption> _albumSortOptions = [
-        //    new SortOption { Tag = "DefaultOrder", UidKey = "SortOrderDefault" },           
-        //    new SortOption { Tag = "Artist", UidKey = "SortOrderArtist" },
-        //];
-        private ObservableCollection<SortOption> _sortOptions=[
-            new SortOption { Tag = "DefaultOrder", UidKey = "SortOrderDefault" },
-            new SortOption { Tag = "A-Z", UidKey = "SortOrderA_Z" },
-            new SortOption { Tag = "Artist", UidKey = "SortOrderArtist" },
-            new SortOption { Tag = "Album", UidKey = "SortOrderAlbum" },
-            new SortOption { Tag = "CreateTimeASC", UidKey = "SortOrderCreateTimeASC" },
-            new SortOption { Tag = "CreateTimeDESC", UidKey = "SortOrderCreateTimeDESC" },
-            new SortOption { Tag = "UpdateTimeASC", UidKey = "SortOrderUpdateTimeASC" },
-            new SortOption { Tag = "UpdateTimeDESC", UidKey = "SortOrderUpdateTimeDESC" }
+        private IEnumerable<SortOption> _allSortOptions = [
+            new SortOption( "DefaultOrder", "SortOrderDefault"),
+            new SortOption("A-Z", "SortOrderA_Z"),
+            new SortOption("Artist", "SortOrderArtist"),
+            new SortOption("Album", "SortOrderAlbum"),
+            new SortOption("CreateTimeASC", "SortOrderCreateTimeASC"),
+            new SortOption("CreateTimeDESC", "SortOrderCreateTimeDESC"),
+            new SortOption("UpdateTimeASC", "SortOrderUpdateTimeASC"),
+            new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
         ];
+        private IEnumerable<SortOption> _albumSortOptions = [
+            new SortOption( "DefaultOrder", "SortOrderDefault"),
+            new SortOption("Artist", "SortOrderArtist")
+        ];
+        private ObservableCollection<SortOption> _sortOptions;
         public ObservableCollection<SortOption> SortOptions
         {
             get => _sortOptions;
@@ -350,28 +341,31 @@ namespace WinUIMusicPlayer.ViewModel
             if (AppSettings.IsFolderWatchEnabled) {
                 StartWatchingFileFolder();
             }
+            SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
             StartWatchingUsbStorageDevices();
-            UpdateDisplayTexts();           
+            //UpdateDisplayTexts();           
         }
 
-        //public void AllSortOptions() {
-        //    SortOptions.Clear();
-        //    foreach (var options in _allSortOptions)
-        //    {
-        //        SortOptions.Add(options);
-        //    }
-        //    UpdateDisplayTexts();
-        //    InitializeSortComboBox();
-        //}
-        //public void AlbumSortOptions() {
-        //    SortOptions.Clear();
-        //    foreach (var options in _albumSortOptions)
-        //    {
-        //        SortOptions.Add(options);
-        //    }
-        //    UpdateDisplayTexts();
-        //    InitializeSortComboBox();
-        //}
+        public void AllSortOptions()
+        {
+            SortOptions.Clear();
+            foreach (var options in _allSortOptions)
+            {
+                SortOptions.Add(options);
+            }
+            UpdateDisplayTexts();
+            InitializeSortComboBox();
+        }
+        public void AlbumSortOptions()
+        {
+            SortOptions.Clear();
+            foreach (var options in _albumSortOptions)
+            {
+                SortOptions.Add(options);
+            }
+            UpdateDisplayTexts();
+            InitializeSortComboBox();
+        }
 
         private void InitializeSortComboBox()
         {
@@ -876,7 +870,9 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void OnSelectionChanged()
         {
-            //AllSortOptions();
+            if (SortOptions.Count == 2) {
+                AllSortOptions();
+            }            
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
             currentPage = typeof(SongListPage);
             switch (SelectedPage.Name)

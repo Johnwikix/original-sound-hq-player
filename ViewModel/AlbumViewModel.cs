@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.ViewModel
                 InitializeData();
             }
             ToolUtils.RefreshIcon(MusicList, "album");
-            //_musicBrowseViewModel?.AlbumSortOptions();
+            _musicBrowseViewModel?.AlbumSortOptions();
             SortMusicList(AppData.sortOrder);
         }
 

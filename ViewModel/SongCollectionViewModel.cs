@@ -77,6 +77,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private MusicBrowsePage? _parentPage;
+        private MusicBrowseViewModel? _musicBrowseViewModel;
         private SongCollectionPage _currentPage;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
@@ -92,7 +93,7 @@ namespace WinUIMusicPlayer.ViewModel
         MusicPlaybackService _musicPlaybackService;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
+        public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel)
         {
             _parentPage = parent;           
             _parentPage.refreshSong += RefreshSong;
@@ -101,6 +102,7 @@ namespace WinUIMusicPlayer.ViewModel
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
             _progressDialog.Title = ToolUtils.GetString("Processing");
             _converterService.updateProgress += OnConverterProgressUpdated;
+            _musicBrowseViewModel = musicBrowseViewModel;
         }
         public void SetCurrentPage(SongCollectionPage page)
         {
@@ -108,8 +110,10 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void ReceiveNavigation()
         {
-            _parentPage.DisableBackButton();
-            //App.Services.GetRequiredService<MusicBrowseViewModel>().AllSortOptions();
+            _parentPage?.DisableBackButton();
+            if (_musicBrowseViewModel?.SortOptions.Count == 2) {
+                _musicBrowseViewModel?.AllSortOptions();
+            }
             RefreshUsbDeviceMusicList(null, null);            
             RefreshPage();
         }
