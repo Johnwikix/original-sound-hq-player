@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage.DisableBackButton();
-            App.Services.GetRequiredService<MusicBrowseViewModel>().AllSortOptions();
+            //App.Services.GetRequiredService<MusicBrowseViewModel>().AllSortOptions();
             RefreshUsbDeviceMusicList(null, null);            
             RefreshPage();
         }
