@@ -40,20 +40,12 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {
         public MainWindow mainWindow;
-        //public string paramName = "defualt";
-        //public System.Type currentPage = typeof(SongListPage);
         private bool isMouseOverVolumeSlider = false;
-        //public Music CurrentAlbum;
-        //public Music CurrentArtist;
-        //public Music CurrentFolder;
-        //public PlayList currentPlayList;
-        //public int currentPlayListId;
         private DispatcherTimer typingTimer;  
         private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
-        //public int previousSelectedIndex = 0;
         private readonly INavigationService _navigationService;
         private EqualizerDialog equalizerDialog;
         private bool isSearching = false;
@@ -233,27 +225,7 @@ namespace WinUIMusicPlayer.View
                     mainWindow.DisableEnableBackButton(false);
                 }
             }            
-        }
-
-        //public async void LoadPlayListSong(PlayList playList)
-        //{
-        //    ViewModel.PageType = "playlist";
-        //    ViewModel.paramName = playList.Name;
-        //    ViewModel.currentPlayList = playList;
-        //    ViewModel.currentPlayListId = playList.Id;
-        //    ViewModel.currentPage = typeof(PlayListSongPage);
-        //    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
-        //}
-
-        //public async void LoadAlbumMusic(Music album)
-        //{
-        //    ViewModel.PageType = "album";
-        //    ViewModel.paramName = album.Album;
-        //    //currentAlbumName = album.Album;
-        //    ViewModel.CurrentAlbum = album;
-        //    ViewModel.currentPage = typeof(SongCollectionPage);
-        //    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(),AppSettings.DrillInAnimationTime);
-        //}
+        }        
 
         public void SelectBarAlbum(string Album)
         {
@@ -273,17 +245,7 @@ namespace WinUIMusicPlayer.View
                     SelectBarItem("album");
                 }
             }
-        }
-
-        //public async void LoadArtistMusic(Music artist)
-        //{
-        //    ViewModel.PageType = "artist";
-        //    ViewModel.paramName = artist.Author;
-        //    //currentArtistName = artist.Author;
-        //    ViewModel.CurrentArtist = artist;
-        //    ViewModel.currentPage = typeof(SongCollectionPage);
-        //    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-        //}
+        }      
 
         public void SelectBarArtist(string artist)
         {
@@ -304,22 +266,6 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        //public void LoadFolderMusic(Music folder)
-        //{
-        //    try
-        //    {
-        //        ViewModel.PageType = "folder";
-        //        ViewModel.paramName = folder.LastLevelFolderPath;
-        //        ViewModel.CurrentFolder = folder;
-        //        ViewModel.currentPage = typeof(SongCollectionPage);
-        //        _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-        //    }
-        //    catch (Exception ex) {
-        //        Debug.WriteLine(ex.Message);
-        //    }            
-        //}
-
 
         public async Task AddToFavourite(Music music)
         {
@@ -417,84 +363,6 @@ namespace WinUIMusicPlayer.View
             }
             DisableBackButton();
         }
-
-        //private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
-        //{
-        //    DateTime startTime = DateTime.Now;
-        //    //ResetNavigationButtons();
-        //    SelectorBarItem selectedItem = sender.SelectedItem;
-        //    //selectedItem.FontSize = 26;
-        //    int currentSelectedIndex = sender.Items.IndexOf(selectedItem);
-        //    currentPage = typeof(SongListPage);
-        //    switch (selectedItem.Name)
-        //    {
-        //        case "Song":
-        //            ViewModel.PageType = "song";
-        //            currentPage = typeof(SongListPage);
-        //            break;
-        //        case "Album":
-        //            if (CurrentAlbum != null && !string.IsNullOrEmpty(CurrentAlbum.Album))
-        //            {
-        //                ViewModel.PageType = "album";
-        //                paramName = CurrentAlbum.Album;
-        //                currentPage = typeof(SongCollectionPage);
-        //            }
-        //            else
-        //            {
-        //                ViewModel.PageType = "albumBrowse";
-        //                currentPage = typeof(AlbumPage);
-        //            }
-        //            break;
-        //        case "Artist":
-        //            if (CurrentArtist != null && !string.IsNullOrEmpty(CurrentArtist.Author))
-        //            {
-        //                ViewModel.PageType = "artist";
-        //                paramName = CurrentArtist.Author;
-        //                currentPage = typeof(SongCollectionPage);
-        //            }
-        //            else
-        //            {
-        //                ViewModel.PageType = "artistBrowse";
-        //                currentPage = typeof(ArtistPage);
-        //            }
-        //            break;
-        //        case "Folder":
-        //            if (CurrentFolder != null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
-        //            {
-        //                ViewModel.PageType = "folder";
-        //                paramName = CurrentFolder.LastLevelFolderPath;
-        //                currentPage = typeof(SongCollectionPage);
-        //            }
-        //            else
-        //            {
-        //                ViewModel.PageType = "folderBrowse";
-        //                currentPage = typeof(FolderBrowsePage);
-        //            }
-        //            break;
-        //        case "Favourite":
-        //            ViewModel.PageType = "favourite";
-        //            currentPage = typeof(FavouritePlayListPage);
-        //            break;
-        //        case "PlayList":
-        //            if (currentPlayList != null)
-        //            {
-        //                ViewModel.PageType = "playlist";
-        //                paramName = currentPlayList.Name;
-        //                currentPlayListId = currentPlayList.Id;
-        //                currentPage = typeof(PlayListSongPage);
-        //            }
-        //            else
-        //            {
-        //                ViewModel.PageType = "playlistBrowse";
-        //                currentPage = typeof(PlayListPage);
-        //            }
-        //            break;
-        //    }
-        //    SlideNavigationTransitionEffect slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-        //    _navigationService.Navigate(currentPage, this, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect },AppSettings.SlideAnimationTime,true);
-        //    previousSelectedIndex = currentSelectedIndex;
-        //    DisableBackButton();
-        //}
 
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {
