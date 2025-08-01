@@ -450,6 +450,44 @@ namespace WinUIMusicPlayer.Services
                             if (device.FriendlyName == AppSettings.DeviceName)
                             {
                                 selectedDevice = device;
+                                //设备独占格式测试
+                                //int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000,768000 };
+                                //int[] bitDepths = { 16, 24, 32 };
+
+                                //int maxSupportedSampleRate = 0;
+                                //int maxSupportedBitDepth = 0;
+
+                                //Debug.WriteLine($"设备: {device.FriendlyName}");
+                                //Debug.WriteLine("支持的格式:");
+                                //foreach (var sampleRate in sampleRates)
+                                //{
+                                //    foreach (var bitDepth in bitDepths)
+                                //    {
+                                //        var testFormat = new WaveFormat(sampleRate, bitDepth, 2); // 立体声
+
+                                //        try
+                                //        {
+                                //            // 测试独占模式支持
+                                //            bool supportedFormat = device.AudioClient.IsFormatSupported(
+                                //                AudioClientShareMode.Exclusive, testFormat);
+
+                                //            if (supportedFormat)
+                                //            {
+                                //                Debug.WriteLine($"  ✓ {sampleRate}Hz, {bitDepth}bit");
+
+                                //                if (sampleRate > maxSupportedSampleRate)
+                                //                    maxSupportedSampleRate = sampleRate;
+
+                                //                if (bitDepth > maxSupportedBitDepth)
+                                //                    maxSupportedBitDepth = bitDepth;
+                                //            }
+                                //        }
+                                //        catch (Exception)
+                                //        {
+                                //            // 格式不支持，忽略异常
+                                //        }
+                                //    }
+                                //}
                                 break;
                             }
                         }
