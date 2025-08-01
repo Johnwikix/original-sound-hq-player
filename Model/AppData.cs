@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.Model
         public static IntPtr m_hWnd { get; set; } = IntPtr.Zero;
         public static double AppDpiScale { get; set; } = 1.0;
         public static string systemLanguage { get; set; } = "en";
-        //public static int MaxSupportedSampleRate = 0;
-        //public static int MaxSupportedBitDepth = 0;
+        public static int MaxSupportedSampleRate = 0;
+        public static int MaxSupportedBitDepth = 0;
     }
 }

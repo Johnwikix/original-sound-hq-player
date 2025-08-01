@@ -440,8 +440,8 @@ namespace WinUIMusicPlayer.Services
         {
             selectedDevice?.Dispose(); // 确保释放之前的设备
             selectedDevice = null;
-            //AppData.MaxSupportedBitDepth = 0;
-            //AppData.MaxSupportedSampleRate = 0;
+            AppData.MaxSupportedBitDepth = 0;
+            AppData.MaxSupportedSampleRate = 0;
             using (var enumerator = new MMDeviceEnumerator())
             {
                 try
@@ -454,7 +454,7 @@ namespace WinUIMusicPlayer.Services
                             if (device.FriendlyName == AppSettings.DeviceName)
                             {
                                 selectedDevice = device;
-                                //GetMaxDeviceWasapiSupportFormat(selectedDevice);
+                                GetMaxDeviceWasapiSupportFormat(selectedDevice);
                                 break;
                             }
                         }
@@ -475,35 +475,36 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        //private void GetMaxDeviceWasapiSupportFormat(MMDevice device) {
-        //    Debug.WriteLine($"设备: {device.FriendlyName}");
-        //    Debug.WriteLine("支持的格式:");
-        //    foreach (var sampleRate in sampleRates)
-        //    {
-        //        foreach (var bitDepth in bitDepths)
-        //        {
-        //            var testFormat = new WaveFormat(sampleRate, bitDepth, 2); // 立体声
-        //            try
-        //            {
-        //                // 测试独占模式支持
-        //                bool supportedFormat = device.AudioClient.IsFormatSupported(
-        //                    AudioClientShareMode.Exclusive, testFormat);
-        //                if (supportedFormat)
-        //                {                           
-        //                    if (sampleRate > AppData.MaxSupportedSampleRate)
-        //                        AppData.MaxSupportedSampleRate = sampleRate;
-        //                    if (bitDepth > AppData.MaxSupportedBitDepth)
-        //                        AppData.MaxSupportedBitDepth = bitDepth;
-        //                }
-        //            }
-        //            catch (Exception)
-        //            {
-        //                // 格式不支持，忽略异常
-        //            }
-        //        }
-        //    }
-        //    Debug.WriteLine($"  ✓ {AppData.MaxSupportedSampleRate}Hz, {AppData.MaxSupportedBitDepth}bit");
-        //}
+        private void GetMaxDeviceWasapiSupportFormat(MMDevice device)
+        {
+            Debug.WriteLine($"设备: {device.FriendlyName}");
+            Debug.WriteLine("支持的格式:");
+            foreach (var sampleRate in sampleRates)
+            {
+                foreach (var bitDepth in bitDepths)
+                {
+                    var testFormat = new WaveFormat(sampleRate, bitDepth, 2); // 立体声
+                    try
+                    {
+                        // 测试独占模式支持
+                        bool supportedFormat = device.AudioClient.IsFormatSupported(
+                            AudioClientShareMode.Exclusive, testFormat);
+                        if (supportedFormat)
+                        {
+                            if (sampleRate > AppData.MaxSupportedSampleRate)
+                                AppData.MaxSupportedSampleRate = sampleRate;
+                            if (bitDepth > AppData.MaxSupportedBitDepth)
+                                AppData.MaxSupportedBitDepth = bitDepth;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 格式不支持，忽略异常
+                    }
+                }
+            }
+            Debug.WriteLine($"✓{AppData.MaxSupportedSampleRate}Hz, {AppData.MaxSupportedBitDepth}bit");
+        }
 
         public void SelectOutputDevice()
         {
