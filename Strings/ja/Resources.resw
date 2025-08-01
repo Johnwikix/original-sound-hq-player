@@ -415,7 +415,7 @@
     <value>キャンセル</value>
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
-    <value>保存</value>
+    <value>ファイルに書き込む</value>
   </data>
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>閉じる</value>
@@ -718,7 +718,7 @@
     <value>ディスク番号：</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
-    <value>ファイルから歌詞を読み直す</value>
+    <value>ファイルからメタ情報を再取得する</value>
   </data>
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>音楽ファイルにメタ情報を書き込むかどうかを確認</value>
@@ -752,5 +752,11 @@
   </data>
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>日付降順の変更</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>更新時間：</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>Сохранить в базу данных</value>
   </data>
 </root>

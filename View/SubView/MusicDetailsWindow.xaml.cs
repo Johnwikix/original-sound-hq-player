@@ -77,8 +77,8 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.SetMinimumSize(hwnd,this,650,800);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 750,650,App.MainWindow.AppWindow,this.AppWindow);
+            WindowSizeHelper.SetMinimumSize(hwnd,this,650,850);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850,650,App.MainWindow.AppWindow,this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();
         }
@@ -110,10 +110,37 @@ namespace WinUIMusicPlayer.View.SubView
             albumCoverData = await ToolUtils.GetRawImage(music);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             CreateTimeBlock.Text = music.CreateTime.ToString();
+            UpdateTimeBlock.Text = music.UpdateTime.ToString();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
+            this.Close();
+        }
+
+        private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+            if (music != null)
+            {
+                try
+                {
+                    music.Title = TitleTextBlock.Text;
+                    music.Author = AuthorTextBlock.Text;
+                    music.Album = AlbumTextBlock.Text;
+                    music.Year = (int)YearTextBlock.Value;
+                    music.DiskNumber = (int)DiskNumberBox.Value;
+                    music.TrackNumber = (int)TrackNumberBox.Value;
+                    music.Lyrics = LyricsTextBox.Text;
+                    await MusicDatabaseService.UpdateMusicInfo(music);
+                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                    MusicDetailChanged?.Invoke(this, music);
+                }
+                catch (Exception ex)
+                {
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                }
+            }
             this.Close();
         }
 
@@ -200,15 +227,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);
-            //if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-            //{
-            //    lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}
-            //else
-            //{
-            //    lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}            
+            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);          
             if (lyrics != null)
             {
                 LyricsTextBox.Text = lyrics;
@@ -238,13 +257,31 @@ namespace WinUIMusicPlayer.View.SubView
             ToolUtils.OpenFileInExplorer(musicDetail.Path);
         }
 
-        private  void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
+        private void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
         {
-            _=Task.Run(() => {
-                var lyrics =ToolUtils.GetLyricsFromFile(musicDetail.Path);
-                if (!string.IsNullOrEmpty(lyrics)) {
-                    DispatcherQueue.TryEnqueue(() => {
-                        LyricsTextBox.Text = lyrics;
+            _=Task.Run(async () => {
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(musicDetail.Path);
+                Music music = await ToolUtils.GetMusicInfo(storageFile,musicDetail.Path);
+                if (music!=null) {
+                    DispatcherQueue.TryEnqueue(() => {                        
+                        TitleTextBlock.Text = music.Title;
+                        AuthorTextBlock.Text = music.Author;
+                        AlbumTextBlock.Text = music.Album;
+                        if (!string.IsNullOrEmpty(music.Lyrics))
+                        {
+                            LyricsTextBox.Text = music.Lyrics;
+                        }
+                        TrackNumberBox.Value = music.TrackNumber;
+                        DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
+                        BitDepthTextBlock.Text = $"{music.BitDepth}bit";
+                        BitRateTextBlock.Text = $"{music.BitRate}kbps";
+                        SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
+                        YearTextBlock.Value = music.Year;
+                        LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
+                        DiskNumberBox.Value = music.DiskNumber;
+                        PathTextBlock.Text = music.Path;
+                        CreateTimeBlock.Text = music.CreateTime.ToString();
+                        UpdateTimeBlock.Text = music.UpdateTime.ToString();
                     });
                 }
             });            
@@ -308,15 +345,15 @@ namespace WinUIMusicPlayer.View.SubView
             ConfirmFlyout.Hide();
         }
 
-        private async void SaveLyricsToDateBase_Click(object sender, RoutedEventArgs e)
-        {
-            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music != null)
-            {
-                music.Lyrics = LyricsTextBox.Text;
-                await MusicDatabaseService.UpdateMusicInfo(music);
-            }
-            this.Close();
-        }
+        //private async void SaveLyricsToDateBase_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+        //    if (music != null)
+        //    {
+        //        music.Lyrics = LyricsTextBox.Text;
+        //        await MusicDatabaseService.UpdateMusicInfo(music);
+        //    }
+        //    this.Close();
+        //}
     }
 }

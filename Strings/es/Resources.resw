@@ -415,7 +415,7 @@
     <value>Cancelar</value>
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
-    <value>Guardar</value>
+    <value>Escribe en el archivo</value>
   </data>
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>Cerrar</value>
@@ -718,7 +718,7 @@
     <value>Número de disco:</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
-    <value>Volver a leer la letra del archivo</value>
+    <value>Recuperar la metainformación del archivo</value>
   </data>
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Si está seguro de escribir metainformación en el archivo musical</value>
@@ -752,5 +752,11 @@
   </data>
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>Modificar el orden descendente de la fecha</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>Tiempo de actualización:</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>Guardar en la base de datos</value>
   </data>
 </root>

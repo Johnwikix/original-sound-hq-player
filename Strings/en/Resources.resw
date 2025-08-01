@@ -415,7 +415,7 @@
     <value>Cancel</value>
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
-    <value>Save</value>
+    <value>Write File</value>
   </data>
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>Close</value>
@@ -718,7 +718,7 @@
     <value>Disc number:</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
-    <value>Retrieve lyrics from the file again</value>
+    <value>Retrieve metadata from the file</value>
   </data>
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
@@ -752,5 +752,11 @@
   </data>
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>Update time DESC</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>Update Time:</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>Save To Database</value>
   </data>
 </root>

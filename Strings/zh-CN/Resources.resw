@@ -415,7 +415,7 @@
     <value>取消</value>
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
-    <value>保存</value>
+    <value>写入文件</value>
   </data>
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>关闭</value>
@@ -718,7 +718,7 @@
     <value>碟号：</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
-    <value>从文件中重新读取歌词</value>
+    <value>从文件中重新获取元信息</value>
   </data>
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>是否确定写入元信息至音乐文件</value>
@@ -752,5 +752,11 @@
   </data>
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>修改日期降序</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>修改时间：</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>保存到数据库</value>
   </data>
 </root>

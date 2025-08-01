@@ -415,7 +415,7 @@
     <value>Отменить</value>
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
-    <value>Сохранить</value>
+    <value>Запись в файл</value>
   </data>
   <data name="CloseButtonItem.Content" xml:space="preserve">
     <value>Закрыть</value>
@@ -718,7 +718,7 @@
     <value>Диск:</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
-    <value>Перечитать текст из файла</value>
+    <value>Получение метаинформации из файла</value>
   </data>
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
@@ -752,5 +752,11 @@
   </data>
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>сортировка по дате изменения по убыванию</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>Время обновления:</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>Сохранить в базу данных</value>
   </data>
 </root>

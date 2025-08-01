@@ -929,23 +929,7 @@ namespace WinUIMusicPlayer.Utils
                 lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
             return lyrics;
-        }
-
-        public static string GetLyricsFromFile(string filePath)
-        {
-            try
-            {
-                using (TagLib.File audioFile = TagLib.File.Create(filePath))
-                {
-                    Tag tag = audioFile.Tag;
-                    return tag.Lyrics;
-                }
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
-        }
+        }      
 
         public static DateTime GetSafeFileCreateTime(string filePath)
         {
@@ -969,6 +953,185 @@ namespace WinUIMusicPlayer.Utils
             {
                 return DateTime.Now;
             }
+        }
+
+        public static async Task<Music> GetMusicInfo(StorageFile file, string folderPath)
+        {
+            try
+            {
+                using (TagLib.File audioFile = TagLib.File.Create(file.Path))
+                {
+                    Tag tag = audioFile.Tag;
+
+                    string title = "未知标题";
+                    string artist = "未知艺术家";
+                    string album = "未知专辑";
+                    int trackNumber = 0;
+                    int diskNumber = 0;
+                    int sampleRate = 0;
+                    int bitDepth = 0;
+                    int bitRate = 0;
+                    int year = 0;
+                    int channelCount = 0;
+                    string lyrics = string.Empty;
+                    TimeSpan duration = TimeSpan.Zero;
+                    //string lastLevelFolderPath = Path.GetFileName(folderPath);
+                    string lastLevelDirectory = Path.GetDirectoryName(file.Path);
+                    DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
+                    string lastLevelFolderPath = directoryInfo.Name;
+                    Properties audioProperties = audioFile.Properties;
+                    trackNumber = (int)tag.Track;
+                    diskNumber = (int)tag.Disc;
+                    title = !string.IsNullOrWhiteSpace(tag.Title) ?
+                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+
+                    string[] artists = audioFile.Tag.Performers;
+                    if (artists.Length > 0)
+                    {
+                        artist = artists[0]; // 取第一个艺术家
+                        Console.WriteLine("艺术家: " + string.Join(", ", artists));
+                    }
+                    if (!string.IsNullOrWhiteSpace(tag.Album))
+                    {
+                        album = tag.Album;
+                    }
+                    sampleRate = audioProperties.AudioSampleRate;
+                    bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
+                    bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
+                    year = (int)tag.Year;
+                    duration = audioProperties.Duration;
+                    channelCount = audioProperties.AudioChannels;
+                    lyrics = tag.Lyrics;
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
+                    {
+                        title = GarbledTextFixer.FixGbkToIso88591(title);
+                    }
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(artist))
+                    {
+                        artist = GarbledTextFixer.FixGbkToIso88591(artist);
+                    }
+                    if (GarbledTextFixer.IsGbkToIso88591Garbled(album))
+                    {
+                        album = GarbledTextFixer.FixGbkToIso88591(album);
+                    }
+
+
+                    var music = new Music
+                    {
+                        Path = file.Path,
+                        Title = title,
+                        Author = artist,
+                        Album = album,
+                        Duration = duration,
+                        FolderPath = lastLevelDirectory,
+                        Order = 0,
+                        LastLevelFolderPath = lastLevelFolderPath,
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        BitDepth = bitDepth,
+                        BitRate = bitRate,
+                        SampleRate = sampleRate,
+                        Channel = channelCount,
+                        TrackNumber = trackNumber,
+                        DiskNumber = diskNumber,
+                        Year = year,
+                        Lyrics = lyrics,
+                        CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
+                        UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
+                    };
+                    return music;
+                }
+            }
+            catch (Exception ex)
+            {
+                AudioFileInfo wavFileInfo = new AudioFileInfo();
+                try
+                {
+                    wavFileInfo = ToolUtils.GetAudioFileInfo(file.Path);
+                }
+                catch (Exception exception)
+                {
+                    System.Diagnostics.Debug.WriteLine($"获取WAV文件属性时出错: {exception.Message}");
+                }
+                // 即使提取元数据失败，也尝试添加基本信息
+                try
+                {
+                    var music = new Music
+                    {
+                        Path = file.Path,
+                        Title = Path.GetFileNameWithoutExtension(file.Name),
+                        Author = "未知艺术家",
+                        Duration = wavFileInfo.Duration,
+                        Album = "未知专辑",
+                        FolderPath = folderPath,
+                        Order = 0,
+                        LastLevelFolderPath = Path.GetFileName(folderPath),
+                        Extension = file.FileType.TrimStart('.').ToUpper(),
+                        BitDepth = wavFileInfo.BitDepth,
+                        BitRate = wavFileInfo.BitRate,
+                        SampleRate = wavFileInfo.SampleRate,
+                        Year = 0,
+                        Channel = wavFileInfo.ChannelCount,
+                        CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
+                        UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
+                    };
+                    return music;
+                }
+                catch (Exception innerEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");                     // 返回null以指示错误
+                }
+
+            }
+            return null;
+        }
+
+        private static async Task<int> GetBitDepth(StorageFile file)
+        {
+            var bitDepth = 16;
+            try
+            {
+                // 其余代码保持不变...
+                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
+                                "System.Audio.SampleSize"
+                             });
+                // 处理位深度
+                if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] != null)
+                {
+                    var sampleSize = Convert.ToInt32(audioProps["System.Audio.SampleSize"]);
+                    bitDepth = sampleSize;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                bitDepth = 16;
+                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+            }
+            return bitDepth;
+        }
+
+        private static async Task<int> GetBitRate(StorageFile file)
+        {
+            var bitRate = 0;
+            try
+            {
+                // 其余代码保持不变...
+                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
+                                "System.Audio.EncodingBitrate"
+                             });
+                if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] != null)
+                {
+                    int rawBitrate = Convert.ToInt32(audioProps["System.Audio.EncodingBitrate"]);
+                    bitRate = rawBitrate > 0 ? rawBitrate / 1000 : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+                bitRate = 0;
+                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+            }
+            return bitRate;
         }
 
     }

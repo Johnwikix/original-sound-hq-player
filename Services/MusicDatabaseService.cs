@@ -1061,7 +1061,7 @@ namespace WinUIMusicPlayer.Services
             if (existingMusic == null) {
                 return null;
             }
-            Music newMusic = await addFolderService.getMusicInfo(storageFile, folderPath);
+            Music newMusic = await ToolUtils.GetMusicInfo(storageFile, folderPath);
             //Debug.WriteLine($"标题：{newMusic.Title}创建时间{newMusic.CreateTime.ToString()}");
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -1235,7 +1235,7 @@ namespace WinUIMusicPlayer.Services
                     }
 
                     StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                    Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
+                    Music music = await ToolUtils.GetMusicInfo(storageFile, folder.Path);
                     return music;
                 }
                 catch (Exception ex)

@@ -71,6 +71,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -221,7 +222,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="*" />
-                                    <RowDefinition Height="*" />
+                                    <!--<RowDefinition Height="*" />-->
                                 </Grid.RowDefinitions>
                                 <Button
                                     Grid.Row="0"
@@ -285,7 +286,7 @@
                                         <ToolTip x:Uid="LyricsTextBox" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button
+                                <!--<Button
                                     Grid.Row="4"
                                     Margin="5"
                                     VerticalAlignment="Stretch"
@@ -300,7 +301,7 @@
                                     <ToolTipService.ToolTip>
                                         <ToolTip x:Uid="LyricsSaveToDataBase" />
                                     </ToolTipService.ToolTip>
-                                </Button>
+                                </Button>-->
                             </Grid>
                         </Grid>
 
@@ -414,6 +415,22 @@
                             HorizontalAlignment="Left"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Uid="UpdateTime"
+                            Grid.Row="14"
+                            Grid.Column="0"
+                            Margin="5"
+                            HorizontalAlignment="Right"
+                            FontWeight="Bold"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="UpdateTimeBlock"
+                            Grid.Row="14"
+                            Grid.Column="1"
+                            Margin="5"
+                            HorizontalAlignment="Left"
+                            TextTrimming="WordEllipsis"
+                            TextWrapping="WrapWholeWords" />
                     </Grid>
                     <Grid Grid.Column="1" Margin="10">
                         <StackPanel>
@@ -492,6 +509,7 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
+                <Button x:Uid="SaveToDataBase" Margin="5" Click="SaveToDataBaseButton_Click" />
                 <Button x:Uid="CloseButtonItem" Margin="5" Click="CloseButton_Click" />
             </StackPanel>
 
