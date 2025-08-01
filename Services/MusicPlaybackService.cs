@@ -785,7 +785,7 @@ namespace WinUIMusicPlayer.Services
                         }
                         lock (_waveOutLock)
                         {
-                            Debug.WriteLine($"采样率：{waveOut.OutputWaveFormat.SampleRate}bit:{waveOut.OutputWaveFormat.BitsPerSample}独占是否支持：{selectedDevice.AudioClient.IsFormatSupported(AudioClientShareMode.Exclusive, waveOut.OutputWaveFormat)}");
+                            Debug.WriteLine($"采样率：{waveOut.OutputWaveFormat.SampleRate}bit:{waveOut.OutputWaveFormat.BitsPerSample}独占是否支持：{selectedDevice.AudioClient.IsFormatSupported(AudioClientShareMode.Exclusive, multiTypeAudioReader.WaveFormat)}");
                             if (waveOut != null && !_isDisposing)
                             {
                                 waveOut.Play();
