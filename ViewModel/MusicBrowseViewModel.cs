@@ -434,8 +434,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task ReadUsbDevice()
         {
             try
-            {
-                AppData.usbStorageDevices.Clear();
+            {           
                 AppData.usbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
