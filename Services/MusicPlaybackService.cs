@@ -318,7 +318,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 });
                 UpdateLyrics(_cachedCurrentTime);
-                //_systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
+                _systemMediaControlsService.UpdateTimelineProperties(multiTypeAudioReader.CurrentTime, multiTypeAudioReader.TotalTime);
             }
         }
 
