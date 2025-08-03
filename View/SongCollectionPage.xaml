@@ -73,6 +73,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
+                            Canvas.ZIndex="1"
                             Source="{Binding ViewModel.CurrentMusicObject.Cover, Mode=OneWay}"
                             Stretch="UniformToFill" />
                     </Grid>
