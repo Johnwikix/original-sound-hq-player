@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
+using System.Diagnostics;
 
 namespace WinUIMusicPlayer.Services.NavigationService
 {
@@ -76,24 +77,37 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
         private void AnimatePageTransition(Page newPage, NavigationTransitionInfo transitionInfo, int animeTime)
         {
-            var currentContent = ContentFrame.Content as FrameworkElement;
+            try
+            {
+                var currentContent = ContentFrame.Content as FrameworkElement;
+                // 清理当前页面的变换
+                if (currentContent != null)
+                {
+                    currentContent.RenderTransform = null;
+                    currentContent.ClearValue(UIElement.RenderTransformProperty);
+                }
 
-            // 设置新页面
-            ContentFrame.Content = newPage;
+                // 设置新页面
+                ContentFrame.Content = newPage;
 
-            // 根据过渡信息类型执行不同动画
-            if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
-            {
-                ExecuteSlideAnimation(newPage, slideInfo.Effect, animeTime);
+                // 根据过渡信息类型执行不同动画
+
+                if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
+                {
+                    ExecuteSlideAnimation(newPage, slideInfo.Effect, animeTime);
+                }
+                else if (transitionInfo is DrillInNavigationTransitionInfo)
+                {
+                    ExecuteDrillInAnimation(newPage, animeTime);
+                }
+                else if (transitionInfo is EntranceNavigationTransitionInfo)
+                {
+                    ExecuteEntranceAnimation(newPage, animeTime);
+                }
             }
-            else if (transitionInfo is DrillInNavigationTransitionInfo)
-            {
-                ExecuteDrillInAnimation(newPage, animeTime);
-            }
-            else if (transitionInfo is EntranceNavigationTransitionInfo)
-            {
-                ExecuteEntranceAnimation(newPage, animeTime);
-            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex.Message);
+            }           
         }
 
         private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect, int animeTime)
