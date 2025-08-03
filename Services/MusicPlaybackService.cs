@@ -287,6 +287,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
                 _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
+                Debug.WriteLine(_cachedTotalTime);
                 _timeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -295,7 +296,20 @@ namespace WinUIMusicPlayer.Services
                         try
                         {
                             MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
-                            MusicBrowseViewModel.PlayTimeText = _timeStringBuilder.AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime).ToString();
+                            if (_cachedTotalTime.TotalHours >= 1)
+                            {
+                                // 包含小时的格式化 (hh:mm:ss)
+                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
+                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
+                                    .ToString();
+                            }
+                            else
+                            {
+                                // 仅分钟和秒的格式化 (mm:ss)
+                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
+                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
+                                    .ToString();
+                            }
                         }
                         catch (Exception ex)
                         {

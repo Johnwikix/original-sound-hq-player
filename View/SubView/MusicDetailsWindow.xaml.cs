@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.View.SubView
             AlbumTextBlock.Text = music.Album;
             TrackNumberBox.Value = music.TrackNumber;
             LyricsTextBox.Text = music.Lyrics;
-            DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
+            DurationTextBlock.Text = music.Duration.TotalHours >= 1 ? music.Duration.ToString(@"hh\:mm\:ss") : music.Duration.ToString(@"mm\:ss");
             BitDepthTextBlock.Text = $"{music.BitDepth}bit";
             BitRateTextBlock.Text = $"{music.BitRate}kbps";
             SampleRateTextBlock.Text = $"{music.SampleRate}Hz";

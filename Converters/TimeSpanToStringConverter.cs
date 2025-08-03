@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is TimeSpan timeSpan)
             {
-                return timeSpan.ToString(@"mm\:ss");
+                return timeSpan.TotalHours >= 1 ? timeSpan.ToString(@"hh\:mm\:ss") : timeSpan.ToString(@"mm\:ss");
             }
             return string.Empty;
         }
