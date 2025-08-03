@@ -10,7 +10,10 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
     <Page.Resources>
-        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Style
+            x:Key="ListViewItemStyle"
+            BasedOn="{StaticResource DefaultListViewItemStyle}"
+            TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
@@ -18,9 +21,18 @@
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertWavItem"
+                                Click="ConvertAudio_Click"
+                                Tag="wav" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertMp3Item"
+                                Click="ConvertAudio_Click"
+                                Tag="mp3" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertFlacItem"
+                                Click="ConvertAudio_Click"
+                                Tag="flac" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
@@ -37,7 +49,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid x:Name="DetailInfoBar" Grid.Row="0" Margin="10,0,10,10">
+        <Grid
+            x:Name="DetailInfoBar"
+            Grid.Row="0"
+            Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -58,20 +73,19 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
-                            Canvas.ZIndex="1"
                             Source="{Binding ViewModel.CurrentMusicObject.Cover, Mode=OneWay}"
                             Stretch="UniformToFill" />
-                        <Grid
-                            Width="150"
-                            Height="150"
-                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                            Canvas.ZIndex="0">
-                            <FontIcon
-                                Canvas.ZIndex="0"
-                                FontSize="50"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Glyph="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToIconConverter}, Mode=OneWay}" />
-                        </Grid>
+                    </Grid>
+                    <Grid
+                        Width="150"
+                        Height="150"
+                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                        Canvas.ZIndex="0">
+                        <FontIcon
+                            Canvas.ZIndex="0"
+                            FontSize="50"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Glyph="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToIconConverter}, Mode=OneWay}" />
                     </Grid>
                 </Grid>
             </Border>
@@ -112,7 +126,10 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     Text="{Binding ViewModel.ThirdTitle, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
-                <Grid Grid.Row="3" Margin="10,0,10,0" VerticalAlignment="Bottom">
+                <Grid
+                    Grid.Row="3"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Bottom">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
@@ -195,7 +212,10 @@
                             BorderThickness="0"
                             Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
                             CommandParameter="{x:Bind}">
-                            <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                            <FontIcon
+                                x:Name="IsFavouriteIcon"
+                                Foreground="Red"
+                                Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                         </Button>
                         <TextBlock
                             Grid.Column="1"
@@ -250,7 +270,10 @@
                             BorderThickness="0"
                             Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
                             CommandParameter="{x:Bind}">
-                            <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                            <FontIcon
+                                Margin="0,2,0,0"
+                                VerticalAlignment="Center"
+                                Glyph="&#xE710;" />
                         </Button>
                         <FontIcon
                             x:Name="IsExistOnDeviceIcon"
