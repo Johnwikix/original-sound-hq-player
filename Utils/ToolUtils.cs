@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1201,12 +1202,27 @@ namespace WinUIMusicPlayer.Utils
                 // 处理歌曲路径行（非注释行）
                 if (!line.StartsWith("#"))
                 {
+                    Debug.WriteLine(Path.GetFileName(line));
                     Music? music = AppData.allSongs.FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
                     if (music != null) {
                         await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
                     }                   
                 }
             }
+        }
+
+        public static string GenerateM3U8Content(IEnumerable<Music> musics, string playlistName)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("#EXTM3U");
+            sb.AppendLine($"# Playlist: {playlistName}");
+            sb.AppendLine($"# Created: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            foreach (var music in musics)
+            {
+                sb.AppendLine($"#EXTINF:{music.Author} - {music.Title}");
+                sb.AppendLine(music.Path);
+            }
+            return sb.ToString();
         }
 
     }

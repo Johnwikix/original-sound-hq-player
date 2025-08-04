@@ -18,13 +18,14 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Button
                                 x:Name="EditPlayListNameButton"
                                 Grid.Column="0"
-                                Margin="10,0,10,0"
+                                Margin="10,0,0,0"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
@@ -32,12 +33,23 @@
                                 Tag="{Binding}">
                                 <FontIcon Glyph="&#xeb7e;" />
                             </Button>
-                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="1" Orientation="Horizontal">
+                            <Button
+                                x:Name="ExportPlayList"
+                                Grid.Column="1"
+                                Margin="0,0,10,0"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                Click="ExportPlayList_Click"
+                                Tag="{Binding}">
+                                <FontIcon Glyph="&#xEDE1;" />
+                            </Button>
+                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="2" Orientation="Horizontal">
                                 <TextBlock VerticalAlignment="Center" FontSize="18" Text="{Binding Name, Mode=TwoWay}" />
                             </StackPanel>
                             <Button
                                 x:Name="RemovePlayListButton"
-                                Grid.Column="2"
+                                Grid.Column="3"
                                 Margin="10"
                                 Background="Transparent"
                                 BorderBrush="Transparent"

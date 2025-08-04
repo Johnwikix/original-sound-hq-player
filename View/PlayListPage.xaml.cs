@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -81,6 +83,14 @@ namespace WinUIMusicPlayer.View
         {
             var playList = PlayListView.SelectedItem as PlayList;
             ViewModel.PlayListView_SelectionChanged(playList);
+        }
+
+        private void ExportPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is PlayList playList)
+            {
+                ViewModel.ExportPlayList(playList);
+            }
         }
     }
 }
