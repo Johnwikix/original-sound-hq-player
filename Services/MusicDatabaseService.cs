@@ -11,6 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Media.Playlists;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -526,14 +527,22 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.DeleteAsync(playListMusic);
             }
         }
-        public static async Task InsertPlayList(PlayList playList)
+        public static async Task<int> InsertPlayList(PlayList playList)
         {
             await _dbConnection.InsertAsync(playList);
+            return playList.Id;
         }
 
         public static async Task UpdatePlayList(PlayList playList)
         {
             await _dbConnection.UpdateAsync(playList);
+        }
+
+        public static async Task<PlayList> GetPlayListByName(string playListName)
+        {
+           return await _dbConnection.Table<PlayList>()
+               .Where(plm => plm.Name == playListName)
+               .FirstOrDefaultAsync();
         }
 
         public static async Task RemovePlayList(PlayList playList)

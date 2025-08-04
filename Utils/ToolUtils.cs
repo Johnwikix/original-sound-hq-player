@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
@@ -26,12 +27,15 @@ using TagLib;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Devices;
+using Windows.Media.Playlists;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
@@ -1132,6 +1136,77 @@ namespace WinUIMusicPlayer.Utils
                 System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
             }
             return bitRate;
+        }
+
+        public async static Task<PlayList> OpenM3u8File() {
+            var picker = new FileOpenPicker();
+            // 设置文件选择器的视图
+            picker.ViewMode = PickerViewMode.List;
+            picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
+
+            // 添加m3u8文件筛选器
+            picker.FileTypeFilter.Add(".m3u8");
+
+            // 在WinUI3中需要设置文件选择器的窗口句柄
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, AppData.m_hWnd);
+
+            // 显示文件选择器并获取结果
+            var file = await picker.PickSingleFileAsync();
+            if (file != null)
+            {
+                try
+                {
+                    PlayList playList = await MusicDatabaseService.GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
+                    int playListId = 0;
+                    if (playList != null)
+                    {
+                        playListId = playList.Id;
+                    }
+                    else {
+                        playList = new() { Name = Path.GetFileNameWithoutExtension(file.Name) };
+                        playListId = await MusicDatabaseService.InsertPlayList(playList);
+                    }
+
+                    string fileContent = await FileIO.ReadTextAsync(file);
+                    if (!string.IsNullOrEmpty(fileContent))
+                    {
+                        //Debug.WriteLine(fileContent);
+                        ParseM3u8Content(fileContent, playListId);
+                    }
+                    return playList;
+                }
+                catch (Exception ex)
+                {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        public async static void ParseM3u8Content(string fileContent,int playListId)
+        {
+            if (string.IsNullOrEmpty(fileContent))
+                return;
+            // 按行分割内容
+            var lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            // 验证是否是有效的m3u8文件
+            if (lines.Length == 0 || !lines[0].Equals("#EXTM3U", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new FormatException("无效的m3u8文件格式，必须以#EXTM3U开头");
+            }
+            // 从第二行开始解析
+            for (int i = lines.Length - 1; i >= 1; i--)
+            {
+                var line = lines[i].Trim();
+                // 处理歌曲路径行（非注释行）
+                if (!line.StartsWith("#"))
+                {
+                    Music? music = AppData.allSongs.FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
+                    if (music != null) {
+                        await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
+                    }                   
+                }
+            }
         }
 
     }

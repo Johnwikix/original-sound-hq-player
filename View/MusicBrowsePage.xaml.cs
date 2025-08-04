@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -358,18 +359,57 @@ namespace WinUIMusicPlayer.View
             }
             DisableBackButton();
         }
-
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {
+            var titlePanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Spacing = 8
+            };
+            titlePanel.Children.Add(new TextBlock
+            {
+                Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
+                FontSize = 18,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            var customButton = new Button
+            {
+                Content = new FontIcon { Glyph = "\uE8B5", FontSize = 16 },
+                Background = new SolidColorBrush(Colors.Transparent),
+                BorderThickness = new Thickness(0),
+                Margin = new Thickness(4, 2, 4, 0),
+                Padding = new Thickness(4,6,4,4),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            
+            titlePanel.Children.Add(customButton);
+
             ContentDialog contentDialog = new ContentDialog
             {
-                Title = ToolUtils.GetString("FlyoutAddToPlaylist"),
+                // 使用自定义面板作为标题
+                Title = titlePanel,
                 Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
                 PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                 CloseButtonText = ToolUtils.GetString("CloseButton"),
                 XamlRoot = this.XamlRoot
             };
             contentDialog.RequestedTheme = AppSettings.elementTheme;
+
+            // 声明事件处理方法（方便后续解除订阅）
+            RoutedEventHandler buttonClickHandler = null;
+            buttonClickHandler = async (s, e) =>
+            {
+                PlayList newPlaylist = await OpenM3u8File();
+                if (newPlaylist != null)
+                {
+                    addPlayListEvent?.Invoke(this, newPlaylist);
+                }
+                contentDialog.Hide();
+                customButton.Click -= buttonClickHandler;
+            };
+            customButton.Click += buttonClickHandler;
+
             ContentDialogResult result = await contentDialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)
@@ -383,7 +423,33 @@ namespace WinUIMusicPlayer.View
                     addPlayListEvent?.Invoke(this, newPlaylist);
                 }
             }
+            customButton.Click -= buttonClickHandler;
         }
+        //private async void AddPlayList_Click(object sender, RoutedEventArgs e)
+        //{
+        //    ContentDialog contentDialog = new ContentDialog
+        //    {
+        //        Title = ToolUtils.GetString("FlyoutAddToPlaylist"),
+        //        Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
+        //        PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+        //        CloseButtonText = ToolUtils.GetString("CloseButton"),
+        //        XamlRoot = this.XamlRoot
+        //    };
+        //    contentDialog.RequestedTheme = AppSettings.elementTheme;
+        //    ContentDialogResult result = await contentDialog.ShowAsync();
+
+        //    if (result == ContentDialogResult.Primary)
+        //    {
+        //        Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
+        //        string playlistName = textBox.Text;
+        //        if (!string.IsNullOrEmpty(playlistName))
+        //        {
+        //            PlayList newPlaylist = new PlayList { Name = playlistName };
+        //            await MusicDatabaseService.InsertPlayList(newPlaylist);
+        //            addPlayListEvent?.Invoke(this, newPlaylist);
+        //        }
+        //    }
+        //}
 
         private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
         {
@@ -517,56 +583,7 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-        }
-
-        //private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    if (e.AddedItems.Count > 0)
-        //    {
-        //        ComboBoxItem selectedItem = (ComboBoxItem)e.AddedItems[0];
-        //        AppData.sortOrder = selectedItem.Tag.ToString();
-        //        if (ContentFrame != null && ContentFrame.Content != null)
-        //        {
-        //            if (ContentFrame.Content is SongCollectionPage)
-        //            {
-        //                var page = ContentFrame.Content as SongCollectionPage;
-        //                page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
-        //            }
-        //            if (ContentFrame.Content is SongListPage)
-        //            {
-        //                var page = ContentFrame.Content as SongListPage;
-        //                if (page != null)
-        //                {
-        //                    page.SortMusicList(AppData.sortOrder);
-        //                }
-        //            }
-        //            if (ContentFrame.Content is FavouritePlayListPage)
-        //            {
-        //                var page = ContentFrame.Content as FavouritePlayListPage;
-        //                if (page != null)
-        //                {
-        //                    page.SortMusicList(AppData.sortOrder);
-        //                }
-        //            }
-        //            if (ContentFrame.Content is AlbumPage)
-        //            {
-        //                var page = ContentFrame.Content as AlbumPage;
-        //                if (page != null)
-        //                {
-        //                    page.SortMusicList(AppData.sortOrder);
-        //                }
-        //            }
-        //            if (ContentFrame.Content is PlayListSongPage)
-        //            {
-        //                var page = ContentFrame.Content as PlayListSongPage;
-        //                if (page != null)
-        //                {
-        //                    page.SortMusicList(AppData.sortOrder);
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
+        }     
         
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
