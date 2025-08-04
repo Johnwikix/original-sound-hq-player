@@ -42,6 +42,7 @@ namespace WinUIMusicPlayer.Services
         private CancellationTokenSource _lyricsCancellationTokenSource;       
         private CustomEqualizer equalizer;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
+        private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
@@ -265,7 +266,15 @@ namespace WinUIMusicPlayer.Services
                 {
 
                     if (multiTypeAudioReader != null)
-                    {                        
+                    {
+                        Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime}");
+                        if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime!=TimeSpan.Zero)
+                        {
+                            if (AppSettings.isPlaying) {
+                                AutoPlayNextTrack();
+                            }                            
+                        }                        
+                        _cachedLastCurrentTime = _cachedCurrentTime;                        
                         if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
                         {
                             AutoPlayNextTrack();
@@ -287,7 +296,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
                 _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
-                Debug.WriteLine(_cachedTotalTime);
+                Debug.WriteLine($"当前时间：{multiTypeAudioReader.CurrentTime.TotalSeconds}，总时间：{multiTypeAudioReader.TotalTime.TotalSeconds}");
                 _timeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -298,14 +307,12 @@ namespace WinUIMusicPlayer.Services
                             MusicBrowseViewModel.ProgressSlider = multiTypeAudioReader.CurrentTime.TotalSeconds;
                             if (_cachedTotalTime.TotalHours >= 1)
                             {
-                                // 包含小时的格式化 (hh:mm:ss)
                                 MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
                                     .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
                                     .ToString();
                             }
                             else
                             {
-                                // 仅分钟和秒的格式化 (mm:ss)
                                 MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
                                     .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
                                     .ToString();

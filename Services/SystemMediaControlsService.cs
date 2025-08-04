@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.Services
             {
                 mediaPlayer = new MediaPlayer();
                 SystemMediaControls = mediaPlayer.SystemMediaTransportControls;
-                //mediaPlayer.CommandManager.IsEnabled = false;
+                mediaPlayer.CommandManager.IsEnabled = true;
                 if (SystemMediaControls != null)
                 {
                     SystemMediaControls.IsPlayEnabled = true;
@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.Services
                     SystemMediaControls.IsFastForwardEnabled = false;
                     SystemMediaControls.IsRewindEnabled = false;
                     SystemMediaControls.ButtonPressed += SystemMediaControls_ButtonPressed;
-                    //SystemMediaControls.PlaybackPositionChangeRequested += SystemMediaControls_PlaybackPositionChangeRequested;
+                    SystemMediaControls.PlaybackPositionChangeRequested += SystemMediaControls_PlaybackPositionChangeRequested;
                     UpdateSystemMediaControlsState();
                 }
             }
