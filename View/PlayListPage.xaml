@@ -43,6 +43,9 @@
                                 Click="ExportPlayList_Click"
                                 Tag="{Binding}">
                                 <FontIcon Glyph="&#xEDE1;" />
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="ExportM3u8" />
+                                </ToolTipService.ToolTip>
                             </Button>
                             <StackPanel x:Name="OpenPlayListPanel" Grid.Column="2" Orientation="Horizontal">
                                 <TextBlock VerticalAlignment="Center" FontSize="18" Text="{Binding Name, Mode=TwoWay}" />

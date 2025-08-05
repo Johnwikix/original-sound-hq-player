@@ -759,4 +759,10 @@
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>Save To Database</value>
   </data>
+  <data name="ImportM3u8" xml:space="preserve">
+    <value>Import playlist from m3u8</value>
+  </data>
+  <data name="ExportM3u8.Content" xml:space="preserve">
+    <value>Export as m3u8</value>
+  </data>
 </root>

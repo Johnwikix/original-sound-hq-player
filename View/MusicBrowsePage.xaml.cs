@@ -376,13 +376,12 @@ namespace WinUIMusicPlayer.View
             var customButton = new Button
             {
                 Content = new FontIcon { Glyph = "\uE8B5", FontSize = 16 },
-                Background = new SolidColorBrush(Colors.Transparent),
-                BorderThickness = new Thickness(0),
+                Style = Application.Current.Resources["AccentButtonStyle"] as Style,
                 Margin = new Thickness(4, 2, 4, 0),
-                Padding = new Thickness(4,6,4,4),
+                Padding = new Thickness(6,3,6,2),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            
+            ToolTipService.SetToolTip(customButton, GetString("ImportM3u8"));
             titlePanel.Children.Add(customButton);
 
             ContentDialog contentDialog = new ContentDialog

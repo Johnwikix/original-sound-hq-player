@@ -759,4 +759,10 @@
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>保存到数据库</value>
   </data>
+  <data name="ImportM3u8" xml:space="preserve">
+    <value>从m3u8导入播放列表</value>
+  </data>
+  <data name="ExportM3u8.Content" xml:space="preserve">
+    <value>导出为m3u8</value>
+  </data>
 </root>

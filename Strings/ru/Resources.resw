@@ -759,4 +759,10 @@
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>Сохранить в базу данных</value>
   </data>
+  <data name="ImportM3u8" xml:space="preserve">
+    <value>Импорт списка воспроизведения из m3u8</value>
+  </data>
+  <data name="ExportM3u8.Content" xml:space="preserve">
+    <value>Экспорт в M3U8</value>
+  </data>
 </root>
