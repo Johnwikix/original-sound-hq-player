@@ -108,8 +108,10 @@ namespace WinUIMusicPlayer.View
             };
             this.notificationService = notificationService;
             InitializeTimer();
-            SetAcrylicBrushBackground();            
-            ViewModel.OnFileChanged(null, null);
+            SetAcrylicBrushBackground();    
+            Task.Run(() => {
+                ViewModel.OnFileChanged(null, null);
+            });            
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
          
