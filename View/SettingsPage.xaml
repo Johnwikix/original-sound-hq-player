@@ -404,6 +404,9 @@
                         <controls:SettingsCard ContentAlignment="Left">
                             <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard ContentAlignment="Left">
+                            <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
             </Grid>

@@ -765,4 +765,7 @@
   <data name="ExportM3u8.Content" xml:space="preserve">
     <value>m3u8としてエクスポート</value>
   </data>
+  <data name="LogPath.Content" xml:space="preserve">
+    <value>ログディレクトリを開く</value>
+  </data>
 </root>

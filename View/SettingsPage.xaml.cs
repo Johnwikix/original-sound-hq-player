@@ -59,12 +59,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.DeviceName = AppSettings.DeviceName;
         }
 
-        //private async void ToolTip_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        //{
-        //    Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
-        //    await Launcher.LaunchUriAsync(uri);
-        //}
-
         private void ThirdParty_Click(object sender, RoutedEventArgs e)
         {
             if (_thirdPartyDialog == null)

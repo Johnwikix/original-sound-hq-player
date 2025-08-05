@@ -5,7 +5,10 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
+using Windows.Storage;
+using Windows.System;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -606,6 +609,18 @@ namespace WinUIMusicPlayer.ViewModel
             AppSettings.DefualtEntry = value;
             // 保存设置
             _ = MusicDatabaseService.SaveSettingAsync();
+        }
+
+        [RelayCommand]
+        private async void OpenLogPath()
+        {
+            var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
+            var folder = await StorageFolder.GetFolderFromPathAsync(logDirectory);
+            var options = new FolderLauncherOptions
+            {
+                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
+            };
+            await Launcher.LaunchFolderAsync(folder, options);
         }
     }
 }

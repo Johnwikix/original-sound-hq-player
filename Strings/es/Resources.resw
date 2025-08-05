@@ -765,4 +765,7 @@
   <data name="ExportM3u8.Content" xml:space="preserve">
     <value>Exportar a m3u8</value>
   </data>
+  <data name="LogPath.Content" xml:space="preserve">
+    <value>Abrir el catálogo de registros</value>
+  </data>
 </root>
