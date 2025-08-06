@@ -207,6 +207,7 @@ namespace WinUIMusicPlayer
                 var tasks = new Task[] {
                         LoadMusicList(),
                         RefreshDevice(),
+                        AutoRescanService.AutoScan()
                 };
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
