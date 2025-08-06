@@ -426,31 +426,6 @@ namespace WinUIMusicPlayer.View
             }
             customButton.Click -= buttonClickHandler;
         }
-        //private async void AddPlayList_Click(object sender, RoutedEventArgs e)
-        //{
-        //    ContentDialog contentDialog = new ContentDialog
-        //    {
-        //        Title = ToolUtils.GetString("FlyoutAddToPlaylist"),
-        //        Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
-        //        PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-        //        CloseButtonText = ToolUtils.GetString("CloseButton"),
-        //        XamlRoot = this.XamlRoot
-        //    };
-        //    contentDialog.RequestedTheme = AppSettings.elementTheme;
-        //    ContentDialogResult result = await contentDialog.ShowAsync();
-
-        //    if (result == ContentDialogResult.Primary)
-        //    {
-        //        Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
-        //        string playlistName = textBox.Text;
-        //        if (!string.IsNullOrEmpty(playlistName))
-        //        {
-        //            PlayList newPlaylist = new PlayList { Name = playlistName };
-        //            await MusicDatabaseService.InsertPlayList(newPlaylist);
-        //            addPlayListEvent?.Invoke(this, newPlaylist);
-        //        }
-        //    }
-        //}
 
         private async void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
         {

@@ -207,7 +207,7 @@ namespace WinUIMusicPlayer
                 var tasks = new Task[] {
                         LoadMusicList(),
                         RefreshDevice(),
-                        AutoRescanService.AutoScan()
+                        AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
                 LoadingGrid.Visibility = Visibility.Collapsed;
@@ -215,11 +215,17 @@ namespace WinUIMusicPlayer
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
                 updateSelectSection?.Invoke(this, EventArgs.Empty);
-                //await AutoRescanService.AutoScan();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"初始化错误: {ex.Message}");
+            }
+        }
+
+        private async Task AutoScanFolder() {
+            if (AppSettings.IsFolderWatchEnabled)
+            {
+                await AutoRescanService.AutoScan();
             }
         }
 
@@ -278,7 +284,6 @@ namespace WinUIMusicPlayer
         public async Task LoadMusicList(string search = null)
         {
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            //_ = AlbumCoverService.LoadAlbumCoversInCacheAsync(AppData.allSongs);
             await MusicDatabaseService.GetPlayListMusic();
         }
 
@@ -318,10 +323,8 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                // 获取窗口句柄
-                IntPtr hwnd = WindowNative.GetWindowHandle(this);
+                //IntPtr hwnd = WindowNative.GetWindowHandle(this);
                 _taskbarHelper?.Dispose();
-                // 创建任务栏助手并初始化
                 _taskbarHelper = new TaskbarHelper(m_hwnd);
                 _taskbarHelper.InitializeThumbButtons();
             }
