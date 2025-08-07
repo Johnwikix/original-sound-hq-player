@@ -2,6 +2,7 @@
 using CSCore.Ffmpeg;
 using NAudio.Wave;
 using System;
+using System.IO;
 
 namespace WinUIMusicPlayer.Reader
 {
@@ -44,6 +45,38 @@ namespace WinUIMusicPlayer.Reader
         public FFmpegAudioReader(string filename)
         {
             ffmpegDecoder = new FfmpegDecoder(filename);
+            if (null != ffmpegDecoder)
+            {
+                int originalSampleRate = ffmpegDecoder.WaveFormat.SampleRate;
+                int channels = ffmpegDecoder.WaveFormat.Channels;
+
+                // 限制最高采样率不超过384000
+                int targetSampleRate = originalSampleRate;
+                if (originalSampleRate > 384000)
+                {
+                    int divisor = 1;
+                    while (originalSampleRate / divisor > 384000)
+                    {
+                        divisor++;
+                    }
+                    targetSampleRate = originalSampleRate / divisor;
+
+                    if (targetSampleRate != originalSampleRate)
+                    {
+                        ffmpegDecoder = new CSCore.DSP.DmoResampler(ffmpegDecoder, targetSampleRate)
+                        {
+                            Quality = 60 // 设置高质量
+                        };
+                    }
+                }
+                sampleSource = ffmpegDecoder.ToSampleSource();
+                // 创建32-bit float格式的WaveFormat
+                this.waveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(targetSampleRate, channels);
+            }
+        }
+        public FFmpegAudioReader(Stream stream)
+        {
+            ffmpegDecoder = new FfmpegDecoder(stream);
             if (null != ffmpegDecoder)
             {
                 int originalSampleRate = ffmpegDecoder.WaveFormat.SampleRate;
