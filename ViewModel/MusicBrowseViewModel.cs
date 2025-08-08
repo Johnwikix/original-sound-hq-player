@@ -98,7 +98,7 @@ namespace WinUIMusicPlayer.ViewModel
                             {
                                 double currentPlayPosition = _musicPlaybackService.multiTypeAudioReader.CurrentTime.TotalSeconds;
 
-                                if (Math.Abs(value - currentPlayPosition) > 4.0)
+                                if (Math.Abs(value - currentPlayPosition) > 2.0)
                                 {     
                                     Task.Run(() =>
                                     {
