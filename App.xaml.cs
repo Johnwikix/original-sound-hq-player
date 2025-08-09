@@ -148,7 +148,8 @@ namespace WinUIMusicPlayer
         }
         private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            _logger.LogWarning(e.Exception, "首次机会异常: {Message}", e.Exception.Message);
+            _logger.LogWarning(e.Exception, "首次机会异常Warning: {Message}", e.Exception.Message);
+            _logger.LogError(e.Exception, "首次机会异常: {Message}", e.Exception.StackTrace);
         }
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
