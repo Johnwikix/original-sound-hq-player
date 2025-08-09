@@ -128,29 +128,33 @@ namespace WinUIMusicPlayer
                 SetAppStyle();
             });
         }
-
+        //显示窗口
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
-            if (msg == SingleInstanceHelper.WM_SHOWME)
-            {
-                Debug.WriteLine("收到显示窗口消息");
-                DispatcherQueue.TryEnqueue(() =>
+            try {
+                if (msg == SingleInstanceHelper.WM_SHOWME)
                 {
-                    if (this == null)
+                    Debug.WriteLine("收到显示窗口消息");
+                    DispatcherQueue.TryEnqueue(() =>
                     {
-                        return;
-                    }
+                        if (this == null)
+                        {
+                            return;
+                        }
 
-                    if (!this.Visible)
-                    {
-                        this.Show();
-                    }
-                });
-                return IntPtr.Zero;
+                        if (!this.Visible)
+                        {
+                            this.Show();
+                        }
+                    });
+                    return IntPtr.Zero;
+                }
+                // 调用默认窗口过程处理其他消息
+                return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }
-
-            // 调用默认窗口过程处理其他消息
-            return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
+            catch (Exception e) {
+                return IntPtr.Zero;
+            }         
         }
 
 
