@@ -182,24 +182,32 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                
-                var tasks = new Task[] {
-                    App.Services.GetRequiredService<MusicBrowsePage>().ClosePage()
-                };
-                AppNotifyIconControl?.Dispose();            
+                var musicBrowsePage = App.Services.GetRequiredService<MusicBrowsePage>();
+                if (musicBrowsePage != null)
+                {
+                    await musicBrowsePage.ClosePage().ConfigureAwait(true); // 确保回到UI线程
+                }
+                AppNotifyIconControl?.Dispose();
+                AppNotifyIconControl = null;
                 if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
                 {
                     WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
+                    m_hwnd = IntPtr.Zero;
+                    defaultWndProc = IntPtr.Zero;
                 }
                 _taskbarHelper?.Dispose();
                 _taskbarHelper = null;                
-                await Task.WhenAll(tasks);
-                WindowClosed?.Invoke(this, EventArgs.Empty);
+                await Task.Delay(50).ConfigureAwait(true);
                 App.Current_Exit();
             }
             catch (Exception e) {
                 Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
-            }                 
+                App.Current_Exit();
+            }
+            finally
+            {
+                args.Handled = false;
+            }
         }
 
         private async void InitializeApp()
