@@ -128,20 +128,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private List<Music> GetUniqueSelectedItems()
-        //{
-        //    List<Music> uniqueItems = new List<Music>();
-        //    var selectedItems = MusicListView.SelectedItems;
-        //    foreach (var item in selectedItems)
-        //    {
-        //        if (item is Music music)
-        //        {
-        //            uniqueItems.Add(music);
-        //        }
-        //    }
-        //    return uniqueItems;
-        //}
-
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var targetElement = e.OriginalSource as FrameworkElement;

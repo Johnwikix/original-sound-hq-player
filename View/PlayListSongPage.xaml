@@ -12,16 +12,28 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Style
+            x:Key="ListViewItemStyle"
+            BasedOn="{StaticResource DefaultListViewItemStyle}"
+            TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertWavItem"
+                                Click="ConvertAudio_Click"
+                                Tag="wav" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertMp3Item"
+                                Click="ConvertAudio_Click"
+                                Tag="mp3" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertFlacItem"
+                                Click="ConvertAudio_Click"
+                                Tag="flac" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
@@ -81,7 +93,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                <FontIcon
+                                    x:Name="IsFavouriteIcon"
+                                    Foreground="Red"
+                                    Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                             </Button>
                             <TextBlock
                                 Grid.Column="1"
@@ -108,7 +123,7 @@
                                 TextTrimming="CharacterEllipsis" />
                             <Image
                                 Grid.Column="4"
-                                Height="10"
+                                Height="14"
                                 Margin="5"
                                 VerticalAlignment="Center"
                                 Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
@@ -126,7 +141,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                                <FontIcon
+                                    Margin="0,2,0,0"
+                                    VerticalAlignment="Center"
+                                    Glyph="&#xE710;" />
                             </Button>
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"

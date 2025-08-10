@@ -95,7 +95,7 @@
                             TextTrimming="CharacterEllipsis" />
                         <Image
                             Grid.Column="4"
-                            Height="10"
+                            Height="14"
                             Margin="5"
                             VerticalAlignment="Center"
                             Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
