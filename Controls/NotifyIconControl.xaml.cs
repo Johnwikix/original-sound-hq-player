@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -99,6 +100,7 @@ namespace WinUIMusicPlayer.Controls
                         MusicBrowseViewModel.PlayModeFlyoutText = GetString("IconRandomLoop");
                         break;
                 }
+                MusicBrowseViewModel._musicPlaybackService.UpdateCurrentPlayList();
             }
             else
             {
