@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Provider;
@@ -82,7 +83,22 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
+            MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
+            UpdateCurrentPlayList();
+        }
+
+        public void UpdateCurrentPlayList(bool IsChangeList = true) {
+            if (!IsChangeList) {
+                return;
+            }
+            if (MusicBrowseViewModel.CurrentPlayMode != PlayMode.RandomLoop)
+            {
+                MusicBrowseViewModel.CurrentPlayingList = MusicBrowseViewModel.SequentialPlayingList;
+            }
+            else
+            {
+                MusicBrowseViewModel.CurrentPlayingList = MusicBrowseViewModel.SequentialPlayingList.CreateShuffled();
+            }
         }
 
         public async Task SetLyrics()
@@ -621,17 +637,20 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayNextTrack()
         {
-            if (AppData.PlayMode != PlayMode.RandomLoop)
-            {
-                int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
-                int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
-            }
-            else {
-                Random random = new Random();
-                int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
-                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
-            }            
+            int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+            int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            //if (AppData.PlayMode != PlayMode.RandomLoop)
+            //{
+            //    int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+            //    int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+            //    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            //}
+            //else {
+            //    Random random = new Random();
+            //    int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
+            //    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
+            //}            
         }
 
         public void UpdateEqualizerSettings()
@@ -832,7 +851,7 @@ namespace WinUIMusicPlayer.Services
                             AppSettings.isPlaying = true;
                             MusicBrowseViewModel.IsPlaying = true;
                             MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);                            
+                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);                            
                         });
                     }
                     catch (Exception ex)
@@ -927,7 +946,7 @@ namespace WinUIMusicPlayer.Services
             {                
                 equalizer = null;
             }
-            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.CurrentPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);      
+            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);      
         }
 
         public void ChangeWaveChannelTime(TimeSpan timeSpan) {

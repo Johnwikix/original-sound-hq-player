@@ -203,8 +203,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic != null && _parentPage != null)
             {
-               _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
-               _parentPage?.PlayMusic(SelectedMusic);
+               _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+               _parentPage?.PlayMusic(music:SelectedMusic, IsChangeList: true);
             }
         }
 
@@ -227,13 +227,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                _parentPage?.PlayMusic(uniqueSelectedMusics.First());
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
+                _parentPage?.PlayMusic(music:uniqueSelectedMusics.First(),IsChangeList:true);
             }
             else
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = MusicList;
-                _parentPage?.PlayMusic(SelectedMusic);               
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+                _parentPage?.PlayMusic(music:SelectedMusic, IsChangeList: true);               
             }
         }
 

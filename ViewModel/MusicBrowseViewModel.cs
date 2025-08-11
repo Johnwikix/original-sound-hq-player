@@ -47,6 +47,17 @@ namespace WinUIMusicPlayer.ViewModel
             get => _playModeFlyoutText;
             set => SetProperty(ref _playModeFlyoutText, value);
         }
+
+        private ObservableCollection<Music> _sequentialPlayingList;
+        public ObservableCollection<Music> SequentialPlayingList
+        {
+            get => _sequentialPlayingList;
+            set
+            {
+                SetProperty(ref _sequentialPlayingList, value);
+            }
+        }
+
         private ObservableCollection<Music> _currentPlayingList;
         public ObservableCollection<Music> CurrentPlayingList
         {
@@ -704,6 +715,7 @@ namespace WinUIMusicPlayer.ViewModel
                     PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
+            _musicPlaybackService.UpdateCurrentPlayList();
             App.MainWindow.UpdateAppNotifyIconControl();
         }
         [RelayCommand]

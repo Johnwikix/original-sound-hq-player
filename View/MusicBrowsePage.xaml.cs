@@ -464,7 +464,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
             if (selectedMusic != null)
             {
-                PlayMusic(selectedMusic);
+                PlayMusic(music: selectedMusic, IsChangeList: false);
             }
         }       
 
@@ -495,7 +495,7 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false,bool IsChangeList = false)
         {
             try
             {
@@ -505,6 +505,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
+                ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
                 _ = Task.Run(async () =>
                 {
                     ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
@@ -795,7 +796,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
             if (selectedMusic != null)
             {
-                PlayMusic(selectedMusic);
+                PlayMusic(music: selectedMusic, IsChangeList: false);
             }
         }
 

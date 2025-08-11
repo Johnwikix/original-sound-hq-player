@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppTitle.Text" xml:space="preserve">
-    <value>Hi-Fi-плеер Original Sound</value>
+    <value>HQ-плеер Original Sound</value>
   </data>
   <data name="LoadingText.Text" xml:space="preserve">
     <value>Загрузка данных, пожалуйста подождите...</value>
@@ -136,7 +136,7 @@
     <value>Просмотр музыки</value>
   </data>
   <data name="AppMainTitle" xml:space="preserve">
-    <value>Hi-Fi-плеер Original Sound</value>
+    <value>HQ-плеер Original Sound</value>
   </data>
   <data name="ArtistTab.Text" xml:space="preserve">
     <value>Артисты</value>
@@ -529,7 +529,7 @@
     <value>Сохранить текст в базу данных</value>
   </data>
   <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
-    <value>Hi-Fi-плеер Original Sound</value>
+    <value>HQ-плеер Original Sound</value>
   </data>
   <data name="IconDisplay.Text" xml:space="preserve">
     <value>Показать</value>
@@ -703,7 +703,7 @@
     <value>Кэш обложки страницы альбома</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
-    <value>Hi-Fi-плеер Original Sound</value>
+    <value>HQ-плеер Original Sound</value>
   </data>
   <data name="CoverLoadThreadCount.Header" xml:space="preserve">
     <value>Количество потоков, загруженных на обложку</value>

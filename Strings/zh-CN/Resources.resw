@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppTitle.Text" xml:space="preserve">
-    <value>原音HIFI播放器</value>
+    <value>原音HQ播放器</value>
   </data>
   <data name="LoadingText.Text" xml:space="preserve">
     <value>正在加载数据，请稍候...</value>
@@ -136,7 +136,7 @@
     <value>音乐浏览</value>
   </data>
   <data name="AppMainTitle" xml:space="preserve">
-    <value>原音HIFI播放器</value>
+    <value>原音HQ播放器</value>
   </data>
   <data name="ArtistTab.Text" xml:space="preserve">
     <value>艺术家</value>
@@ -529,7 +529,7 @@
     <value>保存歌词到数据库</value>
   </data>
   <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
-    <value>原音HIFI播放器</value>
+    <value>原音HQ播放器</value>
   </data>
   <data name="IconDisplay.Text" xml:space="preserve">
     <value>显示</value>
@@ -703,7 +703,7 @@
     <value>专辑页的封面缓存</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
-    <value>原音HIFI播放器</value>
+    <value>原音HQ播放器</value>
   </data>
   <data name="CoverLoadThreadCount.Header" xml:space="preserve">
     <value>封面加载线程数量</value>

@@ -207,8 +207,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage != null)
                 {
-                    parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(artists);
-                    parentPage.PlayMusic(artists[0]);
+                    parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(artists);
+                    parentPage.PlayMusic(music:artists[0], IsChangeList: true);
                 }
             }
         }

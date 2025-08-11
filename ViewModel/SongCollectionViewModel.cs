@@ -336,9 +336,9 @@ namespace WinUIMusicPlayer.ViewModel
         {            
             if (SelectedMusic != null && _parentPage != null)
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList =
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList =
                                         new ObservableCollection<Music>(MusicList);
-                _parentPage?.PlayMusic(SelectedMusic);
+                _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
 
@@ -346,15 +346,15 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                _parentPage?.PlayMusic(uniqueSelectedMusics.First());
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
+                _parentPage?.PlayMusic(music:uniqueSelectedMusics.First(), IsChangeList: true);
             }
             else
             {
                 if (SelectedMusic != null)
                 {
-                    _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList = new ObservableCollection<Music>(MusicList);
-                    _parentPage?.PlayMusic(SelectedMusic);
+                    _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(MusicList);
+                    _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
                 }
             }
         }
@@ -586,10 +586,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage != null)
             {
-                _parentPage.ViewModel.CurrentPlayingList = new ObservableCollection<Music>(MusicList);
+                _parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(MusicList);
                 if (MusicList.Count > 0)
                 {
-                    _parentPage.PlayMusic(MusicList[0]);
+                    _parentPage.PlayMusic(music:MusicList[0], IsChangeList: true);
                 }
             }
         }
