@@ -41,7 +41,7 @@ public class CloudMusicSearchHelper
             string albumcoverUrl = await GetAlbumUrl(albumId);
             return await _api.GetImageBytesFromUrlAsync(albumcoverUrl);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
@@ -67,7 +67,7 @@ public class CloudMusicSearchHelper
         {
             return null;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
@@ -97,7 +97,7 @@ public class CloudMusicSearchHelper
             }
             return songsArray[0].GetProperty("id").ToString();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
@@ -128,7 +128,7 @@ public class CloudMusicSearchHelper
             }
             return songsArray[0].GetProperty("album").GetProperty("id").ToString();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
@@ -151,7 +151,7 @@ public class CloudMusicSearchHelper
                 {
                     lyrics += (string)lyricResult["tlyric"]!["lyric"]!;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Debug.WriteLine("No translated lyrics found.");
                 }

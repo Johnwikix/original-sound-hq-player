@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             }
@@ -228,9 +228,8 @@ namespace WinUIMusicPlayer.Services
             {
                 return await _dbConnection.Table<Folder>().ToListAsync();
             }
-            catch (SQLiteException ex)
+            catch (SQLiteException)
             {
-                System.Diagnostics.Debug.WriteLine($"SQLite error: {ex.Message}");
                 return new List<Folder>();
             }
         }
@@ -241,9 +240,8 @@ namespace WinUIMusicPlayer.Services
             {
                 return await _dbConnection.Table<PlayList>().ToListAsync();
             }
-            catch (SQLiteException ex)
+            catch (SQLiteException)
             {
-                System.Diagnostics.Debug.WriteLine($"SQLite error: {ex.Message}");
                 return new List<PlayList>();
             }
         }
@@ -255,9 +253,8 @@ namespace WinUIMusicPlayer.Services
                 //return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
                 return AppData.allSongs.FirstOrDefault(m => m.Id == musicId);
             }
-            catch (SQLiteException ex)
+            catch (SQLiteException)
             {
-                System.Diagnostics.Debug.WriteLine($"SQLite 错误: {ex.Message}");
                 return null;
             }
         }

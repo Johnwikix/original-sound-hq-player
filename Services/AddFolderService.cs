@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.Services
                     return music;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // 即使提取元数据失败，也尝试添加基本信息
                 try

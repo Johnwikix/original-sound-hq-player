@@ -992,7 +992,7 @@ namespace WinUIMusicPlayer.ViewModel
                     _musicBrowsePage.SelectSortOptionChanged();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
         }

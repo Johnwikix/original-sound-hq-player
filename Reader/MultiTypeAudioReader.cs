@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.Reader
                     readerStream = new FFmpegAudioReader(fileName);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 readerStream = new FFmpegAudioReader(fileName);
             }

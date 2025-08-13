@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer
                 // 调用默认窗口过程处理其他消息
                 return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return IntPtr.Zero;
             }

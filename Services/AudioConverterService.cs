@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.Services
                         break;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 OnProgressChanged(100);
             }
