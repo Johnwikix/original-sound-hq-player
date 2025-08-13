@@ -143,7 +143,8 @@ namespace WinUIMusicPlayer
 
                         if (!this.Visible)
                         {
-                            this.Show();
+                            this.Show(); 
+                            InitializeTaskbarHelper();
                         }
                     });
                     return IntPtr.Zero;
