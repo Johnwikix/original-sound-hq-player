@@ -58,7 +58,7 @@ namespace WinUIMusicPlayer
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
-            this.Closed += MainWindow_Closed;
+            //this.Closed += MainWindow_Closed;
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -184,10 +184,7 @@ namespace WinUIMusicPlayer
             try
             {
                 var musicBrowsePage = App.Services.GetRequiredService<MusicBrowsePage>();
-                if (musicBrowsePage != null)
-                {
-                    await musicBrowsePage.ClosePage().ConfigureAwait(true); // 确保回到UI线程
-                }
+                musicBrowsePage?.ClosePage();
                 AppNotifyIconControl?.Dispose();
                 AppNotifyIconControl = null;
                 if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
@@ -198,17 +195,14 @@ namespace WinUIMusicPlayer
                 }
                 _taskbarHelper?.Dispose();
                 _taskbarHelper = null;
-                await Task.Delay(50).ConfigureAwait(true);
-                App.Current_Exit();
+                //App.Current_Exit();
             }
             catch (Exception e)
             {
                 Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
-                App.Current_Exit();
-            }
-            finally
-            {
-                args.Handled = false;
+                //App.Current_Exit();
+            }finally { 
+                args.Handled = false; 
             }
         }
 

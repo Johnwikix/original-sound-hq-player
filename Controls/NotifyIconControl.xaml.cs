@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Controls
         [RelayCommand]
         public void ExitApplication()
         {
-            App.MainWindow?.Close();
+            App.Current_Exit();
         }
 
         private void NextSong_Click(object sender, RoutedEventArgs e)
@@ -213,18 +213,11 @@ namespace WinUIMusicPlayer.Controls
         {
             try
             {
-                if (NotifyIcon != null)
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        NotifyIcon.Dispose();
-                        NotifyIcon = null;
-                    });
-                }
+                NotifyIcon?.Dispose();
+                NotifyIcon = null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"NotifyIcon dispose error: {ex}");
                 NotifyIcon = null;
             }
         }

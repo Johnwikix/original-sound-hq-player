@@ -190,16 +190,21 @@ namespace WinUIMusicPlayer
         }
 
         /// <summary>
-        public static async void Current_Exit()
+        public async static void Current_Exit()
         {
             try
             {
-                await _host.StopAsync();
+                await Services.GetRequiredService<MusicBrowsePage>().ClosePage();
+                _host.StopAsync().Wait();
                 _logger?.LogInformation("应用程序退出完成");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "退出应用时出错: {Message}", ex.Message);
+            }
+            finally
+            {
+                Environment.Exit(0);
             }
         }
     }

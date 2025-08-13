@@ -937,17 +937,10 @@ namespace WinUIMusicPlayer.Services
             }
             if (waveOut != null)
             {
-                //waveOut.PlaybackStopped -= WaveOut_Stop;
                 waveOut.Stop();
                 waveOut.Dispose();
                 waveOut = null;
             }
-
-            //if (waveChannel != null)
-            //{
-            //    waveChannel.Dispose();
-            //    waveChannel = null;
-            //}
 
             if (multiTypeAudioReader != null)
             {
