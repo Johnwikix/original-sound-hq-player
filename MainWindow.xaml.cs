@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer
     {
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
-        public event EventHandler WindowClosed;
+        //public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler updateSelectSection;
