@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.Model
             {"8kHz", 0},   // 8kHz 初始增益 0dB
             {"16kHz", 0}   // 16kHz 初始增益 0dB
         };
-        public static bool IsEqualizerEnabled { get; set; } = false;  
+        public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
         public static bool IsFolderWatchEnabled { get; set; } = true;
         public static int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数

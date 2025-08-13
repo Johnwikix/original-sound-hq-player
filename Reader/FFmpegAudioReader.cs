@@ -59,7 +59,8 @@ namespace WinUIMusicPlayer.Reader
             }
         }
 
-        private void InitizedAudio() {
+        private void InitizedAudio()
+        {
             int originalSampleRate = ffmpegDecoder.WaveFormat.SampleRate;
             int channels = ffmpegDecoder.WaveFormat.Channels;
 
@@ -128,5 +129,5 @@ namespace WinUIMusicPlayer.Reader
             }
             base.Dispose(disposing);
         }
-    }   
+    }
 }

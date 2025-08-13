@@ -1,24 +1,20 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.View;
-using CommunityToolkit.Mvvm.Messaging;
-using WinUIMusicPlayer.Helper;
-using System.IO;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
+using WinUIMusicPlayer.View.SubView;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -93,9 +89,9 @@ namespace WinUIMusicPlayer.ViewModel
         MusicPlaybackService _musicPlaybackService;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public SongCollectionViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel)
+        public SongCollectionViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel)
         {
-            _parentPage = parent;           
+            _parentPage = parent;
             _parentPage.refreshSong += RefreshSong;
             _converterService = converterService;
             _musicPlaybackService = musicPlaybackService;
@@ -111,10 +107,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage?.DisableBackButton();
-            if (_musicBrowseViewModel?.SortOptions.Count == 2) {
+            if (_musicBrowseViewModel?.SortOptions.Count == 2)
+            {
                 _musicBrowseViewModel?.AllSortOptions();
             }
-            RefreshUsbDeviceMusicList(null, null);            
+            RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
         }
 
@@ -196,7 +193,7 @@ namespace WinUIMusicPlayer.ViewModel
                         .Where(music => music.Album == CurrentMusicObject.Album)
                         .Select(music => music.Author)
                         .Distinct());
-                    ThirdTitle = $"{(CurrentMusicObject.Year!=0 ? $"{CurrentMusicObject.Year} · ".ToString():"")}{AppData.allSongs.Count(music => music.Album == CurrentMusicObject.Album)} {ToolUtils.GetString("NumberOfSongs")}";
+                    ThirdTitle = $"{(CurrentMusicObject.Year != 0 ? $"{CurrentMusicObject.Year} · ".ToString() : "")}{AppData.allSongs.Count(music => music.Album == CurrentMusicObject.Album)} {ToolUtils.GetString("NumberOfSongs")}";
                     LoadMusicAsync(musics, CurrentPageType);
                 }
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
@@ -238,7 +235,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SortMusicList(string sortOrder, string type)
         {
-            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;           
+            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
 
             if (MusicList.Count > 0)
             {
@@ -333,7 +330,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void MusicListView_DoubleTapped()
-        {            
+        {
             if (SelectedMusic != null && _parentPage != null)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList =
@@ -347,7 +344,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                _parentPage?.PlayMusic(music:uniqueSelectedMusics.First(), IsChangeList: true);
+                _parentPage?.PlayMusic(music: uniqueSelectedMusics.First(), IsChangeList: true);
             }
             else
             {
@@ -373,7 +370,7 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 if (SelectedMusic != null)
-                {                    
+                {
                     await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
                     ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
                     MusicList.Remove(SelectedMusic);
@@ -407,7 +404,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void OpenInExplorer_Click()
-        {            
+        {
             if (SelectedMusic != null)
             {
                 var filePath = SelectedMusic.Path;
@@ -436,7 +433,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
-                {    
+                {
                     _progressDialog.RequestedTheme = AppSettings.elementTheme;
                     await _progressDialog.UpdateProgress(progressBarValue);
                     _progressDialog.XamlRoot = _currentPage.XamlRoot;
@@ -457,7 +454,8 @@ namespace WinUIMusicPlayer.ViewModel
                 isMutiFile = false;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
-                    if (SelectedMusic != null) {
+                    if (SelectedMusic != null)
+                    {
                         if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
                         {
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
@@ -589,12 +587,13 @@ namespace WinUIMusicPlayer.ViewModel
                 _parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(MusicList);
                 if (MusicList.Count > 0)
                 {
-                    _parentPage.PlayMusic(music:MusicList[0], IsChangeList: true);
+                    _parentPage.PlayMusic(music: MusicList[0], IsChangeList: true);
                 }
             }
         }
         [RelayCommand]
-        private void OnAlbumInfoChanged() {            
+        private void OnAlbumInfoChanged()
+        {
             if (CurrentMusicObject != null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(CurrentMusicObject);

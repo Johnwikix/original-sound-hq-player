@@ -2,9 +2,6 @@
 using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.CompilerServices;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -13,7 +10,7 @@ namespace WinUIMusicPlayer.Model
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public string Path { get; set; }
-        
+
         private string _title;
         public string Title
         {
@@ -77,7 +74,8 @@ namespace WinUIMusicPlayer.Model
         }
 
         private int _diskNumber;
-        public int DiskNumber {
+        public int DiskNumber
+        {
             get => _diskNumber;
             set => SetProperty(ref _diskNumber, value);
         }

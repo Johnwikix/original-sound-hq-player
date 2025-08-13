@@ -17,7 +17,7 @@ namespace WinUIMusicPlayer.Services
         private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(8, 8);
         public AddFolderService()
         {
-        }             
+        }
 
         public UsbDeviceMusic getUsbDeviceMusicInfo(StorageFile file, string folderPath, string uniqueDeviceId)
         {
@@ -119,7 +119,7 @@ namespace WinUIMusicPlayer.Services
             var subfolders = await folder.GetFoldersAsync();
             var subfolderTasks = subfolders.Select(subfolder =>
                 GetMusicFilesRecursive(subfolder, musicFiles));
-            await Task.WhenAll(subfolderTasks);            
+            await Task.WhenAll(subfolderTasks);
             Debug.WriteLine($"扫描文件夹 {folder.Path} 完成，耗时: {(DateTime.Now - startTime).TotalSeconds} 秒");
         }
     }

@@ -1,14 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using SQLite;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -25,7 +22,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AddFolderPage : Page
     {
         private NotificationService notificationService;
-        public AddFolderViewModel ViewModel { get;}
+        public AddFolderViewModel ViewModel { get; }
         public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel)
         {
             this.InitializeComponent();
@@ -35,7 +32,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
-        { 
+        {
             var button = sender as Button;
             if (button != null && button.Tag is string folderPath)
             {
@@ -71,7 +68,7 @@ namespace WinUIMusicPlayer.View
         {
             ContentDialog contentDialog = new ContentDialog
             {
-                Title = ToolUtils.GetString("RemoveFolderTitle"),               
+                Title = ToolUtils.GetString("RemoveFolderTitle"),
                 PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                 CloseButtonText = ToolUtils.GetString("CloseButton"),
                 XamlRoot = this.XamlRoot
@@ -88,7 +85,8 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void RemoveFolder(int folderId) {
+        private void RemoveFolder(int folderId)
+        {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
             ViewModel.RemoveFolderButton_Click(folderId);

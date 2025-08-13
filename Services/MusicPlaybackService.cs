@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.Services
         public bool isInitializing = true;
         private NotificationService notificationService;
         public List<LyricLine> _lyrics = new List<LyricLine>();
-        private CancellationTokenSource _lyricsCancellationTokenSource;       
+        private CancellationTokenSource _lyricsCancellationTokenSource;
         private CustomEqualizer equalizer;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.Services
             new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
         };
         private bool isEnableEq = false;
-        public MusicBrowseViewModel MusicBrowseViewModel { get;}
+        public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly object _waveOutLock = new();
         private readonly object _waveChannelLock = new();
         private readonly object _equalizerLock = new();
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Services
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
-            
+
         }
 
         private async void InitializingData()
@@ -87,8 +87,10 @@ namespace WinUIMusicPlayer.Services
             UpdateCurrentPlayList();
         }
 
-        public void UpdateCurrentPlayList(bool IsChangeList = true) {
-            if (!IsChangeList) {
+        public void UpdateCurrentPlayList(bool IsChangeList = true)
+        {
+            if (!IsChangeList)
+            {
                 return;
             }
             if (MusicBrowseViewModel.CurrentPlayMode != PlayMode.RandomLoop)
@@ -284,20 +286,21 @@ namespace WinUIMusicPlayer.Services
                     if (multiTypeAudioReader != null)
                     {
                         Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime}");
-                        if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime!=TimeSpan.Zero)
+                        if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
                         {
-                            if (AppSettings.isPlaying) {
+                            if (AppSettings.isPlaying)
+                            {
                                 AutoPlayNextTrack();
-                            }                            
-                        }                        
-                        _cachedLastCurrentTime = _cachedCurrentTime;                        
+                            }
+                        }
+                        _cachedLastCurrentTime = _cachedCurrentTime;
                         if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
                         {
                             AutoPlayNextTrack();
                         }
                         // 格式化显示时间
                         UpdateProgressTimerUI();
-                    } 
+                    }
                 }
             }
             catch (Exception ex)
@@ -432,7 +435,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         ResumeMusic();
                     }
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -466,9 +469,10 @@ namespace WinUIMusicPlayer.Services
                     AppSettings.isPlaying = true;
                     MusicBrowseViewModel.IsPlaying = true;
                     progressTimer.Start();
-                }               
+                }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -563,7 +567,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void SwitchDevice() {
+        private void SwitchDevice()
+        {
             switch (AppSettings.OutputMode)
             {
                 case "WaveOut":
@@ -613,9 +618,9 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
                     break;
                 case PlayMode.RepeatOff:
-                    MusicEnd();                    
+                    MusicEnd();
                     break;
-            }            
+            }
         }
 
         private void MusicEnd()
@@ -624,7 +629,7 @@ namespace WinUIMusicPlayer.Services
             if (multiTypeAudioReader != null)
             {
                 waveOut.Stop();
-                ChangeWaveChannelTime(TimeSpan.Zero);                
+                ChangeWaveChannelTime(TimeSpan.Zero);
             }
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -677,7 +682,8 @@ namespace WinUIMusicPlayer.Services
             if (AppSettings.IsEqualizerEnabled && !isEnableEq)
             {
                 //var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
-                lock (_waveOutLock) {
+                lock (_waveOutLock)
+                {
                     if (waveOut != null)
                     {
                         //isManualPlayingNext = true;
@@ -700,7 +706,7 @@ namespace WinUIMusicPlayer.Services
                         waveOut.Play();
                         progressTimer.Start();
                     }
-                }                
+                }
             }
         }
 
@@ -713,15 +719,17 @@ namespace WinUIMusicPlayer.Services
             equalizer.Update();
         }
 
-        public void ClearEqualizer() {
-            lock (_equalizerLock) {
+        public void ClearEqualizer()
+        {
+            lock (_equalizerLock)
+            {
                 if (equalizer == null) return;
                 foreach (var band in equalizerBands)
                 {
                     band.Gain = 0f; // 重置增益                
                 }
                 equalizer.Update();
-            }           
+            }
         }
 
         public void SetEqualizer()
@@ -734,7 +742,7 @@ namespace WinUIMusicPlayer.Services
                     band.Gain = (float)AppSettings.equalizer[FloatToString[band.Frequency]];
                 }
                 equalizer.Update();
-            }            
+            }
         }
 
         public bool InitializeAudioResources(Music music, TimeSpan currentPos = new TimeSpan())
@@ -777,7 +785,8 @@ namespace WinUIMusicPlayer.Services
                     AppSettings.isDsd = true;
                     multiTypeAudioReader.Volume = volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0);
                 }
-                else {
+                else
+                {
                     multiTypeAudioReader.Volume = volume;
                 }
                 if (token.IsCancellationRequested) return false;
@@ -795,7 +804,7 @@ namespace WinUIMusicPlayer.Services
                         isEnableEq = false;
                         waveOut.Init(multiTypeAudioReader);
                     }
-                }                
+                }
                 if (token.IsCancellationRequested) return false;
                 return true;
 
@@ -811,7 +820,8 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false)
         {
-            lock (_initializeLock) {
+            lock (_initializeLock)
+            {
                 if (_isDisposing) return;
                 if (InitializeAudioResources(music, currentPos))
                 {
@@ -851,7 +861,7 @@ namespace WinUIMusicPlayer.Services
                             AppSettings.isPlaying = true;
                             MusicBrowseViewModel.IsPlaying = true;
                             MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);                            
+                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
                         });
                     }
                     catch (Exception ex)
@@ -866,14 +876,15 @@ namespace WinUIMusicPlayer.Services
                     Reset();
                     OutputDeviceChange();
                 }
-            }            
+            }
 
         }
-        private void InitializeMusic() {
+        private void InitializeMusic()
+        {
             lock (_waveOutLock)
             {
                 isManualSelect = false;
-                isPausing = false;                
+                isPausing = false;
                 isSettingsChangeStop = false;
                 isEnableEq = false;
                 if (waveOut != null)
@@ -883,7 +894,8 @@ namespace WinUIMusicPlayer.Services
                     waveOut = null;
                 }
 
-                if (multiTypeAudioReader != null) {
+                if (multiTypeAudioReader != null)
+                {
                     multiTypeAudioReader.Dispose();
                     multiTypeAudioReader = null;
                 }
@@ -900,7 +912,8 @@ namespace WinUIMusicPlayer.Services
             _isDisposing = true;
             try
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     MusicBrowseViewModel.IsPlaying = false;
                 });
                 AppSettings.isPlaying = false;
@@ -909,7 +922,7 @@ namespace WinUIMusicPlayer.Services
             finally
             {
                 _isDisposing = false;
-            }            
+            }
         }
 
         public async Task DisposeAudio()
@@ -925,8 +938,8 @@ namespace WinUIMusicPlayer.Services
             if (waveOut != null)
             {
                 //waveOut.PlaybackStopped -= WaveOut_Stop;
-                waveOut.Stop();                
-                waveOut.Dispose();                
+                waveOut.Stop();
+                waveOut.Dispose();
                 waveOut = null;
             }
 
@@ -943,16 +956,18 @@ namespace WinUIMusicPlayer.Services
             }
 
             if (equalizer != null)
-            {                
+            {
                 equalizer = null;
             }
-            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);      
+            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
         }
 
-        public void ChangeWaveChannelTime(TimeSpan timeSpan) {
-            lock (_waveChannelLock) {
+        public void ChangeWaveChannelTime(TimeSpan timeSpan)
+        {
+            lock (_waveChannelLock)
+            {
                 multiTypeAudioReader.CurrentTime = timeSpan;
-            }            
+            }
         }
 
         public void SwitchPlayMode()
@@ -982,7 +997,7 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Stop();
                 waveOut.Stop();
                 AppSettings.isPlaying = false;
-                MusicBrowseViewModel.IsPlaying = false;                
+                MusicBrowseViewModel.IsPlaying = false;
             }
 
         }
@@ -1049,7 +1064,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
-                        notificationService.SendNotification(ToolUtils.GetString("Error"),"没有可播放的音乐");
+                        notificationService.SendNotification(ToolUtils.GetString("Error"), "没有可播放的音乐");
                         return;
                     }
                 }

@@ -279,7 +279,7 @@ namespace testDemo.Taskbar
 
             // 触发事件
             //ThumbButtonClicked?.Invoke(this, new ThumbButtonClickedEventArgs(buttonId));
-            
+
         }
 
         public void UpdateTaskbarButtonIcon()

@@ -1,16 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using TagLib;
-using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinUIMusicPlayer.Helper;
@@ -19,7 +15,6 @@ using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
-using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -77,8 +72,8 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.SetMinimumSize(hwnd,this,650,850);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850,650,App.MainWindow.AppWindow,this.AppWindow);
+            WindowSizeHelper.SetMinimumSize(hwnd, this, 650, 850);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 650, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();
         }
@@ -92,7 +87,7 @@ namespace WinUIMusicPlayer.View.SubView
         }
 
         private async void InitalizeData(Music music)
-        {            
+        {
             musicDetail = music;
             TitleTextBlock.Text = music.Title;
             AuthorTextBlock.Text = music.Author;
@@ -214,7 +209,7 @@ namespace WinUIMusicPlayer.View.SubView
             else
             {
                 albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }            
+            }
             if (albumCoverData != null)
             {
                 AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
@@ -227,7 +222,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);          
+            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);
             if (lyrics != null)
             {
                 LyricsTextBox.Text = lyrics;
@@ -243,7 +238,7 @@ namespace WinUIMusicPlayer.View.SubView
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(musicDetail.Path), invalidChars);
             string targetBasePath = Path.GetDirectoryName(musicDetail.Path);
-            _=Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                 string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
@@ -259,11 +254,14 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
         {
-            _=Task.Run(async () => {
+            _ = Task.Run(async () =>
+            {
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(musicDetail.Path);
-                Music music = await ToolUtils.GetMusicInfo(storageFile,musicDetail.Path);
-                if (music!=null) {
-                    DispatcherQueue.TryEnqueue(() => {                        
+                Music music = await ToolUtils.GetMusicInfo(storageFile, musicDetail.Path);
+                if (music != null)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
                         TitleTextBlock.Text = music.Title;
                         AuthorTextBlock.Text = music.Author;
                         AlbumTextBlock.Text = music.Album;
@@ -284,7 +282,7 @@ namespace WinUIMusicPlayer.View.SubView
                         UpdateTimeBlock.Text = music.UpdateTime.ToString();
                     });
                 }
-            });            
+            });
         }
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)

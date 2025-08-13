@@ -1,18 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -24,7 +13,7 @@ namespace WinUIMusicPlayer.View
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class FolderBrowsePage : Page, INavigatable
-    {        
+    {
         public FolderViewModel ViewModel { get; }
         public FolderBrowsePage(FolderViewModel viewModel)
         {
@@ -56,7 +45,7 @@ namespace WinUIMusicPlayer.View
 
         private void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            ViewModel.Folder_RightTapped(sender, e);            
+            ViewModel.Folder_RightTapped(sender, e);
         }
     }
 }

@@ -6,13 +6,11 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -38,7 +36,8 @@ namespace WinUIMusicPlayer.ViewModel
         public float DsdGain
         {
             get => _dsdGain;
-            set {
+            set
+            {
                 if (SetProperty(ref _dsdGain, value))
                 {
                     // 更新应用设置
@@ -55,7 +54,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsAutoLyricsEnabled
         {
             get => _isAutoLyricsEnabled;
-            set {
+            set
+            {
                 if (SetProperty(ref _isAutoLyricsEnabled, value))
                 {
                     // 更新应用设置
@@ -87,7 +87,8 @@ namespace WinUIMusicPlayer.ViewModel
         public int Latency
         {
             get => _latency;
-            set {
+            set
+            {
                 if (SetProperty(ref _latency, value))
                 {
                     // 更新应用设置
@@ -133,7 +134,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private int _appHeight = 810;
-        public int AppHeight {
+        public int AppHeight
+        {
             get => _appHeight;
             set
             {
@@ -151,7 +153,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsCoverCacheEnabled
         {
             get => _isCoverCacheEnabled;
-            set {
+            set
+            {
                 if (SetProperty(ref _isCoverCacheEnabled, value))
                 {
                     // 更新应用设置
@@ -183,7 +186,8 @@ namespace WinUIMusicPlayer.ViewModel
         public string DefaultPlayListComboBoxTag
         {
             get => _defaultPlayListComboBoxTag;
-            set {
+            set
+            {
                 if (SetProperty(ref _defaultPlayListComboBoxTag, value))
                 {
                     // 更新应用设置
@@ -216,9 +220,11 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private string _lrcAPISource = "LRC";
-        public string LrcAPISource {
+        public string LrcAPISource
+        {
             get => _lrcAPISource;
-            set {
+            set
+            {
                 if (SetProperty(ref _lrcAPISource, value))
                 {
                     // 更新应用设置
@@ -243,10 +249,11 @@ namespace WinUIMusicPlayer.ViewModel
                     // 更新应用设置
                     AppSettings.OutputMode = value;
                     // 保存设置                   
-                    if (_isInitized) {
+                    if (_isInitized)
+                    {
                         _ = MusicDatabaseService.SaveSettingAsync();
                         AppSettings.OnOutputSettingsChanged();
-                    }                    
+                    }
                 }
             }
         }
@@ -255,10 +262,11 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<string> OutputDevices
         {
             get => _outputDevices;
-            set {
+            set
+            {
                 if (SetProperty(ref _outputDevices, value))
                 {
-                    Debug.WriteLine("OutputDevices collection changed.");                    
+                    Debug.WriteLine("OutputDevices collection changed.");
                 }
             }
         }
@@ -270,22 +278,25 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _deviceName, value))
                 {
-                    if (value != null) {
+                    if (value != null)
+                    {
                         Debug.WriteLine($"DeviceName changed to: {value}");
                         // 更新应用设置
                         AppSettings.DeviceName = value;
                         // 保存设置                        
                         if (IsRealDevceChange)
                         {
-                            if (_isInitized) {
+                            if (_isInitized)
+                            {
                                 _ = MusicDatabaseService.SaveSettingAsync();
                                 AppSettings.OnOutputSettingsChanged();
                             }
                         }
-                        else {
+                        else
+                        {
                             IsRealDevceChange = true;
                         }
-                    }                    
+                    }
                 }
             }
         }
@@ -336,9 +347,10 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref _entranceAnimationTime, value))
                 {
                     AppSettings.EntranceAnimationTime = value;
-                    if (_isInitized) {
+                    if (_isInitized)
+                    {
                         _ = MusicDatabaseService.SaveSettingAsync();
-                    }                    
+                    }
                 }
             }
         }
@@ -498,7 +510,8 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnBackdropTypeChanged(string type)
         {
-            try {
+            try
+            {
                 var mainWindow = (App.MainWindow as MainWindow);
                 if (mainWindow != null)
                 {
@@ -519,7 +532,9 @@ namespace WinUIMusicPlayer.ViewModel
                     mainWindow.SetAppStyle();
                     _ = MusicDatabaseService.SaveSettingAsync();
                 }
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Debug.WriteLine($"Error setting backdrop type: {ex.Message}");
             }
         }
@@ -550,7 +565,7 @@ namespace WinUIMusicPlayer.ViewModel
                             AppSettings.elementTheme = ElementTheme.Default;
                             break;
                     }
-                    mainWindow.SetAppTheme();                    
+                    mainWindow.SetAppTheme();
                     _ = MusicDatabaseService.SaveSettingAsync();
                     App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
                 }

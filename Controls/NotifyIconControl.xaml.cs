@@ -5,13 +5,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -65,11 +61,13 @@ namespace WinUIMusicPlayer.Controls
             MainWindow window = App.MainWindow;
             ShowWindow(window);
             window.NavigateToMusicBrowsePage();
-            _ = Task.Delay(100).ContinueWith(_ => {
-                window.DispatcherQueue.TryEnqueue(() => {
+            _ = Task.Delay(100).ContinueWith(_ =>
+            {
+                window.DispatcherQueue.TryEnqueue(() =>
+                {
                     MusicBrowseViewModel.ShowPlayingDetail();
-                });                
-            });            
+                });
+            });
         }
 
         private void PlayMode_Click(object sender, RoutedEventArgs e)
@@ -109,7 +107,8 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
-        private void UpdatePlayModeIcon(PlayMode playMode) {
+        private void UpdatePlayModeIcon(PlayMode playMode)
+        {
             AppData.PlayMode = playMode;
             MusicBrowseViewModel.CurrentPlayMode = playMode;
         }
@@ -127,7 +126,7 @@ namespace WinUIMusicPlayer.Controls
                     }
                 }
             }
-            
+
         }
 
         public void UpdatePlayMode()
@@ -170,7 +169,8 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
-        private void ShowWindow(MainWindow window) {
+        private void ShowWindow(MainWindow window)
+        {
             if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
             {
                 // 如果窗口最小化，则恢复它
@@ -179,7 +179,7 @@ namespace WinUIMusicPlayer.Controls
                     WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
                 }
                 // 将窗口置于前台
-                WindowHelper.SetForegroundWindow(AppData.m_hWnd);                
+                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
             }
             else
             {
@@ -192,9 +192,10 @@ namespace WinUIMusicPlayer.Controls
                     window.Show();
                     window.InitializeTaskbarHelper();
                 }
-                if (AppSettings.IsProcessAboveNormal) {
+                if (AppSettings.IsProcessAboveNormal)
+                {
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
-                }                
+                }
             }
         }
 

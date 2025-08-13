@@ -1,17 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using TagLib;
-using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinUIMusicPlayer.Helper;
@@ -20,7 +16,6 @@ using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
-using AppWindow = Microsoft.UI.Windowing.AppWindow;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -97,7 +92,7 @@ namespace WinUIMusicPlayer.View.SubView
             musicDetail = album;
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
-            albumCoverData =await ToolUtils.GetRawImage(album);
+            albumCoverData = await ToolUtils.GetRawImage(album);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 
@@ -181,9 +176,10 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
-            else {
+            else
+            {
                 albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }            
+            }
             if (albumCoverData != null)
             {
                 AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);

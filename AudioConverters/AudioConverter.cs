@@ -1,12 +1,10 @@
 ﻿using CSCore;
 using CSCore.Ffmpeg;
-using CSCore.Streams;
 using CUETools.Codecs.FLAKE;
 using NAudio.Flac;
 using NAudio.Lame;
 using NAudio.Vorbis;
 using NAudio.Wave;
-using NAudio.Wave.Compression;
 using System;
 using System.IO;
 using System.Text;
@@ -66,7 +64,7 @@ namespace WinUIMusicPlayer.AudioConverters
                         }
                         memoryStream.Position = 0;
                         ConvertAudioToFlac(outputPath, memoryStream);
-                    }                    
+                    }
                 }
             }
             SaveMetaData(mp3FilePath, outputPath);
@@ -238,11 +236,11 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                }               
+                }
             }
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);
-        }       
+        }
 
         public void ConvertDSDToWav(string filePath, string outputPath, string type = "wav")
         {
@@ -409,13 +407,13 @@ namespace WinUIMusicPlayer.AudioConverters
                         target.Write(buff);
                         target.Close();
                     }
-                }                
+                }
             }
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);
         }
 
-        public void FFmpegConverter(string filePath, string outputPath, string type = "wav",int bitDepth = 16)
+        public void FFmpegConverter(string filePath, string outputPath, string type = "wav", int bitDepth = 16)
         {
             using (IWaveSource waveSource = new FfmpegDecoder(filePath))
             {
@@ -444,7 +442,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                 }
                 if (type == "mp3")
-                {                    
+                {
                     IWaveSource audio;
                     if (waveSource.WaveFormat.SampleRate != 44100)
                     {
@@ -524,7 +522,7 @@ namespace WinUIMusicPlayer.AudioConverters
                         sampleSource = normalizer;
                         var limiter = new SoftLimiter(sampleSource, -0.1f); // -0.1dB限制
                         sampleSource = limiter;
-                        sampleSource = new DitheringProcessor(sampleSource, bitDepth);                        
+                        sampleSource = new DitheringProcessor(sampleSource, bitDepth);
                         audio = sampleSource.ToWaveSource(bitDepth);
                     }
                     long totalBytes = audio.Length;
@@ -575,7 +573,7 @@ namespace WinUIMusicPlayer.AudioConverters
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);
         }
-       
+
         public void ConvertOgg(string filePath, string outputPath, string type = "wav")
         {
             using (WaveStream audio = new VorbisWaveReader(filePath))
@@ -643,7 +641,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     }
                     memoryStream.Position = 0;
                     ConvertAudioToFlac(outputPath, memoryStream);
-                }               
+                }
             }
             SaveMetaData(filePath, outputPath);
             progressEvent?.Invoke(this, 100);

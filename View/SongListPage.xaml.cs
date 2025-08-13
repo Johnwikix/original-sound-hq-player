@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
@@ -25,12 +24,12 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class SongListPage : Page, INavigatable
     {
-        public SongListViewModel ViewModel { get;}
+        public SongListViewModel ViewModel { get; }
         public SongListPage(SongListViewModel viewModel)
         {
-            InitializeComponent();         
+            InitializeComponent();
             ViewModel = viewModel;
-            ViewModel.SetCurrentPage(this);            
+            ViewModel.SetCurrentPage(this);
             DataContext = this;
         }
 
@@ -53,17 +52,17 @@ namespace WinUIMusicPlayer.View
                 {
                     MusicListView.ScrollIntoView(selectedMusic);
                 });
-            });            
-        }       
+            });
+        }
 
         public void SortMusicList(string sortOrder)
         {
-            ViewModel.SortMusicList(sortOrder);           
+            ViewModel.SortMusicList(sortOrder);
         }
-       
+
         public void UpdateMusicListView()
         {
-            ViewModel.UpdateMusicListView();           
+            ViewModel.UpdateMusicListView();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
@@ -86,19 +85,19 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
+            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
         private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);            
+            ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);            
+            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)

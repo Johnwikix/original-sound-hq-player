@@ -1,10 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;
@@ -88,7 +84,7 @@ namespace WinUIMusicPlayer.Services
                 MediaPlaybackStatus.Playing :
                 MediaPlaybackStatus.Paused;
         }
-       
+
 
         public async Task UpdateMediaInfo(string title, string artist, string album, byte[] cover = null)
         {
@@ -163,6 +159,6 @@ namespace WinUIMusicPlayer.Services
                 Console.WriteLine($"转换过程中出现错误: {ex.Message}");
                 return null;
             }
-        }        
+        }
     }
 }

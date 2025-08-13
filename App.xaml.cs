@@ -1,26 +1,18 @@
-﻿using CommunityToolkit.Mvvm.DependencyInjection;
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using Microsoft.VisualBasic.ApplicationServices;
-using Microsoft.VisualBasic.Logging;
 using Serilog;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime;
 using System.Threading.Tasks;
-using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.View;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -103,7 +95,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;            
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
             this.InitializeComponent();
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
@@ -177,7 +169,7 @@ namespace WinUIMusicPlayer
         protected async override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
-            {                
+            {
                 // 检查应用程序是否已经在运行
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {

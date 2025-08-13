@@ -1,16 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.UI.Xaml.Navigation;
-using Windows.Foundation;
 using System.Diagnostics;
+using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Services.NavigationService
 {
@@ -49,10 +45,11 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 {
                     navigatablePage.ReceiveNavigationParameter(parameter);
                 }
-                if (!isPlayAnime) {
+                if (!isPlayAnime)
+                {
                     return; // 直接返回，不执行动画
                 }
-                    
+
             }
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
@@ -105,9 +102,10 @@ namespace WinUIMusicPlayer.Services.NavigationService
                     ExecuteEntranceAnimation(newPage, animeTime);
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Debug.WriteLine(ex.Message);
-            }           
+            }
         }
 
         private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect, int animeTime)
@@ -155,8 +153,9 @@ namespace WinUIMusicPlayer.Services.NavigationService
         private void ExecuteDrillInAnimation(Page page, int animeTime)
         {
             var storyboard = new Storyboard();
-            var compositeTransform = new CompositeTransform() { 
-                ScaleX = 1.1, 
+            var compositeTransform = new CompositeTransform()
+            {
+                ScaleX = 1.1,
                 ScaleY = 1.1,
             };
             page.RenderTransformOrigin = new Point(0.5, 0.5);

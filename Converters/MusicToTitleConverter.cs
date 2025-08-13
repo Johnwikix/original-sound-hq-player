@@ -1,12 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Data;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
-using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Converters
 {
@@ -16,7 +11,8 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is Music music)
             {
-                if (music != null) {
+                if (music != null)
+                {
                     return music.Title;
                 }
             }

@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 
@@ -16,7 +14,8 @@ public class CloudMusicSearchHelper
     private static readonly NeteaseCloudMusicApi _api = new();
     private const byte Limit = 10;
 
-    private static async Task<JsonDocument> GetJsonElement(string keyWords) {
+    private static async Task<JsonDocument> GetJsonElement(string keyWords)
+    {
         var (_, result) = await _api.RequestAsync(
             CloudMusicApiProviders.Search,
             new Dictionary<string, string>
@@ -26,18 +25,19 @@ public class CloudMusicSearchHelper
                     { "offset", "0" },
             }
         );
-        JsonDocument document = JsonDocument.Parse(result.ToJsonString());        
+        JsonDocument document = JsonDocument.Parse(result.ToJsonString());
         return document;
     }
 
 
-    public static async Task<byte[]> GetSongAlbum(string title,string album,string author)
+    public static async Task<byte[]> GetSongAlbum(string title, string album, string author)
     {
-        try {
+        try
+        {
             string keyWords = album + " " + author;
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
-            string albumId = SearchForAlbumId(root,album,author);
+            string albumId = SearchForAlbumId(root, album, author);
             string albumcoverUrl = await GetAlbumUrl(albumId);
             return await _api.GetImageBytesFromUrlAsync(albumcoverUrl);
         }
@@ -47,9 +47,10 @@ public class CloudMusicSearchHelper
         }
     }
 
-    public static async Task<string> GetSongLyrics(string title, string album, string author,CancellationToken cancellationToken = default)
+    public static async Task<string> GetSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
     {
-        try {
+        try
+        {
             string keyWords = title + " " + album + " " + author;
             cancellationToken.ThrowIfCancellationRequested();
             using JsonDocument document = await GetJsonElement(keyWords);
@@ -72,7 +73,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static string SearchForSongId(JsonElement root,string title,string artist)
+    private static string SearchForSongId(JsonElement root, string title, string artist)
     {
         try
         {
@@ -144,7 +145,8 @@ public class CloudMusicSearchHelper
              );
             string lyrics = string.Empty;
             lyrics = (string)lyricResult["lrc"]!["lyric"]!;
-            if (AppData.systemLanguage == "zh") {
+            if (AppData.systemLanguage == "zh")
+            {
                 try
                 {
                     lyrics += (string)lyricResult["tlyric"]!["lyric"]!;
@@ -156,14 +158,16 @@ public class CloudMusicSearchHelper
             }
             return lyrics;
         }
-        else { 
+        else
+        {
             return null;
-        }       
+        }
     }
 
     public static async Task<string> GetAlbumUrl(string albumId)
     {
-        if (albumId != null) {
+        if (albumId != null)
+        {
             var api = new NeteaseCloudMusicApi();
             var (_, albumResult) = await api.RequestAsync(
                 CloudMusicApiProviders.Album,
@@ -174,7 +178,7 @@ public class CloudMusicSearchHelper
         else
         {
             return null;
-        }        
+        }
     }
-    
+
 }

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -29,7 +28,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel)
         {
-            _parentPage = parent;            
+            _parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
             _parentPage.addPlayListEvent += RefreshPlayList;
         }
@@ -114,7 +113,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayListView_SelectionChanged(PlayList? playList)
         {
-            if (playList != null && _parentPage != null && _musicBrowseViewModel!=null)
+            if (playList != null && _parentPage != null && _musicBrowseViewModel != null)
             {
                 //_parentPage.LoadPlayListSong(playList);
                 _musicBrowseViewModel.PageType = "playlist";

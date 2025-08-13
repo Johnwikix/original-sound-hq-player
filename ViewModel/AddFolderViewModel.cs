@@ -1,19 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Xaml;
 using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -42,7 +37,7 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (var folder in folderList)
                 {
                     FolderList.Add(folder);
-                }   
+                }
             }
             catch (SQLiteException ex)
             {
@@ -66,7 +61,7 @@ namespace WinUIMusicPlayer.ViewModel
             folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
             folderPicker.FileTypeFilter.Add("*");
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
-            var folder = await folderPicker.PickSingleFolderAsync();            
+            var folder = await folderPicker.PickSingleFolderAsync();
             await AddFolderMusic(folder);
         }
         private async Task AddFolderMusic(StorageFolder folder)

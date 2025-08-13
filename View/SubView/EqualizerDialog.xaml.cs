@@ -1,19 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Collections.Generic;
 using WinUIMusicPlayer.Model;
-using System.Diagnostics;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
@@ -56,7 +45,7 @@ namespace WinUIMusicPlayer.View.SubView
                     break;
                 }
             }
-            InitializeSliders();            
+            InitializeSliders();
             ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
         }
 
@@ -97,14 +86,14 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     string frequency = slider.Tag?.ToString() ?? "Unknown";
                     double value = Math.Round(slider.Value, 1);
-                    AppSettings.equalizer[frequency] = value;                  
+                    AppSettings.equalizer[frequency] = value;
                     string? presetName = selectedItem.Tag.ToString();
                     if (presetName == "Custom")
                     {
                         await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
                     }
                     EqualizerGainChanged?.Invoke(this, frequency);
-                }                
+                }
             }
         }
 
@@ -129,9 +118,9 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 if (slider.Tag?.ToString() is string frequency &&
                     settings.ContainsKey(frequency))
-                    {
-                        slider.Value = settings[frequency];
-                    }
+                {
+                    slider.Value = settings[frequency];
+                }
             }
         }
 
@@ -142,7 +131,7 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 clearEqualizer?.Invoke(this, EventArgs.Empty);
             });
-            
+
         }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -153,7 +142,7 @@ namespace WinUIMusicPlayer.View.SubView
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
                 settings.EqualizerPreset = AppSettings.EqualizerPreset;
                 await MusicDatabaseService.UpdateSettings(settings);
-            }           
+            }
             this.Hide();
         }
 
@@ -173,7 +162,8 @@ namespace WinUIMusicPlayer.View.SubView
                         AppSettings.equalizer[frequency] = presetValues[i];
                     }
                 }
-                else if (presetName == "Custom") {
+                else if (presetName == "Custom")
+                {
                     SaveSettings settings = await MusicDatabaseService.GetSettings();
                     AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                     InitializeSliders();

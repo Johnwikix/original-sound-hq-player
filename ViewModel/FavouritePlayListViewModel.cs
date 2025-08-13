@@ -1,21 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -62,7 +54,7 @@ namespace WinUIMusicPlayer.ViewModel
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            _progressDialog.Title = ToolUtils.GetString("Processing");            
+            _progressDialog.Title = ToolUtils.GetString("Processing");
         }
 
         private void OnConverterProgressUpdated(object? sender, double progress)
@@ -94,7 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void ReceiveNavigation()
-        {            
+        {
             InitializeData();
             RefreshUsbDeviceMusicList();
         }

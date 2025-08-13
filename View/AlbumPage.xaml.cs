@@ -1,8 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
@@ -22,7 +20,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
-            this.InitializeComponent();            
+            this.InitializeComponent();
             DataContext = this;
         }
 
@@ -35,19 +33,19 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             if (e.Parameter is MusicBrowsePage parentPage)
             {
-                ViewModel.ReceiveNavigation();                
-            }            
+                ViewModel.ReceiveNavigation();
+            }
         }
 
         public void SortMusicList(string sortOrder = "DefaultOrder")
         {
-            ViewModel.SortMusicList(sortOrder);           
+            ViewModel.SortMusicList(sortOrder);
         }
-        
+
 
         private void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            ViewModel.Album_RightTapped(sender, e);            
+            ViewModel.Album_RightTapped(sender, e);
         }
 
         public void OnAlbumDetailChanged(object sender, Music cover)

@@ -1,17 +1,13 @@
-﻿using Microsoft.UI.Xaml.Controls;
-using SQLite;
+﻿using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Playlists;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -63,7 +59,7 @@ namespace WinUIMusicPlayer.Services
                 if (userProfilePath != null)
                 {
                     // 拼接应用文件夹路径，这里假设应用文件夹名为"MyAppFolder"
-                    string appFolderPath = Path.Combine(userProfilePath,"OriginalSoundPlayer", "DataBase");
+                    string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "DataBase");
                     string dbFilePath = Path.Combine(appFolderPath, "MusicDatabase.db");
                     string sourceDbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
                     if (!Directory.Exists(appFolderPath))
@@ -82,12 +78,14 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            }            
+            }
         }
 
-        private static async void CopyFile(string sourceFilePath, string targetFilePath) {
+        private static async void CopyFile(string sourceFilePath, string targetFilePath)
+        {
 
             if (File.Exists(sourceFilePath))
             {
@@ -100,7 +98,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-        } 
+        }
 
         public static SQLiteAsyncConnection GetDbConnection()
         {
@@ -540,9 +538,9 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task<PlayList> GetPlayListByName(string playListName)
         {
-           return await _dbConnection.Table<PlayList>()
-               .Where(plm => plm.Name == playListName)
-               .FirstOrDefaultAsync();
+            return await _dbConnection.Table<PlayList>()
+                .Where(plm => plm.Name == playListName)
+                .FirstOrDefaultAsync();
         }
 
         public static async Task RemovePlayList(PlayList playList)
@@ -860,7 +858,8 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Debug.WriteLine($"删除音乐时出错: {e.Message}");
             }
         }
@@ -893,7 +892,7 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume,string sortOrder)
+        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume, string sortOrder)
         {
             try
             {
@@ -926,10 +925,11 @@ namespace WinUIMusicPlayer.Services
                     _ = _dbConnection.UpdateAsync(playState);
                 }
             }
-            catch (Exception ex) { 
+            catch (Exception ex)
+            {
                 Debug.WriteLine($"保存播放状态时出错: {ex.Message}");
             }
-        } 
+        }
 
         public static async Task<List<Music>> GetMusicListByFolder(StorageFolder folder)
         {
@@ -1067,7 +1067,8 @@ namespace WinUIMusicPlayer.Services
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
-            if (existingMusic == null) {
+            if (existingMusic == null)
+            {
                 return null;
             }
             Music newMusic = await ToolUtils.GetMusicInfo(storageFile, folderPath);
@@ -1096,7 +1097,7 @@ namespace WinUIMusicPlayer.Services
             });
             return existingMusic;
 
-        }        
+        }
 
         public static async Task RescanFolder(int folderId)
         {
@@ -1216,7 +1217,7 @@ namespace WinUIMusicPlayer.Services
                 try
                 {
                     return await updateMusic(music, folder.Path);
-                }                
+                }
                 finally
                 {
                     semaphore.Release();

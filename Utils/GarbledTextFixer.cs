@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -24,7 +21,7 @@ namespace WinUIMusicPlayer.Utils
 
                 // 2. 将这些字节按照 GBK 编码解释为正确的字符串
                 Encoding gbkEncoding = Encoding.GetEncoding("GBK");
-                string fixedText = gbkEncoding.GetString(originalGbkBytes);                
+                string fixedText = gbkEncoding.GetString(originalGbkBytes);
                 return fixedText;
             }
             catch (Exception ex)
@@ -40,7 +37,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 // 1. 将乱码文本按照 ISO-8859-1 编码转换为字节数组
                 // 这样可以恢复原始的 GBK 字节
-                Encoding gbkEncoding = Encoding.GetEncoding("GBK");                
+                Encoding gbkEncoding = Encoding.GetEncoding("GBK");
                 byte[] originalGbkBytes = gbkEncoding.GetBytes(corruptedText);
 
                 // 2. 将这些字节按照 GBK 编码解释为正确的字符串

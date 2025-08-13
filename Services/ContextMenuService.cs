@@ -18,7 +18,8 @@ namespace WinUIMusicPlayer.Services
         private static ContextMenuService _instance;
         private MenuFlyout flyout;
         public static ContextMenuService Instance => _instance ??= new ContextMenuService();
-        public ContextMenuService() {
+        public ContextMenuService()
+        {
             flyout = new MenuFlyout();
         }
 
@@ -240,7 +241,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (!string.IsNullOrEmpty(item.FolderPath))
                     {
-                        await Task.Run(async() =>
+                        await Task.Run(async () =>
                         {
                             await MusicDatabaseService.RescanFolderByPath(item.FolderPath);
                         });

@@ -5,21 +5,16 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using testDemo.Taskbar;
-using Windows.Graphics;
 using Windows.UI.ViewManagement;
-using WinRT.Interop;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -53,8 +48,8 @@ namespace WinUIMusicPlayer
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             SetTitleBar(AppTitleBar);
             setWindow();
-            AppData.m_hWnd = m_hwnd;            
-            this.Activated += MainWindow_Activated;            
+            AppData.m_hWnd = m_hwnd;
+            this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             // 在需要使用导航服务的地方获取工厂
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -62,16 +57,17 @@ namespace WinUIMusicPlayer
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
-            _navigationService.RegisterPage<SettingsPage>();            
-            this.Closed += MainWindow_Closed;            
+            _navigationService.RegisterPage<SettingsPage>();
+            this.Closed += MainWindow_Closed;
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
-            themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);            
+            themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             H.NotifyIcon.WindowExtensions.Hide(this, enableEfficiencyMode: false);
             H.NotifyIcon.WindowExtensions.Show(this, disableEfficiencyMode: true);
-            if (AppSettings.IsProcessAboveNormal) {
+            if (AppSettings.IsProcessAboveNormal)
+            {
                 PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
             }
             this.AppWindow.Closing += AppWindow_Closing;
@@ -94,14 +90,16 @@ namespace WinUIMusicPlayer
             {
                 WindowSizeHelper.ResizeWindowAndCenterInScreen(m_hwnd, AppSettings.AppHeight, AppSettings.AppWidth, this.AppWindow);
             }
-            else {
+            else
+            {
                 WindowSizeHelper.CenterInScreen(this.AppWindow);
             }
         }
 
-        public void UpdateAppNotifyIconControl() {            
+        public void UpdateAppNotifyIconControl()
+        {
             Debug.WriteLine(AppData.PlayMode);
-            AppNotifyIconControl.UpdatePlayMode();            
+            AppNotifyIconControl.UpdatePlayMode();
         }
 
         private void SaveMainWindowHandle(IntPtr handle)
@@ -131,7 +129,8 @@ namespace WinUIMusicPlayer
         //显示窗口
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
-            try {
+            try
+            {
                 if (msg == SingleInstanceHelper.WM_SHOWME)
                 {
                     Debug.WriteLine("收到显示窗口消息");
@@ -152,9 +151,10 @@ namespace WinUIMusicPlayer
                 // 调用默认窗口过程处理其他消息
                 return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 return IntPtr.Zero;
-            }         
+            }
         }
 
 
@@ -171,9 +171,10 @@ namespace WinUIMusicPlayer
                 {
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                 }
-                else {
+                else
+                {
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
-                }                
+                }
             }
         }
 
@@ -196,11 +197,12 @@ namespace WinUIMusicPlayer
                     defaultWndProc = IntPtr.Zero;
                 }
                 _taskbarHelper?.Dispose();
-                _taskbarHelper = null;                
+                _taskbarHelper = null;
                 await Task.Delay(50).ConfigureAwait(true);
                 App.Current_Exit();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
                 App.Current_Exit();
             }
@@ -234,7 +236,8 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private async Task AutoScanFolder() {
+        private async Task AutoScanFolder()
+        {
             if (AppSettings.IsFolderWatchEnabled)
             {
                 await AutoRescanService.AutoScan();
@@ -285,7 +288,7 @@ namespace WinUIMusicPlayer
         public void NavigateToSettingsPage()
         {
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this,null, 100);
+            _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
         }
 
         public void UpdateMusicList()
@@ -369,17 +372,19 @@ namespace WinUIMusicPlayer
 
         public void NavigateToMusicBrowsePage()
         {
-            if (ContentFrame.Content is not MusicBrowsePage) {
+            if (ContentFrame.Content is not MusicBrowsePage)
+            {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                _navigationService.Navigate(typeof(MusicBrowsePage),null,null,0);
-            }            
+                _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 0);
+            }
         }
 
-        public void NavigationViewCollapsed() {
+        public void NavigationViewCollapsed()
+        {
             DispatcherQueue.TryEnqueue(() =>
             {
                 NavigationViewControlGrid.Opacity = 0;
-            });            
+            });
         }
 
         public void NavigationViewExpanded()
@@ -387,7 +392,7 @@ namespace WinUIMusicPlayer
             DispatcherQueue.TryEnqueue(() =>
             {
                 NavigationViewControlGrid.Opacity = 1.0f;
-            });            
+            });
         }
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
@@ -400,7 +405,7 @@ namespace WinUIMusicPlayer
             DispatcherQueue.TryEnqueue(() =>
             {
                 NavigationViewControl.IsBackEnabled = isEnable;
-            });            
+            });
         }
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
@@ -412,8 +417,8 @@ namespace WinUIMusicPlayer
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                AppTitleBar.Visibility = isVisible? Visibility.Visible: Visibility.Collapsed; 
-            });            
+                AppTitleBar.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+            });
         }
 
         private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
@@ -423,9 +428,10 @@ namespace WinUIMusicPlayer
 
         private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (IsPlayingDetail) {
+            if (IsPlayingDetail)
+            {
                 NavigationViewControlGrid.Opacity = 0;
-            }            
+            }
         }
     }
 }

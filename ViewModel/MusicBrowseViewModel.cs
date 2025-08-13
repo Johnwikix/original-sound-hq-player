@@ -62,9 +62,10 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<Music> CurrentPlayingList
         {
             get => _currentPlayingList;
-            set {
+            set
+            {
                 SetProperty(ref _currentPlayingList, value);
-            } 
+            }
         }
 
         private string _musicInfo;
@@ -88,7 +89,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isUserDraggingProgressSlider, value))
-                {                   
+                {
                 }
             }
         }
@@ -110,13 +111,13 @@ namespace WinUIMusicPlayer.ViewModel
                                 double currentPlayPosition = _musicPlaybackService.multiTypeAudioReader.CurrentTime.TotalSeconds;
 
                                 if (Math.Abs(value - currentPlayPosition) > 2.0)
-                                {     
+                                {
                                     Task.Run(() =>
                                     {
                                         _musicPlaybackService.isManualSelect = true;
                                         _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
                                         _musicPlaybackService.isManualSelect = false;
-                                    });                                                            
+                                    });
                                 }
                             }
                         }
@@ -150,13 +151,15 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (IsInitialized)
                     {
-                        if (value > 0) {
+                        if (value > 0)
+                        {
                             IsMuted = false;
                         }
-                        if (!IsMuted) {
+                        if (!IsMuted)
+                        {
                             _tempVolume = value;
-                        }                        
-                        _musicPlaybackService.volume = (float) value / 100;
+                        }
+                        _musicPlaybackService.volume = (float)value / 100;
                         if (_musicPlaybackService.multiTypeAudioReader != null)
                         {
                             _musicPlaybackService.multiTypeAudioReader.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
@@ -195,7 +198,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private bool _isMuted = false;
         public bool IsMuted
-            {
+        {
             get => _isMuted;
             set => SetProperty(ref _isMuted, value);
         }
@@ -222,7 +225,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _lastLyricIndex;
             set => SetProperty(ref _lastLyricIndex, value);
         }
-        private Visibility _usbDeviceVisibility=Visibility.Collapsed;
+        private Visibility _usbDeviceVisibility = Visibility.Collapsed;
         public Visibility UsbDeviceVisibility
         {
             get => _usbDeviceVisibility;
@@ -238,7 +241,7 @@ namespace WinUIMusicPlayer.ViewModel
         public int UsbSelectedIndex
         {
             get => _usbSelectedIndex;
-            set =>SetProperty(ref _usbSelectedIndex, value);
+            set => SetProperty(ref _usbSelectedIndex, value);
         }
         private Visibility _processRingVisibility = Visibility.Collapsed;
         public Visibility ProcessRingVisibility
@@ -270,14 +273,15 @@ namespace WinUIMusicPlayer.ViewModel
             get => _infoBarMessage;
             set => SetProperty(ref _infoBarMessage, value);
         }
-        private string _pageType=string.Empty;
+        private string _pageType = string.Empty;
         public string PageType
         {
             get => _pageType;
             set => SetProperty(ref _pageType, value);
         }
         private bool _isInPlayingDetailMode = false;
-        public bool IsInPlayingDetailMode {
+        public bool IsInPlayingDetailMode
+        {
             get => _isInPlayingDetailMode;
             set => SetProperty(ref _isInPlayingDetailMode, value);
         }
@@ -318,9 +322,10 @@ namespace WinUIMusicPlayer.ViewModel
         public SortOption SelectedSortOption
         {
             get => _selectedSortOption;
-            set 
+            set
             {
-                if (SetProperty(ref _selectedSortOption, value)) {
+                if (SetProperty(ref _selectedSortOption, value))
+                {
                     OnSelectSortChanged();
                 }
             }
@@ -349,7 +354,8 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = (double)(AppData.Volume * 100);
             _tempVolume = (double)(AppData.Volume * 100);
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-            if (AppSettings.IsFolderWatchEnabled) {
+            if (AppSettings.IsFolderWatchEnabled)
+            {
                 StartWatchingFileFolder();
             }
             SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
@@ -433,19 +439,20 @@ namespace WinUIMusicPlayer.ViewModel
             System.Diagnostics.Debug.WriteLine("设备枚举已完成");
         }
 
-        public void UpdateInfoBar(string message) {
+        public void UpdateInfoBar(string message)
+        {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 InfoBarIsOpen = true;
                 InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
                 InfoBarMessage = message;
-            });          
+            });
         }
 
         private async Task ReadUsbDevice()
         {
             try
-            {           
+            {
                 AppData.usbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -458,7 +465,7 @@ namespace WinUIMusicPlayer.ViewModel
                     else
                     {
                         UsbSelectedIndex = -1;
-                        UsbDeviceVisibility = Visibility.Collapsed;                        
+                        UsbDeviceVisibility = Visibility.Collapsed;
                         UsbStorageDevices = null;
                         AppData.musicOnUsbDevice.Clear();
                         ClearAllUsbStatus();
@@ -534,9 +541,10 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Debug.WriteLine(ex.Message);
-            }            
+            }
         }
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
@@ -648,7 +656,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpdateLyricsToUI(int index) {
+        public void UpdateLyricsToUI(int index)
+        {
             if (LastLyricIndex == index || !IsInPlayingDetailMode)
                 return;
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
@@ -729,13 +738,13 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
         }
-            
+
 
         public void UpdatePlayPauseButtonIcon()
         {
             App.MainWindow.UpdateTaskbarIcon();
             //App.MainWindow.UpdateIconControl();
-            _systemMediaControlsService.UpdateSystemMediaControlsState();        
+            _systemMediaControlsService.UpdateSystemMediaControlsState();
         }
 
         [RelayCommand]
@@ -772,10 +781,11 @@ namespace WinUIMusicPlayer.ViewModel
             });
         }
 
-        public async void ShowPlayingDetail() {
+        public async void ShowPlayingDetail()
+        {
             await _musicBrowsePage.ShowPlayingDetail();
         }
-           
+
 
         private void PlayLastTrack()
         {
@@ -796,7 +806,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task OnPlayBarFavouriteButtonChanged()
         {
-            await _musicBrowsePage.AddToFavourite(CurrentPlayingMusic);            
+            await _musicBrowsePage.AddToFavourite(CurrentPlayingMusic);
             NotifySubPageUpdateFavouriteState();
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
@@ -881,9 +891,10 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void OnSelectionChanged()
         {
-            if (SortOptions.Count == 2) {
+            if (SortOptions.Count == 2)
+            {
                 AllSortOptions();
-            }            
+            }
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
             currentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
@@ -915,7 +926,7 @@ namespace WinUIMusicPlayer.ViewModel
                     else
                     {
                         PageType = "artistBrowse";
-                        currentPage = typeof(ArtistPage);                        
+                        currentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
@@ -971,7 +982,8 @@ namespace WinUIMusicPlayer.ViewModel
             };
         }
 
-        private void OnSelectSortChanged() {
+        private void OnSelectSortChanged()
+        {
             try
             {
                 if (SelectedSortOption != null)
@@ -980,8 +992,9 @@ namespace WinUIMusicPlayer.ViewModel
                     _musicBrowsePage.SelectSortOptionChanged();
                 }
             }
-            catch (Exception ex) {
-            }            
+            catch (Exception ex)
+            {
+            }
         }
     }
 }

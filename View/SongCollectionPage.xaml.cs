@@ -1,14 +1,10 @@
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
@@ -16,7 +12,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -66,52 +61,52 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder, string type)
         {
-            ViewModel.SortMusicList(sortOrder, type);            
-        }       
+            ViewModel.SortMusicList(sortOrder, type);
+        }
 
         public void UpdateFavouriteMusic(Music music)
         {
-            ViewModel.UpdateFavouriteMusic(music);            
+            ViewModel.UpdateFavouriteMusic(music);
         }
 
         public void UpdateMusicListView()
         {
-            ViewModel.UpdateMusicListView();            
+            ViewModel.UpdateMusicListView();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            ViewModel.MusicListView_DoubleTapped();            
+            ViewModel.MusicListView_DoubleTapped();
         }
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);            
+            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);            
+            await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);            
+            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.OpenInExplorer_Click();            
+            ViewModel.OpenInExplorer_Click();
         }
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
+            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
         //private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
@@ -128,7 +123,7 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string artist = textBlock.Text;
-                ViewModel.AuthorTextBlock_Tapped(artist);                
+                ViewModel.AuthorTextBlock_Tapped(artist);
             }
         }
 
@@ -137,14 +132,14 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock)
             {
                 string albumName = textBlock.Text;
-                ViewModel.AlbumTextBlock_Tapped(albumName);                
+                ViewModel.AlbumTextBlock_Tapped(albumName);
             }
         }
 
         private void MusicDetail_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.MusicDetail_Click();           
-        }        
+            ViewModel.MusicDetail_Click();
+        }
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
@@ -332,7 +327,8 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    foreach (var music in ViewModel.MusicList) {
+                    foreach (var music in ViewModel.MusicList)
+                    {
                         await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                     }
                 };

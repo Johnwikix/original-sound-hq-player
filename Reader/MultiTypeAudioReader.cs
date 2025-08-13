@@ -1,6 +1,4 @@
-﻿using NAudio.Flac;
-using NAudio.Vorbis;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
 
@@ -108,13 +106,15 @@ namespace WinUIMusicPlayer.Reader
                         readerStream = new BlockAlignReductionStream(readerStream);
                     }
                 }
-                else {
+                else
+                {
                     readerStream = new FFmpegAudioReader(fileName);
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 readerStream = new FFmpegAudioReader(fileName);
-            }            
+            }
             //try
             //{
             //    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))

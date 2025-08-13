@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -8,9 +7,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -44,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
         private int progressBarValue = 0;
         private bool isMutiFile = false;
 
-        public SongListViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService,AudioConverterService converterService)
+        public SongListViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
             _parentPage = parent;
             _parentPage.refreshPage += RefreshPage;
@@ -54,7 +51,7 @@ namespace WinUIMusicPlayer.ViewModel
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            _progressDialog.Title = ToolUtils.GetString("Processing");           
+            _progressDialog.Title = ToolUtils.GetString("Processing");
             //_messenger = messenger;
         }
 
@@ -64,7 +61,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void ReceiveNavigation()
-        {            
+        {
 
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {
@@ -203,8 +200,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic != null && _parentPage != null)
             {
-               _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
-               _parentPage?.PlayMusic(music:SelectedMusic, IsChangeList: true);
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+                _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
 
@@ -219,7 +216,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         currentMusic.IsFavorite = music.IsFavorite;
                     }
-                });                
+                });
             }
         }
 
@@ -228,16 +225,16 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                _parentPage?.PlayMusic(music:uniqueSelectedMusics.First(),IsChangeList:true);
+                _parentPage?.PlayMusic(music: uniqueSelectedMusics.First(), IsChangeList: true);
             }
             else
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
-                _parentPage?.PlayMusic(music:SelectedMusic, IsChangeList: true);               
+                _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
 
-        public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics,MenuFlyoutItem menuItem)
+        public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem menuItem)
         {
             progressBarValue = 0;
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
@@ -267,7 +264,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (SelectedMusic != null)
                     {
-                        if(SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
+                        if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
                         {
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
@@ -280,7 +277,7 @@ namespace WinUIMusicPlayer.ViewModel
                             _progressDialog.XamlRoot = currentPage.XamlRoot;
                             _ = _progressDialog.ShowAsync();
                         }
-                    }                   
+                    }
                 }
             }
         }
@@ -290,7 +287,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
-                {                    
+                {
                     await MusicDatabaseService.RemoveMusic(item.Id);
                     ToolUtils.DeleteFileFromDisk(item.Path);
                     MusicList.Remove(item);
@@ -299,10 +296,10 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 if (SelectedMusic != null)
-                {                    
+                {
                     await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
                     ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
-                    MusicList.Remove(SelectedMusic);                    
+                    MusicList.Remove(SelectedMusic);
                 }
             }
         }
@@ -327,7 +324,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void OpenInExplorer_Click()
-        {            
+        {
             if (SelectedMusic != null)
             {
                 var filePath = SelectedMusic.Path;
@@ -375,7 +372,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void MusicDetail_Click()
-        {            
+        {
             if (SelectedMusic != null)
             {
                 var musicDetailsWindow = new MusicDetailsWindow(SelectedMusic);
@@ -408,7 +405,7 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     string lyrics = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).FirstOrDefault();                   
+                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).FirstOrDefault();
                     if (music != null)
                     {
                         music.Lyrics = lyrics;
@@ -419,7 +416,7 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();               
+                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
                 if (music != null)
                 {
                     music.Lyrics = lyrics;

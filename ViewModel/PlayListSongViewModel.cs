@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -8,9 +7,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -52,9 +49,9 @@ namespace WinUIMusicPlayer.ViewModel
         private int progressBarValue = 0;
         private bool isMutiFile = false;
 
-        public PlayListSongViewModel(MusicBrowsePage parent,MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
+        public PlayListSongViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
-            _parentPage = parent;          
+            _parentPage = parent;
             _parentPage.refreshPage += RefreshPlayList;
             _musicPlaybackService = musicPlaybackService;
             _converterService = converterService;
@@ -73,7 +70,7 @@ namespace WinUIMusicPlayer.ViewModel
             _parentPage.DisableBackButton();
             PlayListName = _parentPage.ViewModel.currentPlayList.Name;
             InitizeData();
-            RefreshUsbDeviceMusicList(null, null);            
+            RefreshUsbDeviceMusicList(null, null);
         }
 
         public void ShowTransmission()
@@ -100,7 +97,8 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     progressBarValue = (int)progress;
                 }
-                if (isMutiFile) {
+                if (isMutiFile)
+                {
                     if (progressBarValue < 100)
                     {
                         _ = _progressDialog.UpdateProgress(progressBarValue);
@@ -219,7 +217,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         currentMusic.IsFavorite = music.IsFavorite;
                     }
-                });                
+                });
             }
         }
 
@@ -281,7 +279,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
             else
-            {                
+            {
                 if (SelectedMusic != null)
                 {
                     await _parentPage.AddToFavourite(SelectedMusic);
@@ -319,7 +317,7 @@ namespace WinUIMusicPlayer.ViewModel
             progressBarValue = 0;
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                isMutiFile= true;
+                isMutiFile = true;
                 if (menuItem != null && menuItem.Tag.ToString() != null)
                 {
                     _ = _progressDialog.UpdateProgress(progressBarValue);
@@ -347,7 +345,7 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
                             return;
-                        }                        
+                        }
                         _progressDialog.RequestedTheme = AppSettings.elementTheme;
                         _ = _progressDialog.UpdateProgress(progressBarValue);
                         _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
@@ -356,7 +354,7 @@ namespace WinUIMusicPlayer.ViewModel
                             _progressDialog.XamlRoot = _currentPage.XamlRoot;
                             _ = _progressDialog.ShowAsync();
                         }
-                    }                    
+                    }
                 }
             }
         }

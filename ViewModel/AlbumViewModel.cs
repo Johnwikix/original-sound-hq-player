@@ -4,15 +4,11 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -20,7 +16,7 @@ using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public partial class AlbumViewModel: ObservableObject
+    public partial class AlbumViewModel : ObservableObject
     {
         private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
@@ -54,7 +50,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 IsSourceGrouped = true
             };
-          
+
             parentPage.refreshPage += RefreshAlbum;
             _contextMenuService = contextMenuService;
             _contextMenuService.playingAlbumMusic += PlayingAlbum;
@@ -74,7 +70,8 @@ namespace WinUIMusicPlayer.ViewModel
             };
         }
 
-        public void UpdateUsbIcon() {
+        public void UpdateUsbIcon()
+        {
             ToolUtils.RefreshIcon(MusicList, "album");
         }
 
@@ -85,10 +82,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            
+
             parentPage.ViewModel.CurrentAlbum = null;
             parentPage.ViewModel.PageType = "albumBrowse";
-            parentPage.DisableBackButton();            
+            parentPage.DisableBackButton();
             Entance();
         }
 
@@ -118,11 +115,11 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.Album);
             foreach (var music in query)
             {
-                MusicList.Add(music);               
-            }            
-            LoadMoreAlbumsAsync(true);            
+                MusicList.Add(music);
+            }
+            LoadMoreAlbumsAsync(true);
         }
-        public void SortMusicList(string sortOrder = "DefaultOrder",bool isSort = true)
+        public void SortMusicList(string sortOrder = "DefaultOrder", bool isSort = true)
         {
             if (_currentSortOrder == sortOrder && isSort)
                 return;
@@ -184,7 +181,7 @@ namespace WinUIMusicPlayer.ViewModel
             catch (Exception ex)
             {
                 Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-            }            
+            }
         }
 
         public async void OnAlbumDetailChanged(object sender, Music cover)
@@ -206,7 +203,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music album = item.Content as Music;
-                if (parentPage != null && _musicBrowseViewModel!=null)
+                if (parentPage != null && _musicBrowseViewModel != null)
                 {
                     //parentPage.LoadAlbumMusic(album);
                     _musicBrowseViewModel.PageType = "album";
@@ -228,7 +225,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null && _musicBrowseViewModel != null)
                 {
                     _musicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(albums);
-                    parentPage.PlayMusic(music:albums[0], IsChangeList: true);
+                    parentPage.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }
         }

@@ -1,15 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -43,7 +36,7 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
-       
+
         private void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is PlayList playList)
@@ -77,7 +70,7 @@ namespace WinUIMusicPlayer.View
 
                     return string.Empty;
                 });
-            }           
+            }
         }
         private void PlayListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

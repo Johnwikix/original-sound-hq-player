@@ -1,9 +1,5 @@
-﻿using ABI.Microsoft.UI.Xaml;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.International.Converters.PinYinConverter;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
@@ -13,10 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -28,7 +22,6 @@ using TagLib;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Devices;
-using Windows.Media.Playlists;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
@@ -36,7 +29,6 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
@@ -88,8 +80,8 @@ namespace WinUIMusicPlayer.Utils
                 ["Album"] = musicList => musicList.GroupBy(m => m.Album)
                                                   .OrderBy(g => g.Key, StringComparer)
                                                   .SelectMany(g => g
-                                                        .OrderBy(m => m.DiskNumber) 
-                                                        .ThenBy(m => m.TrackNumber)      
+                                                        .OrderBy(m => m.DiskNumber)
+                                                        .ThenBy(m => m.TrackNumber)
                                                    ),
                 ["CreateTimeASC"] = musicList => musicList.OrderBy(m => m.CreateTime),
                 ["CreateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.CreateTime),
@@ -149,7 +141,7 @@ namespace WinUIMusicPlayer.Utils
                 foreach (DeviceInformation device in devices)
                 {
                     AppSettings.outputDeviceList.Add(device.Name);
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -177,7 +169,8 @@ namespace WinUIMusicPlayer.Utils
         {
             foreach (var item in musicList)
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     if (type == "album")
                     {
                         if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
@@ -217,7 +210,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<BitmapImage> GetAlbumCover(Music album,int coverSize = 150)
+        public static async Task<BitmapImage> GetAlbumCover(Music album, int coverSize = 150)
         {
             BitmapImage newCover = album.Cover;
             var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
@@ -398,7 +391,7 @@ namespace WinUIMusicPlayer.Utils
                         dataWriter.WriteBytes(imageData);
                         await dataWriter.StoreAsync();
                     }
-                    var bitmapImage = maxSize==0? new BitmapImage():new BitmapImage { DecodePixelWidth = maxSize };
+                    var bitmapImage = maxSize == 0 ? new BitmapImage() : new BitmapImage { DecodePixelWidth = maxSize };
                     await bitmapImage.SetSourceAsync(stream);
                     return bitmapImage;
                 }
@@ -438,7 +431,7 @@ namespace WinUIMusicPlayer.Utils
                 Console.WriteLine($"发生错误: {ex.Message}");
             }
             return null;
-        }        
+        }
 
         public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
         {
@@ -451,9 +444,9 @@ namespace WinUIMusicPlayer.Utils
                 }
             }
             return musicList;
-        }       
+        }
 
-        
+
 
         public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
         {
@@ -536,7 +529,8 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                try {
+                try
+                {
                     using (var reader = new FFmpegAudioReader(filePath))
                     {
                         return new AudioFileInfo
@@ -553,13 +547,13 @@ namespace WinUIMusicPlayer.Utils
                 {
                     Debug.WriteLine($"获取音频文件信息失败: {ex.Message} | {ex2.Message}");
                     return new AudioFileInfo();
-                }                
+                }
             }
         }
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg",".oga", ".aiff",".aif", ".m4a", ".dsf", ".dff", ".amr" ,".au",".ape",".opus",".wv"};
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".amr", ".au", ".ape", ".opus", ".wv" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 
@@ -673,10 +667,11 @@ namespace WinUIMusicPlayer.Utils
                    {"16kHz", 0}
                };
             }
-            
+
         }
 
-        public static string GetPlayModeText(PlayMode playMode) {
+        public static string GetPlayModeText(PlayMode playMode)
+        {
             switch (playMode)
             {
                 case PlayMode.SingleLoop:
@@ -692,7 +687,8 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void DeleteFileFromDisk(string path) {
+        public static void DeleteFileFromDisk(string path)
+        {
             try
             {
                 if (System.IO.File.Exists(path))
@@ -806,7 +802,8 @@ namespace WinUIMusicPlayer.Utils
             return name;
         }
 
-        public static void OpenFileInExplorer(string filePath) {
+        public static void OpenFileInExplorer(string filePath)
+        {
             if (System.IO.File.Exists(filePath))
             {
                 try
@@ -872,7 +869,8 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
-        public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter) {
+        public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
+        {
             _ = Task.Run(async () =>
             {
                 var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
@@ -934,7 +932,7 @@ namespace WinUIMusicPlayer.Utils
                 lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
             return lyrics;
-        }      
+        }
 
         public static DateTime GetSafeFileCreateTime(string filePath)
         {
@@ -1139,7 +1137,8 @@ namespace WinUIMusicPlayer.Utils
             return bitRate;
         }
 
-        public async static Task<PlayList> OpenM3u8File() {
+        public async static Task<PlayList> OpenM3u8File()
+        {
             var picker = new FileOpenPicker();
             // 设置文件选择器的视图
             picker.ViewMode = PickerViewMode.List;
@@ -1163,7 +1162,8 @@ namespace WinUIMusicPlayer.Utils
                     {
                         playListId = playList.Id;
                     }
-                    else {
+                    else
+                    {
                         playList = new() { Name = Path.GetFileNameWithoutExtension(file.Name) };
                         playListId = await MusicDatabaseService.InsertPlayList(playList);
                     }
@@ -1184,7 +1184,7 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
-        public async static void ParseM3u8Content(string fileContent,int playListId)
+        public async static void ParseM3u8Content(string fileContent, int playListId)
         {
             if (string.IsNullOrEmpty(fileContent))
                 return;
@@ -1204,9 +1204,10 @@ namespace WinUIMusicPlayer.Utils
                 {
                     Debug.WriteLine(Path.GetFileName(line));
                     Music? music = AppData.allSongs.FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
-                    if (music != null) {
+                    if (music != null)
+                    {
                         await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
-                    }                   
+                    }
                 }
             }
         }

@@ -3,7 +3,7 @@ using SQLite;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class Folder:ObservableObject
+    public class Folder : ObservableObject
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }

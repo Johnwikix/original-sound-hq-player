@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -79,7 +77,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void ReceiveNavigation()
-        {           
+        {
             parentPage.ViewModel.CurrentFolder = null;
             parentPage.ViewModel.PageType = "folderBrowse";
 
@@ -162,7 +160,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music folder = item.Content as Music;
-                if (parentPage != null && _musicBrowseViewModel!=null)
+                if (parentPage != null && _musicBrowseViewModel != null)
                 {
                     try
                     {
@@ -196,7 +194,7 @@ namespace WinUIMusicPlayer.ViewModel
                         originalSource,
                         e.GetPosition(originalSource),
                         "folder"
-                    );                   
+                    );
                 }
             }
 
@@ -220,7 +218,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null)
                 {
                     parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(folders);
-                    parentPage.PlayMusic(music:folders[0], IsChangeList: true);
+                    parentPage.PlayMusic(music: folders[0], IsChangeList: true);
                 }
             }
         }

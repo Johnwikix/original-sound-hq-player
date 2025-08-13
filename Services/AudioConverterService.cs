@@ -10,7 +10,8 @@ namespace WinUIMusicPlayer.Services
         public EventHandler<double>? updateProgress;
         private AudioConverter converter;
 
-        public AudioConverterService() {
+        public AudioConverterService()
+        {
             converter = new AudioConverter();
             converter.progressEvent += (sender, progress) =>
             {
@@ -76,12 +77,13 @@ namespace WinUIMusicPlayer.Services
                     default:
                         await Task.Run(() =>
                         {
-                            converter.FFmpegConverter(music.Path, outputPath, type,music.BitDepth<=16?16: music.BitDepth);
+                            converter.FFmpegConverter(music.Path, outputPath, type, music.BitDepth <= 16 ? 16 : music.BitDepth);
                         });
                         break;
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 OnProgressChanged(100);
             }
         }

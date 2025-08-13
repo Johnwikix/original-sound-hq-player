@@ -1,5 +1,4 @@
-﻿using Microsoft.UI.Xaml.Media.Imaging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;

@@ -1,22 +1,15 @@
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -28,7 +21,7 @@ namespace WinUIMusicPlayer.View
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class PlayListSongPage : Page, INavigatable
-    {       
+    {
         public PlayListSongViewModel ViewModel { get; }
         public PlayListSongPage(PlayListSongViewModel viewModel)
         {
@@ -141,7 +134,7 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);            
+            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)

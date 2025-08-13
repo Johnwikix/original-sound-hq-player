@@ -1,5 +1,3 @@
-using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -32,7 +30,7 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             ViewModel = viewModel;
-            ViewModel.SetCurrentPage(this);                   
+            ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
         }
@@ -55,13 +53,13 @@ namespace WinUIMusicPlayer.View
 
         public void ReceiveNavigationParameter(object parameter)
         {
-            ViewModel.ReceiveNavigation();   
+            ViewModel.ReceiveNavigation();
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();            
-        }       
+            ViewModel.ReceiveNavigation();
+        }
 
         private void RefreshMusicList(object? sender, EventArgs e)
         {
@@ -70,8 +68,8 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder)
         {
-            ViewModel.SortMusicList(sortOrder);            
-        }        
+            ViewModel.SortMusicList(sortOrder);
+        }
 
         public void UpdateFavouriteMusic(Music music)
         {
@@ -87,47 +85,47 @@ namespace WinUIMusicPlayer.View
 
         private void AddMusicToTop(Music newMusic)
         {
-            ViewModel.AddMusicToTop(newMusic);           
+            ViewModel.AddMusicToTop(newMusic);
         }
 
         private void RemoveMusic(Music musicToRemove)
         {
-            ViewModel.RemoveMusic(musicToRemove);          
+            ViewModel.RemoveMusic(musicToRemove);
         }
 
         public void UpdateMusicListView()
         {
-            ViewModel.UpdateMusicListView();           
+            ViewModel.UpdateMusicListView();
         }
 
         private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             Music selectedMusic = MusicListView.SelectedItem as Music;
-            ViewModel.MusicListView_DoubleTapped(selectedMusic);            
+            ViewModel.MusicListView_DoubleTapped(selectedMusic);
         }
 
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);            
+            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
         private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);           
+            ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);            
+            ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.OpenInExplorer_Click();            
+            ViewModel.OpenInExplorer_Click();
         }
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
@@ -151,7 +149,7 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            ViewModel.ConvertAudio_Click(menuItem, uniqueSelectedMusics);         
+            ViewModel.ConvertAudio_Click(menuItem, uniqueSelectedMusics);
         }
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -248,13 +246,14 @@ namespace WinUIMusicPlayer.View
                                 if (uniqueSelectedMusics.Count() > 1)
                                 {
                                     ViewModel.ShowTransmission();
-                                    using (var usbWriter = new UsbWriterHelper()) {
+                                    using (var usbWriter = new UsbWriterHelper())
+                                    {
                                         usbWriter.hideTransmission += (sender, args) =>
                                         {
                                             ViewModel.HideTransmission();
                                         };
                                         await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
-                                    }                                        
+                                    }
                                     foreach (var music in uniqueSelectedMusics)
                                     {
                                         var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
@@ -282,7 +281,7 @@ namespace WinUIMusicPlayer.View
                                             ViewModel.HideTransmission();
                                         };
                                         await usbWriter.WriteToUsb(musicItems, usbDevice);
-                                    }                                    
+                                    }
                                     UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
                                     usbDeviceMusic.Title = musicItem.Title;
                                     usbDeviceMusic.Author = musicItem.Author;
@@ -320,7 +319,7 @@ namespace WinUIMusicPlayer.View
         private void MusicDetail_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.MusicDetail_Click();
-        }       
+        }
 
         //private void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
         //{

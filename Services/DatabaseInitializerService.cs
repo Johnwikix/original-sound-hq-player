@@ -1,16 +1,10 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class DatabaseInitializerService : IHostedService    
+    public class DatabaseInitializerService : IHostedService
     {
 
         // 应用启动时执行初始化

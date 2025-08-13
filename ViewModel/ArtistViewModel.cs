@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -18,7 +16,7 @@ using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public partial class ArtistViewModel: ObservableObject
+    public partial class ArtistViewModel : ObservableObject
     {
         private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
@@ -40,7 +38,7 @@ namespace WinUIMusicPlayer.ViewModel
         private ArtistPage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public ArtistViewModel(MusicBrowsePage parent,ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel)
+        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -87,10 +85,10 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void ReceiveNavigation()
-        {            
+        {
             parentPage.ViewModel.CurrentArtist = null;
             parentPage.ViewModel.PageType = "artistBrowse";
-            parentPage.DisableBackButton();            
+            parentPage.DisableBackButton();
             if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
             {
                 _lastSearchText = AppData.searchText;
@@ -100,7 +98,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 Debug.WriteLine("搜索条件未变更，保留当前视图状态");
             }
-            ToolUtils.RefreshIcon(MusicList, "artist");            
+            ToolUtils.RefreshIcon(MusicList, "artist");
         }
 
         private void RefreshArtist(object? sender, EventArgs e)
@@ -162,7 +160,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (item != null)
             {
                 Music artist = item.Content as Music;
-                if (parentPage != null && _musicBrowseViewModel!=null)
+                if (parentPage != null && _musicBrowseViewModel != null)
                 {
                     //parentPage.LoadArtistMusic(artist);
                     _musicBrowseViewModel.PageType = "artist";
@@ -194,7 +192,7 @@ namespace WinUIMusicPlayer.ViewModel
                         e.GetPosition(originalSource),
                         "artist"
                     );
-                    _contextMenuService.playingArtistMusic += PlayingArtist;                   
+                    _contextMenuService.playingArtistMusic += PlayingArtist;
                 }
             }
             e.Handled = true;
@@ -208,7 +206,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (parentPage != null)
                 {
                     parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(artists);
-                    parentPage.PlayMusic(music:artists[0], IsChangeList: true);
+                    parentPage.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }
         }

@@ -1,5 +1,5 @@
-﻿using Microsoft.Windows.AppNotifications.Builder;
-using Microsoft.Windows.AppNotifications;
+﻿using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Services
                 .AddText(title)
                 .AddText(content)
                 .BuildNotification();
-            AppNotificationManager.Default.Show(notification);            
+            AppNotificationManager.Default.Show(notification);
         }
     }
 }

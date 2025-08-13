@@ -1,14 +1,9 @@
-﻿using Microsoft.UI;
-using Microsoft.UI.Windowing;
+﻿using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.Graphics;
-using WinRT.Interop;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
@@ -18,7 +13,7 @@ namespace WinUIMusicPlayer.Helper
         private static readonly Dictionary<IntPtr, (int minWidth, int minHeight, IntPtr oldWndProc, WndProcDelegate newWndProc)> _windowData
             = new Dictionary<IntPtr, (int, int, IntPtr, WndProcDelegate)>();
 
-        public static void SetMinimumSize(IntPtr hwnd,Window window, int minWidth, int minHeight)
+        public static void SetMinimumSize(IntPtr hwnd, Window window, int minWidth, int minHeight)
         {
             //var hwnd = WindowNative.GetWindowHandle(window);
             uint dpi = GetDpiForWindow(hwnd);
@@ -106,12 +101,13 @@ namespace WinUIMusicPlayer.Helper
             return CallWindowProc(oldWndProc, hwnd, msg, wParam, lParam);
         }
 
-        public static void ResizeWindowAndCenterInMainWindow(IntPtr hwnd,int height,int width, AppWindow mainWindow,AppWindow appWindow) {
+        public static void ResizeWindowAndCenterInMainWindow(IntPtr hwnd, int height, int width, AppWindow mainWindow, AppWindow appWindow)
+        {
             uint dpi = GetDpiForWindow(hwnd);
             double scaleFactor = dpi / 96.0;
             int adjustedWidth = (int)(width * scaleFactor);
             int adjustedHeight = (int)(height * scaleFactor);
-            PointInt32 mainWindowPosition = mainWindow.Position; 
+            PointInt32 mainWindowPosition = mainWindow.Position;
             int mainWindowWidth = mainWindow.Size.Width;
             int mainWindowHeight = mainWindow.Size.Height;
             int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;

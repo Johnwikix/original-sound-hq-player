@@ -1,9 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Text;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -11,23 +8,16 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Windows.Devices.Enumeration;
-using Windows.Devices.Portable;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -42,7 +32,7 @@ namespace WinUIMusicPlayer.View
     {
         public MainWindow mainWindow;
         private bool isMouseOverVolumeSlider = false;
-        private DispatcherTimer typingTimer;  
+        private DispatcherTimer typingTimer;
         private NotificationService notificationService;
         public EventHandler refreshSong;
         public EventHandler refreshPage;
@@ -55,10 +45,10 @@ namespace WinUIMusicPlayer.View
 
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
-            NotificationService notificationService, 
+            NotificationService notificationService,
             MusicBrowseViewModel viewModel
             )
-        {           
+        {
             this.InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetMusicService(musicPlaybackService);
@@ -76,7 +66,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            ProgressSlider.Loaded += ProgressSlider_Loaded;            
+            ProgressSlider.Loaded += ProgressSlider_Loaded;
             //this.KeyDown += MusicBrowsePage_KeyDown;
             this.Focus(FocusState.Programmatic);
             mainWindow = (App.MainWindow as MainWindow);
@@ -88,7 +78,7 @@ namespace WinUIMusicPlayer.View
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
             {
-                float feq= FrequencyMap[frequency];
+                float feq = FrequencyMap[frequency];
                 musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
             };
             equalizerDialog.clearEqualizer += (s, e) =>
@@ -104,21 +94,22 @@ namespace WinUIMusicPlayer.View
                         musicPlaybackService.SetEqualizer();
                         musicPlaybackService.ToggleEqualizer();
                     }
-                });             
+                });
             };
             this.notificationService = notificationService;
             InitializeTimer();
-            SetAcrylicBrushBackground();    
+            SetAcrylicBrushBackground();
             //Task.Run(() => {
             //    ViewModel.OnFileChanged(null, null);
             //});            
             ViewModel.IsInitialized = true;
             //TODO 波形可视化
-         
+
         }
 
-        public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo,int animeTime) {
-            _navigationService.Navigate(currentPage, this,navigationTransitionInfo , animeTime, true);
+        public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
+        {
+            _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
         }
 
         private void MainWindow_updateSelectSection(object? sender, EventArgs e)
@@ -126,7 +117,8 @@ namespace WinUIMusicPlayer.View
             SelectBarItem(AppSettings.DefualtPlayList);
         }
 
-        private void SetAcrylicBrushBackground() {
+        private void SetAcrylicBrushBackground()
+        {
 
             ChangeAcrylicBrushBackground();
             AcrylicBrushBackground.Background = acrylicBrush;
@@ -174,12 +166,13 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async Task ClosePage() {
+        public async Task ClosePage()
+        {
             await ViewModel._musicPlaybackService.DisposeAudio();
             if (mainWindow != null)
             {
                 mainWindow.updateSelectSection -= MainWindow_updateSelectSection;
-                mainWindow.updateMusicList -= MainWindow_updateMusicList;             
+                mainWindow.updateMusicList -= MainWindow_updateMusicList;
             }
         }
 
@@ -222,8 +215,8 @@ namespace WinUIMusicPlayer.View
                 {
                     mainWindow.DisableEnableBackButton(false);
                 }
-            }            
-        }        
+            }
+        }
 
         public void SelectBarAlbum(string Album)
         {
@@ -243,7 +236,7 @@ namespace WinUIMusicPlayer.View
                     SelectBarItem("album");
                 }
             }
-        }      
+        }
 
         public void SelectBarArtist(string artist)
         {
@@ -289,7 +282,8 @@ namespace WinUIMusicPlayer.View
         {
             typingTimer.Stop();
 
-            try {
+            try
+            {
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     // 防止重入
@@ -327,7 +321,9 @@ namespace WinUIMusicPlayer.View
                         isSearching = false;
                     }
                 });
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Debug.WriteLine($"搜索处理异常: {ex.Message}");
             }
         }
@@ -380,7 +376,7 @@ namespace WinUIMusicPlayer.View
                 Content = new FontIcon { Glyph = "\uE8B5", FontSize = 16 },
                 Style = Application.Current.Resources["AccentButtonStyle"] as Style,
                 Margin = new Thickness(4, 2, 4, 0),
-                Padding = new Thickness(6,3,6,2),
+                Padding = new Thickness(6, 3, 6, 2),
                 VerticalAlignment = VerticalAlignment.Center
             };
             ToolTipService.SetToolTip(customButton, GetString("ImportM3u8"));
@@ -443,7 +439,7 @@ namespace WinUIMusicPlayer.View
                     music.Id == ViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic != null)
-                    {                        
+                    {
                         _ = Task.Delay(100).ContinueWith(_ =>
                         {
                             DispatcherQueue.TryEnqueue(() =>
@@ -453,9 +449,9 @@ namespace WinUIMusicPlayer.View
                                 CurrentPlayListView.ScrollIntoView(selectedMusic);
                                 CurrentPlayListViewPlayingDetail.ScrollIntoView(selectedMusic);
                             });
-                        }); 
+                        });
                     }
-                }                
+                }
             }
         }
 
@@ -466,7 +462,7 @@ namespace WinUIMusicPlayer.View
             {
                 PlayMusic(music: selectedMusic, IsChangeList: false);
             }
-        }       
+        }
 
         private void UpdateViewList(Music music)
         {
@@ -495,7 +491,7 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false,bool IsChangeList = false)
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
             try
             {
@@ -510,8 +506,8 @@ namespace WinUIMusicPlayer.View
                 {
                     ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 });
-                
-                
+
+
             }
             catch (Exception ex)
             {
@@ -519,7 +515,8 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void SelectSortOptionChanged() {
+        public void SelectSortOptionChanged()
+        {
             if (ContentFrame != null && ContentFrame.Content != null)
             {
                 if (ContentFrame.Content is SongCollectionPage)
@@ -560,8 +557,8 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
-        }     
-        
+        }
+
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             isMouseOverVolumeSlider = true;
@@ -648,12 +645,12 @@ namespace WinUIMusicPlayer.View
             if (ViewModel._musicPlaybackService.multiTypeAudioReader != null)
             {
                 double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.multiTypeAudioReader.TotalTime.TotalSeconds));
-                _=Task.Run(() =>
+                _ = Task.Run(() =>
                 {
                     ViewModel._musicPlaybackService.isManualSelect = true;
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
                     ViewModel._musicPlaybackService.isManualSelect = false;
-                });                
+                });
             }
         }
 
@@ -662,13 +659,15 @@ namespace WinUIMusicPlayer.View
             await ShowPlayingDetail();
         }
 
-        public async Task ShowPlayingDetail() {
-            if (!ViewModel.IsInPlayingDetailMode) {
+        public async Task ShowPlayingDetail()
+        {
+            if (!ViewModel.IsInPlayingDetailMode)
+            {
                 ViewModel.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;
                 App.MainWindow.NavigationViewCollapsed();
                 ChangeAcrylicBrushBackgroundOpacity();
-                mainWindow?.AppTitleBarVisibility(false);             
+                mainWindow?.AppTitleBarVisibility(false);
                 if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
                 {
                     ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
@@ -680,7 +679,7 @@ namespace WinUIMusicPlayer.View
                     AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
                     ViewModel.InfoBarIsOpen = false;
                     PlayingDetail.Visibility = Visibility.Visible;
-                    BottomControlBar.Visibility= Visibility.Collapsed;
+                    BottomControlBar.Visibility = Visibility.Collapsed;
                     PlayingDetailControlBar.Visibility = Visibility.Visible;
                     ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
                     ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
@@ -692,7 +691,7 @@ namespace WinUIMusicPlayer.View
                     ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
                 }
                 ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
-            }            
+            }
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
@@ -724,7 +723,7 @@ namespace WinUIMusicPlayer.View
         {
             equalizerDialog.RequestedTheme = AppSettings.elementTheme;
             equalizerDialog.XamlRoot = this.XamlRoot;
-            _=equalizerDialog.ShowAsync();           
+            _ = equalizerDialog.ShowAsync();
         }
 
         private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)

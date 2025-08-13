@@ -13,13 +13,16 @@ namespace WinUIMusicPlayer.Converters
             {
                 return (bool)value ? 28.0 : 22.0;
             }
-            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1920) {
+            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1920)
+            {
                 return (bool)value ? 32.0 : 22.0;
             }
-            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2160) {
+            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2160)
+            {
                 return (bool)value ? 34.0 : 22.0;
             }
-            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2560) {
+            if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2560)
+            {
                 return (bool)value ? 36.0 : 22.0;
             }
             return (bool)value ? 40.0 : 22.0;

@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
-    public class UsbWriterHelper :IDisposable
+    public class UsbWriterHelper : IDisposable
     {
         public EventHandler hideTransmission;
         private bool _disposed = false;
@@ -107,8 +106,8 @@ namespace WinUIMusicPlayer.Helper
             hideTransmission?.Invoke(this, EventArgs.Empty);
         }
 
-        
 
-        
+
+
     }
 }
