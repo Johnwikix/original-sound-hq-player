@@ -20,6 +20,7 @@
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
+    <None Remove="Style\CustomFontStyle.xaml" />
     <None Remove="Style\GroupStyleHeader.xaml" />
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumPage.xaml" />
@@ -116,6 +117,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Style\CustomFontStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\GroupStyleHeader.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
