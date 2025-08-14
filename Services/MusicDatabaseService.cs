@@ -772,6 +772,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
+                AppSettings.GlobalFont = settings.GlobalFont;
+
             }
         }
 
@@ -789,7 +791,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-            //newSettings.maxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;
@@ -807,6 +808,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
+            newSettings.GlobalFont = AppSettings.GlobalFont;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

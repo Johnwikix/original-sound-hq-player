@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="/Style/ConverterDictionary.xaml" />
                 <ResourceDictionary Source="/Style/BtnStyle.xaml" />
                 <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
+                <ResourceDictionary Source="/Style/CustomFontStyle.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <AcrylicBrush

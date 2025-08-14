@@ -1,11 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Linq;
+using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Helper;
@@ -445,6 +451,25 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        //private ObservableCollection<string> _fontFamilyList = new ObservableCollection<string>();
+        //public ObservableCollection<string> FontFamilyList {
+        //    get => _fontFamilyList;
+        //    set => SetProperty(ref _fontFamilyList, value);
+        //}
+        //private string _fontFamily = string.Empty;
+        //public string FontFamily {
+        //    get => _fontFamily;
+        //    set {
+        //        if (SetProperty(ref _fontFamily, value)) {
+        //            AppSettings.GlobalFont = value;
+        //            if (_isInitized)
+        //            {
+        //                Application.Current.Resources["GlobalFontFamily"] = new FontFamily(value); ;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
 
         public SettingsViewModel()
@@ -501,12 +526,46 @@ namespace WinUIMusicPlayer.ViewModel
             IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             // 初始化封面加载线程数
             CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
+            // 是否启用自定义窗口大小
             IsCustomAppSize = AppSettings.IsCustomAppSize;
+            // 高度
             AppHeight = AppSettings.AppHeight;
+            // 宽度
             AppWidth = AppSettings.AppWidth;
+            // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
+            //FontFamilyList = new ObservableCollection<string>(GetSystemFontsInternal());
             _isInitized = true;
         }
+        //private static List<string> GetSystemFontsInternal()
+        //{
+        //    var fonts = new List<string>();
+        //    try
+        //    {
+        //        // 创建Canvas设备（需要在UI线程）
+        //        using (var canvasDevice = CanvasDevice.GetSharedDevice())
+        //        {
+        //            var systemFontSet = CanvasFontSet.GetSystemFontSet();
+        //            for (int i = 0; i < systemFontSet.Fonts.Count; i++)
+        //            {
+        //                var font = systemFontSet.Fonts[i];
+        //                var familyNames = font.FamilyNames;
+        //                if (familyNames.ContainsKey("en-us"))
+        //                {
+        //                    fonts.Add(familyNames["en-us"]);
+        //                }
+        //                else if (familyNames.Count > 0)
+        //                {
+        //                    fonts.Add(familyNames.Values.First());
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //    }
+        //    return fonts.Distinct().OrderBy(f => f).ToList();
+        //}
         [RelayCommand]
         private void OnBackdropTypeChanged(string type)
         {

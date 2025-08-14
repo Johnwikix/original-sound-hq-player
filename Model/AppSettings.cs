@@ -67,5 +67,6 @@ namespace WinUIMusicPlayer.Model
         public static bool IsCustomAppSize { get; set; } = false;
         public static int AppWidth { get; set; } = 1440;
         public static int AppHeight { get; set; } = 810;
+        public static string GlobalFont { get; set; } = "Segoe UI, sans-serif";
     }
 }
