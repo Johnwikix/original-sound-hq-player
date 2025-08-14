@@ -285,7 +285,7 @@ namespace WinUIMusicPlayer.Services
 
                     if (multiTypeAudioReader != null)
                     {
-                        Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime}");
+                        Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}");
                         if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
                         {
                             if (AppSettings.isPlaying)
