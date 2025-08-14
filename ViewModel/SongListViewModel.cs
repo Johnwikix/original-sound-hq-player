@@ -163,7 +163,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     MusicList.Add(music);
                 }
-                //MusicList = musics;
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }

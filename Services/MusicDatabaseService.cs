@@ -772,7 +772,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
-                AppSettings.GlobalFont = settings.GlobalFont;
+                AppSettings.GlobalFont = new(settings.GlobalFont);
 
             }
         }
@@ -808,7 +808,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
-            newSettings.GlobalFont = AppSettings.GlobalFont;
+            newSettings.GlobalFont = GetCleanFontName(AppSettings.GlobalFont.Source);
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

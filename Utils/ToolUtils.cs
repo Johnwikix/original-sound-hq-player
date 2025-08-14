@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -1224,6 +1225,18 @@ namespace WinUIMusicPlayer.Utils
                 sb.AppendLine(music.Path);
             }
             return sb.ToString();
+        }
+
+        public static string GetCleanFontName(string fontSource)
+        {
+            if (string.IsNullOrEmpty(fontSource)) return fontSource;
+            var index = fontSource.IndexOf(',');
+            return index > 0 ? fontSource.Substring(0, index).Trim() : fontSource.Trim();
+        }
+        public static List<string> GetSystemFontsInternal()
+        {
+            var fontFamilies = CanvasTextFormat.GetSystemFontFamilies();
+            return [.. fontFamilies.OrderBy(f => f)];
         }
 
     }

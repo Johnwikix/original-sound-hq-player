@@ -647,7 +647,7 @@
                                                 x:Name="LyricsTextBlock"
                                                 Margin="0,8,0,8"
                                                 HorizontalAlignment="Left"
-                                                FontFamily="{StaticResource GlobalFontFamily}"
+                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                 FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
                                                 FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
                                                 Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"

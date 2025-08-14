@@ -219,6 +219,7 @@ namespace WinUIMusicPlayer
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
+                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 NavigateToDefaultPage();

@@ -768,4 +768,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>Открыть каталог журнала</value>
   </data>
+  <data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>Шрифт текста</value>
+  </data>
 </root>

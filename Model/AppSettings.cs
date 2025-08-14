@@ -1,4 +1,5 @@
 ﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
@@ -67,6 +68,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsCustomAppSize { get; set; } = false;
         public static int AppWidth { get; set; } = 1440;
         public static int AppHeight { get; set; } = 810;
-        public static string GlobalFont { get; set; } = "Segoe UI, sans-serif";
+        public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
+        public static List<string> FontFamilyList { get; set; }
     }
 }

@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private MusicBrowsePage? _parentPage;
         private PlayListSongPage _currentPage;
-        private string _lastSearchText = "";
+        //private string _lastSearchText = "";
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
         private int _currentPlayListId;

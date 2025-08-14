@@ -768,4 +768,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>Abrir el catálogo de registros</value>
   </data>
+  <data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>Fuente de la letra</value>
+  </data>
 </root>

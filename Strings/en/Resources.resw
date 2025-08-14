@@ -768,4 +768,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>Open the log directory</value>
   </data>
+  <data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>Lyrics Font</value>
+  </data>
 </root>

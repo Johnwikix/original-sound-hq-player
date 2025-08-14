@@ -768,4 +768,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>日志目录</value>
   </data>
+  <data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>歌词字体</value>
+  </data>
 </root>

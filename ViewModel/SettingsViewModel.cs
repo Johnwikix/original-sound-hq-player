@@ -17,6 +17,7 @@ using Windows.System;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -451,25 +452,27 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        //private ObservableCollection<string> _fontFamilyList = new ObservableCollection<string>();
-        //public ObservableCollection<string> FontFamilyList {
-        //    get => _fontFamilyList;
-        //    set => SetProperty(ref _fontFamilyList, value);
-        //}
-        //private string _fontFamily = string.Empty;
-        //public string FontFamily {
-        //    get => _fontFamily;
-        //    set {
-        //        if (SetProperty(ref _fontFamily, value)) {
-        //            AppSettings.GlobalFont = value;
-        //            if (_isInitized)
-        //            {
-        //                Application.Current.Resources["GlobalFontFamily"] = new FontFamily(value); ;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
+        private ObservableCollection<string> _fontFamilyList;
+        public ObservableCollection<string> FontFamilyList {
+            get => _fontFamilyList;
+            set => SetProperty(ref _fontFamilyList, value);
+        }
+        private string _fontFamily = string.Empty;
+        public string FontFamily
+        {
+            get => _fontFamily;
+            set
+            {
+                if (SetProperty(ref _fontFamily, value))
+                {
+                    AppSettings.GlobalFont = new(value);
+                    if (_isInitized)
+                    {
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
 
 
         public SettingsViewModel()
@@ -534,63 +537,32 @@ namespace WinUIMusicPlayer.ViewModel
             AppWidth = AppSettings.AppWidth;
             // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
-            //FontFamilyList = new ObservableCollection<string>(GetSystemFontsInternal());
+            FontFamilyList = new ObservableCollection<string>(AppSettings.FontFamilyList);
+            FontFamily = ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source);
             _isInitized = true;
         }
-        //private static List<string> GetSystemFontsInternal()
-        //{
-        //    var fonts = new List<string>();
-        //    try
-        //    {
-        //        // 创建Canvas设备（需要在UI线程）
-        //        using (var canvasDevice = CanvasDevice.GetSharedDevice())
-        //        {
-        //            var systemFontSet = CanvasFontSet.GetSystemFontSet();
-        //            for (int i = 0; i < systemFontSet.Fonts.Count; i++)
-        //            {
-        //                var font = systemFontSet.Fonts[i];
-        //                var familyNames = font.FamilyNames;
-        //                if (familyNames.ContainsKey("en-us"))
-        //                {
-        //                    fonts.Add(familyNames["en-us"]);
-        //                }
-        //                else if (familyNames.Count > 0)
-        //                {
-        //                    fonts.Add(familyNames.Values.First());
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
-        //    }
-        //    return fonts.Distinct().OrderBy(f => f).ToList();
-        //}
+        
         [RelayCommand]
         private void OnBackdropTypeChanged(string type)
         {
             try
             {
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case "Acrylic":
-                            // 设置为Acrylic背景
-                            AppSettings.AppStyle = "Acrylic";
-                            break;
-                        case "TransparentAcrylic":
-                            AppSettings.AppStyle = "TransparentAcrylic";
-                            break;
-                        case "Mica":
-                            // 设置为Mica背景
-                            AppSettings.AppStyle = "Mica";
-                            break;
-                    }
-                    mainWindow.SetAppStyle();
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    case "Acrylic":
+                        // 设置为Acrylic背景
+                        AppSettings.AppStyle = "Acrylic";
+                        break;
+                    case "TransparentAcrylic":
+                        AppSettings.AppStyle = "TransparentAcrylic";
+                        break;
+                    case "Mica":
+                        // 设置为Mica背景
+                        AppSettings.AppStyle = "Mica";
+                        break;
                 }
+                App.MainWindow?.SetAppStyle();
+                _ = MusicDatabaseService.SaveSettingAsync();
             }
             catch (Exception ex)
             {
@@ -602,32 +574,28 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case "Default":
-                            AppSettings.AppTheme = "Default";
-                            AppSettings.elementTheme = ElementTheme.Default;
-                            break;
-                        case "Dark":
-                            AppSettings.AppTheme = "Dark";
-                            AppSettings.elementTheme = ElementTheme.Dark;
-                            break;
-                        case "Light":
-                            AppSettings.AppTheme = "Light";
-                            AppSettings.elementTheme = ElementTheme.Light;
-                            break;
-                        default:
-                            AppSettings.AppTheme = "Default";
-                            AppSettings.elementTheme = ElementTheme.Default;
-                            break;
-                    }
-                    mainWindow.SetAppTheme();
-                    _ = MusicDatabaseService.SaveSettingAsync();
-                    App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
+                    case "Default":
+                        AppSettings.AppTheme = "Default";
+                        AppSettings.elementTheme = ElementTheme.Default;
+                        break;
+                    case "Dark":
+                        AppSettings.AppTheme = "Dark";
+                        AppSettings.elementTheme = ElementTheme.Dark;
+                        break;
+                    case "Light":
+                        AppSettings.AppTheme = "Light";
+                        AppSettings.elementTheme = ElementTheme.Light;
+                        break;
+                    default:
+                        AppSettings.AppTheme = "Default";
+                        AppSettings.elementTheme = ElementTheme.Default;
+                        break;
                 }
+                App.MainWindow?.SetAppTheme();
+                _ = MusicDatabaseService.SaveSettingAsync();
+                App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
             }
             catch (Exception ex)
             {

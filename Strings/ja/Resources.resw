@@ -768,4 +768,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>ログディレクトリを開く</value>
   </data>
+  <data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>歌詞フォント</value>
+  </data>
 </root>
