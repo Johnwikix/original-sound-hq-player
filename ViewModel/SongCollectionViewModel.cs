@@ -59,12 +59,12 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _thirdTitle, value);
         }
 
-        private Visibility _isAlbumImageVisible = Visibility.Visible;
-        public Visibility IsAlbumImageVisible
-        {
-            get => _isAlbumImageVisible;
-            set => SetProperty(ref _isAlbumImageVisible, value);
-        }
+        //private Visibility _isAlbumImageVisible = Visibility.Visible;
+        //public Visibility IsAlbumImageVisible
+        //{
+        //    get => _isAlbumImageVisible;
+        //    set => SetProperty(ref _isAlbumImageVisible, value);
+        //}
         private ObservableCollection<PlayList> _playLists;
         public ObservableCollection<PlayList> PlayLists
         {
@@ -170,23 +170,9 @@ namespace WinUIMusicPlayer.ViewModel
 
                 if (CurrentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
                 {
-                    IsAlbumImageVisible = Visibility.Visible;
+                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentAlbum;
-                    _ = Task.Run(async () =>
-                    {
-                        if (CurrentMusicObject?.Cover == null)
-                        {
-                            BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
-                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                CurrentMusicObject.Cover = cover;
-                            });
-                            if (AppSettings.isCoverCacheEnabled && cover != null)
-                            {
-                                AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
-                            }
-                        }
-                    });
+                    GetCover();
                     var musics = MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
                     FirstTitle = CurrentMusicObject.Album;
                     SecondTitle = string.Join(" · ", AppData.allSongs
@@ -198,8 +184,9 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
-                    IsAlbumImageVisible = Visibility.Collapsed;
+                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentArtist;
+                    GetCover();
                     var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs
@@ -213,8 +200,9 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
-                    IsAlbumImageVisible = Visibility.Collapsed;
+                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
+                    GetCover();
                     var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs
@@ -231,6 +219,24 @@ namespace WinUIMusicPlayer.ViewModel
                     LoadMusicAsync(musics, CurrentPageType);
                 }
             }
+        }
+
+        private void GetCover() {
+            _ = Task.Run(async () =>
+            {
+                if (CurrentMusicObject?.Cover == null)
+                {
+                    BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        CurrentMusicObject.Cover = cover;
+                    });
+                    if (AppSettings.isCoverCacheEnabled && cover != null)
+                    {
+                        AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
+                    }
+                }
+            });
         }
 
         public void SortMusicList(string sortOrder, string type)
