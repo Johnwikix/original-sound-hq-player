@@ -57,8 +57,7 @@
                 <controls:SettingsExpander
                     x:Uid="SettingOutput"
                     Grid.Row="2"
-                    Margin="10,10,10,0"
-                    IsExpanded="True">
+                    Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="SettingOutputMode">
                             <ComboBox
