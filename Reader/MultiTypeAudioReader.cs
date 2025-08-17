@@ -178,9 +178,15 @@ namespace WinUIMusicPlayer.Reader
         //     Number of bytes read
         public override int Read(byte[] buffer, int offset, int count)
         {
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
-            int count2 = count / 4;
-            return Read(waveBuffer.FloatBuffer, offset / 4, count2) * 4;
+            try
+            {
+                WaveBuffer waveBuffer = new WaveBuffer(buffer);
+                int count2 = count / 4;
+                return Read(waveBuffer.FloatBuffer, offset / 4, count2) * 4;
+            }
+            catch (Exception) {
+                return 0;
+            }           
         }
 
         //
