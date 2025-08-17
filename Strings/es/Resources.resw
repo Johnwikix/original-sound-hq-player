@@ -771,4 +771,7 @@
   <data name="LyricsFontFamily.Header" xml:space="preserve">
     <value>Fuente de la letra</value>
   </data>
+  <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
+    <value>Decodificación global ffmega</value>
+  </data>
 </root>

@@ -474,6 +474,21 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private bool _isGlobalFFmpegEnabled = true;
+        public bool IsGlobalFFmpegEnabled {
+            get => _isGlobalFFmpegEnabled;
+            set {
+                if (SetProperty(ref _isGlobalFFmpegEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsGlobalFFmpegEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
 
         public SettingsViewModel()
         {
@@ -538,8 +553,8 @@ namespace WinUIMusicPlayer.ViewModel
             // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<string>(AppSettings.FontFamilyList);
-            Debug.WriteLine(AppSettings.GlobalFont.Source);
             FontFamily = ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source);
+            IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             _isInitized = true;
         }
         

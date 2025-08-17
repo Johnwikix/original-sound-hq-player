@@ -1,6 +1,10 @@
-﻿using NAudio.Wave;
+﻿using NAudio.Flac;
+using NAudio.Vorbis;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
+using System.Diagnostics;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Reader
 {
@@ -94,70 +98,66 @@ namespace WinUIMusicPlayer.Reader
         //     File Name
         private void CreateReaderStream(string fileName)
         {
-            //在CurrentTime修复前全部使用FFmpegAudioReader转成pcm
             try
             {
-                if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
-                {
-                    readerStream = new WaveFileReader(fileName);
-                    if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                if (AppSettings.IsGlobalFFmpegEnabled) {
+                    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                     {
-                        readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                        readerStream = new BlockAlignReductionStream(readerStream);
+                        readerStream = new WaveFileReader(fileName);
+                        if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                        {
+                            readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                            readerStream = new BlockAlignReductionStream(readerStream);
+                        }
+                    }
+                    else
+                    {
+                        readerStream = new FFmpegAudioReader(fileName);
                     }
                 }
-                else
-                {
-                    readerStream = new FFmpegAudioReader(fileName);
-                }
+                else {
+                    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new WaveFileReader(fileName);
+                        if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                        {
+                            readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                            readerStream = new BlockAlignReductionStream(readerStream);
+                        }
+                    }
+                    else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new FlacReader(fileName);
+                    }
+                    else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (Environment.OSVersion.Version.Major < 6)
+                        {
+                            readerStream = new Mp3FileReader(fileName);
+                        }
+                        else
+                        {
+                            readerStream = new MediaFoundationReader(fileName);
+                        }
+                    }
+                    if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new VorbisWaveReader(fileName);
+                    }
+                    else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+                    {
+                        readerStream = new AiffFileReader(fileName);
+                    }
+                    else
+                    {
+                        readerStream = new MediaFoundationReader(fileName);
+                    }
+                }                
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 readerStream = new FFmpegAudioReader(fileName);
             }
-            //try
-            //{
-            //    if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        readerStream = new WaveFileReader(fileName);
-            //        if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-            //        {
-            //            readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-            //            readerStream = new BlockAlignReductionStream(readerStream);
-            //        }
-            //    }
-            //    else if (fileName.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        readerStream = new FlacReader(fileName);
-            //    }
-            //    else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        if (Environment.OSVersion.Version.Major < 6)
-            //        {
-            //            readerStream = new Mp3FileReader(fileName);
-            //        }
-            //        else
-            //        {
-            //            readerStream = new MediaFoundationReader(fileName);
-            //        }
-            //    }
-            //    if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        readerStream = new VorbisWaveReader(fileName);
-            //    }
-            //    else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        readerStream = new AiffFileReader(fileName);
-            //    }
-            //    else
-            //    {
-            //        readerStream = new MediaFoundationReader(fileName);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    readerStream = new FFmpegAudioReader(fileName);
-            //}
         }
 
         //
@@ -183,6 +183,10 @@ namespace WinUIMusicPlayer.Reader
                 WaveBuffer waveBuffer = new WaveBuffer(buffer);
                 int count2 = count / 4;
                 return Read(waveBuffer.FloatBuffer, offset / 4, count2) * 4;
+            }
+            catch (AccessViolationException)
+            {
+                return 0;
             }
             catch (Exception) {
                 return 0;

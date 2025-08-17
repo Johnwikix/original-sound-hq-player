@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.Services
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private CustomEqualizer equalizer;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
-        //private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
+        private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
         private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
@@ -285,15 +285,15 @@ namespace WinUIMusicPlayer.Services
 
                     if (multiTypeAudioReader != null)
                     {
-                        //Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}");
-                        //if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
-                        //{
-                        //    if (AppSettings.isPlaying)
-                        //    {
-                        //        AutoPlayNextTrack();
-                        //    }
-                        //}
-                        //_cachedLastCurrentTime = _cachedCurrentTime;
+                        Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}");
+                        if (AppSettings.IsGlobalFFmpegEnabled && _cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
+                        {
+                            if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
+                            {
+                                AutoPlayNextTrack();
+                            }
+                        }
+                        _cachedLastCurrentTime = _cachedCurrentTime;
                         if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
                         {
                             AutoPlayNextTrack();

@@ -771,4 +771,7 @@
   <data name="LyricsFontFamily.Header" xml:space="preserve">
     <value>歌词字体</value>
   </data>
+  <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
+    <value>全局FFmpeg解码</value>
+  </data>
 </root>

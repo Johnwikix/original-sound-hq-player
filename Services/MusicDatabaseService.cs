@@ -774,7 +774,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
                 AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
-
+                AppSettings.IsGlobalFFmpegEnabled = settings.IsGlobalFFmpegEnabled;
             }
         }
 
@@ -810,6 +810,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
             newSettings.GlobalFont = AppSettings.GlobalFont.Source;
+            newSettings.IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);
