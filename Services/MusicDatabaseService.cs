@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Microsoft.UI.Xaml.Media;
+using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -772,7 +773,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
-                AppSettings.GlobalFont = new(settings.GlobalFont);
+                AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
 
             }
         }
@@ -808,7 +809,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
-            newSettings.GlobalFont = GetCleanFontName(AppSettings.GlobalFont.Source);
+            newSettings.GlobalFont = AppSettings.GlobalFont.Source;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

@@ -4,11 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using Windows.ApplicationModel.Core;
@@ -464,10 +464,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _fontFamily, value))
-                {
-                    AppSettings.GlobalFont = new(value);
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.GlobalFont = new FontFamily(value);
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -538,6 +538,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<string>(AppSettings.FontFamilyList);
+            Debug.WriteLine(AppSettings.GlobalFont.Source);
             FontFamily = ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source);
             _isInitized = true;
         }
@@ -562,7 +563,10 @@ namespace WinUIMusicPlayer.ViewModel
                         break;
                 }
                 App.MainWindow?.SetAppStyle();
-                _ = MusicDatabaseService.SaveSettingAsync();
+                if (_isInitized)
+                {
+                    _ = MusicDatabaseService.SaveSettingAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -594,7 +598,10 @@ namespace WinUIMusicPlayer.ViewModel
                         break;
                 }
                 App.MainWindow?.SetAppTheme();
-                _ = MusicDatabaseService.SaveSettingAsync();
+                if (_isInitized)
+                {
+                    _ = MusicDatabaseService.SaveSettingAsync();
+                }
                 App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
             }
             catch (Exception ex)
@@ -616,7 +623,10 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.isRunningBackend = true;
                     break;
             }
-            _ = MusicDatabaseService.SaveSettingAsync();
+            if (_isInitized)
+            {
+                _ = MusicDatabaseService.SaveSettingAsync();
+            }
         }
 
         [RelayCommand]
@@ -634,7 +644,10 @@ namespace WinUIMusicPlayer.ViewModel
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                     break;
             }
-            _ = MusicDatabaseService.SaveSettingAsync();
+            if (_isInitized)
+            {
+                _ = MusicDatabaseService.SaveSettingAsync();
+            }
         }
 
         private void OnCoverSizeChanged(int value)
@@ -642,7 +655,10 @@ namespace WinUIMusicPlayer.ViewModel
             // 更新应用设置
             AppSettings.CoverSize = value;
             // 保存设置
-            _ = MusicDatabaseService.SaveSettingAsync();
+            if (_isInitized)
+            {
+                _ = MusicDatabaseService.SaveSettingAsync();
+            }
         }
 
         private void OnDefaultEntryComboBoxTagChanged(string value)
@@ -650,7 +666,10 @@ namespace WinUIMusicPlayer.ViewModel
             // 更新应用设置
             AppSettings.DefualtEntry = value;
             // 保存设置
-            _ = MusicDatabaseService.SaveSettingAsync();
+            if (_isInitized)
+            {
+                _ = MusicDatabaseService.SaveSettingAsync();
+            }
         }
 
         [RelayCommand]

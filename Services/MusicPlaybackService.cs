@@ -749,7 +749,9 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
+                // 首先确保所有之前的操作都已取消和释放
                 _currentOperationCts?.Cancel();
+                _currentOperationCts?.Dispose(); // 新增：释放取消令牌
                 _currentOperationCts = new CancellationTokenSource();
                 var token = _currentOperationCts.Token;
                 progressTimer.Stop();
