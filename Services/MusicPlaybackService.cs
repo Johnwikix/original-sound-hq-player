@@ -658,22 +658,22 @@ namespace WinUIMusicPlayer.Services
             //}            
         }
 
-        public void UpdateEqualizerSettings()
-        {
-            equalizerBands = new CustomEqualizerBand[]
-            {
-                    new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 64, Gain = (float)AppSettings.equalizer["64Hz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 125, Gain = (float)AppSettings.equalizer["125Hz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 250, Gain = (float)AppSettings.equalizer["250Hz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 500, Gain = (float)AppSettings.equalizer["500Hz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 1000, Gain = (float)AppSettings.equalizer["1kHz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 2000, Gain = (float)AppSettings.equalizer["2kHz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 4000, Gain = (float)AppSettings.equalizer["4kHz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 8000, Gain = (float)AppSettings.equalizer["8kHz"], Bandwidth = 1.0f},
-                    new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
-            };
-        }
+        //public void UpdateEqualizerSettings()
+        //{
+        //    equalizerBands = new CustomEqualizerBand[]
+        //    {
+        //            new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 64, Gain = (float)AppSettings.equalizer["64Hz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 125, Gain = (float)AppSettings.equalizer["125Hz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 250, Gain = (float)AppSettings.equalizer["250Hz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 500, Gain = (float)AppSettings.equalizer["500Hz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 1000, Gain = (float)AppSettings.equalizer["1kHz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 2000, Gain = (float)AppSettings.equalizer["2kHz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 4000, Gain = (float)AppSettings.equalizer["4kHz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 8000, Gain = (float)AppSettings.equalizer["8kHz"], Bandwidth = 1.0f},
+        //            new CustomEqualizerBand {Frequency = 16000, Gain = (float)AppSettings.equalizer["16kHz"], Bandwidth = 1.0f}
+        //    };
+        //}
 
         // 切换均衡器开关
         public void ToggleEqualizer()
@@ -837,7 +837,6 @@ namespace WinUIMusicPlayer.Services
                         }
                         lock (_waveOutLock)
                         {
-                            Debug.WriteLine($"采样率：{waveOut.OutputWaveFormat.SampleRate}bit:{waveOut.OutputWaveFormat.BitsPerSample}独占是否支持：{selectedDevice.AudioClient.IsFormatSupported(AudioClientShareMode.Exclusive, multiTypeAudioReader.WaveFormat)}");
                             if (waveOut != null && !_isDisposing)
                             {
                                 waveOut.Play();
