@@ -315,7 +315,6 @@ namespace WinUIMusicPlayer.Services
             {
                 _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
                 _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
-                Debug.WriteLine($"当前时间：{multiTypeAudioReader.CurrentTime.TotalSeconds}，总时间：{multiTypeAudioReader.TotalTime.TotalSeconds}");
                 _timeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
