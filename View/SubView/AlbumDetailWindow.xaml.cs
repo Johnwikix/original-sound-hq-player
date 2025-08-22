@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
-            List<Music> musics = MusicDatabaseService.FindMusicListByAlbum(album.Album);
+            IEnumerable<Music> musics = MusicDatabaseService.FindMusicListByAlbum(album.Album);
             Music result = null;
             // 避免重复写入标志位
             bool isResultAssigned = false;

@@ -138,6 +138,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (_parentPage != null)
             {
                 var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(_parentPage.ViewModel.currentPlayListId, AppData.searchText);
+                _currentPlayListId = _parentPage.ViewModel.currentPlayListId;
                 LoadMusicAsync(musicList);
             }
         }
@@ -253,6 +254,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
+                Debug.WriteLine(_currentPlayListId);
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     await MusicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, item.Id);
@@ -267,6 +269,7 @@ namespace WinUIMusicPlayer.ViewModel
                     MusicList.Remove(SelectedMusic);
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public async Task SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)

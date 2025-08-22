@@ -33,6 +33,7 @@ using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
+using ZLinq;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
 using Window = Microsoft.UI.Xaml.Window;
 
@@ -70,48 +71,47 @@ namespace WinUIMusicPlayer.Utils
         };
 
         //private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
-        private static readonly StringComparer StringComparer =
-       StringComparer.CurrentCultureIgnoreCase;
+        private static readonly StringComparer StringComparer = StringComparer.CurrentCultureIgnoreCase;
 
         // 预定义的排序策略字典，避免字符串比较
         private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> SortStrategies =
             new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
             {
-                ["A-Z"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
-                ["Artist"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
-                ["Album"] = musicList => musicList.GroupBy(m => m.Album)
+                ["A-Z"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Title, StringComparer).ToImmutableList(),
+                ["Artist"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Author, StringComparer).ToImmutableList(),
+                ["Album"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
                                                   .OrderBy(g => g.Key, StringComparer)
                                                   .SelectMany(g => g
                                                         .OrderBy(m => m.DiskNumber)
                                                         .ThenBy(m => m.TrackNumber)
-                                                   ),
-                ["CreateTimeASC"] = musicList => musicList.OrderBy(m => m.CreateTime),
-                ["CreateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.CreateTime),
-                ["UpdateTimeASC"] = musicList => musicList.OrderBy(m => m.UpdateTime),
-                ["UpdateTimeDESC"] = musicList => musicList.OrderByDescending(m => m.UpdateTime)
+                                                   ).ToImmutableList(),
+                ["CreateTimeASC"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.CreateTime).ToImmutableList(),
+                ["CreateTimeDESC"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.CreateTime).ToImmutableList(),
+                ["UpdateTimeASC"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.UpdateTime).ToImmutableList(),
+                ["UpdateTimeDESC"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.UpdateTime).ToImmutableList()
             };
 
         // 预定义的类型默认排序策略
         private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> TypeDefaultSortStrategies =
             new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
             {
-                ["song"] = musicList => musicList.OrderBy(m => m.Title, StringComparer),
-                ["folderCover"] = musicList => musicList.OrderBy(m => m.LastLevelFolderPath, StringComparer),
-                ["folder"] = musicList => musicList.GroupBy(m => m.Album)
+                ["song"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Title, StringComparer).ToImmutableList(),
+                ["folderCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.LastLevelFolderPath, StringComparer).ToImmutableList(),
+                ["folder"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
                                                    .OrderBy(g => g.Key, StringComparer)
                                                    .SelectMany(g => g
                                                         .OrderBy(m => m.DiskNumber)
                                                         .ThenBy(m => m.TrackNumber)
-                                                   ),
-                ["artistCover"] = musicList => musicList.OrderBy(m => m.Author, StringComparer),
-                ["artist"] = musicList => musicList.OrderBy(m => m.Album, StringComparer)
+                                                   ).ToImmutableList(),
+                ["artistCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Author, StringComparer).ToImmutableList(),
+                ["artist"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Album, StringComparer)
                                                     .ThenBy(m => m.DiskNumber)
-                                                    .ThenBy(m => m.TrackNumber),
-                ["albumCover"] = musicList => musicList.OrderBy(m => m.Album, StringComparer),
-                ["album"] = musicList => musicList.OrderBy(m => m.DiskNumber)
-                                            .ThenBy(m => m.TrackNumber),
-                ["favour"] = musicList => musicList.OrderByDescending(m => m.Order),
-                ["playList"] = musicList => musicList.OrderByDescending(m => m.PlayListOrder)
+                                                    .ThenBy(m => m.TrackNumber).ToImmutableList(),
+                ["albumCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Album, StringComparer).ToImmutableList(),
+                ["album"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.DiskNumber)
+                                            .ThenBy(m => m.TrackNumber).ToImmutableList(),
+                ["favour"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.Order).ToImmutableList(),
+                ["playList"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.PlayListOrder).ToImmutableList()
             };
 
         public static string GetString(string key)
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     if (type == "album")
                     {
-                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Album == item.Album))
+                        if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album))
                         {
                             item.IsExistOnDevice = 1;
                         }
@@ -186,7 +186,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else if (type == "artist")
                     {
-                        if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Author == item.Author))
+                        if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author))
                         {
                             item.IsExistOnDevice = 1;
                         }
@@ -197,11 +197,11 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else if (type == "folder")
                     {
-                        var allSongList = AppData.allSongs.Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath).ToList();
+                        var allSongList = AppData.allSongs.AsValueEnumerable().Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath);
                         item.IsExistOnDevice = 0;
                         foreach (var songs in allSongList)
                         {
-                            if (AppData.musicOnUsbDevice.Any(usbMusic => usbMusic.Title == item.Title))
+                            if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Title == item.Title))
                             {
                                 item.IsExistOnDevice = 1;
                                 break;
@@ -435,18 +435,18 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
-        public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
-        {
-            if (musicList != null && musicList.Count > 0)
-            {
-                var index = musicList.FindIndex(m => m.Id == music.Id);
-                if (index != -1)
-                {
-                    musicList[index].IsFavorite = music.IsFavorite;
-                }
-            }
-            return musicList;
-        }
+        //public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
+        //{
+        //    if (musicList != null && musicList.Count > 0)
+        //    {
+        //        var index = musicList.FindIndex(m => m.Id == music.Id);
+        //        if (index != -1)
+        //        {
+        //            musicList[index].IsFavorite = music.IsFavorite;
+        //        }
+        //    }
+        //    return musicList;
+        //}
 
 
 
@@ -559,53 +559,53 @@ namespace WinUIMusicPlayer.Utils
             return musicExtensions.Contains(fileType.ToLower());
         }
 
-        public static List<Music> UpdateMusicInList(List<Music> musicList, Music newMusic)
-        {
-            for (int i = 0; i < musicList.Count; i++)
-            {
-                if (musicList[i].Id == newMusic.Id)
-                {
-                    musicList[i] = newMusic;
-                }
-            }
-            return musicList;
-        }
+        //public static List<Music> UpdateMusicInList(List<Music> musicList, Music newMusic)
+        //{
+        //    for (int i = 0; i < musicList.Count; i++)
+        //    {
+        //        if (musicList[i].Id == newMusic.Id)
+        //        {
+        //            musicList[i] = newMusic;
+        //        }
+        //    }
+        //    return musicList;
+        //}
 
-        public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
-        {
-            byte[] buffer = null;
-            if (imageControl.Source is BitmapImage bitmapImage)
-            {
-                // 使用 RenderTargetBitmap 捕获图像
-                var renderTargetBitmap = new RenderTargetBitmap();
-                await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth / scaleFactor), (int)(bitmapImage.PixelHeight / scaleFactor));
-                Debug.WriteLine($"bitmapImage长宽:{bitmapImage.PixelHeight} {bitmapImage.PixelWidth}");
-                // 获取像素
-                var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
-                var pixels = pixelBuffer.ToArray();
-                // 创建编码器并写入流
-                var stream = new InMemoryRandomAccessStream();
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                // 设置像素数据
-                encoder.SetPixelData(
-                    BitmapPixelFormat.Bgra8,
-                    BitmapAlphaMode.Premultiplied,
-                    (uint)renderTargetBitmap.PixelWidth,
-                    (uint)renderTargetBitmap.PixelHeight,
-                    96.0, // DPI X
-                    96.0, // DPI Y
-                    pixels);
+        //public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
+        //{
+        //    byte[] buffer = null;
+        //    if (imageControl.Source is BitmapImage bitmapImage)
+        //    {
+        //        // 使用 RenderTargetBitmap 捕获图像
+        //        var renderTargetBitmap = new RenderTargetBitmap();
+        //        await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth / scaleFactor), (int)(bitmapImage.PixelHeight / scaleFactor));
+        //        Debug.WriteLine($"bitmapImage长宽:{bitmapImage.PixelHeight} {bitmapImage.PixelWidth}");
+        //        // 获取像素
+        //        var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
+        //        var pixels = pixelBuffer.ToArray();
+        //        // 创建编码器并写入流
+        //        var stream = new InMemoryRandomAccessStream();
+        //        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+        //        // 设置像素数据
+        //        encoder.SetPixelData(
+        //            BitmapPixelFormat.Bgra8,
+        //            BitmapAlphaMode.Premultiplied,
+        //            (uint)renderTargetBitmap.PixelWidth,
+        //            (uint)renderTargetBitmap.PixelHeight,
+        //            96.0, // DPI X
+        //            96.0, // DPI Y
+        //            pixels);
 
-                // 刷新编码器
-                await encoder.FlushAsync();
-                // 读取流到字节数组
-                stream.Seek(0);
-                buffer = new byte[stream.Size];
-                await stream.AsStream().ReadAsync(buffer, 0, buffer.Length);
+        //        // 刷新编码器
+        //        await encoder.FlushAsync();
+        //        // 读取流到字节数组
+        //        stream.Seek(0);
+        //        buffer = new byte[stream.Size];
+        //        await stream.AsStream().ReadAsync(buffer, 0, buffer.Length);
 
-            }
-            return buffer;
-        }
+        //    }
+        //    return buffer;
+        //}
 
         // 将字典转换为JSON字符串的方法
         public static string ConvertToJson(Dictionary<string, double> dict)
@@ -747,7 +747,7 @@ namespace WinUIMusicPlayer.Utils
                         if (!string.IsNullOrEmpty(firstPinyin))
                         {
                             // 去掉声调数字和其他符号，只保留字母
-                            string cleanPinyin = new string(firstPinyin.Where(char.IsLetter).ToArray());
+                            string cleanPinyin = new string(firstPinyin.AsValueEnumerable().Where(char.IsLetter).ToArray());
                             if (!string.IsNullOrEmpty(cleanPinyin))
                             {
                                 return cleanPinyin[0].ToString().ToUpper();
@@ -825,7 +825,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static void RefreshUsbDeviceMusicList(ObservableCollection<Music> MusicList)
         {
-            var usbMusicGroups = AppData.musicOnUsbDevice
+            var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
                             .GroupBy(u => u.Title)
                             .ToDictionary(g => g.Key, g => g.ToList());
             foreach (var music in MusicList)
@@ -876,7 +876,7 @@ namespace WinUIMusicPlayer.Utils
             _ = Task.Run(async () =>
             {
                 var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
-                var allMusicItems = groupedByFirstLetter.SelectMany(group => group).ToList();
+                var allMusicItems = groupedByFirstLetter.AsValueEnumerable().SelectMany(group => group);
                 var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
                 {
                     await semaphore.WaitAsync();

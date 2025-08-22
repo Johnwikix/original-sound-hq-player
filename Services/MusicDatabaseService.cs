@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
@@ -208,7 +209,7 @@ namespace WinUIMusicPlayer.Services
                 return new List<Music>();
             }
 
-            var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries).AsValueEnumerable()
                                                          .Select(int.Parse).ToList();
             var musicList = new List<Music>();
             foreach (var musicId in musicIds)
@@ -252,7 +253,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 //return await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
-                return AppData.allSongs.FirstOrDefault(m => m.Id == musicId);
+                return AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == musicId);
             }
             catch (SQLiteException)
             {
@@ -267,109 +268,142 @@ namespace WinUIMusicPlayer.Services
 
         public static IEnumerable<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
-            var query = from plm in AppData.allPlayListMusics
-                        join m in AppData.allSongs on plm.MusicId equals m.Id
-                        where plm.PlayListId == playListId
-                        orderby plm.Order descending
-                        select new Music
-                        {
-                            Id = m.Id,
-                            Path = m.Path,
-                            Title = m.Title,
-                            Cover = m.Cover,
-                            Author = m.Author,
-                            Duration = m.Duration,
-                            Album = m.Album,
-                            FolderPath = m.FolderPath,
-                            LastLevelFolderPath = m.LastLevelFolderPath,
-                            Extension = m.Extension,
-                            Order = m.Order,
-                            BitDepth = m.BitDepth,
-                            BitRate = m.BitRate,
-                            SampleRate = m.SampleRate,
-                            IsFavorite = m.IsFavorite,
-                            TrackNumber = m.TrackNumber,
-                            Lyrics = m.Lyrics,
-                            PlayListOrder = plm.Order,
-                            CreateTime = m.CreateTime,
-                            UpdateTime = m.UpdateTime,
-                        };
+            //var query = from plm in AppData.allPlayListMusics
+            //            join m in AppData.allSongs on plm.MusicId equals m.Id
+            //            where plm.PlayListId == playListId
+            //            orderby plm.Order descending
+            //            select new Music
+            //            {
+            //                Id = m.Id,
+            //                Path = m.Path,
+            //                Title = m.Title,
+            //                Cover = m.Cover,
+            //                Author = m.Author,
+            //                Duration = m.Duration,
+            //                Album = m.Album,
+            //                FolderPath = m.FolderPath,
+            //                LastLevelFolderPath = m.LastLevelFolderPath,
+            //                Extension = m.Extension,
+            //                Order = m.Order,
+            //                BitDepth = m.BitDepth,
+            //                BitRate = m.BitRate,
+            //                SampleRate = m.SampleRate,
+            //                IsFavorite = m.IsFavorite,
+            //                TrackNumber = m.TrackNumber,
+            //                Lyrics = m.Lyrics,
+            //                PlayListOrder = plm.Order,
+            //                CreateTime = m.CreateTime,
+            //                UpdateTime = m.UpdateTime,
+            //            };
+
+            var query = AppData.allPlayListMusics
+                        .AsValueEnumerable()
+                        .Where(plm => plm.PlayListId == playListId)
+                        .Join(
+                            AppData.allSongs.AsValueEnumerable(),
+                            plm => plm.MusicId,
+                            m => m.Id,
+                            (plm, m) => new Music
+                            {
+                                Id = m.Id,
+                                Path = m.Path,
+                                Title = m.Title,
+                                Cover = m.Cover,
+                                Author = m.Author,
+                                Duration = m.Duration,
+                                Album = m.Album,
+                                FolderPath = m.FolderPath,
+                                LastLevelFolderPath = m.LastLevelFolderPath,
+                                Extension = m.Extension,
+                                Order = m.Order,
+                                BitDepth = m.BitDepth,
+                                BitRate = m.BitRate,
+                                SampleRate = m.SampleRate,
+                                IsFavorite = m.IsFavorite,
+                                TrackNumber = m.TrackNumber,
+                                Lyrics = m.Lyrics,
+                                PlayListOrder = plm.Order,
+                                CreateTime = m.CreateTime,
+                                UpdateTime = m.UpdateTime,
+                            }
+                        )
+                        .OrderByDescending(m => m.PlayListOrder);
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
+                return query.Where(m =>
+                     m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                     m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                     m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                 ).ToImmutableList();
             }
-            return query;
+            return query.ToImmutableList();
         }
 
-        public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
-        {
-            var query = from plm in await _dbConnection.Table<PlayListMusic>().ToListAsync()
-                        join m in await _dbConnection.Table<Music>().ToListAsync() on plm.MusicId equals m.Id
-                        where plm.PlayListId == playListId
-                        orderby plm.Order descending
-                        select new Music
-                        {
-                            Id = m.Id,
-                            Path = m.Path,
-                            Title = m.Title,
-                            Cover = m.Cover,
-                            Author = m.Author,
-                            Duration = m.Duration,
-                            Album = m.Album,
-                            FolderPath = m.FolderPath,
-                            LastLevelFolderPath = m.LastLevelFolderPath,
-                            Extension = m.Extension,
-                            Order = m.Order,
-                            BitDepth = m.BitDepth,
-                            BitRate = m.BitRate,
-                            SampleRate = m.SampleRate,
-                            IsFavorite = m.IsFavorite,
-                            TrackNumber = m.TrackNumber,
-                            Lyrics = m.Lyrics,
-                            PlayListOrder = plm.Order
-                        };
+        //public static async Task<List<Music>> GetMusicByPlayListId(int playListId, string search = null)
+        //{
+        //    var query = from plm in await _dbConnection.Table<PlayListMusic>().ToListAsync()
+        //                join m in await _dbConnection.Table<Music>().ToListAsync() on plm.MusicId equals m.Id
+        //                where plm.PlayListId == playListId
+        //                orderby plm.Order descending
+        //                select new Music
+        //                {
+        //                    Id = m.Id,
+        //                    Path = m.Path,
+        //                    Title = m.Title,
+        //                    Cover = m.Cover,
+        //                    Author = m.Author,
+        //                    Duration = m.Duration,
+        //                    Album = m.Album,
+        //                    FolderPath = m.FolderPath,
+        //                    LastLevelFolderPath = m.LastLevelFolderPath,
+        //                    Extension = m.Extension,
+        //                    Order = m.Order,
+        //                    BitDepth = m.BitDepth,
+        //                    BitRate = m.BitRate,
+        //                    SampleRate = m.SampleRate,
+        //                    IsFavorite = m.IsFavorite,
+        //                    TrackNumber = m.TrackNumber,
+        //                    Lyrics = m.Lyrics,
+        //                    PlayListOrder = plm.Order
+        //                };
 
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
-            }
-            return query.ToList();
-        }
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        query = query.Where(m =>
+        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //            m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+        //            m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+        //        );
+        //    }
+        //    return query.ToList();
+        //}
 
-        public static async Task UpdatePlayListMusicOrder(int playListId, Music music)
-        {
-            var playListMusic = await _dbConnection.Table<PlayListMusic>()
-                   .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
-                   .FirstOrDefaultAsync();
+        //public static async Task UpdatePlayListMusicOrder(int playListId, Music music)
+        //{
+        //    var playListMusic = await _dbConnection.Table<PlayListMusic>()
+        //           .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
+        //           .FirstOrDefaultAsync();
 
-            if (playListMusic != null)
-            {
-                playListMusic.Order = music.PlayListOrder;
-                await _dbConnection.UpdateAsync(playListMusic);
-            }
-        }
+        //    if (playListMusic != null)
+        //    {
+        //        playListMusic.Order = music.PlayListOrder;
+        //        await _dbConnection.UpdateAsync(playListMusic);
+        //    }
+        //}
 
         public static async Task UpdatePlayListMusicOrderBatch(int playListId, List<Music> musicList)
         {
             try
             {
                 // 批量查询所有相关的 PlayListMusic 记录
-                var musicIds = musicList.Select(m => m.Id).ToList();
+                var musicIds = musicList.AsValueEnumerable().Select(m => m.Id).ToList();
                 var playListMusics = await _dbConnection.Table<PlayListMusic>()
                     .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
                     .ToListAsync();
 
                 // 创建字典以便快速查找
-                var musicOrderDict = musicList.ToDictionary(m => m.Id, m => m.PlayListOrder);
+                var musicOrderDict = musicList.AsValueEnumerable().ToDictionary(m => m.Id, m => m.PlayListOrder);
 
                 // 更新 Order 字段
                 foreach (var plm in playListMusics)
@@ -392,31 +426,37 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static List<Music> FindMusicListByArtist(string artist)
+        public static IEnumerable<Music> FindMusicListByArtist(string artist)
         {
-            var query = from m in AppData.allSongs
-                        where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
-                        select m;
-            return query.ToList();
+            //var query = from m in AppData.allSongs
+            //            where m.Author != null && m.Author.ToLower().Equals(artist.ToLower())
+            //            select m;
+            //return query.ToList();
+            return AppData.allSongs.AsValueEnumerable()
+                   .Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower())).ToImmutableList();
         }
 
-        public static List<Music> FindMusicListByAlbum(string album)
+        public static IEnumerable<Music> FindMusicListByAlbum(string album)
         {
-            var query = from m in AppData.allSongs
-                        where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
-                        select m;
-            return query.ToList();
+            //var query = from m in AppData.allSongs
+            //            where m.Album != null && m.Album.ToLower().Equals(album.ToLower())
+            //            select m;
+            //return query.ToList();
+            return AppData.allSongs.AsValueEnumerable()
+                   .Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower())).OrderBy(m=>m.TrackNumber).ToImmutableList();
         }
 
-        public static List<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
+        public static IEnumerable<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
         {
-            var query = from m in AppData.allSongs
-                        where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
-                        select m;
-            return query.ToList();
+            //var query = from m in AppData.allSongs
+            //            where m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())
+            //            select m;
+            //return query.ToList();
+            return AppData.allSongs.AsValueEnumerable()
+                   .Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())).ToImmutableList();
         }
 
-        public static async Task AddMusicListToFavour(List<Music> musics)
+        public static async Task AddMusicListToFavour(IEnumerable<Music> musics)
         {
             var maxOrder = await GetMaxOrder();
             foreach (var music in musics)
@@ -432,7 +472,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task AddMusicListToPlayList(List<Music> musics, int playListId)
+        public static async Task AddMusicListToPlayList(IEnumerable<Music> musics, int playListId)
         {
             PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
                                           .Where(m => m.PlayListId == playListId)
@@ -510,7 +550,21 @@ namespace WinUIMusicPlayer.Services
             }
             return maxOrder;
         }
+        //public static async Task DeleteAllMusicFromPlayList(int playListId, List<int> musicIds)
+        //{
+        //    if (musicIds == null || musicIds.Count == 0)
+        //        return;
 
+        //    var playListMusics = await _dbConnection.Table<PlayListMusic>()
+        //        .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
+        //        .ToListAsync();
+
+        //    if (playListMusics.Count > 0)
+        //    {
+        //        var tableMapping = _dbConnection.GetMapping<PlayListMusic>();
+        //        await _dbConnection.DeleteAllAsync(tableMapping, playListMusics);
+        //    }
+        //}
 
         public static async Task RemoveMusicFromPlayList(int playListId, int musicId)
         {
@@ -621,36 +675,36 @@ namespace WinUIMusicPlayer.Services
 
         public static IEnumerable<Music> GetMusicListFromMem(string search)
         {
-            return AppData.allSongs.Where(m =>
+            return AppData.allSongs.AsValueEnumerable().Where(m =>
                 m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                 m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
                 m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-            ).OrderBy(m => m.Title);
+            ).OrderBy(m => m.Title).ToImmutableList();
         }
 
-        public static List<Music> GetMusicListFromMemWithFolderSearchOption(string search)
+        public static IEnumerable<Music> GetMusicListFromMemWithFolderSearchOption(string search)
         {
-            return AppData.allSongs.Where(m =>
+            return AppData.allSongs.AsValueEnumerable().Where(m =>
                 m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
                 m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
                 m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
                 m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Contains(search.ToLower())
-            ).OrderBy(m => m.Title).ToList();
+            ).OrderBy(m => m.Title).ToImmutableList();
         }
 
-        public static async Task<List<Music>> GetFavoriteMusicAsync(string search = null)
-        {
-            var query = _dbConnection.Table<Music>().Where(m => m.IsFavorite == true);
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-                );
-            }
-            return await query.OrderByDescending(m => m.Order).ToListAsync();
-        }
+        //public static async Task<List<Music>> GetFavoriteMusicAsync(string search = null)
+        //{
+        //    var query = _dbConnection.Table<Music>().Where(m => m.IsFavorite == true);
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        query = query.Where(m =>
+        //            m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //            m.Author != null && m.Author.ToLower().Contains(search.ToLower()) ||
+        //            m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+        //        );
+        //    }
+        //    return await query.OrderByDescending(m => m.Order).ToListAsync();
+        //}
 
         public static IEnumerable<Music> GetFavoriteMusicFromMem(string search = null)
         {
@@ -666,56 +720,95 @@ namespace WinUIMusicPlayer.Services
             return query.OrderByDescending(m => m.Order);
         }
 
-        public static List<Music> GetArtistMusicFromMem(string artist, string search = null)
+        public static IEnumerable<Music> GetArtistMusicFromMem(string artist, string search = null)
         {
-            var query = AppData.allSongs.AsQueryable();
+            var query = AppData.allSongs.AsValueEnumerable();
             if (artist != null)
             {
-                query = query.Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()));
-            }
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower())
-                );
-            }
-            return query.OrderBy(m => m.Album).ToList();
+                if (!string.IsNullOrEmpty(search))
+                {
+                    return query.Where(m =>
+                        m.Author != null && m.Author.ToLower().Equals(artist.ToLower())||
+                        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                        m.Album != null && m.Album.ToLower().Contains(search.ToLower())
+                    ).OrderBy(m => m.Album).ToImmutableList();
+                }
+                else {
+                   return query.Where(m => m.Author != null && m.Author.ToLower().Equals(artist.ToLower()))
+                        .OrderBy(m => m.Album).ToImmutableList();
+                }
+            }            
+            return query.OrderBy(m => m.Album).ToImmutableList();
         }
 
-        public static List<Music> GetFolderMusicFromMem(string folder, string search = null)
+        public static IEnumerable<Music> GetFolderMusicFromMem(string folder, string search = null)
         {
-            var query = AppData.allSongs.AsQueryable();
+            var query = AppData.allSongs.AsValueEnumerable();
             if (folder != null)
             {
-                query = query.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+                if (!string.IsNullOrEmpty(search))
+                {
+                    return query.Where(m =>
+                        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                        m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+                        m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                    ).OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
+                }
+                else
+                {
+                    return query.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()))
+                         .OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
+                }
             }
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
-            }
-            return query.OrderBy(m => m.LastLevelFolderPath).ToList();
+            return query.OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
+            //var query = AppData.allSongs.AsQueryable();
+            //if (folder != null)
+            //{
+            //    query = query.Where(m => m.LastLevelFolderPath != null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()));
+            //}
+            //if (!string.IsNullOrEmpty(search))
+            //{
+            //    query = query.Where(m =>
+            //        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+            //        m.Album != null && m.Album.ToLower().Contains(search.ToLower()) ||
+            //        m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+            //    );
+            //}
+            //return query.OrderBy(m => m.LastLevelFolderPath).ToList();
         }
 
         public static IEnumerable<Music> GetAlbumMusicFromMem(string album, string search = null)
         {
-            var query = AppData.allSongs.AsQueryable();
+            var query = AppData.allSongs.AsValueEnumerable();
             if (album != null)
             {
-                query = query.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+                if (!string.IsNullOrEmpty(search))
+                {
+                    return query.Where(m =>
+                        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+                        m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+                    ).OrderBy(m => m.TrackNumber).ToImmutableList();
+                }
+                else
+                {
+                    return query.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()))
+                         .OrderBy(m => m.TrackNumber).ToImmutableList();
+                }
             }
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(m =>
-                    m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author != null && m.Author.ToLower().Contains(search.ToLower())
-                );
-            }
-            return query.OrderBy(m => m.TrackNumber);
+            return query.OrderBy(m => m.TrackNumber).ToImmutableList();
+            //var query = AppData.allSongs.AsQueryable();
+            //if (album != null)
+            //{
+            //    query = query.Where(m => m.Album != null && m.Album.ToLower().Equals(album.ToLower()));
+            //}
+            //if (!string.IsNullOrEmpty(search))
+            //{
+            //    query = query.Where(m =>
+            //        m.Title != null && m.Title.ToLower().Contains(search.ToLower()) ||
+            //        m.Author != null && m.Author.ToLower().Contains(search.ToLower())
+            //    );
+            //}
+            //return query.OrderBy(m => m.TrackNumber);
         }
 
 
@@ -952,7 +1045,7 @@ namespace WinUIMusicPlayer.Services
                 .ContinueWith(t => t.Result.Select(m => m.Path).ToList());
 
             // 过滤掉已存在的音乐文件
-            var newMusicFiles = musicFiles
+            var newMusicFiles = musicFiles.AsValueEnumerable()
                 .Where(m => !existingMusicPaths.Contains(m.Path))
                 .ToList();
 
@@ -1008,7 +1101,7 @@ namespace WinUIMusicPlayer.Services
             if (!folderAlreadyExists)
             {
                 // 移除被新文件夹包含的旧文件夹
-                var foldersToRemove = existingFolders
+                var foldersToRemove = existingFolders.AsValueEnumerable()
                     .Where(f => folder.Path.StartsWith(f.Path))
                     .ToList();
 
@@ -1130,7 +1223,7 @@ namespace WinUIMusicPlayer.Services
                 var currentFiles = await folder.GetFilesAsync();
                 files = new List<StorageFile>();
                 files.AddRange(currentFiles);
-                musicFilesInFolder = AppData.allSongs
+                musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
                     .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else
@@ -1329,12 +1422,12 @@ namespace WinUIMusicPlayer.Services
                 var currentFiles = await folder.GetFilesAsync();
                 files = new List<StorageFile>();
                 files.AddRange(currentFiles);
-                musicFilesInFolder = usbDeviceMusics.Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+                musicFilesInFolder = usbDeviceMusics.AsValueEnumerable().Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else
             {
                 files = await GetAllFilesInFolderAndSubfolders(folder);
-                musicFilesInFolder = usbDeviceMusics
+                musicFilesInFolder = usbDeviceMusics.AsValueEnumerable()
                    .Where(m => m.Path.Contains(folderPath)).ToList();
             }
             HashSet<string> filePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1381,7 +1474,7 @@ namespace WinUIMusicPlayer.Services
             List<UsbDeviceMusic> usbDeviceMusicsInsertList = new List<UsbDeviceMusic>();
             foreach (var path in filePaths)
             {
-                var existingMusic = usbDeviceMusics.Where(m => m.Path == path).FirstOrDefault();
+                var existingMusic = usbDeviceMusics.AsValueEnumerable().Where(m => m.Path == path).FirstOrDefault();
                 if (existingMusic != null)
                 {
                     continue;

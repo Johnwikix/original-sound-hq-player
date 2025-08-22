@@ -138,7 +138,7 @@ namespace WinUIMusicPlayer.Services
             UsbStorageDevice device = data.UsbStorageDevice;
             if (item != null)
             {
-                List<Music> musicList = new List<Music>();
+                IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
                     musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count > 0)
+                if (musicList != null && musicList.Count() > 0)
                 {
                     showTransmission?.Invoke(this, EventArgs.Empty);
                     var usbWriter = new UsbWriterHelper();
@@ -209,7 +209,7 @@ namespace WinUIMusicPlayer.Services
             var music = menuItem?.DataContext as Music;
             if (music != null)
             {
-                List<Music> musicList = new List<Music>();
+                IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
                     musicList = MusicDatabaseService.FindMusicListByAlbum(music.Album);
@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count > 0)
+                if (musicList != null && musicList.Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToFavour(musicList);
                     AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -282,7 +282,7 @@ namespace WinUIMusicPlayer.Services
 
             if (item != null)
             {
-                List<Music> musicList = new List<Music>();
+                IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
                     musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
@@ -295,7 +295,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count > 0)
+                if (musicList != null && musicList.Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 }
