@@ -13,6 +13,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -254,12 +255,19 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                Debug.WriteLine(_currentPlayListId);
-                foreach (Music item in uniqueSelectedMusics)
+                await MusicDatabaseService.DeleteAllMusicFromPlayList(_currentPlayListId, uniqueSelectedMusics.AsValueEnumerable().Select(item => item.Id).ToImmutableList());
+                for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
-                    await MusicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, item.Id);
-                    MusicList.Remove(item);
+                    if (uniqueSelectedMusics.Contains(MusicList[i]))
+                    {
+                        MusicList.RemoveAt(i);
+                    }
                 }
+                //foreach (Music item in uniqueSelectedMusics)
+                //{
+                //    //await MusicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, item.Id);
+                //    MusicList.Remove(item);
+                //}
             }
             else
             {
@@ -269,7 +277,7 @@ namespace WinUIMusicPlayer.ViewModel
                     MusicList.Remove(SelectedMusic);
                 }
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            await MusicDatabaseService.GetPlayListMusic();
         }
 
         public async Task SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)

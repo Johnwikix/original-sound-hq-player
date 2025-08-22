@@ -310,11 +310,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                foreach (Music item in uniqueSelectedMusics)
+                for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
-                    await MusicDatabaseService.RemoveMusic(item.Id);
-                    ToolUtils.DeleteFileFromDisk(item.Path);
-                    MusicList.Remove(item);
+                    if (uniqueSelectedMusics.Contains(MusicList[i]))
+                    {
+                        await MusicDatabaseService.RemoveMusic((MusicList[i].Id));
+                        ToolUtils.DeleteFileFromDisk((MusicList[i].Path));
+                        MusicList.RemoveAt(i);
+                    }
                 }
             }
             else
@@ -329,15 +332,23 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null)
             {
-                foreach (Music item in uniqueSelectedMusics)
+                await MusicDatabaseService.CancelMusicsFavourite(uniqueSelectedMusics.ToList());
+                for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
-                    if (item.IsFavorite)
+                    if (uniqueSelectedMusics.Contains(MusicList[i]))
                     {
-                        MusicList.Remove(item);
+                        MusicList.RemoveAt(i);
+                        if (parentPage.ViewModel.CurrentPlayingMusic != null)
+                        {
+                            if (parentPage.ViewModel.CurrentPlayingMusic.Id == MusicList[i].Id)
+                            {
+                                parentPage.ViewModel.CurrentPlayingMusic.IsFavorite = MusicList[i].IsFavorite;
+                            }
+                        }
                     }
-                    await parentPage.AddToFavourite(item);
-                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 }
+                
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
 

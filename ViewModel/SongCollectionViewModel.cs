@@ -366,12 +366,21 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
             {
-                foreach (Music item in uniqueSelectedMusics)
+                for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
-                    await MusicDatabaseService.RemoveMusic(item.Id);
-                    ToolUtils.DeleteFileFromDisk(item.Path);
-                    MusicList.Remove(item);
+                    if (uniqueSelectedMusics.Contains(MusicList[i]))
+                    {
+                        await MusicDatabaseService.RemoveMusic((MusicList[i].Id));
+                        ToolUtils.DeleteFileFromDisk((MusicList[i].Path));
+                        MusicList.RemoveAt(i);
+                    }
                 }
+                //foreach (Music item in uniqueSelectedMusics)
+                //{
+                //    await MusicDatabaseService.RemoveMusic(item.Id);
+                //    ToolUtils.DeleteFileFromDisk(item.Path);
+                //    MusicList.Remove(item);
+                //}
             }
             else
             {

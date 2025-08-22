@@ -550,21 +550,22 @@ namespace WinUIMusicPlayer.Services
             }
             return maxOrder;
         }
-        //public static async Task DeleteAllMusicFromPlayList(int playListId, List<int> musicIds)
-        //{
-        //    if (musicIds == null || musicIds.Count == 0)
-        //        return;
+        public static async Task DeleteAllMusicFromPlayList(int playListId, IEnumerable<int> musicIds)
+        {
+            if (musicIds == null || musicIds.Count() == 0)
+            {
+                return;
+            }
 
-        //    var playListMusics = await _dbConnection.Table<PlayListMusic>()
-        //        .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
-        //        .ToListAsync();
+            // 将 musicIds 转换为逗号分隔的字符串，用于 SQL IN 子句
+            var musicIdsString = string.Join(",", musicIds);
 
-        //    if (playListMusics.Count > 0)
-        //    {
-        //        var tableMapping = _dbConnection.GetMapping<PlayListMusic>();
-        //        await _dbConnection.DeleteAllAsync(tableMapping, playListMusics);
-        //    }
-        //}
+            // 构建 SQL 删除语句
+            var sql = $"DELETE FROM PlayListMusic WHERE PlayListId = ? AND MusicId IN ({musicIdsString})";
+
+            // 执行 SQL 语句
+            await _dbConnection.ExecuteAsync(sql, playListId);
+        }
 
         public static async Task RemoveMusicFromPlayList(int playListId, int musicId)
         {
@@ -956,6 +957,13 @@ namespace WinUIMusicPlayer.Services
             {
                 Debug.WriteLine($"删除音乐时出错: {e.Message}");
             }
+        }
+        public static async Task CancelMusicsFavourite(IEnumerable<Music> musics)
+        {
+            foreach (var music in musics) {
+                music.IsFavorite = false;
+            }
+            await _dbConnection.UpdateAllAsync(musics);
         }
         public static async Task AddToFavourite(Music music, Music currentPlayingMusic)
         {
