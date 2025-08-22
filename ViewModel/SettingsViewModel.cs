@@ -452,13 +452,13 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private ObservableCollection<string> _fontFamilyList;
-        public ObservableCollection<string> FontFamilyList {
+        private ObservableCollection<FontInfo> _fontFamilyList;
+        public ObservableCollection<FontInfo> FontFamilyList {
             get => _fontFamilyList;
             set => SetProperty(ref _fontFamilyList, value);
         }
-        private string _fontFamily = string.Empty;
-        public string FontFamily
+        private FontInfo _fontFamily;
+        public FontInfo FontFamily
         {
             get => _fontFamily;
             set
@@ -467,7 +467,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {                    
                     if (_isInitized)
                     {
-                        AppSettings.GlobalFont = new FontFamily(value);
+                        AppSettings.GlobalFont = value.FontFamily;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -552,8 +552,8 @@ namespace WinUIMusicPlayer.ViewModel
             AppWidth = AppSettings.AppWidth;
             // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
-            FontFamilyList = new ObservableCollection<string>(AppSettings.FontFamilyList);
-            FontFamily = ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source);
+            FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
+            FontFamily = FontFamilyList.FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
             IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             _isInitized = true;
         }

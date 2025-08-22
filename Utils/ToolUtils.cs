@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -1233,10 +1234,24 @@ namespace WinUIMusicPlayer.Utils
             var index = fontSource.IndexOf(',');
             return index > 0 ? fontSource.Substring(0, index).Trim() : fontSource.Trim();
         }
-        public static List<string> GetSystemFontsInternal()
+        public static List<FontInfo> GetSystemFontsInternal()
         {
-            var fontFamilies = CanvasTextFormat.GetSystemFontFamilies();
-            return [.. fontFamilies.OrderBy(f => f)];
+            var language = new string[] { CultureInfo.CurrentUICulture.Name.ToLowerInvariant() };
+            var names = CanvasTextFormat.GetSystemFontFamilies();
+            var displayNames = CanvasTextFormat.GetSystemFontFamilies(language);
+            var list = new List<FontInfo>();
+            for (var i = 0; i < names.Length; i++)
+            {
+                list.Add(
+                    new FontInfo
+                    {
+                        Name = names[i],
+                        DisplayName = displayNames[i],
+                        FontFamily = new FontFamily(names[i]),
+                    }
+                );
+            }
+            return [.. list.OrderBy(f => f.Name)];
         }
 
     }

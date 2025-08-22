@@ -8,11 +8,17 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <DataTemplate x:Key="FontComboboxTemplate" x:DataType="model:FontInfo">
+            <TextBlock FontFamily="{x:Bind FontFamily}" Text="{x:Bind DisplayName}" />
+        </DataTemplate>
+    </Page.Resources>
     <Grid Margin="48,32,0,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -185,6 +191,7 @@
                             <ComboBox
                                 x:Name="LyricsFontFamily"
                                 Width="300"
+                                ItemTemplate="{StaticResource FontComboboxTemplate}"
                                 ItemsSource="{Binding ViewModel.FontFamilyList, Mode=OneWay}"
                                 SelectedValue="{Binding ViewModel.FontFamily, Mode=TwoWay}" />
                         </controls:SettingsCard>
