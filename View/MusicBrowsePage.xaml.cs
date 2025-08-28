@@ -66,7 +66,6 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            ProgressSlider.Loaded += ProgressSlider_Loaded;
             //this.KeyDown += MusicBrowsePage_KeyDown;
             this.Focus(FocusState.Programmatic);
             mainWindow = (App.MainWindow as MainWindow);

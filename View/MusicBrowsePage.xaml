@@ -687,6 +687,7 @@
                             Grid.Column="0"
                             Margin="0"
                             VerticalAlignment="Center"
+                            Loaded="ProgressSlider_Loaded"
                             Maximum="{Binding ViewModel.ProgressSliderMax, Mode=TwoWay}"
                             Minimum="0"
                             Opacity="0.5"
