@@ -37,8 +37,7 @@ namespace WinUIMusicPlayer.View.SubView
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
-            //mainWindow = (App.MainWindow as MainWindow);
-            SystemBackdrop = new DesktopAcrylicBackdrop();
+            //SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AlbumDetailTitleBar);
             setWindow();

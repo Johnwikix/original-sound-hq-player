@@ -29,7 +29,6 @@ namespace WinUIMusicPlayer
     {
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
-        //public event EventHandler WindowClosed;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler updateSelectSection;
@@ -41,8 +40,6 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
-        private int MinWindowWidth = 1280;
-        private int MinWindowHeight = 720;
         public MainWindow()
         {
             InitializeComponent();
@@ -52,14 +49,12 @@ namespace WinUIMusicPlayer
             AppData.m_hWnd = m_hwnd;
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
-            // 在需要使用导航服务的地方获取工厂
+            // 导航服务
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            // 为特定Frame创建导航服务
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.RegisterPage<AddFolderPage>();
             _navigationService.RegisterPage<MusicBrowsePage>();
             _navigationService.RegisterPage<SettingsPage>();
-            //this.Closed += MainWindow_Closed;
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -180,32 +175,32 @@ namespace WinUIMusicPlayer
         }
 
 
-        private async void MainWindow_Closed(object sender, WindowEventArgs args)
-        {
-            try
-            {
-                var musicBrowsePage = App.Services.GetRequiredService<MusicBrowsePage>();
-                musicBrowsePage?.ClosePage();
-                AppNotifyIconControl?.Dispose();
-                AppNotifyIconControl = null;
-                if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
-                {
-                    WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
-                    m_hwnd = IntPtr.Zero;
-                    defaultWndProc = IntPtr.Zero;
-                }
-                _taskbarHelper?.Dispose();
-                _taskbarHelper = null;
-                //App.Current_Exit();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
-                //App.Current_Exit();
-            }finally { 
-                args.Handled = false; 
-            }
-        }
+        //private async void MainWindow_Closed(object sender, WindowEventArgs args)
+        //{
+        //    try
+        //    {
+        //        var musicBrowsePage = App.Services.GetRequiredService<MusicBrowsePage>();
+        //        musicBrowsePage?.ClosePage();
+        //        AppNotifyIconControl?.Dispose();
+        //        AppNotifyIconControl = null;
+        //        if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
+        //        {
+        //            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
+        //            m_hwnd = IntPtr.Zero;
+        //            defaultWndProc = IntPtr.Zero;
+        //        }
+        //        _taskbarHelper?.Dispose();
+        //        _taskbarHelper = null;
+        //        //App.Current_Exit();
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Debug.WriteLine($"MainWindow 关闭时出错: {e.Message}");
+        //        //App.Current_Exit();
+        //    }finally { 
+        //        args.Handled = false; 
+        //    }
+        //}
 
         private async void InitializeApp()
         {
@@ -334,7 +329,6 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //IntPtr hwnd = WindowNative.GetWindowHandle(this);
                 _taskbarHelper?.Dispose();
                 _taskbarHelper = new TaskbarHelper(m_hwnd);
                 _taskbarHelper.InitializeThumbButtons();
