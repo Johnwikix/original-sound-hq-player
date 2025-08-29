@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using testDemo.Taskbar;
 using Windows.UI.ViewManagement;
+using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -24,7 +25,7 @@ namespace WinUIMusicPlayer
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
+    public sealed partial class MainWindow : WinUIEx.WindowEx
     {
         public event EventHandler updateMusicList;
         public event EventHandler SettingLoaded;
@@ -71,28 +72,29 @@ namespace WinUIMusicPlayer
                 PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
             }
             this.AppWindow.Closing += AppWindow_Closing;
+            //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
-            Debug.WriteLine($"窗口句柄: {m_hwnd}");
             SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
-            // 注册颜色值变化事件，这会在系统主题变化时触发
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         }
 
         private void setWindow()
         {
-            WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
-            this.AppWindow.SetIcon("Assets/icon.ico");
+            //WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
+            this.SetIcon("Assets/icon.ico");
             Title = ToolUtils.GetString("AppMainTitle");
             if (AppSettings.IsCustomAppSize)
             {
-                WindowSizeHelper.ResizeWindowAndCenterInScreen(m_hwnd, AppSettings.AppHeight, AppSettings.AppWidth, this.AppWindow);
+                this.CenterOnScreen(AppSettings.AppWidth, AppSettings.AppHeight);
+                //WindowSizeHelper.ResizeWindowAndCenterInScreen(m_hwnd, AppSettings.AppHeight, AppSettings.AppWidth, this.AppWindow);
             }
             else
             {
-                WindowSizeHelper.CenterInScreen(this.AppWindow);
+                this.CenterOnScreen();
+                //WindowSizeHelper.CenterInScreen(this.AppWindow);
             }
         }
 
@@ -119,10 +121,8 @@ namespace WinUIMusicPlayer
         }
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
         {
-            Debug.WriteLine("colorchange");
             _ = DispatcherQueue.EnqueueAsync(() =>
             {
-                // 重新应用样式
                 SetAppStyle();
             });
         }

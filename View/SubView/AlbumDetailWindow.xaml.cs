@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.View.SubView
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class AlbumDetailWindow : Window
+    public sealed partial class AlbumDetailWindow : WinUIEx.WindowEx
     {
         private Music musicDetail;
         public EventHandler<Music> AlbumDetailChanged;
@@ -71,7 +71,7 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.SetMinimumSize(hwnd, this, 550, 700);
+            //WindowSizeHelper.SetMinimumSize(hwnd, this, 550, 700);
             WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 700, 550, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();

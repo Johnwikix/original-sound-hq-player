@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Window
+<winex:WindowEx
     x:Class="WinUIMusicPlayer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,10 +8,13 @@
     xmlns:local="using:WinUIMusicPlayer"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:view="using:WinUIMusicPlayer.View"
-    Title="OriginalSound HIFI Player">
-    <Window.SystemBackdrop>
+    xmlns:winex="using:WinUIEx"
+    Title="OriginalSound HQ Player"
+    MinWidth="1280"
+    MinHeight="720">
+    <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
-    </Window.SystemBackdrop>
+    </winex:WindowEx.SystemBackdrop>
     <Grid>
         <controls:NotifyIconControl x:Name="AppNotifyIconControl" MinWidth="200" />
         <Grid
@@ -131,4 +134,4 @@
             <Frame x:Name="ContentFrame" Grid.Column="1" />
         </Grid>-->
     </Grid>
-</Window>
+</winex:WindowEx>

@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Window
+<winex:WindowEx
     x:Class="WinUIMusicPlayer.View.SubView.AlbumDetailWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winex="using:WinUIEx"
     Title="专辑属性"
+    MinWidth="550"
+    MinHeight="700"
     mc:Ignorable="d">
 
-    <Window.SystemBackdrop>
+    <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
-    </Window.SystemBackdrop>
+    </winex:WindowEx.SystemBackdrop>
     <Grid>
         <Grid
             x:Name="AlbumDetailTitleBar"
@@ -68,10 +71,7 @@
                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                 Canvas.ZIndex="0">
                                 <Viewbox Stretch="Uniform">
-                                    <Border
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                         <!--  图标层  -->
                                         <FontIcon
                                             Width="200"
@@ -114,10 +114,7 @@
                                 Grid.Column="0"
                                 HorizontalAlignment="Left"
                                 Orientation="Horizontal">
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="GetImageFromNet_Click">
+                                <Button Margin="5" HorizontalAlignment="Center" Click="GetImageFromNet_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xebd3;" />
@@ -127,10 +124,7 @@
                                         <ToolTip x:Uid="GetImageFromNetButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Stretch"
-                                    Click="SaveImageButton_Click">
+                                <Button Margin="5" HorizontalAlignment="Stretch" Click="SaveImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe78c;" />
@@ -140,10 +134,7 @@
                                         <ToolTip x:Uid="SaveImageButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Stretch"
-                                    Click="SelectCoverImageButton_Click">
+                                <Button Margin="5" HorizontalAlignment="Stretch" Click="SelectCoverImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe70f;" />
@@ -190,37 +181,22 @@
                     </Grid>
                 </Grid>
             </ScrollViewer>
-            <StackPanel
-                Grid.Row="1"
-                HorizontalAlignment="Right"
-                Orientation="Horizontal">
+            <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button x:Uid="SaveButton" Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
-                                <TextBlock
-                                    x:Uid="SaveConfirm"
-                                    Margin="0,0,0,12"
-                                    Style="{ThemeResource BaseTextBlockStyle}" />
+                                <TextBlock x:Uid="SaveConfirm" Margin="0,0,0,12" Style="{ThemeResource BaseTextBlockStyle}" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button
-                                        x:Uid="ConfirmButton"
-                                        Margin="0,0,10,0"
-                                        Click="ConfirmButton_Click" />
-                                    <Button
-                                        x:Uid="CancelButton"
-                                        Margin="0,0,10,0"
-                                        Click="CloseFlyoutButton_Click" />
+                                    <Button x:Uid="ConfirmButton" Margin="0,0,10,0" Click="ConfirmButton_Click" />
+                                    <Button x:Uid="CancelButton" Margin="0,0,10,0" Click="CloseFlyoutButton_Click" />
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <Button
-                    x:Uid="CloseButtonItem"
-                    Margin="5"
-                    Click="CloseButton_Click" />
+                <Button x:Uid="CloseButtonItem" Margin="5" Click="CloseButton_Click" />
             </StackPanel>
         </Grid>
     </Grid>
-</Window>
+</winex:WindowEx>
