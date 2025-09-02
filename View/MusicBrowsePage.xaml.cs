@@ -660,35 +660,36 @@ namespace WinUIMusicPlayer.View
 
         public async Task ShowPlayingDetail()
         {
-            if (!ViewModel.IsInPlayingDetailMode)
+            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
             {
                 ViewModel.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;
                 App.MainWindow.NavigationViewCollapsed();
-                ChangeAcrylicBrushBackgroundOpacity();
                 mainWindow?.AppTitleBarVisibility(false);
-                if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
-                {
-                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
-                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
-                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("ControlBarToDetail", BottomControlBar);
-                    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
-                    TopPanel.Visibility = Visibility.Collapsed;
-                    ContentFrame.Visibility = Visibility.Collapsed;
-                    AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
-                    ViewModel.InfoBarIsOpen = false;
-                    PlayingDetail.Visibility = Visibility.Visible;
-                    BottomControlBar.Visibility = Visibility.Collapsed;
-                    PlayingDetailControlBar.Visibility = Visibility.Visible;
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
-                    ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
-                }
+                ChangeAcrylicBrushBackgroundOpacity();
+                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
+                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
+                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("ControlBarToDetail", BottomControlBar);
+                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
+                TopPanel.Visibility = Visibility.Collapsed;
+                ContentFrame.Visibility = Visibility.Collapsed;
+                AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+                ViewModel.InfoBarIsOpen = false;
+                PlayingDetail.Visibility = Visibility.Visible;
+                BottomControlBar.Visibility = Visibility.Collapsed;
+                PlayingDetailControlBar.Visibility = Visibility.Visible;
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
+                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
+                //if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
+                //{
+
+                //}
                 ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
             }
         }
