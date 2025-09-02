@@ -653,12 +653,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
+        private void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
         {
-            await ShowPlayingDetail();
+            ShowPlayingDetail();
         }
 
-        public async Task ShowPlayingDetail()
+        public void ShowPlayingDetail()
         {
             if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
             {
@@ -686,10 +686,6 @@ namespace WinUIMusicPlayer.View
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
-                //if (ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
-                //{
-
-                //}
                 ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
             }
         }

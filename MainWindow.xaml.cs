@@ -174,34 +174,6 @@ namespace WinUIMusicPlayer
             }
         }
 
-
-        //private async void MainWindow_Closed(object sender, WindowEventArgs args)
-        //{
-        //    try
-        //    {
-        //        var musicBrowsePage = App.Services.GetRequiredService<MusicBrowsePage>();
-        //        musicBrowsePage?.ClosePage();
-        //        AppNotifyIconControl?.Dispose();
-        //        AppNotifyIconControl = null;
-        //        if (m_hwnd != IntPtr.Zero && defaultWndProc != IntPtr.Zero)
-        //        {
-        //            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, defaultWndProc);
-        //            m_hwnd = IntPtr.Zero;
-        //            defaultWndProc = IntPtr.Zero;
-        //        }
-        //        _taskbarHelper?.Dispose();
-        //        _taskbarHelper = null;
-        //        //App.Current_Exit();
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Debug.WriteLine($"MainWindow ¹Ø±ÕÊ±³ö´í: {e.Message}");
-        //        //App.Current_Exit();
-        //    }finally { 
-        //        args.Handled = false; 
-        //    }
-        //}
-
         private async void InitializeApp()
         {
             try
