@@ -285,11 +285,14 @@ namespace WinUIMusicPlayer.Services
 
                     if (multiTypeAudioReader != null)
                     {
-                        Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}");
+                        //Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}，总：{multiTypeAudioReader.TotalTime.TotalSeconds}");
                         if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
                         {
-                            if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
-                            {
+                            //if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
+                            //{
+                            //    AutoPlayNextTrack();
+                            //}
+                            if (Math.Abs(multiTypeAudioReader.TotalTime.TotalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1) {
                                 AutoPlayNextTrack();
                             }
                         }
