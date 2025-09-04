@@ -28,18 +28,13 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Music musicDetail;
         public EventHandler<Music> MusicDetailChanged;
-        //private double scaleFactor = 0;
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
-        //private AppWindow musicDetailAppWindow;
         private ThemeStyleHelper themeStyleHelper;
-        //private MainWindow mainWindow;
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
-            //mainWindow = (App.MainWindow as MainWindow);
-            //SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
@@ -51,14 +46,11 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
                 App.MainWindow.styleChanged += MainWindow_styleChanged;
-                //App.MainWindow.WindowClosed += (s, e) =>
-                //{
-                //    this.Close();
-                //};
+                App.MainWindow.customStyleChanged += MainWindow_customStyleChanged;
             }
             Title = ToolUtils.GetString("MusicDetailTitle");
             this.Closed += MusicDetailWindow_Closed;
-        }
+        }        
 
         private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
         {
@@ -72,10 +64,14 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            //WindowSizeHelper.SetMinimumSize(hwnd, this, 650, 850);
             WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 650, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();
+        }
+
+        private void MainWindow_customStyleChanged(object? sender, EventArgs e)
+        {
+            themeStyleHelper.ChangeCustomAcrylicStyle();
         }
         private void MainWindow_styleChanged(object? sender, EventArgs e)
         {
@@ -342,16 +338,5 @@ namespace WinUIMusicPlayer.View.SubView
         {
             ConfirmFlyout.Hide();
         }
-
-        //private async void SaveLyricsToDateBase_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-        //    if (music != null)
-        //    {
-        //        music.Lyrics = LyricsTextBox.Text;
-        //        await MusicDatabaseService.UpdateMusicInfo(music);
-        //    }
-        //    this.Close();
-        //}
     }
 }

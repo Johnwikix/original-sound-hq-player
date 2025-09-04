@@ -15,6 +15,7 @@ namespace WinUIMusicPlayer.Helper
     {
         public event EventHandler ThemeChanged;
         public event EventHandler StyleChanged;
+        public event EventHandler CustomStyleChanged;
 
         private Window _window;
         private AppWindow _appWindow;
@@ -147,6 +148,7 @@ namespace WinUIMusicPlayer.Helper
                             AppSettings.CustomColorRed, 
                             AppSettings.CustomColorGreen, 
                             AppSettings.CustomColorBlue));
+                    CustomStyleChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
         }

@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer
         public event EventHandler SettingLoaded;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
+        public event EventHandler customStyleChanged;
         public event EventHandler updateSelectSection;
         public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
@@ -58,6 +59,7 @@ namespace WinUIMusicPlayer
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
+            themeStyleHelper.CustomStyleChanged += (s, e) => customStyleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             H.NotifyIcon.WindowExtensions.Hide(this, enableEfficiencyMode: false);

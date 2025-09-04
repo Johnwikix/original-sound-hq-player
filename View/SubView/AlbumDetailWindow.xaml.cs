@@ -37,26 +37,22 @@ namespace WinUIMusicPlayer.View.SubView
         public AlbumDetailWindow(Music music)
         {
             this.InitializeComponent();
-            //SystemBackdrop = new DesktopAcrylicBackdrop();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AlbumDetailTitleBar);
             setWindow();
             InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
-            themeStyleHelper.SetAppTheme();
+            themeStyleHelper.SetAppTheme();            
             if (App.MainWindow != null)
             {
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
                 App.MainWindow.styleChanged += MainWindow_styleChanged;
-                //App.MainWindow.WindowClosed += (s, e) =>
-                //{
-                //    this.Close();
-                //};
+                App.MainWindow.customStyleChanged += MainWindow_customStyleChanged;
             }
             Title = ToolUtils.GetString("AlbumDetailTitle");
             this.Closed += AlbumDetailWindow_Closed;
-        }
+        }        
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
         {
@@ -64,16 +60,20 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
+                App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
             }
         }
 
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            //WindowSizeHelper.SetMinimumSize(hwnd, this, 550, 700);
             WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 700, 550, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             notificationService = App.Services.GetRequiredService<NotificationService>();
+        }
+        private void MainWindow_customStyleChanged(object? sender, EventArgs e)
+        {
+            themeStyleHelper.ChangeCustomAcrylicStyle();
         }
 
         private void MainWindow_styleChanged(object? sender, EventArgs e)
@@ -138,7 +138,6 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
                     {
-                        //AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
                         AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
                     }
                     result = music;
@@ -170,7 +169,6 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
-            //LrcService lrcService = new LrcService();
             if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
             {
                 albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
