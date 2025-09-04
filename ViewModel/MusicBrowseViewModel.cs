@@ -781,9 +781,9 @@ namespace WinUIMusicPlayer.ViewModel
             });
         }
 
-        public async void ShowPlayingDetail()
+        public void ShowPlayingDetail()
         {
-            await _musicBrowsePage.ShowPlayingDetail();
+            _musicBrowsePage.ShowPlayingDetail();
         }
 
 
