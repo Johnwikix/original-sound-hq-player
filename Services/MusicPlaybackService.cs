@@ -286,20 +286,23 @@ namespace WinUIMusicPlayer.Services
                     if (multiTypeAudioReader != null)
                     {
                         //Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}，总：{multiTypeAudioReader.TotalTime.TotalSeconds}");
-                        if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
-                        {
-                            //if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
-                            //{
-                            //    AutoPlayNextTrack();
-                            //}
-                            if (Math.Abs(multiTypeAudioReader.TotalTime.TotalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1) {
-                                AutoPlayNextTrack();
-                            }
-                        }
-                        _cachedLastCurrentTime = _cachedCurrentTime;
                         if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
                         {
                             AutoPlayNextTrack();
+                        }
+                        else {
+                            if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
+                            {
+                                //if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
+                                //{
+                                //    AutoPlayNextTrack();
+                                //}
+                                if (Math.Abs(multiTypeAudioReader.TotalTime.TotalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1)
+                                {
+                                    AutoPlayNextTrack();
+                                }
+                            }
+                            _cachedLastCurrentTime = _cachedCurrentTime;
                         }
                         // 格式化显示时间
                         UpdateProgressTimerUI();
@@ -308,7 +311,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
+                //System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
         }
 
