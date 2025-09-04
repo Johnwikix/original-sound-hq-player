@@ -774,4 +774,13 @@
   <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
     <value>Global FFmpeg decoding</value>
   </data>
+  <data name="TransparentTintStyle.Content" xml:space="preserve">
+    <value>Complete Transparent</value>
+  </data>
+  <data name="CustomAcrylicStyle.Content" xml:space="preserve">
+    <value>Custom Acrylic</value>
+  </data>
+  <data name="CustomOpacity.Text" xml:space="preserve">
+    <value>Opacity</value>
+  </data>
 </root>

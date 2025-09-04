@@ -15,6 +15,11 @@ namespace WinUIMusicPlayer.Model
         public string LrcAPISource { get; set; } = "https://api.lrc.cx";
         public string LrcAPIAuth { get; set; }
         public string AppStyle { get; set; } = "TransparentAcrylic";
+        public float CustomAcrylicOpacity { get; set; } = 0.5f;
+        public byte CustomColorAlpha { get; set; } = 255;
+        public byte CustomColorRed { get; set; } = 128;
+        public byte CustomColorGreen { get; set; } = 128;
+        public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Dark";
         public bool isCoverCacheEnabled { get; set; } = false;
         public bool isRunningBackend { get; set; } = true;

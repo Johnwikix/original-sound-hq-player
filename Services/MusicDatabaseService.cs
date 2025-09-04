@@ -869,6 +869,11 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppHeight = settings.AppHeight;
                 AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
                 AppSettings.IsGlobalFFmpegEnabled = settings.IsGlobalFFmpegEnabled;
+                AppSettings.CustomAcrylicOpacity = settings.CustomAcrylicOpacity;
+                AppSettings.CustomColorAlpha = settings.CustomColorAlpha;
+                AppSettings.CustomColorRed = settings.CustomColorRed;
+                AppSettings.CustomColorGreen = settings.CustomColorGreen;
+                AppSettings.CustomColorBlue = settings.CustomColorBlue;
             }
         }
 
@@ -905,6 +910,11 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppWidth = AppSettings.AppWidth;
             newSettings.GlobalFont = AppSettings.GlobalFont.Source;
             newSettings.IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
+            newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
+            newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
+            newSettings.CustomColorRed = AppSettings.CustomColorRed;
+            newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
+            newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

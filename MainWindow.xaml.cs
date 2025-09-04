@@ -217,6 +217,11 @@ namespace WinUIMusicPlayer
             themeStyleHelper.SetAppStyle();
         }
 
+        public void SetCustomAppStyle()
+        {
+            themeStyleHelper.ChangeCustomAcrylicStyle();
+        }
+
         public void SetAppTheme()
         {
             themeStyleHelper.SetAppStyle();

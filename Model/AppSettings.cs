@@ -27,6 +27,11 @@ namespace WinUIMusicPlayer.Model
         public static bool isDsd { get; set; } = false;
         public static float dsdGain { get; set; } = 6f;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
+        public static float CustomAcrylicOpacity { get; set; } = 0.5f;
+        public static byte CustomColorAlpha { get; set; } = 255;
+        public static byte CustomColorRed { get; set; } = 128;
+        public static byte CustomColorGreen { get; set; } = 128;
+        public static byte CustomColorBlue { get; set; } = 128;
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = false;

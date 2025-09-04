@@ -201,24 +201,24 @@
                 <controls:SettingsExpander x:Uid="CloseButtonFunction" Grid.Row="6" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="CloseAppRadioButton"
-                                x:Uid="CloseApp"
-                                Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
-                                CommandParameter="Closed"
-                                GroupName="ClosedGroup"
-                                IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
-                                Tag="Closed" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="RunningBackendRadioButton"
-                                x:Uid="Backgrounder"
-                                Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
-                                CommandParameter="RunningBackend"
-                                GroupName="ClosedGroup"
-                                IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay}"
-                                Tag="RunningBackend" />
+                            <StackPanel>
+                                <RadioButton
+                                    x:Name="CloseAppRadioButton"
+                                    x:Uid="CloseApp"
+                                    Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Closed"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Tag="Closed" />
+                                <RadioButton
+                                    x:Name="RunningBackendRadioButton"
+                                    x:Uid="Backgrounder"
+                                    Command="{Binding ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
+                                    CommandParameter="RunningBackend"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{Binding ViewModel.IsRunningBackend, Mode=TwoWay}"
+                                    Tag="RunningBackend" />
+                            </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
@@ -227,24 +227,24 @@
                 <controls:SettingsExpander x:Uid="ProcessPriorityFunction" Grid.Row="7" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="ProcessNormalRadioButton"
-                                x:Uid="ProcessPriorityNormal"
-                                Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
-                                CommandParameter="Normal"
-                                GroupName="ProcessPriorityGroup"
-                                IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
-                                Tag="Normal" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="ProcessAboveNormalRadioButton"
-                                x:Uid="ProcessPriorityAboveNormal"
-                                Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
-                                CommandParameter="AboveNormal"
-                                GroupName="ProcessPriorityGroup"
-                                IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay}"
-                                Tag="AboveNormal" />
+                            <StackPanel>
+                                <RadioButton
+                                    x:Name="ProcessNormalRadioButton"
+                                    x:Uid="ProcessPriorityNormal"
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Normal"
+                                    GroupName="ProcessPriorityGroup"
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Tag="Normal" />
+                                <RadioButton
+                                    x:Name="ProcessAboveNormalRadioButton"
+                                    x:Uid="ProcessPriorityAboveNormal"
+                                    Command="{Binding ViewModel.ProcessPriorityChangedCommand, Mode=OneWay}"
+                                    CommandParameter="AboveNormal"
+                                    GroupName="ProcessPriorityGroup"
+                                    IsChecked="{Binding ViewModel.IsProcessAboveNormal, Mode=TwoWay}"
+                                    Tag="AboveNormal" />
+                            </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
@@ -262,34 +262,77 @@
                 <controls:SettingsExpander x:Uid="AppStyle" Grid.Row="10" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="MicaRadioButton"
-                                x:Uid="MicaStyle"
-                                Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Mica"
-                                GroupName="BackdropGroup"
-                                IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Mica}"
-                                Tag="Mica" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="AcrylicRadioButton"
-                                x:Uid="AcrylicStyle"
-                                Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Acrylic"
-                                GroupName="BackdropGroup"
-                                IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Acrylic}"
-                                Tag="Acrylic" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="TransparentAcrylicRadioButton"
-                                x:Uid="TransparentAcrylicStyle"
-                                Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="TransparentAcrylic"
-                                GroupName="BackdropGroup"
-                                IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=TransparentAcrylic}"
-                                Tag="TransparentAcrylic" />
+                            <StackPanel>
+                                <RadioButton
+                                    x:Name="TransparentTintRadioButton"
+                                    x:Uid="TransparentTintStyle"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="TransparentTint"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=TransparentTint}"
+                                    Tag="TransparentTint" />
+                                <RadioButton
+                                    x:Name="MicaRadioButton"
+                                    x:Uid="MicaStyle"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Mica"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Mica}"
+                                    Tag="Mica" />
+                                <RadioButton
+                                    x:Name="AcrylicRadioButton"
+                                    x:Uid="AcrylicStyle"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Acrylic"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Acrylic}"
+                                    Tag="Acrylic" />
+                                <RadioButton
+                                    x:Name="TransparentAcrylicRadioButton"
+                                    x:Uid="TransparentAcrylicStyle"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="TransparentAcrylic"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=TransparentAcrylic}"
+                                    Tag="TransparentAcrylic" />
+                                <RadioButton
+                                    x:Name="CustomAcrylicStyleRadioButton"
+                                    x:Uid="CustomAcrylicStyle"
+                                    Command="{Binding ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="CustomAcrylicStyle"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=CustomAcrylicStyle}"
+                                    Tag="CustomAcrylicStyle" />
+                                <StackPanel Visibility="{Binding ViewModel.IsColorPickerVisible, Mode=OneWay}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Center"
+                                            x:Uid="CustomOpacity" />
+                                        <Slider
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Stretch"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            Value="{Binding ViewModel.CustomOpacity, Mode=TwoWay}" />
+                                    </Grid>
+                                    <ColorPicker
+                                        ColorSpectrumShape="Ring"
+                                        IsAlphaEnabled="True"
+                                        IsAlphaSliderVisible="True"
+                                        IsAlphaTextInputVisible="False"
+                                        IsColorChannelTextInputVisible="False"
+                                        IsColorSliderVisible="True"
+                                        IsHexInputVisible="False"
+                                        IsMoreButtonVisible="False"
+                                        Color="{Binding ViewModel.CustomColor, Mode=TwoWay}" />
+                                </StackPanel>
+                            </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
@@ -297,34 +340,32 @@
                 <controls:SettingsExpander x:Uid="ThemeStyle" Grid.Row="11" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="DefaultRadioButton"
-                                x:Uid="SystemDefaultTheme"
-                                Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Default"
-                                GroupName="ThemeGroup"
-                                IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Default}"
-                                Tag="Default" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="DarkRadioButton"
-                                x:Uid="Dark"
-                                Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Dark"
-                                GroupName="ThemeGroup"
-                                IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Dark}"
-                                Tag="Dark" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <RadioButton
-                                x:Name="LightRadioButton"
-                                x:Uid="Light"
-                                Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Light"
-                                GroupName="ThemeGroup"
-                                IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Light}"
-                                Tag="Light" />
+                            <StackPanel>
+                                <RadioButton
+                                    x:Name="DefaultRadioButton"
+                                    x:Uid="SystemDefaultTheme"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Default"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Default}"
+                                    Tag="Default" />
+                                <RadioButton
+                                    x:Name="DarkRadioButton"
+                                    x:Uid="Dark"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Dark"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Dark}"
+                                    Tag="Dark" />
+                                <RadioButton
+                                    x:Name="LightRadioButton"
+                                    x:Uid="Light"
+                                    Command="{Binding ViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Light"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{Binding ViewModel.ThemeType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=Light}"
+                                    Tag="Light" />
+                            </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

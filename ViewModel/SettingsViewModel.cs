@@ -14,6 +14,7 @@ using System.Linq;
 using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.System;
+using Windows.UI;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -489,6 +490,51 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private bool _isColorPickerVisible = false;
+        public bool IsColorPickerVisible
+        {
+            get => _isColorPickerVisible;
+            set => SetProperty(ref _isColorPickerVisible, value);
+        }
+
+        private Color _customColor = Color.FromArgb(255,128,128,128);
+        public Color CustomColor
+        {
+            get => _customColor;
+            set
+            {
+                if (SetProperty(ref _customColor, value))
+                {  
+                    if (_isInitized)
+                    {
+                        AppSettings.CustomColorAlpha = value.A;
+                        AppSettings.CustomColorRed = value.R;
+                        AppSettings.CustomColorGreen = value.G;
+                        AppSettings.CustomColorBlue = value.B;
+                        App.MainWindow?.SetCustomAppStyle();
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private float _customOpacity = 50f;
+        public float CustomOpacity
+        {
+            get => _customOpacity;
+            set
+            {
+                if (SetProperty(ref _customOpacity, value)) {                    
+                    if (_isInitized)
+                    {
+                        AppSettings.CustomAcrylicOpacity = value / 100;
+                        App.MainWindow?.SetCustomAppStyle();
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
 
         public SettingsViewModel()
         {
@@ -528,6 +574,18 @@ namespace WinUIMusicPlayer.ViewModel
             DeviceName = AppSettings.DeviceName;
             // 初始化背景类型
             BackdropType = AppSettings.AppStyle;
+            if (BackdropType != "CustomAcrylicStyle")
+            {
+                IsColorPickerVisible = false;
+            }
+            else {
+                IsColorPickerVisible = true;
+            }
+            CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
+            CustomColor = Color.FromArgb(AppSettings.CustomColorAlpha,
+                                                 AppSettings.CustomColorRed,
+                                                 AppSettings.CustomColorGreen,
+                                                 AppSettings.CustomColorBlue);
             // 初始化主题类型
             ThemeType = AppSettings.AppTheme;
             // 初始化入口动画时间
@@ -566,15 +624,24 @@ namespace WinUIMusicPlayer.ViewModel
                 switch (type)
                 {
                     case "Acrylic":
-                        // 设置为Acrylic背景
                         AppSettings.AppStyle = "Acrylic";
+                        IsColorPickerVisible = false;
                         break;
                     case "TransparentAcrylic":
                         AppSettings.AppStyle = "TransparentAcrylic";
+                        IsColorPickerVisible = false;
                         break;
                     case "Mica":
-                        // 设置为Mica背景
                         AppSettings.AppStyle = "Mica";
+                        IsColorPickerVisible = false;
+                        break;
+                    case "TransparentTint":
+                        AppSettings.AppStyle = "TransparentTint";
+                        IsColorPickerVisible = false;
+                        break;
+                    case "CustomAcrylicStyle":
+                        AppSettings.AppStyle = "CustomAcrylicStyle";
+                        IsColorPickerVisible = true;
                         break;
                 }
                 App.MainWindow?.SetAppStyle();
