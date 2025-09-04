@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.View
 
         public async void ReceiveNavigationParameter(object parameter)
         {
-            Debug.WriteLine($"SettingsPage received parameter: {parameter}");
+            //Debug.WriteLine($"SettingsPage received parameter: {parameter}");
             await ToolUtils.RefreshDevice();
             LoadOutputDevices();
         }

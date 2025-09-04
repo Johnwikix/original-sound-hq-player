@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.Helper
             if (_acrylicController == null || _dispatcherQueue == null || !_isConnected)
             {
                 // 记录日志，帮助诊断问题
-                System.Diagnostics.Debug.WriteLine("SetAcrylicProperties被调用，但控制器或调度队列无效");
+                //System.Diagnostics.Debug.WriteLine("SetAcrylicProperties被调用，但控制器或调度队列无效");
                 return;
             }
 
@@ -157,16 +157,16 @@ namespace WinUIMusicPlayer.Helper
                         _acrylicController.TintColor = TintColor;
                         _acrylicController.TintOpacity = (float)TintOpacity;
                         _acrylicController.LuminosityOpacity = (float)LuminosityOpacity;
-                        System.Diagnostics.Debug.WriteLine($"成功更新亚克力效果 - 颜色: {TintColor}, 不透明度: {TintOpacity}");
+                        //System.Diagnostics.Debug.WriteLine($"成功更新亚克力效果 - 颜色: {TintColor}, 不透明度: {TintOpacity}");
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
+                        //System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SetAcrylicProperties error: {ex.Message}");
+                    //System.Diagnostics.Debug.WriteLine($"SetAcrylicProperties error: {ex.Message}");
                 }
             });
         }

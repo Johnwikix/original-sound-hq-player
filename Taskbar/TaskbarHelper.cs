@@ -255,7 +255,7 @@ namespace testDemo.Taskbar
         // 处理任务栏按钮点击事件
         private void HandleThumbButtonClick(int buttonId)
         {
-            System.Diagnostics.Debug.WriteLine($"任务栏按钮点击：按钮ID {buttonId}");
+            //System.Diagnostics.Debug.WriteLine($"任务栏按钮点击：按钮ID {buttonId}");
             if (buttonId == 0)
             {
                 _musicBrowseViewModel.LastMusicButton_Click();
@@ -274,7 +274,7 @@ namespace testDemo.Taskbar
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath); // 按钮2的ID是1
-                System.Diagnostics.Debug.WriteLine("已将按钮2的图标更改为Button4.ico");
+                //System.Diagnostics.Debug.WriteLine("已将按钮2的图标更改为Button4.ico");
             }
 
             // 触发事件

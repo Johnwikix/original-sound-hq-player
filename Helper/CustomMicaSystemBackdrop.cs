@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.Helper
             if (_micaController == null || _dispatcherQueue == null || !_isConnected)
             {
                 // 记录日志，帮助诊断问题
-                System.Diagnostics.Debug.WriteLine("SetMicaProperties被调用，但控制器或调度队列无效");
+                //System.Diagnostics.Debug.WriteLine("SetMicaProperties被调用，但控制器或调度队列无效");
                 return;
             }
 
@@ -157,16 +157,16 @@ namespace WinUIMusicPlayer.Helper
                         _micaController.Kind = MicaKind;
                         _micaController.TintColor = TintColor;
                         _micaController.TintOpacity = TintOpacity;
-                        System.Diagnostics.Debug.WriteLine($"成功更新云母效果 - 类型: {MicaKind}, 颜色: {TintColor}, 不透明度: {TintOpacity}");
+                        //System.Diagnostics.Debug.WriteLine($"成功更新云母效果 - 类型: {MicaKind}, 颜色: {TintColor}, 不透明度: {TintOpacity}");
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
+                        //System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SetMicaProperties error: {ex.Message}");
+                    //System.Diagnostics.Debug.WriteLine($"SetMicaProperties error: {ex.Message}");
                 }
             });
         }

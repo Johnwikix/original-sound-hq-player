@@ -115,18 +115,14 @@ namespace WinUIMusicPlayer.Helper
                 if (!result)
                 {
                     int error = Marshal.GetLastWin32Error();
-                    Debug.WriteLine($"禁用效率模式失败，错误代码: {error}");
-                }
-                else
-                {
-                    Debug.WriteLine("成功禁用效率模式");
-                }
+                    //Debug.WriteLine($"禁用效率模式失败，错误代码: {error}");
+                }                
 
                 return result;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"尝试禁用效率模式时出错: {ex.Message}");
+                //Debug.WriteLine($"尝试禁用效率模式时出错: {ex.Message}");
                 return false;
             }
         }

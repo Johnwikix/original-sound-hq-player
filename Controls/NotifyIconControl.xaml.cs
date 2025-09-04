@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.Controls
         private void PlayMode_Click(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as ToggleMenuFlyoutItem;
-            Debug.WriteLine(menuItem?.Name.ToString());
+            //Debug.WriteLine(menuItem?.Name.ToString());
             if (menuItem != null && menuItem.IsChecked == true)
             {
                 UncheckOtherItems(menuItem);

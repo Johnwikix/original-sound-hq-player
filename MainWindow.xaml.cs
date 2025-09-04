@@ -128,7 +128,7 @@ namespace WinUIMusicPlayer
             {
                 if (msg == SingleInstanceHelper.WM_SHOWME)
                 {
-                    Debug.WriteLine("收到显示窗口消息");
+                    //Debug.WriteLine("收到显示窗口消息");
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         if (this == null)
@@ -193,9 +193,9 @@ namespace WinUIMusicPlayer
                 UpdateAppNotifyIconControl();
                 updateSelectSection?.Invoke(this, EventArgs.Empty);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"初始化错误: {ex.Message}");
+                //System.Diagnostics.Debug.WriteLine($"初始化错误: {ex.Message}");
             }
         }
 
