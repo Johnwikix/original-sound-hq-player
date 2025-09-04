@@ -139,8 +139,7 @@ namespace WinUIMusicPlayer.Reader
                         {
                             readerStream = new MediaFoundationReader(fileName);
                         }
-                    }
-                    if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+                    } else if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                     {
                         readerStream = new VorbisWaveReader(fileName);
                     }

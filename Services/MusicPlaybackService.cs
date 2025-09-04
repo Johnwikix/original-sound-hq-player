@@ -286,7 +286,7 @@ namespace WinUIMusicPlayer.Services
                     if (multiTypeAudioReader != null)
                     {
                         Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}");
-                        if (AppSettings.IsGlobalFFmpegEnabled && _cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
+                        if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
                         {
                             if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
                             {
