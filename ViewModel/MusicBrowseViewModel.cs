@@ -689,7 +689,7 @@ namespace WinUIMusicPlayer.ViewModel
                 _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
-            await _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
+            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
         }
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
