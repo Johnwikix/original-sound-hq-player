@@ -30,7 +30,10 @@
             </TransitionCollection>
         </Grid.Transitions>
         <Grid Grid.Row="0" Margin="32,0,32,0">
-            <TextBlock x:Uid="Settings" Margin="10,20,0,10" FontSize="28" />
+            <TextBlock
+                x:Uid="Settings"
+                Margin="10,20,0,10"
+                FontSize="28" />
         </Grid>
         <ScrollView Grid.Row="1">
             <Grid Margin="32,0,32,0">
@@ -53,7 +56,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ChildrenTransitions>
-                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="True" />
+                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
                 </Grid.ChildrenTransitions>
                 <TextBlock
@@ -61,7 +64,10 @@
                     Grid.Row="1"
                     Margin="10,10,0,0"
                     FontSize="16" />
-                <controls:SettingsExpander x:Uid="SettingOutput" Grid.Row="2" Margin="10,10,10,0">
+                <controls:SettingsExpander
+                    x:Uid="SettingOutput"
+                    Grid.Row="2"
+                    Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="SettingOutputMode">
                             <ComboBox
@@ -113,7 +119,10 @@
                     Grid.Row="3"
                     Margin="10,10,0,0"
                     FontSize="16" />
-                <controls:SettingsExpander x:Uid="SettingInterface" Grid.Row="4" Margin="10,10,10,0">
+                <controls:SettingsExpander
+                    x:Uid="SettingInterface"
+                    Grid.Row="4"
+                    Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="DefaultEntryInterface">
                             <ComboBox
@@ -142,7 +151,10 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  封面歌词设置  -->
-                <controls:SettingsExpander x:Uid="SettingCoverLyrics" Grid.Row="5" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="SettingCoverLyrics"
+                    Grid.Row="5"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                             x:Name="LrcAPISource"
@@ -213,7 +225,10 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  关闭按钮功能  -->
-                <controls:SettingsExpander x:Uid="CloseButtonFunction" Grid.Row="6" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="CloseButtonFunction"
+                    Grid.Row="6"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -239,7 +254,10 @@
                 </controls:SettingsExpander>
 
                 <!--  进程优先级功能  -->
-                <controls:SettingsExpander x:Uid="ProcessPriorityFunction" Grid.Row="7" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="ProcessPriorityFunction"
+                    Grid.Row="7"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -264,7 +282,10 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  音乐库文件夹监听功能  -->
-                <controls:SettingsCard x:Uid="FolderWatchEnabled" Grid.Row="8" Margin="10,0,10,0">
+                <controls:SettingsCard
+                    x:Uid="FolderWatchEnabled"
+                    Grid.Row="8"
+                    Margin="10,0,10,0">
                     <ToggleSwitch IsOn="{Binding ViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <!--  外观设置  -->
@@ -274,7 +295,10 @@
                     Margin="10,10,0,0"
                     FontSize="16" />
                 <!--  背景设置  -->
-                <controls:SettingsExpander x:Uid="AppStyle" Grid.Row="10" Margin="10,10,10,0">
+                <controls:SettingsExpander
+                    x:Uid="AppStyle"
+                    Grid.Row="10"
+                    Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsUpdateBackDrop">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
@@ -343,11 +367,11 @@
                                         ColorSpectrumShape="Ring"
                                         IsAlphaEnabled="True"
                                         IsAlphaSliderVisible="True"
-                                        IsAlphaTextInputVisible="False"
-                                        IsColorChannelTextInputVisible="False"
+                                        IsAlphaTextInputVisible="True"
+                                        IsColorChannelTextInputVisible="True"
                                         IsColorSliderVisible="True"
                                         IsHexInputVisible="False"
-                                        IsMoreButtonVisible="False"
+                                        IsMoreButtonVisible="True"
                                         Color="{Binding ViewModel.CustomColor, Mode=TwoWay}" />
                                 </StackPanel>
                             </StackPanel>
@@ -355,7 +379,10 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  主题设置  -->
-                <controls:SettingsExpander x:Uid="ThemeStyle" Grid.Row="11" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="ThemeStyle"
+                    Grid.Row="11"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -388,7 +415,10 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  动画设置  -->
-                <controls:SettingsExpander x:Uid="AnimationSettings" Grid.Row="12" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="AnimationSettings"
+                    Grid.Row="12"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="EntranceAnimationTime">
                             <NumberBox
@@ -424,7 +454,10 @@
                 </controls:SettingsExpander>
 
                 <!--  窗口大小设置  -->
-                <controls:SettingsExpander x:Uid="MainWindowSizeSettings" Grid.Row="13" Margin="10,0,10,0">
+                <controls:SettingsExpander
+                    x:Uid="MainWindowSizeSettings"
+                    Grid.Row="13"
+                    Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsCustomAppSize" Description="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCustomAppSize, Mode=TwoWay}" />
@@ -474,10 +507,16 @@
                         Text="{Binding ViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
+                            <HyperlinkButton
+                                x:Name="ThirdParty"
+                                x:Uid="ThirdPartyComponents"
+                                Click="ThirdParty_Click" />
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                            <HyperlinkButton
+                                x:Name="LogPath"
+                                x:Uid="LogPath"
+                                Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
