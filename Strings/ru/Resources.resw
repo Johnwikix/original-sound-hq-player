@@ -775,7 +775,7 @@
     <value>Глобальное декодирование FFmpeg</value>
   </data>
   <data name="TransparentTintStyle.Content" xml:space="preserve">
-    <value>Полностью прозрачный</value>
+    <value>Прозрачный</value>
   </data>
   <data name="CustomAcrylicStyle.Content" xml:space="preserve">
     <value>Акрил на заказ</value>

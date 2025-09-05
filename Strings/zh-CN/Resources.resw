@@ -775,7 +775,7 @@
     <value>全局FFmpeg解码</value>
   </data>
   <data name="TransparentTintStyle.Content" xml:space="preserve">
-    <value>完全透明</value>
+    <value>透明</value>
   </data>
   <data name="CustomAcrylicStyle.Content" xml:space="preserve">
     <value>自定义亚克力</value>

@@ -775,7 +775,7 @@
     <value>Global FFmpeg decoding</value>
   </data>
   <data name="TransparentTintStyle.Content" xml:space="preserve">
-    <value>Complete Transparent</value>
+    <value>Transparent</value>
   </data>
   <data name="CustomAcrylicStyle.Content" xml:space="preserve">
     <value>Custom Acrylic</value>

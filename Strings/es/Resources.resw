@@ -775,7 +775,7 @@
     <value>Decodificación global ffmega</value>
   </data>
   <data name="TransparentTintStyle.Content" xml:space="preserve">
-    <value>Completamente Transparente</value>
+    <value>Transparente</value>
   </data>
   <data name="CustomAcrylicStyle.Content" xml:space="preserve">
     <value>Acrílico personalizado</value>
