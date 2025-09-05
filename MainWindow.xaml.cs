@@ -169,10 +169,10 @@ namespace WinUIMusicPlayer
                 {
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                 }
-                else
-                {
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
-                }
+                //else
+                //{
+                //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+                //}
             }
         }
 
