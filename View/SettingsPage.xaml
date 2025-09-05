@@ -52,6 +52,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <Grid.ChildrenTransitions>
+                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="True" />
+                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                </Grid.ChildrenTransitions>
                 <TextBlock
                     x:Uid="SettingAudio"
                     Grid.Row="1"
@@ -180,7 +184,7 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>                       
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
