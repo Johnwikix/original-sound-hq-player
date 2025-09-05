@@ -180,12 +180,12 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>                       
+                        <controls:SettingsCard x:Uid="BackgroundCover">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching" Description="{x:Bind tool:ToolUtils.GetString('NeedConfigureLrcAPIService')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="BackgroundCover">
-                            <ToggleSwitch IsOn="{Binding ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
                             <ComboBox
