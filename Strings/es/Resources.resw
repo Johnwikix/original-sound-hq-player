@@ -798,4 +798,7 @@
   <data name="Right.Content" xml:space="preserve">
     <value>Right</value>
   </data>
+  <data name="LyricsMargin.Header" xml:space="preserve">
+    <value>Letras Margin</value>
+  </data>
 </root>

@@ -564,6 +564,22 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private int _lyricsMargin = 0;
+        public int LyricsMargin
+        {
+            get => _lyricsMargin;
+            set
+            {
+                if (SetProperty(ref _lyricsMargin, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.LyricsMargin = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
 
 
         public SettingsViewModel()
@@ -645,6 +661,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+            LyricsMargin = AppSettings.LyricsMargin;
             _isInitized = true;
         }
         

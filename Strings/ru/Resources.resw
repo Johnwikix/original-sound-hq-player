@@ -798,4 +798,7 @@
   <data name="Right.Content" xml:space="preserve">
     <value>право</value>
   </data>
+  <data name="LyricsMargin.Header" xml:space="preserve">
+    <value>Лирика Margin</value>
+  </data>
 </root>

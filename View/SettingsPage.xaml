@@ -222,6 +222,16 @@
                                 <ComboBoxItem x:Uid="Right" Tag="Right" />
                             </ComboBox>
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsMargin">
+                            <NumberBox
+                                x:Name="LyricsMarginNumberBox"
+                                Width="300"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{Binding ViewModel.LyricsMargin, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  关闭按钮功能  -->

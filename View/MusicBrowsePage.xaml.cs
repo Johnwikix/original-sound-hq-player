@@ -498,6 +498,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel.CurrentPlayingMusic = music;
                 ViewModel.LoadLyricsToUI();
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
+                ViewModel.UpdateLyricsMargin();
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
@@ -505,8 +506,6 @@ namespace WinUIMusicPlayer.View
                 {
                     ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 });
-
-
             }
             catch (Exception ex)
             {

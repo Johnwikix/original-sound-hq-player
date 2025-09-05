@@ -43,5 +43,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsGlobalFFmpegEnabled { get; set; } = false;
         public bool IsUpdateBackDrop { get; set; } = false;
         public string LyricsAlignment { get; set; } = "Center";
+        public int LyricsMargin { get; set; } = 20;
     }
 }

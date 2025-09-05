@@ -875,6 +875,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.CustomColorBlue = settings.CustomColorBlue;
                 AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
+                AppSettings.LyricsMargin = settings.LyricsMargin;
             }
         }
 
@@ -917,7 +918,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
             newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
             newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-            newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment)  ;
+            newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+            newSettings.LyricsMargin = AppSettings.LyricsMargin;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

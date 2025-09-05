@@ -798,4 +798,7 @@
   <data name="Right.Content" xml:space="preserve">
     <value>靠右</value>
   </data>
+  <data name="LyricsMargin.Header" xml:space="preserve">
+    <value>歌词边距</value>
+  </data>
 </root>

@@ -331,6 +331,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private Thickness _lyricsMargin;
+        public Thickness LyricsMargin
+        {
+            get => _lyricsMargin;
+            set => SetProperty(ref _lyricsMargin, value);
+        }
         public System.Type currentPage = typeof(SongListPage);
         public Music CurrentAlbum;
         public Music CurrentArtist;
@@ -348,8 +354,8 @@ namespace WinUIMusicPlayer.ViewModel
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;
-            //ChangeLyricsAlignment(AppSettings.LyricsAlignment);
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
+            LyricsMargin = new Thickness(AppSettings.LyricsMargin,0, AppSettings.LyricsMargin,0);
             UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
@@ -364,7 +370,11 @@ namespace WinUIMusicPlayer.ViewModel
             StartWatchingUsbStorageDevices();
             //UpdateDisplayTexts();           
         }
-        
+        public void UpdateLyricsMargin() {
+            if (LyricsMargin.Left != AppSettings.LyricsMargin) {
+                LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
+            }            
+        }
 
         public void AllSortOptions()
         {
