@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
@@ -1254,5 +1255,13 @@ namespace WinUIMusicPlayer.Utils
             return [.. list.OrderBy(f => f.Name)];
         }
 
+        public static TextAlignment ConvertStringToTextAlignment(string alignment)
+        {
+            return Enum.TryParse(alignment, true, out TextAlignment result) ? result : TextAlignment.Left;
+        }
+        public static string ConvertTextAlignmentToString(TextAlignment alignment)
+        {
+            return alignment.ToString();
+        }
     }
 }

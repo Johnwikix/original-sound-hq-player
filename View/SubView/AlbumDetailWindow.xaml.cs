@@ -52,7 +52,15 @@ namespace WinUIMusicPlayer.View.SubView
             }
             Title = ToolUtils.GetString("AlbumDetailTitle");
             this.Closed += AlbumDetailWindow_Closed;
-        }        
+            this.Activated += AlbumDetailWindow_Activated;
+        }
+
+        private void AlbumDetailWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            if (AppSettings.IsUpdateBackDrop) {
+                themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
+            }            
+        }
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
         {
@@ -62,6 +70,8 @@ namespace WinUIMusicPlayer.View.SubView
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
                 App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
             }
+            this.Activated -= AlbumDetailWindow_Activated;
+            this.Closed -= AlbumDetailWindow_Closed;
         }
 
         private void setWindow()

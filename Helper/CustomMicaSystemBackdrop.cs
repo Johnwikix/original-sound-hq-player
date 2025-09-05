@@ -186,5 +186,13 @@ namespace WinUIMusicPlayer.Helper
         {
             return MicaController.IsSupported();
         }
+
+        public void UpdateActiveState(bool isActive)
+        {
+            if (_backdropConfiguration != null)
+            {
+                _backdropConfiguration.IsInputActive = isActive;
+            }
+        }
     }
 }

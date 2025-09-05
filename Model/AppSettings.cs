@@ -76,5 +76,7 @@ namespace WinUIMusicPlayer.Model
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
         public static List<FontInfo> FontFamilyList { get; set; }
         public static bool IsGlobalFFmpegEnabled { get; set; } = false;
+        public static bool IsUpdateBackDrop { get; set; } = false;
+        public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
     }
 }

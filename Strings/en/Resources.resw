@@ -783,4 +783,19 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>Opacity</value>
   </data>
+  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+    <value>Stop background updates when windows are out of focus</value>
+  </data>
+  <data name="LyricsAlignment.Header" xml:space="preserve">
+    <value>Lyrics Alignment</value>
+  </data>
+  <data name="Left.Content" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Center.Content" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Right.Content" xml:space="preserve">
+    <value>Right</value>
+  </data>
 </root>

@@ -180,5 +180,13 @@ namespace WinUIMusicPlayer.Helper
 
             SetAcrylicProperties();
         }
+
+        public void UpdateActiveState(bool isActive)
+        {
+            if (_backdropConfiguration != null)
+            {
+                _backdropConfiguration.IsInputActive = isActive;
+            }
+        }
     }
 }

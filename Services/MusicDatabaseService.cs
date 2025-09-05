@@ -849,7 +849,6 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;
                 AppSettings.isCoverCacheEnabled = settings.isCoverCacheEnabled;
-                //AppSettings.maxCoverPreLoadNum = settings.maxCoverPreLoadNum;
                 AppSettings.isRunningBackend = settings.isRunningBackend;
                 AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
                 AppSettings.dsdGain = settings.dsdGain;
@@ -874,6 +873,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.CustomColorRed = settings.CustomColorRed;
                 AppSettings.CustomColorGreen = settings.CustomColorGreen;
                 AppSettings.CustomColorBlue = settings.CustomColorBlue;
+                AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
+                AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
             }
         }
 
@@ -915,6 +916,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.CustomColorRed = AppSettings.CustomColorRed;
             newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
             newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
+            newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
+            newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment)  ;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

@@ -49,8 +49,17 @@ namespace WinUIMusicPlayer.View.SubView
                 App.MainWindow.customStyleChanged += MainWindow_customStyleChanged;
             }
             Title = ToolUtils.GetString("MusicDetailTitle");
+            this.Activated += MusicDetailsWindow_Activated;
             this.Closed += MusicDetailWindow_Closed;
-        }        
+        }
+
+        private void MusicDetailsWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            if (AppSettings.IsUpdateBackDrop)
+            {
+                themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
+            }
+        }
 
         private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
         {
@@ -58,7 +67,10 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
+                App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
             }
+            this.Activated -= MusicDetailsWindow_Activated;
+            this.Closed -= MusicDetailWindow_Closed;
         }
 
         private void setWindow()

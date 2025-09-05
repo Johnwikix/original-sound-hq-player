@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer
 
                         if (!this.Visible)
                         {
-                            this.Show(); 
+                            this.Show();
                             InitializeTaskbarHelper();
                         }
                     });
@@ -293,11 +293,13 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (args.WindowActivationState != WindowActivationState.Deactivated)
-            {
-
-                this.Activated -= MainWindow_Activated; // 只执行一次
-            }
+            //if (args.WindowActivationState != WindowActivationState.Deactivated)
+            //{
+            //    this.Activated -= MainWindow_Activated;                
+            //}
+            if (AppSettings.IsUpdateBackDrop) {
+                themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
+            }            
             if (_taskbarHelper == null)
             {
                 InitializeTaskbarHelper();

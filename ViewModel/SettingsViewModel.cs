@@ -253,12 +253,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _outputModeTag, value))
-                {
-                    // 更新应用设置
-                    AppSettings.OutputMode = value;
-                    // 保存设置                   
+                {           
                     if (_isInitized)
                     {
+                        AppSettings.OutputMode = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                         AppSettings.OnOutputSettingsChanged();
                     }
@@ -407,7 +405,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (_isInitized)
                     {
                         _ = MusicDatabaseService.SaveSettingAsync();
-                        App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackgroundOpacity();
+                        App.Services.GetRequiredService<MusicBrowsePage>()?.ChangeAcrylicBrushBackgroundOpacity();
                     }
                 }
             }
@@ -534,6 +532,38 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private bool _isUpdateBackDrop = false;
+        public bool IsUpdateBackDrop
+        {
+            get => _isUpdateBackDrop;
+            set
+            {
+                if (SetProperty(ref _isUpdateBackDrop, value))
+                {                    
+                    if (_isInitized)
+                    {
+                        AppSettings.IsUpdateBackDrop = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+        private string _lyricsAlignment = "Left";
+        public string LyricsAlignment
+        {
+            get => _lyricsAlignment;
+            set
+            {
+                if (SetProperty(ref _lyricsAlignment, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(value);
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
 
 
         public SettingsViewModel()
@@ -613,6 +643,8 @@ namespace WinUIMusicPlayer.ViewModel
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
             FontFamily = FontFamilyList.FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
             IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
+            IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
+            LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             _isInitized = true;
         }
         

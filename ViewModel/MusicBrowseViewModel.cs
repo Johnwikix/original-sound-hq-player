@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -347,6 +348,7 @@ namespace WinUIMusicPlayer.ViewModel
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;
+            //ChangeLyricsAlignment(AppSettings.LyricsAlignment);
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
             UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
@@ -362,6 +364,7 @@ namespace WinUIMusicPlayer.ViewModel
             StartWatchingUsbStorageDevices();
             //UpdateDisplayTexts();           
         }
+        
 
         public void AllSortOptions()
         {

@@ -783,4 +783,19 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>不透明度</value>
   </data>
+  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+    <value>ウィンドウがフォーカスを失ったときに背景更新を停止する</value>
+  </data>
+  <data name="LyricsAlignment.Header" xml:space="preserve">
+    <value>歌詞のアラインメント</value>
+  </data>
+  <data name="Left.Content" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="Center.Content" xml:space="preserve">
+    <value>居中</value>
+  </data>
+  <data name="Right.Content" xml:space="preserve">
+    <value>右</value>
+  </data>
 </root>

@@ -153,6 +153,24 @@ namespace WinUIMusicPlayer.Helper
             }
         }
 
+        public void IsBackdropActive(bool IsActive)
+        {
+            try
+            {
+                if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop Acrylicbackdrop)
+                {
+                    Acrylicbackdrop.UpdateActiveState(IsActive);
+                }
+                else if (_window.SystemBackdrop is CustomMicaSystemBackdrop Micabackdrop)
+                {
+                    Micabackdrop.UpdateActiveState(IsActive);
+                }
+            }
+            catch (Exception)
+            {                
+            }
+        }
+
         public void SetAppTheme()
         {
             try

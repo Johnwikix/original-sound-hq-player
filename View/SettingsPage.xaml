@@ -195,6 +195,17 @@
                                 ItemsSource="{Binding ViewModel.FontFamilyList, Mode=OneWay}"
                                 SelectedValue="{Binding ViewModel.FontFamily, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsAlignment">
+                            <ComboBox
+                                x:Name="LyricsAlignmentComboBox"
+                                Width="300"
+                                SelectedValue="{Binding ViewModel.LyricsAlignment, Mode=TwoWay}"
+                                SelectedValuePath="Tag">
+                                <ComboBoxItem x:Uid="Left" Tag="Left" />
+                                <ComboBoxItem x:Uid="Center" Tag="Center" />
+                                <ComboBoxItem x:Uid="Right" Tag="Right" />
+                            </ComboBox>
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  关闭按钮功能  -->
@@ -261,6 +272,9 @@
                 <!--  背景设置  -->
                 <controls:SettingsExpander x:Uid="AppStyle" Grid.Row="10" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="IsUpdateBackDrop">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
                                 <RadioButton
@@ -310,10 +324,10 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock
+                                            x:Uid="CustomOpacity"
                                             Grid.Column="0"
                                             Margin="0,0,10,0"
-                                            VerticalAlignment="Center"
-                                            x:Uid="CustomOpacity" />
+                                            VerticalAlignment="Center" />
                                         <Slider
                                             Grid.Column="1"
                                             HorizontalAlignment="Stretch"

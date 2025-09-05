@@ -783,4 +783,19 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>Непрозрачность</value>
   </data>
+  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+    <value>Остановка фоновых обновлений, когда окна находятся не в фокусе</value>
+  </data>
+  <data name="LyricsAlignment.Header" xml:space="preserve">
+    <value>Выравнивание текстов песен</value>
+  </data>
+  <data name="Left.Content" xml:space="preserve">
+    <value>Налево</value>
+  </data>
+  <data name="Center.Content" xml:space="preserve">
+    <value>Центр</value>
+  </data>
+  <data name="Right.Content" xml:space="preserve">
+    <value>право</value>
+  </data>
 </root>
