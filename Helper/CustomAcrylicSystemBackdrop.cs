@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.Helper
             // 监听窗口状态变更
             if (connectedTarget is Window window)
             {
-                window.Activated += Window_Activated;
+                //window.Activated += Window_Activated;
                 window.Closed += Window_Closed;
             }
 
@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.Helper
 
                 if (_currentTarget is Window window)
                 {
-                    window.Activated += Window_Activated;
+                    //window.Activated += Window_Activated;
                     window.Closed += Window_Closed;
                 }
             }
