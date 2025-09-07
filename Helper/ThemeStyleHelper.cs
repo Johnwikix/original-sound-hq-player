@@ -83,18 +83,23 @@ namespace WinUIMusicPlayer.Helper
                         }                       
                         break;
                     case "Mica":
-                        _window.SystemBackdrop = null;                        
-                        var mica = new CustomMicaSystemBackdrop
-                        {
-                            MicaKind = MicaKind.Base,
-                            TintOpacity = 0.8f,
-                            TintColor = uiColor
-                        };
-                        _window.SystemBackdrop = mica;
+                        if (_window.SystemBackdrop is not CustomMicaSystemBackdrop) {
+                            _window.SystemBackdrop = null;
+                            var mica = new CustomMicaSystemBackdrop
+                            {
+                                MicaKind = MicaKind.Base,
+                                TintOpacity = 0.8f,
+                                TintColor = uiColor
+                            };
+                            _window.SystemBackdrop = mica;
+                        }                        
                         break;
                     case "TransparentTint":
-                        _window.SystemBackdrop = null;                        
-                        _window.SystemBackdrop = new TransparentTintBackdrop(Colors.Transparent);
+                        if (_window.SystemBackdrop is not TransparentTintBackdrop)
+                        {
+                            _window.SystemBackdrop = null;
+                            _window.SystemBackdrop = new TransparentTintBackdrop(Colors.Transparent);
+                        }                        
                         break;
                     case "CustomAcrylicStyle":
                         if (backdrop != null)
