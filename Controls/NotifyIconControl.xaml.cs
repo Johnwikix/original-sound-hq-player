@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
@@ -174,12 +175,15 @@ namespace WinUIMusicPlayer.Controls
             if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
             {
                 // 如果窗口最小化，则恢复它
-                if (WindowHelper.IsIconic(AppData.m_hWnd))
-                {
-                    WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
-                }
+                //if (WindowHelper.IsIconic(AppData.m_hWnd))
+                //{
+                //    //WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
+                //}
                 // 将窗口置于前台
-                WindowHelper.SetForegroundWindow(AppData.m_hWnd);
+                //WindowHelper.SetForegroundWindow(AppData.m_hWnd);
+                window.Restore();
+                window.Activate();
+                window.SetForegroundWindow();
             }
             else
             {
