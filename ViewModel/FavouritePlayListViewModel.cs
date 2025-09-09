@@ -183,12 +183,14 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task DragItems()
         {
-            for (int i = 0; i < MusicList.Count; i++)
-            {
-                MusicList[i].Order = MusicList.Count - i;
-            }
-            await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            if (AppData.sortOrder == "DefaultOrder") {
+                for (int i = 0; i < MusicList.Count; i++)
+                {
+                    MusicList[i].Order = MusicList.Count - i;
+                }
+                await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            }            
         }
 
         public void ClearUsbDeviceMusicList()

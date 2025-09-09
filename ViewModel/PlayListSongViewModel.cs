@@ -146,16 +146,18 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void MusicListView_DragItemsCompleted()
         {
-            if (_parentPage != null)
+            if (AppData.sortOrder == "DefaultOrder")
             {
-                for (int i = 0; i < MusicList.Count; i++)
+                if (_parentPage != null)
                 {
-                    MusicList[i].PlayListOrder = MusicList.Count - i;
-                    //await MusicDatabaseService.UpdatePlayListMusicOrder(_parentPage.currentPlayList.Id, MusicList[i]);
+                    for (int i = 0; i < MusicList.Count; i++)
+                    {
+                        MusicList[i].PlayListOrder = MusicList.Count - i;
+                    }
+                    await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.ToList());
+                    await MusicDatabaseService.GetPlayListMusic();
                 }
-                await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.ToList());
-                await MusicDatabaseService.GetPlayListMusic();
-            }
+            }            
         }
 
         public void LoadMusicAsync(IEnumerable<Music> musics)

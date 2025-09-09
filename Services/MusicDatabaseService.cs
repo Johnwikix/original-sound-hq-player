@@ -392,7 +392,7 @@ namespace WinUIMusicPlayer.Services
         //    }
         //}
 
-        public static async Task UpdatePlayListMusicOrderBatch(int playListId, List<Music> musicList)
+        public static async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<Music> musicList)
         {
             try
             {
@@ -414,8 +414,7 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
 
-                // 批量更新
-                if (playListMusics.Any())
+                if (playListMusics.Count != 0)
                 {
                     await _dbConnection.UpdateAllAsync(playListMusics);
                 }
