@@ -591,7 +591,7 @@ namespace WinUIMusicPlayer.Services
                     waveOut = new NAudio.Wave.WasapiOut(selectedDevice, AudioClientShareMode.Exclusive, true, AppSettings.Latency);
                     break;
                 case "DirectSound":
-                    waveOut = new NAudio.Wave.DirectSoundOut();
+                    waveOut = new NAudio.Wave.DirectSoundOut(AppSettings.Latency);
                     break;
                 case "ASIO":
                     waveOut = new NAudio.Wave.AsioOut();
