@@ -74,6 +74,8 @@ namespace WinUIMusicPlayer.Model
         public static int AppWidth { get; set; } = 1440;
         public static int AppHeight { get; set; } = 810;
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
+        public static bool IsGlobalFontSizeEnabled { get; set; } = false;
+        public static double GlobalFontSize { get; set; } = 32;
         public static List<FontInfo> FontFamilyList { get; set; }
         public static bool IsGlobalFFmpegEnabled { get; set; } = false;
         public static bool IsUpdateBackDrop { get; set; } = false;

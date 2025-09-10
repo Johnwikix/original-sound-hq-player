@@ -875,6 +875,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
                 AppSettings.LyricsMargin = settings.LyricsMargin;
+                AppSettings.GlobalFontSize = settings.GlobalFontSize;
+                AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
             }
         }
 
@@ -919,6 +921,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             newSettings.LyricsMargin = AppSettings.LyricsMargin;
+            newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
+            newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

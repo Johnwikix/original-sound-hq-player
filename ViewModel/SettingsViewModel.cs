@@ -580,6 +580,39 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private bool _isGlobalFontSizeEnabled = false;
+        public bool IsGlobalFontSizeEnabled
+        {
+            get => _isGlobalFontSizeEnabled;
+            set
+            {
+                if (SetProperty(ref _isGlobalFontSizeEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsGlobalFontSizeEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private double _globalFontSize = 32f;
+        public double GlobalFontSize
+        {
+            get => _globalFontSize;
+            set
+            {
+                if (SetProperty(ref _globalFontSize, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.GlobalFontSize = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
 
 
         public SettingsViewModel()
@@ -662,6 +695,8 @@ namespace WinUIMusicPlayer.ViewModel
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             LyricsMargin = AppSettings.LyricsMargin;
+            IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
+            GlobalFontSize = AppSettings.GlobalFontSize;
             _isInitized = true;
         }
         

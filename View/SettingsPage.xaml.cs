@@ -83,5 +83,11 @@ namespace WinUIMusicPlayer.View
             Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
             await Launcher.LaunchUriAsync(uri);
         }
+
+        private void SpectrumVisualization_Click(object sender, RoutedEventArgs e)
+        {
+            string storeUri = $"ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7";
+            _ = Launcher.LaunchUriAsync(new Uri(storeUri));
+        }
     }
 }

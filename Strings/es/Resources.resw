@@ -801,4 +801,10 @@
   <data name="LyricsMargin.Header" xml:space="preserve">
     <value>Letras Margin</value>
   </data>
+  <data name="SpectrumVisualization.Header" xml:space="preserve">
+    <value>SpectrumVisualization</value>
+  </data>
+  <data name="LyricsFontSize.Header" xml:space="preserve">
+    <value>Tamaño de fuente de letras</value>
+  </data>
 </root>

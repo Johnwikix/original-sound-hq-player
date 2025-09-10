@@ -40,6 +40,8 @@ namespace WinUIMusicPlayer.Model
         public int AppWidth { get; set; } = 1440;
         public int AppHeight { get; set; } = 810;
         public string GlobalFont { get; set; } = "Segoe UI, sans-serif";
+        public bool IsGlobalFontSizeEnabled { get; set; } = false;
+        public double GlobalFontSize { get; set; } = 32;
         public bool IsGlobalFFmpegEnabled { get; set; } = false;
         public bool IsUpdateBackDrop { get; set; } = false;
         public string LyricsAlignment { get; set; } = "Center";

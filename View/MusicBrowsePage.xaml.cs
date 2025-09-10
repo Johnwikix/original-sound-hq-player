@@ -724,7 +724,7 @@ namespace WinUIMusicPlayer.View
         private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var textblock = (TextBlock)sender;
-            if (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 34 || textblock.FontSize == 36 || textblock.FontSize == 40)
+            if ((!AppSettings.IsGlobalFontSizeEnabled && (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 36 || textblock.FontSize == 40 || textblock.FontSize == 44)) || (AppSettings.IsGlobalFontSizeEnabled && textblock.FontSize == AppSettings.GlobalFontSize))
             {
                 var currentScrollPosition = LyricViewer.VerticalOffset;
                 var point = new Point(0, currentScrollPosition);
