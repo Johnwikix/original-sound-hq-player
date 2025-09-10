@@ -188,11 +188,11 @@ namespace WinUIMusicPlayer
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
-                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
-                LoadingGrid.Visibility = Visibility.Collapsed;
-                NavigationViewControl.Visibility = Visibility.Visible;
+                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();               
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
+                LoadingGrid.Visibility = Visibility.Collapsed;
+                NavigationViewControl.Visibility = Visibility.Visible;
                 updateSelectSection?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception)
@@ -241,6 +241,7 @@ namespace WinUIMusicPlayer
                     break;
                 }
             }
+            _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
