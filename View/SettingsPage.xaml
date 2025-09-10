@@ -53,7 +53,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ChildrenTransitions>
-                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="True" />
+                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
                 </Grid.ChildrenTransitions>
                 <TextBlock
@@ -63,7 +63,6 @@
                     FontSize="16" />
                 <StackPanel Grid.Row="2">
                     <StackPanel.ChildrenTransitions>
-                        <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="True" />
                         <RepositionThemeTransition IsStaggeringEnabled="False" />
                     </StackPanel.ChildrenTransitions>
                     <controls:SettingsExpander x:Uid="SettingOutput" Margin="10,10,10,0">
@@ -220,7 +219,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <ToggleSwitch Margin="0,0,10,0" Grid.Column="0" IsOn="{Binding ViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
+                                <ToggleSwitch Grid.Column="0" Margin="0,0,10,0" IsOn="{Binding ViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
                                 <NumberBox
                                     x:Name="LyricsFontSize"
                                     Grid.Column="1"

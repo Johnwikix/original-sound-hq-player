@@ -805,6 +805,6 @@
     <value>音频可视化</value>
   </data>
   <data name="LyricsFontSize.Header" xml:space="preserve">
-    <value>歌词字体大小</value>
+    <value>歌词字号</value>
   </data>
 </root>
