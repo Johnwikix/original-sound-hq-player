@@ -64,10 +64,16 @@ namespace WinUIMusicPlayer.ViewModel
             //WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
             //var folder = await folderPicker.PickSingleFolderAsync();
             //await AddFolderMusic(folder);
-            var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
-            PickFolderResult result = await folderPicker.PickSingleFolderAsync();
-            if (result == null) return;
-            await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
+            try
+            {
+                var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
+                PickFolderResult result = await folderPicker.PickSingleFolderAsync();
+                if (result == null) return;
+                await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
+            }
+            catch (Exception)
+            {
+            }
         }
         private async Task AddFolderMusic(StorageFolder folder)
         {
