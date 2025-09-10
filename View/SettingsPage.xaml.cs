@@ -86,8 +86,11 @@ namespace WinUIMusicPlayer.View
 
         private void SpectrumVisualization_Click(object sender, RoutedEventArgs e)
         {
-            string storeUri = $"ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7";
-            _ = Launcher.LaunchUriAsync(new Uri(storeUri));
+            string storeUri = "spectrumvisualization:";
+            LauncherOptions options = new LauncherOptions {
+                FallbackUri = new Uri("ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7")
+            };
+            _=Launcher.LaunchUriAsync(new Uri(storeUri), options);
         }
     }
 }
