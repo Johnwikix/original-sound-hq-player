@@ -244,13 +244,14 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                     _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
                     break;
                 case "MusicBrowse":
                     _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                     break;
                 default:
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                     break;
             }
         }
