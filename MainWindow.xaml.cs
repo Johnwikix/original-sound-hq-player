@@ -241,7 +241,6 @@ namespace WinUIMusicPlayer
                     break;
                 }
             }
-            _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
