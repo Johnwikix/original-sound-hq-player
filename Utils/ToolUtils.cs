@@ -690,7 +690,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void DeleteFileFromDisk(string path)
+        public static bool DeleteFileFromDisk(string path)
         {
             try
             {
@@ -702,16 +702,20 @@ namespace WinUIMusicPlayer.Utils
                         UIOption.OnlyErrorDialogs,
                         RecycleOption.SendToRecycleBin
                     );
+                    return true;
                 }
                 else
                 {
+                    return true;
                 }
             }
             catch (OperationCanceledException)
             {
+                return false;
             }
             catch (Exception ex)
             {
+                return false;
             }
         }
 

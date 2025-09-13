@@ -234,6 +234,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public async Task<bool> IsDeleteFromDisk()
+        {
+            if (parentPage == null)
+            {
+                return false;
+            }
+            return await parentPage.AreUSureDeleteFromDisk();
+        }
+
         public void MusicListView_DoubleTapped(Music selectedMusic)
         {
             if (selectedMusic != null && parentPage != null)
@@ -315,18 +324,20 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
-                    {
-                        await MusicDatabaseService.RemoveMusic((MusicList[i].Id));
-                        ToolUtils.DeleteFileFromDisk((MusicList[i].Path));
-                        MusicList.RemoveAt(i);
+                    {                        
+                        if (ToolUtils.DeleteFileFromDisk((MusicList[i].Path))) {
+                            await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
+                            MusicList.RemoveAt(i);
+                        }                        
                     }
                 }
             }
             else
-            {
-                await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
-                ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
-                MusicList.Remove(SelectedMusic);
+            {                
+                if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path)) {
+                    await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                    MusicList.Remove(SelectedMusic);
+                }   
             }
         }
 

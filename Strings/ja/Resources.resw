@@ -807,4 +807,7 @@
   <data name="LyricsFontSize.Header" xml:space="preserve">
     <value>歌詞のフォントサイズ</value>
   </data>
+  <data name="AreUSureDeleteFromDisk" xml:space="preserve">
+    <value>音楽をディスクから削除してよろしいですか？</value>
+  </data>
 </root>

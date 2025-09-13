@@ -78,6 +78,15 @@ namespace WinUIMusicPlayer.ViewModel
             RefreshUsbDeviceMusicList(null, null);
         }
 
+        public async Task<bool> IsDeleteFromDisk()
+        {
+            if (_parentPage == null)
+            {
+                return false;
+            }
+            return await _parentPage.AreUSureDeleteFromDisk();
+        }
+
         private void OnConverterProgressUpdated(object sender, double progress)
         {
             if (_progressDialog != null)
@@ -288,20 +297,22 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
-                    {
-                        await MusicDatabaseService.RemoveMusic((MusicList[i].Id));
-                        ToolUtils.DeleteFileFromDisk((MusicList[i].Path));
-                        MusicList.RemoveAt(i);
+                    {                        
+                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path)) {
+                            await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
+                            MusicList.RemoveAt(i);
+                        }
                     }
                 }
             }
             else
             {
                 if (SelectedMusic != null)
-                {
-                    await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
-                    ToolUtils.DeleteFileFromDisk(SelectedMusic.Path);
-                    MusicList.Remove(SelectedMusic);
+                {                    
+                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path)) {
+                        await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                        MusicList.Remove(SelectedMusic);
+                    }
                 }
             }
         }

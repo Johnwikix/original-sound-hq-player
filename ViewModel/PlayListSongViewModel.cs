@@ -253,6 +253,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public async Task<bool> IsDeleteFromDisk()
+        {
+            if (_parentPage == null)
+            {
+                return false;
+            }
+            return await _parentPage.AreUSureDeleteFromDisk();
+        }
+
         public async Task DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)

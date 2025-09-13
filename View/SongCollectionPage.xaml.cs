@@ -87,8 +87,11 @@ namespace WinUIMusicPlayer.View
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
+            if (await ViewModel.IsDeleteFromDisk())
+            {
+                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
+            }            
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)

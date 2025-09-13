@@ -114,10 +114,22 @@ namespace WinUIMusicPlayer.View
             _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
         }
 
-        //private void MainWindow_updateSelectSection(object? sender, EventArgs e)
-        //{
-        //    SelectBarItem(AppSettings.DefualtPlayList);
-        //}
+        public async Task<bool> AreUSureDeleteFromDisk() {
+            ContentDialog contentDialog = new ContentDialog
+            {
+                Title = ToolUtils.GetString("AreUSureDeleteFromDisk"),
+                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+                CloseButtonText = ToolUtils.GetString("CloseButton"),
+                XamlRoot = this.XamlRoot
+            };
+            contentDialog.RequestedTheme = AppSettings.elementTheme;
+            ContentDialogResult result = await contentDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                return true;
+            }
+            return false;
+        }
 
         private void SetAcrylicBrushBackground()
         {
