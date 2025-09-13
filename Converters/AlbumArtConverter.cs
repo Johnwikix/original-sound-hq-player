@@ -16,10 +16,8 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            // 传入的 value 是音乐文件路径
             if (value is Music music && music != null)
             {
-                // 创建一个占位符，图片加载前显示
                 var placeholderBitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
                 if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
                 {
@@ -27,10 +25,8 @@ namespace WinUIMusicPlayer.Converters
                 }
                 else
                 {
-                    // 异步地加载图片
                     _ = LoadImageAsync(music.Path, music.Album, placeholderBitmap);
                 }
-                //_ = LoadImageAsync(music.Path, music.Album, placeholderBitmap);
                 return placeholderBitmap;
             }
             return null;
