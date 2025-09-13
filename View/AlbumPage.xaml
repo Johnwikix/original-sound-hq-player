@@ -8,7 +8,7 @@
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     NavigationCacheMode="Enabled"
-    mc:Ignorable="d">    
+    mc:Ignorable="d">
     <Grid Margin="0">
         <SemanticZoom>
             <!--  详细视图 (ZoomedInView)  -->
@@ -21,7 +21,7 @@
                     ItemClick="AlbumGridView_ItemClick"
                     ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Album_RightTapped"
-                    SelectionMode = "None"
+                    SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <GridView.GroupStyle>
                         <GroupStyle>
@@ -59,7 +59,7 @@
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Canvas.ZIndex="1"
-                                                Source="{Binding Cover}"
+                                                Source="{Binding Converter={StaticResource AlbumArtConverter}}"
                                                 Stretch="UniformToFill" />
                                             <Grid
                                                 Width="150"
@@ -131,5 +131,5 @@
                 </GridView>
             </SemanticZoom.ZoomedOutView>
         </SemanticZoom>
-    </Grid>   
+    </Grid>
 </Page>

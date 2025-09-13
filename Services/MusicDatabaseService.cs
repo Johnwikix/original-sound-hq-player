@@ -308,7 +308,6 @@ namespace WinUIMusicPlayer.Services
                                 Id = m.Id,
                                 Path = m.Path,
                                 Title = m.Title,
-                                Cover = m.Cover,
                                 Author = m.Author,
                                 Duration = m.Duration,
                                 Album = m.Album,

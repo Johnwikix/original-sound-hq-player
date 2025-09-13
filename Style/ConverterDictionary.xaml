@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:WinUIMusicPlayer.Converters">
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:WinUIMusicPlayer.Converters">
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
     <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />
@@ -30,4 +33,5 @@
     <converters:HideNavigationViewIconConverter x:Key="HideNavigationViewIconConverter" />
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <converters:AlbumArtConverter x:Key="AlbumArtConverter" />
 </ResourceDictionary>

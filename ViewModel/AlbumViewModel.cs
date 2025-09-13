@@ -176,7 +176,7 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 SortMusicList(_currentSortOrder, false);
-                ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
+                //ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
             }
             catch (Exception ex)
             {
@@ -190,7 +190,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .FirstOrDefault(music => music.Album == cover.Album);
             if (musicToUpdate != null)
             {
-                musicToUpdate.Cover = cover.Cover;
+                //musicToUpdate.Cover = cover.Cover;
                 musicToUpdate.Year = cover.Year;
                 musicToUpdate.Album = cover.Album;
             }

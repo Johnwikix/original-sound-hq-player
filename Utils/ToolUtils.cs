@@ -213,50 +213,49 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<BitmapImage> GetAlbumCover(Music album, int coverSize = 150)
-        {
-            BitmapImage newCover = album.Cover;
-            var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
-            if (album.Album != "未知专辑")
-            {
-                if (musics == null || musics.Count() == 0)
-                {
-                    return null;
-                }
-                foreach (var song in musics)
-                {
-                    try
-                    {
-                        using (var file = TagLib.File.Create(song.Path))
-                        {
-                            if (file.Tag.Pictures.Length > 0)
-                            {
-                                var picture = file.Tag.Pictures[0];
-                                newCover = await ReadBitmapImageAsync(picture, coverSize);
-                            }
-                            else
-                            {
-                                newCover = null;
-                            }
-                            return newCover;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        //newCover = await DefaultAlbumCover();
-                        Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-                        return null;
-                    }
-                }
-            }
-            else
-            {
-                //newCover = await DefaultAlbumCover();
-                return null;
-            }
-            return newCover;
-        }
-
+        //public static async Task<BitmapImage> GetAlbumCover(Music album, int coverSize = 150)
+        //{
+        //    BitmapImage newCover = album.Cover;
+        //    var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
+        //    if (album.Album != "未知专辑")
+        //    {
+        //        if (musics == null || musics.Count() == 0)
+        //        {
+        //            return null;
+        //        }
+        //        foreach (var song in musics)
+        //        {
+        //            try
+        //            {
+        //                using (var file = TagLib.File.Create(song.Path))
+        //                {
+        //                    if (file.Tag.Pictures.Length > 0)
+        //                    {
+        //                        var picture = file.Tag.Pictures[0];
+        //                        newCover = await ReadBitmapImageAsync(picture, coverSize);
+        //                    }
+        //                    else
+        //                    {
+        //                        newCover = null;
+        //                    }
+        //                    return newCover;
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                //newCover = await DefaultAlbumCover();
+        //                Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
+        //                return null;
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        //newCover = await DefaultAlbumCover();
+        //        return null;
+        //    }
+        //    return newCover;
+        //}
 
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
@@ -876,56 +875,56 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
-        public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
-        {
-            _ = Task.Run(async () =>
-            {
-                var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
-                var allMusicItems = groupedByFirstLetter.AsValueEnumerable().SelectMany(group => group);
-                var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
-                {
-                    await semaphore.WaitAsync();
-                    try
-                    {
-                        if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-                        {
-                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                music.Cover = cachedCover;
-                            });
-                        }
-                        else
-                        {
-                            BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-                            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                music.Cover = cover;
-                            });
-                            if (AppSettings.isCoverCacheEnabled && cover != null)
-                            {
-                                AppData.albumCoverCache.SetValue(music.Album, cover);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-                    }
-                    finally
-                    {
-                        semaphore.Release(); // 释放信号量
-                    }
-                })).ToArray();
-                try
-                {
-                    await Task.WhenAll(visibleTasks);
-                }
-                finally
-                {
-                    semaphore.Dispose();
-                }
-            });
-        }
+        //public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
+        //{
+        //    _ = Task.Run(async () =>
+        //    {
+        //        var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
+        //        var allMusicItems = groupedByFirstLetter.AsValueEnumerable().SelectMany(group => group);
+        //        var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
+        //        {
+        //            await semaphore.WaitAsync();
+        //            try
+        //            {
+        //                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
+        //                {
+        //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //                    {
+        //                        music.Cover = cachedCover;
+        //                    });
+        //                }
+        //                else
+        //                {
+        //                    BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
+        //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //                    {
+        //                        music.Cover = cover;
+        //                    });
+        //                    if (AppSettings.isCoverCacheEnabled && cover != null)
+        //                    {
+        //                        AppData.albumCoverCache.SetValue(music.Album, cover);
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
+        //            }
+        //            finally
+        //            {
+        //                semaphore.Release(); // 释放信号量
+        //            }
+        //        })).ToArray();
+        //        try
+        //        {
+        //            await Task.WhenAll(visibleTasks);
+        //        }
+        //        finally
+        //        {
+        //            semaphore.Dispose();
+        //        }
+        //    });
+        //}
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
         {

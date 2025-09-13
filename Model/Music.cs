@@ -18,13 +18,13 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _title, value);
         }
 
-        private BitmapImage _cover = null;
-        [Ignore]
-        public BitmapImage Cover
-        {
-            get => _cover;
-            set => SetProperty(ref _cover, value);
-        }
+        //private BitmapImage _cover = null;
+        //[Ignore]
+        //public BitmapImage Cover
+        //{
+        //    get => _cover;
+        //    set => SetProperty(ref _cover, value);
+        //}
 
         private string _author;
         public string Author

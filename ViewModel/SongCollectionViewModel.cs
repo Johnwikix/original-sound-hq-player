@@ -172,7 +172,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentAlbum;
-                    GetCover();
+                    //GetCover();
                     var musics = MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
                     FirstTitle = CurrentMusicObject.Album;
                     SecondTitle = string.Join(" · ", AppData.allSongs
@@ -186,7 +186,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentArtist;
-                    GetCover();
+                    //GetCover();
                     var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs
@@ -202,7 +202,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
-                    GetCover();
+                    //GetCover();
                     var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs
@@ -229,23 +229,23 @@ namespace WinUIMusicPlayer.ViewModel
             return await _parentPage.AreUSureDeleteFromDisk();
         }
 
-        private void GetCover() {
-            _ = Task.Run(async () =>
-            {
-                if (CurrentMusicObject?.Cover == null)
-                {
-                    BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        CurrentMusicObject.Cover = cover;
-                    });
-                    if (AppSettings.isCoverCacheEnabled && cover != null)
-                    {
-                        AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
-                    }
-                }
-            });
-        }
+        //private void GetCover() {
+        //    _ = Task.Run(async () =>
+        //    {
+        //        if (CurrentMusicObject?.Cover == null)
+        //        {
+        //            BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
+        //            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //            {
+        //                CurrentMusicObject.Cover = cover;
+        //            });
+        //            if (AppSettings.isCoverCacheEnabled && cover != null)
+        //            {
+        //                AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
+        //            }
+        //        }
+        //    });
+        //}
 
         public void SortMusicList(string sortOrder, string type)
         {
