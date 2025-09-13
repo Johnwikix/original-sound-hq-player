@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {
-        public MainWindow mainWindow;
+        //public MainWindow mainWindow;
         private bool isMouseOverVolumeSlider = false;
         private DispatcherTimer typingTimer;
         private NotificationService notificationService;
@@ -66,13 +66,11 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListPage>();
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
-            //this.KeyDown += MusicBrowsePage_KeyDown;
             this.Focus(FocusState.Programmatic);
-            mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
+            if (App.MainWindow != null)
             {
-                mainWindow.updateMusicList += MainWindow_updateMusicList;
-                mainWindow.updateSelectSection += MainWindow_updateSelectSection;
+                App.MainWindow.updateMusicList += MainWindow_updateMusicList;
+                //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
@@ -100,10 +98,15 @@ namespace WinUIMusicPlayer.View
             SetAcrylicBrushBackground();
             //Task.Run(() => {
             //    ViewModel.OnFileChanged(null, null);
-            //});            
+            //});
             ViewModel.IsInitialized = true;
-            //TODO 波形可视化
+            this.Loaded += OnPageLoaded;
+        }
 
+        private void OnPageLoaded(object sender, RoutedEventArgs e)
+        {
+            SelectBarItem(AppSettings.DefualtPlayList);
+            this.Loaded -= OnPageLoaded;        
         }
 
         public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
@@ -111,10 +114,10 @@ namespace WinUIMusicPlayer.View
             _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
         }
 
-        private void MainWindow_updateSelectSection(object? sender, EventArgs e)
-        {
-            SelectBarItem(AppSettings.DefualtPlayList);
-        }
+        //private void MainWindow_updateSelectSection(object? sender, EventArgs e)
+        //{
+        //    SelectBarItem(AppSettings.DefualtPlayList);
+        //}
 
         private void SetAcrylicBrushBackground()
         {
@@ -168,10 +171,10 @@ namespace WinUIMusicPlayer.View
         public async Task ClosePage()
         {
             await ViewModel._musicPlaybackService.DisposeAudio();
-            if (mainWindow != null)
+            if (App.MainWindow != null)
             {
-                mainWindow.updateSelectSection -= MainWindow_updateSelectSection;
-                mainWindow.updateMusicList -= MainWindow_updateMusicList;
+                //App.MainWindow.updateSelectSection -= MainWindow_updateSelectSection;
+                App.MainWindow.updateMusicList -= MainWindow_updateMusicList;
             }
         }
 
@@ -204,15 +207,15 @@ namespace WinUIMusicPlayer.View
 
         public void DisableBackButton()
         {
-            if (mainWindow != null)
+            if (App.MainWindow != null)
             {
                 if (ViewModel.currentPage == typeof(SongCollectionPage) || ViewModel.currentPage == typeof(PlayListSongPage))
                 {
-                    mainWindow.DisableEnableBackButton(true);
+                    App.MainWindow.DisableEnableBackButton(true);
                 }
                 else
                 {
-                    mainWindow.DisableEnableBackButton(false);
+                    App.MainWindow.DisableEnableBackButton(false);
                 }
             }
         }
@@ -664,7 +667,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;
                 App.MainWindow.NavigationViewCollapsed();
-                mainWindow?.AppTitleBarVisibility(false);
+                App.MainWindow?.AppTitleBarVisibility(false);
                 ChangeAcrylicBrushBackgroundOpacity();
                 ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
                 ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
@@ -695,7 +698,7 @@ namespace WinUIMusicPlayer.View
             App.MainWindow.IsPlayingDetail = false;
             App.MainWindow.NavigationViewExpanded();
             ChangeAcrylicBrushBackgroundOpacity();
-            mainWindow?.AppTitleBarVisibility(true);
+            App.MainWindow?.AppTitleBarVisibility(true);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToControlBar", PlayingDetailControlBar);

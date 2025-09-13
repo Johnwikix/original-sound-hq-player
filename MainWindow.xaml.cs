@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
-        public event EventHandler updateSelectSection;
+        //public event EventHandler updateSelectSection;
         public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
@@ -193,7 +193,7 @@ namespace WinUIMusicPlayer
                 UpdateAppNotifyIconControl();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
-                updateSelectSection?.Invoke(this, EventArgs.Empty);
+                //updateSelectSection?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception)
             {
@@ -244,7 +244,6 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
                     _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
                     break;
                 case "MusicBrowse":

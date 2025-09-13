@@ -207,12 +207,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInitialized
         {
             get => _isInitialized;
-            set
-            {
-                if (SetProperty(ref _isInitialized, value))
-                {
-                }
-            }
+            set => SetProperty(ref _isInitialized, value);
         }
         private ObservableCollection<LyricLine> _uiLyrics;
         public ObservableCollection<LyricLine> UILyrics
