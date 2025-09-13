@@ -855,19 +855,24 @@ namespace WinUIMusicPlayer.Services
                         UpdateProgressTimerUI();
                         App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                         {
-                            MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
-                            if (isSettingChanged)
+                            try
                             {
-                                MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
+                                MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
+                                if (isSettingChanged)
+                                {
+                                    MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
+                                }
+                                else
+                                {
+                                    MusicBrowseViewModel.ProgressSlider = 0;
+                                }
+                                AppSettings.isPlaying = true;
+                                MusicBrowseViewModel.IsPlaying = true;
+                                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                                _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
                             }
-                            else
-                            {
-                                MusicBrowseViewModel.ProgressSlider = 0;
-                            }
-                            AppSettings.isPlaying = true;
-                            MusicBrowseViewModel.IsPlaying = true;
-                            MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                            _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
+                            catch (Exception) {
+                            }                           
                         });
                     }
                     catch (Exception ex)
