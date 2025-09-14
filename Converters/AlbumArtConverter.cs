@@ -19,22 +19,18 @@ namespace WinUIMusicPlayer.Converters
 {
     public class AlbumArtConverter : IValueConverter
     {
-        private static readonly SemaphoreSlim _semaphore = new(4);
+        private static readonly SemaphoreSlim _semaphore = new(AppSettings.CoverLoadThreadCount);
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is Music music && music != null)
             {
-                // 尝试从缓存中获取 byte[] 数组
-                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedData))
+                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cached))
                 {
-                    // 如果命中，直接从 byte[] 数组创建 BitmapImage
-                    var cachedBitmap = new BitmapImage();
-                    _ = SetSourceAsync(cachedBitmap, cachedData);
-                    return cachedBitmap;
+                    return cached;
                 }
                 // 缓存未命中，开始加载
-                var placeholderBitmap = new BitmapImage();
+                var placeholderBitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
                 _ = LoadImageAsync(music.Path, music.Album, placeholderBitmap);
                 return placeholderBitmap;
             }
@@ -61,23 +57,40 @@ namespace WinUIMusicPlayer.Converters
                             var picture = file.Tag.Pictures.FirstOrDefault();
                             if (picture?.Data.Data != null)
                             {
-                                using (var originalStream = new InMemoryRandomAccessStream())
+                                // 直接使用图片的原始数据，避免额外的内存复制
+                                using (var originalStream = new MemoryStream(picture.Data.Data))
                                 {
-                                    await originalStream.WriteAsync(picture.Data.Data.AsBuffer());
-                                    originalStream.Seek(0);
                                     // 解码原始图像
-                                    var decoder = await BitmapDecoder.CreateAsync(originalStream);
+                                    var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
+                                    // 计算保持宽高比的缩放尺寸
+                                    double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                                    uint newWidth, newHeight;
+                                    if (aspectRatio > 1) // 宽度大于高度
+                                    {
+                                        newWidth = (uint)AppSettings.CoverSize;
+                                        newHeight = (uint)(AppSettings.CoverSize / aspectRatio);
+                                    }
+                                    else // 高度大于或等于宽度
+                                    {
+                                        newHeight = (uint)AppSettings.CoverSize;
+                                        newWidth = (uint)(AppSettings.CoverSize * aspectRatio);
+                                    }
+
                                     // 创建缩放后的编码器
-                                    var inMemoryStream = new InMemoryRandomAccessStream();
-                                    var encoder = await BitmapEncoder.CreateForTranscodingAsync(inMemoryStream, decoder);
-                                    encoder.BitmapTransform.ScaledWidth = (uint)AppSettings.CoverSize;
-                                    encoder.BitmapTransform.ScaledHeight = (uint)AppSettings.CoverSize;
-                                    encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
-                                    await encoder.FlushAsync();
-                                    // 将缩放后的图像数据转换为 byte[] 数组
-                                    var outputData = new byte[inMemoryStream.Size];
-                                    await inMemoryStream.ReadAsync(outputData.AsBuffer(), (uint)inMemoryStream.Size, InputStreamOptions.None);
-                                    imageData = outputData;
+                                    using (var inMemoryStream = new InMemoryRandomAccessStream())
+                                    {
+                                        var encoder = await BitmapEncoder.CreateForTranscodingAsync(inMemoryStream, decoder);
+                                        encoder.BitmapTransform.ScaledWidth = newWidth;
+                                        encoder.BitmapTransform.ScaledHeight = newHeight;
+                                        encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+                                        await encoder.FlushAsync();
+
+                                        // 优化：直接从流中获取数据，而不是创建新的缓冲区
+                                        inMemoryStream.Seek(0);
+                                        // 使用 ReadAsync 到一个预先分配的缓冲区，避免新的 byte[] 分配
+                                        imageData = new byte[inMemoryStream.Size];
+                                        await inMemoryStream.ReadAsync(imageData.AsBuffer(), (uint)imageData.Length, InputStreamOptions.None);
+                                    }
                                 }
                             }
                         }
@@ -88,14 +101,14 @@ namespace WinUIMusicPlayer.Converters
                 });
 
                 if (imageData != null)
-                {
-                    AppData.albumCoverCache.TryAdd(album, imageData);
+                {                   
                     App.MainWindow.DispatcherQueue.TryEnqueue(
                         async () =>
                         {
                             try
                             {
                                 await SetSourceAsync(bitmap, imageData);
+                                AppData.albumCoverCache.TryAdd(album, bitmap);
                             }
                             catch (Exception)
                             {

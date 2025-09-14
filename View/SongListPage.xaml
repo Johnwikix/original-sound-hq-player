@@ -70,13 +70,19 @@
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.25*" />
                         </Grid.ColumnDefinitions>
-                        <Border
+                        <Button
+                            x:Name="CoverThumbnail"
                             Grid.Column="0"
-                            Width="40"
-                            Height="40"
                             Margin="0,5,10,5"
-                            CornerRadius="5">
-                            <Grid>
+                            Padding="0"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding ElementName=MusicListView, Path=DataContext.ViewModel.PlayMusicCommand}"
+                            CommandParameter="{Binding}"
+                            CornerRadius="5"
+                            Style="{StaticResource PlayHoverButtonStyle}">
+                            <Grid Width="40" Height="40">
                                 <Image
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
@@ -101,7 +107,7 @@
                                         Glyph="&#xE93C;" />
                                 </Grid>
                             </Grid>
-                        </Border>
+                        </Button>
                         <Button
                             x:Name="isFavouriteIconButton"
                             Grid.Column="1"

@@ -494,7 +494,16 @@ namespace WinUIMusicPlayer.ViewModel
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, music);
                 }
             }
+        }
 
+        [RelayCommand]
+        private void PlayMusic(Music music)
+        {
+            if (music != null && parentPage != null)
+            {
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+                parentPage.PlayMusic(music: music, IsChangeList: true);
+            }
         }
     }
 }

@@ -229,23 +229,15 @@ namespace WinUIMusicPlayer.ViewModel
             return await _parentPage.AreUSureDeleteFromDisk();
         }
 
-        //private void GetCover() {
-        //    _ = Task.Run(async () =>
-        //    {
-        //        if (CurrentMusicObject?.Cover == null)
-        //        {
-        //            BitmapImage cover = await ToolUtils.GetAlbumCover(CurrentMusicObject, AppSettings.CoverSize);
-        //            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //            {
-        //                CurrentMusicObject.Cover = cover;
-        //            });
-        //            if (AppSettings.isCoverCacheEnabled && cover != null)
-        //            {
-        //                AppData.albumCoverCache.SetValue(CurrentMusicObject.Album, cover);
-        //            }
-        //        }
-        //    });
-        //}
+        [RelayCommand]
+        private void PlayMusic(Music music)
+        {
+            if (music != null && _parentPage != null)
+            {
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+                _parentPage.PlayMusic(music: music, IsChangeList: true);
+            }
+        }
 
         public void SortMusicList(string sortOrder, string type)
         {

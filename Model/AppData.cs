@@ -3,13 +3,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Drawing;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
 {
     public static class AppData
     {
-        public static ConcurrentDictionary<string, byte[]> albumCoverCache = [];
+        public static ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
         //public static WeakImageCache albumCoverCache = new();
 
         public static IReadOnlyCollection<Music> allSongs = [];

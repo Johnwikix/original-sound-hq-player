@@ -479,5 +479,15 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
+
+        [RelayCommand]
+        private void PlayMusic(Music music)
+        {
+            if (music != null && _parentPage != null)
+            {
+                _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
+                _parentPage.PlayMusic(music: music, IsChangeList: true);
+            }
+        }
     }
 }

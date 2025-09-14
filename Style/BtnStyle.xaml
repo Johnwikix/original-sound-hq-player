@@ -97,6 +97,90 @@
         </Setter>
     </Style>
 
+    <Style x:Key="PlayHoverButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="CornflowerBlue" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border
+                        x:Name="RootBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <Grid>
+                            <ContentPresenter
+                                x:Name="ContentPresenter"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <Border
+                                x:Name="HoverBorder"
+                                Background="Black"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0" />
+
+                            <Path
+                                x:Name="HoverArrow"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Data="M0,0 L0,16 L14,8 Z"
+                                Fill="White"
+                                Opacity="0"
+                                RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <TranslateTransform x:Name="ArrowTransform" Y="0" />
+                                </Path.RenderTransform>
+                            </Path>
+                        </Grid>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal">
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="HoverBorder"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0"
+                                            Duration="0:0:0.2" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="HoverArrow"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0"
+                                            Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="HoverBorder"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0.4"
+                                            Duration="0:0:0.2" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="HoverArrow"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0.9"
+                                            Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="HoverBorder.Opacity" Value="0.6" />
+                                        <Setter Target="HoverArrow.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="CircularHoverButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
