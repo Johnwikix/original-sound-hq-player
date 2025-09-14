@@ -196,7 +196,7 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <!--<controls:SettingsCard x:Uid="CoverLoadThreadCount" Description="{x:Bind tool:ToolUtils.GetString('CoverLoadThreadCountDescription')}">
+                        <controls:SettingsCard x:Uid="CoverLoadThreadCount" Description="{x:Bind tool:ToolUtils.GetString('CoverLoadThreadCountDescription')}">
                             <NumberBox
                                 x:Name="CoverLoadThreadCountNumberBox"
                                 Width="300"
@@ -204,7 +204,7 @@
                                 Minimum="1"
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.CoverLoadThreadCount, Mode=TwoWay}" />
-                        </controls:SettingsCard>-->
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>

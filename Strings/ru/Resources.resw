@@ -709,7 +709,7 @@
     <value>Количество потоков, загруженных на обложку</value>
   </data>
   <data name="CoverLoadThreadCountDescription" xml:space="preserve">
-    <value>Количество потоков на странице альбома для загрузки обложки</value>
+    <value>Количество потоков на странице альбома для загрузки обложки.Перезапустить приложение</value>
   </data>
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>Прослушивание папок библиотеки</value>

@@ -60,13 +60,18 @@
                                                 VerticalAlignment="Center"
                                                 Canvas.ZIndex="1"
                                                 Source="{Binding Converter={StaticResource AlbumArtConverter}}"
-                                                Stretch="UniformToFill" />
+                                                Stretch="UniformToFill">
+                                                <Image.Transitions>
+                                                    <TransitionCollection>
+                                                        <ContentThemeTransition VerticalOffset="100" HorizontalOffset="0" />
+                                                    </TransitionCollection>
+                                                </Image.Transitions>
+                                            </Image>
                                             <Grid
                                                 Width="150"
                                                 Height="150"
                                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                                Canvas.ZIndex="0"
-                                                Visibility="{Binding Cover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                Canvas.ZIndex="0">
                                                 <FontIcon
                                                     Canvas.ZIndex="0"
                                                     FontSize="50"

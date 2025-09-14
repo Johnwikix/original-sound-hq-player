@@ -709,7 +709,7 @@
     <value>カバーロードスレッド数</value>
   </data>
   <data name="CoverLoadThreadCountDescription" xml:space="preserve">
-    <value>アルバムページのロードカバーのスレッド数</value>
+    <value>アルバムページのロードカバーのスレッド数，再起動アプリケーションの有効化</value>
   </data>
   <data name="FolderWatchEnabled.Header" xml:space="preserve">
     <value>ライブラリフォルダの待ち受け</value>

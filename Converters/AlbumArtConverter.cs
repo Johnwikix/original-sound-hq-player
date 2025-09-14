@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
@@ -14,6 +15,7 @@ namespace WinUIMusicPlayer.Converters
 {
     public class AlbumArtConverter : IValueConverter
     {
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount);
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is Music music && music != null)
@@ -34,48 +36,56 @@ namespace WinUIMusicPlayer.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
-            // 通常不需要实现反向转换
             throw new NotImplementedException();
         }
 
         private async Task LoadImageAsync(string filePath,string album, BitmapImage bitmap)
         {
+            await _semaphore.WaitAsync();
             try
             {
-                // 在后台线程执行耗时的文件I/O
-                byte[] albumArtData = await Task.Run(() =>
+                byte[] imageData = null;
+                await Task.Run(() =>
                 {
-                    using (var file = TagLib.File.Create(filePath))
+                    try
                     {
-                        var picture = file.Tag.Pictures.FirstOrDefault();
-                        return picture?.Data.Data;
+                        using (var file = TagLib.File.Create(filePath))
+                        {
+                            var picture = file.Tag.Pictures.FirstOrDefault();
+                            if (picture?.Data.Data != null)
+                            {
+                                imageData = picture.Data.Data;
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
                     }
                 });
-
-                if (albumArtData != null)
+                if (imageData != null)
                 {
-                    // 回到 UI 线程来更新 BitmapImage
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                     {
-                        using (var stream = new MemoryStream(albumArtData))
+                        try
                         {
-                            try
+                            using (var stream = new MemoryStream(imageData))
                             {
-                                await bitmap.SetSourceAsync(stream.AsRandomAccessStream());
+                                bitmap.SetSource(stream.AsRandomAccessStream());
                                 if (AppSettings.isCoverCacheEnabled && bitmap != null)
                                 {
                                     AppData.albumCoverCache.SetValue(album, bitmap);
                                 }
                             }
-                            catch (Exception) {
-                            }                            
+                        }
+                        catch (Exception)
+                        {
                         }
                     });
                 }
             }
-            catch (Exception)
+            finally
             {
-                // 错误处理，可忽略或记录
+                _semaphore.Release();
             }
         }
     }

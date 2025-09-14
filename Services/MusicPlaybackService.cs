@@ -1054,7 +1054,6 @@ namespace WinUIMusicPlayer.Services
                     //    MusicBrowseViewModel.IsPlaying = true;
                     //    progressTimer.Start();
                     //}
-
                 }
                 else
                 {
