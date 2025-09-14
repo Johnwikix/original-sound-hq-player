@@ -700,7 +700,7 @@
     <value>Añadir a la lista de reproducción actual</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">
-    <value>Caché de la portada de la página del álbum</value>
+    <value>Caché de imagen original de la portada del álbum</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>Reproductor HQ Sonido Original</value>

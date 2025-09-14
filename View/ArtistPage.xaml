@@ -54,7 +54,7 @@
                                         Padding="0"
                                         CornerRadius="75">
                                         <Grid>
-                                            <Image
+                                            <!--<Image
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Canvas.ZIndex="1"
@@ -65,7 +65,7 @@
                                                         <ContentThemeTransition />
                                                     </TransitionCollection>
                                                 </Image.Transitions>
-                                            </Image>
+                                            </Image>-->
                                             <Grid
                                                 Width="150"
                                                 Height="150"

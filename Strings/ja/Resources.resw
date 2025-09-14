@@ -700,7 +700,7 @@
     <value>現在のプレイリストに追加</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">
-    <value>アルバムページのカバーキャッシュ</value>
+    <value>アルバムジャケットオリジナル画像キャッシュ</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>原音HQプレイヤー</value>

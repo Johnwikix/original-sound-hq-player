@@ -188,7 +188,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
-                    <Grid>
+                    <Grid Height="50">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
@@ -202,7 +202,7 @@
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.25*" />
                         </Grid.ColumnDefinitions>
-                        <Button
+                        <!--<Button
                             x:Name="CoverThumbnail"
                             Grid.Column="0"
                             Margin="0,5,10,5"
@@ -239,7 +239,7 @@
                                         Glyph="&#xE93C;" />
                                 </Grid>
                             </Grid>
-                        </Button>
+                        </Button>-->
                         <Button
                             x:Name="isFavouriteIconButton"
                             Grid.Column="1"

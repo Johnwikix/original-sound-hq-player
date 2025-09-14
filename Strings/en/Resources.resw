@@ -700,7 +700,7 @@
     <value>Add To Current Playlist</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">
-    <value>Cover cache for album pages</value>
+    <value>Album Cover Original Image Cache</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>OriginalSound HQ Player</value>

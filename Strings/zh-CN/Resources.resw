@@ -700,7 +700,7 @@
     <value>添加到当前播放列表</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">
-    <value>专辑页的封面缓存</value>
+    <value>专辑封面原始图像缓存</value>
   </data>
   <data name="AppTitleHeader.Header" xml:space="preserve">
     <value>原音HQ播放器</value>
