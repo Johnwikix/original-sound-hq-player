@@ -28,11 +28,9 @@ namespace WinUIMusicPlayer.Services
         private System.Timers.Timer progressTimer;
         public IWavePlayer waveOut;
         public MultiTypeAudioReader multiTypeAudioReader;
-        //public WaveChannel32 waveChannel;
         private MMDevice selectedDevice = null;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
-        //public bool isManualPlayingNext = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
@@ -699,8 +697,7 @@ namespace WinUIMusicPlayer.Services
                         if (AppSettings.IsEqualizerEnabled)
                         {
                             isEnableEq = true;
-                            var sampleProvider = multiTypeAudioReader.ToSampleProvider();
-                            equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
+                            equalizer = new CustomEqualizer(multiTypeAudioReader.ToSampleProvider(), equalizerBands);
                             waveOut.Init(equalizer);
                         }
                         //InitializeAudioResources(MusicBrowseViewModel.CurrentPlayingMusic, currentPos);
@@ -802,8 +799,8 @@ namespace WinUIMusicPlayer.Services
                     if (AppSettings.IsEqualizerEnabled)
                     {
                         isEnableEq = true;
-                        var sampleProvider = multiTypeAudioReader.ToSampleProvider();
-                        equalizer = new CustomEqualizer(sampleProvider, equalizerBands);
+                        //var sampleProvider = multiTypeAudioReader.ToSampleProvider();
+                        equalizer = new CustomEqualizer(multiTypeAudioReader.ToSampleProvider(), equalizerBands);
                         waveOut.Init(equalizer);
                     }
                     else
@@ -835,11 +832,11 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         // 根据文件类型获取总时长
-                        double totalSeconds = 0;
-                        if (multiTypeAudioReader != null)
-                        {
-                            totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
-                        }
+                        //double totalSeconds = 0;
+                        //if (multiTypeAudioReader != null)
+                        //{
+                        //    totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
+                        //}
                         lock (_waveOutLock)
                         {
                             if (waveOut != null && !_isDisposing)
@@ -857,7 +854,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             try
                             {
-                                MusicBrowseViewModel.ProgressSliderMax = totalSeconds;
+                                MusicBrowseViewModel.ProgressSliderMax = multiTypeAudioReader.TotalTime.TotalSeconds;
                                 if (isSettingChanged)
                                 {
                                     MusicBrowseViewModel.ProgressSlider = currentPos.TotalSeconds;
