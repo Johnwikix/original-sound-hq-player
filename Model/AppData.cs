@@ -10,7 +10,7 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppData
     {
-        public static ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
+        public readonly static ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
         //public static WeakImageCache albumCoverCache = new();
 
         public static IReadOnlyCollection<Music> allSongs = [];
