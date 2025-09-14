@@ -63,7 +63,7 @@
                                                 Stretch="UniformToFill">
                                                 <Image.Transitions>
                                                     <TransitionCollection>
-                                                        <ContentThemeTransition VerticalOffset="100" HorizontalOffset="0" />
+                                                        <ContentThemeTransition />
                                                     </TransitionCollection>
                                                 </Image.Transitions>
                                             </Image>

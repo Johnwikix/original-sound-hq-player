@@ -8,7 +8,7 @@
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     NavigationCacheMode="Enabled"
-    mc:Ignorable="d">    
+    mc:Ignorable="d">
     <Grid Margin="0">
         <SemanticZoom>
             <!--  详细视图 (ZoomedInView)  -->
@@ -41,7 +41,10 @@
                     </GridView.GroupStyle>
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
                                 <Grid Width="150" Height="150">
                                     <Border
                                         Grid.Row="0"
@@ -51,6 +54,18 @@
                                         Padding="0"
                                         CornerRadius="75">
                                         <Grid>
+                                            <!--<Image
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Canvas.ZIndex="1"
+                                                Source="{Binding Converter={StaticResource AlbumArtConverter}}"
+                                                Stretch="UniformToFill">
+                                                <Image.Transitions>
+                                                    <TransitionCollection>
+                                                        <ContentThemeTransition />
+                                                    </TransitionCollection>
+                                                </Image.Transitions>
+                                            </Image>-->
                                             <Grid
                                                 Width="150"
                                                 Height="150"
@@ -111,6 +126,6 @@
                     </GridView.ItemTemplate>
                 </GridView>
             </SemanticZoom.ZoomedOutView>
-        </SemanticZoom>       
+        </SemanticZoom>
     </Grid>
 </Page>

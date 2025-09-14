@@ -68,6 +68,18 @@
                                             Padding="0"
                                             CornerRadius="10">
                                             <Grid>
+                                                <!--<Image
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Canvas.ZIndex="1"
+                                                    Source="{Binding Converter={StaticResource AlbumArtConverter}}"
+                                                    Stretch="UniformToFill">
+                                                    <Image.Transitions>
+                                                        <TransitionCollection>
+                                                            <ContentThemeTransition />
+                                                        </TransitionCollection>
+                                                    </Image.Transitions>
+                                                </Image>-->
                                                 <Grid
                                                     Width="150"
                                                     Height="150"
@@ -131,6 +143,6 @@
                     </GridView.ItemTemplate>
                 </GridView>
             </SemanticZoom.ZoomedOutView>
-        </SemanticZoom>       
+        </SemanticZoom>
     </Grid>
 </Page>
