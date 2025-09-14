@@ -41,12 +41,12 @@ namespace WinUIMusicPlayer.Converters
         {
             throw new NotImplementedException();
         }
+
         private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap)
         {
             await _semaphore.WaitAsync();
             try
             {
-                byte[] imageData = null;
                 await Task.Run(async () =>
                 {
                     try
@@ -54,84 +54,65 @@ namespace WinUIMusicPlayer.Converters
                         using (var file = TagLib.File.Create(filePath))
                         {
                             var picture = file.Tag.Pictures.FirstOrDefault();
-                            if (AppSettings.isCoverCacheEnabled)
+                            if (picture?.Data.Data != null)
                             {
-                                imageData = picture?.Data.Data;
-                            }
-                            else {
-                                if (picture?.Data.Data != null)
+                                // 直接使用图片的原始数据流
+                                using (var originalStream = new MemoryStream(picture.Data.Data))
                                 {
-                                    // 直接使用图片的原始数据，避免额外的内存复制
-                                    using (var originalStream = new MemoryStream(picture.Data.Data))
+                                    // 解码原始图像
+                                    var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
+
+                                    // 计算保持宽高比的缩放尺寸
+                                    double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                                    uint newWidth, newHeight;
+                                    if (aspectRatio > 1)
                                     {
-                                        // 解码原始图像
-                                        var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
-                                        // 计算保持宽高比的缩放尺寸
-                                        double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                                        uint newWidth, newHeight;
-                                        if (aspectRatio > 1) // 宽度大于高度
-                                        {
-                                            newWidth = (uint)AppSettings.CoverSize;
-                                            newHeight = (uint)(AppSettings.CoverSize / aspectRatio);
-                                        }
-                                        else // 高度大于或等于宽度
-                                        {
-                                            newHeight = (uint)AppSettings.CoverSize;
-                                            newWidth = (uint)(AppSettings.CoverSize * aspectRatio);
-                                        }
-
-                                        // 创建缩放后的编码器
-                                        using (var inMemoryStream = new InMemoryRandomAccessStream())
-                                        {
-                                            var encoder = await BitmapEncoder.CreateForTranscodingAsync(inMemoryStream, decoder);
-                                            encoder.BitmapTransform.ScaledWidth = newWidth;
-                                            encoder.BitmapTransform.ScaledHeight = newHeight;
-                                            encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
-                                            await encoder.FlushAsync();
-
-                                            // 优化：直接从流中获取数据，而不是创建新的缓冲区
-                                            inMemoryStream.Seek(0);
-                                            // 使用 ReadAsync 到一个预先分配的缓冲区，避免新的 byte[] 分配
-                                            imageData = new byte[inMemoryStream.Size];
-                                            await inMemoryStream.ReadAsync(imageData.AsBuffer(), (uint)imageData.Length, InputStreamOptions.None);
-                                        }
+                                        newWidth = (uint)AppSettings.CoverSize;
+                                        newHeight = (uint)(AppSettings.CoverSize / aspectRatio);
                                     }
+                                    else
+                                    {
+                                        newHeight = (uint)AppSettings.CoverSize;
+                                        newWidth = (uint)(AppSettings.CoverSize * aspectRatio);
+                                    }
+
+                                    // 创建缩放后的流，避免byte[]中间分配
+                                    var resizedStream = new InMemoryRandomAccessStream();
+                                    var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
+                                    encoder.BitmapTransform.ScaledWidth = newWidth;
+                                    encoder.BitmapTransform.ScaledHeight = newHeight;
+                                    encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+                                    await encoder.FlushAsync();
+
+                                    // 在UI线程中设置bitmap源
+                                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                                    {
+                                        try
+                                        {
+                                            resizedStream.Seek(0);
+                                            await bitmap.SetSourceAsync(resizedStream);
+                                            AppData.albumCoverCache.TryAdd(album, bitmap);
+                                            resizedStream.Dispose(); // 在使用完成后释放
+                                        }
+                                        catch (Exception)
+                                        {
+                                            resizedStream.Dispose(); // 异常时也要释放
+                                        }
+                                    });
                                 }
                             }
                         }
                     }
                     catch (Exception)
                     {
+                        // 静默处理异常
                     }
                 });
-
-                if (imageData != null)
-                {                   
-                    App.MainWindow.DispatcherQueue.TryEnqueue(
-                        async () =>
-                        {
-                            try
-                            {
-                                await SetSourceAsync(bitmap, imageData);
-                                AppData.albumCoverCache.TryAdd(album, bitmap);
-                            }
-                            catch (Exception)
-                            {
-                            }
-                    });
-                }
             }
             finally
             {
                 _semaphore.Release();
             }
-        }
-        private async Task SetSourceAsync(BitmapImage bitmap, byte[] data)
-        {
-            using (var stream = new MemoryStream(data))
-            {
-                await bitmap.SetSourceAsync(stream.AsRandomAccessStream());
-            }
-        }        
+        }            
     }
 }
