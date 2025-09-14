@@ -1240,22 +1240,31 @@ namespace WinUIMusicPlayer.Utils
         }
         public static List<FontInfo> GetSystemFontsInternal()
         {
-            var language = new string[] { CultureInfo.CurrentUICulture.Name.ToLowerInvariant() };
-            var names = CanvasTextFormat.GetSystemFontFamilies();
-            var displayNames = CanvasTextFormat.GetSystemFontFamilies(language);
-            var list = new List<FontInfo>();
-            for (var i = 0; i < names.Length; i++)
-            {
-                list.Add(
-                    new FontInfo
-                    {
-                        Name = names[i],
-                        DisplayName = displayNames[i],
-                        FontFamily = new FontFamily(names[i]),
+            try {
+                var language = new string[] { CultureInfo.CurrentUICulture.Name.ToLowerInvariant() };
+                var names = CanvasTextFormat.GetSystemFontFamilies();
+                var displayNames = CanvasTextFormat.GetSystemFontFamilies(language);
+                var list = new List<FontInfo>();
+                for (var i = 0; i < names.Length; i++)
+                {
+                    try {
+                        list.Add(
+                            new FontInfo
+                            {
+                                Name = names[i],
+                                DisplayName = displayNames[i],
+                                FontFamily = new FontFamily(names[i]),
+                            }
+                        );
                     }
-                );
+                    catch (Exception){
+                    }                    
+                }
+                return [.. list.OrderBy(f => f.Name)];
             }
-            return [.. list.OrderBy(f => f.Name)];
+            catch (Exception) {
+                return new List<FontInfo>();
+            }             
         }
 
         public static TextAlignment ConvertStringToTextAlignment(string alignment)

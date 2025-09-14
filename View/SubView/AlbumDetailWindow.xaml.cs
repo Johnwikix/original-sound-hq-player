@@ -148,7 +148,8 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
                     {
-                        AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
+                        AppData.albumCoverCache[music.Album] = albumCoverData;
+                        //AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
                     }
                     result = music;
                     //result.Cover = (BitmapImage)AlbumCoverImage.Source;

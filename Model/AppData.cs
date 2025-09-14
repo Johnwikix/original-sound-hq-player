@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml.Media.Imaging;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -7,8 +9,8 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppData
     {
-        //public static Dictionary<string, BitmapImage> albumCoverCache = new Dictionary<string, BitmapImage>();
-        public static WeakImageCache albumCoverCache = new();
+        public static ConcurrentDictionary<string, byte[]> albumCoverCache = [];
+        //public static WeakImageCache albumCoverCache = new();
 
         public static IReadOnlyCollection<Music> allSongs = [];
 

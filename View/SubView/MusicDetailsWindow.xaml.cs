@@ -183,8 +183,8 @@ namespace WinUIMusicPlayer.View.SubView
             await MusicDatabaseService.UpdateMusicInfo(music);
             if (AppData.albumCoverCache.ContainsKey(music.Album))
             {
-                //AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
-                AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
+                AppData.albumCoverCache[music.Album] = albumCoverData;
+                //AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);

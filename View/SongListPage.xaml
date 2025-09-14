@@ -70,11 +70,11 @@
                             <ColumnDefinition Width="0.5*" />
                             <ColumnDefinition Width="0.25*" />
                         </Grid.ColumnDefinitions>
-                        <!--<Border
+                        <Border
                             Grid.Column="0"
                             Width="40"
                             Height="40"
-                            Margin="5"
+                            Margin="0,5,10,5"
                             CornerRadius="5">
                             <Grid>
                                 <Image
@@ -101,7 +101,7 @@
                                         Glyph="&#xE93C;" />
                                 </Grid>
                             </Grid>
-                        </Border>-->
+                        </Border>
                         <Button
                             x:Name="isFavouriteIconButton"
                             Grid.Column="1"
