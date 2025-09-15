@@ -13,25 +13,6 @@ namespace WinUIMusicPlayer.Services
     public class AutoRescanService
     {
         private static Dictionary<string, SubFolder> _subFoldersDict = new Dictionary<string, SubFolder>(1024);
-        //private static List<SubFolder> subFolderList = new List<SubFolder>();
-        //public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
-        //{           
-        //    SubFolder folderItem = new SubFolder
-        //    {
-        //        Path = folder,
-        //        LastModifiedTime = Directory.GetLastWriteTime(folder),
-        //        FolderId=folderId
-        //    };
-        //    subFolderList.Add(folderItem);
-        //    Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.FolderId}");
-        //    // 递归获取子文件夹
-        //    string[] subFolders = Directory.GetDirectories(folder);
-        //    foreach (string subFolderItem in subFolders)
-        //    {
-        //        RecordInitialFolderTimes(subFolderItem, folderId);
-        //    }
-        //    return subFolderList;
-        //}
 
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
         {
