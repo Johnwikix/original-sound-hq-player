@@ -16,12 +16,8 @@ namespace WinUIMusicPlayer.Services
 
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
         {
-            // 创建方法内的局部变量，每次调用都会创建新的列表
             List<SubFolder> result = new List<SubFolder>();
-
-            // 调用辅助方法进行递归收集
             CollectFolderInfo(folder, folderId, result);
-
             return result;
         }
 
