@@ -33,6 +33,11 @@ namespace WinUIMusicPlayer.Services
             "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
         ];
 
+        private static SemaphoreSlim _rescanfolderSemaphore = new SemaphoreSlim(4, 4);
+        private static ConcurrentBag<Music> _toDelete = [];
+        private static ConcurrentBag<Music> _toUpdate = [];
+        private static List<StorageFile> _files = [];
+        private static List<Music> _musicFilesInFolder = null;
         private static readonly object lockObject = new object();
         public static async Task Initialize()
         {
@@ -1237,34 +1242,31 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
         {
-            DateTime startTime = DateTime.Now;
-            using var semaphore = new SemaphoreSlim(8, 8);
-            // 获取StorageFolder对象
-            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-            List<StorageFile> files = null;
-            List<Music> musicFilesInFolder = null;
+            _toDelete.Clear();
+            _toUpdate.Clear();
+            _files.Clear();
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);           
+           
             if (isSingleFolder)
             {
                 var currentFiles = await folder.GetFilesAsync();
-                files = new List<StorageFile>();
-                files.AddRange(currentFiles);
-                musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
+                _files.AddRange(currentFiles);
+                _musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
                     .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else
             {
-                files = await GetAllFilesInFolderAndSubfolders(folder);
-                musicFilesInFolder = await _dbConnection.Table<Music>()
+                _files = await GetAllFilesInFolderAndSubfolders(folder);
+                _musicFilesInFolder = await _dbConnection.Table<Music>()
                    .Where(m => m.FolderPath.Contains(folderPath))
                    .ToListAsync();
             }
 
             var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-
-            // 优化1: 使用信号量限制并行处理文件路径收集
-            var filePathTasks = files.Select(async file =>
+            // 并行处理文件路径收集
+            var filePathTasks = _files.Select(async file =>
             {
-                await semaphore.WaitAsync();
+                await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
                     if (ToolUtils.IsMusicFile(file.FileType))
@@ -1278,44 +1280,41 @@ namespace WinUIMusicPlayer.Services
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _rescanfolderSemaphore.Release();
                 }
             });
             await Task.WhenAll(filePathTasks);
-            // 存储需要删除的 Music 项
-            var toDelete = new ConcurrentBag<Music>();
-            var toUpdate = new ConcurrentBag<Music>();
-            // 优化2: 使用信号量限制并行检查现有音乐文件
-            var checkTasks = musicFilesInFolder.Select(async newMusic =>
+            //并行检查现有音乐文件
+            var checkTasks = _musicFilesInFolder.Select(async newMusic =>
             {
-                await semaphore.WaitAsync();
+                await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
                     if (!filePaths.ContainsKey(newMusic.Path))
                     {
-                        toDelete.Add(newMusic);
+                        _toDelete.Add(newMusic);
                     }
                     else
                     {
-                        toUpdate.Add(newMusic);
+                        _toUpdate.Add(newMusic);
                         filePaths.TryRemove(newMusic.Path, out _);
                     }
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _rescanfolderSemaphore.Release();
                 }
             });
 
             await Task.WhenAll(checkTasks);
-            // 优化3: 使用信号量限制并行执行删除操作
-            var deleteTasks = toDelete.Select(async music =>
+            // 并行执行删除操作
+            var deleteTasks = _toDelete.Select(async music =>
             {
-                await semaphore.WaitAsync();
+                await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
                     await _dbConnection.DeleteAsync(music);
-                    musicFilesInFolder.Remove(music);
+                    _musicFilesInFolder.Remove(music);
                 }
                 catch (Exception ex)
                 {
@@ -1323,38 +1322,36 @@ namespace WinUIMusicPlayer.Services
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _rescanfolderSemaphore.Release();
                 }
             });
 
             await Task.WhenAll(deleteTasks);
-            // 优化4: 使用信号量限制并行执行更新操作
-            System.Diagnostics.Debug.WriteLine($"开始并行更新 {toUpdate.Count} 个文件");
-            var updateTasks = toUpdate.Select(async music =>
+            //并行执行更新操作
+            var updateTasks = _toUpdate.Select(async music =>
             {
-                await semaphore.WaitAsync();
+                await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
                     return await updateMusic(music, folder.Path);
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _rescanfolderSemaphore.Release();
                 }
             }).ToArray();
             var results = await Task.WhenAll(updateTasks);
             var validResults = results.Where(r => r != null).ToList();
-            if (validResults.Any())
+            if (validResults.Count != 0)
             {
                 await _dbConnection.UpdateAllAsync(validResults);
                 Debug.WriteLine($"批量更新完成，共 {validResults.Count} 条记录");
             }
 
-            // 方案一：完全批量处理（推荐） 
-            System.Diagnostics.Debug.WriteLine($"开始并行添加 {filePaths.Count} 个文件");
+            //完全批量处理
             var addTasks = filePaths.Keys.Select(async path =>
             {
-                await semaphore.WaitAsync();
+                await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
                     var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
@@ -1374,60 +1371,141 @@ namespace WinUIMusicPlayer.Services
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _rescanfolderSemaphore.Release();
                 }
             });
             var AddResults = await Task.WhenAll(addTasks);
             var validMusic = AddResults.Where(m => m != null).ToList();
-            if (validMusic.Any())
+            if (validMusic.Count != 0)
             {
                 await _dbConnection.InsertAllAsync(validMusic);
             }
-            //// 优化5: 使用信号量限制并行执行添加操作
-            //var addTasks = filePaths.Keys.Select(async path =>
-            //{
-            //    await semaphore.WaitAsync();
-            //    try
-            //    {
-            //        var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
-            //        if (existingMusic != null)
-            //        {
-            //            return;
-            //        }
-
-            //        StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-            //        Music music = await addFolderService.getMusicInfo(storageFile, folder.Path);
-            //        if (music != null)
-            //        {
-            //            await _dbConnection.InsertAsync(music);
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
-            //    }
-            //    finally
-            //    {
-            //        semaphore.Release();
-            //    }
-            //});
-
-            //await Task.WhenAll(addTasks);
-
-            // 更新UI和主窗口的音乐列表
             if (isUpdate)
             {
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    mainWindow.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        mainWindow.UpdateMusicList();
-                    });
-                }
+                    App.MainWindow.UpdateMusicList();
+                });
+            }
+        }
+
+        public static async Task RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
+        {
+            var toDelete = new ConcurrentBag<Music>();
+            var files = new List<StorageFile>();
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            List<Music> musicFilesInFolder = null;
+            if (isSingleFolder)
+            {
+                var currentFiles = await folder.GetFilesAsync();
+                files.AddRange(currentFiles);
+                musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
+                    .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+            }
+            else
+            {
+                files = await GetAllFilesInFolderAndSubfolders(folder);
+                musicFilesInFolder = await _dbConnection.Table<Music>()
+                   .Where(m => m.FolderPath.Contains(folderPath))
+                   .ToListAsync();
             }
 
-            Debug.WriteLine($"重新扫描文件夹耗时: {(DateTime.Now - startTime).TotalSeconds}秒");
+            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            // 并行处理文件路径收集
+            var filePathTasks = files.Select(async file =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    if (ToolUtils.IsMusicFile(file.FileType))
+                    {
+                        filePaths.TryAdd(file.Path, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+            await Task.WhenAll(filePathTasks);
+            //并行检查现有音乐文件
+            var checkTasks = musicFilesInFolder.Select(async newMusic =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    if (!filePaths.ContainsKey(newMusic.Path))
+                    {
+                        toDelete.Add(newMusic);
+                    }
+                    else
+                    {
+                        filePaths.TryRemove(newMusic.Path, out _);
+                    }
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(checkTasks);
+            // 并行执行删除操作
+            var deleteTasks = toDelete.Select(async music =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    await _dbConnection.DeleteAsync(music);
+                    musicFilesInFolder.Remove(music);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(deleteTasks);
+            //完全批量处理
+            var addTasks = filePaths.Keys.Select(async path =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
+                    if (existingMusic != null)
+                    {
+                        return null;
+                    }
+
+                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
+                    Music music = await ToolUtils.GetMusicInfo(storageFile, folder.Path);
+                    return music;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    return null;
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+            var AddResults = await Task.WhenAll(addTasks);
+            var validMusic = AddResults.Where(m => m != null).ToList();
+            if (validMusic.Count != 0)
+            {
+                await _dbConnection.InsertAllAsync(validMusic);
+            }
         }
 
 
@@ -1440,7 +1518,7 @@ namespace WinUIMusicPlayer.Services
         {
             // 获取StorageFolder对象
             var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
-            List<StorageFile> files = null;
+            List<StorageFile> files = [];
             List<UsbDeviceMusic> musicFilesInFolder = null;
             if (isSingleFolder)
             {

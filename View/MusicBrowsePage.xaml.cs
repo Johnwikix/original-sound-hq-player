@@ -35,7 +35,7 @@ namespace WinUIMusicPlayer.View
         private DispatcherTimer typingTimer;
         private NotificationService notificationService;
         public EventHandler refreshSong;
-        public EventHandler refreshPage;
+        public EventHandler<bool> refreshPage;
         public EventHandler<PlayList> addPlayListEvent;
         private readonly INavigationService _navigationService;
         private EqualizerDialog equalizerDialog;
@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.View
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             if (ContentFrame != null && ContentFrame.Content != null)
             {
-                refreshPage?.Invoke(this, EventArgs.Empty);
+                refreshPage?.Invoke(this, false);
                 refreshSong?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -322,7 +322,7 @@ namespace WinUIMusicPlayer.View
                         AppData.searchText = currentText;
                         if (ContentFrame?.Content != null)
                         {
-                            refreshPage?.Invoke(this, EventArgs.Empty);
+                            refreshPage?.Invoke(this, true);
                             refreshSong?.Invoke(this, EventArgs.Empty);
                         }
                     }

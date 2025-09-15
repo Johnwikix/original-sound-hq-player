@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
-        private void RefreshPage(object? sender, EventArgs e)
+        private void RefreshPage(object? sender, bool e)
         {
             InitializeDatabase();
         }

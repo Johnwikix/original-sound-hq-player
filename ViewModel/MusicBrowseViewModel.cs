@@ -559,7 +559,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (!await scanSemaphore.WaitAsync(0) || !AppSettings.IsFolderWatchEnabled)
             {
-                Debug.WriteLine("已经有扫描操作在进行，忽略此次事件");
                 return;
             }
             try

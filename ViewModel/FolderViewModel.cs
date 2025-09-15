@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.RefreshIcon(MusicList, "folder");
         }
 
-        private void RefreshFolder(object? sender, EventArgs e)
+        private void RefreshFolder(object? sender, bool e)
         {
             InitializeData();
         }

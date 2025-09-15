@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.ViewModel
             Entance();
         }
 
-        private void RefreshAlbum(object? sender, EventArgs e)
+        private void RefreshAlbum(object? sender, bool e)
         {
             InitializeData();
         }

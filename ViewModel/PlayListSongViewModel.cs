@@ -129,9 +129,9 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
-        private void RefreshPlayList(object? sender, EventArgs e)
+        private void RefreshPlayList(object? sender, bool e)
         {
-            InitizeData();
+            if(e) InitizeData();
         }
 
         private void InitizeData()
