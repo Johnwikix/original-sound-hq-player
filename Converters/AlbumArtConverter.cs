@@ -64,17 +64,8 @@ namespace WinUIMusicPlayer.Converters
 
                                     // 计算保持宽高比的缩放尺寸
                                     double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                                    uint newWidth, newHeight;
-                                    if (aspectRatio > 1)
-                                    {
-                                        newWidth = (uint)AppSettings.CoverSize;
-                                        newHeight = (uint)(AppSettings.CoverSize / aspectRatio);
-                                    }
-                                    else
-                                    {
-                                        newHeight = (uint)AppSettings.CoverSize;
-                                        newWidth = (uint)(AppSettings.CoverSize * aspectRatio);
-                                    }
+                                    uint newWidth = (uint)AppSettings.CoverSize;
+                                    uint newHeight = (uint)(newWidth / aspectRatio);
 
                                     // 创建缩放后的流，避免byte[]中间分配
                                     var resizedStream = new InMemoryRandomAccessStream();
