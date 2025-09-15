@@ -881,6 +881,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LyricsMargin = settings.LyricsMargin;
                 AppSettings.GlobalFontSize = settings.GlobalFontSize;
                 AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
+                AppSettings.IsSongCoverEnabled = settings.IsSongCoverEnabled;
             }
         }
 
@@ -898,6 +899,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            newSettings.IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;

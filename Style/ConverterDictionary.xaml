@@ -34,4 +34,5 @@
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <converters:AlbumArtConverter x:Key="AlbumArtConverter" />
+    <converters:SongCoverConverter x:Key="SongCoverConverter" />
 </ResourceDictionary>

@@ -33,6 +33,13 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _selectedMusic, value);
         }
 
+        private bool _isCoverVisible = false;
+        public bool IsCoverVisible
+        {
+            get => _isCoverVisible;
+            set => SetProperty(ref _isCoverVisible, value);
+        }
+
         private MusicBrowsePage? _parentPage;
         private SongListPage currentPage;
         private string _lastSearchText = "";

@@ -810,4 +810,13 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>Удалить музыку с диска?</value>
   </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>Обложка списка песен</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>Обложка списка</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>Включить отображение на обложке списка, если возникают проблемы с производительностью</value>
+  </data>
 </root>

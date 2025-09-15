@@ -875,6 +875,55 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
+         public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap)
+         {
+            try
+            {
+                using (var file = TagLib.File.Create(filePath))
+                {
+                    var picture = file.Tag.Pictures.FirstOrDefault();
+                    if (picture?.Data.Data != null)
+                    {
+                        // 直接使用图片的原始数据流
+                        using (var originalStream = new MemoryStream(picture.Data.Data))
+                        {
+                            // 解码原始图像
+                            var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
+                            double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                            uint newWidth = (uint)AppSettings.CoverSize;
+                            uint newHeight = (uint)(newWidth / aspectRatio);
+                            var resizedStream = new InMemoryRandomAccessStream();
+                            var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
+                            encoder.BitmapTransform.ScaledWidth = newWidth;
+                            encoder.BitmapTransform.ScaledHeight = newHeight;
+                            encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+                            await encoder.FlushAsync();
+
+                            // 在UI线程中设置bitmap源
+                            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                            {
+                                try
+                                {
+                                    resizedStream.Seek(0);
+                                    await bitmap.SetSourceAsync(resizedStream);
+                                    AppData.albumCoverCache.TryAdd(album, bitmap);
+                                    resizedStream.Dispose(); // 在使用完成后释放
+                                }
+                                catch (Exception)
+                                {
+                                    resizedStream.Dispose(); // 异常时也要释放
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // 静默处理异常
+            }
+        }            
+
         //public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
         //{
         //    _ = Task.Run(async () =>

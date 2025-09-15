@@ -614,6 +614,21 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private bool _isSongCoverEnabled;
+        public bool IsSongCoverEnabled
+        {
+            get => _isSongCoverEnabled;
+            set {
+                if (SetProperty(ref _isSongCoverEnabled, value)) {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsSongCoverEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
 
         public SettingsViewModel()
         {
@@ -697,6 +712,7 @@ namespace WinUIMusicPlayer.ViewModel
             LyricsMargin = AppSettings.LyricsMargin;
             IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             GlobalFontSize = AppSettings.GlobalFontSize;
+            IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
             _isInitized = true;
         }
         

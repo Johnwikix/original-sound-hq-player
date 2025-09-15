@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
+using System.Threading;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -12,11 +13,9 @@ namespace WinUIMusicPlayer.Model
     {
         public readonly static ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
         //public static WeakImageCache albumCoverCache = new();
-
+        public readonly static SemaphoreSlim Semaphore = new(4);
         public static IReadOnlyCollection<Music> allSongs = [];
-
         public static List<UsbDeviceMusic> musicOnUsbDevice = [];
-
         public static List<PlayListMusic> allPlayListMusics = [];
         public static PlayMode PlayMode { get; set; }
         public static int? LastPlayedMusicId { get; set; }

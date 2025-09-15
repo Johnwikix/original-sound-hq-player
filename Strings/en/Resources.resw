@@ -810,4 +810,13 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>Are you sure to delete music from the disk?</value>
   </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>Song List Cover</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>List Cover</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>Enable cover display on the list. If you encounter performance issues, please turn off this option as appropriate</value>
+  </data>
 </root>

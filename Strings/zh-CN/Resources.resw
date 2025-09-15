@@ -810,4 +810,13 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>确定从磁盘删除音乐？</value>
   </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>歌曲列表封面</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>列表封面</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>启用列表上的封面显示，如果遇到性能问题请酌情关闭此项</value>
+  </data>
 </root>

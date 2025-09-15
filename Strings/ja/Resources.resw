@@ -810,4 +810,13 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>音楽をディスクから削除してよろしいですか？</value>
   </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>歌曲リストカバー</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>リストの表紙</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>リストの表紙表示を有効にします。パフォーマンスに問題がある場合は、適宜オフにしてください</value>
+  </data>
 </root>

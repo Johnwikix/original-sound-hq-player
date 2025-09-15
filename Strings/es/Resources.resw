@@ -810,4 +810,13 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>¿¿ estás seguro de eliminar la música del disco?</value>
   </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>Portada de la lista de canciones</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>Portada de la lista</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>Activa la visualización de la portada en la lista y cierra esta opción según corresponda si tienes problemas de rendimiento</value>
+  </data>
 </root>
