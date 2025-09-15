@@ -15,6 +15,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -517,7 +518,7 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     string lyrics = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).FirstOrDefault();
+                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).AsValueEnumerable().FirstOrDefault();
                     if (music != null)
                     {
                         music.Lyrics = lyrics;
@@ -528,13 +529,14 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
+                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).AsValueEnumerable().FirstOrDefault();
                 if (music != null)
                 {
                     music.Lyrics = lyrics;
                     await MusicDatabaseService.UpdateMusicInfo(music);
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public void AuthorTextBlock_Tapped(string artist)
@@ -555,9 +557,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void MusicDetail_Click()
         {
-            if (SelectedMusic != null)
+            var music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == SelectedMusic.Id);
+            if (music != null)
             {
-                var musicDetailsWindow = new MusicDetailsWindow(SelectedMusic);
+                var musicDetailsWindow = new MusicDetailsWindow(music);
                 musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
                 musicDetailsWindow.Activate();
             }

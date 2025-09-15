@@ -13,6 +13,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -254,9 +255,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void MusicDetail_Click()
         {
-            var musicDetailsWindow = new MusicDetailsWindow(SelectedMusic);
-            musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
-            musicDetailsWindow.Activate();
+            var music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == SelectedMusic.Id);
+            if (music != null) {
+                var musicDetailsWindow = new MusicDetailsWindow(music);
+                musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
+                musicDetailsWindow.Activate();
+            }
         }
 
         private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
@@ -297,7 +301,7 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     string lyrics = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).FirstOrDefault();
+                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).AsValueEnumerable().FirstOrDefault();
                     if (music != null)
                     {
                         music.Lyrics = lyrics;
@@ -308,13 +312,14 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
+                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).AsValueEnumerable().FirstOrDefault();
                 if (music != null)
                 {
                     music.Lyrics = lyrics;
                     await MusicDatabaseService.UpdateMusicInfo(music);
                 }
             }
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
@@ -433,17 +438,22 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private async void IsFavouriteIconButtonChange(Music music)
+        private void IsFavouriteIconButtonChange(Music music)
         {
             if (music != null)
             {
                 if (music.IsFavorite)
                 {
                     MusicList.Remove(music);
-                }
-                await parentPage.AddToFavourite(music);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                    _ = CancelFavouriteIconButtonChange(music);
+                }                
             }
+        }
+
+        private async Task CancelFavouriteIconButtonChange(Music music)
+        {
+            await parentPage.AddToFavourite(music);
+            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
 
         public void AlbumTextBlock_Tapped(TextBlock textBlock)

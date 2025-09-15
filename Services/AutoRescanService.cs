@@ -74,7 +74,6 @@ namespace WinUIMusicPlayer.Services
                     var subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
                     if (subFoldersInDb?.Count > 0)
                     {
-                        // 3. 使用HashSet记录需要删除的路径，避免重复Any()调用
                         var dbPaths = new HashSet<string>(subFoldersInDb.Count);
                         foreach (var dbSubFolder in subFoldersInDb)
                         {
@@ -106,7 +105,6 @@ namespace WinUIMusicPlayer.Services
                             }
                         }
 
-                        // 处理删除 - 使用HashSet避免Any()调用
                         var currentPaths = _subFoldersDict.Keys.ToHashSet();
                         foreach (var dbSubFolder in subFoldersInDb)
                         {
@@ -125,7 +123,6 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
 
-                // 移出循环，减少不必要的UI更新
                 if (changeCount > 0)
                 {
                     App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
