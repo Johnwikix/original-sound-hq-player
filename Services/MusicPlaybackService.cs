@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.Services
         private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
-        private CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
+        private readonly CustomEqualizerBand[] equalizerBands = new CustomEqualizerBand[]
         {
             new CustomEqualizerBand {Frequency = 32, Gain =  (float)AppSettings.equalizer["32Hz"], Bandwidth = 1.0f},
             new CustomEqualizerBand {Frequency = 64, Gain = (float)AppSettings.equalizer["64Hz"], Bandwidth = 1.0f},
@@ -65,8 +65,8 @@ namespace WinUIMusicPlayer.Services
         private CancellationTokenSource _currentOperationCts;
         private readonly object _initializeLock = new object();
         private volatile bool _isDisposing = false;
-        private int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 768000 };
-        private int[] bitDepths = { 16, 24, 32 };
+        private readonly int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 768000 };
+        private readonly int[] bitDepths = { 16, 24, 32 };
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
 
         public MusicPlaybackService(NotificationService notificationService)
@@ -291,10 +291,6 @@ namespace WinUIMusicPlayer.Services
                         else {
                             if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
                             {
-                                //if (MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dsf" && MusicBrowseViewModel.CurrentPlayingMusic.Extension.ToLower() != "dff")
-                                //{
-                                //    AutoPlayNextTrack();
-                                //}
                                 if (Math.Abs(multiTypeAudioReader.TotalTime.TotalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1)
                                 {
                                     AutoPlayNextTrack();
@@ -302,14 +298,12 @@ namespace WinUIMusicPlayer.Services
                             }
                             _cachedLastCurrentTime = _cachedCurrentTime;
                         }
-                        // 格式化显示时间
                         UpdateProgressTimerUI();
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //System.Diagnostics.Debug.WriteLine($"进度条更新失败: {ex.Message}");
             }
         }
 
@@ -317,8 +311,8 @@ namespace WinUIMusicPlayer.Services
         {
             if (multiTypeAudioReader != null)
             {
-                _cachedCurrentTime = TimeSpan.FromSeconds(multiTypeAudioReader.CurrentTime.TotalSeconds);
-                _cachedTotalTime = TimeSpan.FromSeconds(multiTypeAudioReader.TotalTime.TotalSeconds);
+                _cachedCurrentTime = multiTypeAudioReader.CurrentTime;
+                _cachedTotalTime = multiTypeAudioReader.TotalTime;
                 _timeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
