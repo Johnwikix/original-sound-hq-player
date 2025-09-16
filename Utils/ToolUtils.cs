@@ -405,7 +405,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<byte[]> GetRawImage(Music music)
+        public static async Task<byte[]> GetRawImage(Music music,bool isManual = false)
         {
             try
             {
@@ -425,7 +425,8 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        if (AppSettings.isAutoLyricsEnabled) {
+                        if (AppSettings.isAutoLyricsEnabled && !isManual) {
+                            var cancellationToken = new CancellationTokenSource();
                             byte[] picture = null;
                             string fileName = $"{music.Title}_{music.Album}_{music.Author}";
                             string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
@@ -435,7 +436,7 @@ namespace WinUIMusicPlayer.Utils
                             {
                                 picture = System.IO.File.ReadAllBytes(filePath);
                             }
-                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
+                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
                             if (picture != null)
                             {
                                 System.IO.File.WriteAllBytes(filePath, picture);

@@ -110,7 +110,7 @@ namespace WinUIMusicPlayer.View.SubView
             LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
             DiskNumberBox.Value = music.DiskNumber;
             PathTextBlock.Text = music.Path;
-            albumCoverData = await ToolUtils.GetRawImage(music);
+            albumCoverData = await ToolUtils.GetRawImage(music,true);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             CreateTimeBlock.Text = music.CreateTime.ToString();
             UpdateTimeBlock.Text = music.UpdateTime.ToString();

@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Extensions;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
@@ -299,11 +300,13 @@ public sealed partial class NeteaseCloudMusicApi : IDisposable
         }
     }
 
-    public async Task<byte[]> GetImageBytesFromUrlAsync(string url)
+    public async Task<byte[]> GetImageBytesFromUrlAsync(string url, CancellationToken cancellationToken = default)
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             byte[] imageBytes = await _client.GetByteArrayAsync(url);
+            cancellationToken.ThrowIfCancellationRequested();
             return imageBytes;
         }
         catch (HttpRequestException ex)

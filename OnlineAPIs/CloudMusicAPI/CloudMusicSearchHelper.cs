@@ -30,16 +30,24 @@ public class CloudMusicSearchHelper
     }
 
 
-    public static async Task<byte[]> GetSongAlbum(string title, string album, string author)
+    public static async Task<byte[]> GetSongAlbum(string title, string album, string author, CancellationToken cancellationToken = default)
     {
         try
         {
             string keyWords = album + " " + author;
+            cancellationToken.ThrowIfCancellationRequested();
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
+            cancellationToken.ThrowIfCancellationRequested();
             string albumId = SearchForAlbumId(root, album, author);
+            cancellationToken.ThrowIfCancellationRequested();
             string albumcoverUrl = await GetAlbumUrl(albumId);
-            return await _api.GetImageBytesFromUrlAsync(albumcoverUrl);
+            cancellationToken.ThrowIfCancellationRequested();
+            return await _api.GetImageBytesFromUrlAsync(albumcoverUrl, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
         }
         catch (Exception)
         {
