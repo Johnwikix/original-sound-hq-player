@@ -22,6 +22,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
+using TagLib.Flac;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Devices;
@@ -424,7 +425,23 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        return null;
+                        if (AppSettings.isAutoLyricsEnabled) {
+                            byte[] picture = null;
+                            string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                            string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                            fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                            string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                            if (System.IO.File.Exists(filePath))
+                            {
+                                picture = System.IO.File.ReadAllBytes(filePath);
+                            }
+                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
+                            if (picture != null)
+                            {
+                                System.IO.File.WriteAllBytes(filePath, picture);
+                            }
+                            return picture;
+                        }                        
                     }
                 }
             }
@@ -875,18 +892,34 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
-         public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap)
+         public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap,Music music)
          {
             await Task.Run( async () => {
                 try
                 {
                     using (var file = TagLib.File.Create(filePath))
                     {
-                        var picture = file.Tag.Pictures.FirstOrDefault();
-                        if (picture?.Data.Data != null)
+                        byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
+                        if (picture == null)
                         {
+                            if (AppSettings.isAutoLyricsEnabled) {
+                                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                                string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                                string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                                if (System.IO.File.Exists(filePath)) {
+                                    picture = System.IO.File.ReadAllBytes(filePath);
+                                }
+                                    
+                                picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);                                
+                                if (picture != null) { 
+                                    System.IO.File.WriteAllBytes(filePath, picture);
+                                }
+                            }                            
+                        }
+                        if (picture != null) {
                             // 直接使用图片的原始数据流
-                            using (var originalStream = new MemoryStream(picture.Data.Data))
+                            using (var originalStream = new MemoryStream(picture))
                             {
                                 // 解码原始图像
                                 var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
@@ -899,7 +932,6 @@ namespace WinUIMusicPlayer.Utils
                                 encoder.BitmapTransform.ScaledHeight = newHeight;
                                 encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
                                 await encoder.FlushAsync();
-
                                 // 在UI线程中设置bitmap源
                                 App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
                                 {
@@ -907,7 +939,9 @@ namespace WinUIMusicPlayer.Utils
                                     {
                                         resizedStream.Seek(0);
                                         await bitmap.SetSourceAsync(resizedStream);
-                                        AppData.albumCoverCache.TryAdd(album, bitmap);
+                                        if (!AppData.UnknownAlbums.Contains(album)) {
+                                            AppData.albumCoverCache.TryAdd(album, bitmap);
+                                        }
                                         resizedStream.Dispose(); // 在使用完成后释放
                                     }
                                     catch (Exception)
@@ -979,16 +1013,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
         {
-            string lyrics = string.Empty;
-            if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-            {
-                lyrics = await CloudMusicSearchHelper.GetSongLyrics(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }
-            else
-            {
-                lyrics = await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            }
-            return lyrics;
+            return await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
         }
 
         public static DateTime GetSafeFileCreateTime(string filePath)

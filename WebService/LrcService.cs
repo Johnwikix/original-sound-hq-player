@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 
 namespace WinUIMusicPlayer.WebService
 {
@@ -16,19 +17,25 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
-                if (!string.IsNullOrEmpty(AppSettings.LrcAPIAuth))
+                if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
                 {
                     _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                }
+                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com") {
+                    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist);
                 }
                 var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsByteArrayAsync();
+                byte[] result = await response.Content.ReadAsByteArrayAsync();
+                if (result == null) {
+                    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist);
+                }
+                return result;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching image: {ex.Message}");
-                return null;
+                return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist);
             }
         }
 
@@ -36,14 +43,22 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
-                if (!string.IsNullOrEmpty(AppSettings.LrcAPIAuth))
+                if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
                 {
                     _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                }
+                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com" || AppSettings.LrcAPISource == "https://api.lrc.cx")
+                {
+                    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
                 }
                 var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (string.IsNullOrWhiteSpace(result)) {
+                    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
+                }
+                result += await CloudMusicSearchHelper.GetTranslateSongLyrics(title, album, artist, cancellationToken);
                 return result;
             }
             catch (OperationCanceledException)
@@ -53,8 +68,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"GetLyricsAsync Error fetching lyrics: {ex.Message}");
-                return null;
+                return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
             }
         }
 

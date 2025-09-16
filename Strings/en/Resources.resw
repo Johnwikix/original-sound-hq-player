@@ -262,7 +262,7 @@
     <value>Maximum number of pre loaded covers</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Auto Lyric Matching</value>
+    <value>Auto Cover Lyric Matching</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Need to configure LrcAPI service</value>

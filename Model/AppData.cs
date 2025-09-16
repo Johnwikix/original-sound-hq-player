@@ -11,9 +11,15 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppData
     {
-        public readonly static ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
+        public static readonly ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
         //public static WeakImageCache albumCoverCache = new();
-        public readonly static SemaphoreSlim Semaphore = new(4);
+        public static readonly HashSet<string> UnknownAlbums = [
+                "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"
+         ];
+        public static readonly HashSet<string> UnknownArtists =
+        [
+            "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
+        ];
         public static IReadOnlyCollection<Music> allSongs = [];
         public static List<UsbDeviceMusic> musicOnUsbDevice = [];
         public static List<PlayListMusic> allPlayListMusics = [];

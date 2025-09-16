@@ -262,7 +262,7 @@
     <value>最大封面预载数量</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>自动歌词匹配</value>
+    <value>自动封面歌词匹配</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>需要配置LrcAPI服务</value>

@@ -150,22 +150,27 @@ namespace WinUIMusicPlayer.Services
                     try
                     {
                         var autoLyrics = string.Empty;
-                        if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-                        {
-                            autoLyrics = await CloudMusicSearchHelper.GetSongLyrics(
+                        autoLyrics = await LrcService.GetLyricsAsync(
                             MusicBrowseViewModel.CurrentPlayingMusic.Title,
                             MusicBrowseViewModel.CurrentPlayingMusic.Album,
                             MusicBrowseViewModel.CurrentPlayingMusic.Author,
                             cancellationToken);
-                        }
-                        else
-                        {
-                            autoLyrics = await LrcService.GetLyricsAsync(
-                            MusicBrowseViewModel.CurrentPlayingMusic.Title,
-                            MusicBrowseViewModel.CurrentPlayingMusic.Album,
-                            MusicBrowseViewModel.CurrentPlayingMusic.Author,
-                            cancellationToken);
-                        }
+                        //if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
+                        //{
+                        //    autoLyrics = await CloudMusicSearchHelper.GetSongLyrics(
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Title,
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Album,
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Author,
+                        //    cancellationToken);
+                        //}
+                        //else
+                        //{
+                        //    autoLyrics = await LrcService.GetLyricsAsync(
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Title,
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Album,
+                        //    MusicBrowseViewModel.CurrentPlayingMusic.Author,
+                        //    cancellationToken);
+                        //}
 
                         if (autoLyrics != null)
                         {

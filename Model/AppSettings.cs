@@ -85,6 +85,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
         public static int LyricsMargin { get; set; } = 20;
+        public static string MusicCoverCache { get; set; } = @"J:\MusicCoverCache";
 
     }
 }

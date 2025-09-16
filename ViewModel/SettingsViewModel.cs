@@ -293,7 +293,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (_isInitized)
                     {
-                        AppSettings.LrcAPISource = string.IsNullOrEmpty(value) ? "https://api.lrc.cx" : value;
+                        AppSettings.LrcAPISource = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }

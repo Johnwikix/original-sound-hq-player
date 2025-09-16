@@ -73,6 +73,31 @@ public class CloudMusicSearchHelper
         }
     }
 
+    public static async Task<string> GetTranslateSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string keyWords = title + " " + album + " " + author;
+            cancellationToken.ThrowIfCancellationRequested();
+            using JsonDocument document = await GetJsonElement(keyWords);
+            JsonElement root = document.RootElement;
+            cancellationToken.ThrowIfCancellationRequested();
+            string songId = SearchForSongId(root, title, author);
+            cancellationToken.ThrowIfCancellationRequested();
+            var lyrics = await GetTranslateLyrics(songId);
+            cancellationToken.ThrowIfCancellationRequested();
+            return lyrics;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     private static string SearchForSongId(JsonElement root, string title, string artist)
     {
         try
@@ -162,6 +187,28 @@ public class CloudMusicSearchHelper
         {
             return null;
         }
+    }
+
+    private static async Task<string> GetTranslateLyrics(string songId) {
+        if (songId != null)
+        {
+            var api = new NeteaseCloudMusicApi();
+            var (_, lyricResult) = await api.RequestAsync(
+                 CloudMusicApiProviders.Lyric,
+                 new Dictionary<string, string> { { "id", $"{songId}" } }
+             );
+            if (AppData.systemLanguage == "zh")
+            {
+                try
+                {
+                    return (string)lyricResult["tlyric"]!["lyric"]!;
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+        return null;
     }
 
     public static async Task<string> GetAlbumUrl(string albumId)

@@ -262,7 +262,7 @@
     <value>Макс. количество 미리 загруженных обложек</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Автоматическое сопоставлениеrics</value>
+    <value>Автоматическое совпадение текста на обложке</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Необходимо настроить службуLrcAPI</value>

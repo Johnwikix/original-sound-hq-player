@@ -262,7 +262,7 @@
     <value>最大ジャケットプリロード数</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>自動歌詞マッチング</value>
+    <value>自動カバー歌詞マッチング</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>LrcAPIサービスを設定が必要です</value>

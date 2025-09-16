@@ -22,16 +22,6 @@ namespace WinUIMusicPlayer.Services
         private static SQLiteAsyncConnection _dbConnection;
         private static string DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private static AddFolderService addFolderService = new AddFolderService();
-        // 作为类的静态只读字段，仅初始化一次，避免每次调用创建新集合
-        private static readonly HashSet<string> _unknownAlbums = [
-                "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"
-         ];
-
-
-        private static readonly HashSet<string> _unknownArtists =
-        [
-            "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
-        ];
 
         private static SemaphoreSlim _rescanfolderSemaphore = new SemaphoreSlim(4, 4);
         private static ConcurrentBag<Music> _toDelete = [];
@@ -663,12 +653,12 @@ namespace WinUIMusicPlayer.Services
             foreach (var music in musicList)
             {
                 // 仅在需要时才修改，减少不必要的字符串赋值（字符串是不可变的，赋值会创建新对象）
-                if (_unknownAlbums.Contains(music.Album) && music.Album != localizedUnknownAlbum)
+                if (AppData.UnknownAlbums.Contains(music.Album) && music.Album != localizedUnknownAlbum)
                 {
                     music.Album = localizedUnknownAlbum;
                 }
 
-                if (_unknownArtists.Contains(music.Author) && music.Author != localizedUnknownArtist)
+                if (AppData.UnknownArtists.Contains(music.Author) && music.Author != localizedUnknownArtist)
                 {
                     music.Author = localizedUnknownArtist;
                 }
@@ -847,7 +837,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.LrcAPISource = string.IsNullOrEmpty(settings.LrcAPISource) ? "https://api.lrc.cx" : settings.LrcAPISource;
+                AppSettings.LrcAPISource = settings.LrcAPISource;
                 AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;

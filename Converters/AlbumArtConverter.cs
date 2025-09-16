@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.Converters
                 }
                 // 缓存未命中，开始加载
                 var placeholderBitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
-                _ = LoadImageAsync(music.Path, music.Album, placeholderBitmap);
+                _ = LoadImageAsync(music.Path, music.Album, placeholderBitmap, music);
                 return placeholderBitmap;
             }
             return null;
@@ -42,12 +42,12 @@ namespace WinUIMusicPlayer.Converters
         {
             throw new NotImplementedException();
         }
-        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap)
+        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap,Music music)
         {
             await _semaphore.WaitAsync();
             try
             {
-                await ToolUtils.LoadImageAsync(filePath, album, bitmap);
+                await ToolUtils.LoadImageAsync(filePath, album, bitmap, music);
             }
             finally
             {
