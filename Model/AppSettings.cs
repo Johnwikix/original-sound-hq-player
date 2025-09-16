@@ -36,6 +36,9 @@ namespace WinUIMusicPlayer.Model
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = false;
         public static bool IsSongCoverEnabled { get; set; } = true;
+        public static bool IsFavouriteCoverEnabled { get; set; } = true;
+        public static bool IsSongCollectionCoverEnabled { get; set; } = true;
+        public static bool IsPlayListCoverEnabled { get; set; } = true;
         //public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;

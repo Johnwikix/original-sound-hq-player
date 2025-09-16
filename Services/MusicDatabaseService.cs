@@ -882,6 +882,9 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.GlobalFontSize = settings.GlobalFontSize;
                 AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppSettings.IsSongCoverEnabled = settings.IsSongCoverEnabled;
+                AppSettings.IsPlayListCoverEnabled = settings.IsPlayListCoverEnabled;
+                AppSettings.IsFavouriteCoverEnabled = settings.IsFavouriteCoverEnabled;
+                AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
             }
         }
 
@@ -929,6 +932,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.LyricsMargin = AppSettings.LyricsMargin;
             newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
             newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
+            newSettings.IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
+            newSettings.IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
+            newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

@@ -100,7 +100,7 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Canvas.ZIndex="1"
-                                        Source="{Binding Converter={StaticResource AlbumArtConverter}}"
+                                        Source="{Binding Converter={StaticResource PlayListCoverConverter}}"
                                         Stretch="UniformToFill">
                                         <Image.Transitions>
                                             <TransitionCollection>

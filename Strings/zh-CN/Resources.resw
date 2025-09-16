@@ -819,4 +819,13 @@
   <data name="ListCoverEnableTooltip" xml:space="preserve">
     <value>启用列表上的封面显示，如果遇到性能问题请酌情关闭此项</value>
   </data>
+  <data name="SongCollectionListCoverEnable.Header" xml:space="preserve">
+    <value>歌曲合集封面</value>
+  </data>
+  <data name="FavouriteListCoverEnabled.Header" xml:space="preserve">
+    <value>最爱列表封面</value>
+  </data>
+  <data name="PlayListCoverEnabled.Header" xml:space="preserve">
+    <value>播放列表封面</value>
+  </data>
 </root>

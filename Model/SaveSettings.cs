@@ -22,7 +22,10 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Dark";
         public bool isCoverCacheEnabled { get; set; } = false;
-        public bool IsSongCoverEnabled { get; set; } = false;
+        public bool IsSongCoverEnabled { get; set; } = true;
+        public bool IsFavouriteCoverEnabled { get; set; } = true;
+        public bool IsSongCollectionCoverEnabled { get; set; } = true;
+        public bool IsPlayListCoverEnabled { get; set; } = true;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
         public float dsdGain { get; set; } = 6f;

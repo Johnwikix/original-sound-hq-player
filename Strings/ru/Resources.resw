@@ -819,4 +819,13 @@
   <data name="ListCoverEnableTooltip" xml:space="preserve">
     <value>Включить отображение на обложке списка, если возникают проблемы с производительностью</value>
   </data>
+  <data name="SongCollectionListCoverEnable.Header" xml:space="preserve">
+    <value>Песня на обложке</value>
+  </data>
+  <data name="FavouriteListCoverEnabled.Header" xml:space="preserve">
+    <value>Список любимых обложек</value>
+  </data>
+  <data name="PlayListCoverEnabled.Header" xml:space="preserve">
+    <value>Обложка списка воспроизведения</value>
+  </data>
 </root>

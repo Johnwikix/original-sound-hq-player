@@ -819,4 +819,13 @@
   <data name="ListCoverEnableTooltip" xml:space="preserve">
     <value>Enable cover display on the list. If you encounter performance issues, please turn off this option as appropriate</value>
   </data>
+  <data name="SongCollectionListCoverEnable.Header" xml:space="preserve">
+    <value>Song Collection List Cover</value>
+  </data>
+  <data name="FavouriteListCoverEnabled.Header" xml:space="preserve">
+    <value>Favorite List Cover</value>
+  </data>
+  <data name="PlayListCoverEnabled.Header" xml:space="preserve">
+    <value>Playlist Cover</value>
+  </data>
 </root>

@@ -30,10 +30,7 @@
             </TransitionCollection>
         </Grid.Transitions>
         <Grid Grid.Row="0" Margin="32,0,32,0">
-            <TextBlock
-                x:Uid="Settings"
-                Margin="10,20,0,10"
-                FontSize="28" />
+            <TextBlock x:Uid="Settings" Margin="10,20,0,10" FontSize="28" />
         </Grid>
         <ScrollView Grid.Row="1">
             <Grid Margin="32,0,32,0">
@@ -131,10 +128,7 @@
                     Grid.Row="3"
                     Margin="10,10,0,0"
                     FontSize="16" />
-                <controls:SettingsExpander
-                    x:Uid="SettingInterface"
-                    Grid.Row="4"
-                    Margin="10,10,10,0">
+                <controls:SettingsExpander x:Uid="SettingInterface" Grid.Row="4" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="DefaultEntryInterface">
                             <ComboBox
@@ -163,10 +157,7 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  封面歌词设置  -->
-                <controls:SettingsExpander
-                    x:Uid="SettingCoverLyrics"
-                    Grid.Row="5"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="SettingCoverLyrics" Grid.Row="5" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                             x:Name="LrcAPISource"
@@ -229,10 +220,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <ToggleSwitch
-                                    Grid.Column="0"
-                                    Margin="0,0,10,0"
-                                    IsOn="{Binding ViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
+                                <ToggleSwitch Grid.Column="0" Margin="0,0,10,0" IsOn="{Binding ViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
                                 <NumberBox
                                     x:Name="LyricsFontSize"
                                     Grid.Column="1"
@@ -276,13 +264,19 @@
                         <controls:SettingsCard x:Uid="SongListCoverEnable">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsSongCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="FavouriteListCoverEnabled">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsFavouriteCoverEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="SongCollectionListCoverEnable">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsSongCollectionCoverEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="PlayListCoverEnabled">
+                            <ToggleSwitch IsOn="{Binding ViewModel.IsPlayListCoverEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  关闭按钮功能  -->
-                <controls:SettingsExpander
-                    x:Uid="CloseButtonFunction"
-                    Grid.Row="7"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="CloseButtonFunction" Grid.Row="7" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -308,10 +302,7 @@
                 </controls:SettingsExpander>
 
                 <!--  进程优先级功能  -->
-                <controls:SettingsExpander
-                    x:Uid="ProcessPriorityFunction"
-                    Grid.Row="8"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="ProcessPriorityFunction" Grid.Row="8" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -336,10 +327,7 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  音乐库文件夹监听功能  -->
-                <controls:SettingsCard
-                    x:Uid="FolderWatchEnabled"
-                    Grid.Row="9"
-                    Margin="10,0,10,0">
+                <controls:SettingsCard x:Uid="FolderWatchEnabled" Grid.Row="9" Margin="10,0,10,0">
                     <ToggleSwitch IsOn="{Binding ViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <!--  外观设置  -->
@@ -349,10 +337,7 @@
                     Margin="10,10,0,0"
                     FontSize="16" />
                 <!--  背景设置  -->
-                <controls:SettingsExpander
-                    x:Uid="AppStyle"
-                    Grid.Row="11"
-                    Margin="10,10,10,0">
+                <controls:SettingsExpander x:Uid="AppStyle" Grid.Row="11" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsUpdateBackDrop">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
@@ -433,10 +418,7 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  主题设置  -->
-                <controls:SettingsExpander
-                    x:Uid="ThemeStyle"
-                    Grid.Row="12"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="ThemeStyle" Grid.Row="12" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -469,10 +451,7 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <!--  动画设置  -->
-                <controls:SettingsExpander
-                    x:Uid="AnimationSettings"
-                    Grid.Row="13"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="AnimationSettings" Grid.Row="13" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="EntranceAnimationTime">
                             <NumberBox
@@ -508,10 +487,7 @@
                 </controls:SettingsExpander>
 
                 <!--  窗口大小设置  -->
-                <controls:SettingsExpander
-                    x:Uid="MainWindowSizeSettings"
-                    Grid.Row="14"
-                    Margin="10,0,10,0">
+                <controls:SettingsExpander x:Uid="MainWindowSizeSettings" Grid.Row="14" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsCustomAppSize" Description="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCustomAppSize, Mode=TwoWay}" />
@@ -561,16 +537,10 @@
                         Text="{Binding ViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton
-                                x:Name="ThirdParty"
-                                x:Uid="ThirdPartyComponents"
-                                Click="ThirdParty_Click" />
+                            <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton
-                                x:Name="LogPath"
-                                x:Uid="LogPath"
-                                Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                            <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

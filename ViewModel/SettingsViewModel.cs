@@ -48,11 +48,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _dsdGain, value))
                 {
-                    // 更新应用设置
-                    AppSettings.dsdGain = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.dsdGain = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -66,11 +64,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _isAutoLyricsEnabled, value))
                 {
-                    // 更新应用设置
-                    AppSettings.isAutoLyricsEnabled = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.isAutoLyricsEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -99,11 +95,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _latency, value))
                 {
-                    // 更新应用设置
-                    AppSettings.Latency = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.Latency = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -116,10 +110,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isCustomAppSize, value))
-                {
-                    AppSettings.IsCustomAppSize = value;
+                {                   
                     if (_isInitized)
                     {
+                        AppSettings.IsCustomAppSize = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -132,10 +126,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _appWidth, value))
-                {
-                    AppSettings.AppWidth = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.AppWidth = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -149,9 +143,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _appHeight, value))
                 {
-                    AppSettings.AppHeight = value;
                     if (_isInitized)
                     {
+                        AppSettings.AppHeight = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -165,11 +159,77 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _isCoverCacheEnabled, value))
                 {
-                    // 更新应用设置
-                    AppSettings.isCoverCacheEnabled = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.isCoverCacheEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private bool _isSongCoverEnabled;
+        public bool IsSongCoverEnabled
+        {
+            get => _isSongCoverEnabled;
+            set
+            {
+                if (SetProperty(ref _isSongCoverEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsSongCoverEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private bool _isFavouriteCoverEnabled = false;
+        public bool IsFavouriteCoverEnabled
+        {
+            get => _isFavouriteCoverEnabled;
+            set
+            {
+                if (SetProperty(ref _isFavouriteCoverEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsFavouriteCoverEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private bool _isPlayListCoverEnabled = false;
+        public bool IsPlayListCoverEnabled
+        {
+            get => _isPlayListCoverEnabled;
+            set
+            {
+                if (SetProperty(ref _isPlayListCoverEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsPlayListCoverEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
+        private bool _isSongCollectionCoverEnabled = false;
+        public bool IsSongCollectionCoverEnabled
+        {
+            get => _isSongCollectionCoverEnabled;
+            set
+            {
+                if (SetProperty(ref _isSongCollectionCoverEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsSongCollectionCoverEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -198,11 +258,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _defaultPlayListComboBoxTag, value))
                 {
-                    // 更新应用设置
-                    AppSettings.DefualtPlayList = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.DefualtPlayList = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -216,11 +274,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _lrcAPIAuth, value))
                 {
-                    // 更新应用设置
-                    AppSettings.LrcAPIAuth = value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.LrcAPIAuth = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -235,11 +291,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _lrcAPISource, value))
                 {
-                    // 更新应用设置
-                    AppSettings.LrcAPISource = string.IsNullOrEmpty(value) ? "https://api.lrc.cx" : value;
-                    // 保存设置
                     if (_isInitized)
                     {
+                        AppSettings.LrcAPISource = string.IsNullOrEmpty(value) ? "https://api.lrc.cx" : value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -285,15 +339,12 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref _deviceName, value))
                 {
                     if (value != null)
-                    {
-                        Debug.WriteLine($"DeviceName changed to: {value}");
-                        // 更新应用设置
-                        AppSettings.DeviceName = value;
-                        // 保存设置                        
+                    {                       
                         if (IsRealDevceChange)
                         {
                             if (_isInitized)
                             {
+                                AppSettings.DeviceName = value;
                                 _ = MusicDatabaseService.SaveSettingAsync();
                                 AppSettings.OnOutputSettingsChanged();
                             }
@@ -314,10 +365,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _backdropType, value))
-                {
-                    AppSettings.AppStyle = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.AppStyle = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -333,11 +384,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _themeType, value))
                 {
-                    Debug.WriteLine($"ThemeType changed to: {value}");
-                    // 保存设置
-                    AppSettings.AppTheme = value;
+                    // 保存设置                   
                     if (_isInitized)
                     {
+                        AppSettings.AppTheme = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -351,10 +401,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _entranceAnimationTime, value))
-                {
-                    AppSettings.EntranceAnimationTime = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.EntranceAnimationTime = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -367,10 +417,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _slideAnimationTime, value))
-                {
-                    AppSettings.SlideAnimationTime = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.SlideAnimationTime = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -383,10 +433,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _drillInAnimationTime, value))
-                {
-                    AppSettings.DrillInAnimationTime = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.DrillInAnimationTime = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -400,10 +450,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
-                {
-                    AppSettings.IsBackgroundCoverEnabled = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.IsBackgroundCoverEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                         App.Services.GetRequiredService<MusicBrowsePage>()?.ChangeAcrylicBrushBackgroundOpacity();
                     }
@@ -418,10 +468,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _coverLoadThreadCount, value))
-                {
-                    AppSettings.CoverLoadThreadCount = value;
+                {                    
                     if (_isInitized)
                     {
+                        AppSettings.CoverLoadThreadCount = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -442,10 +492,10 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isFolderWatchEnabled, value))
-                {
-                    AppSettings.IsFolderWatchEnabled = value;
+                {                   
                     if (_isInitized)
                     {
+                        AppSettings.IsFolderWatchEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -614,21 +664,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private bool _isSongCoverEnabled;
-        public bool IsSongCoverEnabled
-        {
-            get => _isSongCoverEnabled;
-            set {
-                if (SetProperty(ref _isSongCoverEnabled, value)) {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsSongCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
 
         public SettingsViewModel()
         {
@@ -713,6 +748,9 @@ namespace WinUIMusicPlayer.ViewModel
             IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             GlobalFontSize = AppSettings.GlobalFontSize;
             IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
+            IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
+            IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
+            IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             _isInitized = true;
         }
         
