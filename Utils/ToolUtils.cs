@@ -939,9 +939,7 @@ namespace WinUIMusicPlayer.Utils
                                     {
                                         resizedStream.Seek(0);
                                         await bitmap.SetSourceAsync(resizedStream);
-                                        if (!AppData.UnknownAlbums.Contains(album)) {
-                                            AppData.albumCoverCache.TryAdd(album, bitmap);
-                                        }
+                                        AppData.albumCoverCache.TryAdd(album, bitmap);
                                         resizedStream.Dispose(); // 在使用完成后释放
                                     }
                                     catch (Exception)
