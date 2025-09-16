@@ -193,7 +193,6 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //await Services.GetRequiredService<MusicBrowsePage>().ClosePage();
                 _host.StopAsync().Wait();
                 _logger?.LogInformation("应用程序退出完成");
             }

@@ -19,6 +19,7 @@ using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
+using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
@@ -105,7 +106,7 @@ namespace WinUIMusicPlayer.Services
         {
             CancelPreviousLyricsTask();
             _lyrics.Clear();
-            string? lrcContent = AppData.allSongs.FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
+            string? lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
             var lyricsContent = await ParseLrcLyrics(lrcContent);
             if (lyricsContent != null)
             {
@@ -113,12 +114,36 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        private string GetLyricsContentFromLrc(string path) {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                string lyricFilePath = Path.ChangeExtension(path, ".lrc");
+                if (File.Exists(lyricFilePath))
+                {
+                    try
+                    {
+                        return File.ReadAllText(lyricFilePath);
+                    }
+                    catch (Exception)
+                    {
+                        return null;
+                    }
+                }
+            }
+            return null;
+        }
+
         public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
             List<LyricLine> lyrics = new List<LyricLine>();
-            if (string.IsNullOrEmpty(lrcContent))
+            if (!string.IsNullOrWhiteSpace(lrcContent))
+            {
+                return SpliteContent(lrcContent, lyrics);
+            }
+            lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Path);
+            if (string.IsNullOrWhiteSpace(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
                 {
@@ -177,7 +202,9 @@ namespace WinUIMusicPlayer.Services
                     return lyrics;
                 }
             }
-            return SpliteContent(lrcContent, lyrics);
+            else {
+                return SpliteContent(lrcContent, lyrics);
+            }            
         }
 
         private void CancelPreviousLyricsTask()
@@ -825,12 +852,6 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        // 根据文件类型获取总时长
-                        //double totalSeconds = 0;
-                        //if (multiTypeAudioReader != null)
-                        //{
-                        //    totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
-                        //}
                         lock (_waveOutLock)
                         {
                             if (waveOut != null && !_isDisposing)
