@@ -831,4 +831,7 @@
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
     <value>Изменить расположение кэша обложки</value>
   </data>
+  <data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>песен</value>
+  </data>
 </root>

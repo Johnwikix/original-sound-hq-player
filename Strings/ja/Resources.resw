@@ -831,4 +831,7 @@
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
     <value>カバーキャッシュの場所の変更</value>
   </data>
+  <data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>曲</value>
+  </data>
 </root>

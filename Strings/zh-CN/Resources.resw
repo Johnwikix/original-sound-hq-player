@@ -831,4 +831,7 @@
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
     <value>更改封面缓存位置</value>
   </data>
+  <data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>首歌曲</value>
+  </data>
 </root>

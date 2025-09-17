@@ -831,4 +831,7 @@
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
     <value>Change the cover cache location</value>
   </data>
+  <data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>Songs</value>
+  </data>
 </root>

@@ -9,7 +9,8 @@ using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-
+using System.Linq;
+using ZLinq;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AddFolderViewModel : ObservableObject
@@ -36,6 +37,7 @@ namespace WinUIMusicPlayer.ViewModel
                 FolderList.Clear();
                 foreach (var folder in folderList)
                 {
+                    folder.SongCount = AppData.allSongs.AsValueEnumerable().Where(m => m.FolderPath.StartsWith(folder.Path)).Count();
                     FolderList.Add(folder);
                 }
             }
