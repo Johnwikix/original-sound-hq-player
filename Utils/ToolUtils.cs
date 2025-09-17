@@ -909,21 +909,21 @@ namespace WinUIMusicPlayer.Utils
                         byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
                         if (picture == null)
                         {
-                            if (!AppData.UnknownAlbums.Contains(album)) {
-                                if (!Directory.Exists(AppSettings.MusicCoverCache))
-                                {
-                                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                                }
+                            if (!Directory.Exists(AppSettings.MusicCoverCache))
+                            {
+                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                            }
+                            string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                            fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                            string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                            if (System.IO.File.Exists(filePath))
+                            {
+                                picture = System.IO.File.ReadAllBytes(filePath);
+                            }
+                            if (!AppData.UnknownAlbums.Contains(album)) {                                
                                 if (AppSettings.isAutoLyricsEnabled)
-                                {
-                                    string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                                    if (System.IO.File.Exists(filePath))
-                                    {
-                                        picture = System.IO.File.ReadAllBytes(filePath);
-                                    }
+                                {                                    
                                     picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
                                     if (picture != null)
                                     {
