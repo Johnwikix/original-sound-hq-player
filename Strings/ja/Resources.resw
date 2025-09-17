@@ -828,4 +828,7 @@
   <data name="PlayListCoverEnabled.Header" xml:space="preserve">
     <value>プレイリストの表紙</value>
   </data>
+  <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
+    <value>カバーキャッシュの場所の変更</value>
+  </data>
 </root>

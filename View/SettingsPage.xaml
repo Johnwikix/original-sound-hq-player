@@ -6,6 +6,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -196,6 +197,23 @@
                                 Minimum="1"
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.CoverLoadThreadCount, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Width="300"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding ViewModel.MusicCoverCache, Mode=OneWay}"
+                                    TextAlignment="Right"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="{Binding ViewModel.MusicCoverCache, Mode=OneWay}" VerticalOffset="10" />
+                                    </ToolTipService.ToolTip>
+                                </TextBlock>
+                                <Button x:Uid="ChangeMusicCoverCache" Command="{Binding ViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                            </StackPanel>
                         </controls:SettingsCard>
                         <!--<controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />

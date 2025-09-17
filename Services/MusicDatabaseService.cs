@@ -875,6 +875,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsPlayListCoverEnabled = settings.IsPlayListCoverEnabled;
                 AppSettings.IsFavouriteCoverEnabled = settings.IsFavouriteCoverEnabled;
                 AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
+                AppSettings.MusicCoverCache = settings.MusicCoverCache;
             }
         }
 
@@ -925,6 +926,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             newSettings.IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
             newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
+            newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

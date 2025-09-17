@@ -305,7 +305,7 @@ public sealed partial class NeteaseCloudMusicApi : IDisposable
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            byte[] imageBytes = await _client.GetByteArrayAsync(url);
+            byte[] imageBytes = await _client.GetByteArrayAsync(url, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return imageBytes;
         }

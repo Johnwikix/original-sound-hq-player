@@ -315,5 +315,15 @@ namespace WinUIMusicPlayer.View
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
         }
+
+        private void CoverImage_Loaded(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("ImageLoaded");
+        }
+
+        private void CoverImage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("ImageUnLoaded");
+        }
     }
 }

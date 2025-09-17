@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.WebService
                 {
                     _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
                 }
-                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com" || AppSettings.LrcAPISource == "https://api.lrc.cx")
+                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
                 {
                     return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
                 }

@@ -67,7 +67,7 @@ public class CloudMusicSearchHelper
             cancellationToken.ThrowIfCancellationRequested();
             string songId = SearchForSongId(root, title, author);
             cancellationToken.ThrowIfCancellationRequested();
-            var lyrics = await GetLyricsUrl(songId);
+            var lyrics = await GetLyricsUrl(songId, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return lyrics;
         }
@@ -167,7 +167,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static async Task<string> GetLyricsUrl(string songId)
+    private static async Task<string> GetLyricsUrl(string songId,CancellationToken cancellationToken = default)
     {
         if (songId != null)
         {

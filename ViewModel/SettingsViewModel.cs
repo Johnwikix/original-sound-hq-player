@@ -664,6 +664,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private string _musicCoverCache;
+        public string MusicCoverCache {
+            get => _musicCoverCache;
+            set => SetProperty(ref _musicCoverCache, value);
+        }
+
 
         public SettingsViewModel()
         {
@@ -751,6 +757,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
             IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
             IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
+            MusicCoverCache = AppSettings.MusicCoverCache;
             _isInitized = true;
         }
         
@@ -902,6 +909,24 @@ namespace WinUIMusicPlayer.ViewModel
                 DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
             };
             await Launcher.LaunchFolderAsync(folder, options);
+        }
+
+        [RelayCommand]
+        private async void ChangeCoverCacheLocation() {
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                MusicCoverCache = folder.Path;
+                AppSettings.MusicCoverCache = folder.Path;
+                if (_isInitized)
+                {
+                    _ = MusicDatabaseService.SaveSettingAsync();
+                }
+            }
         }
     }
 }

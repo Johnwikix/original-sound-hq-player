@@ -84,6 +84,9 @@
                             Style="{StaticResource PlayHoverButtonStyle}">
                             <Grid Width="40" Height="40">
                                 <Image
+                                    x:Name="CoverImage"
+                                    Loaded="CoverImage_Loaded"
+                                    Unloaded="CoverImage_Unloaded"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     Canvas.ZIndex="1"

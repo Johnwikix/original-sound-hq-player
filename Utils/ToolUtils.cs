@@ -4,6 +4,7 @@ using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Shapes;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Windows.ApplicationModel.Resources;
 using NAudio.Wave;
@@ -37,6 +38,7 @@ using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
+using Path = System.IO.Path;
 using Window = Microsoft.UI.Xaml.Window;
 
 namespace WinUIMusicPlayer.Utils
@@ -427,11 +429,15 @@ namespace WinUIMusicPlayer.Utils
                     {
                         if (AppSettings.isAutoLyricsEnabled && !isManual) {
                             var cancellationToken = new CancellationTokenSource();
+                            if (!Directory.Exists(AppSettings.MusicCoverCache))
+                            {
+                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                            }
                             byte[] picture = null;
                             string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                            string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                             fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                            string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                            string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
                             if (System.IO.File.Exists(filePath))
                             {
                                 picture = System.IO.File.ReadAllBytes(filePath);
@@ -903,15 +909,18 @@ namespace WinUIMusicPlayer.Utils
                         byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
                         if (picture == null)
                         {
+                            if (!Directory.Exists(AppSettings.MusicCoverCache))
+                            {
+                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                            }
                             if (AppSettings.isAutoLyricsEnabled) {
                                 string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                                string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                                 fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                                string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
                                 if (System.IO.File.Exists(filePath)) {
                                     picture = System.IO.File.ReadAllBytes(filePath);
-                                }
-                                    
+                                }                                    
                                 picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);                                
                                 if (picture != null) { 
                                     System.IO.File.WriteAllBytes(filePath, picture);

@@ -50,5 +50,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsUpdateBackDrop { get; set; } = false;
         public string LyricsAlignment { get; set; } = "Center";
         public int LyricsMargin { get; set; } = 20;
+        public string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
     }
 }

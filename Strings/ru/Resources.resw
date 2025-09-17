@@ -828,4 +828,7 @@
   <data name="PlayListCoverEnabled.Header" xml:space="preserve">
     <value>Обложка списка воспроизведения</value>
   </data>
+  <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
+    <value>Изменить расположение кэша обложки</value>
+  </data>
 </root>

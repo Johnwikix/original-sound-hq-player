@@ -828,4 +828,7 @@
   <data name="PlayListCoverEnabled.Header" xml:space="preserve">
     <value>Portada de la lista de reproducción</value>
   </data>
+  <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
+    <value>Cambiar la ubicación de la caché de la portada</value>
+  </data>
 </root>
