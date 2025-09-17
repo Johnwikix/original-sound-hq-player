@@ -198,7 +198,7 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.CoverLoadThreadCount, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
+                        <controls:SettingsCard x:Uid="CoverCache">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock
                                     Width="300"

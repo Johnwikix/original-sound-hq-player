@@ -909,23 +909,28 @@ namespace WinUIMusicPlayer.Utils
                         byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
                         if (picture == null)
                         {
-                            if (!Directory.Exists(AppSettings.MusicCoverCache))
-                            {
-                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                            }
-                            if (AppSettings.isAutoLyricsEnabled) {
-                                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                                if (System.IO.File.Exists(filePath)) {
-                                    picture = System.IO.File.ReadAllBytes(filePath);
-                                }                                    
-                                picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);                                
-                                if (picture != null) { 
-                                    System.IO.File.WriteAllBytes(filePath, picture);
+                            if (!AppData.UnknownAlbums.Contains(album)) {
+                                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                                {
+                                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
                                 }
-                            }                            
+                                if (AppSettings.isAutoLyricsEnabled)
+                                {
+                                    string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                                    if (System.IO.File.Exists(filePath))
+                                    {
+                                        picture = System.IO.File.ReadAllBytes(filePath);
+                                    }
+                                    picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
+                                    if (picture != null)
+                                    {
+                                        System.IO.File.WriteAllBytes(filePath, picture);
+                                    }
+                                }
+                            }                        
                         }
                         if (picture != null) {
                             // 直接使用图片的原始数据流
@@ -949,7 +954,9 @@ namespace WinUIMusicPlayer.Utils
                                     {
                                         resizedStream.Seek(0);
                                         await bitmap.SetSourceAsync(resizedStream);
-                                        AppData.albumCoverCache.TryAdd(album, bitmap);
+                                        if (!AppData.UnknownAlbums.Contains(album)) {
+                                            AppData.albumCoverCache.TryAdd(album, bitmap);
+                                        }
                                         resizedStream.Dispose(); // 在使用完成后释放
                                     }
                                     catch (Exception)

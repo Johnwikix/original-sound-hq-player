@@ -8,6 +8,7 @@ using NAudio.Wave;
 using System;
 using System.IO;
 using System.Text;
+using WinUIMusicPlayer.Reader;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -119,54 +120,67 @@ namespace WinUIMusicPlayer.AudioConverters
 
         public void ConvertFlac(string flacFilePath, string outputPath, string type = "wav")
         {
-            using (WaveStream flacReader = new FlacReader(flacFilePath))
+            try
             {
-                long totalBytes = flacReader.Length;
-                long bytesWritten = 0;
-                DateTime lastUpdate = DateTime.Now;
-                if (type == "wav")
+                using (WaveStream flacReader = new FlacReader(flacFilePath))
                 {
-                    using (var wavWriter = new WaveFileWriter(outputPath, flacReader.WaveFormat))
-                    {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = flacReader.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            wavWriter.Write(buffer, 0, bytesRead);
-                            bytesWritten += bytesRead;
-                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                            {
-                                double progress = (double)bytesWritten / totalBytes * 100;
-                                lastUpdate = DateTime.Now;
-                                progressEvent?.Invoke(this, progress);
-                            }
-                        }
-                    }
+                    ConvertFlacFFmpeg(flacReader, outputPath, type);
                 }
-                if (type == "mp3")
+            }
+            catch (Exception ex) {
+                using (WaveStream flacReader = new FFmpegAudioReader(flacFilePath))
                 {
-                    var mp3FormatPCMStream = ResampleToMp3Format(flacReader, flacReader.WaveFormat.Channels);
-                    totalBytes = mp3FormatPCMStream.Length;
-                    using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
-                    {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            mp3Writer.Write(buffer, 0, bytesRead);
-                            bytesWritten += bytesRead;
-                            if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
-                            {
-                                double progress = (double)bytesWritten / totalBytes * 100;
-                                lastUpdate = DateTime.Now;
-                                progressEvent?.Invoke(this, progress);
-                            }
-                        }
-                    }
+                    ConvertFlacFFmpeg(flacReader, outputPath, type);
                 }
             }
             SaveMetaData(flacFilePath, outputPath);
             progressEvent?.Invoke(this, 100);
+        }
+
+        private void ConvertFlacFFmpeg(WaveStream flacReader, string outputPath, string type) {
+            long totalBytes = flacReader.Length;
+            long bytesWritten = 0;
+            DateTime lastUpdate = DateTime.Now;
+            if (type == "wav")
+            {
+                using (var wavWriter = new WaveFileWriter(outputPath, flacReader.WaveFormat))
+                {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = flacReader.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        wavWriter.Write(buffer, 0, bytesRead);
+                        bytesWritten += bytesRead;
+                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                        {
+                            double progress = (double)bytesWritten / totalBytes * 100;
+                            lastUpdate = DateTime.Now;
+                            progressEvent?.Invoke(this, progress);
+                        }
+                    }
+                }
+            }
+            if (type == "mp3")
+            {
+                var mp3FormatPCMStream = ResampleToMp3Format(flacReader, flacReader.WaveFormat.Channels);
+                totalBytes = mp3FormatPCMStream.Length;
+                using (LameMP3FileWriter mp3Writer = new LameMP3FileWriter(outputPath, mp3FormatPCMStream.WaveFormat, LAMEPreset.INSANE))
+                {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = mp3FormatPCMStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        mp3Writer.Write(buffer, 0, bytesRead);
+                        bytesWritten += bytesRead;
+                        if ((DateTime.Now - lastUpdate).TotalSeconds >= 1)
+                        {
+                            double progress = (double)bytesWritten / totalBytes * 100;
+                            lastUpdate = DateTime.Now;
+                            progressEvent?.Invoke(this, progress);
+                        }
+                    }
+                }
+            }
         }
 
         public void ConvertAiff(string filePath, string outputPath, string type = "wav")
