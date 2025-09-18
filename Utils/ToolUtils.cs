@@ -933,7 +933,6 @@ namespace WinUIMusicPlayer.Utils
                             }                        
                         }
                         if (picture != null) {
-                            // 直接使用图片的原始数据流
                             using (var originalStream = new MemoryStream(picture))
                             {
                                 // 解码原始图像
@@ -954,14 +953,15 @@ namespace WinUIMusicPlayer.Utils
                                     {
                                         resizedStream.Seek(0);
                                         await bitmap.SetSourceAsync(resizedStream);
-                                        if (!AppData.UnknownAlbums.Contains(album)) {
+                                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled) {
                                             AppData.albumCoverCache.TryAdd(album, bitmap);
                                         }
-                                        resizedStream.Dispose(); // 在使用完成后释放
                                     }
                                     catch (Exception)
                                     {
-                                        resizedStream.Dispose(); // 异常时也要释放
+                                    }
+                                    finally { 
+                                        resizedStream.Dispose(); 
                                     }
                                 });
                             }

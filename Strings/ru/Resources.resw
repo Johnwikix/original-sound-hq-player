@@ -256,7 +256,7 @@
     <value>Код авторизации CoverServiceLrcAPI</value>
   </data>
   <data name="CoverCache.Header" xml:space="preserve">
-    <value>Кэш обложек</value>
+    <value>Кэш при запуске обложки</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Макс. количество 미리 загруженных обложек</value>
@@ -833,5 +833,8 @@
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>песен</value>
+  </data>
+  <data name="CoverDiskCache.Header" xml:space="preserve">
+    <value>Кэш на диске обложки</value>
   </data>
 </root>

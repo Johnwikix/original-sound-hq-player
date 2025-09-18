@@ -26,6 +26,8 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _musicList, value);
         }
 
+        private IEnumerable<Music> Playlist;
+
         private Music _selectedMusic;
         public Music SelectedMusic
         {
@@ -38,6 +40,17 @@ namespace WinUIMusicPlayer.ViewModel
         {
             get => _playListName;
             set => SetProperty(ref _playListName, value);
+        }
+        private Music _currentMusicObject;
+        public Music CurrentMusicObject {
+            get => _currentMusicObject;
+            set => SetProperty(ref _currentMusicObject, value);
+        }
+        private string _secondTitle;
+        public string SecondTitle
+        {
+            get => _secondTitle;
+            set => SetProperty(ref _secondTitle, value);
         }
 
         private MusicBrowsePage? _parentPage;
@@ -72,6 +85,21 @@ namespace WinUIMusicPlayer.ViewModel
             PlayListName = _parentPage.ViewModel.currentPlayList.Name;
             InitizeData();
             RefreshUsbDeviceMusicList(null, null);
+        }
+
+        private void InitizeTitle()
+        {
+            var albums = Playlist
+                        .AsValueEnumerable()
+                        .Select(music => music.Album)
+                        .Distinct()
+                        .Count();
+            var authors = Playlist
+                .AsValueEnumerable()
+                .Select(music => music.Author)
+                .Distinct()
+                .Count();
+            SecondTitle = $"{Playlist.AsValueEnumerable().Count()} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
         }
 
         public void ShowTransmission()
@@ -138,9 +166,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage != null)
             {
-                var musicList = MusicDatabaseService.GetMusicByPlayListIdFromMem(_parentPage.ViewModel.currentPlayListId, AppData.searchText);
+                Playlist = MusicDatabaseService.GetMusicByPlayListIdFromMem(_parentPage.ViewModel.currentPlayListId, AppData.searchText);
+                InitizeTitle();
                 _currentPlayListId = _parentPage.ViewModel.currentPlayListId;
-                LoadMusicAsync(musicList);
+                LoadMusicAsync(Playlist);
             }
         }
 
@@ -170,6 +199,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     MusicList.Add(music);
                 }
+                CurrentMusicObject = MusicList?.AsValueEnumerable().FirstOrDefault();
                 SortMusicList(AppData.sortOrder);
                 UpdateMusicListView();
             }
@@ -435,17 +465,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
-
-        //public async Task IsFavouriteIconButton_Click(Music music)
-        //{
-        //    if (music != null)
-        //    {
-        //        // 通过事件通知视图更新图标
-        //        await _parentPage.AddToFavourite(music);
-        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-        //    }
-        //}
-
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
@@ -513,6 +532,18 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
                 _parentPage.PlayMusic(music: music, IsChangeList: true);
+            }
+        }
+
+        [RelayCommand]
+        private void OnPlayAll() {
+            if (_parentPage != null)
+            {
+                _parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(MusicList);
+                if (MusicList.Count > 0)
+                {
+                    _parentPage.PlayMusic(music: MusicList[0], IsChangeList: true);
+                }
             }
         }
     }

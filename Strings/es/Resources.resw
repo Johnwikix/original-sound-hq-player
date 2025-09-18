@@ -256,7 +256,7 @@
     <value>Código de autenticación de la API Lrc para el servicio de portadas</value>
   </data>
   <data name="CoverCache.Header" xml:space="preserve">
-    <value>Cache de portadas</value>
+    <value>Caché en tiempo de ejecución de la portada</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Número máximo de portadas pre cargadas</value>
@@ -833,5 +833,8 @@
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Canciones</value>
+  </data>
+  <data name="CoverDiskCache.Header" xml:space="preserve">
+    <value>Caché de disco de portada</value>
   </data>
 </root>

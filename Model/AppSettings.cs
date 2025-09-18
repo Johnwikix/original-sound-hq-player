@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.Model
         public static byte CustomColorBlue { get; set; } = 128;
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
-        public static bool isCoverCacheEnabled { get; set; } = false;
+        public static bool isCoverCacheEnabled { get; set; } = true;
         public static bool IsSongCoverEnabled { get; set; } = true;
         public static bool IsFavouriteCoverEnabled { get; set; } = true;
         public static bool IsSongCollectionCoverEnabled { get; set; } = true;

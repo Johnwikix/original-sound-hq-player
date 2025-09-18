@@ -256,7 +256,7 @@
     <value>ジャケットサービスLrcAPIソース認証コード</value>
   </data>
   <data name="CoverCache.Header" xml:space="preserve">
-    <value>ジャケットキャッシュ</value>
+    <value>表紙ランタイムキャッシュ</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大ジャケットプリロード数</value>
@@ -833,5 +833,8 @@
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>曲</value>
+  </data>
+  <data name="CoverDiskCache.Header" xml:space="preserve">
+    <value>カバーディスクキャッシュ</value>
   </data>
 </root>

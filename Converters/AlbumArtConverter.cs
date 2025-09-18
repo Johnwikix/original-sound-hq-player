@@ -30,7 +30,6 @@ namespace WinUIMusicPlayer.Converters
                 {
                     return cached;
                 }
-                // 缓存未命中，开始加载
                 var placeholderBitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
                 _ = LoadImageAsync(music.Path, music.Album, placeholderBitmap, music);
                 return placeholderBitmap;

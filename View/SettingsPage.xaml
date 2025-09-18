@@ -198,7 +198,7 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{Binding ViewModel.CoverLoadThreadCount, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="CoverCache">
+                        <controls:SettingsCard x:Uid="CoverDiskCache">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock
                                     Width="300"
@@ -215,13 +215,13 @@
                                 <Button x:Uid="ChangeMusicCoverCache" Command="{Binding ViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
                             </StackPanel>
                         </controls:SettingsCard>
-                        <!--<controls:SettingsCard x:Uid="CoverCache" Description="{x:Bind tool:ToolUtils.GetString('CoverCacheDescription')}">
+                        <controls:SettingsCard x:Uid="CoverCache">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>-->
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="AutoLyricMatching" Description="{x:Bind tool:ToolUtils.GetString('NeedConfigureLrcAPIService')}">
+                        <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{Binding ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
