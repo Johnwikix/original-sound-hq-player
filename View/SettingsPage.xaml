@@ -555,10 +555,12 @@
                         Text="{Binding ViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard ContentAlignment="Left">
-                            <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                            <StackPanel Orientation="Horizontal">
+                                <HyperlinkButton x:Name="WebSite" x:Uid="OfficialWebSite" Command="{Binding ViewModel.OpenWebSiteCommand, Mode=OneWay}" />
+                                <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
+                                <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{Binding ViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                            </StackPanel>
+
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

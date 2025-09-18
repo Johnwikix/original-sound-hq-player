@@ -928,5 +928,11 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+
+        [RelayCommand]
+        private void OpenWebSite()
+        {
+            _=Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
+        }
     }
 }

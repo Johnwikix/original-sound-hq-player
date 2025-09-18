@@ -837,4 +837,7 @@
   <data name="CoverDiskCache.Header" xml:space="preserve">
     <value>Кэш на диске обложки</value>
   </data>
+  <data name="OfficialWebSite.Content" xml:space="preserve">
+    <value>OfficialWebSite</value>
+  </data>
 </root>
