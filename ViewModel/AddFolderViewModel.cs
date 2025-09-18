@@ -35,9 +35,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var folderList = await MusicDatabaseService.GetFolders();
                 FolderList.Clear();
+                Debug.WriteLine(AppData.allSongs.AsValueEnumerable().Count());
                 foreach (var folder in folderList)
                 {
-                    folder.SongCount = AppData.allSongs.AsValueEnumerable().Where(m => m.FolderPath.StartsWith(folder.Path)).Count();
+                    folder.SongCount = AppData.allSongs.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
                     FolderList.Add(folder);
                 }
             }
