@@ -667,7 +667,7 @@
     <value>张专辑</value>
   </data>
   <data name="NumberOfArtists" xml:space="preserve">
-    <value>个艺术家</value>
+    <value>位艺术家</value>
   </data>
   <data name="Artist" xml:space="preserve">
     <value>艺术家</value>
