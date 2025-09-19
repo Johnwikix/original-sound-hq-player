@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Runtime;
 using System.Threading.Tasks;
+using testDemo.Taskbar;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;

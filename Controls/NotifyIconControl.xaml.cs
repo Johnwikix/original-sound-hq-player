@@ -194,6 +194,7 @@ namespace WinUIMusicPlayer.Controls
                 if (!window.Visible)
                 {
                     window.Show();
+                    //window.RecoverTaskbarHelper();
                     window.InitializeTaskbarHelper();
                 }
                 if (AppSettings.IsProcessAboveNormal)

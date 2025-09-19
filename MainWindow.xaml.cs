@@ -80,18 +80,15 @@ namespace WinUIMusicPlayer
 
         private void setWindow()
         {
-            //WindowSizeHelper.SetMinimumSize(m_hwnd, this, MinWindowWidth, MinWindowHeight);
             this.SetIcon("Assets/icon.ico");
             Title = ToolUtils.GetString("AppMainTitle");
             if (AppSettings.IsCustomAppSize)
             {
                 this.CenterOnScreen(AppSettings.AppWidth, AppSettings.AppHeight);
-                //WindowSizeHelper.ResizeWindowAndCenterInScreen(m_hwnd, AppSettings.AppHeight, AppSettings.AppWidth, this.AppWindow);
             }
             else
             {
                 this.CenterOnScreen();
-                //WindowSizeHelper.CenterInScreen(this.AppWindow);
             }
         }
 
@@ -169,10 +166,6 @@ namespace WinUIMusicPlayer
                 {
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                 }
-                //else
-                //{
-                //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
-                //}
             }
         }
 
@@ -193,11 +186,9 @@ namespace WinUIMusicPlayer
                 UpdateAppNotifyIconControl();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
-                //updateSelectSection?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception)
             {
-                //System.Diagnostics.Debug.WriteLine($"≥ı ºªØ¥ÌŒÛ: {ex.Message}");
             }
         }
 
@@ -293,10 +284,6 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            //if (args.WindowActivationState != WindowActivationState.Deactivated)
-            //{
-            //    this.Activated -= MainWindow_Activated;                
-            //}
             if (AppSettings.IsUpdateBackDrop) {
                 themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
             }            
@@ -310,9 +297,15 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                _taskbarHelper?.Dispose();
-                _taskbarHelper = new TaskbarHelper(m_hwnd);
-                _taskbarHelper.InitializeThumbButtons();
+                //_taskbarHelper?.Dispose();
+                if (_taskbarHelper == null)
+                {
+                    _taskbarHelper = new TaskbarHelper(m_hwnd);
+                    _taskbarHelper.InitializeThumbButtons();
+                }
+                else {
+                    _taskbarHelper.RecoverTaskbarHelper();
+                } 
             }
             catch (Exception ex)
             {

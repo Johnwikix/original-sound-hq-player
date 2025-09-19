@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Runtime.InteropServices;
 using WinUIMusicPlayer;
@@ -40,7 +41,7 @@ namespace testDemo.Taskbar
 
         // 子类过程委托
         private delegate IntPtr SubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData);
-        private readonly IntPtr _hwnd;
+        private IntPtr _hwnd;
         private ITaskbarList3 _taskbarList;
         private ThumbButton[] _buttons;
         private SubclassProc _wndProc; // 保持引用，防止被垃圾回收
@@ -82,6 +83,11 @@ namespace testDemo.Taskbar
         {
             _hwnd = hwnd;
             _musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+        }
+
+        public void RecoverTaskbarHelper()
+        {
+            _taskbarList.ThumbBarAddButtons(_hwnd, (uint)_buttons.Length, _buttons);
         }
 
 
@@ -227,19 +233,14 @@ namespace testDemo.Taskbar
             {
                 // 创建新图标
                 IntPtr newIcon = CreateIconFromImage(iconPath, size);
-
                 // 保存之前的图标句柄以便释放
                 IntPtr oldIcon = _iconHandles[buttonId];
-
                 // 更新图标句柄数组
                 _iconHandles[buttonId] = newIcon;
-
                 // 更新按钮结构
                 _buttons[buttonId].hIcon = newIcon;
-
                 // 更新任务栏按钮
                 _taskbarList.ThumbBarUpdateButtons(_hwnd, (uint)_buttons.Length, _buttons);
-
                 // 释放旧图标资源
                 if (oldIcon != IntPtr.Zero)
                 {
