@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.View
             this.notificationService = notificationService;
         }
 
-        private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             if (button != null && button.Tag is string folderPath)
