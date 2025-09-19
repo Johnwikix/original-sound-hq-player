@@ -24,8 +24,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public AddFolderViewModel()
         {
-            // Initialize with some default folders if needed
-            // FolderList.Add(new Folder { Name = "Default Folder", Path = "C:\\DefaultPath" });
             _ = LoadFoldersAsync();
         }
 
@@ -82,24 +80,17 @@ namespace WinUIMusicPlayer.ViewModel
             if (folder != null)
             {
                 await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
+                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 await LoadFoldersAsync();
-                var mainWindow = (App.MainWindow as MainWindow);
-                if (mainWindow != null)
-                {
-                    mainWindow.UpdateMusicList();
-                }
+                App.MainWindow?.UpdateMusicList();                
             }
         }
 
-        public async void RemoveFolderButton_Click(int folderId)
+        public async Task RemoveFolderButton_Click(int folderId)
         {
-            await MusicDatabaseService.RemoveFolder(folderId);
+            await Task.Run(() => MusicDatabaseService.RemoveFolder(folderId));
             await LoadFoldersAsync();
-            var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
-            {
-                mainWindow.UpdateMusicList();
-            }
+            App.MainWindow?.UpdateMusicList();
         }
 
         public async void Grid_Drop(IEnumerable<IStorageItem> folders)

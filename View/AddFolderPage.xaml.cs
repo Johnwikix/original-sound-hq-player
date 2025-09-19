@@ -85,11 +85,11 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void RemoveFolder(int folderId)
+        private async void RemoveFolder(int folderId)
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
-            ViewModel.RemoveFolderButton_Click(folderId);
+            await ViewModel.RemoveFolderButton_Click(folderId);
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;
         }
