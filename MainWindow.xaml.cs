@@ -297,7 +297,6 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //_taskbarHelper?.Dispose();
                 if (_taskbarHelper == null)
                 {
                     _taskbarHelper = new TaskbarHelper(m_hwnd);
