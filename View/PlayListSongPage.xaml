@@ -159,18 +159,18 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-                    <!--<Button
+                    <Button
+                        x:Name="EditPlaylistName"
                         Grid.Column="2"
                         Margin="10,0,10,0"
-                        Command="{Binding ViewModel.AlbumInfoChangedCommand, Mode=OneWay}"
-                        Visibility="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToEditVisibleConverter}, Mode=OneWay}">
+                        Click="EditPlaylistName_Click">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE70F;" />
                                 <TextBlock x:Uid="Edit" Margin="10,0,0,0" />
                             </StackPanel>
                         </Button.Content>
-                    </Button>-->
+                    </Button>
                 </Grid>
             </Grid>
         </Grid>

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Media.Playlists;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -286,6 +287,29 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+        }
+
+        private void EditPlaylistName_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.EditPlayListName(async () =>
+            {
+                ContentDialog contentDialog = new ContentDialog
+                {
+                    Title = ToolUtils.GetString("ModifyPlaylist"),
+                    Content = new TextBox { Text = $"{ViewModel.PlayListName}" },
+                    PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
+                    CloseButtonText = ToolUtils.GetString("CloseButton"),
+                    XamlRoot = this.XamlRoot
+                };
+                contentDialog.RequestedTheme = AppSettings.elementTheme;
+                ContentDialogResult result = await contentDialog.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    TextBox textBox = (TextBox)contentDialog.Content;
+                    return textBox.Text;
+                }
+                return string.Empty;
+            });
         }
     }
 }

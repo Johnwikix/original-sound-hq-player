@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -550,6 +551,18 @@ namespace WinUIMusicPlayer.ViewModel
         public void ExportPlayList()
         {
             ToolUtils.ExportPlayList(_musicPlaybackService.MusicBrowseViewModel.currentPlayList);
+        }
+
+        public async void EditPlayListName(Func<Task<string>> getNameCallback)
+        {
+            string newName = await getNameCallback();
+            var playList = _musicPlaybackService.MusicBrowseViewModel.currentPlayList;
+            if (!string.IsNullOrEmpty(newName))
+            {                
+                playList.Name = newName;
+                await MusicDatabaseService.UpdatePlayList(playList);
+                PlayListName = newName;
+            }
         }
     }
 }
