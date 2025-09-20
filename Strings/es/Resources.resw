@@ -843,4 +843,7 @@
   <data name="AlbumSongs.Text" xml:space="preserve">
     <value>Canciones</value>
   </data>
+  <data name="ExportM3u8List.Text" xml:space="preserve">
+    <value>Exportar a m3u8</value>
+  </data>
 </root>

@@ -125,25 +125,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void ExportPlayList(PlayList playList)
+        public void ExportPlayList(PlayList playList)
         {
-            try
-            {
-                var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, AppData.m_hWnd);
-                savePicker.FileTypeChoices.Add("M3U8 播放列表", new List<string>() { ".m3u8" });
-                savePicker.SuggestedFileName = playList.Name;
-                var file = await savePicker.PickSaveFileAsync();
-                if (file != null)
-                {
-                    IEnumerable<Music> musics = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id);
-                    var m3u8Content = ToolUtils.GenerateM3U8Content(musics, playList.Name);
-                    await Windows.Storage.FileIO.WriteTextAsync(file, m3u8Content, Windows.Storage.Streams.UnicodeEncoding.Utf8);
-                }
-            }
-            catch (Exception ex)
-            {
-            }
+            ToolUtils.ExportPlayList(playList);
         }
     }
 }

@@ -12,16 +12,28 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Style
+            x:Key="ListViewItemStyle"
+            BasedOn="{StaticResource DefaultListViewItemStyle}"
+            TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertWavItem"
+                                Click="ConvertAudio_Click"
+                                Tag="wav" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertMp3Item"
+                                Click="ConvertAudio_Click"
+                                Tag="mp3" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertFlacItem"
+                                Click="ConvertAudio_Click"
+                                Tag="flac" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
@@ -38,7 +50,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid x:Name="PlayListName" Grid.Row="0" Margin="10,0,10,10">
+        <Grid
+            x:Name="PlayListName"
+            Grid.Row="0"
+            Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -112,8 +127,20 @@
                     FontSize="14"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     TextTrimming="CharacterEllipsis" />
-                <Grid Grid.Row="3" Margin="10,0,10,0" VerticalAlignment="Bottom">
-                    <Button Margin="10,0,10,0" Command="{Binding ViewModel.PlayAllCommand, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}">
+                <Grid
+                    Grid.Row="3"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Bottom">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Grid.Column="0"
+                        Margin="10,0,10,0"
+                        Command="{Binding ViewModel.PlayAllCommand, Mode=OneWay}"
+                        Style="{StaticResource AccentButtonStyle}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE768;" />
@@ -121,6 +148,29 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
+                    <Button
+                        Grid.Column="1"
+                        Margin="10,0,10,0"
+                        Command="{Binding ViewModel.ExportPlayListCommand, Mode=OneWay}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon Glyph="&#xEDE1;" />
+                                <TextBlock x:Uid="ExportM3u8List" Margin="10,0,0,0" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                    <!--<Button
+                        Grid.Column="2"
+                        Margin="10,0,10,0"
+                        Command="{Binding ViewModel.AlbumInfoChangedCommand, Mode=OneWay}"
+                        Visibility="{Binding ViewModel.CurrentPageType, Converter={StaticResource SongCollectionPageTypeToEditVisibleConverter}, Mode=OneWay}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon Glyph="&#xE70F;" />
+                                <TextBlock x:Uid="Edit" Margin="10,0,0,0" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>-->
                 </Grid>
             </Grid>
         </Grid>
@@ -199,7 +249,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                <FontIcon
+                                    x:Name="IsFavouriteIcon"
+                                    Foreground="Red"
+                                    Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                             </Button>
                             <TextBlock
                                 Grid.Column="2"
@@ -244,7 +297,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                                <FontIcon
+                                    Margin="0,2,0,0"
+                                    VerticalAlignment="Center"
+                                    Glyph="&#xE710;" />
                             </Button>
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"

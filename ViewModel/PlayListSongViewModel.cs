@@ -546,5 +546,10 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        [RelayCommand]
+        public void ExportPlayList()
+        {
+            ToolUtils.ExportPlayList(_musicPlaybackService.MusicBrowseViewModel.currentPlayList);
+        }
     }
 }
