@@ -840,4 +840,7 @@
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>Sitio web oficial</value>
   </data>
+  <data name="AlbumSongs.Text" xml:space="preserve">
+    <value>Songs</value>
+  </data>
 </root>

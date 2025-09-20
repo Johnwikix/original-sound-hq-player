@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:WinUIMusicPlayer.Converters">
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:WinUIMusicPlayer.Converters">
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
     <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />
@@ -35,4 +38,5 @@
     <converters:FavourCoverConverter x:Key="FavourCoverConverter" />
     <converters:PlayListCoverConverter x:Key="PlayListCoverConverter" />
     <converters:SongCollectionCoverConverter x:Key="SongCollectionCoverConverter" />
+    <converters:AlbumSongsConverter x:Key="AlbumSongsConverter" />
 </ResourceDictionary>

@@ -840,4 +840,7 @@
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>官方网址</value>
   </data>
+  <data name="AlbumSongs.Text" xml:space="preserve">
+    <value>首</value>
+  </data>
 </root>

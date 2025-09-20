@@ -17,7 +17,6 @@ namespace WinUIMusicPlayer.Model
             get => _title;
             set => SetProperty(ref _title, value);
         }
-
         //private BitmapImage _cover = null;
         //[Ignore]
         //public BitmapImage Cover

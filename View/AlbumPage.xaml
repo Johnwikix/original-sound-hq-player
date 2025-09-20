@@ -98,14 +98,36 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="Wrap" />
-                                <TextBlock
-                                    Width="150"
-                                    Height="15"
-                                    Margin="0"
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{Binding Author, Mode=OneWay}"
-                                    TextTrimming="CharacterEllipsis" />
+                                <Grid Width="150">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Height="15"
+                                        Margin="0"
+                                        HorizontalAlignment="Stretch"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Author, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Height="15"
+                                        Margin="0"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Album,Converter={StaticResource AlbumSongsConverter},Mode=OneWay}" />
+                                    <TextBlock
+                                        x:Uid="AlbumSongs"
+                                        Grid.Column="2"
+                                        Height="15"
+                                        Margin="0"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </Grid>
                             </StackPanel>
                         </DataTemplate>
                     </GridView.ItemTemplate>

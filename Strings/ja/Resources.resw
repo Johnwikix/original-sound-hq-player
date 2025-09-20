@@ -840,4 +840,7 @@
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>公式サイト</value>
   </data>
+  <data name="AlbumSongs.Text" xml:space="preserve">
+    <value>曲</value>
+  </data>
 </root>
