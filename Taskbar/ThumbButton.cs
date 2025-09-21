@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace testDemo.Taskbar
+namespace WinUIMusicPlayer.Taskbar
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
     public struct ThumbButton

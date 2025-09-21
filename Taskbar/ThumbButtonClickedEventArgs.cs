@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace testDemo.Taskbar
+namespace WinUIMusicPlayer.Taskbar
 {
     public class ThumbButtonClickedEventArgs : EventArgs
     {

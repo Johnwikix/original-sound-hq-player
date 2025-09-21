@@ -41,12 +41,21 @@
                     </GridView.GroupStyle>
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel
+                            <Grid
                                 Height="205"
-                                Margin="5"
+                                Margin="5,10,5,10"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-                                <Grid Width="150" Height="150">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid
+                                    Grid.Row="0"
+                                    Width="150"
+                                    Height="150">
                                     <!--  图片在下层  -->
                                     <Border
                                         Width="150"
@@ -90,6 +99,7 @@
                                         Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                                 </Grid>
                                 <TextBlock
+                                    Grid.Row="1"
                                     Width="150"
                                     MaxHeight="40"
                                     Margin="0"
@@ -98,7 +108,7 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="Wrap" />
-                                <Grid Width="150">
+                                <Grid Grid.Row="3" Width="150">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -119,7 +129,7 @@
                                         Margin="0"
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{Binding Album,Converter={StaticResource AlbumSongsConverter},Mode=OneWay}" />
+                                        Text="{Binding Album, Converter={StaticResource AlbumSongsConverter}, Mode=OneWay}" />
                                     <TextBlock
                                         x:Uid="AlbumSongs"
                                         Grid.Column="2"
@@ -128,7 +138,7 @@
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>

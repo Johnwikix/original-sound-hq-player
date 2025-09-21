@@ -1,4 +1,4 @@
-﻿namespace testDemo.Taskbar
+﻿namespace WinUIMusicPlayer.Taskbar
 {
     public enum TaskbarProgressState
     {

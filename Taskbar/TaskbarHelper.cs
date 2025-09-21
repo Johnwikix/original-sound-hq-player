@@ -7,7 +7,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
-namespace testDemo.Taskbar
+namespace WinUIMusicPlayer.Taskbar
 {
     public class TaskbarHelper : IDisposable
     {
