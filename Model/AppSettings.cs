@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
         public static double GlobalFontSize { get; set; } = 32;
         public static List<FontInfo> FontFamilyList { get; set; }
-        public static bool IsGlobalFFmpegEnabled { get; set; } = true;
+        public static bool IsGlobalFFmpegEnabled { get; set; } = false;
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
         public static int LyricsMargin { get; set; } = 20;
