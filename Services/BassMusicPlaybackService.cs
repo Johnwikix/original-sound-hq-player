@@ -128,7 +128,7 @@ namespace WinUIMusicPlayer.Services
                 "bassopus.dll",
                 "basswebm.dll",
                 "basswv.dll",
-                "basswasapi.dll"
+                //"basswasapi.dll"
             };
 
             foreach (var pluginPath in pluginPaths)
@@ -568,7 +568,7 @@ namespace WinUIMusicPlayer.Services
                 BassWasapi.GetInfo(out wasapiInfo);
                 Debug.WriteLine($"实际WASAPI格式 - 采样率: {wasapiInfo.Frequency}, 声道: {wasapiInfo.Channels}, 格式: {wasapiInfo.Format}");
                 // 设置音量
-                BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)(100 / 1000.0));
+                BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
                 Debug.WriteLine($"WASAPI独占模式启动成功");
                 return true;
             }
@@ -612,7 +612,7 @@ namespace WinUIMusicPlayer.Services
                     Bass.ChannelSetAttribute(
                         _currentStream,
                         ChannelAttribute.Volume,
-                        1.0f
+                        volume
                     );
                 }
                 var lengthBytes = Bass.ChannelGetLength(_currentStream);
@@ -646,7 +646,10 @@ namespace WinUIMusicPlayer.Services
                 Bass.ChannelStop(_currentStream);
                 progressTimer.Stop();
                 AppSettings.isPlaying = false;
-                MusicBrowseViewModel.IsPlaying = false;
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.IsPlaying = false;
+                });
             }
         }
 
@@ -683,7 +686,9 @@ namespace WinUIMusicPlayer.Services
                 }
                 isPausing = true;
                 AppSettings.isPlaying = false;
-                MusicBrowseViewModel.IsPlaying = false;
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                    MusicBrowseViewModel.IsPlaying = false;
+                });                
                 progressTimer.Stop();
             }
             else

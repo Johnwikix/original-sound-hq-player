@@ -517,11 +517,11 @@ namespace WinUIMusicPlayer.View
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
-                ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                //_ = Task.Run(async () =>
-                //{
-                //    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                //});
+                //ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                _ = Task.Run(async () =>
+                {
+                    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                });
             }
             catch (Exception ex)
             {

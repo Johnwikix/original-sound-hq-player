@@ -78,7 +78,6 @@
                                     <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush" />
                                     <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent" />
                                     <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared" />
-                                    <ComboBoxItem x:Uid="WaveOut" Tag="WaveOut" />
                                     <ComboBoxItem x:Uid="DirectSound" Tag="DirectSound" />
                                 </ComboBox>
                             </controls:SettingsCard>
