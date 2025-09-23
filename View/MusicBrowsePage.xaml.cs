@@ -180,15 +180,15 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async Task ClosePage()
-        {
-            await ViewModel._musicPlaybackService.DisposeAudio();
-            if (App.MainWindow != null)
-            {
-                //App.MainWindow.updateSelectSection -= MainWindow_updateSelectSection;
-                App.MainWindow.updateMusicList -= MainWindow_updateMusicList;
-            }
-        }
+        //public async Task ClosePage()
+        //{
+        //    await ViewModel._musicPlaybackService.DisposeAudio();
+        //    if (App.MainWindow != null)
+        //    {
+        //        //App.MainWindow.updateSelectSection -= MainWindow_updateSelectSection;
+        //        App.MainWindow.updateMusicList -= MainWindow_updateMusicList;
+        //    }
+        //}
 
         private void InitializeTimer()
         {

@@ -570,12 +570,17 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine($"使用WASAPI设备: {info.Name}");
                 // 初始化播放模式                
                 var result = SwitchDevice();
-
                 if (!result)
                 {
                     var error = Bass.LastError;
-                    Debug.WriteLine($"WASAPI独占模式初始化失败: {error}");
-                    return false;
+                    if (Bass.LastError == Errors.Busy) {
+                        StopWasapiPlayback();
+                    }
+                    result = SwitchDevice();
+                    if (!result) {
+                        Debug.WriteLine($"WASAPI独占模式初始化失败: {error}");
+                        return false;
+                    }                    
                 }
                 WasapiInfo wasapiInfo;
                 BassWasapi.GetInfo(out wasapiInfo);
@@ -978,9 +983,14 @@ namespace WinUIMusicPlayer.Services
             await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
         }
 
-        private void Dispose()
+        public void Dispose()
         {
             DisposeStream();
+            if (BassWasapi.IsStarted)
+            {
+                BassWasapi.Stop(true);
+            }
+            BassWasapi.Free(); 
             Bass.Free();
         }
     }
