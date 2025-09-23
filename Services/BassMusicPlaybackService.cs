@@ -474,7 +474,7 @@ namespace WinUIMusicPlayer.Services
                     BassWasapi.Stop();
                 }
                 else {
-                    Bass.Stop();
+                    Bass.ChannelStop(_currentStream);
                 }
                 ChangeWaveChannelTime(TimeSpan.Zero);
             }
