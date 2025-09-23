@@ -100,17 +100,17 @@
                                     SpinButtonPlacementMode="Inline"
                                     Value="{Binding ViewModel.Latency, Mode=TwoWay}" />
                             </controls:SettingsCard>
-                            <controls:SettingsCard x:Uid="SettingDSDGain">
+                            <!--<controls:SettingsCard x:Uid="SettingDSDGain">
                                 <NumberBox
                                     x:Name="DSDGainNumberBox"
                                     Width="300"
                                     Minimum="0"
                                     SpinButtonPlacementMode="Inline"
                                     Value="{Binding ViewModel.DsdGain, Mode=TwoWay}" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard x:Uid="SettingIsGlobalFFmpegEnabled">
+                            </controls:SettingsCard>-->
+                            <!--<controls:SettingsCard x:Uid="SettingIsGlobalFFmpegEnabled">
                                 <ToggleSwitch IsOn="{Binding ViewModel.IsGlobalFFmpegEnabled, Mode=TwoWay}" />
-                            </controls:SettingsCard>
+                            </controls:SettingsCard>-->
                         </controls:SettingsExpander.Items>
                     </controls:SettingsExpander>
                     <controls:SettingsCard

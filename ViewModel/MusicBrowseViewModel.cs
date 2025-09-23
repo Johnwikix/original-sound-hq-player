@@ -835,9 +835,9 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnStopButtonChanged()
         {
-            _musicPlaybackService.Stop();
+            _musicPlaybackService.MusicEnd();
             UpdatePlayPauseButtonIcon();
-            _musicPlaybackService.Reset();
+            //_musicPlaybackService.Reset();
             ProgressSlider = 0;
         }
         [RelayCommand]

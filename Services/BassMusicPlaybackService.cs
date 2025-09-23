@@ -128,7 +128,7 @@ namespace WinUIMusicPlayer.Services
                 "bassopus.dll",
                 "basswebm.dll",
                 "basswv.dll",
-                //"basswasapi.dll"
+                "bassalac.dll"
             };
 
             foreach (var pluginPath in pluginPaths)
@@ -149,7 +149,14 @@ namespace WinUIMusicPlayer.Services
                 {
                     Debug.WriteLine($"加载插件失败: {pluginPath}，错误: {Bass.LastError}");
                 }
+                var plugins = Bass.PluginGetInfo(pluginHandle);
+
+                foreach (var plugin in plugins.Formats)
+                {
+                    Debug.WriteLine($"  支持格式: {plugin.Name} ({plugin.FileExtensions})");
+                }
             }
+            
         }
 
         private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
@@ -457,14 +464,20 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void MusicEnd()
+        public void MusicEnd()
         {
             progressTimer.Stop();
-            //if (multiTypeAudioReader != null)
-            //{
-            //    waveOut.Stop();
-            //    ChangeWaveChannelTime(TimeSpan.Zero);
-            //}
+            if (_currentStream != 0)
+            {
+                if (AppSettings.OutputMode.Contains("Wasapi"))
+                {
+                    BassWasapi.Stop();
+                }
+                else {
+                    Bass.Stop();
+                }
+                ChangeWaveChannelTime(TimeSpan.Zero);
+            }
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicBrowseViewModel.ProgressSlider = 0;
@@ -568,8 +581,15 @@ namespace WinUIMusicPlayer.Services
                 BassWasapi.GetInfo(out wasapiInfo);
                 Debug.WriteLine($"实际WASAPI格式 - 采样率: {wasapiInfo.Frequency}, 声道: {wasapiInfo.Channels}, 格式: {wasapiInfo.Format}");
                 // 设置音量
-                BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
-                Debug.WriteLine($"WASAPI独占模式启动成功");
+                if (AppSettings.OutputMode.Contains("WasapiShared"))
+                {
+                    BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
+                }
+                else if(AppSettings.OutputMode.Contains("WasapiExclusive"))
+                {
+                    BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
+                }               
+                Debug.WriteLine($"WASAPI模式启动成功");
                 return true;
             }
             catch (Exception ex)
@@ -579,28 +599,26 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void SetSource(string path)
+        private void SetSource(Music music)
         {
             try
             {
-                DisposeStream();
-                
+                DisposeStream();                
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
                     // 在独占模式
-                    _currentStream = Bass.CreateStream(path, 0,0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    _currentStream = Bass.CreateStream(music.Path, 0,0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else
                 {
                     // 在共享模式
-                    _currentStream = Bass.CreateStream(path);
+                    _currentStream = Bass.CreateStream(music.Path);
                 }
                 if (_currentStream == 0)
                 {
-                    Debug.WriteLine($"创建Bass流失败: {Bass.LastError}");
+                    notificationService.SendNotification(ToolUtils.GetString("Error"), $"创建流失败: {Bass.LastError}");
                     return;
                 }
-                //_tempoStream = _currentStream;
                 //InitializeEqualizer();
                 Bass.ChannelSetSync(_currentStream, SyncFlags.End, 0, _syncEndCallback); // 设置播放结束回调
                 Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _syncFailCallback); // 设置播放失败回调
@@ -617,7 +635,6 @@ namespace WinUIMusicPlayer.Services
                 }
                 var lengthBytes = Bass.ChannelGetLength(_currentStream);
                 _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, lengthBytes);
-                //App.Services.GetRequiredService<DashboardViewModel>().ProgressSilderMax = lengthSeconds;
             }
             catch (Exception ex)
             {
@@ -630,7 +647,7 @@ namespace WinUIMusicPlayer.Services
             lock (_streamLock)
             {
                 Stop();
-                SetSource(music.Path);
+                SetSource(music);
                 Play(isSettingChanged);
             }
         }
@@ -664,7 +681,7 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.IsPlaying = false;
                 });
                 AppSettings.isPlaying = false;
-                SetSource(MusicBrowseViewModel.CurrentPlayingMusic.Path);
+                SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
             }
             finally
             {
@@ -843,9 +860,11 @@ namespace WinUIMusicPlayer.Services
         {
             if (_currentStream != 0)
             {
-                if (AppSettings.OutputMode.Contains("Wasapi"))
+                if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
+                } else if (AppSettings.OutputMode.Contains("WasapiShared")) {
+                    BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
                 }
                 else
                 {
@@ -896,15 +915,19 @@ namespace WinUIMusicPlayer.Services
                 //isManualPlayingNext = true;
                 lock (_streamLock)
                 {
-                    if (AppSettings.isPlaying) {
-                        Stop();
-                    }
-                    DisposeStream();
-                    SetSource(MusicBrowseViewModel.CurrentPlayingMusic.Path);
+                    var currentTime = GetCurrentPosition();
                     if (AppSettings.isPlaying)
                     {
+                        Stop();
+                        DisposeStream();
+                        SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
                         Play(true);
                     }
+                    else {
+                        DisposeStream();
+                        SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
+                    }
+                    ChangeWaveChannelTime(TimeSpan.FromSeconds(currentTime));
                 }
             }
             catch (Exception ex)
