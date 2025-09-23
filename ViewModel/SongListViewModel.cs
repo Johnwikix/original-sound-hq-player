@@ -45,11 +45,11 @@ namespace WinUIMusicPlayer.ViewModel
         private string _lastSearchText = "";
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
-        private MusicPlaybackService _musicPlaybackService;
+        private BassMusicPlaybackService _musicPlaybackService;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
 
-        public SongListViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
+        public SongListViewModel(MusicBrowsePage parent, BassMusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
             _parentPage = parent;
             _parentPage.refreshPage += RefreshPage;

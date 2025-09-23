@@ -137,23 +137,23 @@ namespace WinUIMusicPlayer.Utils
             RepeatOff
         }
 
-        public static async Task RefreshDevice()
-        {
-            try
-            {
-                string selector = MediaDevice.GetAudioRenderSelector();
-                DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
-                AppSettings.outputDeviceList.Clear();
-                foreach (DeviceInformation device in devices)
-                {
-                    AppSettings.outputDeviceList.Add(device.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
-            }
-        }
+        //public static async Task RefreshDevice()
+        //{
+        //    try
+        //    {
+        //        string selector = MediaDevice.GetAudioRenderSelector();
+        //        DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(selector);
+        //        AppSettings.outputDeviceList.Clear();
+        //        foreach (DeviceInformation device in devices)
+        //        {
+        //            AppSettings.outputDeviceList.Add(device.Name);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
+        //    }
+        //}
 
         //public static Microsoft.UI.Windowing.AppWindow GetAppWindowForCurrentWindow(Window window)
         //{

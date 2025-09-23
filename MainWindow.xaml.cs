@@ -177,7 +177,7 @@ namespace WinUIMusicPlayer
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
                         LoadMusicList(),
-                        RefreshDevice(),
+                        //RefreshDevice(),
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
@@ -263,24 +263,24 @@ namespace WinUIMusicPlayer
             await MusicDatabaseService.GetPlayListMusic();
         }
 
-        public async Task RefreshDevice()
-        {
-            try
-            {
-                await ToolUtils.RefreshDevice();
-                if (SettingLoaded != null)
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        SettingLoaded?.Invoke(this, EventArgs.Empty);
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
-            }
-        }
+        //public async Task RefreshDevice()
+        //{
+        //    try
+        //    {
+        //        await ToolUtils.RefreshDevice();
+        //        if (SettingLoaded != null)
+        //        {
+        //            DispatcherQueue.TryEnqueue(() =>
+        //            {
+        //                SettingLoaded?.Invoke(this, EventArgs.Empty);
+        //            });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"刷新音频设备失败: {ex.Message}");
+        //    }
+        //}
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {

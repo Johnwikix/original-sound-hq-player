@@ -87,10 +87,10 @@ namespace WinUIMusicPlayer.ViewModel
         private string? _currentAlbumName;
         private string? _currentArtistName;
         private string? _currentFolderName;
-        MusicPlaybackService _musicPlaybackService;
+        private BassMusicPlaybackService _musicPlaybackService;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public SongCollectionViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel)
+        public SongCollectionViewModel(MusicBrowsePage parent, BassMusicPlaybackService musicPlaybackService, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel)
         {
             _parentPage = parent;
             _parentPage.refreshSong += RefreshSong;

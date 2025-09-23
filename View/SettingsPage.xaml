@@ -86,8 +86,9 @@
                                 <ComboBox
                                     x:Name="OutputDeviceComboBox"
                                     Width="300"
-                                    ItemsSource="{Binding ViewModel.OutputDevices, Mode=OneWay}"
-                                    SelectedItem="{Binding ViewModel.DeviceName, Mode=TwoWay}" />
+                                    DisplayMemberPath="Name"
+                                    ItemsSource="{Binding ViewModel.BassOutputDevices, Mode=OneWay}"
+                                    SelectedItem="{Binding ViewModel.SelectedDevice, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="SettingBufferSize">
                                 <NumberBox

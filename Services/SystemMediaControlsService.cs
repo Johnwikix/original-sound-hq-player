@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer.Services
         // 处理播放位置更改请求
         private void SystemMediaControls_PlaybackPositionChangeRequested(SystemMediaTransportControls sender, PlaybackPositionChangeRequestedEventArgs args)
         {
-            App.Services.GetRequiredService<MusicPlaybackService>().ChangeWaveChannelTime(args.RequestedPlaybackPosition);
+            App.Services.GetRequiredService<BassMusicPlaybackService>().ChangeWaveChannelTime(args.RequestedPlaybackPosition);
         }
 
         private void SystemMediaControls_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)

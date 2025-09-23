@@ -828,7 +828,7 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task GetSettingsAsync()
         {
-            AppSettings.outputDeviceList.Clear();
+            //AppSettings.outputDeviceList.Clear();
             var settings = await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings != null)
             {
@@ -876,6 +876,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsFavouriteCoverEnabled = settings.IsFavouriteCoverEnabled;
                 AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
+                AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
             }
         }
 
@@ -927,6 +928,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
             newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
+            newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             if (settings == null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

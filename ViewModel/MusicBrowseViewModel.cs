@@ -107,9 +107,9 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (!IsUserDraggingProgressSlider)
                         {
-                            if (_musicPlaybackService.multiTypeAudioReader != null)
+                            if (_musicPlaybackService._currentStream != 0)
                             {
-                                double currentPlayPosition = _musicPlaybackService.multiTypeAudioReader.CurrentTime.TotalSeconds;
+                                double currentPlayPosition = _musicPlaybackService.GetCurrentPosition();
 
                                 if (Math.Abs(value - currentPlayPosition) > 2.0)
                                 {
@@ -161,9 +161,10 @@ namespace WinUIMusicPlayer.ViewModel
                             _tempVolume = value;
                         }
                         _musicPlaybackService.volume = (float)value / 100;
-                        if (_musicPlaybackService.multiTypeAudioReader != null)
+                        if (_musicPlaybackService._currentStream != 0)
                         {
-                            _musicPlaybackService.multiTypeAudioReader.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
+                            //_musicPlaybackService.multiTypeAudioReader.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
+                            _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
                         }
                     }
                 }
@@ -340,7 +341,7 @@ namespace WinUIMusicPlayer.ViewModel
         public string paramName = "defualt";
         public int previousSelectedIndex = 0;
         public int currentPlayListId;
-        public MusicPlaybackService _musicPlaybackService;
+        public BassMusicPlaybackService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
         private DeviceWatcher deviceWatcher;
@@ -616,7 +617,7 @@ namespace WinUIMusicPlayer.ViewModel
             };
         }
 
-        public void SetMusicService(MusicPlaybackService musicPlaybackService)
+        public void SetMusicService(BassMusicPlaybackService musicPlaybackService)
         {
             _musicPlaybackService = musicPlaybackService;
             InitializeDatabase();
@@ -834,7 +835,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnStopButtonChanged()
         {
-            _musicPlaybackService.StopPlaying();
+            _musicPlaybackService.Stop();
             UpdatePlayPauseButtonIcon();
             _musicPlaybackService.Reset();
             ProgressSlider = 0;

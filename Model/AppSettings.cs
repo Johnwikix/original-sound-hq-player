@@ -16,9 +16,9 @@ namespace WinUIMusicPlayer.Model
 
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
 
-        public static List<string> outputDeviceList = [];
-
-        public static string DeviceName = "Default";
+        //public static List<string> outputDeviceList = [];
+        public static int BassOutputDeviceId { get; set; } = -1;
+        public static string DeviceName { get; set; } = "Default";
         public static string DefualtEntry { get; set; } = "AddFolder";
         public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;

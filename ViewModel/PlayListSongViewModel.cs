@@ -60,11 +60,11 @@ namespace WinUIMusicPlayer.ViewModel
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
         private int _currentPlayListId;
-        private MusicPlaybackService _musicPlaybackService;
+        private BassMusicPlaybackService _musicPlaybackService;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
 
-        public PlayListSongViewModel(MusicBrowsePage parent, MusicPlaybackService musicPlaybackService, AudioConverterService converterService)
+        public PlayListSongViewModel(MusicBrowsePage parent, BassMusicPlaybackService musicPlaybackService, AudioConverterService converterService)
         {
             _parentPage = parent;
             _parentPage.refreshPage += RefreshPlayList;

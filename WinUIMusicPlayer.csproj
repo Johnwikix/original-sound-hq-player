@@ -87,6 +87,9 @@
     <PackageReference Include="CUETools.Codecs.FLAKE-Reloaded" Version="1.0.1" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.0" />
     <PackageReference Include="LordLuceus.CSCore.Ffmpeg" Version="1.0.2" />
+    <PackageReference Include="ManagedBass" Version="4.0.1" />
+    <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
+    <PackageReference Include="ManagedBass.Wasapi" Version="4.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />

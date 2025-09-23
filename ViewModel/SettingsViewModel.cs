@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
@@ -318,33 +319,40 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private ObservableCollection<string> _outputDevices = new ObservableCollection<string>();
-        public ObservableCollection<string> OutputDevices
+        //private ObservableCollection<string> _outputDevices = new ObservableCollection<string>();
+        //public ObservableCollection<string> OutputDevices
+        //{
+        //    get => _outputDevices;
+        //    set
+        //    {
+        //        if (SetProperty(ref _outputDevices, value))
+        //        {
+        //            Debug.WriteLine("OutputDevices collection changed.");
+        //        }
+        //    }
+        //}
+        private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
+        public ObservableCollection<BassOutputDevice> BassOutputDevices
         {
-            get => _outputDevices;
-            set
-            {
-                if (SetProperty(ref _outputDevices, value))
-                {
-                    Debug.WriteLine("OutputDevices collection changed.");
-                }
-            }
+            get => _bassOutputDevices;
+            set => SetProperty(ref _bassOutputDevices, value);
         }
-        private string _deviceName = "Default";
-        public string DeviceName
+        private BassOutputDevice _selectedDevice;
+        public BassOutputDevice SelectedDevice
         {
-            get => _deviceName;
+            get => _selectedDevice;
             set
             {
-                if (SetProperty(ref _deviceName, value))
+                if (SetProperty(ref _selectedDevice, value))
                 {
                     if (value != null)
-                    {                       
+                    {
                         if (IsRealDevceChange)
                         {
                             if (_isInitized)
                             {
-                                AppSettings.DeviceName = value;
+                                AppSettings.DeviceName = value.Name;
+                                AppSettings.BassOutputDeviceId = value.Id;
                                 _ = MusicDatabaseService.SaveSettingAsync();
                                 AppSettings.OnOutputSettingsChanged();
                             }
@@ -357,6 +365,33 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        //private string _deviceName = "Default";
+        //public string DeviceName
+        //{
+        //    get => _deviceName;
+        //    set
+        //    {
+        //        if (SetProperty(ref _deviceName, value))
+        //        {
+        //            if (value != null)
+        //            {                       
+        //                if (IsRealDevceChange)
+        //                {
+        //                    if (_isInitized)
+        //                    {
+        //                        AppSettings.DeviceName = value;
+        //                        _ = MusicDatabaseService.SaveSettingAsync();
+        //                        AppSettings.OnOutputSettingsChanged();
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    IsRealDevceChange = true;
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
         private string _backdropType = "TransparentAcrylic";
 
         public string BackdropType
@@ -704,9 +739,9 @@ namespace WinUIMusicPlayer.ViewModel
             // 初始化输出模式  
             OutputModeTag = AppSettings.OutputMode;
             // 初始化输出设备列表  
-            OutputDevices = new ObservableCollection<string>(AppSettings.outputDeviceList);
+            //OutputDevices = new ObservableCollection<string>(AppSettings.outputDeviceList);
             // 初始化设备名称
-            DeviceName = AppSettings.DeviceName;
+            //DeviceName = AppSettings.DeviceName;
             // 初始化背景类型
             BackdropType = AppSettings.AppStyle;
             if (BackdropType != "CustomAcrylicStyle")
@@ -758,9 +793,37 @@ namespace WinUIMusicPlayer.ViewModel
             IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
             IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             MusicCoverCache = AppSettings.MusicCoverCache;
+            InitializeWasapiDevice();
             _isInitized = true;
         }
-        
+
+        public void InitializeWasapiDevice()
+        {
+            BassOutputDevices.Clear();
+            int n = BassWasapi.DeviceCount;
+            for (int i = 0; i < n; i++)
+            {
+                if (BassWasapi.GetDeviceInfo(i, out WasapiDeviceInfo deviceInfo))
+                {
+                    // 筛选有效的WASAPI设备：已启用且是WASAPI设备
+                    if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
+                    {
+                        if (!BassOutputDevices.Any(d => d.Name == deviceInfo.Name))
+                        {
+                            Debug.WriteLine($"{deviceInfo.Name}: {i}");
+                            BassOutputDevices.Add(new BassOutputDevice
+                            {
+                                Name = deviceInfo.Name,
+                                Id = i
+                            });
+                        }
+                    }
+                }
+            }
+            SelectedDevice = BassOutputDevices.FirstOrDefault(d => d.Name == AppSettings.DeviceName)
+                ?? BassOutputDevices.FirstOrDefault();
+        }
+
         [RelayCommand]
         private void OnBackdropTypeChanged(string type)
         {

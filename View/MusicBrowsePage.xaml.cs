@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
         private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
 
         public MusicBrowseViewModel ViewModel { get; }
-        public MusicBrowsePage(MusicPlaybackService musicPlaybackService,
+        public MusicBrowsePage(BassMusicPlaybackService musicPlaybackService,
             NotificationService notificationService,
             MusicBrowseViewModel viewModel
             )
@@ -72,27 +72,27 @@ namespace WinUIMusicPlayer.View
                 App.MainWindow.updateMusicList += MainWindow_updateMusicList;
                 //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
-            equalizerDialog = new EqualizerDialog();
-            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
-            {
-                float feq = FrequencyMap[frequency];
-                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            };
-            equalizerDialog.clearEqualizer += (s, e) =>
-            {
-                Task.Run(() =>
-                {
-                    if (!AppSettings.IsEqualizerEnabled)
-                    {
-                        musicPlaybackService.ClearEqualizer();
-                    }
-                    else
-                    {
-                        musicPlaybackService.SetEqualizer();
-                        musicPlaybackService.ToggleEqualizer();
-                    }
-                });
-            };
+            //equalizerDialog = new EqualizerDialog();
+            //equalizerDialog.EqualizerGainChanged += (s, frequency) =>
+            //{
+            //    float feq = FrequencyMap[frequency];
+            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            //};
+            //equalizerDialog.clearEqualizer += (s, e) =>
+            //{
+            //    Task.Run(() =>
+            //    {
+            //        if (!AppSettings.IsEqualizerEnabled)
+            //        {
+            //            musicPlaybackService.ClearEqualizer();
+            //        }
+            //        else
+            //        {
+            //            musicPlaybackService.SetEqualizer();
+            //            musicPlaybackService.ToggleEqualizer();
+            //        }
+            //    });
+            //};
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();
@@ -517,10 +517,11 @@ namespace WinUIMusicPlayer.View
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
-                _ = Task.Run(async () =>
-                {
-                    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                });
+                ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                //_ = Task.Run(async () =>
+                //{
+                //    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                //});
             }
             catch (Exception ex)
             {
@@ -655,9 +656,9 @@ namespace WinUIMusicPlayer.View
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.IsUserDraggingProgressSlider = false;
-            if (ViewModel._musicPlaybackService.multiTypeAudioReader != null)
+            if (ViewModel._musicPlaybackService._currentStream != 0)
             {
-                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.multiTypeAudioReader.TotalTime.TotalSeconds));
+                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.GetTotalPosition()));
                 _ = Task.Run(() =>
                 {
                     ViewModel._musicPlaybackService.isManualSelect = true;
