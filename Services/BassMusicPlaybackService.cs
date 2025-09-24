@@ -1,4 +1,6 @@
-﻿using ManagedBass;
+﻿using CSCore.Streams.Effects;
+using ManagedBass;
+using ManagedBass.Fx;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -13,8 +15,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Windows.Media.Audio;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Provider;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -49,13 +53,28 @@ namespace WinUIMusicPlayer.Services
         private readonly object _streamLock = new();
         private readonly object _waveChannelLock = new();
         private CancellationTokenSource _currentOperationCts;
-        private readonly object _initializeLock = new object();
+        //private readonly object _initializeLock = new object();
         private volatile bool _isDisposing = false;
-        private readonly int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 768000 };
-        private readonly int[] bitDepths = { 16, 24, 32 };
+        //private readonly int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 768000 };
+        //private readonly int[] bitDepths = { 16, 24, 32 };
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
         private double _totalSeconds;
         private double _currentSeconds;
+        private readonly int[] _bandIndices = new int[10]; // 存储每个频段的索引
+        private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
+        private readonly float[] _eqGains = [
+                                                (float)AppSettings.equalizer["32Hz"],
+                                                (float)AppSettings.equalizer["64Hz"],
+                                                (float)AppSettings.equalizer["125Hz"],
+                                                (float)AppSettings.equalizer["250Hz"],
+                                                (float)AppSettings.equalizer["500Hz"],
+                                                (float)AppSettings.equalizer["1kHz"],
+                                                (float)AppSettings.equalizer["2kHz"],
+                                                (float)AppSettings.equalizer["4kHz"],
+                                                (float)AppSettings.equalizer["8kHz"],
+                                                (float)AppSettings.equalizer["16kHz"]
+                                            ];
+        private PeakEQ _peakEQ;
 
         public BassMusicPlaybackService(NotificationService notificationService)
         {
@@ -130,7 +149,8 @@ namespace WinUIMusicPlayer.Services
                 "basswv.dll",
                 "bassalac.dll"
             };
-
+            var version = BassFx.Version;
+            Debug.WriteLine($"BassFx: {version}");
             foreach (var pluginPath in pluginPaths)
             {
                 var fullPath = Path.Combine(appPath, pluginPath);
@@ -521,6 +541,70 @@ namespace WinUIMusicPlayer.Services
             return 0;
         }
 
+        public void ToggleEqualizer()
+        {
+            if (AppSettings.IsEqualizerEnabled)
+            {
+                try
+                {
+                    if (_currentStream != 0) {
+                        _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 2.5);
+                        // 为每个频段添加Band
+                        for (int i = 0; i < _eqFrequencies.Length; i++)
+                        {
+                            _bandIndices[i] = _peakEQ.AddBand(_eqFrequencies[i]);
+                            Debug.WriteLine($"均衡器频段 {_eqFrequencies[i]}Hz 创建成功，Band索引: {_bandIndices[i]}");
+                        }
+                        Debug.WriteLine("均衡器初始化完成");
+                    }                   
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"初始化均衡器时出错: {ex.Message}");
+                    _peakEQ = null;
+                }
+            }
+        }
+
+        public void SetEqualizerGain(int bandIndex, float gain)
+        {
+            if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
+            {
+                Debug.WriteLine($"无效的频段索引: {bandIndex}");
+                return;
+            }
+            if (_peakEQ == null)
+            {
+                Debug.WriteLine("均衡器未初始化");
+                return;
+            }
+
+            try
+            {
+                // 使用UpdateBand方法更新指定频段的增益
+                _peakEQ.UpdateBand(_bandIndices[bandIndex], gain);
+                Debug.WriteLine($"频段 {_eqFrequencies[bandIndex]}Hz (Band {_bandIndices[bandIndex]}) 增益设置为 {gain}dB");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"设置均衡器参数失败: {ex.Message}");
+            }
+        }
+
+        public void SetEqualizer()
+        {
+            if (_peakEQ is null) return;
+            for (int i = 0;i < 10;i++)
+            {
+                _peakEQ.UpdateBand(_bandIndices[i], (float)AppSettings.equalizer[FloatToString[_eqFrequencies[i]]]);
+            }
+        }
+
+        public void ClearEqualizer()
+        {
+            DisposeEq();
+        }
+
         private bool SwitchDevice()
         {
             bool result = false;
@@ -565,7 +649,6 @@ namespace WinUIMusicPlayer.Services
                     Debug.WriteLine($"无法获取默认WASAPI设备");
                     return false;
                 }
-
                 var info = BassWasapi.GetDeviceInfo(AppSettings.BassOutputDeviceId);
                 Debug.WriteLine($"使用WASAPI设备: {info.Name}");
                 // 初始化播放模式                
@@ -627,7 +710,7 @@ namespace WinUIMusicPlayer.Services
                 //InitializeEqualizer();
                 Bass.ChannelSetSync(_currentStream, SyncFlags.End, 0, _syncEndCallback); // 设置播放结束回调
                 Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _syncFailCallback); // 设置播放失败回调
-
+                ToggleEqualizer();
                 // 根据模式设置音量
                 if (!AppSettings.OutputMode.Contains("Wasapi"))
                 {
@@ -748,56 +831,6 @@ namespace WinUIMusicPlayer.Services
                 });                
                 progressTimer.Start();
             }
-            //if (AppSettings.isPlaying)
-            //{
-            //    if (waveOut is not null)
-            //    {
-            //        //必须这样写，不然在某些音频设备上会有bug
-            //        if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-            //        {
-            //            isPausing = true;
-            //            waveOut.Stop();
-            //            AppSettings.isPlaying = false;
-            //            MusicBrowseViewModel.IsPlaying = false;
-            //            progressTimer.Stop();
-            //        }
-            //        else
-            //        {
-            //            isPausing = true;
-            //            waveOut.Pause();
-            //            AppSettings.isPlaying = false;
-            //            MusicBrowseViewModel.IsPlaying = false;
-            //            progressTimer.Stop();
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    if (waveOut is not null)
-            //    {
-            //        isPausing = false;
-            //        waveOut.Play();
-            //        AppSettings.isPlaying = true;
-            //        MusicBrowseViewModel.IsPlaying = true;
-            //        progressTimer.Start();
-            //    }
-            //    else
-            //    {
-            //        if (MusicBrowseViewModel.CurrentPlayingMusic is not null)
-            //        {
-            //            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
-            //        }
-            //        else if (MusicBrowseViewModel.CurrentPlayingList is not null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
-            //        {
-            //            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
-            //        }
-            //        else
-            //        {
-            //            notificationService.SendNotification(ToolUtils.GetString("Error"), "没有可播放的音乐");
-            //            return;
-            //        }
-            //    }
-            //}
         }
 
         public void Play(bool isSettingChanged = false)
@@ -821,6 +854,9 @@ namespace WinUIMusicPlayer.Services
                 {
                     // 共享模式下直接播放
                     Bass.ChannelPlay(_currentStream, false);
+                }
+                if (AppSettings.IsEqualizerEnabled) {
+                    SetEqualizer();
                 }
                 progressTimer.Start();
                 UpdateProgressTimerUI();
@@ -950,6 +986,7 @@ namespace WinUIMusicPlayer.Services
                 _currentStream = 0;
             }
             StopWasapiPlayback();
+            DisposeEq();
         }
 
         private void StopWasapiPlayback()
@@ -968,7 +1005,10 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine(ex, $"停止WASAPI播放时出错");
             }
         }
-
+        public void DisposeEq() {
+            _peakEQ?.Dispose();
+            _peakEQ = null;
+        }
         public async Task DisposeAudio()
         {
             CancelPreviousLyricsTask();

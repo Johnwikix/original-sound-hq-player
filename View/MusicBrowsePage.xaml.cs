@@ -72,27 +72,27 @@ namespace WinUIMusicPlayer.View
                 App.MainWindow.updateMusicList += MainWindow_updateMusicList;
                 //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
-            //equalizerDialog = new EqualizerDialog();
-            //equalizerDialog.EqualizerGainChanged += (s, frequency) =>
-            //{
-            //    float feq = FrequencyMap[frequency];
-            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            //};
-            //equalizerDialog.clearEqualizer += (s, e) =>
-            //{
-            //    Task.Run(() =>
-            //    {
-            //        if (!AppSettings.IsEqualizerEnabled)
-            //        {
-            //            musicPlaybackService.ClearEqualizer();
-            //        }
-            //        else
-            //        {
-            //            musicPlaybackService.SetEqualizer();
-            //            musicPlaybackService.ToggleEqualizer();
-            //        }
-            //    });
-            //};
+            equalizerDialog = new EqualizerDialog();
+            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
+            {
+                int feq = FrequencyIndexMap[frequency];
+                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            };
+            equalizerDialog.clearEqualizer += (s, e) =>
+            {
+                Task.Run(() =>
+                {
+                    if (AppSettings.IsEqualizerEnabled)
+                    {                        
+                        musicPlaybackService.ToggleEqualizer();
+                        musicPlaybackService.SetEqualizer();
+                    }
+                    else
+                    {
+                        musicPlaybackService.ClearEqualizer();
+                    }
+                });
+            };
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();

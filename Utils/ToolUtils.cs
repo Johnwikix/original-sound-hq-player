@@ -60,6 +60,20 @@ namespace WinUIMusicPlayer.Utils
             ["16kHz"] = 16000f
         };
 
+        public static readonly Dictionary<string, int> FrequencyIndexMap = new Dictionary<string, int>
+        {
+            ["32Hz"] = 0,
+            ["64Hz"] = 1,
+            ["125Hz"] = 2,
+            ["250Hz"] = 3,
+            ["500Hz"] = 4,
+            ["1kHz"] = 5,
+            ["2kHz"] = 6,
+            ["4kHz"] = 7,
+            ["8kHz"] = 8,
+            ["16kHz"] = 9
+        };
+
         public static readonly Dictionary<float, string> FloatToString = new Dictionary<float, string>
         {
             [32f] = "32Hz",

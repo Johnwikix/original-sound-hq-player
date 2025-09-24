@@ -114,7 +114,8 @@
 //            }
 //        }
 
-//        private string GetLyricsContentFromLrc(string path) {
+//        private string GetLyricsContentFromLrc(string path)
+//        {
 //            if (!string.IsNullOrWhiteSpace(path))
 //            {
 //                string lyricFilePath = Path.ChangeExtension(path, ".lrc");
@@ -207,9 +208,10 @@
 //                    return lyrics;
 //                }
 //            }
-//            else {
+//            else
+//            {
 //                return SpliteContent(lrcContent, lyrics);
-//            }            
+//            }
 //        }
 
 //        private void CancelPreviousLyricsTask()
@@ -320,7 +322,8 @@
 //                        {
 //                            AutoPlayNextTrack();
 //                        }
-//                        else {
+//                        else
+//                        {
 //                            if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
 //                            {
 //                                if (Math.Abs(multiTypeAudioReader.TotalTime.TotalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1)
@@ -888,8 +891,9 @@
 //                                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
 //                                _ = MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
 //                            }
-//                            catch (Exception) {
-//                            }                           
+//                            catch (Exception)
+//                            {
+//                            }
 //                        });
 //                    }
 //                    catch (Exception ex)
