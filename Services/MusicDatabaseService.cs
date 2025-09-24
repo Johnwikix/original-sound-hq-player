@@ -861,7 +861,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
                 AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
-                AppSettings.IsGlobalFFmpegEnabled = settings.IsGlobalFFmpegEnabled;
+                //AppSettings.IsGlobalFFmpegEnabled = settings.IsGlobalFFmpegEnabled;
                 AppSettings.CustomAcrylicOpacity = settings.CustomAcrylicOpacity;
                 AppSettings.CustomColorAlpha = settings.CustomColorAlpha;
                 AppSettings.CustomColorRed = settings.CustomColorRed;
@@ -878,6 +878,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
+                AppSettings.IsDopEnabled = settings.IsDopEnabled;
             }
         }
 
@@ -914,7 +915,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
             newSettings.GlobalFont = AppSettings.GlobalFont.Source;
-            newSettings.IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
+            //newSettings.IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
             newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
             newSettings.CustomColorRed = AppSettings.CustomColorRed;
@@ -930,6 +931,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
+            newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
             if (settings is null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

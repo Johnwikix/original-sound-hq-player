@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.Services
         private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
-        private bool isEnableEq = false;
+        //private bool isEnableEq = false;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly object _streamLock = new();
         private readonly object _waveChannelLock = new();
@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.Services
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
         private double _totalSeconds;
         private double _currentSeconds;
-        private readonly int[] _bandIndices = new int[10]; // 存储每个频段的索引
+        private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
         private readonly float[] _eqGains = [
                                                 (float)AppSettings.equalizer["32Hz"],
@@ -679,12 +679,16 @@ namespace WinUIMusicPlayer.Services
                 DisposeStream();
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
-                    // 在独占模式
-                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float);
+                    }
+                    else {
+                        _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    }                    
                 }
                 else
                 {
-                    // 在共享模式
                     _currentStream = Bass.CreateStream(music.Path);
                 }
                 if (_currentStream == 0)

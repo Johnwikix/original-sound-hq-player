@@ -554,22 +554,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private bool _isGlobalFFmpegEnabled = true;
-        public bool IsGlobalFFmpegEnabled
-        {
-            get => _isGlobalFFmpegEnabled;
-            set
-            {
-                if (SetProperty(ref _isGlobalFFmpegEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsGlobalFFmpegEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isGlobalFFmpegEnabled = true;
+        //public bool IsGlobalFFmpegEnabled
+        //{
+        //    get => _isGlobalFFmpegEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isGlobalFFmpegEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsGlobalFFmpegEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
         private bool _isColorPickerVisible = false;
         public bool IsColorPickerVisible
@@ -705,6 +705,21 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _musicCoverCache, value);
         }
 
+        private bool _isDopEnabled;
+        public bool IsDopEnabled { 
+            get => _isDopEnabled;
+            set {
+                if (SetProperty(ref _isDopEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsDopEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
 
         public SettingsViewModel()
         {
@@ -783,7 +798,8 @@ namespace WinUIMusicPlayer.ViewModel
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
             FontFamily = FontFamilyList.FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
-            IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
+            //IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
+            IsDopEnabled = AppSettings.IsDopEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             LyricsMargin = AppSettings.LyricsMargin;

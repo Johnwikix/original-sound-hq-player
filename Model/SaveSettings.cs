@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsPlayListCoverEnabled { get; set; } = true;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
+        public bool IsDopEnabled { get; set; } = false;
         public float dsdGain { get; set; } = 6f;
         public string equalizerStr { get; set; }
         public bool IsEqualizerEnabled { get; set; } = false;
@@ -47,7 +48,7 @@ namespace WinUIMusicPlayer.Model
         public string GlobalFont { get; set; } = "Segoe UI, sans-serif";
         public bool IsGlobalFontSizeEnabled { get; set; } = false;
         public double GlobalFontSize { get; set; } = 32;
-        public bool IsGlobalFFmpegEnabled { get; set; } = false;
+        //public bool IsGlobalFFmpegEnabled { get; set; } = false;
         public bool IsUpdateBackDrop { get; set; } = false;
         public string LyricsAlignment { get; set; } = "Center";
         public int LyricsMargin { get; set; } = 20;
