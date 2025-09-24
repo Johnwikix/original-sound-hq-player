@@ -80,18 +80,15 @@ namespace WinUIMusicPlayer.View
             };
             equalizerDialog.clearEqualizer += (s, e) =>
             {
-                Task.Run(() =>
+                if (AppSettings.IsEqualizerEnabled)
                 {
-                    if (AppSettings.IsEqualizerEnabled)
-                    {                        
-                        musicPlaybackService.ToggleEqualizer();
-                        musicPlaybackService.SetEqualizer();
-                    }
-                    else
-                    {
-                        musicPlaybackService.ClearEqualizer();
-                    }
-                });
+                    musicPlaybackService.ToggleEqualizer();
+                    musicPlaybackService.SetEqualizer();
+                }
+                else
+                {
+                    musicPlaybackService.ClearEqualizer();
+                }
             };
             this.notificationService = notificationService;
             InitializeTimer();
