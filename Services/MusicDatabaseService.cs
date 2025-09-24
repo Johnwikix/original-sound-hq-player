@@ -846,6 +846,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.isRunningBackend = settings.isRunningBackend;
                 AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
                 AppSettings.dsdGain = settings.dsdGain;
+                AppSettings.dsdPcmFreq = settings.dsdPcmFreq;
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
@@ -932,6 +933,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
+            newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
             if (settings is null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

@@ -846,4 +846,7 @@
   <data name="ExportM3u8List.Text" xml:space="preserve">
     <value>m3u8としてエクスポート</value>
   </data>
+  <data name="DSD2PCMFreq.Header" xml:space="preserve">
+    <value>DSDtoPCM SampleRate (Hz)</value>
+  </data>
 </root>

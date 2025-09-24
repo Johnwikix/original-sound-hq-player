@@ -720,6 +720,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private string _dsdPcmFreq = "88200";
+        public string DsdPcmFreq
+        {
+            get => _dsdPcmFreq;
+            set
+            {
+                if (SetProperty(ref _dsdPcmFreq, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.dsdPcmFreq = int.Parse(value);
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
+
 
         public SettingsViewModel()
         {
@@ -810,6 +827,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
             IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             MusicCoverCache = AppSettings.MusicCoverCache;
+            DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             InitializeWasapiDevice();
             _isInitized = true;
         }

@@ -103,6 +103,17 @@
                                     SpinButtonPlacementMode="Inline"
                                     Value="{Binding ViewModel.Latency, Mode=TwoWay}" />
                             </controls:SettingsCard>
+                            <controls:SettingsCard x:Uid="DSD2PCMFreq">
+                                <ComboBox
+                                    Width="300"
+                                    SelectedValue="{Binding ViewModel.DsdPcmFreq, Mode=TwoWay}"
+                                    SelectedValuePath="Tag">
+                                    <ComboBoxItem Content="44100" Tag="44100" />
+                                    <ComboBoxItem Content="88200" Tag="88200" />
+                                    <ComboBoxItem Content="176400" Tag="176400" />
+                                    <ComboBoxItem Content="352800" Tag="352800" />
+                                </ComboBox>
+                            </controls:SettingsCard>
                             <!--<controls:SettingsCard Header="DSD Dop">
                                 <ToggleSwitch IsOn="{Binding ViewModel.IsDopEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>-->

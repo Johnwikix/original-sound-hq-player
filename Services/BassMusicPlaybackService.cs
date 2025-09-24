@@ -632,7 +632,7 @@ namespace WinUIMusicPlayer.Services
                     if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                     {
                         BassDsd.DefaultGain = AppSettings.dsdGain;
-                        BassDsd.DefaultFrequency = 176400;                        
+                        BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;                        
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode);                        
                     }
                     else

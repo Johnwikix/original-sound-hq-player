@@ -27,6 +27,7 @@ namespace WinUIMusicPlayer.Model
         //public static bool isDsd { get; set; } = false;
         public static bool IsDopEnabled { get; set; } = false;
         public static int dsdGain { get; set; } = 6;
+        public static int dsdPcmFreq { get; set; } = 88200;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
         public static byte CustomColorAlpha { get; set; } = 255;
