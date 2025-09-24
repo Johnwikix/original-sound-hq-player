@@ -108,10 +108,10 @@
                                     Width="300"
                                     SelectedValue="{Binding ViewModel.DsdPcmFreq, Mode=TwoWay}"
                                     SelectedValuePath="Tag">
-                                    <ComboBoxItem Content="44100" Tag="44100" />
-                                    <ComboBoxItem Content="88200" Tag="88200" />
-                                    <ComboBoxItem Content="176400" Tag="176400" />
-                                    <ComboBoxItem Content="352800" Tag="352800" />
+                                    <ComboBoxItem Content="44100Hz" Tag="44100" />
+                                    <ComboBoxItem Content="88200Hz" Tag="88200" />
+                                    <ComboBoxItem Content="176400Hz" Tag="176400" />
+                                    <ComboBoxItem Content="352800Hz" Tag="352800" />
                                 </ComboBox>
                             </controls:SettingsCard>
                             <!--<controls:SettingsCard Header="DSD Dop">

@@ -847,6 +847,6 @@
     <value>Экспорт в M3U8</value>
   </data>
   <data name="DSD2PCMFreq.Header" xml:space="preserve">
-    <value>DSDtoPCM SampleRate (Hz)</value>
+    <value>DSDtoPCM SampleRate</value>
   </data>
 </root>
