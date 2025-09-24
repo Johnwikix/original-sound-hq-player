@@ -541,7 +541,7 @@ namespace WinUIMusicPlayer.Services
         {
             bool result = false;
             // 获取当前流的格式信息
-            var channelInfo = Bass.ChannelGetInfo(_currentStream);
+            ChannelInfo channelInfo = Bass.ChannelGetInfo(_currentStream);           
             switch (AppSettings.OutputMode)
             {
                 case "WasapiShared":

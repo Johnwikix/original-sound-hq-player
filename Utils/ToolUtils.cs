@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ManagedBass;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
@@ -6,7 +7,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Windows.ApplicationModel.Resources;
-using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,8 +26,8 @@ using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
@@ -546,45 +546,70 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
-        public static AudioFileInfo GetAudioFileInfo(string filePath)
+        public static AudioFileInfo GetAudioInfoFromBass(string filePath)
         {
-            try
+            // Initialize BASS (only needs to be done once per application)
+            BassManager.Initialize();
+            AudioFileInfo fileInfo = null;
+            int streamHandle = Bass.CreateStream(filePath, 0, 0, BassFlags.Decode);
+            if (streamHandle != 0)
             {
-                using (var reader = new MediaFoundationReader(filePath))
-                {
-                    return new AudioFileInfo
-                    {
-                        SampleRate = reader.WaveFormat.SampleRate,
-                        ChannelCount = reader.WaveFormat.Channels,
-                        BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
-                        BitDepth = reader.WaveFormat.BitsPerSample,
-                        Duration = reader.TotalTime
-                    };
-                }
+                fileInfo = new AudioFileInfo();
+                ChannelInfo info;
+                Bass.ChannelGetInfo(streamHandle, out info);
+                fileInfo.SampleRate = info.Frequency;
+                fileInfo.ChannelCount = info.Channels;
+                fileInfo.BitDepth = info.OriginalResolution == 0 ? 16: info.OriginalResolution;
+                long lengthBytes = Bass.ChannelGetLength(streamHandle);
+                double durationSeconds = Bass.ChannelBytes2Seconds(streamHandle, lengthBytes);
+                fileInfo.Duration = TimeSpan.FromSeconds(durationSeconds);
+                float bitrate = 0;
+                Bass.ChannelGetAttribute(streamHandle, ChannelAttribute.Bitrate, out bitrate);
+                fileInfo.BitRate = (int)bitrate;
+                Bass.StreamFree(streamHandle);
             }
-            catch (Exception ex)
-            {
-                try
-                {
-                    using (var reader = new FFmpegAudioReader(filePath))
-                    {
-                        return new AudioFileInfo
-                        {
-                            SampleRate = reader.WaveFormat.SampleRate,
-                            ChannelCount = reader.WaveFormat.Channels,
-                            BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
-                            BitDepth = reader.WaveFormat.BitsPerSample,
-                            Duration = reader.TotalTime
-                        };
-                    }
-                }
-                catch (Exception ex2)
-                {
-                    Debug.WriteLine($"获取音频文件信息失败: {ex.Message} | {ex2.Message}");
-                    return new AudioFileInfo();
-                }
-            }
+            return fileInfo;
         }
+
+        //public static AudioFileInfo GetAudioFileInfo(string filePath)
+        //{
+        //    try
+        //    {
+        //        using (var reader = new MediaFoundationReader(filePath))
+        //        {
+        //            return new AudioFileInfo
+        //            {
+        //                SampleRate = reader.WaveFormat.SampleRate,
+        //                ChannelCount = reader.WaveFormat.Channels,
+        //                BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
+        //                BitDepth = reader.WaveFormat.BitsPerSample,
+        //                Duration = reader.TotalTime
+        //            };
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        try
+        //        {
+        //            using (var reader = new FFmpegAudioReader(filePath))
+        //            {
+        //                return new AudioFileInfo
+        //                {
+        //                    SampleRate = reader.WaveFormat.SampleRate,
+        //                    ChannelCount = reader.WaveFormat.Channels,
+        //                    BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
+        //                    BitDepth = reader.WaveFormat.BitsPerSample,
+        //                    Duration = reader.TotalTime
+        //                };
+        //            }
+        //        }
+        //        catch (Exception ex2)
+        //        {
+        //            Debug.WriteLine($"获取音频文件信息失败: {ex.Message} | {ex2.Message}");
+        //            return new AudioFileInfo();
+        //        }
+        //    }
+        //}
 
         public static bool IsMusicFile(string fileType)
         {
@@ -1160,7 +1185,7 @@ namespace WinUIMusicPlayer.Utils
                 AudioFileInfo wavFileInfo = new AudioFileInfo();
                 try
                 {
-                    wavFileInfo = ToolUtils.GetAudioFileInfo(file.Path);
+                    wavFileInfo = ToolUtils.GetAudioInfoFromBass(file.Path);
                 }
                 catch (Exception exception)
                 {
