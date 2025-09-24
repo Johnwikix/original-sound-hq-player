@@ -9,11 +9,17 @@ namespace WinUIMusicPlayer.Services
     {
         public EventHandler<double>? updateProgress;
         private AudioConverter converter;
-
+        private BassAudioConverter bassAudioConverter;
         public AudioConverterService()
         {
             converter = new AudioConverter();
+            bassAudioConverter = new BassAudioConverter();
             converter.progressEvent += (sender, progress) =>
+            {
+                // 触发 Service 的事件，将进度传递给 Page
+                OnProgressChanged(progress);
+            };
+            bassAudioConverter.progressEvent += (sender, progress) =>
             {
                 // 触发 Service 的事件，将进度传递给 Page
                 OnProgressChanged(progress);
@@ -30,6 +36,7 @@ namespace WinUIMusicPlayer.Services
                         await Task.Run(() =>
                         {
                             converter.ConvertMp3(music.Path, outputPath, type);
+                            //bassAudioConverter.ConvertToWav(music.Path, outputPath);
                         });
                         break;
                     case "flac":

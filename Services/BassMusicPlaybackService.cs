@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using WinUIMusicPlayer.Extensions;
+using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -103,13 +104,7 @@ namespace WinUIMusicPlayer.Services
 
         private void InitializeBass()
         {
-
-            if (!Bass.Init())
-            {
-                Debug.WriteLine($"Bass初始化失败: {Bass.LastError}");
-                return;
-            }
-            LoadBassPlugins();
+            BassManager.Initialize();
             _syncEndCallback = OnPlayBackEnded;
             _syncFailCallback = OnPlaybackFailed;
         }
@@ -123,52 +118,6 @@ namespace WinUIMusicPlayer.Services
         {
             AppSettings.isPlaying = false;
             AutoPlayNextTrack();
-        }
-
-        private static void LoadBassPlugins()
-        {
-            var appPath = AppContext.BaseDirectory;
-            var pluginPaths = new[]
-            {
-                "bassape.dll",
-                "basscd.dll",
-                "bassdsd.dll",
-                "bassflac.dll",
-                "basshls.dll",
-                "bassmidi.dll",
-                "bassopus.dll",
-                "basswebm.dll",
-                "basswv.dll",
-                "bassalac.dll"
-            };
-            var version = BassFx.Version;
-            Debug.WriteLine($"BassFx: {version}");
-            foreach (var pluginPath in pluginPaths)
-            {
-                var fullPath = Path.Combine(appPath, pluginPath);
-                if (!File.Exists(fullPath))
-                {
-                    Debug.WriteLine($"插件文件不存在: {fullPath}");
-                    continue;
-                }
-
-                var pluginHandle = Bass.PluginLoad(fullPath);
-                if (pluginHandle != 0)
-                {
-                    Debug.WriteLine($"成功加载插件: {pluginPath}，句柄: {pluginHandle}");
-                }
-                else
-                {
-                    Debug.WriteLine($"加载插件失败: {pluginPath}，错误: {Bass.LastError}");
-                }
-                var plugins = Bass.PluginGetInfo(pluginHandle);
-
-                foreach (var plugin in plugins.Formats)
-                {
-                    Debug.WriteLine($"  支持格式: {plugin.Name} ({plugin.FileExtensions})");
-                }
-            }
-
         }
 
         private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
@@ -1006,9 +955,12 @@ namespace WinUIMusicPlayer.Services
             _peakEQ?.Dispose();
             _peakEQ = null;
         }
-        public async Task DisposeAudio()
+
+        public void Dispose()
         {
+            DisposeEq();
             CancelPreviousLyricsTask();
+            DisposeStream();
             if (progressTimer is not null)
             {
                 progressTimer.Stop();
@@ -1016,19 +968,14 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Dispose();
                 progressTimer = null;
             }
-            Dispose();
-            await MusicDatabaseService.SavePlayState(MusicBrowseViewModel.SequentialPlayingList.ToList(), AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
-        }
-
-        public void Dispose()
-        {
-            DisposeStream();
             if (BassWasapi.IsStarted)
             {
                 BassWasapi.Stop(true);
             }
+            _syncEndCallback -= OnPlayBackEnded;
+            _syncFailCallback -= OnPlaybackFailed;
             BassWasapi.Free();
-            Bass.Free();
+            BassManager.Free();
         }
     }
 }
