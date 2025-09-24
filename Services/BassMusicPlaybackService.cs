@@ -1,4 +1,5 @@
 ﻿using ManagedBass;
+using ManagedBass.Dsd;
 using ManagedBass.Fx;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
@@ -628,13 +629,15 @@ namespace WinUIMusicPlayer.Services
                 DisposeStream();
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
-                    //if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
-                    //{
-                    //    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float);
-                    //}
-                    //else {
-                    //    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
-                    //}
+                    if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
+                    {
+                        BassDsd.DefaultGain = AppSettings.dsdGain;
+                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM);
+                    }
+                    else
+                    {
+                        _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    }
                     _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else

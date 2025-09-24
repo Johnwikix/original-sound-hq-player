@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.Model
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
         public bool IsDopEnabled { get; set; } = false;
-        public float dsdGain { get; set; } = 6f;
+        public int dsdGain { get; set; } = 6;
         public string equalizerStr { get; set; }
         public bool IsEqualizerEnabled { get; set; } = false;
         public int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素

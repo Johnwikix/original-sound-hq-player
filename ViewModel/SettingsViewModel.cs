@@ -36,8 +36,8 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private float _dsdGain = 6f;
-        public float DsdGain
+        private int _dsdGain = 6;
+        public int DsdGain
         {
             get => _dsdGain;
             set

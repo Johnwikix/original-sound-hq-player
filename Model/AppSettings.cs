@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.Model
         public static string LrcAPIAuth { get; set; }
         //public static bool isDsd { get; set; } = false;
         public static bool IsDopEnabled { get; set; } = false;
-        public static float dsdGain { get; set; } = 6f;
+        public static int dsdGain { get; set; } = 6;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
         public static byte CustomColorAlpha { get; set; } = 255;

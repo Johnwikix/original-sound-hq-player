@@ -88,6 +88,7 @@
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.0" />
     <PackageReference Include="LordLuceus.CSCore.Ffmpeg" Version="1.0.2" />
     <PackageReference Include="ManagedBass" Version="4.0.1" />
+    <PackageReference Include="ManagedBass.Dsd" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Wasapi" Version="4.0.1" />
