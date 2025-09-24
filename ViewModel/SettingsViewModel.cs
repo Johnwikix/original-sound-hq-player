@@ -2,17 +2,12 @@
 using CommunityToolkit.Mvvm.Input;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
@@ -111,7 +106,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isCustomAppSize, value))
-                {                   
+                {
                     if (_isInitized)
                     {
                         AppSettings.IsCustomAppSize = value;
@@ -127,7 +122,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _appWidth, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.AppWidth = value;
@@ -308,7 +303,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _outputModeTag, value))
-                {           
+                {
                     if (_isInitized)
                     {
                         AppSettings.OutputMode = value;
@@ -400,7 +395,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _backdropType, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.AppStyle = value;
@@ -436,7 +431,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _entranceAnimationTime, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.EntranceAnimationTime = value;
@@ -452,7 +447,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _slideAnimationTime, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.SlideAnimationTime = value;
@@ -468,7 +463,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _drillInAnimationTime, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.DrillInAnimationTime = value;
@@ -485,7 +480,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.IsBackgroundCoverEnabled = value;
@@ -503,7 +498,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _coverLoadThreadCount, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.CoverLoadThreadCount = value;
@@ -527,7 +522,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isFolderWatchEnabled, value))
-                {                   
+                {
                     if (_isInitized)
                     {
                         AppSettings.IsFolderWatchEnabled = value;
@@ -537,7 +532,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private ObservableCollection<FontInfo> _fontFamilyList;
-        public ObservableCollection<FontInfo> FontFamilyList {
+        public ObservableCollection<FontInfo> FontFamilyList
+        {
             get => _fontFamilyList;
             set => SetProperty(ref _fontFamilyList, value);
         }
@@ -548,7 +544,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _fontFamily, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.GlobalFont = value.FontFamily;
@@ -559,9 +555,11 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private bool _isGlobalFFmpegEnabled = true;
-        public bool IsGlobalFFmpegEnabled {
+        public bool IsGlobalFFmpegEnabled
+        {
             get => _isGlobalFFmpegEnabled;
-            set {
+            set
+            {
                 if (SetProperty(ref _isGlobalFFmpegEnabled, value))
                 {
                     if (_isInitized)
@@ -580,14 +578,14 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _isColorPickerVisible, value);
         }
 
-        private Color _customColor = Color.FromArgb(255,128,128,128);
+        private Color _customColor = Color.FromArgb(255, 128, 128, 128);
         public Color CustomColor
         {
             get => _customColor;
             set
             {
                 if (SetProperty(ref _customColor, value))
-                {  
+                {
                     if (_isInitized)
                     {
                         AppSettings.CustomColorAlpha = value.A;
@@ -607,7 +605,8 @@ namespace WinUIMusicPlayer.ViewModel
             get => _customOpacity;
             set
             {
-                if (SetProperty(ref _customOpacity, value)) {                    
+                if (SetProperty(ref _customOpacity, value))
+                {
                     if (_isInitized)
                     {
                         AppSettings.CustomAcrylicOpacity = value / 100;
@@ -624,7 +623,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref _isUpdateBackDrop, value))
-                {                    
+                {
                     if (_isInitized)
                     {
                         AppSettings.IsUpdateBackDrop = value;
@@ -700,7 +699,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private string _musicCoverCache;
-        public string MusicCoverCache {
+        public string MusicCoverCache
+        {
             get => _musicCoverCache;
             set => SetProperty(ref _musicCoverCache, value);
         }
@@ -748,7 +748,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 IsColorPickerVisible = false;
             }
-            else {
+            else
+            {
                 IsColorPickerVisible = true;
             }
             CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
@@ -975,7 +976,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private async void ChangeCoverCacheLocation() {
+        private async void ChangeCoverCacheLocation()
+        {
             var folderPicker = new Windows.Storage.Pickers.FolderPicker();
             folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
             folderPicker.FileTypeFilter.Add("*");
@@ -995,7 +997,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OpenWebSite()
         {
-            _=Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
+            _ = Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
         }
     }
 }

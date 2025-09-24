@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -222,7 +220,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task<bool> IsDeleteFromDisk() {
+        public async Task<bool> IsDeleteFromDisk()
+        {
             if (_parentPage is null)
             {
                 return false;
@@ -370,11 +369,12 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
-                    {                        
-                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path)) {
+                    {
+                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
+                        {
                             await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
                             MusicList.RemoveAt(i);
-                        }                       
+                        }
                     }
                 }
                 //foreach (Music item in uniqueSelectedMusics)
@@ -387,8 +387,9 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 if (SelectedMusic is not null)
-                {                    
-                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path)) {
+                {
+                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
+                    {
                         await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
                         MusicList.Remove(SelectedMusic);
                     }

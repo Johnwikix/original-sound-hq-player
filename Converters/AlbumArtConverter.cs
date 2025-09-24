@@ -1,18 +1,8 @@
 ﻿using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Core;
-using Windows.Graphics.Imaging;
-using Windows.Storage.Streams;
-using Windows.UI.Core;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -25,7 +15,7 @@ namespace WinUIMusicPlayer.Converters
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is Music music && music is not null)
-            {               
+            {
                 if (AppData.albumCoverCache.TryGetValue(music.Album, out var cached))
                 {
                     return cached;
@@ -41,7 +31,7 @@ namespace WinUIMusicPlayer.Converters
         {
             throw new NotImplementedException();
         }
-        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap,Music music)
+        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap, Music music)
         {
             await _semaphore.WaitAsync();
             try
@@ -52,6 +42,6 @@ namespace WinUIMusicPlayer.Converters
             {
                 _semaphore.Release();
             }
-        }         
+        }
     }
 }

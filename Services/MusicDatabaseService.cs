@@ -436,7 +436,7 @@ namespace WinUIMusicPlayer.Services
             //            select m;
             //return query.ToList();
             return AppData.allSongs.AsValueEnumerable()
-                   .Where(m => m.Album is not null && m.Album.ToLower().Equals(album.ToLower())).OrderBy(m=>m.TrackNumber).ToImmutableList();
+                   .Where(m => m.Album is not null && m.Album.ToLower().Equals(album.ToLower())).OrderBy(m => m.TrackNumber).ToImmutableList();
         }
 
         public static IEnumerable<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
@@ -722,16 +722,17 @@ namespace WinUIMusicPlayer.Services
                 if (!string.IsNullOrEmpty(search))
                 {
                     return query.Where(m =>
-                        m.Author is not null && m.Author.ToLower().Equals(artist.ToLower())||
+                        m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()) ||
                         m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                         m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
                     ).OrderBy(m => m.Album).ToImmutableList();
                 }
-                else {
-                   return query.Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()))
-                        .OrderBy(m => m.Album).ToImmutableList();
+                else
+                {
+                    return query.Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()))
+                         .OrderBy(m => m.Album).ToImmutableList();
                 }
-            }            
+            }
             return query.OrderBy(m => m.Album).ToImmutableList();
         }
 
@@ -984,7 +985,8 @@ namespace WinUIMusicPlayer.Services
         }
         public static async Task CancelMusicsFavourite(IEnumerable<Music> musics)
         {
-            foreach (var music in musics) {
+            foreach (var music in musics)
+            {
                 music.IsFavorite = false;
             }
             await _dbConnection.UpdateAllAsync(musics);
@@ -1247,8 +1249,8 @@ namespace WinUIMusicPlayer.Services
             _toDelete.Clear();
             _toUpdate.Clear();
             _files.Clear();
-            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);           
-           
+            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+
             if (isSingleFolder)
             {
                 var currentFiles = await folder.GetFilesAsync();

@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void RefreshMusicList(object? sender, bool e)
         {
-            if(e) InitializeData();
+            if (e) InitializeData();
         }
 
         public void ShowTransmission()
@@ -184,14 +184,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task DragItems()
         {
-            if (AppData.sortOrder == "DefaultOrder") {
+            if (AppData.sortOrder == "DefaultOrder")
+            {
                 for (int i = 0; i < MusicList.Count; i++)
                 {
                     MusicList[i].Order = MusicList.Count - i;
                 }
                 await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            }            
+            }
         }
 
         public void ClearUsbDeviceMusicList()
@@ -256,7 +257,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void MusicDetail_Click()
         {
             var music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == SelectedMusic.Id);
-            if (music is not null) {
+            if (music is not null)
+            {
                 var musicDetailsWindow = new MusicDetailsWindow(music);
                 musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
                 musicDetailsWindow.Activate();
@@ -329,20 +331,22 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
-                    {                        
-                        if (ToolUtils.DeleteFileFromDisk((MusicList[i].Path))) {
+                    {
+                        if (ToolUtils.DeleteFileFromDisk((MusicList[i].Path)))
+                        {
                             await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
                             MusicList.RemoveAt(i);
-                        }                        
+                        }
                     }
                 }
             }
             else
-            {                
-                if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path)) {
+            {
+                if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
+                {
                     await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
                     MusicList.Remove(SelectedMusic);
-                }   
+                }
             }
         }
 
@@ -365,7 +369,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 }
-                
+
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
@@ -446,7 +450,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     MusicList.Remove(music);
                     _ = CancelFavouriteIconButtonChange(music);
-                }                
+                }
             }
         }
 

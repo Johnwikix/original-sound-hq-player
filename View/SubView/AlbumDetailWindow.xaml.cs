@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -43,7 +42,7 @@ namespace WinUIMusicPlayer.View.SubView
             InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
-            themeStyleHelper.SetAppTheme();            
+            themeStyleHelper.SetAppTheme();
             if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
@@ -57,9 +56,10 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void AlbumDetailWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (AppSettings.IsUpdateBackDrop) {
+            if (AppSettings.IsUpdateBackDrop)
+            {
                 themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
-            }            
+            }
         }
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.View.SubView
             musicDetail = album;
             AlbumTextBlock.Text = album.Album;
             YearTextBlock.Text = album.Year.ToString();
-            albumCoverData = await ToolUtils.GetRawImage(album,true);
+            albumCoverData = await ToolUtils.GetRawImage(album, true);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
         }
 

@@ -3,7 +3,6 @@ using NAudio.Vorbis;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
-using System.Diagnostics;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Reader
@@ -100,7 +99,8 @@ namespace WinUIMusicPlayer.Reader
         {
             try
             {
-                if (AppSettings.IsGlobalFFmpegEnabled) {
+                if (AppSettings.IsGlobalFFmpegEnabled)
+                {
                     if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                     {
                         readerStream = new WaveFileReader(fileName);
@@ -115,7 +115,8 @@ namespace WinUIMusicPlayer.Reader
                         readerStream = new FFmpegAudioReader(fileName);
                     }
                 }
-                else {
+                else
+                {
                     if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                     {
                         readerStream = new WaveFileReader(fileName);
@@ -139,7 +140,8 @@ namespace WinUIMusicPlayer.Reader
                         {
                             readerStream = new MediaFoundationReader(fileName);
                         }
-                    } else if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+                    }
+                    else if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                     {
                         readerStream = new VorbisWaveReader(fileName);
                     }
@@ -151,7 +153,7 @@ namespace WinUIMusicPlayer.Reader
                     {
                         readerStream = new MediaFoundationReader(fileName);
                     }
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -187,9 +189,10 @@ namespace WinUIMusicPlayer.Reader
             {
                 return 0;
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 return 0;
-            }           
+            }
         }
 
         //

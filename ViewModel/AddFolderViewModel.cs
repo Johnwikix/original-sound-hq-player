@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using System.Linq;
 using ZLinq;
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
                 await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
                 await LoadFoldersAsync();
-                App.MainWindow?.UpdateMusicList();                
+                App.MainWindow?.UpdateMusicList();
             }
         }
 

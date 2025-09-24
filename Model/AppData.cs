@@ -3,8 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Threading;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -34,6 +32,6 @@ namespace WinUIMusicPlayer.Model
         public static double AppDpiScale { get; set; } = 1.0;
         public static string systemLanguage { get; set; } = "en";
         public static int MaxSupportedSampleRate = 0;
-        public static int MaxSupportedBitDepth = 0;       
+        public static int MaxSupportedBitDepth = 0;
     }
 }

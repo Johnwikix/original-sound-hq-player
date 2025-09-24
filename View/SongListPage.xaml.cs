@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
@@ -90,11 +89,12 @@ namespace WinUIMusicPlayer.View
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            
-            if (await ViewModel.IsDeleteFromDisk()) {
+
+            if (await ViewModel.IsDeleteFromDisk())
+            {
                 IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);
-            }           
+            }
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)

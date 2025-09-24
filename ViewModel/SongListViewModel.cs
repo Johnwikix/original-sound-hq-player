@@ -305,8 +305,9 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
-                    {                        
-                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path)) {
+                    {
+                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
+                        {
                             await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
                             MusicList.RemoveAt(i);
                         }
@@ -316,8 +317,9 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 if (SelectedMusic is not null)
-                {                    
-                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path)) {
+                {
+                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
+                    {
                         await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
                         MusicList.Remove(SelectedMusic);
                     }

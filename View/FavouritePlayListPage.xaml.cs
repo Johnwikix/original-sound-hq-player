@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.View
             {
                 IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
-            }            
+            }
         }
 
         private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)

@@ -116,7 +116,7 @@ namespace WinUIMusicPlayer.Helper
                 {
                     int error = Marshal.GetLastWin32Error();
                     //Debug.WriteLine($"禁用效率模式失败，错误代码: {error}");
-                }                
+                }
 
                 return result;
             }

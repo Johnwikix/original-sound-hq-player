@@ -1,12 +1,10 @@
-﻿using CSCore.Streams.Effects;
-using ManagedBass;
+﻿using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,11 +13,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using Windows.Media.Audio;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Provider;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
@@ -52,11 +47,8 @@ namespace WinUIMusicPlayer.Services
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly object _streamLock = new();
         private readonly object _waveChannelLock = new();
-        private CancellationTokenSource _currentOperationCts;
-        //private readonly object _initializeLock = new object();
+        //private CancellationTokenSource _currentOperationCts;
         private volatile bool _isDisposing = false;
-        //private readonly int[] sampleRates = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 768000 };
-        //private readonly int[] bitDepths = { 16, 24, 32 };
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
         private double _totalSeconds;
         private double _currentSeconds;
@@ -176,7 +168,7 @@ namespace WinUIMusicPlayer.Services
                     Debug.WriteLine($"  支持格式: {plugin.Name} ({plugin.FileExtensions})");
                 }
             }
-            
+
         }
 
         private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
@@ -191,19 +183,8 @@ namespace WinUIMusicPlayer.Services
                         var lengthBytes = Bass.ChannelGetLength(_currentStream);
                         _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, lengthBytes);
                         _currentSeconds = Bass.ChannelBytes2Seconds(_currentStream, positionBytes);
-                        if (_currentSeconds >= (int)_totalSeconds)
+                        if (_currentSeconds < (int)_totalSeconds)
                         {
-                            //AutoPlayNextTrack();
-                        }
-                        else
-                        {
-                            //if (_cachedCurrentTime == _cachedLastCurrentTime && _cachedCurrentTime != TimeSpan.Zero)
-                            //{
-                            //    if (Math.Abs(_totalSeconds - _cachedLastCurrentTime.TotalSeconds) < 1)
-                            //    {
-                            //        AutoPlayNextTrack();
-                            //    }
-                            //}
                             _cachedLastCurrentTime = _cachedCurrentTime;
                         }
                         UpdateProgressTimerUI();
@@ -493,7 +474,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     BassWasapi.Stop();
                 }
-                else {
+                else
+                {
                     Bass.ChannelStop(_currentStream);
                 }
                 ChangeWaveChannelTime(TimeSpan.Zero);
@@ -511,7 +493,7 @@ namespace WinUIMusicPlayer.Services
         {
             int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
             int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);          
+            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
         }
 
         private void InitializeBassWasapi()
@@ -547,7 +529,8 @@ namespace WinUIMusicPlayer.Services
             {
                 try
                 {
-                    if (_currentStream != 0) {
+                    if (_currentStream != 0)
+                    {
                         _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 2.5);
                         // 为每个频段添加Band
                         for (int i = 0; i < _eqFrequencies.Length; i++)
@@ -556,7 +539,7 @@ namespace WinUIMusicPlayer.Services
                             Debug.WriteLine($"均衡器频段 {_eqFrequencies[i]}Hz 创建成功，Band索引: {_bandIndices[i]}");
                         }
                         Debug.WriteLine("均衡器初始化完成");
-                    }                   
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -594,7 +577,7 @@ namespace WinUIMusicPlayer.Services
         public void SetEqualizer()
         {
             if (_peakEQ is null) return;
-            for (int i = 0;i < 10;i++)
+            for (int i = 0; i < 10; i++)
             {
                 _peakEQ.UpdateBand(_bandIndices[i], (float)AppSettings.equalizer[FloatToString[_eqFrequencies[i]]]);
             }
@@ -611,7 +594,7 @@ namespace WinUIMusicPlayer.Services
             // 获取当前流的格式信息
             var channelInfo = Bass.ChannelGetInfo(_currentStream);
             switch (AppSettings.OutputMode)
-            {              
+            {
                 case "WasapiShared":
                     result = BassWasapi.Init(AppSettings.BassOutputDeviceId,
                             channelInfo.Frequency,
@@ -624,7 +607,7 @@ namespace WinUIMusicPlayer.Services
                             channelInfo.Frequency,
                             channelInfo.Channels,
                             WasapiInitFlags.Exclusive,
-                            AppSettings.Latency/1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
+                            AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
                     break;
                 case "WasapiExclusiveEvent":
                     result = BassWasapi.Init(AppSettings.BassOutputDeviceId,
@@ -656,14 +639,16 @@ namespace WinUIMusicPlayer.Services
                 if (!result)
                 {
                     var error = Bass.LastError;
-                    if (Bass.LastError == Errors.Busy) {
+                    if (Bass.LastError == Errors.Busy)
+                    {
                         StopWasapiPlayback();
                     }
                     result = SwitchDevice();
-                    if (!result) {
+                    if (!result)
+                    {
                         Debug.WriteLine($"WASAPI独占模式初始化失败: {error}");
                         return false;
-                    }                    
+                    }
                 }
                 WasapiInfo wasapiInfo;
                 BassWasapi.GetInfo(out wasapiInfo);
@@ -673,10 +658,10 @@ namespace WinUIMusicPlayer.Services
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
                 }
-                else if(AppSettings.OutputMode.Contains("WasapiExclusive"))
+                else if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
-                }               
+                }
                 Debug.WriteLine($"WASAPI模式启动成功");
                 return true;
             }
@@ -691,11 +676,11 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                DisposeStream();                
+                DisposeStream();
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
                     // 在独占模式
-                    _currentStream = Bass.CreateStream(music.Path, 0,0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else
                 {
@@ -791,9 +776,10 @@ namespace WinUIMusicPlayer.Services
                 }
                 isPausing = true;
                 AppSettings.isPlaying = false;
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     MusicBrowseViewModel.IsPlaying = false;
-                });                
+                });
                 progressTimer.Stop();
             }
             else
@@ -809,7 +795,8 @@ namespace WinUIMusicPlayer.Services
                         Bass.ChannelPlay(_currentStream, false);
                     }
                 }
-                else {
+                else
+                {
                     if (MusicBrowseViewModel.CurrentPlayingMusic is not null)
                     {
                         MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
@@ -826,9 +813,10 @@ namespace WinUIMusicPlayer.Services
                 }
                 isPausing = false;
                 AppSettings.isPlaying = true;
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     MusicBrowseViewModel.IsPlaying = true;
-                });                
+                });
                 progressTimer.Start();
             }
         }
@@ -855,7 +843,8 @@ namespace WinUIMusicPlayer.Services
                     // 共享模式下直接播放
                     Bass.ChannelPlay(_currentStream, false);
                 }
-                if (AppSettings.IsEqualizerEnabled) {
+                if (AppSettings.IsEqualizerEnabled)
+                {
                     SetEqualizer();
                 }
                 progressTimer.Start();
@@ -864,7 +853,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        MusicBrowseViewModel.ProgressSliderMax = Bass.ChannelBytes2Seconds(_currentStream,Bass.ChannelGetLength(_currentStream));
+                        MusicBrowseViewModel.ProgressSliderMax = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
                         if (isSettingChanged)
                         {
                             MusicBrowseViewModel.ProgressSlider = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetPosition(_currentStream));
@@ -904,7 +893,9 @@ namespace WinUIMusicPlayer.Services
                 if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
-                } else if (AppSettings.OutputMode.Contains("WasapiShared")) {
+                }
+                else if (AppSettings.OutputMode.Contains("WasapiShared"))
+                {
                     BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
                 }
                 else
@@ -964,7 +955,8 @@ namespace WinUIMusicPlayer.Services
                         SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
                         Play(true);
                     }
-                    else {
+                    else
+                    {
                         DisposeStream();
                         SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
                     }
@@ -979,7 +971,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         private void DisposeStream()
-        {            
+        {
             if (_currentStream != 0)
             {
                 Bass.StreamFree(_currentStream);
@@ -1005,7 +997,8 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine(ex, $"停止WASAPI播放时出错");
             }
         }
-        public void DisposeEq() {
+        public void DisposeEq()
+        {
             _peakEQ?.Dispose();
             _peakEQ = null;
         }
@@ -1030,7 +1023,7 @@ namespace WinUIMusicPlayer.Services
             {
                 BassWasapi.Stop(true);
             }
-            BassWasapi.Free(); 
+            BassWasapi.Free();
             Bass.Free();
         }
     }

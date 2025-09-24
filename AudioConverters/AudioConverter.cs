@@ -127,7 +127,8 @@ namespace WinUIMusicPlayer.AudioConverters
                     ConvertFlacFFmpeg(flacReader, outputPath, type);
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 using (WaveStream flacReader = new FFmpegAudioReader(flacFilePath))
                 {
                     ConvertFlacFFmpeg(flacReader, outputPath, type);
@@ -137,7 +138,8 @@ namespace WinUIMusicPlayer.AudioConverters
             progressEvent?.Invoke(this, 100);
         }
 
-        private void ConvertFlacFFmpeg(WaveStream flacReader, string outputPath, string type) {
+        private void ConvertFlacFFmpeg(WaveStream flacReader, string outputPath, string type)
+        {
             long totalBytes = flacReader.Length;
             long bytesWritten = 0;
             DateTime lastUpdate = DateTime.Now;

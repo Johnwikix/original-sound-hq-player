@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
@@ -110,7 +109,7 @@ namespace WinUIMusicPlayer.View.SubView
             LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
             DiskNumberBox.Value = music.DiskNumber;
             PathTextBlock.Text = music.Path;
-            albumCoverData = await ToolUtils.GetRawImage(music,true);
+            albumCoverData = await ToolUtils.GetRawImage(music, true);
             AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             CreateTimeBlock.Text = music.CreateTime.ToString();
             UpdateTimeBlock.Text = music.UpdateTime.ToString();

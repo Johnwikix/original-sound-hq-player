@@ -9,8 +9,9 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (AppSettings.IsGlobalFontSizeEnabled) {
-                return (bool)value ? AppSettings.GlobalFontSize:AppSettings.GlobalFontSize * 0.75;
+            if (AppSettings.IsGlobalFontSizeEnabled)
+            {
+                return (bool)value ? AppSettings.GlobalFontSize : AppSettings.GlobalFontSize * 0.75;
             }
             if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1440)
             {

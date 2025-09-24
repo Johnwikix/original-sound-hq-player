@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Diagnostics;
 using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -89,10 +88,11 @@ namespace WinUIMusicPlayer.View
         private void SpectrumVisualization_Click(object sender, RoutedEventArgs e)
         {
             string storeUri = "spectrumvisualization:";
-            LauncherOptions options = new LauncherOptions {
+            LauncherOptions options = new LauncherOptions
+            {
                 FallbackUri = new Uri("ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7")
             };
-            _=Launcher.LaunchUriAsync(new Uri(storeUri), options);
+            _ = Launcher.LaunchUriAsync(new Uri(storeUri), options);
         }
     }
 }

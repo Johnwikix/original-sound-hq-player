@@ -1,9 +1,6 @@
 ﻿using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -11,7 +8,7 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class SongCoverConverter:IValueConverter
+    public class SongCoverConverter : IValueConverter
     {
         private static readonly SemaphoreSlim _semaphore = new(AppSettings.CoverLoadThreadCount);
         public object Convert(object value, Type targetType, object parameter, string language)
@@ -38,7 +35,7 @@ namespace WinUIMusicPlayer.Converters
         {
             throw new NotImplementedException();
         }
-        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap,Music music)
+        private async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap, Music music)
         {
             await _semaphore.WaitAsync();
             try

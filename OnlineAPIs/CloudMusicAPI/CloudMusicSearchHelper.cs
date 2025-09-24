@@ -1,7 +1,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -167,7 +166,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static async Task<string> GetLyricsUrl(string songId,CancellationToken cancellationToken = default)
+    private static async Task<string> GetLyricsUrl(string songId, CancellationToken cancellationToken = default)
     {
         if (songId is not null)
         {
@@ -197,7 +196,8 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static async Task<string> GetTranslateLyrics(string songId) {
+    private static async Task<string> GetTranslateLyrics(string songId)
+    {
         if (songId is not null)
         {
             var api = new NeteaseCloudMusicApi();

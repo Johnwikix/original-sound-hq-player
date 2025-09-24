@@ -2,7 +2,6 @@
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 using Windows.UI;
@@ -48,12 +47,13 @@ namespace WinUIMusicPlayer.Helper
                 var backdrop = _window.SystemBackdrop as CustomAcrylicSystemBackdrop;
                 switch (AppSettings.AppStyle)
                 {
-                    case "Acrylic":                       
+                    case "Acrylic":
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0.5f, 0.8f, uiColor);
                         }
-                        else {
+                        else
+                        {
                             _window.SystemBackdrop = null;
                             var acrylic = new CustomAcrylicSystemBackdrop
                             {
@@ -62,10 +62,10 @@ namespace WinUIMusicPlayer.Helper
                                 TintColor = uiColor
                             };
                             _window.SystemBackdrop = acrylic;
-                        }                        
+                        }
                         break;
                     case "TransparentAcrylic":
-                        float colorOpacity = 0.4f;                        
+                        float colorOpacity = 0.4f;
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0, colorOpacity, uiColor);
@@ -80,10 +80,11 @@ namespace WinUIMusicPlayer.Helper
                                 TintColor = uiColor
                             };
                             _window.SystemBackdrop = customAcrylic;
-                        }                       
+                        }
                         break;
                     case "Mica":
-                        if (_window.SystemBackdrop is not CustomMicaSystemBackdrop) {
+                        if (_window.SystemBackdrop is not CustomMicaSystemBackdrop)
+                        {
                             _window.SystemBackdrop = null;
                             var mica = new CustomMicaSystemBackdrop
                             {
@@ -92,20 +93,20 @@ namespace WinUIMusicPlayer.Helper
                                 TintColor = uiColor
                             };
                             _window.SystemBackdrop = mica;
-                        }                        
+                        }
                         break;
                     case "TransparentTint":
                         if (_window.SystemBackdrop is not TransparentTintBackdrop)
                         {
                             _window.SystemBackdrop = null;
                             _window.SystemBackdrop = new TransparentTintBackdrop(Colors.Transparent);
-                        }                        
+                        }
                         break;
                     case "CustomAcrylicStyle":
                         if (backdrop is not null)
                         {
-                            backdrop.UpdateProperties(1.0, 
-                                            AppSettings.CustomAcrylicOpacity, 
+                            backdrop.UpdateProperties(1.0,
+                                            AppSettings.CustomAcrylicOpacity,
                                             Color.FromArgb(AppSettings.CustomColorAlpha,
                                                 AppSettings.CustomColorRed,
                                                 AppSettings.CustomColorGreen,
@@ -122,7 +123,7 @@ namespace WinUIMusicPlayer.Helper
                                                 AppSettings.CustomColorRed,
                                                 AppSettings.CustomColorGreen,
                                                 AppSettings.CustomColorBlue)
-                             };
+                            };
                             _window.SystemBackdrop = customAcrylic;
                         }
                         break;
@@ -144,14 +145,17 @@ namespace WinUIMusicPlayer.Helper
             }
         }
 
-        public void ChangeCustomAcrylicStyle() {
-            if (AppSettings.AppStyle == "CustomAcrylicStyle") {
-                if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop backdrop) {
+        public void ChangeCustomAcrylicStyle()
+        {
+            if (AppSettings.AppStyle == "CustomAcrylicStyle")
+            {
+                if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop backdrop)
+                {
                     backdrop.UpdateProperties(1.0,
-                        AppSettings.CustomAcrylicOpacity, 
-                        Color.FromArgb(AppSettings.CustomColorAlpha, 
-                            AppSettings.CustomColorRed, 
-                            AppSettings.CustomColorGreen, 
+                        AppSettings.CustomAcrylicOpacity,
+                        Color.FromArgb(AppSettings.CustomColorAlpha,
+                            AppSettings.CustomColorRed,
+                            AppSettings.CustomColorGreen,
                             AppSettings.CustomColorBlue));
                     CustomStyleChanged?.Invoke(this, EventArgs.Empty);
                 }
@@ -172,7 +176,7 @@ namespace WinUIMusicPlayer.Helper
                 }
             }
             catch (Exception)
-            {                
+            {
             }
         }
 

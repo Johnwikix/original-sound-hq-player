@@ -21,14 +21,16 @@ namespace WinUIMusicPlayer.WebService
                 {
                     _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
                 }
-                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com") {
+                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
+                {
                     return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
                 }
                 var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
                 var response = await _httpClient.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
                 byte[] result = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-                if (result is null) {
+                if (result is null)
+                {
                     return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
                 }
                 return result;
@@ -59,7 +61,8 @@ namespace WinUIMusicPlayer.WebService
                 var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadAsStringAsync(cancellationToken);
-                if (string.IsNullOrWhiteSpace(result)) {
+                if (string.IsNullOrWhiteSpace(result))
+                {
                     return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
                 }
                 result += await CloudMusicSearchHelper.GetTranslateSongLyrics(title, album, artist, cancellationToken);

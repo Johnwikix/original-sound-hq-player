@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -43,7 +42,8 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _playListName, value);
         }
         private Music _currentMusicObject;
-        public Music CurrentMusicObject {
+        public Music CurrentMusicObject
+        {
             get => _currentMusicObject;
             set => SetProperty(ref _currentMusicObject, value);
         }
@@ -160,7 +160,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void RefreshPlayList(object? sender, bool e)
         {
-            if(e) InitizeData();
+            if (e) InitizeData();
         }
 
         private void InitizeData()
@@ -187,7 +187,7 @@ namespace WinUIMusicPlayer.ViewModel
                     await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.ToList());
                     await MusicDatabaseService.GetPlayListMusic();
                 }
-            }            
+            }
         }
 
         public void LoadMusicAsync(IEnumerable<Music> musics)
@@ -537,7 +537,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void OnPlayAll() {
+        private void OnPlayAll()
+        {
             if (_parentPage is not null)
             {
                 _parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(MusicList);
@@ -558,7 +559,7 @@ namespace WinUIMusicPlayer.ViewModel
             string newName = await getNameCallback();
             var playList = _musicPlaybackService.MusicBrowseViewModel.currentPlayList;
             if (!string.IsNullOrEmpty(newName))
-            {                
+            {
                 playList.Name = newName;
                 await MusicDatabaseService.UpdatePlayList(playList);
                 PlayListName = newName;

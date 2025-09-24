@@ -181,7 +181,7 @@ namespace WinUIMusicPlayer
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
-                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();               
+                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
                 LoadingGrid.Visibility = Visibility.Collapsed;
@@ -284,9 +284,10 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (AppSettings.IsUpdateBackDrop) {
+            if (AppSettings.IsUpdateBackDrop)
+            {
                 themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
-            }            
+            }
             if (_taskbarHelper is null)
             {
                 InitializeTaskbarHelper();
@@ -302,9 +303,10 @@ namespace WinUIMusicPlayer
                     _taskbarHelper = new TaskbarHelper(m_hwnd);
                     _taskbarHelper.InitializeThumbButtons();
                 }
-                else {
+                else
+                {
                     _taskbarHelper.RecoverTaskbarHelper();
-                } 
+                }
             }
             catch (Exception ex)
             {

@@ -4,7 +4,6 @@ using Microsoft.International.Converters.PinYinConverter;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.UI.Xaml.Shapes;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Windows.ApplicationModel.Resources;
 using NAudio.Wave;
@@ -23,15 +22,11 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
-using TagLib.Flac;
-using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
-using Windows.Media.Devices;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
@@ -39,7 +34,6 @@ using WinUIMusicPlayer.WebService;
 using ZLinq;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
 using Path = System.IO.Path;
-using Window = Microsoft.UI.Xaml.Window;
 
 namespace WinUIMusicPlayer.Utils
 {
@@ -421,7 +415,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<byte[]> GetRawImage(Music music,bool isManual = false)
+        public static async Task<byte[]> GetRawImage(Music music, bool isManual = false)
         {
             try
             {
@@ -441,7 +435,8 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        if (AppSettings.isAutoLyricsEnabled && !isManual) {
+                        if (AppSettings.isAutoLyricsEnabled && !isManual)
+                        {
                             var cancellationToken = new CancellationTokenSource();
                             if (!Directory.Exists(AppSettings.MusicCoverCache))
                             {
@@ -462,7 +457,7 @@ namespace WinUIMusicPlayer.Utils
                                 System.IO.File.WriteAllBytes(filePath, picture);
                             }
                             return picture;
-                        }                        
+                        }
                     }
                 }
             }
@@ -593,7 +588,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff",".ape",".opus",".wv"};
+            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv" };
             return musicExtensions.Contains(fileType.ToLower());
         }
 
@@ -913,9 +908,10 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
-         public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap,Music music)
-         {
-            await Task.Run( async () => {
+        public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap, Music music)
+        {
+            await Task.Run(async () =>
+            {
                 try
                 {
                     using (var file = TagLib.File.Create(filePath))
@@ -935,18 +931,20 @@ namespace WinUIMusicPlayer.Utils
                             {
                                 picture = System.IO.File.ReadAllBytes(filePath);
                             }
-                            if (!AppData.UnknownAlbums.Contains(album)) {                                
+                            if (!AppData.UnknownAlbums.Contains(album))
+                            {
                                 if (AppSettings.isAutoLyricsEnabled)
-                                {                                    
+                                {
                                     picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
                                     if (picture is not null)
                                     {
                                         System.IO.File.WriteAllBytes(filePath, picture);
                                     }
                                 }
-                            }                        
+                            }
                         }
-                        if (picture is not null) {
+                        if (picture is not null)
+                        {
                             using (var originalStream = new MemoryStream(picture))
                             {
                                 // 解码原始图像
@@ -967,15 +965,17 @@ namespace WinUIMusicPlayer.Utils
                                     {
                                         resizedStream.Seek(0);
                                         await bitmap.SetSourceAsync(resizedStream);
-                                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled) {
+                                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                                        {
                                             AppData.albumCoverCache.TryAdd(album, bitmap);
                                         }
                                     }
                                     catch (Exception)
                                     {
                                     }
-                                    finally { 
-                                        resizedStream.Dispose(); 
+                                    finally
+                                    {
+                                        resizedStream.Dispose();
                                     }
                                 });
                             }
@@ -986,8 +986,8 @@ namespace WinUIMusicPlayer.Utils
                 {
                     // 静默处理异常
                 }
-            } );
-        }            
+            });
+        }
 
         //public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
         //{
@@ -1345,14 +1345,16 @@ namespace WinUIMusicPlayer.Utils
         }
         public static List<FontInfo> GetSystemFontsInternal()
         {
-            try {
+            try
+            {
                 var language = new string[] { CultureInfo.CurrentUICulture.Name.ToLowerInvariant() };
                 var names = CanvasTextFormat.GetSystemFontFamilies();
                 var displayNames = CanvasTextFormat.GetSystemFontFamilies(language);
                 var list = new List<FontInfo>();
                 for (var i = 0; i < names.Length; i++)
                 {
-                    try {
+                    try
+                    {
                         list.Add(
                             new FontInfo
                             {
@@ -1362,14 +1364,16 @@ namespace WinUIMusicPlayer.Utils
                             }
                         );
                     }
-                    catch (Exception){
-                    }                    
+                    catch (Exception)
+                    {
+                    }
                 }
                 return [.. list.OrderBy(f => f.Name)];
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 return new List<FontInfo>();
-            }             
+            }
         }
 
         public static TextAlignment ConvertStringToTextAlignment(string alignment)

@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -351,7 +350,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             CurrentPlayMode = AppData.PlayMode;
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
-            LyricsMargin = new Thickness(AppSettings.LyricsMargin,0, AppSettings.LyricsMargin,0);
+            LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
             UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
@@ -366,10 +365,12 @@ namespace WinUIMusicPlayer.ViewModel
             StartWatchingUsbStorageDevices();
             //UpdateDisplayTexts();           
         }
-        public void UpdateLyricsMargin() {
-            if (LyricsMargin.Left != AppSettings.LyricsMargin) {
+        public void UpdateLyricsMargin()
+        {
+            if (LyricsMargin.Left != AppSettings.LyricsMargin)
+            {
                 LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
-            }            
+            }
         }
 
         public void AllSortOptions()

@@ -103,7 +103,7 @@ namespace WinUIMusicPlayer.View
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             SelectBarItem(AppSettings.DefualtPlayList);
-            this.Loaded -= OnPageLoaded;        
+            this.Loaded -= OnPageLoaded;
         }
 
         public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
@@ -111,7 +111,8 @@ namespace WinUIMusicPlayer.View
             _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
         }
 
-        public async Task<bool> AreUSureDeleteFromDisk() {
+        public async Task<bool> AreUSureDeleteFromDisk()
+        {
             ContentDialog contentDialog = new ContentDialog
             {
                 Title = ToolUtils.GetString("AreUSureDeleteFromDisk"),
