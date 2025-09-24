@@ -100,9 +100,9 @@
                                     SpinButtonPlacementMode="Inline"
                                     Value="{Binding ViewModel.Latency, Mode=TwoWay}" />
                             </controls:SettingsCard>
-                            <controls:SettingsCard Header="DSD Dop">
+                            <!--<controls:SettingsCard Header="DSD Dop">
                                 <ToggleSwitch IsOn="{Binding ViewModel.IsDopEnabled, Mode=TwoWay}" />
-                            </controls:SettingsCard>
+                            </controls:SettingsCard>-->
                             <!--<controls:SettingsCard x:Uid="SettingDSDGain">
                                 <NumberBox
                                     x:Name="DSDGainNumberBox"
