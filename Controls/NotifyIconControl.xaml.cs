@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.Controls
         {
             var menuItem = sender as ToggleMenuFlyoutItem;
             //Debug.WriteLine(menuItem?.Name.ToString());
-            if (menuItem != null && menuItem.IsChecked == true)
+            if (menuItem is not null && menuItem.IsChecked == true)
             {
                 UncheckOtherItems(menuItem);
 
@@ -116,7 +116,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)
         {
-            if (PlayModeFlyout != null)
+            if (PlayModeFlyout is not null)
             {
                 // 遍历所有子项，取消其他 ToggleMenuFlyoutItem 的选中状态
                 foreach (var item in PlayModeFlyout.Items)
@@ -148,7 +148,7 @@ namespace WinUIMusicPlayer.Controls
                     name = "IconRepeatOff";
                     break;
             }
-            if (PlayModeFlyout != null)
+            if (PlayModeFlyout is not null)
             {
                 foreach (var item in PlayModeFlyout.Items)
                 {
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.Controls
         {
             MainWindow window = App.MainWindow;
             ShowWindow(window);
-            if (window != null)
+            if (window is not null)
             {
                 window.NavigateToSettingsPage();
             }
@@ -187,7 +187,7 @@ namespace WinUIMusicPlayer.Controls
             }
             else
             {
-                if (window == null)
+                if (window is null)
                 {
                     return;
                 }

@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.Helper
             SetMicaProperties();
 
             // 激活云母效果
-            if (_micaController != null)
+            if (_micaController is not null)
             {
                 // 设置配置
                 _micaController.SetSystemBackdropConfiguration(_backdropConfiguration);
@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.Helper
                 window.Closed -= Window_Closed;
             }
 
-            if (_micaController != null)
+            if (_micaController is not null)
             {
                 _micaController.RemoveSystemBackdropTarget(disconnectedTarget);
                 _micaController.Dispose();
@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.Helper
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 _backdropConfiguration.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
             }
@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Helper
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // 确保释放资源
-            if (_micaController != null)
+            if (_micaController is not null)
             {
                 _micaController.Dispose();
                 _micaController = null;
@@ -119,7 +119,7 @@ namespace WinUIMusicPlayer.Helper
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 switch (element.ActualTheme)
                 {
@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.Helper
         // 设置云母效果的属性
         private void SetMicaProperties()
         {
-            if (_micaController == null || _dispatcherQueue == null || !_isConnected)
+            if (_micaController is null || _dispatcherQueue is null || !_isConnected)
             {
                 // 记录日志，帮助诊断问题
                 //System.Diagnostics.Debug.WriteLine("SetMicaProperties被调用，但控制器或调度队列无效");
@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.Helper
                 try
                 {
                     // 再次检查，因为在队列执行时可能已经变化
-                    if (_micaController != null && _isConnected)
+                    if (_micaController is not null && _isConnected)
                     {
                         // 设置云母效果的类型和颜色
                         _micaController.Kind = MicaKind;
@@ -189,7 +189,7 @@ namespace WinUIMusicPlayer.Helper
 
         public void UpdateActiveState(bool isActive)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 _backdropConfiguration.IsInputActive = isActive;
             }

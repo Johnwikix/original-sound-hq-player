@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.Helper
         private void UnsubscribeEvents()
         {
             // 取消所有事件订阅，防止内存泄漏
-            if (hideTransmission != null)
+            if (hideTransmission is not null)
             {
                 foreach (var handler in hideTransmission.GetInvocationList())
                 {

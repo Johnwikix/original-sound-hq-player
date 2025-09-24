@@ -108,7 +108,7 @@
 //            _lyrics.Clear();
 //            string? lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
 //            var lyricsContent = await ParseLrcLyrics(lrcContent);
-//            if (lyricsContent != null)
+//            if (lyricsContent is not null)
 //            {
 //                _lyrics = lyricsContent;
 //            }
@@ -172,7 +172,7 @@
 //                        //    cancellationToken);
 //                        //}
 
-//                        if (autoLyrics != null)
+//                        if (autoLyrics is not null)
 //                        {
 //                            lrcContent = autoLyrics;
 //                            MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
@@ -214,7 +214,7 @@
 
 //        private void CancelPreviousLyricsTask()
 //        {
-//            if (_lyricsCancellationTokenSource != null)
+//            if (_lyricsCancellationTokenSource is not null)
 //            {
 //                try
 //                {
@@ -313,7 +313,7 @@
 //                if (AppSettings.isPlaying && !MusicBrowseViewModel.IsUserDraggingProgressSlider)
 //                {
 
-//                    if (multiTypeAudioReader != null)
+//                    if (multiTypeAudioReader is not null)
 //                    {
 //                        //Debug.WriteLine($"上一次时间：{_cachedLastCurrentTime.TotalSeconds}，总：{multiTypeAudioReader.TotalTime.TotalSeconds}");
 //                        if (multiTypeAudioReader.CurrentTime.TotalSeconds >= (int)multiTypeAudioReader.TotalTime.TotalSeconds)
@@ -341,7 +341,7 @@
 
 //        private void UpdateProgressTimerUI()
 //        {
-//            if (multiTypeAudioReader != null)
+//            if (multiTypeAudioReader is not null)
 //            {
 //                _cachedCurrentTime = multiTypeAudioReader.CurrentTime;
 //                _cachedTotalTime = multiTypeAudioReader.TotalTime;
@@ -408,7 +408,7 @@
 //            double newPosition = 0;
 //            if (AppSettings.isPlaying)
 //            {
-//                if (multiTypeAudioReader != null)
+//                if (multiTypeAudioReader is not null)
 //                {
 //                    double currentTimeSeconds = multiTypeAudioReader.CurrentTime.TotalSeconds;
 //                    double totalSeconds = multiTypeAudioReader.TotalTime.TotalSeconds;
@@ -432,13 +432,13 @@
 //                    {
 //                        isSettingsChangeStop = true;
 //                        progressTimer?.Stop();
-//                        if (waveOut != null)
+//                        if (waveOut is not null)
 //                        {
 //                            waveOut.Stop();
 //                            waveOut.Dispose();
 //                            waveOut = null;
 //                        }
-//                        if (selectedDevice != null)
+//                        if (selectedDevice is not null)
 //                        {
 //                            selectedDevice.Dispose();
 //                            selectedDevice = null;
@@ -446,21 +446,21 @@
 //                    }
 //                    else
 //                    {
-//                        if (waveOut != null)
+//                        if (waveOut is not null)
 //                        {
 //                            waveOut.Stop();
 //                            waveOut.Dispose();
 //                            waveOut = null;
 //                        }
 //                        isSettingsChangeStop = true;
-//                        if (selectedDevice != null)
+//                        if (selectedDevice is not null)
 //                        {
 //                            selectedDevice.Dispose();
 //                            selectedDevice = null;
 //                        }
 //                    }
 //                    OutputDeviceChange();
-//                    if (multiTypeAudioReader != null)
+//                    if (multiTypeAudioReader is not null)
 //                    {
 //                        ResumeMusic();
 //                    }
@@ -479,14 +479,14 @@
 //            //出错捕获，待测试
 //            try
 //            {
-//                if (multiTypeAudioReader != null && equalizer != null)
+//                if (multiTypeAudioReader is not null && equalizer is not null)
 //                {
 //                    isEnableEq = true;
 //                    SelectOutputDevice();
 //                    waveOut.Init(equalizer);
 
 //                }
-//                else if (multiTypeAudioReader != null)
+//                else if (multiTypeAudioReader is not null)
 //                {
 //                    isEnableEq = false;
 //                    SelectOutputDevice();
@@ -516,7 +516,7 @@
 //            {
 //                try
 //                {
-//                    if (AppSettings.DeviceName != null)
+//                    if (AppSettings.DeviceName is not null)
 //                    {
 //                        var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 //                        foreach (var device in devices)
@@ -531,7 +531,7 @@
 //                    }
 
 //                    // 如果未找到指定名称的设备，则使用系统默认设备
-//                    if (selectedDevice == null)
+//                    if (selectedDevice is null)
 //                    {
 //                        selectedDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 //                        AppSettings.DeviceName = selectedDevice.FriendlyName;
@@ -580,7 +580,7 @@
 //        {
 //            lock (_waveOutLock)
 //            {
-//                if (selectedDevice == null)
+//                if (selectedDevice is null)
 //                {
 //                    OutputDeviceChange();
 //                }
@@ -655,7 +655,7 @@
 //        private void MusicEnd()
 //        {
 //            progressTimer.Stop();
-//            if (multiTypeAudioReader != null)
+//            if (multiTypeAudioReader is not null)
 //            {
 //                waveOut.Stop();
 //                ChangeWaveChannelTime(TimeSpan.Zero);
@@ -713,7 +713,7 @@
 //                //var currentPos = multiTypeAudioReader?.CurrentTime ?? TimeSpan.Zero;
 //                lock (_waveOutLock)
 //                {
-//                    if (waveOut != null)
+//                    if (waveOut is not null)
 //                    {
 //                        //isManualPlayingNext = true;
 //                        waveOut.Stop();
@@ -740,7 +740,7 @@
 
 //        public void SetEqualizerGain(float frequency, float gainDb)
 //        {
-//            if (equalizer == null) return;
+//            if (equalizer is null) return;
 //            // 找到最接近的频段
 //            var band = equalizerBands.OrderBy(b => Math.Abs(b.Frequency - frequency)).First();
 //            band.Gain = gainDb;
@@ -751,7 +751,7 @@
 //        {
 //            lock (_equalizerLock)
 //            {
-//                if (equalizer == null) return;
+//                if (equalizer is null) return;
 //                foreach (var band in equalizerBands)
 //                {
 //                    band.Gain = 0f; // 重置增益                
@@ -764,7 +764,7 @@
 //        {
 //            lock (_equalizerLock)
 //            {
-//                if (equalizer == null) return;
+//                if (equalizer is null) return;
 //                foreach (var band in equalizerBands)
 //                {
 //                    band.Gain = (float)AppSettings.equalizer[FloatToString[band.Frequency]];
@@ -859,7 +859,7 @@
 //                    {
 //                        lock (_waveOutLock)
 //                        {
-//                            if (waveOut != null && !_isDisposing)
+//                            if (waveOut is not null && !_isDisposing)
 //                            {
 //                                waveOut.Play();
 //                            }
@@ -915,20 +915,20 @@
 //                isPausing = false;
 //                isSettingsChangeStop = false;
 //                isEnableEq = false;
-//                if (waveOut != null)
+//                if (waveOut is not null)
 //                {
 //                    waveOut.Stop();
 //                    waveOut.Dispose();
 //                    waveOut = null;
 //                }
 
-//                if (multiTypeAudioReader != null)
+//                if (multiTypeAudioReader is not null)
 //                {
 //                    multiTypeAudioReader.Dispose();
 //                    multiTypeAudioReader = null;
 //                }
 
-//                if (equalizer != null)
+//                if (equalizer is not null)
 //                {
 //                    equalizer = null;
 //                }
@@ -956,27 +956,27 @@
 //        public async Task DisposeAudio()
 //        {
 //            CancelPreviousLyricsTask();
-//            if (progressTimer != null)
+//            if (progressTimer is not null)
 //            {
 //                progressTimer.Stop();
 //                progressTimer.Elapsed -= ProgressTimer_Elapsed;
 //                progressTimer.Dispose();
 //                progressTimer = null;
 //            }
-//            if (waveOut != null)
+//            if (waveOut is not null)
 //            {
 //                waveOut.Stop();
 //                waveOut.Dispose();
 //                waveOut = null;
 //            }
 
-//            if (multiTypeAudioReader != null)
+//            if (multiTypeAudioReader is not null)
 //            {
 //                multiTypeAudioReader.Dispose();
 //                multiTypeAudioReader = null;
 //            }
 
-//            if (equalizer != null)
+//            if (equalizer is not null)
 //            {
 //                equalizer = null;
 //            }
@@ -1012,7 +1012,7 @@
 
 //        public void StopPlaying()
 //        {
-//            if (waveOut != null)
+//            if (waveOut is not null)
 //            {
 //                //isManualPlayingNext = true;
 //                progressTimer.Stop();
@@ -1027,7 +1027,7 @@
 //        {
 //            if (AppSettings.isPlaying)
 //            {
-//                if (waveOut != null)
+//                if (waveOut is not null)
 //                {
 //                    //必须这样写，不然在某些音频设备上会有bug
 //                    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
@@ -1050,7 +1050,7 @@
 //            }
 //            else
 //            {
-//                if (waveOut != null)
+//                if (waveOut is not null)
 //                {
 //                    isPausing = false;
 //                    waveOut.Play();
@@ -1074,11 +1074,11 @@
 //                }
 //                else
 //                {
-//                    if (MusicBrowseViewModel.CurrentPlayingMusic != null)
+//                    if (MusicBrowseViewModel.CurrentPlayingMusic is not null)
 //                    {
 //                        MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
 //                    }
-//                    else if (MusicBrowseViewModel.CurrentPlayingList != null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
+//                    else if (MusicBrowseViewModel.CurrentPlayingList is not null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
 //                    {
 //                        MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
 //                    }

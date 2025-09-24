@@ -67,7 +67,7 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 App.MainWindow.updateMusicList += MainWindow_updateMusicList;
                 //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
@@ -154,14 +154,14 @@ namespace WinUIMusicPlayer.View
 
         public void ChangeAcrylicBrushBackgroundOpacity()
         {
-            ViewModel.IsAcrylicBrushOpacity = ViewModel.MusicDetailCover != null && ViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
+            ViewModel.IsAcrylicBrushOpacity = ViewModel.MusicDetailCover is not null && ViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
             AcrylicBrushBackground.Background.Opacity = ViewModel.IsAcrylicBrushOpacity ? 1.0 : 0;
         }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 refreshPage?.Invoke(this, false);
                 refreshSong?.Invoke(this, EventArgs.Empty);
@@ -183,7 +183,7 @@ namespace WinUIMusicPlayer.View
         //public async Task ClosePage()
         //{
         //    await ViewModel._musicPlaybackService.DisposeAudio();
-        //    if (App.MainWindow != null)
+        //    if (App.MainWindow is not null)
         //    {
         //        //App.MainWindow.updateSelectSection -= MainWindow_updateSelectSection;
         //        App.MainWindow.updateMusicList -= MainWindow_updateMusicList;
@@ -219,7 +219,7 @@ namespace WinUIMusicPlayer.View
 
         public void DisableBackButton()
         {
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 if (ViewModel.currentPage == typeof(SongCollectionPage) || ViewModel.currentPage == typeof(PlayListSongPage))
                 {
@@ -239,7 +239,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.CurrentAlbum = AppData.allSongs.Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             ViewModel.CurrentAlbum.Album = Album;
             ViewModel.currentPage = typeof(SongCollectionPage);
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
@@ -259,7 +259,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.CurrentArtist = AppData.allSongs.FirstOrDefault(m => m.Author == artist);
             ViewModel.CurrentArtist.Author = artist;
             ViewModel.currentPage = typeof(SongCollectionPage);
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
@@ -276,7 +276,7 @@ namespace WinUIMusicPlayer.View
         {
             music.IsFavorite = !music.IsFavorite;
             await MusicDatabaseService.AddToFavourite(music, ViewModel.CurrentPlayingMusic);
-            if (ViewModel.CurrentPlayingMusic != null)
+            if (ViewModel.CurrentPlayingMusic is not null)
             {
                 if (ViewModel.CurrentPlayingMusic.Id == music.Id)
                 {
@@ -320,7 +320,7 @@ namespace WinUIMusicPlayer.View
                     try
                     {
                         AppData.searchText = currentText;
-                        if (ContentFrame?.Content != null)
+                        if (ContentFrame?.Content is not null)
                         {
                             refreshPage?.Invoke(this, true);
                             refreshSong?.Invoke(this, EventArgs.Empty);
@@ -412,7 +412,7 @@ namespace WinUIMusicPlayer.View
             buttonClickHandler = async (s, e) =>
             {
                 PlayList newPlaylist = await OpenM3u8File();
-                if (newPlaylist != null)
+                if (newPlaylist is not null)
                 {
                     addPlayListEvent?.Invoke(this, newPlaylist);
                 }
@@ -445,14 +445,14 @@ namespace WinUIMusicPlayer.View
 
         private void UpdateCurrentPlayList()
         {
-            if (ViewModel.CurrentPlayingList != null)
+            if (ViewModel.CurrentPlayingList is not null)
             {
-                if (ViewModel.CurrentPlayingMusic != null)
+                if (ViewModel.CurrentPlayingMusic is not null)
                 {
                     var selectedMusic = ViewModel.CurrentPlayingList.FirstOrDefault(music =>
                     music.Id == ViewModel.CurrentPlayingMusic.Id);
 
-                    if (selectedMusic != null)
+                    if (selectedMusic is not null)
                     {
                         _ = Task.Delay(100).ContinueWith(_ =>
                         {
@@ -472,7 +472,7 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
-            if (selectedMusic != null)
+            if (selectedMusic is not null)
             {
                 PlayMusic(music: selectedMusic, IsChangeList: false);
             }
@@ -486,19 +486,19 @@ namespace WinUIMusicPlayer.View
                 var songCollectionPage = ContentFrame.Content as SongCollectionPage;
                 var FavouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
                 var playListSongPage = ContentFrame.Content as PlayListSongPage;
-                if (songListPage != null)
+                if (songListPage is not null)
                 {
                     songListPage.UpdateMusicListView();
                 }
-                if (songCollectionPage != null)
+                if (songCollectionPage is not null)
                 {
                     songCollectionPage.UpdateMusicListView();
                 }
-                if (FavouritePlayListPage != null)
+                if (FavouritePlayListPage is not null)
                 {
                     FavouritePlayListPage.UpdateMusicListView();
                 }
-                if (playListSongPage != null)
+                if (playListSongPage is not null)
                 {
                     playListSongPage.UpdateMusicListView();
                 }
@@ -531,7 +531,7 @@ namespace WinUIMusicPlayer.View
 
         public void SelectSortOptionChanged()
         {
-            if (ContentFrame != null && ContentFrame.Content != null)
+            if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is SongCollectionPage)
                 {
@@ -541,7 +541,7 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is SongListPage)
                 {
                     var page = ContentFrame.Content as SongListPage;
-                    if (page != null)
+                    if (page is not null)
                     {
                         page.SortMusicList(AppData.sortOrder);
                     }
@@ -549,7 +549,7 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is FavouritePlayListPage)
                 {
                     var page = ContentFrame.Content as FavouritePlayListPage;
-                    if (page != null)
+                    if (page is not null)
                     {
                         page.SortMusicList(AppData.sortOrder);
                     }
@@ -557,7 +557,7 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is AlbumPage)
                 {
                     var page = ContentFrame.Content as AlbumPage;
-                    if (page != null)
+                    if (page is not null)
                     {
                         page.SortMusicList(AppData.sortOrder);
                     }
@@ -565,7 +565,7 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is PlayListSongPage)
                 {
                     var page = ContentFrame.Content as PlayListSongPage;
-                    if (page != null)
+                    if (page is not null)
                     {
                         page.SortMusicList(AppData.sortOrder);
                     }
@@ -595,7 +595,7 @@ namespace WinUIMusicPlayer.View
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
             var thumb = FindVisualChild<Thumb>(ProgressSlider);
-            if (thumb != null)
+            if (thumb is not null)
             {
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
@@ -604,7 +604,7 @@ namespace WinUIMusicPlayer.View
         private void ProgressSliderPlayingDetail_Loaded(object sender, RoutedEventArgs e)
         {
             var thumb = FindVisualChild<Thumb>(ProgressSliderPlayingDetail);
-            if (thumb != null)
+            if (thumb is not null)
             {
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
@@ -675,7 +675,7 @@ namespace WinUIMusicPlayer.View
 
         public void ShowPlayingDetail()
         {
-            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic != null && AlbumCoverImage != null)
+            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic is not null && AlbumCoverImage is not null)
             {
                 ViewModel.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;
@@ -804,7 +804,7 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
-            if (selectedMusic != null)
+            if (selectedMusic is not null)
             {
                 PlayMusic(music: selectedMusic, IsChangeList: false);
             }

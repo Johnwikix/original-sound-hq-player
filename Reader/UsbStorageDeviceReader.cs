@@ -129,7 +129,7 @@ namespace WinUIMusicPlayer.Reader
                             new List<string> { "System.Devices.DeviceInstanceId" });
 
                         if (properties.ContainsKey("System.Devices.DeviceInstanceId") &&
-                            properties["System.Devices.DeviceInstanceId"] != null)
+                            properties["System.Devices.DeviceInstanceId"] is not null)
                         {
                             uniqueId = properties["System.Devices.DeviceInstanceId"].ToString();
                         }

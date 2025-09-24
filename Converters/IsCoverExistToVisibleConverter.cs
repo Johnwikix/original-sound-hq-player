@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is BitmapImage cover)
             {
-                if (cover != null)
+                if (cover is not null)
                 {
                     return Visibility.Collapsed;
                 }

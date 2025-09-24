@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();            
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
                 App.MainWindow.styleChanged += MainWindow_styleChanged;
@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
         {
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     Tag tag = audioFile.Tag;
                     tag.Pictures = Array.Empty<IPicture>();
-                    if (albumCoverData != null)
+                    if (albumCoverData is not null)
                     {
                         byte[] albumArtData = albumCoverData;
                         Picture albumArt = new Picture
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             ConfirmFlyout.Hide();
             var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music != null)
+            if (music is not null)
             {
                 try
                 {
@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
-            if (albumCoverData != null)
+            if (albumCoverData is not null)
             {
                 AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             }
@@ -210,7 +210,7 @@ namespace WinUIMusicPlayer.View.SubView
                 openPicker.FileTypeFilter.Add(".png");
                 WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
                 StorageFile file = await openPicker.PickSingleFileAsync();
-                if (file != null)
+                if (file is not null)
                 {
                     using (Stream stream = await file.OpenStreamForReadAsync())
                     {
@@ -234,7 +234,7 @@ namespace WinUIMusicPlayer.View.SubView
             picker.SuggestedFileName = "SavedImage";
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
             StorageFile file = await picker.PickSaveFileAsync();
-            if (file != null)
+            if (file is not null)
             {
                 try
                 {

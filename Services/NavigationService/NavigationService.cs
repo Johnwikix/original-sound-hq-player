@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             if (ContentFrame?.Content?.GetType() == pageType)
             {
                 // 如果是相同页面但有导航参数，仍然需要传递参数
-                if (ContentFrame.Content is INavigatable navigatablePage && parameter != null)
+                if (ContentFrame.Content is INavigatable navigatablePage && parameter is not null)
                 {
                     navigatablePage.ReceiveNavigationParameter(parameter);
                 }
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 var currentContent = ContentFrame.Content as FrameworkElement;
                 // 清理当前页面的变换
-                if (currentContent != null)
+                if (currentContent is not null)
                 {
                     currentContent.RenderTransform = null;
                     currentContent.ClearValue(UIElement.RenderTransformProperty);

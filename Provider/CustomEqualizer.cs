@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.Provider
                 var band = bands[bandIndex];
                 for (int n = 0; n < channels; n++)
                 {
-                    if (filters[n, bandIndex] == null)
+                    if (filters[n, bandIndex] is null)
                         filters[n, bandIndex] = BiQuadFilter.PeakingEQ(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
                     else
                         filters[n, bandIndex].SetPeakingEq(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);

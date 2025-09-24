@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.Helper
                 switch (AppSettings.AppStyle)
                 {
                     case "Acrylic":                       
-                        if (backdrop != null)
+                        if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0.5f, 0.8f, uiColor);
                         }
@@ -66,7 +66,7 @@ namespace WinUIMusicPlayer.Helper
                         break;
                     case "TransparentAcrylic":
                         float colorOpacity = 0.4f;                        
-                        if (backdrop != null)
+                        if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0, colorOpacity, uiColor);
                         }
@@ -102,7 +102,7 @@ namespace WinUIMusicPlayer.Helper
                         }                        
                         break;
                     case "CustomAcrylicStyle":
-                        if (backdrop != null)
+                        if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(1.0, 
                                             AppSettings.CustomAcrylicOpacity, 

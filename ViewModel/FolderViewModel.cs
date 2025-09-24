@@ -51,14 +51,14 @@ namespace WinUIMusicPlayer.ViewModel
             _contextMenuService.rescanFolderEnd += RescanFolderEnd;
             _contextMenuService.showTransmission += (s, eventArgs) =>
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.ShowTransmission();
                 }
             };
             _contextMenuService.hideTransmission += (s, eventArgs) =>
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.HideTransmission();
                 }
@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.ViewModel
             parentPage.ViewModel.CurrentFolder = null;
             parentPage.ViewModel.PageType = "folderBrowse";
 
-            if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
+            if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
             {
                 _lastSearchText = AppData.searchText;
                 InitializeData();
@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         //public void SortMusicList(string sortOrder)
         //{
-        //    if (MusicList != null && MusicList.Count > 0)
+        //    if (MusicList is not null && MusicList.Count > 0)
         //    {
         //        //MusicList.Clear();
         //        var query = ToolUtils.SortMusicList("folderCover", sortOrder, MusicList);
@@ -157,10 +157,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var gridView = sender as GridView;
             GridViewItem item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
-            if (item != null)
+            if (item is not null)
             {
                 Music folder = item.Content as Music;
-                if (parentPage != null && _musicBrowseViewModel != null)
+                if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
                     try
                     {
@@ -183,11 +183,11 @@ namespace WinUIMusicPlayer.ViewModel
             var originalSource = e.OriginalSource as FrameworkElement;
             GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
 
-            if (clickedItem != null)
+            if (clickedItem is not null)
             {
                 var folder = clickedItem.Content as Music;
 
-                if (folder != null)
+                if (folder is not null)
                 {
                     await _contextMenuService.ShowAlbumContextMenu(
                         folder,
@@ -204,7 +204,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void RescanFolderEnd(object? sender, EventArgs e)
         {
             var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow != null)
+            if (mainWindow is not null)
             {
                 mainWindow.UpdateMusicList();
             }
@@ -213,9 +213,9 @@ namespace WinUIMusicPlayer.ViewModel
         private void PlayingFolder(object? sender, Music e)
         {
             List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
-            if (folders != null && folders.Count > 0)
+            if (folders is not null && folders.Count > 0)
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(folders);
                     parentPage.PlayMusic(music: folders[0], IsChangeList: true);

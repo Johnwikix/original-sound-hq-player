@@ -152,7 +152,7 @@ namespace WinUIMusicPlayer.Services
         //                    subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
         //                });
         //                List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
-        //                if (subFoldersInDb != null && subFoldersInDb.Count > 0)
+        //                if (subFoldersInDb is not null && subFoldersInDb.Count > 0)
         //                {
         //                    foreach (SubFolder subFolder in subFolders)
         //                    {

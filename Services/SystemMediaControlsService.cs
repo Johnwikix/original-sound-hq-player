@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.Services
                 mediaPlayer = new MediaPlayer();
                 SystemMediaControls = mediaPlayer.SystemMediaTransportControls;
                 mediaPlayer.CommandManager.IsEnabled = true;
-                if (SystemMediaControls != null)
+                if (SystemMediaControls is not null)
                 {
                     SystemMediaControls.IsPlayEnabled = true;
                     SystemMediaControls.IsPauseEnabled = true;
@@ -92,7 +92,7 @@ namespace WinUIMusicPlayer.Services
             SystemMediaControls.DisplayUpdater.MusicProperties.Title = title;
             SystemMediaControls.DisplayUpdater.MusicProperties.Artist = artist;
             SystemMediaControls.DisplayUpdater.MusicProperties.AlbumTitle = album;
-            if (cover != null && cover.Length > 0)
+            if (cover is not null && cover.Length > 0)
             {
                 try
                 {
@@ -114,7 +114,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (SystemMediaControls == null) return;
+                if (SystemMediaControls is null) return;
                 var timelineProperties = new SystemMediaTransportControlsTimelineProperties
                 {
                     StartTime = TimeSpan.Zero,
@@ -136,7 +136,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 // 空值检查
-                if (imageBytes == null || imageBytes.Length == 0)
+                if (imageBytes is null || imageBytes.Length == 0)
                 {
                     Console.WriteLine("输入的字节数组为空或null");
                     return null;

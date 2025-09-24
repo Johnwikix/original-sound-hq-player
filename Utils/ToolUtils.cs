@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.Utils
         public static T FindParent<T>(DependencyObject child) where T : DependencyObject
         {
             DependencyObject parent = VisualTreeHelper.GetParent(child);
-            if (parent == null)
+            if (parent is null)
                 return null;
             T parentAsT = parent as T;
             return parentAsT ?? FindParent<T>(parent);
@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer.Utils
         //    var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
         //    if (album.Album != "未知专辑")
         //    {
-        //        if (musics == null || musics.Count() == 0)
+        //        if (musics is null || musics.Count() == 0)
         //        {
         //            return null;
         //        }
@@ -263,7 +263,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
             byte[] imageData = picture.Data.Data.ToArray();
-            if (picture?.Data?.Data == null)
+            if (picture?.Data?.Data is null)
             {
                 return null;
             }
@@ -301,7 +301,7 @@ namespace WinUIMusicPlayer.Utils
 
         private static bool IsValidImageData(byte[] data)
         {
-            if (data == null || data.Length < 10) return false;
+            if (data is null || data.Length < 10) return false;
 
             // 检查常见图像文件头
             return IsPng(data) || IsJpeg(data) || IsGif(data) || IsBmp(data) || IsWebP(data) || IsTiff(data);
@@ -373,7 +373,7 @@ namespace WinUIMusicPlayer.Utils
                 else
                 {
                     var foundChild = FindVisualChild<T>(child);
-                    if (foundChild != null)
+                    if (foundChild is not null)
                     {
                         return foundChild;
                     }
@@ -387,7 +387,7 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                if (imageData == null || imageData.Length == 0)
+                if (imageData is null || imageData.Length == 0)
                     return null;
                 using (var stream = new InMemoryRandomAccessStream())
                 {
@@ -443,7 +443,7 @@ namespace WinUIMusicPlayer.Utils
                                 picture = System.IO.File.ReadAllBytes(filePath);
                             }
                             picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
-                            if (picture != null)
+                            if (picture is not null)
                             {
                                 System.IO.File.WriteAllBytes(filePath, picture);
                             }
@@ -461,7 +461,7 @@ namespace WinUIMusicPlayer.Utils
 
         //public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
         //{
-        //    if (musicList != null && musicList.Count > 0)
+        //    if (musicList is not null && musicList.Count > 0)
         //    {
         //        var index = musicList.FindIndex(m => m.Id == music.Id);
         //        if (index != -1)
@@ -476,7 +476,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
         {
-            if (musicList == null) return Enumerable.Empty<Music>();
+            if (musicList is null) return Enumerable.Empty<Music>();
 
             // 如果没有数据，直接返回空集合，避免不必要的计算
             if (!musicList.Any()) return musicList;
@@ -507,7 +507,7 @@ namespace WinUIMusicPlayer.Utils
         /// <param name="musicList">要排序的ObservableCollection</param>
         public static void SortMusicListInPlace(string type, string sortOrder, ObservableCollection<Music> musicList)
         {
-            if (musicList == null || musicList.Count <= 1) return;
+            if (musicList is null || musicList.Count <= 1) return;
 
             var sortedList = SortMusicList(type, sortOrder, musicList).ToList();
 
@@ -634,7 +634,7 @@ namespace WinUIMusicPlayer.Utils
         // 将字典转换为JSON字符串的方法
         public static string ConvertToJson(Dictionary<string, double> dict)
         {
-            if (dict == null)
+            if (dict is null)
             {
                 throw new ArgumentNullException(nameof(dict), "字典不能为空");
             }
@@ -768,7 +768,7 @@ namespace WinUIMusicPlayer.Utils
                     // 获取拼音集合
                     var pinyinCollection = chineseChar.Pinyins;
 
-                    if (pinyinCollection != null && pinyinCollection.Count > 0)
+                    if (pinyinCollection is not null && pinyinCollection.Count > 0)
                     {
                         // 获取第一个拼音，去掉声调数字，取首字母
                         string firstPinyin = pinyinCollection[0];
@@ -907,7 +907,7 @@ namespace WinUIMusicPlayer.Utils
                     using (var file = TagLib.File.Create(filePath))
                     {
                         byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
-                        if (picture == null)
+                        if (picture is null)
                         {
                             if (!Directory.Exists(AppSettings.MusicCoverCache))
                             {
@@ -925,14 +925,14 @@ namespace WinUIMusicPlayer.Utils
                                 if (AppSettings.isAutoLyricsEnabled)
                                 {                                    
                                     picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
-                                    if (picture != null)
+                                    if (picture is not null)
                                     {
                                         System.IO.File.WriteAllBytes(filePath, picture);
                                     }
                                 }
                             }                        
                         }
-                        if (picture != null) {
+                        if (picture is not null) {
                             using (var originalStream = new MemoryStream(picture))
                             {
                                 // 解码原始图像
@@ -1000,7 +1000,7 @@ namespace WinUIMusicPlayer.Utils
         //                    {
         //                        music.Cover = cover;
         //                    });
-        //                    if (AppSettings.isCoverCacheEnabled && cover != null)
+        //                    if (AppSettings.isCoverCacheEnabled && cover is not null)
         //                    {
         //                        AppData.albumCoverCache.SetValue(music.Album, cover);
         //                    }
@@ -1195,7 +1195,7 @@ namespace WinUIMusicPlayer.Utils
                                 "System.Audio.SampleSize"
                              });
                 // 处理位深度
-                if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] != null)
+                if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] is not null)
                 {
                     var sampleSize = Convert.ToInt32(audioProps["System.Audio.SampleSize"]);
                     bitDepth = sampleSize;
@@ -1219,7 +1219,7 @@ namespace WinUIMusicPlayer.Utils
                 var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
                                 "System.Audio.EncodingBitrate"
                              });
-                if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] != null)
+                if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] is not null)
                 {
                     int rawBitrate = Convert.ToInt32(audioProps["System.Audio.EncodingBitrate"]);
                     bitRate = rawBitrate > 0 ? rawBitrate / 1000 : 0;
@@ -1249,13 +1249,13 @@ namespace WinUIMusicPlayer.Utils
 
             // 显示文件选择器并获取结果
             var file = await picker.PickSingleFileAsync();
-            if (file != null)
+            if (file is not null)
             {
                 try
                 {
                     PlayList playList = await MusicDatabaseService.GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
                     int playListId = 0;
-                    if (playList != null)
+                    if (playList is not null)
                     {
                         playListId = playList.Id;
                     }
@@ -1301,7 +1301,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     Debug.WriteLine(Path.GetFileName(line));
                     Music? music = AppData.allSongs.FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
-                    if (music != null)
+                    if (music is not null)
                     {
                         await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
                     }
@@ -1376,7 +1376,7 @@ namespace WinUIMusicPlayer.Utils
                 savePicker.FileTypeChoices.Add("M3U8 播放列表", new List<string>() { ".m3u8" });
                 savePicker.SuggestedFileName = playList.Name;
                 var file = await savePicker.PickSaveFileAsync();
-                if (file != null)
+                if (file is not null)
                 {
                     IEnumerable<Music> musics = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id);
                     var m3u8Content = ToolUtils.GenerateM3U8Content(musics, playList.Name);

@@ -68,7 +68,7 @@ namespace WinUIMusicPlayer.ViewModel
             //{
             //    var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
             //    PickFolderResult result = await folderPicker.PickSingleFolderAsync();
-            //    if (result == null) return;
+            //    if (result is null) return;
             //    await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
             //}
             //catch (Exception)
@@ -77,7 +77,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private async Task AddFolderMusic(StorageFolder folder)
         {
-            if (folder != null)
+            if (folder is not null)
             {
                 await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();

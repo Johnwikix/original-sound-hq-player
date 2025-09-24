@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.View.SubView
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             SaveSettings settings = await MusicDatabaseService.GetSettings();
-            if (settings != null)
+            if (settings is not null)
             {
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
                 settings.EqualizerPreset = AppSettings.EqualizerPreset;

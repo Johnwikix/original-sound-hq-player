@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.Reader
         //     True if called from Dispose
         protected override void Dispose(bool disposing)
         {
-            if (disposing && readerStream != null)
+            if (disposing && readerStream is not null)
             {
                 readerStream.Dispose();
                 readerStream = null;

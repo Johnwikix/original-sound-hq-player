@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer.Extensions
 
         public static ObservableCollection<T> CreateShuffled<T>(this ObservableCollection<T> originalCollection)
         {
-            if (originalCollection == null || originalCollection.Count == 0)
+            if (originalCollection is null || originalCollection.Count == 0)
             {
                 return [];
             }

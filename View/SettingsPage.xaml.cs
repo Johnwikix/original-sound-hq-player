@@ -58,7 +58,7 @@ namespace WinUIMusicPlayer.View
 
         private void ThirdParty_Click(object sender, RoutedEventArgs e)
         {
-            if (_thirdPartyDialog == null)
+            if (_thirdPartyDialog is null)
             {
                 _thirdPartyDialog = new ContentDialog
                 {

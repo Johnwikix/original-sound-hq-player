@@ -130,7 +130,7 @@ namespace WinUIMusicPlayer
                     //Debug.WriteLine("收到显示窗口消息");
                     DispatcherQueue.TryEnqueue(() =>
                     {
-                        if (this == null)
+                        if (this is null)
                         {
                             return;
                         }
@@ -268,7 +268,7 @@ namespace WinUIMusicPlayer
         //    try
         //    {
         //        await ToolUtils.RefreshDevice();
-        //        if (SettingLoaded != null)
+        //        if (SettingLoaded is not null)
         //        {
         //            DispatcherQueue.TryEnqueue(() =>
         //            {
@@ -287,7 +287,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsUpdateBackDrop) {
                 themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
             }            
-            if (_taskbarHelper == null)
+            if (_taskbarHelper is null)
             {
                 InitializeTaskbarHelper();
             }
@@ -297,7 +297,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                if (_taskbarHelper == null)
+                if (_taskbarHelper is null)
                 {
                     _taskbarHelper = new TaskbarHelper(m_hwnd);
                     _taskbarHelper.InitializeThumbButtons();

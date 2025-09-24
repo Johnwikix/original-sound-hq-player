@@ -36,7 +36,7 @@ namespace WinUIMusicPlayer.Helper
                 {
                     using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\SennpeiStudio\OriginalSoundHIFIPlayer"))
                     {
-                        if (key != null)
+                        if (key is not null)
                         {
                             long handleValue = Convert.ToInt64(key.GetValue("MainWindowHandle", 0));
                             if (handleValue != 0)
@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.Helper
         /// </summary>
         public static void ReleaseMutex()
         {
-            if (_mutex != null)
+            if (_mutex is not null)
             {
                 _mutex.ReleaseMutex();
                 _mutex.Dispose();

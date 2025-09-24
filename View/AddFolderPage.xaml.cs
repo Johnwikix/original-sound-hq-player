@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.View
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
-            if (button != null && button.Tag is string folderPath)
+            if (button is not null && button.Tag is string folderPath)
             {
                 ViewModel.OpenFolderButton_Click(folderPath);
             }
@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer.View
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
             var button = sender as Button;
-            if (button != null && button.Tag is int folderId)
+            if (button is not null && button.Tag is int folderId)
             {
                 await Task.Run(() => MusicDatabaseService.RescanFolder(folderId));
             }
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.View
             if (result == ContentDialogResult.Primary)
             {
                 var button = sender as Button;
-                if (button != null && button.Tag is int folderId)
+                if (button is not null && button.Tag is int folderId)
                 {
                     RemoveFolder(folderId);
                 }

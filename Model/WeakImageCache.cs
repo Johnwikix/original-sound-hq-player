@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.Model
         }
         public bool UpdateIfExists(string key, BitmapImage newValue)
         {
-            if (ContainsKey(key) && newValue != null)
+            if (ContainsKey(key) && newValue is not null)
             {
                 SetValue(key, newValue);
                 return true;
@@ -70,7 +70,7 @@ namespace WinUIMusicPlayer.Model
         }
         public void SetValue(string key, BitmapImage value)
         {
-            if (value != null)
+            if (value is not null)
             {
                 _cache.AddOrUpdate(key,
                     new WeakReference<BitmapImage>(value),

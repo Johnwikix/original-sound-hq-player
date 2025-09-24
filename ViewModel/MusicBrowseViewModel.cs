@@ -498,7 +498,7 @@ namespace WinUIMusicPlayer.ViewModel
             Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
             AppData.usbStorageDevice = usbStorageDevice;
             List<UsbDeviceMusic> usbDeviceMusics = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-            if (usbDeviceMusics != null && usbDeviceMusics.Count > 0)
+            if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
             {
                 // 检查是否需要重新扫描
                 DateTime startTime = DateTime.Now;
@@ -641,7 +641,7 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
             _musicPlaybackService.volume = AppData.Volume;
             CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
-            if (CurrentPlayingMusic != null)
+            if (CurrentPlayingMusic is not null)
             {
                 UpdatePlayBar(CurrentPlayingMusic);
                 LoadLyricsToUI();
@@ -881,7 +881,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnFullScreenButtonChanged()
         {
-            if (App.MainWindow.AppWindow != null)
+            if (App.MainWindow.AppWindow is not null)
             {
                 if (IsFullScreen)
                 {
@@ -912,7 +912,7 @@ namespace WinUIMusicPlayer.ViewModel
                     currentPage = typeof(SongListPage);
                     break;
                 case "Album":
-                    if (CurrentAlbum != null && !string.IsNullOrEmpty(CurrentAlbum.Album))
+                    if (CurrentAlbum is not null && !string.IsNullOrEmpty(CurrentAlbum.Album))
                     {
                         PageType = "album";
                         paramName = CurrentAlbum.Album;
@@ -925,7 +925,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     break;
                 case "Artist":
-                    if (CurrentArtist != null && !string.IsNullOrEmpty(CurrentArtist.Author))
+                    if (CurrentArtist is not null && !string.IsNullOrEmpty(CurrentArtist.Author))
                     {
                         PageType = "artist";
                         paramName = CurrentArtist.Author;
@@ -938,7 +938,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     break;
                 case "Folder":
-                    if (CurrentFolder != null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
+                    if (CurrentFolder is not null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
                     {
                         PageType = "folder";
                         paramName = CurrentFolder.LastLevelFolderPath;
@@ -955,7 +955,7 @@ namespace WinUIMusicPlayer.ViewModel
                     currentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
-                    if (currentPlayList != null)
+                    if (currentPlayList is not null)
                     {
                         PageType = "playlist";
                         paramName = currentPlayList.Name;
@@ -977,7 +977,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private int GetSelectorBarItemIndex(SelectorBarItem item)
         {
-            if (item == null) return -1;
+            if (item is null) return -1;
             return item.Name switch
             {
                 "Song" => 0,
@@ -994,7 +994,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (SelectedSortOption != null)
+                if (SelectedSortOption is not null)
                 {
                     AppData.sortOrder = SelectedSortOption.Tag;
                     _musicBrowsePage.SelectSortOptionChanged();

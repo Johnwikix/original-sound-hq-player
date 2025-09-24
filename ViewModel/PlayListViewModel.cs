@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void RemovePlayList(PlayList playList)
         {
-            if (playList == null) return;
+            if (playList is null) return;
 
             await MusicDatabaseService.RemovePlayList(playList);
             PlayLists.Remove(playList);
@@ -95,7 +95,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
         {
-            if (playList == null || getNameCallback == null) return;
+            if (playList is null || getNameCallback is null) return;
 
             string newName = await getNameCallback();
 
@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.ViewModel
                 playList.Name = newName;
                 await MusicDatabaseService.UpdatePlayList(playList);
                 var existingPlayList = PlayLists.FirstOrDefault(p => p.Id == playList.Id);
-                if (existingPlayList != null)
+                if (existingPlayList is not null)
                 {
                     existingPlayList.Name = newName;
                 }
@@ -113,7 +113,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayListView_SelectionChanged(PlayList? playList)
         {
-            if (playList != null && _parentPage != null && _musicBrowseViewModel != null)
+            if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
             {
                 //_parentPage.LoadPlayListSong(playList);
                 _musicBrowseViewModel.PageType = "playlist";

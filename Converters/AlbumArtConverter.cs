@@ -24,7 +24,7 @@ namespace WinUIMusicPlayer.Converters
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is Music music && music != null)
+            if (value is Music music && music is not null)
             {               
                 if (AppData.albumCoverCache.TryGetValue(music.Album, out var cached))
                 {

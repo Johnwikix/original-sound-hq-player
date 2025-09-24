@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.WebService
                 var response = await _httpClient.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
                 byte[] result = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-                if (result == null) {
+                if (result is null) {
                     return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
                 }
                 return result;

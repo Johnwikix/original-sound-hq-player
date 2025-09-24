@@ -142,14 +142,14 @@ namespace WinUIMusicPlayer.View
         {
             var targetElement = e.OriginalSource as FrameworkElement;
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            if (listViewItem != null)
+            if (listViewItem is not null)
             {
                 var musicItem = listViewItem.Content as Model.Music;
                 // 检查当前指向的元素是否已在选中项列表中
                 bool isCurrentItemSelected = false;
                 foreach (var item in MusicListView.SelectedItems)
                 {
-                    if (item is Music selectedMusic && musicItem != null && selectedMusic.Id == musicItem.Id)
+                    if (item is Music selectedMusic && musicItem is not null && selectedMusic.Id == musicItem.Id)
                     {
                         isCurrentItemSelected = true;
                         break;
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.View
                 }
                 IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
                 // 设置右键菜单
-                if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem != null)
+                if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem is not null)
                 {
                     // 为菜单项设置DataContext
                     foreach (var menuItem in flyout.Items)
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.View
                     if (menuFlyout.Items.Count > 8)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[3] as MenuFlyoutSubItem;
-                        if (fifthItem != null)
+                        if (fifthItem is not null)
                         {
                             if (fifthItem.Tag.ToString() == "usbDevice")
                             {
@@ -183,7 +183,7 @@ namespace WinUIMusicPlayer.View
                             }
                         }
                     }
-                    if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
+                    if (AppData.usbStorageDevices is not null && AppData.usbStorageDevices.Count > 0)
                     {
                         MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                         {
@@ -211,7 +211,7 @@ namespace WinUIMusicPlayer.View
                                     foreach (var music in uniqueSelectedMusics)
                                     {
                                         var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
-                                        if (existingMusic != null)
+                                        if (existingMusic is not null)
                                         {
                                             continue; // 如果已经存在，则跳过
                                         }
@@ -224,7 +224,7 @@ namespace WinUIMusicPlayer.View
                                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                     }
                                 }
-                                else if (musicItem != null)
+                                else if (musicItem is not null)
                                 {
                                     ViewModel.ShowTransmission();
                                     List<Music> musicItems = new List<Music> { musicItem };
@@ -277,7 +277,7 @@ namespace WinUIMusicPlayer.View
         //private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
         //{
         //    var button = sender as Button;
-        //    if (button != null && button.Tag is Music music)
+        //    if (button is not null && button.Tag is Music music)
         //    {
         //        await ViewModel.IsFavouriteIconButton_Click(music);
         //    }

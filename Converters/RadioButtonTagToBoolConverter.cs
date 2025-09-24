@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Converters
         {
             // value是ViewModel中的属性值（例如"Mica"）
             // parameter是RadioButton的Tag值
-            if (value == null || parameter == null)
+            if (value is null || parameter is null)
                 return false;
 
             return value.ToString().Equals(parameter.ToString(), StringComparison.OrdinalIgnoreCase);
@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.Converters
         {
             // value是RadioButton的IsChecked值
             // parameter是RadioButton的Tag值
-            if (value is bool isChecked && isChecked && parameter != null)
+            if (value is bool isChecked && isChecked && parameter is not null)
             {
                 return parameter.ToString();
             }

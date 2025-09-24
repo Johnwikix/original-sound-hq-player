@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.Helper
             SetAcrylicProperties();
 
             // 激活亚克力效果
-            if (_acrylicController != null)
+            if (_acrylicController is not null)
             {
                 // 设置配置
                 _acrylicController.SetSystemBackdropConfiguration(_backdropConfiguration);
@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.Helper
                 }
             }
 
-            if (_acrylicController != null)
+            if (_acrylicController is not null)
             {
                 _acrylicController.RemoveSystemBackdropTarget(disconnectedTarget);
                 _acrylicController.Dispose();
@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.Helper
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 _backdropConfiguration.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
             }
@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Helper
         private void Window_Closed(object sender, WindowEventArgs args)
         {
             // 确保释放资源
-            if (_acrylicController != null)
+            if (_acrylicController is not null)
             {
                 _acrylicController.Dispose();
                 _acrylicController = null;
@@ -119,7 +119,7 @@ namespace WinUIMusicPlayer.Helper
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 switch (element.ActualTheme)
                 {
@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.Helper
         // 设置亚克力效果的属性
         private void SetAcrylicProperties()
         {
-            if (_acrylicController == null || _dispatcherQueue == null || !_isConnected)
+            if (_acrylicController is null || _dispatcherQueue is null || !_isConnected)
             {
                 // 记录日志，帮助诊断问题
                 //System.Diagnostics.Debug.WriteLine("SetAcrylicProperties被调用，但控制器或调度队列无效");
@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.Helper
                 try
                 {
                     // 再次检查，因为在队列执行时可能已经变化
-                    if (_acrylicController != null && _isConnected)
+                    if (_acrylicController is not null && _isConnected)
                     {
                         // 设置亚克力效果的透明度和颜色
                         _acrylicController.TintColor = TintColor;
@@ -183,7 +183,7 @@ namespace WinUIMusicPlayer.Helper
 
         public void UpdateActiveState(bool isActive)
         {
-            if (_backdropConfiguration != null)
+            if (_backdropConfiguration is not null)
             {
                 _backdropConfiguration.IsInputActive = isActive;
             }

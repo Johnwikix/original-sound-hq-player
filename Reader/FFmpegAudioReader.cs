@@ -21,7 +21,7 @@ namespace WinUIMusicPlayer.Reader
         {
             get
             {
-                if (sampleSource != null)
+                if (sampleSource is not null)
                     return sampleSource.Length * 4; // 32-bit = 4 bytes per sample
                 return 0;
             }

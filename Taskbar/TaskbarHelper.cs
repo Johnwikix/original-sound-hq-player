@@ -324,7 +324,7 @@ namespace WinUIMusicPlayer.Taskbar
 
         private void Uninitialize()
         {
-            if (_isSubclassed && _wndProc != null && IsWindow(_hwnd))
+            if (_isSubclassed && _wndProc is not null && IsWindow(_hwnd))
             {
                 RemoveWindowSubclass(_hwnd, _wndProc, (IntPtr)1);
                 _isSubclassed = false;

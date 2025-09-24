@@ -264,7 +264,7 @@ namespace WinUIMusicPlayer.Services
             _lyrics.Clear();
             string? lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
             var lyricsContent = await ParseLrcLyrics(lrcContent);
-            if (lyricsContent != null)
+            if (lyricsContent is not null)
             {
                 _lyrics = lyricsContent;
             }
@@ -313,7 +313,7 @@ namespace WinUIMusicPlayer.Services
                             MusicBrowseViewModel.CurrentPlayingMusic.Author,
                             cancellationToken);
 
-                        if (autoLyrics != null)
+                        if (autoLyrics is not null)
                         {
                             lrcContent = autoLyrics;
                             MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
@@ -348,7 +348,7 @@ namespace WinUIMusicPlayer.Services
 
         private void CancelPreviousLyricsTask()
         {
-            if (_lyricsCancellationTokenSource != null)
+            if (_lyricsCancellationTokenSource is not null)
             {
                 try
                 {
@@ -727,11 +727,11 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
                 else {
-                    if (MusicBrowseViewModel.CurrentPlayingMusic != null)
+                    if (MusicBrowseViewModel.CurrentPlayingMusic is not null)
                     {
                         MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     }
-                    else if (MusicBrowseViewModel.CurrentPlayingList != null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
+                    else if (MusicBrowseViewModel.CurrentPlayingList is not null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
                     {
                         MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
                     }
@@ -750,7 +750,7 @@ namespace WinUIMusicPlayer.Services
             }
             //if (AppSettings.isPlaying)
             //{
-            //    if (waveOut != null)
+            //    if (waveOut is not null)
             //    {
             //        //必须这样写，不然在某些音频设备上会有bug
             //        if (AppSettings.OutputMode.Contains("WasapiExclusive"))
@@ -773,7 +773,7 @@ namespace WinUIMusicPlayer.Services
             //}
             //else
             //{
-            //    if (waveOut != null)
+            //    if (waveOut is not null)
             //    {
             //        isPausing = false;
             //        waveOut.Play();
@@ -783,11 +783,11 @@ namespace WinUIMusicPlayer.Services
             //    }
             //    else
             //    {
-            //        if (MusicBrowseViewModel.CurrentPlayingMusic != null)
+            //        if (MusicBrowseViewModel.CurrentPlayingMusic is not null)
             //        {
             //            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
             //        }
-            //        else if (MusicBrowseViewModel.CurrentPlayingList != null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
+            //        else if (MusicBrowseViewModel.CurrentPlayingList is not null && MusicBrowseViewModel.CurrentPlayingList.Count > 0)
             //        {
             //            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[0]);
             //        }
@@ -972,7 +972,7 @@ namespace WinUIMusicPlayer.Services
         public async Task DisposeAudio()
         {
             CancelPreviousLyricsTask();
-            if (progressTimer != null)
+            if (progressTimer is not null)
             {
                 progressTimer.Stop();
                 progressTimer.Elapsed -= ProgressTimer_Elapsed;

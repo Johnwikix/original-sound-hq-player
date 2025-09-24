@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnConverterProgressUpdated(object? sender, double progress)
         {
-            if (_progressDialog != null)
+            if (_progressDialog is not null)
             {
                 if (progressBarValue < (int)progress)
                 {
@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ShowTransmission()
         {
-            if (parentPage != null)
+            if (parentPage is not null)
             {
                 parentPage.ShowTransmission();
             }
@@ -107,7 +107,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void HideTransmission()
         {
-            if (parentPage != null)
+            if (parentPage is not null)
             {
                 parentPage.HideTransmission();
             }
@@ -141,14 +141,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
-                    if (_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic != null)
+                    if (_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic is not null)
                     {
                         var selectedMusic = MusicList.FirstOrDefault(music =>
                         music.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id);
 
-                        if (selectedMusic != null)
+                        if (selectedMusic is not null)
                         {
                             SelectedMusic = selectedMusic;
                             currentPage.OnScrollToMusic(selectedMusic);
@@ -164,16 +164,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateFavouriteMusic(Music music)
         {
-            if (MusicList != null && MusicList.Count > 0)
+            if (MusicList is not null && MusicList.Count > 0)
             {
                 Music? currentMusic = MusicList.FirstOrDefault(m => m.Id == music.Id);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (currentMusic != null && !music.IsFavorite)
+                    if (currentMusic is not null && !music.IsFavorite)
                     {
                         MusicList.Remove(currentMusic);
                     }
-                    if (currentMusic == null && music.IsFavorite)
+                    if (currentMusic is null && music.IsFavorite)
                     {
                         MusicList.Insert(0, music);
                     }
@@ -229,7 +229,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void RemoveMusic(Music musicToRemove)
         {
             var music = MusicList.FirstOrDefault(m => m.Id == musicToRemove.Id);
-            if (music != null)
+            if (music is not null)
             {
                 MusicList.Remove(music);
             }
@@ -237,7 +237,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task<bool> IsDeleteFromDisk()
         {
-            if (parentPage == null)
+            if (parentPage is null)
             {
                 return false;
             }
@@ -246,7 +246,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void MusicListView_DoubleTapped(Music selectedMusic)
         {
-            if (selectedMusic != null && parentPage != null)
+            if (selectedMusic is not null && parentPage is not null)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
                 parentPage.PlayMusic(music: selectedMusic, IsChangeList: true);
@@ -256,7 +256,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void MusicDetail_Click()
         {
             var music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == SelectedMusic.Id);
-            if (music != null) {
+            if (music is not null) {
                 var musicDetailsWindow = new MusicDetailsWindow(music);
                 musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
                 musicDetailsWindow.Activate();
@@ -282,7 +282,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
                 parentPage.PlayMusic(music: uniqueSelectedMusics.First(), IsChangeList: true);
@@ -296,13 +296,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     string lyrics = await ToolUtils.GetLyricsFromNet(item);
                     Music? music = AppData.allSongs.Where(m => m.Id == item.Id).AsValueEnumerable().FirstOrDefault();
-                    if (music != null)
+                    if (music is not null)
                     {
                         music.Lyrics = lyrics;
                         await MusicDatabaseService.UpdateMusicInfo(music);
@@ -313,7 +313,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
                 Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).AsValueEnumerable().FirstOrDefault();
-                if (music != null)
+                if (music is not null)
                 {
                     music.Lyrics = lyrics;
                     await MusicDatabaseService.UpdateMusicInfo(music);
@@ -324,7 +324,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
             {
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
@@ -348,7 +348,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics != null)
+            if (uniqueSelectedMusics is not null)
             {
                 await MusicDatabaseService.CancelMusicsFavourite(uniqueSelectedMusics.ToList());
                 for (int i = MusicList.Count - 1; i >= 0; i--)
@@ -356,7 +356,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (uniqueSelectedMusics.Contains(MusicList[i]))
                     {
                         MusicList.RemoveAt(i);
-                        if (parentPage.ViewModel.CurrentPlayingMusic != null)
+                        if (parentPage.ViewModel.CurrentPlayingMusic is not null)
                         {
                             if (parentPage.ViewModel.CurrentPlayingMusic.Id == MusicList[i].Id)
                             {
@@ -394,10 +394,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             progressBarValue = 0;
             _progressDialog.RequestedTheme = AppSettings.elementTheme;
-            if (uniqueSelectedMusics != null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
             {
                 isMutiFile = true;
-                if (menuItem != null && menuItem.Tag.ToString() != null)
+                if (menuItem is not null && menuItem.Tag.ToString() is not null)
                 {
                     await _progressDialog.UpdateProgress(progressBarValue);
                     _progressDialog.XamlRoot = currentPage.XamlRoot;
@@ -416,9 +416,9 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 isMutiFile = false;
-                if (menuItem != null && menuItem.Tag.ToString() != null)
+                if (menuItem is not null && menuItem.Tag.ToString() is not null)
                 {
-                    if (SelectedMusic != null)
+                    if (SelectedMusic is not null)
                     {
                         if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
                         {
@@ -440,7 +440,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void IsFavouriteIconButtonChange(Music music)
         {
-            if (music != null)
+            if (music is not null)
             {
                 if (music.IsFavorite)
                 {
@@ -460,7 +460,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             string albumName = textBlock.Text;
             // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
-            if (parentPage != null)
+            if (parentPage is not null)
             {
                 parentPage.SelectBarAlbum(albumName);
             }
@@ -469,7 +469,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void AuthorTextBlock_Tapped(TextBlock textBlock)
         {
             string artist = textBlock.Text;
-            if (parentPage != null)
+            if (parentPage is not null)
             {
                 parentPage.SelectBarArtist(artist);
             }
@@ -479,7 +479,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
             // 如果找到匹配项，则在其后插入新列表
-            if (index != -1 && uniqueSelectedMusics != null && uniqueSelectedMusics.Any())
+            if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.Any())
             {
                 var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
                 var newMusicsToAdd = uniqueSelectedMusics
@@ -496,7 +496,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
             // 如果找到匹配项，则在其后插入新列表
-            if (index != -1 && music != null)
+            if (index != -1 && music is not null)
             {
                 var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
                 if (!existingIds.Contains(music.Id))
@@ -509,7 +509,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void PlayMusic(Music music)
         {
-            if (music != null && parentPage != null)
+            if (music is not null && parentPage is not null)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = MusicList;
                 parentPage.PlayMusic(music: music, IsChangeList: true);

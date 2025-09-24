@@ -169,7 +169,7 @@ public class CloudMusicSearchHelper
 
     private static async Task<string> GetLyricsUrl(string songId,CancellationToken cancellationToken = default)
     {
-        if (songId != null)
+        if (songId is not null)
         {
             var api = new NeteaseCloudMusicApi();
             var (_, lyricResult) = await api.RequestAsync(
@@ -198,7 +198,7 @@ public class CloudMusicSearchHelper
     }
 
     private static async Task<string> GetTranslateLyrics(string songId) {
-        if (songId != null)
+        if (songId is not null)
         {
             var api = new NeteaseCloudMusicApi();
             var (_, lyricResult) = await api.RequestAsync(
@@ -221,7 +221,7 @@ public class CloudMusicSearchHelper
 
     public static async Task<string> GetAlbumUrl(string albumId)
     {
-        if (albumId != null)
+        if (albumId is not null)
         {
             var api = new NeteaseCloudMusicApi();
             var (_, albumResult) = await api.RequestAsync(

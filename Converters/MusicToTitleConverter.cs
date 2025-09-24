@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is Music music)
             {
-                if (music != null)
+                if (music is not null)
                 {
                     return music.Title;
                 }

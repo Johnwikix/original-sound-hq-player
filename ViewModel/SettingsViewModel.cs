@@ -345,7 +345,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _selectedDevice, value))
                 {
-                    if (value != null)
+                    if (value is not null)
                     {
                         if (IsRealDevceChange)
                         {
@@ -373,7 +373,7 @@ namespace WinUIMusicPlayer.ViewModel
         //    {
         //        if (SetProperty(ref _deviceName, value))
         //        {
-        //            if (value != null)
+        //            if (value is not null)
         //            {                       
         //                if (IsRealDevceChange)
         //                {
@@ -981,7 +981,7 @@ namespace WinUIMusicPlayer.ViewModel
             folderPicker.FileTypeFilter.Add("*");
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
             var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
+            if (folder is not null)
             {
                 MusicCoverCache = folder.Path;
                 AppSettings.MusicCoverCache = folder.Path;

@@ -80,7 +80,7 @@ namespace WinUIMusicPlayer.Services
                     subFolders = RecordInitialFolderTimes(folder, uniqueDeviceId);
                 });
                 List<UsbDeviceSubFolder> subFoldersInDb = await MusicDatabaseService.GetUsbDeviceSubFolders(uniqueDeviceId);
-                if (subFoldersInDb != null && subFoldersInDb.Count > 0)
+                if (subFoldersInDb is not null && subFoldersInDb.Count > 0)
                 {
                     foreach (UsbDeviceSubFolder subFolder in subFolders)
                     {

@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
                 App.MainWindow.styleChanged += MainWindow_styleChanged;
@@ -63,7 +63,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
         {
-            if (App.MainWindow != null)
+            if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.View.SubView
         private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
         {
             var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music != null)
+            if (music is not null)
             {
                 try
                 {
@@ -194,7 +194,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             ConfirmFlyout.Hide();
             var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music != null)
+            if (music is not null)
             {
                 try
                 {
@@ -218,7 +218,7 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             }
-            if (albumCoverData != null)
+            if (albumCoverData is not null)
             {
                 AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
             }
@@ -231,7 +231,7 @@ namespace WinUIMusicPlayer.View.SubView
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
             string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);
-            if (lyrics != null)
+            if (lyrics is not null)
             {
                 LyricsTextBox.Text = lyrics;
             }
@@ -266,7 +266,7 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(musicDetail.Path);
                 Music music = await ToolUtils.GetMusicInfo(storageFile, musicDetail.Path);
-                if (music != null)
+                if (music is not null)
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
@@ -305,7 +305,7 @@ namespace WinUIMusicPlayer.View.SubView
                 openPicker.FileTypeFilter.Add(".png");
                 WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
                 StorageFile file = await openPicker.PickSingleFileAsync();
-                if (file != null)
+                if (file is not null)
                 {
                     using (Stream stream = await file.OpenStreamForReadAsync())
                     {
@@ -329,7 +329,7 @@ namespace WinUIMusicPlayer.View.SubView
             picker.SuggestedFileName = "SavedImage";
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
             StorageFile file = await picker.PickSaveFileAsync();
-            if (file != null)
+            if (file is not null)
             {
                 try
                 {

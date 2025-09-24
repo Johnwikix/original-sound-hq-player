@@ -59,14 +59,14 @@ namespace WinUIMusicPlayer.ViewModel
             _contextMenuService = contextMenuService;
             _contextMenuService.showTransmission += (s, e) =>
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.ShowTransmission();
                 }
             };
             _contextMenuService.hideTransmission += (s, e) =>
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.HideTransmission();
                 }
@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.ViewModel
             parentPage.ViewModel.CurrentArtist = null;
             parentPage.ViewModel.PageType = "artistBrowse";
             parentPage.DisableBackButton();
-            if (_lastSearchText != AppData.searchText || MusicList == null || MusicList.Count == 0)
+            if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
             {
                 _lastSearchText = AppData.searchText;
                 InitializeData();
@@ -157,10 +157,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var gridView = sender as GridView;
             GridViewItem item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
-            if (item != null)
+            if (item is not null)
             {
                 Music artist = item.Content as Music;
-                if (parentPage != null && _musicBrowseViewModel != null)
+                if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
                     //parentPage.LoadArtistMusic(artist);
                     _musicBrowseViewModel.PageType = "artist";
@@ -178,12 +178,12 @@ namespace WinUIMusicPlayer.ViewModel
             var originalSource = e.OriginalSource as FrameworkElement;
             // 向上遍历查找 GridViewItem
             GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-            if (clickedItem != null)
+            if (clickedItem is not null)
             {
                 // 从 GridViewItem 获取数据项
                 var artist = clickedItem.Content as Music;
 
-                if (artist != null)
+                if (artist is not null)
                 {
                     // 显示专辑右键菜单
                     await _contextMenuService.ShowAlbumContextMenu(
@@ -201,9 +201,9 @@ namespace WinUIMusicPlayer.ViewModel
         private void PlayingArtist(object? sender, Music e)
         {
             List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
-            if (artists != null && artists.Count > 0)
+            if (artists is not null && artists.Count > 0)
             {
-                if (parentPage != null)
+                if (parentPage is not null)
                 {
                     parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(artists);
                     parentPage.PlayMusic(music: artists[0], IsChangeList: true);

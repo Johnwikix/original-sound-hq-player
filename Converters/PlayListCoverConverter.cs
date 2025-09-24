@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Converters
         {
             if (AppSettings.IsPlayListCoverEnabled)
             {
-                if (value is Music music && music != null)
+                if (value is Music music && music is not null)
                 {
 
                     if (AppData.albumCoverCache.TryGetValue(music.Album, out var cached))

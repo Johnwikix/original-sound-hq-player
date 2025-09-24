@@ -84,7 +84,7 @@ namespace WinUIMusicPlayer.Services
 
             //List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
             //USB设备相关菜单项
-            if (AppData.usbStorageDevices != null && AppData.usbStorageDevices.Count > 0)
+            if (AppData.usbStorageDevices is not null && AppData.usbStorageDevices.Count > 0)
             {
                 MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
                 {
@@ -136,7 +136,7 @@ namespace WinUIMusicPlayer.Services
             var data = menuItem.DataContext as dynamic;
             Music item = data.MusicItem as Music;
             UsbStorageDevice device = data.UsbStorageDevice;
-            if (item != null)
+            if (item is not null)
             {
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count() > 0)
+                if (musicList is not null && musicList.Count() > 0)
                 {
                     showTransmission?.Invoke(this, EventArgs.Empty);
                     var usbWriter = new UsbWriterHelper();
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.Services
                     foreach (var music in musicList)
                     {
                         var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
-                        if (existingMusic != null)
+                        if (existingMusic is not null)
                         {
                             continue; // 如果已经存在，则跳过
                         }
@@ -185,7 +185,7 @@ namespace WinUIMusicPlayer.Services
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
-            if (music != null)
+            if (music is not null)
             {
                 if (type == "album")
                 {
@@ -207,7 +207,7 @@ namespace WinUIMusicPlayer.Services
         {
             var menuItem = sender as MenuFlyoutItem;
             var music = menuItem?.DataContext as Music;
-            if (music != null)
+            if (music is not null)
             {
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count() > 0)
+                if (musicList is not null && musicList.Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToFavour(musicList);
                     AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -237,7 +237,7 @@ namespace WinUIMusicPlayer.Services
                 //rescanFolderStart?.Invoke(this, EventArgs.Empty);
                 var menuItem = sender as MenuFlyoutItem;
                 var item = menuItem?.DataContext as Music;
-                if (item != null)
+                if (item is not null)
                 {
                     if (!string.IsNullOrEmpty(item.FolderPath))
                     {
@@ -260,10 +260,10 @@ namespace WinUIMusicPlayer.Services
             var menuItem = sender as MenuFlyoutItem;
             var item = menuItem?.DataContext as Music;
 
-            if (item != null)
+            if (item is not null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(item);
-                if (albumPage != null)
+                if (albumPage is not null)
                 {
                     albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
                 }
@@ -280,7 +280,7 @@ namespace WinUIMusicPlayer.Services
             Music item = data.Item as Music;
             PlayList playlist = data.Playlist;
 
-            if (item != null)
+            if (item is not null)
             {
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
@@ -295,7 +295,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList != null && musicList.Count() > 0)
+                if (musicList is not null && musicList.Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 }

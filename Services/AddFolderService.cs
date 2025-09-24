@@ -110,7 +110,7 @@ namespace WinUIMusicPlayer.Services
             // 添加有效结果到列表（线程安全）
             lock (musicFiles)
             {
-                foreach (var music in results.Where(m => m != null))
+                foreach (var music in results.Where(m => m is not null))
                 {
                     musicFiles.Add(music);
                 }
