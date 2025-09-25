@@ -55,9 +55,9 @@ namespace WinUIMusicPlayer.Services
         private double _currentSeconds;
         private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
-        private double MinDb = -70;
+        private double MinDb = -60;
         private double MaxDb = 0;
-        private double MiddleDb = -35;
+        private double MiddleDb = -30;
         private PeakEQ _peakEQ;
 
         public BassMusicPlaybackService(NotificationService notificationService)
@@ -604,7 +604,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 else if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
-                    if (volume > 0.5)
+                    if (volume > 0.7)
                     {
                         volume = (float)DbToLinear(MiddleDb);
                         BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)MiddleDb);
@@ -632,7 +632,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 DisposeStream();                
-                if (AppSettings.OutputMode.Contains("Wasapi"))
+                if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
                     BassDsd.DefaultGain = AppSettings.dsdGain;
                     BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
@@ -644,6 +644,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                     }
+                } else if(AppSettings.OutputMode.Contains("WasapiShared")){
+                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else
                 {
