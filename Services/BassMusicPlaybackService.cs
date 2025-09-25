@@ -541,8 +541,7 @@ namespace WinUIMusicPlayer.Services
         private bool SwitchDevice()
         {
             bool result = false;
-            // 获取当前流的格式信息
-            ChannelInfo channelInfo = Bass.ChannelGetInfo(_currentStream);           
+            Bass.ChannelGetInfo(_currentStream,out var channelInfo);           
             switch (AppSettings.OutputMode)
             {
                 case "WasapiShared":
@@ -629,17 +628,18 @@ namespace WinUIMusicPlayer.Services
                 DisposeStream();
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
-                    if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
-                    {
-                        BassDsd.DefaultGain = AppSettings.dsdGain;
-                        BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;                        
+                    if (AppSettings.IsDopEnabled && ( music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
+                    {                        
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode);                        
+                    }else if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)) {
+                        BassDsd.DefaultGain = AppSettings.dsdGain;
+                        BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
+                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.Decode);
                     }
                     else
                     {
                         _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                     }
-                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else
                 {
@@ -650,7 +650,6 @@ namespace WinUIMusicPlayer.Services
                     notificationService.SendNotification(ToolUtils.GetString("Error"), $"创建流失败: {Bass.LastError}");
                     return;
                 }
-                //InitializeEqualizer();
                 Bass.ChannelSetSync(_currentStream, SyncFlags.End, 0, _syncEndCallback); // 设置播放结束回调
                 Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _syncFailCallback); // 设置播放失败回调
                 ToggleEqualizer();
