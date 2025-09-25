@@ -56,18 +56,18 @@ namespace WinUIMusicPlayer.Services
         private double _currentSeconds;
         private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
-        private readonly float[] _eqGains = [
-                                                (float)AppSettings.equalizer["32Hz"],
-                                                (float)AppSettings.equalizer["64Hz"],
-                                                (float)AppSettings.equalizer["125Hz"],
-                                                (float)AppSettings.equalizer["250Hz"],
-                                                (float)AppSettings.equalizer["500Hz"],
-                                                (float)AppSettings.equalizer["1kHz"],
-                                                (float)AppSettings.equalizer["2kHz"],
-                                                (float)AppSettings.equalizer["4kHz"],
-                                                (float)AppSettings.equalizer["8kHz"],
-                                                (float)AppSettings.equalizer["16kHz"]
-                                            ];
+        //private readonly float[] _eqGains = [
+        //                                        (float)AppSettings.equalizer["32Hz"],
+        //                                        (float)AppSettings.equalizer["64Hz"],
+        //                                        (float)AppSettings.equalizer["125Hz"],
+        //                                        (float)AppSettings.equalizer["250Hz"],
+        //                                        (float)AppSettings.equalizer["500Hz"],
+        //                                        (float)AppSettings.equalizer["1kHz"],
+        //                                        (float)AppSettings.equalizer["2kHz"],
+        //                                        (float)AppSettings.equalizer["4kHz"],
+        //                                        (float)AppSettings.equalizer["8kHz"],
+        //                                        (float)AppSettings.equalizer["16kHz"]
+        //                                    ];
         private PeakEQ _peakEQ;
 
         public BassMusicPlaybackService(NotificationService notificationService)
@@ -481,7 +481,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (_currentStream != 0)
                     {
-                        _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 2.5);
+                        _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 1.0);
                         // 为每个频段添加Band
                         for (int i = 0; i < _eqFrequencies.Length; i++)
                         {
