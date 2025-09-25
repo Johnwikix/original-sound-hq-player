@@ -24,6 +24,8 @@
                             <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
                             <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
                             <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
+                            <MenuFlyoutItem x:Uid="FlyoutConvertOggItem" Click="ConvertAudio_Click" Tag="ogg" />
+                            <MenuFlyoutItem x:Uid="FlyoutConvertOpusItem" Click="ConvertAudio_Click" Tag="opus" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />

@@ -14,9 +14,6 @@ namespace WinUIMusicPlayer.AudioConverters
         public BassAudioConverter()
         {
             BassManager.Initialize();
-            //var version = BassEnc.Version;
-            //var mp3Version = BassEnc_Mp3.Version;
-            //Debug.WriteLine($"BassEnc: {version},{mp3Version}");
         }       
 
         /// <summary>
@@ -77,7 +74,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
                 }
-                var encoder = BassEnc_Mp3.Start(stream, "lame -b 320", EncodeFlags.Default, outputPath);
+                var encoder = BassEnc_Mp3.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
                 while (true)
@@ -125,6 +122,90 @@ namespace WinUIMusicPlayer.AudioConverters
                     flags = EncodeFlags.ConvertFloatTo24Bit;
                 }
                 var encoder = BassEnc_Flac.Start(stream, " --best", flags, outputPath);
+                long length = Bass.ChannelGetLength(stream);
+                long current = 0;
+                while (true)
+                {
+                    var buffer = new byte[16384];
+                    current += 16384;
+                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
+                    if (current % 1048576 == 0)
+                    {
+                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                    }
+                    if (c <= 0) break;
+                }
+                BassEnc.EncodeStop(stream);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"发生错误：{ex.Message}");
+            }
+            finally
+            {
+                if (stream != 0)
+                {
+                    Bass.StreamFree(stream);
+                }
+                SaveMetaData(inputPath, outputPath);
+                progressEvent?.Invoke(this, 100);
+            }
+        }
+
+        public void ConvertToOgg(string inputPath, string outputPath)
+        {
+            int stream = 0;
+            try
+            {
+                // 创建音频流
+                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
+                if (stream == 0)
+                {
+                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
+                }               
+                var encoder = BassEnc_Ogg.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
+                long length = Bass.ChannelGetLength(stream);
+                long current = 0;
+                while (true)
+                {
+                    var buffer = new byte[16384];
+                    current += 16384;
+                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
+                    if (current % 1048576 == 0)
+                    {
+                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                    }
+                    if (c <= 0) break;
+                }
+                BassEnc.EncodeStop(stream);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"发生错误：{ex.Message}");
+            }
+            finally
+            {
+                if (stream != 0)
+                {
+                    Bass.StreamFree(stream);
+                }
+                SaveMetaData(inputPath, outputPath);
+                progressEvent?.Invoke(this, 100);
+            }
+        }
+
+        public void ConvertToOpus(string inputPath, string outputPath)
+        {
+            int stream = 0;
+            try
+            {
+                // 创建音频流
+                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
+                if (stream == 0)
+                {
+                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
+                }
+                var encoder = BassEnc_Opus.Start(stream, " --bitrate 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
                 while (true)

@@ -55,64 +55,25 @@ namespace WinUIMusicPlayer.Services
                             });
                         }                        
                         break;
-                }
-                //switch (music.Extension.ToLower())
-                //{
-                //    case "mp3":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertMp3(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "flac":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertFlac(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "aiff":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertAiff(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "aif":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertAiff(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "wav":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertWav(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "ogg":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertOgg(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "dsf":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertDSDToWav(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    case "dff":
-                //        await Task.Run(() =>
-                //        {
-                //            converter.ConvertDSDToWav(music.Path, outputPath, type);
-                //        });
-                //        break;
-                //    default:
-                //        await Task.Run(() =>
-                //        {
-                //            converter.FFmpegConverter(music.Path, outputPath, type, music.BitDepth <= 16 ? 16 : music.BitDepth);
-                //        });
-                //        break;
-                //}
+                    case "ogg":
+                        if (!music.Extension.Equals("ogg", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await Task.Run(() =>
+                            {
+                                bassAudioConverter.ConvertToOgg(music.Path, outputPath);
+                            });
+                        }
+                        break;
+                    case "opus":
+                        if (!music.Extension.Equals("opus", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await Task.Run(() =>
+                            {
+                                bassAudioConverter.ConvertToOpus(music.Path, outputPath);
+                            });
+                        }
+                        break;
+                }                
             }
             catch (Exception)
             {

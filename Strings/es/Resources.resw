@@ -855,4 +855,10 @@
   <data name="DefaultDevice" xml:space="preserve">
     <value>Dispositivos predeterminados</value>
   </data>
+  <data name="FlyoutConvertOggItem.Text" xml:space="preserve">
+    <value>Ogg</value>
+  </data>
+  <data name="FlyoutConvertOpusItem.Text" xml:space="preserve">
+    <value>Opus</value>
+  </data>
 </root>
