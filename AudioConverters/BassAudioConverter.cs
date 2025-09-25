@@ -1,13 +1,9 @@
 ﻿using ManagedBass;
 using ManagedBass.Enc;
-using ManagedBass.Fx;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 using WinUIMusicPlayer.Manager;
 
 namespace WinUIMusicPlayer.AudioConverters
@@ -19,7 +15,8 @@ namespace WinUIMusicPlayer.AudioConverters
         {
             BassManager.Initialize();
             var version = BassEnc.Version;
-            Debug.WriteLine($"BassEnc: {version}");
+            var mp3Version = BassEnc_Mp3.Version;
+            Debug.WriteLine($"BassEnc: {version},{mp3Version}");
         }       
 
         /// <summary>
@@ -56,6 +53,77 @@ namespace WinUIMusicPlayer.AudioConverters
             finally
             {
                 if (stream != 0 ) Bass.StreamFree(stream);
+                SaveMetaData(inputPath, outputPath);
+                progressEvent?.Invoke(this, 100);
+            }
+        }
+
+        public void ConvertToMp3(string inputPath, string outputPath)
+        {
+            int stream = 0;
+            try
+            {
+                // 创建音频流
+                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode);
+                if (stream == 0)
+                {
+                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
+                }
+                var encoder = BassEnc_Mp3.Start(stream, "lame -b 320", EncodeFlags.Default, outputPath);
+                while (true)
+                {
+                    var buffer = new byte[4096];
+                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
+                    if (c <= 0) break;
+                }
+                BassEnc.EncodeStop(stream);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"发生错误：{ex.Message}");
+            }
+            finally
+            {
+                if (stream != 0)
+                {
+                    Bass.StreamFree(stream);
+                }
+                SaveMetaData(inputPath, outputPath);
+                progressEvent?.Invoke(this, 100);
+            }
+        }
+
+        public void ConvertToFlac(string inputPath, string outputPath)
+        {
+            int stream = 0;
+            try
+            {
+                // 创建音频流
+                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode);
+                if (stream == 0)
+                {
+                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
+                }
+                var encoder = BassEnc_Flac.Start(stream, null, EncodeFlags.Default, outputPath);
+                while (true)
+                {
+                    var buffer = new byte[4096];
+                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
+                    if (c <= 0) break;
+                }
+                BassEnc.EncodeStop(stream);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"发生错误：{ex.Message}");
+            }
+            finally
+            {
+                if (stream != 0)
+                {
+                    Bass.StreamFree(stream);
+                }
+                SaveMetaData(inputPath, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
@@ -202,6 +270,35 @@ namespace WinUIMusicPlayer.AudioConverters
             finally
             {
                 Bass.StreamFree(stream);
+            }
+        }
+
+        private void SaveMetaData(string inputFile, string outputPath)
+        {
+            try
+            {
+                using (var originalFile = TagLib.File.Create(inputFile))
+                {
+                    using (var newFile = TagLib.File.Create(outputPath))
+                    {
+                        newFile.Tag.Title = originalFile.Tag.Title;
+                        newFile.Tag.Performers = originalFile.Tag.Performers;
+                        newFile.Tag.Album = originalFile.Tag.Album;
+                        newFile.Tag.Year = originalFile.Tag.Year;
+                        newFile.Tag.Track = originalFile.Tag.Track;
+                        if (originalFile.Tag.Pictures.Length > 0)
+                        {
+                            var picture = originalFile.Tag.Pictures[0];
+                            newFile.Tag.Pictures = new[] { picture };
+                        }
+
+                        newFile.Save();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"写入元信息和封面时出错: {ex.Message}");
             }
         }
     }

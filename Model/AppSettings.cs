@@ -1,6 +1,5 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using WinUIMusicPlayer.Utils;
@@ -9,7 +8,7 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
-        public static MMDeviceCollection OutputDevices { get; set; }
+        //public static MMDeviceCollection OutputDevices { get; set; }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int Latency { get; set; } = 400;
 
