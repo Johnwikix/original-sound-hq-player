@@ -560,6 +560,7 @@ namespace WinUIMusicPlayer.Services
             MaxDb = info.MaxVolume;
             MinDb = info.MinVolume;
             MiddleDb = (MinDb + MaxDb) / 2;
+            //Debug.WriteLine(MinDb);
             return result;
         }
 
