@@ -465,7 +465,11 @@ namespace WinUIMusicPlayer.Services
 
         public void ToggleEqualizer()
         {
-            if (AppSettings.IsEqualizerEnabled)
+            if (AppSettings.IsEqualizerEnabled 
+                && !(AppSettings.IsDopEnabled 
+                && AppSettings.OutputMode.Contains("WasapiExclusive") 
+                && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))                    
+               )
             {
                 try
                 {
