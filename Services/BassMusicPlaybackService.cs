@@ -625,16 +625,14 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                DisposeStream();
+                DisposeStream();                
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
+                    BassDsd.DefaultGain = AppSettings.dsdGain;
+                    BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
                     if (AppSettings.IsDopEnabled && ( music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                     {                        
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode);                        
-                    }else if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)) {
-                        BassDsd.DefaultGain = AppSettings.dsdGain;
-                        BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
-                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.Decode);
                     }
                     else
                     {

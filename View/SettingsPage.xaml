@@ -101,7 +101,11 @@
                                     Value="{Binding ViewModel.Latency, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="DSD2PCMFreq">
-                                <ComboBox Width="300" SelectedValue="{Binding ViewModel.DsdPcmFreq, Mode=TwoWay}" SelectedValuePath="Tag">
+                                <ComboBox
+                                    Width="300"
+                                    IsEnabled="{Binding ViewModel.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
+                                    SelectedValue="{Binding ViewModel.DsdPcmFreq, Mode=TwoWay}"
+                                    SelectedValuePath="Tag">
                                     <ComboBoxItem Content="44100Hz" Tag="44100" />
                                     <ComboBoxItem Content="88200Hz" Tag="88200" />
                                     <ComboBoxItem Content="176400Hz" Tag="176400" />
@@ -112,12 +116,13 @@
                                 <NumberBox
                                     x:Name="DSDGainNumberBox"
                                     Width="300"
+                                    IsEnabled="{Binding ViewModel.IsDopEnabled, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
                                     Minimum="0"
                                     SmallChange="1"
                                     SpinButtonPlacementMode="Inline"
                                     Value="{Binding ViewModel.DsdGain, Mode=TwoWay}" />
                             </controls:SettingsCard>
-                            <controls:SettingsCard Header="DSD Dop">
+                            <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}" Header="DSD Dop">
                                 <ToggleSwitch IsOn="{Binding ViewModel.IsDopEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>
                         </controls:SettingsExpander.Items>

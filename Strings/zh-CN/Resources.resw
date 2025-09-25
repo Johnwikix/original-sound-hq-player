@@ -849,4 +849,7 @@
   <data name="DSD2PCMFreq.Header" xml:space="preserve">
     <value>DSD到PCM采样率</value>
   </data>
+  <data name="DsdDopDescription" xml:space="preserve">
+    <value>通过PCM帧的原始格式DSD，dsd64需要最低176.2khz、24bit的硬件，dsd128需要352.4khz、24bit的硬件以此类推</value>
+  </data>
 </root>
