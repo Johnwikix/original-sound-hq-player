@@ -45,7 +45,6 @@ namespace WinUIMusicPlayer.Services
         private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
-        //private bool isEnableEq = false;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly object _streamLock = new();
         private readonly object _waveChannelLock = new();
@@ -56,18 +55,9 @@ namespace WinUIMusicPlayer.Services
         private double _currentSeconds;
         private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
-        //private readonly float[] _eqGains = [
-        //                                        (float)AppSettings.equalizer["32Hz"],
-        //                                        (float)AppSettings.equalizer["64Hz"],
-        //                                        (float)AppSettings.equalizer["125Hz"],
-        //                                        (float)AppSettings.equalizer["250Hz"],
-        //                                        (float)AppSettings.equalizer["500Hz"],
-        //                                        (float)AppSettings.equalizer["1kHz"],
-        //                                        (float)AppSettings.equalizer["2kHz"],
-        //                                        (float)AppSettings.equalizer["4kHz"],
-        //                                        (float)AppSettings.equalizer["8kHz"],
-        //                                        (float)AppSettings.equalizer["16kHz"]
-        //                                    ];
+        private double MinDb = -70;
+        private double MaxDb = 0;
+        private double MiddleDb = -35;
         private PeakEQ _peakEQ;
 
         public BassMusicPlaybackService(NotificationService notificationService)
@@ -566,6 +556,10 @@ namespace WinUIMusicPlayer.Services
                             AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
                     break;
             }
+            BassWasapi.GetInfo(out var info);
+            MaxDb = info.MaxVolume;
+            MinDb = info.MinVolume;
+            MiddleDb = (MinDb + MaxDb) / 2;
             return result;
         }
 
@@ -609,7 +603,18 @@ namespace WinUIMusicPlayer.Services
                 }
                 else if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
-                    BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
+                    if (volume > 0.5)
+                    {
+                        volume = (float)DbToLinear(MiddleDb);
+                        BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)MiddleDb);
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            MusicBrowseViewModel.Volume = volume * 100;
+                        });
+                    }
+                    else {
+                        BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)LinearToDb(volume));
+                    }                                    
                 }
                 Debug.WriteLine($"WASAPI模式启动成功");
                 return true;
@@ -847,7 +852,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
-                    BassWasapi.SetVolume(WasapiVolumeTypes.WindowsHybridCurve, (float)volume);
+                    BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)LinearToDb(volume));
                 }
                 else if (AppSettings.OutputMode.Contains("WasapiShared"))
                 {
@@ -923,6 +928,27 @@ namespace WinUIMusicPlayer.Services
                 notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
 
+        }
+
+        public double LinearToDb(double linearValue)
+        {
+            if (linearValue <= 0)
+                return MinDb;
+            if (linearValue >= 1) {
+                return MaxDb;
+            }
+            // 映射到0到-65.25dB的范围
+            double dbValue = MaxDb + (MinDb - MaxDb) * (1 - Math.Log10(9 * linearValue + 1) / Math.Log10(10));
+            return dbValue;
+        }
+
+        public double DbToLinear(double dbValue)
+        {
+            dbValue = Math.Clamp(dbValue, MinDb, MaxDb);
+            if (dbValue <= MinDb)
+                return 0;
+            double dbPosition = (dbValue - MaxDb) / (MinDb - MaxDb);
+            return (Math.Pow(10, (1 - dbPosition) * Math.Log10(10)) - 1) / 9;
         }
 
         private void DisposeStream()

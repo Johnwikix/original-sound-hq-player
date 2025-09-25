@@ -162,7 +162,6 @@ namespace WinUIMusicPlayer.ViewModel
                         _musicPlaybackService.volume = (float)value / 100;
                         if (_musicPlaybackService._currentStream != 0)
                         {
-                            //_musicPlaybackService.multiTypeAudioReader.Volume = AppSettings.isDsd ? _musicPlaybackService.volume * (float)Math.Pow(10, AppSettings.dsdGain / 20.0) : _musicPlaybackService.volume;
                             _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
                         }
                     }
