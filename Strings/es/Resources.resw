@@ -852,4 +852,7 @@
   <data name="DsdDopDescription" xml:space="preserve">
     <value>A través del formato original del cuadro pcm, dsd64 requiere un hardware mínimo de 176,2 khz, 24 bits, dsd128 necesita un hardware de 352,4 khz, 24 bits y así sucesivamente.</value>
   </data>
+  <data name="DefaultDevice" xml:space="preserve">
+    <value>Dispositivos predeterminados</value>
+  </data>
 </root>

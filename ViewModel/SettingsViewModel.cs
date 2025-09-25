@@ -16,6 +16,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -843,7 +844,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 筛选有效的WASAPI设备：已启用且是WASAPI设备
                     if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
                     {
-                        if (!BassOutputDevices.Any(d => d.Name == deviceInfo.Name))
+                        if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
                         {
                             Debug.WriteLine($"{deviceInfo.Name}: {i}");
                             BassOutputDevices.Add(new BassOutputDevice
@@ -855,8 +856,19 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-            SelectedDevice = BassOutputDevices.FirstOrDefault(d => d.Name == AppSettings.DeviceName)
-                ?? BassOutputDevices.FirstOrDefault();
+            BassOutputDevices.Add(new BassOutputDevice
+            {
+                Name = ToolUtils.GetString("DefaultDevice"),
+                Id = -1
+            });
+            var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
+            if (device is null)
+            {
+                SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == ToolUtils.GetString("DefaultDevice"));
+            }
+            else {
+                SelectedDevice = device;
+            }
         }
 
         [RelayCommand]

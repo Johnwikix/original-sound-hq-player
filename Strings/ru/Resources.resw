@@ -852,4 +852,7 @@
   <data name="DsdDopDescription" xml:space="preserve">
     <value>В оригинальном формате DSD с PCM - фреймом для dsd64 требуется минимум 176,2 кГц, 24 - битное оборудование, для dsd128 требуется 352,4 кГц, 24 - битное оборудование и так далее.</value>
   </data>
+  <data name="DefaultDevice" xml:space="preserve">
+    <value>Устройства по умолчанию</value>
+  </data>
 </root>

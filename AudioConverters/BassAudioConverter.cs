@@ -1,7 +1,9 @@
 ﻿using ManagedBass;
+using ManagedBass.Enc;
 using ManagedBass.Fx;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,6 +18,8 @@ namespace WinUIMusicPlayer.AudioConverters
         public BassAudioConverter()
         {
             BassManager.Initialize();
+            var version = BassEnc.Version;
+            Debug.WriteLine($"BassEnc: {version}");
         }       
 
         /// <summary>

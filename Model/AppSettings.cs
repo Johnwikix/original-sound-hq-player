@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Media;
 using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -18,7 +19,7 @@ namespace WinUIMusicPlayer.Model
 
         //public static List<string> outputDeviceList = [];
         public static int BassOutputDeviceId { get; set; } = -1;
-        public static string DeviceName { get; set; } = "Default";
+        public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public static string DefualtEntry { get; set; } = "AddFolder";
         public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;

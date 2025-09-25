@@ -852,4 +852,7 @@
   <data name="DsdDopDescription" xml:space="preserve">
     <value>PCMフレームのオリジナルフォーマットDSDにより、dsd 64には最低176.2 khz、24 bitのハードウェアが必要であり、dsd 128には352.4 khz、24 bitのハードウェアが必要である。</value>
   </data>
+  <data name="DefaultDevice" xml:space="preserve">
+    <value>デフォルトデバイス</value>
+  </data>
 </root>

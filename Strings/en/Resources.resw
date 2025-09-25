@@ -852,4 +852,7 @@
   <data name="DsdDopDescription" xml:space="preserve">
     <value>Using the original format DSD of PCM frames, DSD64 requires a minimum hardware of 176.2kHz and 24bit, DSD128 requires hardware of 352.4kHz and 24bit, and so on</value>
   </data>
+  <data name="DefaultDevice" xml:space="preserve">
+    <value>Default Device</value>
+  </data>
 </root>

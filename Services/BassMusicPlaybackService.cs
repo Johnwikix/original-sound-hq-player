@@ -575,14 +575,14 @@ namespace WinUIMusicPlayer.Services
             {
                 // 停止当前WASAPI流
                 StopWasapiPlayback();
-                // 获取默认音频设备
-                if (AppSettings.BassOutputDeviceId == -1)
-                {
-                    Debug.WriteLine($"无法获取默认WASAPI设备");
-                    return false;
-                }
-                var info = BassWasapi.GetDeviceInfo(AppSettings.BassOutputDeviceId);
-                Debug.WriteLine($"使用WASAPI设备: {info.Name}");
+                //// 获取默认音频设备
+                //if (AppSettings.BassOutputDeviceId == -1)
+                //{
+                //    Debug.WriteLine($"无法获取默认WASAPI设备");
+                //    return false;
+                //}
+                //var info = BassWasapi.GetDeviceInfo(AppSettings.BassOutputDeviceId);
+                //Debug.WriteLine($"使用WASAPI设备: {info.Name}");
                 // 初始化播放模式                
                 var result = SwitchDevice();
                 if (!result)
@@ -599,9 +599,9 @@ namespace WinUIMusicPlayer.Services
                         return false;
                     }
                 }
-                WasapiInfo wasapiInfo;
-                BassWasapi.GetInfo(out wasapiInfo);
-                Debug.WriteLine($"实际WASAPI格式 - 采样率: {wasapiInfo.Frequency}, 声道: {wasapiInfo.Channels}, 格式: {wasapiInfo.Format}");
+                //WasapiInfo wasapiInfo;
+                //BassWasapi.GetInfo(out wasapiInfo);
+                //Debug.WriteLine($"实际WASAPI格式 - 采样率: {wasapiInfo.Frequency}, 声道: {wasapiInfo.Channels}, 格式: {wasapiInfo.Format}");
                 // 设置音量
                 if (AppSettings.OutputMode.Contains("WasapiShared"))
                 {

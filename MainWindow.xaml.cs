@@ -1,10 +1,12 @@
 using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
+using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
@@ -16,6 +18,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Taskbar;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -176,11 +179,11 @@ namespace WinUIMusicPlayer
                 themeStyleHelper.SetAppStyle();
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
-                        LoadMusicList(),
-                        //RefreshDevice(),
+                        LoadMusicList(),                        
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
+                RefreshDevice();
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
@@ -263,24 +266,47 @@ namespace WinUIMusicPlayer
             await MusicDatabaseService.GetPlayListMusic();
         }
 
-        //public async Task RefreshDevice()
-        //{
-        //    try
-        //    {
-        //        await ToolUtils.RefreshDevice();
-        //        if (SettingLoaded is not null)
-        //        {
-        //            DispatcherQueue.TryEnqueue(() =>
-        //            {
-        //                SettingLoaded?.Invoke(this, EventArgs.Empty);
-        //            });
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"À¢–¬“Ù∆µ…Ë±∏ ß∞‹: {ex.Message}");
-        //    }
-        //}
+        public void RefreshDevice()
+        {
+            try
+            {
+                List<BassOutputDevice> BassOutputDevices = [];
+                int n = BassWasapi.DeviceCount;
+                for (int i = 0; i < n; i++)
+                {
+                    if (BassWasapi.GetDeviceInfo(i, out WasapiDeviceInfo deviceInfo))
+                    {
+                        if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
+                        {
+                            if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
+                            {
+                                Debug.WriteLine($"{deviceInfo.Name}: {i}");
+                                BassOutputDevices.Add(new BassOutputDevice
+                                {
+                                    Name = deviceInfo.Name,
+                                    Id = i
+                                });
+                            }
+                        }
+                    }
+                }
+                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
+                if (device is null)
+                {
+                    AppSettings.DeviceName = ToolUtils.GetString("DefaultDevice");
+                    AppSettings.BassOutputDeviceId = -1;
+                }
+                else
+                {
+                    AppSettings.DeviceName = device.Name;
+                    AppSettings.BassOutputDeviceId = device.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"À¢–¬“Ù∆µ…Ë±∏ ß∞‹: {ex.Message}");
+            }
+        }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
