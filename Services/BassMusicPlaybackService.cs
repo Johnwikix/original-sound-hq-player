@@ -486,9 +486,9 @@ namespace WinUIMusicPlayer.Services
                         for (int i = 0; i < _eqFrequencies.Length; i++)
                         {
                             _bandIndices[i] = _peakEQ.AddBand(_eqFrequencies[i]);
-                            Debug.WriteLine($"均衡器频段 {_eqFrequencies[i]}Hz 创建成功，Band索引: {_bandIndices[i]}");
+                            //Debug.WriteLine($"均衡器频段 {_eqFrequencies[i]}Hz 创建成功，Band索引: {_bandIndices[i]}");
                         }
-                        Debug.WriteLine("均衡器初始化完成");
+                        //Debug.WriteLine("均衡器初始化完成");
                     }
                 }
                 catch (Exception ex)
@@ -503,12 +503,12 @@ namespace WinUIMusicPlayer.Services
         {
             if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
             {
-                Debug.WriteLine($"无效的频段索引: {bandIndex}");
+                //Debug.WriteLine($"无效的频段索引: {bandIndex}");
                 return;
             }
             if (_peakEQ == null)
             {
-                Debug.WriteLine("均衡器未初始化");
+                //Debug.WriteLine("均衡器未初始化");
                 return;
             }
 
@@ -516,7 +516,7 @@ namespace WinUIMusicPlayer.Services
             {
                 // 使用UpdateBand方法更新指定频段的增益
                 _peakEQ.UpdateBand(_bandIndices[bandIndex], gain);
-                Debug.WriteLine($"频段 {_eqFrequencies[bandIndex]}Hz (Band {_bandIndices[bandIndex]}) 增益设置为 {gain}dB");
+                //Debug.WriteLine($"频段 {_eqFrequencies[bandIndex]}Hz (Band {_bandIndices[bandIndex]}) 增益设置为 {gain}dB");
             }
             catch (Exception ex)
             {
@@ -632,7 +632,7 @@ namespace WinUIMusicPlayer.Services
                     BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
                     if (AppSettings.IsDopEnabled && ( music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                     {                        
-                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode);                        
+                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);                        
                     }
                     else
                     {
@@ -641,7 +641,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    _currentStream = Bass.CreateStream(music.Path);
+                    _currentStream = Bass.CreateStream(music.Path,0,0,BassFlags.Default | BassFlags.AsyncFile);
                 }
                 if (_currentStream == 0)
                 {
