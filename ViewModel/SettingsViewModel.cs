@@ -771,10 +771,6 @@ namespace WinUIMusicPlayer.ViewModel
             LrcAPISource = AppSettings.LrcAPISource;
             // 初始化输出模式  
             OutputModeTag = AppSettings.OutputMode;
-            // 初始化输出设备列表  
-            //OutputDevices = new ObservableCollection<string>(AppSettings.outputDeviceList);
-            // 初始化设备名称
-            //DeviceName = AppSettings.DeviceName;
             // 初始化背景类型
             BackdropType = AppSettings.AppStyle;
             if (BackdropType != "CustomAcrylicStyle")
@@ -816,7 +812,6 @@ namespace WinUIMusicPlayer.ViewModel
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
             FontFamily = FontFamilyList.FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
-            //IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             IsDopEnabled = AppSettings.IsDopEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
@@ -836,6 +831,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void InitializeWasapiDevice()
         {
             BassOutputDevices.Clear();
+            BassOutputDevices.Add(new BassOutputDevice
+            {
+                Name = ToolUtils.GetString("DefaultDevice"),
+                Id = -1
+            });
             int n = BassWasapi.DeviceCount;
             for (int i = 0; i < n; i++)
             {
@@ -855,12 +855,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 }
-            }
-            BassOutputDevices.Add(new BassOutputDevice
-            {
-                Name = ToolUtils.GetString("DefaultDevice"),
-                Id = -1
-            });
+            }           
             var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
             if (device is null)
             {
