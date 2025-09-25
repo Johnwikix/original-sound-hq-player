@@ -850,7 +850,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>A través del formato original del cuadro pcm, DSD 64 requiere un hardware mínimo de 176,4 khzt, DSD 128 requiere un hardware de 352,8 kHz y así sucesivamente.</value>
+    <value>A través del formato original del cuadro pcm, DSD 64 requiere un hardware mínimo de 176,4 khz, DSD 128 requiere un hardware de 352,8 kHz y así sucesivamente.</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Dispositivos predeterminados</value>

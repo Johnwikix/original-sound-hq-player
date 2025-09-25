@@ -850,7 +850,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>PCMフレームの元のフォーマットDSDを使用すると、dsd 64は最低176.4 khztのハードウェアを必要とし、dsd 128は352.8 khzのハードウェアを必要とします。</value>
+    <value>PCMフレームの元のフォーマットDSDを使用すると、dsd 64は最低176.4 khzのハードウェアを必要とし、dsd 128は352.8 khzのハードウェアを必要とします。</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>デフォルトデバイス</value>
