@@ -22,10 +22,6 @@ namespace WinUIMusicPlayer.AudioConverters
         /// <summary>
         /// 将任意音频文件转换为WAV格式
         /// </summary>
-        /// <param name="inputPath">输入音频文件路径</param>
-        /// <param name="outputPath">输出WAV文件路径</param>
-        /// <param name="targetSampleRate">目标采样率（0表示使用原始采样率）</param>
-        /// <param name="targetChannels">目标声道数（0表示使用原始声道数）</param>
         public void ConvertToWav(string inputPath, string outputPath)
         {
             int stream = 0;
@@ -43,7 +39,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit | EncodeFlags.PCM;
                 }
-                else if (originalResolution == 0 && !(Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff")) {
+                else if ((originalResolution == 0 || originalResolution ==16) && !(Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff")) {
                     flags = EncodeFlags.ConvertFloatTo16BitInt | EncodeFlags.PCM;
                 }
                 var encoder = BassEnc.EncodeStart(stream, outputPath, flags, null);
@@ -128,7 +124,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit;
                 }
-                var encoder = BassEnc_Flac.Start(stream, null, flags, outputPath);
+                var encoder = BassEnc_Flac.Start(stream, " --best", flags, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
                 while (true)
