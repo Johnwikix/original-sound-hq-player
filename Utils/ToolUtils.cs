@@ -562,11 +562,12 @@ namespace WinUIMusicPlayer.Utils
                     var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
                     stream = BassDsd.CreateStream(filePath, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
                     Bass.ChannelGetInfo(stream, out ChannelInfo info);
-                    bool success = Bass.ChannelGetAttribute(
+                    Bass.ChannelGetAttribute(
                                         stream,
                                         ChannelAttribute.Bitrate,
                                         out var bitrate
                     );
+                    double totalSeconds = Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
                     Bass.StreamFree(stream);
                     fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
                     fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
@@ -576,6 +577,7 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.BitDepth = 1;
                     fileInfo.BitRate = (int)bitrate;
                     fileInfo.SampleRate = info.Frequency * 16;
+                    fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
                 }
                 else {
                     Track track = new(filePath);
