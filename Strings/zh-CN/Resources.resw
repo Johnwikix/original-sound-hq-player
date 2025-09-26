@@ -850,7 +850,7 @@
     <value>DSD到PCM采样率</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>通过PCM帧的原始格式DSD，只在Wasapi独占下生效，dsd64需要最低176.4khz的硬件，dsd128需要352.8khz的硬件</value>
+    <value>此模式下均衡器不会生效，Dop只在Wasapi独占下生效，dsd64需要最低176.4khz的硬件，dsd128需要352.8khz的硬件</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>默认设备</value>

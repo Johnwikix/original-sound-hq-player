@@ -1,4 +1,5 @@
-﻿using ManagedBass;
+﻿using ATL;
+using ManagedBass;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -546,29 +548,30 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
-        public static AudioFileInfo GetAudioInfoFromBass(string filePath)
+        public static AudioFileInfo GetAudioInfo(string filePath)
         {
-            // Initialize BASS (only needs to be done once per application)
-            BassManager.Initialize();
-            AudioFileInfo fileInfo = null;
-            int streamHandle = Bass.CreateStream(filePath, 0, 0, BassFlags.Decode);
-            if (streamHandle != 0)
-            {
-                fileInfo = new AudioFileInfo();
-                ChannelInfo info;
-                Bass.ChannelGetInfo(streamHandle, out info);
-                fileInfo.SampleRate = info.Frequency;
-                fileInfo.ChannelCount = info.Channels;
-                fileInfo.BitDepth = info.OriginalResolution == 0 ? 16: info.OriginalResolution;
-                long lengthBytes = Bass.ChannelGetLength(streamHandle);
-                double durationSeconds = Bass.ChannelBytes2Seconds(streamHandle, lengthBytes);
-                fileInfo.Duration = TimeSpan.FromSeconds(durationSeconds);
-                float bitrate = 0;
-                Bass.ChannelGetAttribute(streamHandle, ChannelAttribute.Bitrate, out bitrate);
-                fileInfo.BitRate = (int)bitrate;
-                Bass.StreamFree(streamHandle);
+            AudioFileInfo fileInfo = new AudioFileInfo();
+            try
+            {               
+                Track track = new(filePath);
+                fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(filePath) : track?.Title;
+                fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track?.Album;
+                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家": track?.Artist;
+                fileInfo.Duration = TimeSpan.FromSeconds(track?.Duration ?? 0);
+                fileInfo.SampleRate = (int)track?.SampleRate;
+                fileInfo.ChannelCount = track?.ChannelsArrangement.NbChannels ?? 0;
+                fileInfo.BitDepth = track?.BitDepth ?? 0;
+                fileInfo.BitRate = track?.Bitrate ?? 0;
+                fileInfo.Year = track?.Year ?? 0;
+                fileInfo.Lyrics = track?.Lyrics?.Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics:string.Empty;
+                fileInfo.TrackNumber = track?.TrackNumber ?? 0;
+                fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+                return fileInfo;
             }
-            return fileInfo;
+            catch (Exception) {
+                fileInfo.Title = Path.GetFileNameWithoutExtension(filePath);
+                return fileInfo;
+            }            
         }
 
         //public static AudioFileInfo GetAudioFileInfo(string filePath)
@@ -970,100 +973,57 @@ namespace WinUIMusicPlayer.Utils
                         }
                         if (picture is not null)
                         {
-                            using (var originalStream = new MemoryStream(picture))
-                            {
-                                // 解码原始图像
-                                var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
-                                double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                                uint newWidth = (uint)AppSettings.CoverSize;
-                                uint newHeight = (uint)(newWidth / aspectRatio);
-                                var resizedStream = new InMemoryRandomAccessStream();
-                                var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
-                                encoder.BitmapTransform.ScaledWidth = newWidth;
-                                encoder.BitmapTransform.ScaledHeight = newHeight;
-                                encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
-                                await encoder.FlushAsync();
-                                // 在UI线程中设置bitmap源
-                                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                                {
-                                    try
-                                    {
-                                        resizedStream.Seek(0);
-                                        await bitmap.SetSourceAsync(resizedStream);
-                                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
-                                        {
-                                            AppData.albumCoverCache.TryAdd(album, bitmap);
-                                        }
-                                    }
-                                    catch (Exception)
-                                    {
-                                    }
-                                    finally
-                                    {
-                                        resizedStream.Dispose();
-                                    }
-                                });
-                            }
+                            DecodePicture(picture, album, bitmap);
                         }
                     }
                 }
                 catch (Exception)
                 {
-                    // 静默处理异常
+                    Track track = new(filePath);
+                    PictureInfo pic =  track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0]:null;
+                    if (pic != null) {
+                        DecodePicture(pic.PictureData, album,bitmap);                        
+                    }
                 }
             });
         }
 
-        //public static void AlbumPageLoadCoverAsync(List<MusicGroup> groupedByFirstLetter)
-        //{
-        //    _ = Task.Run(async () =>
-        //    {
-        //        var semaphore = new SemaphoreSlim(AppSettings.CoverLoadThreadCount, Environment.ProcessorCount);
-        //        var allMusicItems = groupedByFirstLetter.AsValueEnumerable().SelectMany(group => group);
-        //        var visibleTasks = allMusicItems.Select(music => Task.Run(async () =>
-        //        {
-        //            await semaphore.WaitAsync();
-        //            try
-        //            {
-        //                if (AppData.albumCoverCache.TryGetValue(music.Album, out var cachedCover))
-        //                {
-        //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //                    {
-        //                        music.Cover = cachedCover;
-        //                    });
-        //                }
-        //                else
-        //                {
-        //                    BitmapImage cover = await ToolUtils.GetAlbumCover(music, AppSettings.CoverSize);
-        //                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //                    {
-        //                        music.Cover = cover;
-        //                    });
-        //                    if (AppSettings.isCoverCacheEnabled && cover is not null)
-        //                    {
-        //                        AppData.albumCoverCache.SetValue(music.Album, cover);
-        //                    }
-        //                }
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                Debug.WriteLine($"加载专辑封面失败: {ex.Message}");
-        //            }
-        //            finally
-        //            {
-        //                semaphore.Release(); // 释放信号量
-        //            }
-        //        })).ToArray();
-        //        try
-        //        {
-        //            await Task.WhenAll(visibleTasks);
-        //        }
-        //        finally
-        //        {
-        //            semaphore.Dispose();
-        //        }
-        //    });
-        //}
+        private static async void DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
+            using (var originalStream = new MemoryStream(picture))
+            {
+                // 解码原始图像
+                var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
+                double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                uint newWidth = (uint)AppSettings.CoverSize;
+                uint newHeight = (uint)(newWidth / aspectRatio);
+                var resizedStream = new InMemoryRandomAccessStream();
+                var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
+                encoder.BitmapTransform.ScaledWidth = newWidth;
+                encoder.BitmapTransform.ScaledHeight = newHeight;
+                encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+                await encoder.FlushAsync();
+                // 在UI线程中设置bitmap源
+                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        resizedStream.Seek(0);
+                        await bitmap.SetSourceAsync(resizedStream);
+                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                        {
+                            AppData.albumCoverCache.TryAdd(album, bitmap);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                    finally
+                    {
+                        resizedStream.Dispose();
+                    }
+                });
+            }
+        }
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
         {
@@ -1096,6 +1056,9 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<Music> GetMusicInfo(StorageFile file, string folderPath)
         {
+            string lastLevelDirectory = Path.GetDirectoryName(file.Path);
+            DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
+            string lastLevelFolderPath = directoryInfo.Name;
             try
             {
                 using (TagLib.File audioFile = TagLib.File.Create(file.Path))
@@ -1114,10 +1077,6 @@ namespace WinUIMusicPlayer.Utils
                     int channelCount = 0;
                     string lyrics = string.Empty;
                     TimeSpan duration = TimeSpan.Zero;
-                    //string lastLevelFolderPath = Path.GetFileName(folderPath);
-                    string lastLevelDirectory = Path.GetDirectoryName(file.Path);
-                    DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
-                    string lastLevelFolderPath = directoryInfo.Name;
                     Properties audioProperties = audioFile.Properties;
                     trackNumber = (int)tag.Track;
                     diskNumber = (int)tag.Disc;
@@ -1182,34 +1141,28 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                AudioFileInfo wavFileInfo = new AudioFileInfo();
-                try
-                {
-                    wavFileInfo = ToolUtils.GetAudioInfoFromBass(file.Path);
-                }
-                catch (Exception exception)
-                {
-                    System.Diagnostics.Debug.WriteLine($"获取WAV文件属性时出错: {exception.Message}");
-                }
-                // 即使提取元数据失败，也尝试添加基本信息
+                AudioFileInfo wavFileInfo = ToolUtils.GetAudioInfo(file.Path);
                 try
                 {
                     var music = new Music
                     {
                         Path = file.Path,
-                        Title = Path.GetFileNameWithoutExtension(file.Name),
-                        Author = "未知艺术家",
+                        Title = wavFileInfo.Title,
+                        Author = wavFileInfo.Artist,
                         Duration = wavFileInfo.Duration,
-                        Album = "未知专辑",
-                        FolderPath = folderPath,
+                        Album = wavFileInfo.Album,
+                        FolderPath = lastLevelDirectory,
                         Order = 0,
-                        LastLevelFolderPath = Path.GetFileName(folderPath),
+                        LastLevelFolderPath = lastLevelFolderPath,
                         Extension = file.FileType.TrimStart('.').ToUpper(),
                         BitDepth = wavFileInfo.BitDepth,
                         BitRate = wavFileInfo.BitRate,
                         SampleRate = wavFileInfo.SampleRate,
-                        Year = 0,
+                        Year = wavFileInfo.Year,
                         Channel = wavFileInfo.ChannelCount,
+                        TrackNumber = wavFileInfo.TrackNumber,
+                        DiskNumber = wavFileInfo.DiskNumber,
+                        Lyrics = wavFileInfo.Lyrics,
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
@@ -1385,7 +1338,7 @@ namespace WinUIMusicPlayer.Utils
                             {
                                 Name = names[i],
                                 DisplayName = displayNames[i],
-                                FontFamily = new FontFamily(names[i]),
+                                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily(names[i]),
                             }
                         );
                     }

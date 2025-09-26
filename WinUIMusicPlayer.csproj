@@ -87,6 +87,7 @@
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
+    <PackageReference Include="ManagedBass.Tags" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Wasapi" Version="4.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
@@ -105,6 +106,7 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.7" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.7.0" />
+    <PackageReference Include="z440.atl.core" Version="7.5.0" />
     <PackageReference Include="ZLinq" Version="1.5.2" />
   </ItemGroup>
   <ItemGroup>

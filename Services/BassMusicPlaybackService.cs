@@ -1,6 +1,7 @@
 ﻿using ManagedBass;
 using ManagedBass.Dsd;
 using ManagedBass.Fx;
+using ManagedBass.Tags;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using System;
