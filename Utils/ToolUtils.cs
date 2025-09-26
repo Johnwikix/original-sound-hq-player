@@ -30,6 +30,7 @@ using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Parser;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
@@ -550,22 +551,33 @@ namespace WinUIMusicPlayer.Utils
 
         public static AudioFileInfo GetAudioInfo(string filePath)
         {
-            AudioFileInfo fileInfo = new AudioFileInfo();
+            AudioFileInfo fileInfo = new();            
             try
-            {               
-                Track track = new(filePath);
-                fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(filePath) : track?.Title;
-                fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track?.Album;
-                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家": track?.Artist;
-                fileInfo.Duration = TimeSpan.FromSeconds(track?.Duration ?? 0);
-                fileInfo.SampleRate = (int)track?.SampleRate;
-                fileInfo.ChannelCount = track?.ChannelsArrangement.NbChannels ?? 0;
-                fileInfo.BitDepth = track?.BitDepth ?? 0;
-                fileInfo.BitRate = track?.Bitrate ?? 0;
-                fileInfo.Year = track?.Year ?? 0;
-                fileInfo.Lyrics = track?.Lyrics?.Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics:string.Empty;
-                fileInfo.TrackNumber = track?.TrackNumber ?? 0;
-                fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+            {
+                if (Path.GetExtension(filePath) == ".dff")
+                {
+                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
+                    fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
+                    fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
+                    fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
+                    fileInfo.Year = int.TryParse(dict?.TextTags["TYER"], out int year) ? year : 0;
+                    fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
+                }
+                else {
+                    Track track = new(filePath);
+                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(filePath) : track?.Title;
+                    fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track?.Album;
+                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track?.Artist;
+                    fileInfo.Duration = TimeSpan.FromSeconds(track?.Duration ?? 0);
+                    fileInfo.SampleRate = (int)track?.SampleRate;
+                    fileInfo.ChannelCount = track?.ChannelsArrangement.NbChannels ?? 0;
+                    fileInfo.BitDepth = track?.BitDepth ?? 0;
+                    fileInfo.BitRate = track?.Bitrate ?? 0;
+                    fileInfo.Year = track?.Year ?? 0;
+                    fileInfo.Lyrics = track?.Lyrics?.Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics : string.Empty;
+                    fileInfo.TrackNumber = track?.TrackNumber ?? 0;
+                    fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+                }               
                 return fileInfo;
             }
             catch (Exception) {
@@ -979,11 +991,23 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception)
                 {
-                    Track track = new(filePath);
-                    PictureInfo pic =  track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0]:null;
-                    if (pic != null) {
-                        DecodePicture(pic.PictureData, album,bitmap);                        
+                    if (music.Extension.ToLower() == "dff")
+                    {
+                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
+                        byte[] picture = res?.Pictures.Count() > 0 ? res.Pictures[0].ImageData:null;
+                        if (picture is not null)
+                        {
+                            DecodePicture(picture, album, bitmap);
+                        }
                     }
+                    else {
+                        Track track = new(filePath);
+                        PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
+                        if (pic is not null)
+                        {
+                            DecodePicture(pic.PictureData, album, bitmap);
+                        }
+                    }                    
                 }
             });
         }
