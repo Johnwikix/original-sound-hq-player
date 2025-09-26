@@ -1,5 +1,6 @@
 ﻿using ATL;
 using ManagedBass;
+using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
@@ -551,17 +552,30 @@ namespace WinUIMusicPlayer.Utils
 
         public static AudioFileInfo GetAudioInfo(string filePath)
         {
+            BassManager.Initialize();
+            int stream = 0;
             AudioFileInfo fileInfo = new();            
             try
             {
                 if (Path.GetExtension(filePath) == ".dff")
                 {
                     var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
+                    stream = BassDsd.CreateStream(filePath, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
+                    Bass.ChannelGetInfo(stream, out ChannelInfo info);
+                    bool success = Bass.ChannelGetAttribute(
+                                        stream,
+                                        ChannelAttribute.Bitrate,
+                                        out var bitrate
+                    );
+                    Bass.StreamFree(stream);
                     fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
                     fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
                     fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
                     fileInfo.Year = int.TryParse(dict?.TextTags["TYER"], out int year) ? year : 0;
                     fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
+                    fileInfo.BitDepth = 1;
+                    fileInfo.BitRate = (int)bitrate;
+                    fileInfo.SampleRate = info.Frequency * 16;
                 }
                 else {
                     Track track = new(filePath);
