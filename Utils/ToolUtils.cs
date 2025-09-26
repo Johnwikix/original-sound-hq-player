@@ -982,61 +982,74 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception)
                 {
-                    if (music.Extension.ToLower() == "dff")
+                    try
                     {
-                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
-                        byte[] picture = res?.Pictures.Count() > 0 ? res.Pictures[0].ImageData:null;
-                        if (picture is not null)
+                        if (music.Extension.ToLower() == "dff")
                         {
-                            DecodePicture(picture, album, bitmap);
+                            var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
+                            byte[] picture = res?.Pictures.Count() > 0 ? res.Pictures[0].ImageData : null;
+                            if (picture is not null)
+                            {
+                                DecodePicture(picture, album, bitmap);
+                            }
+                        }
+                        else
+                        {
+                            Track track = new(filePath);
+                            PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
+                            if (pic is not null)
+                            {
+                                DecodePicture(pic.PictureData, album, bitmap);
+                            }
                         }
                     }
-                    else {
-                        Track track = new(filePath);
-                        PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
-                        if (pic is not null)
-                        {
-                            DecodePicture(pic.PictureData, album, bitmap);
-                        }
-                    }                    
+                    catch (Exception)
+                    { 
+                    }
                 }
             });
         }
 
         private static async void DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
-            using (var originalStream = new MemoryStream(picture))
+            try
             {
-                // 解码原始图像
-                var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
-                double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                uint newWidth = (uint)AppSettings.CoverSize;
-                uint newHeight = (uint)(newWidth / aspectRatio);
-                var resizedStream = new InMemoryRandomAccessStream();
-                var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
-                encoder.BitmapTransform.ScaledWidth = newWidth;
-                encoder.BitmapTransform.ScaledHeight = newHeight;
-                encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
-                await encoder.FlushAsync();
-                // 在UI线程中设置bitmap源
-                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                using (var originalStream = new MemoryStream(picture))
                 {
-                    try
+                    // 解码原始图像
+                    var decoder = await BitmapDecoder.CreateAsync(originalStream.AsRandomAccessStream());
+                    double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                    uint newWidth = (uint)AppSettings.CoverSize;
+                    uint newHeight = (uint)(newWidth / aspectRatio);
+                    var resizedStream = new InMemoryRandomAccessStream();
+                    var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
+                    encoder.BitmapTransform.ScaledWidth = newWidth;
+                    encoder.BitmapTransform.ScaledHeight = newHeight;
+                    encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+                    await encoder.FlushAsync();
+                    // 在UI线程中设置bitmap源
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
                     {
-                        resizedStream.Seek(0);
-                        await bitmap.SetSourceAsync(resizedStream);
-                        if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                        try
                         {
-                            AppData.albumCoverCache.TryAdd(album, bitmap);
+                            resizedStream.Seek(0);
+                            await bitmap.SetSourceAsync(resizedStream);
+                            if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                            {
+                                AppData.albumCoverCache.TryAdd(album, bitmap);
+                            }
                         }
-                    }
-                    catch (Exception)
-                    {
-                    }
-                    finally
-                    {
-                        resizedStream.Dispose();
-                    }
-                });
+                        catch (Exception)
+                        {
+                        }
+                        finally
+                        {
+                            resizedStream.Dispose();
+                        }
+                    });
+                }
+            }
+            catch (Exception)
+            { 
             }
         }
 
