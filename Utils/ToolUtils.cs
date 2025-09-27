@@ -204,50 +204,6 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        //public static async Task<BitmapImage> GetAlbumCover(Music album, int coverSize = 150)
-        //{
-        //    BitmapImage newCover = album.Cover;
-        //    var musics = MusicDatabaseService.GetAlbumMusicFromMem(album.Album);
-        //    if (album.Album != "未知专辑")
-        //    {
-        //        if (musics is null || musics.Count() == 0)
-        //        {
-        //            return null;
-        //        }
-        //        foreach (var song in musics)
-        //        {
-        //            try
-        //            {
-        //                using (var file = TagLib.File.Create(song.Path))
-        //                {
-        //                    if (file.Tag.Pictures.Length > 0)
-        //                    {
-        //                        var picture = file.Tag.Pictures[0];
-        //                        newCover = await ReadBitmapImageAsync(picture, coverSize);
-        //                    }
-        //                    else
-        //                    {
-        //                        newCover = null;
-        //                    }
-        //                    return newCover;
-        //                }
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                //newCover = await DefaultAlbumCover();
-        //                Debug.WriteLine($"读取专辑 {album.Album} 封面失败: {ex.Message}");
-        //                return null;
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //newCover = await DefaultAlbumCover();
-        //        return null;
-        //    }
-        //    return newCover;
-        //}
-
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
             byte[] imageData = picture.Data.Data.ToArray();
@@ -429,21 +385,6 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        //public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
-        //{
-        //    if (musicList is not null && musicList.Count > 0)
-        //    {
-        //        var index = musicList.FindIndex(m => m.Id == music.Id);
-        //        if (index != -1)
-        //        {
-        //            musicList[index].IsFavorite = music.IsFavorite;
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
-
-
         public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
         {
             if (musicList is null) return Enumerable.Empty<Music>();
@@ -559,99 +500,11 @@ namespace WinUIMusicPlayer.Utils
             }            
         }
 
-        //public static AudioFileInfo GetAudioFileInfo(string filePath)
-        //{
-        //    try
-        //    {
-        //        using (var reader = new MediaFoundationReader(filePath))
-        //        {
-        //            return new AudioFileInfo
-        //            {
-        //                SampleRate = reader.WaveFormat.SampleRate,
-        //                ChannelCount = reader.WaveFormat.Channels,
-        //                BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
-        //                BitDepth = reader.WaveFormat.BitsPerSample,
-        //                Duration = reader.TotalTime
-        //            };
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        try
-        //        {
-        //            using (var reader = new FFmpegAudioReader(filePath))
-        //            {
-        //                return new AudioFileInfo
-        //                {
-        //                    SampleRate = reader.WaveFormat.SampleRate,
-        //                    ChannelCount = reader.WaveFormat.Channels,
-        //                    BitRate = (int)(reader.Length * 8 / reader.TotalTime.TotalSeconds / 1000),
-        //                    BitDepth = reader.WaveFormat.BitsPerSample,
-        //                    Duration = reader.TotalTime
-        //                };
-        //            }
-        //        }
-        //        catch (Exception ex2)
-        //        {
-        //            Debug.WriteLine($"获取音频文件信息失败: {ex.Message} | {ex2.Message}");
-        //            return new AudioFileInfo();
-        //        }
-        //    }
-        //}
-
         public static bool IsMusicFile(string fileType)
         {
             var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv" };
             return musicExtensions.Contains(fileType.ToLower());
         }
-
-        //public static List<Music> UpdateMusicInList(List<Music> musicList, Music newMusic)
-        //{
-        //    for (int i = 0; i < musicList.Count; i++)
-        //    {
-        //        if (musicList[i].Id == newMusic.Id)
-        //        {
-        //            musicList[i] = newMusic;
-        //        }
-        //    }
-        //    return musicList;
-        //}
-
-        //public static async Task<byte[]> ImageToByteArray(Microsoft.UI.Xaml.Controls.Image imageControl, double scaleFactor = 1)
-        //{
-        //    byte[] buffer = null;
-        //    if (imageControl.Source is BitmapImage bitmapImage)
-        //    {
-        //        // 使用 RenderTargetBitmap 捕获图像
-        //        var renderTargetBitmap = new RenderTargetBitmap();
-        //        await renderTargetBitmap.RenderAsync(imageControl, (int)(bitmapImage.PixelWidth / scaleFactor), (int)(bitmapImage.PixelHeight / scaleFactor));
-        //        Debug.WriteLine($"bitmapImage长宽:{bitmapImage.PixelHeight} {bitmapImage.PixelWidth}");
-        //        // 获取像素
-        //        var pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
-        //        var pixels = pixelBuffer.ToArray();
-        //        // 创建编码器并写入流
-        //        var stream = new InMemoryRandomAccessStream();
-        //        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-        //        // 设置像素数据
-        //        encoder.SetPixelData(
-        //            BitmapPixelFormat.Bgra8,
-        //            BitmapAlphaMode.Premultiplied,
-        //            (uint)renderTargetBitmap.PixelWidth,
-        //            (uint)renderTargetBitmap.PixelHeight,
-        //            96.0, // DPI X
-        //            96.0, // DPI Y
-        //            pixels);
-
-        //        // 刷新编码器
-        //        await encoder.FlushAsync();
-        //        // 读取流到字节数组
-        //        stream.Seek(0);
-        //        buffer = new byte[stream.Size];
-        //        await stream.AsStream().ReadAsync(buffer, 0, buffer.Length);
-
-        //    }
-        //    return buffer;
-        //}
 
         // 将字典转换为JSON字符串的方法
         public static string ConvertToJson(Dictionary<string, double> dict)
@@ -952,13 +805,13 @@ namespace WinUIMusicPlayer.Utils
                 {
                     try
                     {
-                        Track track = new(filePath);
-                        PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
-                        if (pic is not null)
-                        {
-                            DecodePicture(pic?.PictureData, album, bitmap);
-                        }
-                        GetPicFromNet(pic?.PictureData, album, music, bitmap);
+                        //Track track = new(filePath);
+                        //PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
+                        //if (pic is not null)
+                        //{
+                        //    DecodePicture(pic?.PictureData, album, bitmap);
+                        //}
+                        GetPicFromNet(null, album, music, bitmap);
                     }
                     catch (Exception)
                     { 
