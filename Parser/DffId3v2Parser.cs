@@ -225,10 +225,13 @@ namespace WinUIMusicPlayer.Parser
         {
             var textTags = new Dictionary<string, string>();
             var pictures = new List<Id3v2Picture>();
-            long endPosition = stream.Position + tagDataSize;
+            long startPosition = stream.Position;
+            long endPosition = startPosition + tagDataSize;
 
             while (stream.Position < endPosition - 10) // 至少需要 10 字节的帧头
             {
+                long frameStartPosition = stream.Position;
+
                 // 读取帧头
                 byte[] frameHeader = new byte[10];
                 if (stream.Read(frameHeader, 0, 10) < 10) break;
@@ -236,24 +239,56 @@ namespace WinUIMusicPlayer.Parser
                 // 获取帧ID（4字节）
                 string frameId = Encoding.ASCII.GetString(frameHeader, 0, 4);
 
-                // 如果遇到填充字节或无效帧ID，停止解析
-                if (frameId[0] == 0 || frameId.Contains("\0"))
+                // 严格验证帧ID
+                if (!IsValidFrameId(frameId))
+                {
+                    Debug.WriteLine($"遇到无效帧ID: '{frameId}' at position {frameStartPosition}，停止解析");
                     break;
+                }
 
                 // 获取帧大小（4字节）
                 byte[] frameSizeBytes = new byte[4];
                 Array.Copy(frameHeader, 4, frameSizeBytes, 0, 4);
 
                 int frameSize;
+                int originalFrameSize;
+
+                // 优先使用规范定义的解码方式
                 if (majorVersion >= 4)
                 {
-                    // ID3v2.4 使用同步安全整数
-                    frameSize = DecodeSynchsafeInteger(frameSizeBytes);
+                    frameSize = originalFrameSize = DecodeSynchsafeInteger(frameSizeBytes);
                 }
-                else
+                else // ID3v2.3 或 ID3v2.2
                 {
-                    // ID3v2.3 及之前版本使用普通整数
-                    frameSize = DecodeInteger(frameSizeBytes);
+                    // 默认使用 ID3v2.3 的普通整数解码
+                    frameSize = originalFrameSize = DecodeInteger(frameSizeBytes);
+
+                    // 【关键增强：如果帧大小不合理且版本是 v2.3，尝试回退到同步安全解码】
+                    long remainingBytes = endPosition - stream.Position;
+                    if (majorVersion == 3 && frameSize > remainingBytes)
+                    {
+                        // 尝试使用 Synchsafe 方式重新解码，以修复错误的编码
+                        int synchsafeFrameSize = DecodeSynchsafeInteger(frameSizeBytes);
+
+                        // 如果同步安全解码的结果更合理 (小于剩余字节，且大于 0)，则接受它
+                        if (synchsafeFrameSize > 0 && synchsafeFrameSize <= remainingBytes)
+                        {
+                            Debug.WriteLine($"帧 {frameId} (v2.3) 发现异常大小 ({frameSize})，回退到同步安全大小: {synchsafeFrameSize}");
+                            frameSize = synchsafeFrameSize;
+                        }
+                    }
+                }
+
+                // 【新增：智能帧边界检测】
+                // 如果是文本帧，尝试通过搜索下一个有效帧ID来确定实际边界
+                if (IsTextFrame(frameId) && frameSize > 50) // 只对较大的文本帧进行边界检测
+                {
+                    int detectedSize = DetectActualFrameSize(stream, frameSize, endPosition);
+                    if (detectedSize > 0 && detectedSize != frameSize)
+                    {
+                        Debug.WriteLine($"帧 {frameId} 检测到实际大小 {detectedSize}，原始大小 {frameSize}");
+                        frameSize = detectedSize;
+                    }
                 }
 
                 // 获取帧标志（2字节）
@@ -262,15 +297,29 @@ namespace WinUIMusicPlayer.Parser
 
                 Debug.WriteLine($"解析帧: {frameId}, 大小: {frameSize}");
 
-                if (frameSize <= 0 || frameSize > tagDataSize)
+                // 验证帧大小的合理性
+                long maxReasonableSize = endPosition - stream.Position;
+                if (frameSize <= 0 || frameSize > maxReasonableSize || frameSize > tagDataSize)
                 {
-                    Debug.WriteLine($"无效的帧大小: {frameSize}，跳过");
+                    Debug.WriteLine($"无效的帧大小: {frameSize}，最大合理大小: {maxReasonableSize}，停止解析");
+                    break;
+                }
+
+                // 确保有足够的数据可读
+                if (stream.Position + frameSize > endPosition)
+                {
+                    Debug.WriteLine($"帧 {frameId} 大小 {frameSize} 超出标签边界，停止解析");
                     break;
                 }
 
                 // 读取帧数据
                 byte[] frameData = new byte[frameSize];
-                if (stream.Read(frameData, 0, frameSize) < frameSize) break;
+                int actualRead = stream.Read(frameData, 0, frameSize);
+                if (actualRead < frameSize)
+                {
+                    Debug.WriteLine($"帧 {frameId} 读取不完整: 期望 {frameSize}，实际 {actualRead}");
+                    break;
+                }
 
                 // 根据帧类型进行解析
                 if (frameId == "APIC" || frameId == "PIC") // PIC 是 ID3v2.2 的图片帧
@@ -292,6 +341,14 @@ namespace WinUIMusicPlayer.Parser
                 else
                 {
                     Debug.WriteLine($"  跳过未知帧类型: {frameId}");
+                }
+
+                // 验证当前位置是否正确
+                long expectedPosition = frameStartPosition + 10 + frameSize;
+                if (stream.Position != expectedPosition)
+                {
+                    Debug.WriteLine($"警告: 流位置不匹配，期望: {expectedPosition}，实际: {stream.Position}");
+                    stream.Seek(expectedPosition, SeekOrigin.Begin);
                 }
             }
 
@@ -386,6 +443,76 @@ namespace WinUIMusicPlayer.Parser
                     TagSize = tagDataSize
                 };
             }
+        }
+
+        private static bool IsValidFrameId(string frameId)
+        {
+            if (string.IsNullOrEmpty(frameId) || frameId.Length != 4)
+                return false;
+
+            // ID3v2 帧ID应该只包含大写字母A-Z和数字0-9
+            foreach (char c in frameId)
+            {
+                if (c == 0 || c == 0xFF) // 填充字节
+                    return false;
+
+                if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int DetectActualFrameSize(FileStream stream, int declaredSize, long endPosition)
+        {
+            long currentPos = stream.Position;
+            long maxSearchPos = Math.Min(currentPos + declaredSize, endPosition - 4);
+
+            try
+            {
+                // 在声明的帧大小范围内搜索下一个有效的帧ID
+                for (long searchPos = currentPos + 10; searchPos <= maxSearchPos - 4; searchPos++)
+                {
+                    stream.Seek(searchPos, SeekOrigin.Begin);
+
+                    byte[] potentialFrameId = new byte[4];
+                    if (stream.Read(potentialFrameId, 0, 4) == 4)
+                    {
+                        string frameId = Encoding.ASCII.GetString(potentialFrameId);
+
+                        // 检查是否是有效的帧ID
+                        if (IsValidFrameId(frameId) && IsKnownFrameId(frameId))
+                        {
+                            // 找到可能的下一个帧，计算实际大小
+                            int actualSize = (int)(searchPos - currentPos);
+                            stream.Seek(currentPos, SeekOrigin.Begin); // 恢复位置
+                            return actualSize;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // 搜索过程中出错，恢复到原始位置
+            }
+
+            stream.Seek(currentPos, SeekOrigin.Begin); // 恢复位置
+            return -1; // 未找到边界
+        }
+
+        private static bool IsKnownFrameId(string frameId)
+        {
+            // 常见的ID3v2帧ID
+            string[] knownFrameIds = {
+                "TALB", "TBPM", "TCOM", "TCON", "TCOP", "TDAT", "TDLY", "TENC", "TEXT", "TFLT",
+                "TIME", "TIT1", "TIT2", "TIT3", "TKEY", "TLAN", "TLEN", "TMED", "TOAL", "TOFN",
+                "TOLY", "TOPE", "TORY", "TOWN", "TPE1", "TPE2", "TPE3", "TPE4", "TPOS", "TPUB",
+                "TRCK", "TRDA", "TRSN", "TRSO", "TSIZ", "TSRC", "TSSE", "TYER", "TXXX",
+                "APIC", "COMM", "GEOB", "PCNT", "POPM", "PRIV", "SYLT", "USLT", "WCOM", "WCOP",
+                "WOAF", "WOAR", "WOAS", "WORS", "WPAY", "WPUB", "WXXX"
+            };
+
+            return knownFrameIds.Contains(frameId);
         }
 
         // 兼容性方法：保持原有的方法签名
