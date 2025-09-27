@@ -1,10 +1,10 @@
-﻿using System;
+﻿using ManagedBass;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Parser
 {
@@ -175,275 +175,13 @@ namespace WinUIMusicPlayer.Parser
                 }
             }
             return -1; // 未找到
-        }
-
-        // 在 DFF 文件中查找 ID3 Chunk
-        private static long FindDsdiffId3Chunk(FileStream stream)
-        {
-            stream.Seek(0, SeekOrigin.Begin);
-            byte[] buffer = new byte[8192]; // 8KB 缓冲区
-
-            while (stream.Position < stream.Length - 8)
-            {
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                if (bytesRead < 8) break;
-
-                // 在缓冲区中搜索 "ID3 " 标识符
-                for (int i = 0; i <= bytesRead - 4; i++)
-                {
-                    if (buffer[i] == 'I' && buffer[i + 1] == 'D' &&
-                        buffer[i + 2] == '3' && buffer[i + 3] == ' ')
-                    {
-                        long chunkPosition = stream.Position - bytesRead + i;
-                        stream.Seek(chunkPosition + 4, SeekOrigin.Begin);
-
-                        // 读取 chunk 大小
-                        byte[] sizeBytes = new byte[8];
-                        if (stream.Read(sizeBytes, 0, 8) == 8)
-                        {
-                            // DFF 使用大端字节序
-                            long chunkSize = ((long)sizeBytes[0] << 56) | ((long)sizeBytes[1] << 48) |
-                                           ((long)sizeBytes[2] << 40) | ((long)sizeBytes[3] << 32) |
-                                           ((long)sizeBytes[4] << 24) | ((long)sizeBytes[5] << 16) |
-                                           ((long)sizeBytes[6] << 8) | sizeBytes[7];
-
-                            Debug.WriteLine($"找到 ID3 Chunk 于位置: {chunkPosition}, 大小: {chunkSize}");
-                            return chunkPosition + 12; // 返回 ID3 数据的开始位置
-                        }
-                    }
-                }
-
-                // 回退一些字节以防标识符跨越缓冲区边界
-                stream.Seek(Math.Max(0, stream.Position - 8), SeekOrigin.Begin);
-            }
-
-            return -1;
-        }
-
-        // 解析 ID3v2 帧数据
-        private static (Dictionary<string, string> textTags, List<Id3v2Picture> pictures) ParseId3v2Frames(FileStream stream, int tagDataSize, byte majorVersion)
-        {
-            var textTags = new Dictionary<string, string>();
-            var pictures = new List<Id3v2Picture>();
-            long startPosition = stream.Position;
-            long endPosition = startPosition + tagDataSize;
-
-            while (stream.Position < endPosition - 10) // 至少需要 10 字节的帧头
-            {
-                long frameStartPosition = stream.Position;
-
-                // 读取帧头
-                byte[] frameHeader = new byte[10];
-                if (stream.Read(frameHeader, 0, 10) < 10) break;
-
-                // 获取帧ID（4字节）
-                string frameId = Encoding.ASCII.GetString(frameHeader, 0, 4);
-
-                // 严格验证帧ID
-                if (!IsValidFrameId(frameId))
-                {
-                    Debug.WriteLine($"遇到无效帧ID: '{frameId}' at position {frameStartPosition}，停止解析");
-                    break;
-                }
-
-                // 获取帧大小（4字节）
-                byte[] frameSizeBytes = new byte[4];
-                Array.Copy(frameHeader, 4, frameSizeBytes, 0, 4);
-
-                int frameSize;
-                int originalFrameSize;
-
-                // 优先使用规范定义的解码方式
-                if (majorVersion >= 4)
-                {
-                    frameSize = originalFrameSize = DecodeSynchsafeInteger(frameSizeBytes);
-                }
-                else // ID3v2.3 或 ID3v2.2
-                {
-                    // 默认使用 ID3v2.3 的普通整数解码
-                    frameSize = originalFrameSize = DecodeInteger(frameSizeBytes);
-
-                    // 【关键增强：如果帧大小不合理且版本是 v2.3，尝试回退到同步安全解码】
-                    long remainingBytes = endPosition - stream.Position;
-                    if (majorVersion == 3 && frameSize > remainingBytes)
-                    {
-                        // 尝试使用 Synchsafe 方式重新解码，以修复错误的编码
-                        int synchsafeFrameSize = DecodeSynchsafeInteger(frameSizeBytes);
-
-                        // 如果同步安全解码的结果更合理 (小于剩余字节，且大于 0)，则接受它
-                        if (synchsafeFrameSize > 0 && synchsafeFrameSize <= remainingBytes)
-                        {
-                            Debug.WriteLine($"帧 {frameId} (v2.3) 发现异常大小 ({frameSize})，回退到同步安全大小: {synchsafeFrameSize}");
-                            frameSize = synchsafeFrameSize;
-                        }
-                    }
-                }
-
-                // 【新增：智能帧边界检测】
-                // 如果是文本帧，尝试通过搜索下一个有效帧ID来确定实际边界
-                if (IsTextFrame(frameId) && frameSize > 50) // 只对较大的文本帧进行边界检测
-                {
-                    int detectedSize = DetectActualFrameSize(stream, frameSize, endPosition);
-                    if (detectedSize > 0 && detectedSize != frameSize)
-                    {
-                        Debug.WriteLine($"帧 {frameId} 检测到实际大小 {detectedSize}，原始大小 {frameSize}");
-                        frameSize = detectedSize;
-                    }
-                }
-
-                // 获取帧标志（2字节）
-                byte[] frameFlags = new byte[2];
-                Array.Copy(frameHeader, 8, frameFlags, 0, 2);
-
-                Debug.WriteLine($"解析帧: {frameId}, 大小: {frameSize}");
-
-                // 验证帧大小的合理性
-                long maxReasonableSize = endPosition - stream.Position;
-                if (frameSize <= 0 || frameSize > maxReasonableSize || frameSize > tagDataSize)
-                {
-                    Debug.WriteLine($"无效的帧大小: {frameSize}，最大合理大小: {maxReasonableSize}，停止解析");
-                    break;
-                }
-
-                // 确保有足够的数据可读
-                if (stream.Position + frameSize > endPosition)
-                {
-                    Debug.WriteLine($"帧 {frameId} 大小 {frameSize} 超出标签边界，停止解析");
-                    break;
-                }
-
-                // 读取帧数据
-                byte[] frameData = new byte[frameSize];
-                int actualRead = stream.Read(frameData, 0, frameSize);
-                if (actualRead < frameSize)
-                {
-                    Debug.WriteLine($"帧 {frameId} 读取不完整: 期望 {frameSize}，实际 {actualRead}");
-                    break;
-                }
-
-                // 根据帧类型进行解析
-                if (frameId == "APIC" || frameId == "PIC") // PIC 是 ID3v2.2 的图片帧
-                {
-                    var picture = DecodeApicFrame(frameData, majorVersion);
-                    if (picture != null)
-                    {
-                        pictures.Add(picture);
-                        Debug.WriteLine($"  {frameId}: {picture.MimeType}, {picture.PictureTypeName}, " +
-                                      $"描述: '{picture.Description}', 大小: {picture.ImageData.Length} 字节");
-                    }
-                }
-                else if (IsTextFrame(frameId))
-                {
-                    string value = DecodeTextFrame(frameData);
-                    textTags[frameId] = value;
-                    Debug.WriteLine($"  {frameId}: {value}");
-                }
-                else
-                {
-                    Debug.WriteLine($"  跳过未知帧类型: {frameId}");
-                }
-
-                // 验证当前位置是否正确
-                long expectedPosition = frameStartPosition + 10 + frameSize;
-                if (stream.Position != expectedPosition)
-                {
-                    Debug.WriteLine($"警告: 流位置不匹配，期望: {expectedPosition}，实际: {stream.Position}");
-                    stream.Seek(expectedPosition, SeekOrigin.Begin);
-                }
-            }
-
-            return (textTags, pictures);
-        }
+        }       
 
         // 检查是否为文本帧
         private static bool IsTextFrame(string frameId)
         {
             return frameId.StartsWith("T") && !frameId.Equals("TXXX");
-        }
-
-        // --- 主要读取方法：执行双向搜索 ---
-        public static Id3v2ParseResult ReadId3v2TagsFromDff(string filePath)
-        {
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                long fileSize = stream.Length;
-                long headerPosition = -1;
-
-                // 1. 首先尝试在 DFF 结构中查找 ID3 Chunk
-                headerPosition = FindDsdiffId3Chunk(stream);
-
-                if (headerPosition == -1)
-                {
-                    // 2. 如果没找到 ID3 Chunk，在文件头部区域搜索
-                    long searchEnd = Math.Min(fileSize, 4 * 1024);
-                    headerPosition = FindId3v2Header(stream, 0, searchEnd);
-                }
-
-                if (headerPosition == -1)
-                {
-                    Debug.WriteLine("在文件中未找到 ID3v2 标识符。");
-                    return new Id3v2ParseResult();
-                }
-
-                // 3. 找到位置后，开始解析
-                Debug.WriteLine($"找到 ID3v2 头部于文件位置: {headerPosition} (0x{headerPosition:X})");
-                stream.Seek(headerPosition, SeekOrigin.Begin);
-
-                // 读取 10 字节 ID3v2 头部
-                byte[] headerBytes = new byte[10];
-                if (stream.Read(headerBytes, 0, 10) < 10)
-                {
-                    Debug.WriteLine("无法读取完整的 ID3v2 头部");
-                    return new Id3v2ParseResult();
-                }
-
-                // 验证 ID3 标识符
-                string identifier = Encoding.ASCII.GetString(headerBytes, 0, 3);
-                if (identifier != "ID3")
-                {
-                    Debug.WriteLine("无效的 ID3v2 标识符");
-                    return new Id3v2ParseResult();
-                }
-
-                // 获取版本信息
-                byte majorVersion = headerBytes[3];
-                byte minorVersion = headerBytes[4];
-                byte flags = headerBytes[5];
-
-                // 获取标签大小
-                byte[] sizeBytes = new byte[4];
-                Array.Copy(headerBytes, 6, sizeBytes, 0, 4);
-                int tagDataSize = DecodeSynchsafeInteger(sizeBytes);
-
-                Debug.WriteLine($"ID3v2 版本: v2.{majorVersion}.{minorVersion}，数据大小: {tagDataSize} 字节");
-
-                // 检查是否有扩展头部
-                bool hasExtendedHeader = (flags & 0x40) != 0;
-                if (hasExtendedHeader)
-                {
-                    // 读取扩展头部大小并跳过
-                    byte[] extHeaderSizeBytes = new byte[4];
-                    if (stream.Read(extHeaderSizeBytes, 0, 4) == 4)
-                    {
-                        int extHeaderSize = DecodeSynchsafeInteger(extHeaderSizeBytes);
-                        stream.Seek(extHeaderSize - 4, SeekOrigin.Current); // 跳过扩展头部
-                        Debug.WriteLine($"跳过扩展头部，大小: {extHeaderSize} 字节");
-                    }
-                }
-
-                // 解析帧数据
-                var (textTags, pictures) = ParseId3v2Frames(stream, tagDataSize, majorVersion);
-
-                return new Id3v2ParseResult
-                {
-                    TextTags = textTags,
-                    Pictures = pictures,
-                    MajorVersion = majorVersion,
-                    MinorVersion = minorVersion,
-                    TagSize = tagDataSize
-                };
-            }
-        }
+        }        
 
         private static bool IsValidFrameId(string frameId)
         {
@@ -512,49 +250,211 @@ namespace WinUIMusicPlayer.Parser
                 "WOAF", "WOAR", "WOAS", "WORS", "WPAY", "WPUB", "WXXX"
             };
 
-            return knownFrameIds.Contains(frameId);
+            return knownFrameIds.AsValueEnumerable().Contains(frameId);
         }
 
-        // 兼容性方法：保持原有的方法签名
-        public static Dictionary<string, string> ReadId3v2TagsFromDff_TextOnly(string filePath)
+        /// <summary>
+        /// 专门用于解析文件末尾 4MB 区域内的 ID3v2 标签，并仅提取图片数据。
+        /// </summary>
+        /// <param name="filePath">DFF 文件路径。</param>
+        /// <returns>找到的所有图片数据的字节数组列表。</returns>
+        public static Id3v2ParseResult ReadId3v2TagsFromDff(string filePath,bool FromFront = false)
         {
-            var result = ReadId3v2TagsFromDff(filePath);
-            return result.TextTags;
-        }
-
-        // 便捷方法：获取常见标签的友好名称
-        public static Dictionary<string, string> GetFriendlyTags(Dictionary<string, string> rawTags)
-        {
-            var friendlyTags = new Dictionary<string, string>();
-            var tagMapping = new Dictionary<string, string>
-        {
-            {"TIT2", "标题"},
-            {"TPE1", "艺术家"},
-            {"TALB", "专辑"},
-            {"TCON", "流派"},
-            {"TYER", "年份"},
-            {"TDAT", "日期"},
-            {"TRCK", "音轨"},
-            {"TPE2", "专辑艺术家"},
-            {"TPOS", "唱片集"},
-            {"TSSE", "编码软件"},
-            {"COMM", "评论"},
-            {"TIT1", "内容组描述"},
-            {"TIT3", "副标题"},
-            {"TPE3", "指挥"},
-            {"TPE4", "翻译/修改"},
-            {"TPUB", "发行商"},
-            {"TCOP", "版权"},
-            {"TENC", "编码者"}
-        };
-
-            foreach (var tag in rawTags)
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                string friendlyName = tagMapping.ContainsKey(tag.Key) ? tagMapping[tag.Key] : tag.Key;
-                friendlyTags[friendlyName] = tag.Value;
+                long fileSize = stream.Length;
+                long searchStart = Math.Max(0, fileSize - 1024 * 1024);
+                long searchEnd = fileSize;
+                if (FromFront)
+                {
+                    searchStart = 0;
+                    searchEnd = Math.Min(fileSize, 4 * 1024);
+                }
+                long currentSearchPosition = searchStart;
+                while (currentSearchPosition < searchEnd - 10)
+                {
+                    // 1. 查找 ID3 标识符
+                    long headerPosition = FindId3v2Header(stream, currentSearchPosition, searchEnd);
+
+                    if (headerPosition == -1)
+                    {
+                        Debug.WriteLine("未找到更多 ID3v2 标识符。");
+                        return new Id3v2ParseResult();
+                    }
+
+                    stream.Seek(headerPosition, SeekOrigin.Begin);
+
+                    byte[] headerBytes = new byte[10];
+                    if (stream.Read(headerBytes, 0, 10) < 10)
+                    {
+                        currentSearchPosition = headerPosition + 3; // 移动到标识符之后继续搜
+                        continue;
+                    }
+
+                    byte majorVersion = headerBytes[3];
+                    byte flags = headerBytes[5];
+
+                    // --- 2. 关键验证 ---
+                    // ID3v2 版本号通常是 2, 3, 或 4。我们排除 32 (0x20)
+                    if (majorVersion < 2 || majorVersion > 4)
+                    {
+                        Debug.WriteLine($"找到无效版本号 v2.{majorVersion} (0x{majorVersion:X2})，跳过并继续搜索。");
+                        currentSearchPosition = headerPosition + 3; // 移动到 ID3 标识符之后继续搜
+                        continue;
+                    }
+
+                    // --- 3. 头部有效，开始正常解析 ---
+                    Debug.WriteLine($"找到有效的 ID3v2 头部于位置: {headerPosition} (v2.{majorVersion})");
+                    // 获取标签大小
+                    byte[] sizeBytes = new byte[4];
+                    Array.Copy(headerBytes, 6, sizeBytes, 0, 4);
+
+                    int tagDataSize = (majorVersion >= 4) ? DecodeSynchsafeInteger(sizeBytes) : DecodeInteger(sizeBytes);
+
+                    Debug.WriteLine($"数据大小: {tagDataSize} 字节");
+
+                    // ... (处理扩展头部逻辑) ...
+
+                    // 4. 调用 ParseId3v2FramesForPictures
+                    // 我们传入标签大小，但 ParseId3v2FramesForPictures 内部会用文件长度来限制它。
+                    var (textTags,pictures) = ParseId3v2Frames(stream, tagDataSize, majorVersion);
+
+                    return new Id3v2ParseResult
+                    {
+                        TextTags = textTags,
+                        Pictures = pictures
+                    };
+                }                
+                return new Id3v2ParseResult(); // 如果循环结束都没有找到
+            }
+        }
+
+        /// <summary>
+        /// 专门用于解析 ID3v2 帧数据，但只处理图片帧 (APIC/PIC)。
+        /// 忽略所有文本帧和其它帧，避免因非标准 T-帧导致解析失败。
+        /// </summary>
+        private static (Dictionary<string, string> textTags, List<Id3v2Picture> pictures) ParseId3v2Frames(FileStream stream, int tagDataSize, byte majorVersion)
+        {
+            var textTags = new Dictionary<string, string>();
+            var pictures = new List<Id3v2Picture>();
+            long startPosition = stream.Position;
+            long endPosition = startPosition + tagDataSize;
+            long maxLimit = Math.Min(endPosition, stream.Length);
+
+            while (stream.Position < maxLimit - 10) // 至少需要 10 字节的帧头
+            {
+                long frameStartPosition = stream.Position;
+
+                // 读取帧头
+                byte[] frameHeader = new byte[10];
+                if (stream.Read(frameHeader, 0, 10) < 10) break;
+
+                string frameId = Encoding.ASCII.GetString(frameHeader, 0, 4);
+
+                // 遇到填充字节 (0x00) 立即停止，这是 ID3v2 标签的结束标志
+                if (frameHeader[0] == 0)
+                {
+                    Debug.WriteLine("遇到填充字节 (0x00)，停止解析。");
+                    break;
+                }
+
+                // 遇到无效帧ID也停止
+                if (!IsValidFrameId(frameId))
+                {
+                    Debug.WriteLine($"遇到无效帧ID ('{frameId}')，停止解析。");
+                    break;
+                }
+
+                // 获取帧大小
+                byte[] frameSizeBytes = new byte[4];
+                Array.Copy(frameHeader, 4, frameSizeBytes, 0, 4);
+
+                int frameSize;
+                // 帧大小解码：根据版本选择
+                if (majorVersion >= 4)
+                {
+                    frameSize = DecodeSynchsafeInteger(frameSizeBytes);
+                }
+                else
+                {
+                    frameSize = DecodeInteger(frameSizeBytes);
+                }
+
+                // 【新增：智能帧边界检测】
+                // 如果是文本帧，尝试通过搜索下一个有效帧ID来确定实际边界
+                if (IsTextFrame(frameId) && frameSize > 50) // 只对较大的文本帧进行边界检测
+                {
+                    int detectedSize = DetectActualFrameSize(stream, frameSize, endPosition);
+                    if (detectedSize > 0 && detectedSize != frameSize)
+                    {
+                        Debug.WriteLine($"帧 {frameId} 检测到实际大小 {detectedSize}，原始大小 {frameSize}");
+                        frameSize = detectedSize;
+                    }
+                }
+
+                // 获取帧标志（2字节）
+                byte[] frameFlags = new byte[2];
+                Array.Copy(frameHeader, 8, frameFlags, 0, 2);
+
+                Debug.WriteLine($"解析帧: {frameId}, 大小: {frameSize}");
+
+                // 验证帧大小的合理性
+                long maxReasonableSize = endPosition - stream.Position;
+                if (frameSize <= 0 || frameSize > maxReasonableSize || frameSize > tagDataSize)
+                {
+                    Debug.WriteLine($"无效的帧大小: {frameSize}，最大合理大小: {maxReasonableSize}，停止解析");
+                    break;
+                }
+
+                // 确保有足够的数据可读
+                if (stream.Position + frameSize > endPosition)
+                {
+                    Debug.WriteLine($"帧 {frameId} 大小 {frameSize} 超出标签边界，停止解析");
+                    break;
+                }
+
+                // 读取帧数据
+                byte[] frameData = new byte[frameSize];
+                int actualRead = stream.Read(frameData, 0, frameSize);
+                if (actualRead < frameSize)
+                {
+                    Debug.WriteLine($"帧 {frameId} 读取不完整: 期望 {frameSize}，实际 {actualRead}");
+                    break;
+                }
+                
+                if (frameId == "APIC" || frameId == "PIC")
+                {
+                    if (actualRead == frameSize)
+                    {
+                        var picture = DecodeApicFrame(frameData, majorVersion);
+                        if (picture != null)
+                        {
+                            pictures.Add(picture);
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"图片帧 {frameId} 读取不完整，跳过。");
+                        break;
+                    }
+                }
+                else if(IsTextFrame(frameId))
+                {
+                    string value = DecodeTextFrame(frameData);
+                    Debug.WriteLine($"  {frameId}: {value}");
+                    textTags[frameId] = value;
+                    //stream.Seek(frameSize, SeekOrigin.Current);
+                }
+
+                // 检查跳过操作是否超出边界
+                if (stream.Position > maxLimit)
+                {
+                    Debug.WriteLine($"警告：跳过操作使流位置超出标签/文件边界，停止。");
+                    break;
+                }
             }
 
-            return friendlyTags;
+            return (textTags,pictures);
         }
     }    
 }

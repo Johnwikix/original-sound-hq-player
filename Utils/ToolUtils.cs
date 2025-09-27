@@ -25,6 +25,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
+using TagLib.Flac;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -398,53 +399,34 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                using (TagLib.File audioFile = TagLib.File.Create(music.Path))
+                byte[] picture = null;
+                if (music.Extension.ToLower() == "dff")
                 {
-                    // 获取音频文件中的图片数组
-                    IPicture[] pictures = audioFile.Tag.Pictures;
-
-                    if (pictures.Length > 0)
+                    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
+                    picture = res?.Pictures.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                }
+                else {
+                    using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                     {
-                        // 取第一张图片作为封面
-                        IPicture coverPicture = pictures[0];
-
-                        // 获取封面图片的字节数组
-                        byte[] coverBytes = coverPicture.Data.Data;
-                        return coverBytes;
-                    }
-                    else
-                    {
-                        if (AppSettings.isAutoLyricsEnabled && !isManual)
+                        IPicture[] pictures = audioFile.Tag.Pictures;
+                        if (pictures.Length > 0)
                         {
-                            var cancellationToken = new CancellationTokenSource();
-                            if (!Directory.Exists(AppSettings.MusicCoverCache))
-                            {
-                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                            }
-                            byte[] picture = null;
-                            string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                            fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                            string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                            if (System.IO.File.Exists(filePath))
-                            {
-                                picture = System.IO.File.ReadAllBytes(filePath);
-                            }
-                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
-                            if (picture is not null)
-                            {
-                                System.IO.File.WriteAllBytes(filePath, picture);
-                            }
-                            return picture;
-                        }
+                            // 取第一张图片作为封面
+                            IPicture coverPicture = pictures[0];
+                            // 获取封面图片的字节数组
+                            picture = coverPicture.Data.Data;
+                        }                        
                     }
                 }
+                if (picture is null) {
+                    picture = await GetPicByteFromNet(music, isManual);
+                }
+                return picture;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"发生错误: {ex.Message}");
+                return await GetPicByteFromNet(music, isManual);
             }
-            return null;
         }
 
         //public static List<Music> UpdateFavouriteMusic(List<Music> musicList, Music music)
@@ -547,7 +529,7 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.BitRate = (int)bitrate;
                     fileInfo.SampleRate = info.Frequency * 16;
                     fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
-                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);                    
+                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath,true);                    
                     fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
                     fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
                     fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
@@ -945,69 +927,104 @@ namespace WinUIMusicPlayer.Utils
             {
                 try
                 {
-                    using (var file = TagLib.File.Create(filePath))
+                    byte[] picture = null;
+                    if (music.Extension.ToLower() == "dff")
                     {
-                        byte[] picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;
-                        if (picture is null)
-                        {
-                            if (!Directory.Exists(AppSettings.MusicCoverCache))
-                            {
-                                Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                            }
-                            string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                            fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                            string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                            if (System.IO.File.Exists(filePath))
-                            {
-                                picture = System.IO.File.ReadAllBytes(filePath);
-                            }
-                            if (!AppData.UnknownAlbums.Contains(album))
-                            {
-                                if (AppSettings.isAutoLyricsEnabled)
-                                {
-                                    picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
-                                    if (picture is not null)
-                                    {
-                                        System.IO.File.WriteAllBytes(filePath, picture);
-                                    }
-                                }
-                            }
-                        }
+                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
+                        picture = res?.Pictures.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
                         if (picture is not null)
                         {
                             DecodePicture(picture, album, bitmap);
                         }
-                    }
-                }
-                catch (Exception)
-                {
-                    try
-                    {
-                        if (music.Extension.ToLower() == "dff")
+                    }else{
+                        using (var file = TagLib.File.Create(filePath))
                         {
-                            var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
-                            byte[] picture = res?.Pictures.Count() > 0 ? res.Pictures[0].ImageData : null;
+                            picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;                            
                             if (picture is not null)
                             {
                                 DecodePicture(picture, album, bitmap);
                             }
                         }
-                        else
+                    }
+                    GetPicFromNet(picture, album, music, bitmap);
+                }
+                catch (Exception)
+                {
+                    try
+                    {
+                        Track track = new(filePath);
+                        PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
+                        if (pic is not null)
                         {
-                            Track track = new(filePath);
-                            PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
-                            if (pic is not null)
-                            {
-                                DecodePicture(pic.PictureData, album, bitmap);
-                            }
+                            DecodePicture(pic?.PictureData, album, bitmap);
                         }
+                        GetPicFromNet(pic?.PictureData, album, music, bitmap);
                     }
                     catch (Exception)
                     { 
                     }
                 }
             });
+        }
+
+        private static async void GetPicFromNet(byte[] picture,string album, Music music, BitmapImage bitmap) {
+            if (picture is null)
+            {
+                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                {
+                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                }
+                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                if (System.IO.File.Exists(filePath))
+                {
+                    picture = System.IO.File.ReadAllBytes(filePath);
+                }
+                if (!AppData.UnknownAlbums.Contains(album))
+                {
+                    if (AppSettings.isAutoLyricsEnabled)
+                    {
+                        picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
+                        if (picture is not null)
+                        {
+                            System.IO.File.WriteAllBytes(filePath, picture);
+                        }
+                    }
+                }
+                if (picture is not null)
+                {
+                    DecodePicture(picture, album, bitmap);
+                }
+            }
+        }
+
+        private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false) {
+            byte[] picture = null;
+            if (AppSettings.isAutoLyricsEnabled && !isManual)
+            {
+                var cancellationToken = new CancellationTokenSource();
+                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                {
+                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                }
+                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                
+                if (System.IO.File.Exists(filePath))
+                {
+                    picture = System.IO.File.ReadAllBytes(filePath);
+                }
+                picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
+                if (picture is not null)
+                {
+                    System.IO.File.WriteAllBytes(filePath, picture);
+                }
+            }
+            return picture;
         }
 
         private static async void DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
@@ -1122,7 +1139,7 @@ namespace WinUIMusicPlayer.Utils
                         album = tag.Album;
                     }
                     sampleRate = audioProperties.AudioSampleRate;
-                    bitDepth = audioProperties.BitsPerSample == 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
+                    bitDepth = audioProperties.BitsPerSample <= 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
                     bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
                     year = (int)tag.Year;
                     duration = audioProperties.Duration;

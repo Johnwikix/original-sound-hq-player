@@ -10,8 +10,5 @@ namespace WinUIMusicPlayer.Parser
     {
         public Dictionary<string,string> TextTags { get; set; }
         public List<Id3v2Picture> Pictures { get; set; }
-        public byte MajorVersion { get; set; }
-        public byte MinorVersion { get; set; }
-        public int TagSize { get; set; }
-}
+    }
 }
