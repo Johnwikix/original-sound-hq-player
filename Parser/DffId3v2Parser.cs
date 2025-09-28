@@ -175,7 +175,65 @@ namespace WinUIMusicPlayer.Parser
                 }
             }
             return -1; // 未找到
-        }       
+        }
+
+        /// <summary>
+        /// 从文件尾部向文件开头倒序搜索 ID3v2 头部（"ID3" 标识符）。
+        /// </summary>
+        private static long FindId3v2HeaderReverse(FileStream stream, long fileEnd, long maxSearchOffset)
+        {
+            // 确保 startOffset >= endOffset，因为我们是倒序搜索
+            if (fileEnd < maxSearchOffset)
+            {
+                // 交换以确保逻辑正确，或者直接返回 -1
+                // 这里假设调用者可能错误地传递了参数，进行修正
+                long temp = fileEnd;
+                fileEnd = maxSearchOffset;
+                maxSearchOffset = temp;
+            }
+
+            long searchLength = fileEnd - maxSearchOffset;
+            // 至少需要 3 个字节来容纳 "ID3"
+            if (searchLength < 3) return -1;
+
+            // 设置搜索块大小（例如 4MB）
+            // 为了倒序搜索，我们一次性读取一个搜索块，然后从后往前搜索
+            int bufferSize = (int)Math.Min(searchLength, 4 * 1024 * 1024);
+            byte[] buffer = new byte[bufferSize];
+
+            // 确定读取的起始位置。我们从 (startOffset - bufferSize) 处开始读取
+            long readStartOffset = fileEnd - bufferSize;
+
+            // 确保读取不会超过文件开头，即不小于 endOffset
+            if (readStartOffset < maxSearchOffset)
+            {
+                readStartOffset = maxSearchOffset;
+                bufferSize = (int)(fileEnd - maxSearchOffset); // 实际读取长度
+                if (bufferSize < 3) return -1; // 再次检查最小长度
+            }
+
+            // 设置流位置到实际开始读取的位置
+            stream.Seek(readStartOffset, SeekOrigin.Begin);
+            int bytesRead = stream.Read(buffer, 0, bufferSize);
+
+            // 确保至少读到了 3 个字节
+            if (bytesRead < 3) return -1;
+
+            // 倒序遍历缓冲区，查找 "ID3" 标识符
+            // 从 bytesRead - 3 开始，因为我们需要检查 buffer[i], buffer[i+1], buffer[i+2]
+            for (int i = bytesRead - 3; i >= 0; i--)
+            {
+                if (buffer[i] == 'I' && buffer[i + 1] == 'D' && buffer[i + 2] == '3')
+                {
+                    // 找到了 ID3 头部
+                    // 返回相对于文件开头的绝对偏移量
+                    return readStartOffset + i;
+                }
+            }
+
+            // 未在当前搜索块中找到
+            return -1;
+        }
 
         // 检查是否为文本帧
         private static bool IsTextFrame(string frameId)
@@ -265,16 +323,22 @@ namespace WinUIMusicPlayer.Parser
                 long fileSize = stream.Length;
                 long searchStart = Math.Max(0, fileSize - 1024 * 1024);
                 long searchEnd = fileSize;
+                long currentSearchPosition = searchEnd;
+                long headerPosition = -1;
                 if (FromFront)
                 {
                     searchStart = 0;
                     searchEnd = Math.Min(fileSize, 4 * 1024);
+                    currentSearchPosition = searchStart;                    
                 }
-                long currentSearchPosition = searchStart;
-                while (currentSearchPosition < searchEnd - 10)
+                while (FromFront ? currentSearchPosition < searchEnd - 10 : currentSearchPosition> searchStart+10)
                 {
                     // 1. 查找 ID3 标识符
-                    long headerPosition = FindId3v2Header(stream, currentSearchPosition, searchEnd);
+                    if (headerPosition == -1)
+                    {
+                        headerPosition = FromFront ? FindId3v2Header(stream, currentSearchPosition, searchEnd) : FindId3v2HeaderReverse(stream, currentSearchPosition, searchStart);
+                    }
+
 
                     if (headerPosition == -1)
                     {
@@ -287,7 +351,7 @@ namespace WinUIMusicPlayer.Parser
                     byte[] headerBytes = new byte[10];
                     if (stream.Read(headerBytes, 0, 10) < 10)
                     {
-                        currentSearchPosition = headerPosition + 3; // 移动到标识符之后继续搜
+                        currentSearchPosition = FromFront ? headerPosition + 3:headerPosition - 3; // 移动到标识符之后继续搜
                         continue;
                     }
 
@@ -299,7 +363,7 @@ namespace WinUIMusicPlayer.Parser
                     if (majorVersion < 2 || majorVersion > 4)
                     {
                         Debug.WriteLine($"找到无效版本号 v2.{majorVersion} (0x{majorVersion:X2})，跳过并继续搜索。");
-                        currentSearchPosition = headerPosition + 3; // 移动到 ID3 标识符之后继续搜
+                        currentSearchPosition = FromFront ? headerPosition + 3 : headerPosition - 3;  // 移动到 ID3 标识符之后继续搜
                         continue;
                     }
 
@@ -313,18 +377,16 @@ namespace WinUIMusicPlayer.Parser
 
                     Debug.WriteLine($"数据大小: {tagDataSize} 字节");
 
-                    // ... (处理扩展头部逻辑) ...
-
-                    // 4. 调用 ParseId3v2FramesForPictures
                     // 我们传入标签大小，但 ParseId3v2FramesForPictures 内部会用文件长度来限制它。
-                    var (textTags,pictures) = ParseId3v2Frames(stream, tagDataSize, majorVersion);
+                    var (textTags, pictures) = ParseId3v2Frames(stream, tagDataSize, majorVersion);
 
                     return new Id3v2ParseResult
                     {
                         TextTags = textTags,
                         Pictures = pictures
                     };
-                }                
+                }
+
                 return new Id3v2ParseResult(); // 如果循环结束都没有找到
             }
         }
