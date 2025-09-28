@@ -1,4 +1,5 @@
 ﻿using ATL;
+using DffTagReader;
 using ManagedBass;
 using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
