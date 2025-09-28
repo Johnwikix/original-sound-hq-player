@@ -244,22 +244,38 @@
                             VerticalAlignment="Center"
                             Text="{x:Bind Title, Mode=OneWay}"
                             TextTrimming="CharacterEllipsis" />
-                        <TextBlock
+                        <Button
                             Grid.Column="3"
                             Margin="5"
+                            Padding="5"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Tapped="AuthorTextBlock_Tapped"
-                            Text="{x:Bind Author, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis" />
-                        <TextBlock
+                            Background="Transparent"
+                            BorderThickness="0">
+                            <Button.Content>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Tapped="AuthorTextBlock_Tapped"
+                                    Text="{x:Bind Author, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </Button.Content>
+                        </Button>
+                        <Button
                             Grid.Column="4"
                             Margin="5"
+                            Padding="5"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Tapped="AlbumTextBlock_Tapped"
-                            Text="{x:Bind Album, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis" />
+                            Background="Transparent"
+                            BorderThickness="0">
+                            <Button.Content>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Tapped="AlbumTextBlock_Tapped"
+                                    Text="{x:Bind Album, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </Button.Content>
+                        </Button>
                         <TextBlock
                             Grid.Column="5"
                             Margin="5"
