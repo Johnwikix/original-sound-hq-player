@@ -798,7 +798,7 @@ namespace WinUIMusicPlayer.Utils
                             }
                         }
                     }
-                    GetPicFromNet(picture, album, music, bitmap);
+                    await GetPicFromNet(picture, album, music, bitmap);
                 }
                 catch (Exception)
                 {
@@ -810,7 +810,7 @@ namespace WinUIMusicPlayer.Utils
                         //{
                         //    DecodePicture(pic?.PictureData, album, bitmap);
                         //}
-                        GetPicFromNet(null, album, music, bitmap);
+                        await GetPicFromNet(null, album, music, bitmap);
                     }
                     catch (Exception)
                     { 
@@ -819,7 +819,7 @@ namespace WinUIMusicPlayer.Utils
             });
         }
 
-        private static async void GetPicFromNet(byte[] picture,string album, Music music, BitmapImage bitmap) {
+        private static async Task GetPicFromNet(byte[] picture,string album, Music music, BitmapImage bitmap) {
             if (picture is null)
             {
                 if (!Directory.Exists(AppSettings.MusicCoverCache))
@@ -833,8 +833,7 @@ namespace WinUIMusicPlayer.Utils
                 if (System.IO.File.Exists(filePath))
                 {
                     picture = System.IO.File.ReadAllBytes(filePath);
-                }
-                if (!AppData.UnknownAlbums.Contains(album))
+                } else if (!AppData.UnknownAlbums.Contains(album))
                 {
                     if (AppSettings.isAutoLyricsEnabled)
                     {
@@ -865,16 +864,17 @@ namespace WinUIMusicPlayer.Utils
                 string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                 fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
                 string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                
                 if (System.IO.File.Exists(filePath))
                 {
                     picture = System.IO.File.ReadAllBytes(filePath);
                 }
-                picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
-                if (picture is not null)
-                {
-                    System.IO.File.WriteAllBytes(filePath, picture);
-                }
+                else {
+                    picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
+                    if (picture is not null)
+                    {
+                        System.IO.File.WriteAllBytes(filePath, picture);
+                    }
+                }                
             }
             return picture;
         }

@@ -202,7 +202,7 @@ namespace WinUIMusicPlayer.ViewModel
                     //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
                     //GetCover();
-                    var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
+                    var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, null);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs
                         .Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
