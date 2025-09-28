@@ -84,6 +84,7 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.0" />
     <PackageReference Include="ManagedBass" Version="4.0.1" />
+    <PackageReference Include="ManagedBass.Asio" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />

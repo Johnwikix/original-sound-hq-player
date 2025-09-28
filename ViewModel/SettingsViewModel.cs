@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -314,19 +315,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-
-        //private ObservableCollection<string> _outputDevices = new ObservableCollection<string>();
-        //public ObservableCollection<string> OutputDevices
-        //{
-        //    get => _outputDevices;
-        //    set
-        //    {
-        //        if (SetProperty(ref _outputDevices, value))
-        //        {
-        //            Debug.WriteLine("OutputDevices collection changed.");
-        //        }
-        //    }
-        //}
+      
         private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
         public ObservableCollection<BassOutputDevice> BassOutputDevices
         {
@@ -361,33 +350,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        //private string _deviceName = "Default";
-        //public string DeviceName
-        //{
-        //    get => _deviceName;
-        //    set
-        //    {
-        //        if (SetProperty(ref _deviceName, value))
-        //        {
-        //            if (value is not null)
-        //            {                       
-        //                if (IsRealDevceChange)
-        //                {
-        //                    if (_isInitized)
-        //                    {
-        //                        AppSettings.DeviceName = value;
-        //                        _ = MusicDatabaseService.SaveSettingAsync();
-        //                        AppSettings.OnOutputSettingsChanged();
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    IsRealDevceChange = true;
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
+
         private string _backdropType = "TransparentAcrylic";
 
         public string BackdropType
@@ -554,23 +517,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-
-        //private bool _isGlobalFFmpegEnabled = true;
-        //public bool IsGlobalFFmpegEnabled
-        //{
-        //    get => _isGlobalFFmpegEnabled;
-        //    set
-        //    {
-        //        if (SetProperty(ref _isGlobalFFmpegEnabled, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppSettings.IsGlobalFFmpegEnabled = value;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
 
         private bool _isColorPickerVisible = false;
         public bool IsColorPickerVisible
@@ -825,6 +771,7 @@ namespace WinUIMusicPlayer.ViewModel
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             InitializeWasapiDevice();
+            InitializeAsioDevice();
             _isInitized = true;
         }
 
@@ -846,7 +793,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
                         {
-                            Debug.WriteLine($"{deviceInfo.Name}: {i}");
+                            Debug.WriteLine($"Wasapi:{deviceInfo.Name}: {i}");
                             BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
@@ -863,6 +810,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else {
                 SelectedDevice = device;
+            }
+        }
+
+        public void InitializeAsioDevice()
+        {          
+            int n = BassAsio.DeviceCount;
+            for (int i = 0; i < n; i++)
+            {
+                if (BassAsio.GetDeviceInfo(i, out AsioDeviceInfo deviceInfo))
+                {
+                    Debug.WriteLine($"Asio:{deviceInfo.Name}: {i}");
+                    Debug.WriteLine($"Asio:{deviceInfo.Driver}: {i}");
+                }
             }
         }
 
