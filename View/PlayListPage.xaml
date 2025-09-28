@@ -12,7 +12,7 @@
 
     <Grid>
         <Grid x:Name="PlayList" Margin="0">
-            <ListView x:Name="PlayListView" ItemsSource="{Binding ViewModel.PlayLists, Mode=TwoWay}" SelectionChanged="PlayListView_SelectionChanged">
+            <ListView x:Name="PlayListView" ItemsSource="{x:Bind ViewModel.PlayLists, Mode=TwoWay}" SelectionChanged="PlayListView_SelectionChanged">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayList">
                         <Grid>
@@ -30,7 +30,7 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="EditPlayListNameButton_Click"
-                                Tag="{Binding}">
+                                Tag="{x:Bind}">
                                 <FontIcon Glyph="&#xeb7e;" />
                             </Button>
                             <Button
@@ -41,14 +41,14 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="ExportPlayList_Click"
-                                Tag="{Binding}">
+                                Tag="{x:Bind}">
                                 <FontIcon Glyph="&#xEDE1;" />
                                 <ToolTipService.ToolTip>
                                     <ToolTip x:Uid="ExportM3u8" />
                                 </ToolTipService.ToolTip>
                             </Button>
                             <StackPanel x:Name="OpenPlayListPanel" Grid.Column="2" Orientation="Horizontal">
-                                <TextBlock VerticalAlignment="Center" FontSize="18" Text="{Binding Name, Mode=TwoWay}" />
+                                <TextBlock VerticalAlignment="Center" FontSize="18" Text="{x:Bind Name, Mode=TwoWay}" />
                             </StackPanel>
                             <Button
                                 x:Name="RemovePlayListButton"
@@ -58,7 +58,7 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="RemovePlayListButton_Click"
-                                Tag="{Binding}">
+                                Tag="{x:Bind}">
                                 <FontIcon Glyph="&#xecc9;" />
                             </Button>
                         </Grid>

@@ -170,6 +170,9 @@ namespace WinUIMusicPlayer
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
                 }
             }
+            else {
+                App.Current_Exit();
+            }
         }
 
         private async void InitializeApp()

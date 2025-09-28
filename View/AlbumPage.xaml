@@ -19,7 +19,7 @@
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="AlbumGridView_ItemClick"
-                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Album_RightTapped"
                     SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">

@@ -12,7 +12,10 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Style
+            x:Key="ListViewItemStyle"
+            BasedOn="{StaticResource DefaultListViewItemStyle}"
+            TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
@@ -20,11 +23,26 @@
                         <MenuFlyoutItem x:Uid="CancelFavoriteMenuItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertOggItem" Click="ConvertAudio_Click" Tag="ogg" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertOpusItem" Click="ConvertAudio_Click" Tag="opus" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertWavItem"
+                                Click="ConvertAudio_Click"
+                                Tag="wav" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertMp3Item"
+                                Click="ConvertAudio_Click"
+                                Tag="mp3" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertFlacItem"
+                                Click="ConvertAudio_Click"
+                                Tag="flac" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertOggItem"
+                                Click="ConvertAudio_Click"
+                                Tag="ogg" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertOpusItem"
+                                Click="ConvertAudio_Click"
+                                Tag="opus" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
@@ -43,9 +61,9 @@
         CanReorderItems="True"
         DoubleTapped="MusicListView_DoubleTapped"
         ItemContainerStyle="{StaticResource ListViewItemStyle}"
-        ItemsSource="{Binding ViewModel.MusicList, Mode=TwoWay}"
+        ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
         RightTapped="MusicListView_RightTapped"
-        SelectedItem="{Binding ViewModel.SelectedMusic, Mode=TwoWay}"
+        SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
         SelectionMode="Extended">
         <ListView.ItemTemplate>
             <DataTemplate x:DataType="model:Music">
@@ -78,7 +96,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Canvas.ZIndex="1"
-                                Source="{Binding Converter={StaticResource FavourCoverConverter}}"
+                                Source="{x:Bind Converter={StaticResource FavourCoverConverter}}"
                                 Stretch="UniformToFill">
                                 <Image.Transitions>
                                     <TransitionCollection>
@@ -110,7 +128,10 @@
                         BorderThickness="0"
                         Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
                         CommandParameter="{x:Bind}">
-                        <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Converter={StaticResource FavouriteIconConverter}}" />
+                        <FontIcon
+                            x:Name="IsFavouriteIcon"
+                            Foreground="Red"
+                            Glyph="{x:Bind IsFavorite, Converter={StaticResource FavouriteIconConverter}}" />
                     </Button>
                     <TextBlock
                         Grid.Column="2"
@@ -171,7 +192,10 @@
                         BorderThickness="0"
                         Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
                         CommandParameter="{x:Bind}">
-                        <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                        <FontIcon
+                            Margin="0,2,0,0"
+                            VerticalAlignment="Center"
+                            Glyph="&#xE710;" />
                     </Button>
                     <FontIcon
                         x:Name="IsExistOnDeviceIcon"

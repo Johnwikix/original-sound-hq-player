@@ -61,7 +61,7 @@
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
                             Canvas.ZIndex="1"
-                            Source="{Binding ViewModel.CurrentMusicObject, Converter={StaticResource AlbumArtConverter}, Mode=OneWay}"
+                            Source="{x:Bind ViewModel.CurrentMusicObject, Converter={StaticResource AlbumArtConverter}, Mode=OneWay}"
                             Stretch="UniformToFill" />
                     </Grid>
                     <Grid
@@ -95,7 +95,7 @@
                     Margin="20,0,10,0"
                     FontSize="30"
                     FontWeight="Bold"
-                    Text="{Binding ViewModel.PlayListName, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.PlayListName, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="SecondaryTitleTextBlock"
@@ -103,7 +103,7 @@
                     Margin="20,0,10,0"
                     VerticalAlignment="Bottom"
                     FontSize="20"
-                    Text="{Binding ViewModel.SecondTitle, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="ThirdTitleTextBlock"
@@ -123,7 +123,7 @@
                     <Button
                         Grid.Column="0"
                         Margin="10,0,10,0"
-                        Command="{Binding ViewModel.PlayAllCommand, Mode=OneWay}"
+                        Command="{x:Bind ViewModel.PlayAllCommand, Mode=OneWay}"
                         Style="{StaticResource AccentButtonStyle}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
@@ -132,7 +132,7 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-                    <Button Grid.Column="1" Margin="10,0,10,0" Command="{Binding ViewModel.ExportPlayListCommand, Mode=OneWay}">
+                    <Button Grid.Column="1" Margin="10,0,10,0" Command="{x:Bind ViewModel.ExportPlayListCommand, Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xEDE1;" />
@@ -163,9 +163,9 @@
                 CanReorderItems="True"
                 DoubleTapped="MusicListView_DoubleTapped"
                 ItemContainerStyle="{StaticResource ListViewItemStyle}"
-                ItemsSource="{Binding ViewModel.MusicList, Mode=TwoWay}"
+                ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
                 RightTapped="MusicListView_RightTapped"
-                SelectedItem="{Binding ViewModel.SelectedMusic, Mode=TwoWay}"
+                SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
                 SelectionMode="Extended">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Music">
@@ -198,7 +198,7 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Canvas.ZIndex="1"
-                                        Source="{Binding Converter={StaticResource PlayListCoverConverter}}"
+                                        Source="{x:Bind Converter={StaticResource PlayListCoverConverter}}"
                                         Stretch="UniformToFill">
                                         <Image.Transitions>
                                             <TransitionCollection>

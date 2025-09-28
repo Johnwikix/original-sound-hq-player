@@ -17,16 +17,19 @@
         <Grid.Background>
             <ImageBrush
                 x:Name="ContentGridBackground"
-                ImageSource="{Binding ViewModel.MusicDetailCover, Mode=OneWay}"
-                Opacity="{Binding ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
+                ImageSource="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}"
+                Opacity="{x:Bind ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
                 Stretch="UniformToFill" />
         </Grid.Background>
-        <Grid x:Name="AcrylicBrushBackground" Margin="0" Padding="48,0,0,0">
+        <Grid
+            x:Name="AcrylicBrushBackground"
+            Margin="0"
+            Padding="48,0,0,0">
             <Grid.ChildrenTransitions>
                 <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                 <RepositionThemeTransition IsStaggeringEnabled="False" />
             </Grid.ChildrenTransitions>
-            <Grid Margin="{Binding ViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
+            <Grid Margin="{x:Bind ViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -79,7 +82,10 @@
                             Click="AddPlayList_Click"
                             FontSize="20"
                             Tag="PlayListAdd">
-                            <FontIcon Margin="0,2,0,0" VerticalAlignment="Bottom" Glyph="&#xe948;" />
+                            <FontIcon
+                                Margin="0,2,0,0"
+                                VerticalAlignment="Bottom"
+                                Glyph="&#xe948;" />
                         </Button>
                     </StackPanel>
 
@@ -104,7 +110,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             IsActive="True"
-                            Visibility="{Binding ViewModel.ProcessRingVisibility, Mode=OneWay}" />
+                            Visibility="{x:Bind ViewModel.ProcessRingVisibility, Mode=OneWay}" />
                         <ComboBox
                             x:Name="UsbDeviceCombox"
                             x:Uid="USBDevice"
@@ -114,10 +120,10 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             FontSize="12"
-                            ItemsSource="{Binding ViewModel.UsbStorageDevices, Mode=OneWay}"
-                            SelectedIndex="{Binding ViewModel.UsbSelectedIndex, Mode=TwoWay}"
+                            ItemsSource="{x:Bind ViewModel.UsbStorageDevices, Mode=OneWay}"
+                            SelectedIndex="{x:Bind ViewModel.UsbSelectedIndex, Mode=TwoWay}"
                             SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                            Visibility="{Binding ViewModel.UsbDeviceVisibility, Mode=OneWay}">
+                            Visibility="{x:Bind ViewModel.UsbDeviceVisibility, Mode=OneWay}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="model:UsbStorageDevice">
                                     <StackPanel Orientation="Horizontal">
@@ -128,7 +134,10 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <StackPanel Margin="0" Orientation="Horizontal" Visibility="{Binding ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                        <StackPanel
+                            Margin="0"
+                            Orientation="Horizontal"
+                            Visibility="{x:Bind ViewModel.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
                             <ComboBox
                                 x:Name="SortByComboBox"
                                 Width="130"
@@ -157,10 +166,10 @@
                 </Grid>
                 <InfoBar
                     x:Name="InfoBar"
-                    Title="{Binding ViewModel.InfoBarTitle, Mode=OneWay}"
+                    Title="{x:Bind ViewModel.InfoBarTitle, Mode=OneWay}"
                     Grid.Row="1"
-                    IsOpen="{Binding ViewModel.InfoBarIsOpen, Mode=TwoWay}"
-                    Message="{Binding ViewModel.InfoBarMessage, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.InfoBarIsOpen, Mode=TwoWay}"
+                    Message="{x:Bind ViewModel.InfoBarMessage, Mode=OneWay}"
                     Severity="Informational" />
                 <Frame
                     x:Name="ContentFrame"
@@ -187,7 +196,7 @@
                         x:Name="TopControl"
                         Grid.Row="0"
                         Grid.Column="0"
-                        Opacity="{Binding ViewModel.TopControlsOpacity, Mode=OneWay}"
+                        Opacity="{x:Bind ViewModel.TopControlsOpacity, Mode=OneWay}"
                         Orientation="Horizontal"
                         PointerEntered="TopControl_PointerEntered"
                         PointerExited="TopControl_PointerExited">
@@ -213,7 +222,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{Binding ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}">
+                            Command="{x:Bind ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="F" />
                             </Button.KeyboardAccelerators>
@@ -222,7 +231,7 @@
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
-                                Glyph="{Binding ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
+                                Glyph="{x:Bind ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                         </Button>
                     </StackPanel>
                     <Grid Grid.Row="1" Grid.Column="0">
@@ -257,15 +266,18 @@
                                             VerticalAlignment="Center"
                                             CornerRadius="10">
                                             <Grid>
-                                                <Image Canvas.ZIndex="1" Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}" />
+                                                <Image Canvas.ZIndex="1" Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}" />
                                                 <Grid
                                                     HorizontalAlignment="Stretch"
                                                     VerticalAlignment="Stretch"
                                                     Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                                     Canvas.ZIndex="0"
-                                                    Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                    Visibility="{x:Bind ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                                     <Viewbox Stretch="Uniform">
-                                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                                        <Border
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                                             <!--  图标层  -->
                                                             <FontIcon
                                                                 Width="200"
@@ -289,7 +301,10 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel x:Name="MusicInfoPanel" Grid.Column="0" Margin="5">
+                                    <StackPanel
+                                        x:Name="MusicInfoPanel"
+                                        Grid.Column="0"
+                                        Margin="5">
                                         <RichTextBlock
                                             x:Name="PlayingDetailTitleTextBlock"
                                             Margin="1"
@@ -301,7 +316,7 @@
                                             TextTrimming="CharacterEllipsis"
                                             TextWrapping="NoWrap">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="{Binding ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
+                                                <ToolTip Content="{x:Bind ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
                                             </ToolTipService.ToolTip>
                                         </RichTextBlock>
                                         <RichTextBlock
@@ -314,7 +329,7 @@
                                             TextTrimming="CharacterEllipsis"
                                             TextWrapping="NoWrap">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="{Binding ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}" VerticalOffset="10" />
+                                                <ToolTip Content="{x:Bind ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}" VerticalOffset="10" />
                                             </ToolTipService.ToolTip>
                                         </RichTextBlock>
                                         <RichTextBlock
@@ -327,7 +342,7 @@
                                             TextTrimming="CharacterEllipsis"
                                             TextWrapping="NoWrap">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="{Binding ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}" VerticalOffset="10" />
+                                                <ToolTip Content="{x:Bind ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}" VerticalOffset="10" />
                                             </ToolTipService.ToolTip>
                                         </RichTextBlock>
                                         <Grid Margin="0,2,0,1" HorizontalAlignment="Left">
@@ -340,12 +355,12 @@
                                                 Grid.Column="0"
                                                 Margin="0,0,10,0"
                                                 FontSize="12"
-                                                Text="{Binding ViewModel.MusicInfo, Mode=OneWay}" />
+                                                Text="{x:Bind ViewModel.MusicInfo, Mode=OneWay}" />
                                             <Image
                                                 x:Name="PlayingDetailHRImage"
                                                 Grid.Column="1"
                                                 Height="12"
-                                                Source="{Binding ViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                                Source="{x:Bind ViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                                         </Grid>
                                     </StackPanel>
                                     <Grid Grid.Column="1">
@@ -363,7 +378,7 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{Binding ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
+                                            Command="{x:Bind ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
                                             <Button.KeyboardAccelerators>
                                                 <KeyboardAccelerator Key="L" />
                                             </Button.KeyboardAccelerators>
@@ -376,7 +391,7 @@
                                             Margin="10,0,0,5"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Bottom"
-                                            Text="{Binding ViewModel.PlayTimeText, Mode=TwoWay}" />
+                                            Text="{x:Bind ViewModel.PlayTimeText, Mode=TwoWay}" />
                                     </Grid>
                                 </Grid>
                                 <!--  控制面板  -->
@@ -391,13 +406,13 @@
                                         Grid.Row="0"
                                         Margin="0"
                                         VerticalAlignment="Center"
-                                        Maximum="{Binding ViewModel.ProgressSliderMax, Mode=TwoWay}"
+                                        Maximum="{x:Bind ViewModel.ProgressSliderMax, Mode=TwoWay}"
                                         Minimum="0"
                                         Opacity="0.5"
                                         PointerEntered="ProgressSlider_PointerEntered"
                                         PointerExited="ProgressSlider_PointerExited"
                                         ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                                        Value="{Binding ViewModel.ProgressSlider, Mode=TwoWay}" />
+                                        Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
                                     <Grid
                                         Grid.Row="1"
                                         Margin="0,0,0,0"
@@ -440,7 +455,10 @@
                                             Click="CurrentPlayListButtonPlayingDetail_Click">
                                             <FontIcon x:Name="CurrentPlayListIconPlayingDetail" Glyph="&#xE90B;" />
                                         </Button>
-                                        <TeachingTip x:Name="CurrentPlayListTeachingTipPlayingDetail" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
+                                        <TeachingTip
+                                            x:Name="CurrentPlayListTeachingTipPlayingDetail"
+                                            IsLightDismissEnabled="True"
+                                            Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                             <TeachingTip.Content>
                                                 <Grid Width="290" Margin="0">
                                                     <!--  ListView内容，给右上角留出空间  -->
@@ -449,7 +467,7 @@
                                                         MaxHeight="400"
                                                         Margin="0,24,0,0"
                                                         DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
-                                                        ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
+                                                        ItemsSource="{x:Bind ViewModel.CurrentPlayingList, Mode=OneWay}">
                                                         <ListView.ItemTemplate>
                                                             <DataTemplate x:DataType="model:Music">
                                                                 <TextBlock
@@ -493,7 +511,7 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{Binding ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
+                                            Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
                                             <Button.KeyboardAccelerators>
                                                 <KeyboardAccelerator Key="Up" />
                                             </Button.KeyboardAccelerators>
@@ -510,7 +528,7 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{Binding ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
+                                            Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
                                             Style="{StaticResource CircularHoverButtonStyle}">
                                             <Button.KeyboardAccelerators>
                                                 <KeyboardAccelerator Key="Space" />
@@ -519,7 +537,7 @@
                                                 Width="50"
                                                 Height="50"
                                                 FontSize="32"
-                                                Glyph="{Binding ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                                                Glyph="{x:Bind ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                                         </Button>
 
                                         <Button
@@ -531,7 +549,7 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{Binding ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
+                                            Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
                                             <Button.KeyboardAccelerators>
                                                 <KeyboardAccelerator Key="Down" />
                                             </Button.KeyboardAccelerators>
@@ -548,8 +566,8 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{Binding ViewModel.PlayModeChangedCommand, Mode=OneWay}">
-                                            <FontIcon x:Name="PlayModeIconPlayingDetail" Glyph="{Binding ViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                                            Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
+                                            <FontIcon x:Name="PlayModeIconPlayingDetail" Glyph="{x:Bind ViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                                         </Button>
 
                                         <Button
@@ -566,7 +584,7 @@
                                                 Grid.Column="0"
                                                 Margin="0"
                                                 VerticalAlignment="Center"
-                                                Glyph="{Binding ViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                                Glyph="{x:Bind ViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                                             <Button.Flyout>
                                                 <Flyout x:Name="VolumeFlyout" Placement="Right">
                                                     <Slider
@@ -579,7 +597,7 @@
                                                         PointerEntered="VolumeSlider_PointerEntered"
                                                         PointerExited="VolumeSlider_PointerExited"
                                                         PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                                        Value="{Binding ViewModel.Volume, Mode=TwoWay}" />
+                                                        Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" />
                                                 </Flyout>
                                             </Button.Flyout>
                                         </Button>
@@ -598,7 +616,10 @@
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid Grid.Row="1" Grid.Column="1" Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}">
+                    <Grid
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
@@ -617,7 +638,7 @@
                                     VerticalAlignment="Stretch"
                                     IsItemClickEnabled="True"
                                     ItemClick="LyricsListView_ItemClick"
-                                    ItemsSource="{Binding ViewModel.UILyrics, Mode=TwoWay}"
+                                    ItemsSource="{x:Bind ViewModel.UILyrics, Mode=TwoWay}"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                     SelectionMode="None">
                                     <ListView.ItemContainerStyle>
@@ -693,19 +714,19 @@
                             Margin="0"
                             VerticalAlignment="Center"
                             Loaded="ProgressSlider_Loaded"
-                            Maximum="{Binding ViewModel.ProgressSliderMax, Mode=TwoWay}"
+                            Maximum="{x:Bind ViewModel.ProgressSliderMax, Mode=TwoWay}"
                             Minimum="0"
                             Opacity="0.5"
                             PointerEntered="ProgressSlider_PointerEntered"
                             PointerExited="ProgressSlider_PointerExited"
                             ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                            Value="{Binding ViewModel.ProgressSlider, Mode=TwoWay}" />
+                            Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
                         <TextBlock
                             x:Name="PlayTimeTextBlock"
                             Grid.Column="1"
                             Margin="10,0,0,0"
                             VerticalAlignment="Center"
-                            Text="{Binding ViewModel.PlayTimeText, Mode=TwoWay}" />
+                            Text="{x:Bind ViewModel.PlayTimeText, Mode=TwoWay}" />
                     </Grid>
 
                     <Grid Grid.Row="1" Margin="0">
@@ -748,7 +769,7 @@
                                             <Image
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                Source="{Binding ViewModel.MusicDetailCover, Mode=OneWay}"
+                                                Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}"
                                                 Stretch="UniformToFill" />
                                         </Grid>
                                         <Grid
@@ -756,7 +777,7 @@
                                             Height="80"
                                             Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                             Canvas.ZIndex="0"
-                                            Visibility="{Binding ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                            Visibility="{x:Bind ViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                             <FontIcon
                                                 Canvas.ZIndex="0"
                                                 FontSize="40"
@@ -772,7 +793,10 @@
                                         Opacity="0" />
                                 </Grid>
                             </Button>
-                            <Grid Width="Auto" Height="80" MaxWidth="300">
+                            <Grid
+                                Width="Auto"
+                                Height="80"
+                                MaxWidth="300">
                                 <!--  Rest of your grid content remains the same  -->
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -786,10 +810,10 @@
                                     Margin="10,0,10,0"
                                     FontSize="18"
                                     FontWeight="Bold"
-                                    Text="{Binding ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                     TextTrimming="WordEllipsis">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip Content="{Binding ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
+                                        <ToolTip Content="{x:Bind ViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
                                     </ToolTipService.ToolTip>
                                 </TextBlock>
                                 <Button
@@ -804,7 +828,7 @@
                                         <TextBlock
                                             FontSize="12"
                                             Tapped="AlbumTextBlock_Tapped"
-                                            Text="{Binding ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </Button.Content>
                                 </Button>
@@ -820,7 +844,7 @@
                                         <TextBlock
                                             FontSize="12"
                                             Tapped="AuthorTextBlock_Tapped"
-                                            Text="{Binding ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </Button.Content>
                                 </Button>
@@ -834,12 +858,12 @@
                                         Grid.Column="0"
                                         Margin="10,0,10,0"
                                         FontSize="12"
-                                        Text="{Binding ViewModel.MusicInfo, Mode=OneWay}" />
+                                        Text="{x:Bind ViewModel.MusicInfo, Mode=OneWay}" />
                                     <Image
                                         x:Name="HRImage"
                                         Grid.Column="1"
                                         Height="12"
-                                        Source="{Binding ViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                        Source="{x:Bind ViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                                 </Grid>
                             </Grid>
                         </StackPanel>
@@ -872,7 +896,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="L" />
                                 </Button.KeyboardAccelerators>
@@ -888,7 +912,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.FastBackwardButtonCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.FastBackwardButtonCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Left" />
                                 </Button.KeyboardAccelerators>
@@ -904,7 +928,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Up" />
                                 </Button.KeyboardAccelerators>
@@ -921,7 +945,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
                                 Style="{StaticResource CircularHoverButtonStyle}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Space" />
@@ -930,7 +954,7 @@
                                     Width="50"
                                     Height="50"
                                     FontSize="32"
-                                    Glyph="{Binding ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                                    Glyph="{x:Bind ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                             </Button>
 
                             <Button
@@ -942,7 +966,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Down" />
                                 </Button.KeyboardAccelerators>
@@ -958,7 +982,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.FastForwardButtonCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.FastForwardButtonCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Right" />
                                 </Button.KeyboardAccelerators>
@@ -974,7 +998,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.StopButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.StopButtonChangedCommand, Mode=OneWay}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="End" />
                                 </Button.KeyboardAccelerators>
@@ -992,7 +1016,7 @@
                                 Margin="0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Command="{Binding ViewModel.VolumeUpChangedCommand, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.VolumeUpChangedCommand, Mode=OneWay}"
                                 IsHitTestVisible="False"
                                 Opacity="0">
                                 <Button.KeyboardAccelerators>
@@ -1005,7 +1029,7 @@
                                 Margin="0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Command="{Binding ViewModel.VolumeDownChangedCommand, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.VolumeDownChangedCommand, Mode=OneWay}"
                                 IsHitTestVisible="False"
                                 Opacity="0">
                                 <Button.KeyboardAccelerators>
@@ -1035,7 +1059,10 @@
                                 Click="CurrentPlayListButton_Click">
                                 <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                             </Button>
-                            <TeachingTip x:Name="CurrentPlayListTeachingTip" IsLightDismissEnabled="True" Target="{x:Bind CurrentPlayListButton}">
+                            <TeachingTip
+                                x:Name="CurrentPlayListTeachingTip"
+                                IsLightDismissEnabled="True"
+                                Target="{x:Bind CurrentPlayListButton}">
                                 <TeachingTip.Content>
                                     <Grid Width="290">
                                         <!--  ListView内容，给右上角留出空间  -->
@@ -1045,7 +1072,7 @@
                                             MaxHeight="400"
                                             Margin="0,24,0,0"
                                             DoubleTapped="CurrentPlayListView_DoubleTapped"
-                                            ItemsSource="{Binding ViewModel.CurrentPlayingList, Mode=OneWay}">
+                                            ItemsSource="{x:Bind ViewModel.CurrentPlayingList, Mode=OneWay}">
                                             <ListView.ItemTemplate>
                                                 <DataTemplate x:DataType="model:Music">
                                                     <TextBlock
@@ -1089,8 +1116,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.PlayModeChangedCommand, Mode=OneWay}">
-                                <FontIcon x:Name="PlayModeIcon" Glyph="{Binding ViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                                Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
+                                <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                             </Button>
                             <Button
                                 Margin="0"
@@ -1099,13 +1126,13 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
                                 <FontIcon
                                     x:Name="VolumeSliderIcon"
                                     Grid.Column="0"
                                     Margin="0"
                                     VerticalAlignment="Center"
-                                    Glyph="{Binding ViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                    Glyph="{x:Bind ViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                             </Button>
                             <Slider
                                 x:Name="VolumeSlider"
@@ -1119,7 +1146,7 @@
                                 PointerEntered="VolumeSlider_PointerEntered"
                                 PointerExited="VolumeSlider_PointerExited"
                                 PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                Value="{Binding ViewModel.Volume, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" />
                         </StackPanel>
                     </Grid>
 
