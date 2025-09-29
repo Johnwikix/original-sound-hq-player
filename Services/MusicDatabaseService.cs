@@ -746,8 +746,9 @@ namespace WinUIMusicPlayer.Services
                     return query.Where(m =>
                         m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                         m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
-                        m.Author is not null && m.Author.ToLower().Contains(search.ToLower())
-                    ).OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
+                        m.Author is not null && m.Author.ToLower().Contains(search.ToLower())                        
+                    ).Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()))
+                    .OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
                 }
                 else
                 {

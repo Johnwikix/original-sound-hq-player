@@ -146,7 +146,7 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private async Task UpdateFile(Music music)
+        private async Task UpdateFile(Music music,DateTime updateTime)
         {
             using (TagLib.File audioFile = TagLib.File.Create(music.Path))
             {
@@ -179,6 +179,7 @@ namespace WinUIMusicPlayer.View.SubView
             music.DiskNumber = (int)DiskNumberBox.Value;
             music.TrackNumber = (int)TrackNumberBox.Value;
             music.Lyrics = LyricsTextBox.Text;
+            music.UpdateTime = updateTime;
             await MusicDatabaseService.UpdateMusicInfo(music);
             if (AppData.albumCoverCache.ContainsKey(music.Album))
             {
@@ -197,7 +198,9 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 try
                 {
-                    await UpdateFile(music);
+                    DateTime newModificationTime = DateTime.Now;
+                    await UpdateFile(music, newModificationTime);                    
+                    System.IO.File.SetLastWriteTime(music.Path, newModificationTime);
                 }
                 catch (Exception ex)
                 {
