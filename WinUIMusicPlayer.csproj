@@ -19,7 +19,6 @@
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
     <None Remove="Controls\NotifyIconControl.xaml" />
-    <None Remove="Libraries\x64\bassasio.dll" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
     <None Remove="Style\CustomFontStyle.xaml" />
@@ -79,9 +78,6 @@
   -->
   <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <ProjectCapability Include="Msix" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="Libraries\x64\bassasio.dll" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
