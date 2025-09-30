@@ -783,7 +783,7 @@ namespace WinUIMusicPlayer.Utils
                     if (music.Extension.ToLower() == "dff")
                     {
                         var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
-                        picture = res?.Pictures.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                        picture = res?.Pictures?.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
                         if (picture is not null)
                         {
                             DecodePicture(picture, album, bitmap);
