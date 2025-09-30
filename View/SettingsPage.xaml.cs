@@ -30,15 +30,12 @@ namespace WinUIMusicPlayer.View
 
         public async void ReceiveNavigationParameter(object parameter)
         {
-            //Debug.WriteLine($"SettingsPage received parameter: {parameter}");
-            //await ToolUtils.RefreshDevice();
             LoadOutputDevices();
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            //await ToolUtils.RefreshDevice();
             LoadOutputDevices();
         }
 
@@ -46,13 +43,6 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.IsRealDevceChange = false;
             ViewModel.InitializeWasapiDevice();
-            //ViewModel.OutputDevices.Clear();
-            //foreach (string device in AppSettings.outputDeviceList)
-            //{
-            //    ViewModel.OutputDevices.Add(device);
-            //}
-            //ViewModel.IsRealDevceChange = false;
-            //ViewModel.DeviceName = AppSettings.DeviceName;
         }
 
         private void ThirdParty_Click(object sender, RoutedEventArgs e)
