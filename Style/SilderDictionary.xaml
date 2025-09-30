@@ -104,11 +104,12 @@
                                     Grid.Row="0"
                                     Grid.RowSpan="3"
                                     Grid.Column="1"
-                                    Width="4"
-                                    Height="4"
+                                    Width="8"
+                                    Height="8"
                                     AutomationProperties.AccessibilityView="Raw"
                                     DataContext="{TemplateBinding Value}"
                                     FocusVisualMargin="-14,-6,-14,-6"
+                                    Foreground="{ThemeResource SystemAccentColor}"
                                     Style="{StaticResource SliderThumbStyle}" />
                             </Grid>
                             <Grid

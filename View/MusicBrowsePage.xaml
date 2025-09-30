@@ -411,7 +411,6 @@
                                         Opacity="0.5"
                                         PointerEntered="ProgressSlider_PointerEntered"
                                         PointerExited="ProgressSlider_PointerExited"
-                                        Style="{StaticResource GhostSliderStyle}"
                                         ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
                                         Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
                                     <Grid
@@ -598,7 +597,6 @@
                                                         PointerEntered="VolumeSlider_PointerEntered"
                                                         PointerExited="VolumeSlider_PointerExited"
                                                         PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                                        Style="{StaticResource GhostSliderStyle}"
                                                         Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" />
                                                 </Flyout>
                                             </Button.Flyout>
@@ -721,7 +719,6 @@
                             Opacity="0.5"
                             PointerEntered="ProgressSlider_PointerEntered"
                             PointerExited="ProgressSlider_PointerExited"
-                            Style="{StaticResource GhostSliderStyle}"
                             ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
                             Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
                         <TextBlock
@@ -1149,7 +1146,6 @@
                                 PointerEntered="VolumeSlider_PointerEntered"
                                 PointerExited="VolumeSlider_PointerExited"
                                 PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                Style="{StaticResource GhostSliderStyle}"
                                 Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" />
                         </StackPanel>
                     </Grid>
