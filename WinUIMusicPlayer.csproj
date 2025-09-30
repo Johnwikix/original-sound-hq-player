@@ -23,6 +23,7 @@
     <None Remove="Style\ConverterDictionary.xaml" />
     <None Remove="Style\CustomFontStyle.xaml" />
     <None Remove="Style\GroupStyleHeader.xaml" />
+    <None Remove="Style\SilderDictionary.xaml" />
     <None Remove="View\AddFolderPage.xaml" />
     <None Remove="View\AlbumPage.xaml" />
     <None Remove="View\ArtistPage.xaml" />
@@ -141,6 +142,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Style\SilderDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\CustomFontStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
