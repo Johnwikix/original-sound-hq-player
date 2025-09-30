@@ -10,6 +10,7 @@ namespace WinUIMusicPlayer.Model
         public string OutputMode { get; set; } = "DirectSound";
         public int Latency { get; set; } = 400;
         public int BassOutputDeviceId { get; set; } = -1;
+        public int BassASIODeviceId { get; set; } = -1;
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public string DefualtEntry { get; set; }
         public string DefualtPlayList { get; set; }

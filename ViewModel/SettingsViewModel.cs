@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ManagedBass;
 using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
@@ -298,23 +299,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private string _outputModeTag = "WaveOut";
-        public string OutputModeTag
-        {
-            get => _outputModeTag;
-            set
-            {
-                if (SetProperty(ref _outputModeTag, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.OutputMode = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsChanged();
-                    }
-                }
-            }
-        }
+        //private string _outputModeTag = "WaveOut";
+        //public string OutputModeTag
+        //{
+        //    get => _outputModeTag;
+        //    set
+        //    {
+        //        if (SetProperty(ref _outputModeTag, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.OutputMode = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //                AppSettings.OnOutputSettingsChanged();
+        //            }
+        //        }
+        //    }
+        //}
       
         private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
         public ObservableCollection<BassOutputDevice> BassOutputDevices
@@ -336,8 +337,15 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             if (_isInitized)
                             {
+                                if (value.OutputMode != "ASIO")
+                                {
+                                    AppSettings.BassOutputDeviceId = value.Id;
+                                }
+                                else {                                    
+                                    AppSettings.BassASIODeviceId = value.AsioId;                                    
+                                }
                                 AppSettings.DeviceName = value.Name;
-                                AppSettings.BassOutputDeviceId = value.Id;
+                                AppSettings.OutputMode = value.OutputMode;
                                 _ = MusicDatabaseService.SaveSettingAsync();
                                 AppSettings.OnOutputSettingsChanged();
                             }
@@ -716,7 +724,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 初始化LRC API源  
             LrcAPISource = AppSettings.LrcAPISource;
             // 初始化输出模式  
-            OutputModeTag = AppSettings.OutputMode;
+            //OutputModeTag = AppSettings.OutputMode;
             // 初始化背景类型
             BackdropType = AppSettings.AppStyle;
             if (BackdropType != "CustomAcrylicStyle")
@@ -771,7 +779,7 @@ namespace WinUIMusicPlayer.ViewModel
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             InitializeWasapiDevice();
-            InitializeAsioDevice();
+            //InitializeAsioDevice();
             _isInitized = true;
         }
 
@@ -781,7 +789,30 @@ namespace WinUIMusicPlayer.ViewModel
             BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = ToolUtils.GetString("DefaultDevice"),
-                Id = -1
+                Tag = ToolUtils.GetString("DefaultDevice") + "[DirectSound]",
+                Id = -1,
+                OutputMode = "DirectSound"
+            });
+            BassOutputDevices.Add(new BassOutputDevice
+            {
+                Name = ToolUtils.GetString("DefaultDevice"),
+                Tag = $"{ToolUtils.GetString("DefaultDevice")}[{ToolUtils.GetString("WasapiSharedText")}]",
+                Id = -1,
+                OutputMode = "WasapiShared"
+            });
+            BassOutputDevices.Add(new BassOutputDevice
+            {
+                Name = ToolUtils.GetString("DefaultDevice"),
+                Tag = $"{ToolUtils.GetString("DefaultDevice")}[{ToolUtils.GetString("WasapiExclusivePushText")}]",
+                Id = -1,
+                OutputMode = "WasapiExclusivePush"
+            });
+            BassOutputDevices.Add(new BassOutputDevice
+            {
+                Name = ToolUtils.GetString("DefaultDevice"),
+                Tag = $"{ToolUtils.GetString("DefaultDevice")}[{ToolUtils.GetString("WasapiExclusiveEventText")}]",
+                Id = -1,
+                OutputMode = "WasapiExclusiveEvent"
             });
             int n = BassWasapi.DeviceCount;
             for (int i = 0; i < n; i++)
@@ -797,16 +828,39 @@ namespace WinUIMusicPlayer.ViewModel
                             BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
-                                Id = i
+                                Tag = deviceInfo.Name + "[DirectSound]",
+                                Id = i,
+                                OutputMode= "DirectSound"
+                            });
+                            BassOutputDevices.Add(new BassOutputDevice
+                            {
+                                Name = deviceInfo.Name,
+                                Tag = $"{deviceInfo.Name}[{ToolUtils.GetString("WasapiSharedText")}]",
+                                Id = i,
+                                OutputMode = "WasapiShared"
+                            });
+                            BassOutputDevices.Add(new BassOutputDevice
+                            {
+                                Name = deviceInfo.Name,
+                                Tag = $"{deviceInfo.Name}[{ToolUtils.GetString("WasapiExclusivePushText")}]",
+                                Id = i,
+                                OutputMode = "WasapiExclusivePush"
+                            });
+                            BassOutputDevices.Add(new BassOutputDevice
+                            {
+                                Name = deviceInfo.Name,
+                                Tag = $"{deviceInfo.Name}[{ToolUtils.GetString("WasapiExclusiveEventText")}]",
+                                Id = i,
+                                OutputMode = "WasapiExclusiveEvent"
                             });
                         }
                     }
                 }
-            }           
-            var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
+            }
+            var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode==AppSettings.OutputMode);
             if (device is null)
             {
-                SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == ToolUtils.GetString("DefaultDevice"));
+                SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == ToolUtils.GetString("DefaultDevice") && d.OutputMode == AppSettings.OutputMode);
             }
             else {
                 SelectedDevice = device;
@@ -822,6 +876,13 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     Debug.WriteLine($"Asio:{deviceInfo.Name}: {i}");
                     Debug.WriteLine($"Asio:{deviceInfo.Driver}: {i}");
+                    BassOutputDevices.Add(new BassOutputDevice
+                    {
+                        Name = deviceInfo.Name,
+                        Tag = deviceInfo.Name + "[ASIO]",
+                        AsioId = i,
+                        OutputMode = "ASIO"
+                    });
                 }
             }
         }

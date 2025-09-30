@@ -861,4 +861,13 @@
   <data name="FlyoutConvertOpusItem.Text" xml:space="preserve">
     <value>Opus</value>
   </data>
+  <data name="WasapiExclusivePushText" xml:space="preserve">
+    <value>Wasapi独占(推送)</value>
+  </data>
+  <data name="WasapiExclusiveEventText" xml:space="preserve">
+    <value>Wasapi独占(事件)</value>
+  </data>
+  <data name="WasapiSharedText" xml:space="preserve">
+    <value>Wasapi共享</value>
+  </data>
 </root>

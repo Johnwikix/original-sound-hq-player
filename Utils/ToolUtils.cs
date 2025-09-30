@@ -141,6 +141,7 @@ namespace WinUIMusicPlayer.Utils
                 return key;
             }
         }
+        
         public enum PlayMode
         {
             SingleLoop,
