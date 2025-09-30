@@ -199,8 +199,7 @@ namespace WinUIMusicPlayer.View.SubView
                 try
                 {
                     DateTime newModificationTime = DateTime.Now;
-                    await UpdateFile(music, newModificationTime);                    
-                    System.IO.File.SetLastWriteTime(music.Path, newModificationTime);
+                    await UpdateFile(music, newModificationTime);
                 }
                 catch (Exception ex)
                 {
