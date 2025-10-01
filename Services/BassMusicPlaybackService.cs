@@ -212,7 +212,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private string GetLyricsContentFromLrc(string path)
+        private string GetLyricsContentFromLrc(string? path)
         {
             if (!string.IsNullOrWhiteSpace(path))
             {
