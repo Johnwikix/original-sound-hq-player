@@ -204,7 +204,7 @@ namespace WinUIMusicPlayer.Services
         {
             CancelPreviousLyricsTask();
             _lyrics.Clear();
-            string? lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
+            string? lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Path);
             var lyricsContent = await ParseLrcLyrics(lrcContent);
             if (lyricsContent is not null)
             {
@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.Services
             {
                 return SpliteContent(lrcContent, lyrics);
             }
-            lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Path);
+            lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
             if (string.IsNullOrWhiteSpace(lrcContent))
             {
                 if (AppSettings.isAutoLyricsEnabled)
