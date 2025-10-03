@@ -47,8 +47,8 @@ namespace WinUIMusicPlayer.Services
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
-        private readonly object _streamLock = new();
-        private readonly object _waveChannelLock = new();
+        private readonly Lock _streamLock = new();
+        private readonly Lock _waveChannelLock = new();
         //private CancellationTokenSource _currentOperationCts;
         private volatile bool _isDisposing = false;
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
