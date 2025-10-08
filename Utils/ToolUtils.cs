@@ -787,7 +787,7 @@ namespace WinUIMusicPlayer.Utils
                         picture = res?.Pictures?.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
                         if (picture is not null)
                         {
-                            DecodePicture(picture, album, bitmap);
+                            await DecodePicture(picture, album, bitmap);
                         }
                     }else{
                         using (var file = TagLib.File.Create(filePath))
@@ -795,7 +795,7 @@ namespace WinUIMusicPlayer.Utils
                             picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;                            
                             if (picture is not null)
                             {
-                                DecodePicture(picture, album, bitmap);
+                                await DecodePicture(picture, album, bitmap);
                             }
                         }
                     }
@@ -847,7 +847,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture is not null)
                 {
-                    DecodePicture(picture, album, bitmap);
+                    await DecodePicture(picture, album, bitmap);
                 }
             }
         }
@@ -880,7 +880,8 @@ namespace WinUIMusicPlayer.Utils
             return picture;
         }
 
-        private static async void DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
+        private static async Task DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
+            InMemoryRandomAccessStream resizedStream = null;
             try
             {
                 using (var originalStream = new MemoryStream(picture))
@@ -890,7 +891,7 @@ namespace WinUIMusicPlayer.Utils
                     double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
                     uint newWidth = (uint)AppSettings.CoverSize;
                     uint newHeight = (uint)(newWidth / aspectRatio);
-                    var resizedStream = new InMemoryRandomAccessStream();
+                    resizedStream = new InMemoryRandomAccessStream();
                     var encoder = await BitmapEncoder.CreateForTranscodingAsync(resizedStream, decoder);
                     encoder.BitmapTransform.ScaledWidth = newWidth;
                     encoder.BitmapTransform.ScaledHeight = newHeight;
@@ -908,19 +909,16 @@ namespace WinUIMusicPlayer.Utils
                                 AppData.albumCoverCache.TryAdd(album, bitmap);
                             }
                         }
-                        catch (Exception)
-                        {
-                        }
                         finally
                         {
-                            resizedStream.Dispose();
+                            resizedStream?.Dispose();
                         }
                     });
                 }
             }
-            catch (Exception)
-            { 
-            }
+            catch {
+                resizedStream?.Dispose();
+            }            
         }
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
