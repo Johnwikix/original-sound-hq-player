@@ -577,9 +577,6 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                // 停止当前WASAPI流
-                StopWasapiPlayback();
-                StopAsioPlayback();
                 // 初始化播放模式
                 Bass.ChannelGetInfo(_currentStream,out var channelInfo);      
                 var result = SwitchDevice(channelInfo);
@@ -700,8 +697,6 @@ namespace WinUIMusicPlayer.Services
         {
             if (_currentStream != 0)
             {
-                StopWasapiPlayback();
-                StopAsioPlayback();
                 Bass.ChannelStop(_currentStream);
                 progressTimer.Stop();
                 AppSettings.isPlaying = false;
@@ -936,13 +931,11 @@ namespace WinUIMusicPlayer.Services
                     if (AppSettings.isPlaying)
                     {
                         Stop();
-                        DisposeStream();
                         SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
                         Play(true);
                     }
                     else
                     {
-                        DisposeStream();
                         SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
                     }
                     ChangeWaveChannelTime(TimeSpan.FromSeconds(currentTime));
