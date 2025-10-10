@@ -863,6 +863,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (device is null)
             {
                 SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == ToolUtils.GetString("DefaultDevice") && d.OutputMode == "[DirectSound]");
+                AppSettings.BassOutputDeviceId = -1;
             }
             else {
                 SelectedDevice = device;
