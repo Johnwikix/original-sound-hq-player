@@ -618,7 +618,7 @@ namespace WinUIMusicPlayer.Services
                     BassAsio.ChannelEnableBass(false, 0, _currentStream, true);
                     BassAsio.ChannelSetFormat(false, 0, AsioSampleFormat.Float);
                     BassAsio.Rate = channelInfo.Frequency;
-                    BassAsio.ChannelSetVolume(false, -1, volume / 100.0);
+                    BassAsio.ChannelSetVolume(false, -1, volume);
                 }
                 Debug.WriteLine($"WASAPI模式启动成功");
                 return true;
@@ -635,10 +635,10 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 DisposeStream();
+                BassDsd.DefaultGain = AppSettings.dsdGain;
+                BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
                 if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-                {
-                    BassDsd.DefaultGain = AppSettings.dsdGain;
-                    BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
+                {                    
                     if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                     {
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
@@ -881,7 +881,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
                 } else if (AppSettings.OutputMode == "ASIO") {
-                    BassAsio.ChannelSetVolume(false, -1, volume / 100.0);
+                    BassAsio.ChannelSetVolume(false, -1, volume);
                 }
                 else
                 {
