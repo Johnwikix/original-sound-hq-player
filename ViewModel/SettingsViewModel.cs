@@ -857,6 +857,8 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
+            var deviceName = AppSettings.DeviceName;
+            var outputMode = AppSettings.OutputMode;
             var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode==AppSettings.OutputMode);
             if (device is null)
             {

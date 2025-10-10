@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Model
 
         //public static List<string> outputDeviceList = [];
         public static int BassOutputDeviceId { get; set; } = -1;
-        public static int BassASIODeviceId { get; set; } = -1;
+        public static int BassASIODeviceId { get; set; } = 0;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public static string DefualtEntry { get; set; } = "AddFolder";
         public static string DefualtPlayList { get; set; } = "song";

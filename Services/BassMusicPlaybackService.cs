@@ -1,4 +1,5 @@
 ﻿using ManagedBass;
+using ManagedBass.Asio;
 using ManagedBass.Dsd;
 using ManagedBass.Fx;
 using ManagedBass.Tags;
@@ -468,7 +469,7 @@ namespace WinUIMusicPlayer.Services
         {
             if (AppSettings.IsEqualizerEnabled 
                 && !(AppSettings.IsDopEnabled 
-                && AppSettings.OutputMode.Contains("WasapiExclusive") 
+                && (AppSettings.OutputMode.Contains("WasapiExclusive") ||AppSettings.OutputMode == "ASIO")
                 && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))                    
                )
             {
@@ -533,10 +534,9 @@ namespace WinUIMusicPlayer.Services
             DisposeEq();
         }
 
-        private bool SwitchDevice()
+        private bool SwitchDevice(ChannelInfo channelInfo)
         {
-            bool result = false;
-            Bass.ChannelGetInfo(_currentStream,out var channelInfo);           
+            bool result = false;                 
             switch (AppSettings.OutputMode)
             {
                 case "WasapiShared":
@@ -560,12 +560,16 @@ namespace WinUIMusicPlayer.Services
                             WasapiInitFlags.Exclusive | WasapiInitFlags.EventDriven,
                             AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
                     break;
+                case "ASIO":
+                    result = BassAsio.Init(AppSettings.BassASIODeviceId,AsioInitFlags.Thread);
+                    break;
             }
-            BassWasapi.GetInfo(out var info);
-            MaxDb = info.MaxVolume;
-            MinDb = info.MinVolume;
-            MiddleDb = (MinDb + MaxDb) / 2;
-            //Debug.WriteLine(MinDb);
+            if (AppSettings.OutputMode.Contains("Wasapi")) {
+                BassWasapi.GetInfo(out var info);
+                MaxDb = info.MaxVolume;
+                MinDb = info.MinVolume;
+                MiddleDb = (MinDb + MaxDb) / 2;
+            }            
             return result;
         }
 
@@ -575,33 +579,20 @@ namespace WinUIMusicPlayer.Services
             {
                 // 停止当前WASAPI流
                 StopWasapiPlayback();
-                //// 获取默认音频设备
-                //if (AppSettings.BassOutputDeviceId == -1)
-                //{
-                //    Debug.WriteLine($"无法获取默认WASAPI设备");
-                //    return false;
-                //}
-                //var info = BassWasapi.GetDeviceInfo(AppSettings.BassOutputDeviceId);
-                //Debug.WriteLine($"使用WASAPI设备: {info.Name}");
-                // 初始化播放模式                
-                var result = SwitchDevice();
+                StopAsioPlayback();
+                // 初始化播放模式
+                Bass.ChannelGetInfo(_currentStream,out var channelInfo);      
+                var result = SwitchDevice(channelInfo);
                 if (!result)
                 {
-                    var error = Bass.LastError;
-                    if (Bass.LastError == Errors.Busy)
-                    {
-                        StopWasapiPlayback();
-                    }
-                    result = SwitchDevice();
+                    StopWasapiPlayback();
+                    StopAsioPlayback();
+                    result = SwitchDevice(channelInfo);
                     if (!result)
                     {
-                        Debug.WriteLine($"WASAPI独占模式初始化失败: {error}");
                         return false;
                     }
                 }
-                //WasapiInfo wasapiInfo;
-                //BassWasapi.GetInfo(out wasapiInfo);
-                //Debug.WriteLine($"实际WASAPI格式 - 采样率: {wasapiInfo.Frequency}, 声道: {wasapiInfo.Channels}, 格式: {wasapiInfo.Format}");
                 // 设置音量
                 if (AppSettings.OutputMode.Contains("WasapiShared"))
                 {
@@ -618,9 +609,16 @@ namespace WinUIMusicPlayer.Services
                             MusicBrowseViewModel.Volume = volume * 100;
                         });
                     }
-                    else {
+                    else
+                    {                        
                         BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)LinearToDb(volume));
-                    }                                    
+                    }
+                }
+                else if (AppSettings.OutputMode == "ASIO") {
+                    BassAsio.ChannelEnableBass(false, 0, _currentStream, true);
+                    BassAsio.ChannelSetFormat(false, 0, AsioSampleFormat.Float);
+                    BassAsio.Rate = channelInfo.Frequency;
+                    BassAsio.ChannelSetVolume(false, -1, volume / 100.0);
                 }
                 Debug.WriteLine($"WASAPI模式启动成功");
                 return true;
@@ -636,25 +634,30 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                DisposeStream();                
+                DisposeStream();
                 if (AppSettings.OutputMode.Contains("WasapiExclusive"))
                 {
                     BassDsd.DefaultGain = AppSettings.dsdGain;
                     BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
-                    if (AppSettings.IsDopEnabled && ( music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
-                    {                        
-                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);                        
+                    if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
                     }
                     else
                     {
                         _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                     }
-                } else if(AppSettings.OutputMode.Contains("WasapiShared")){
+                }
+                else if (AppSettings.OutputMode.Contains("WasapiShared"))
+                {
                     _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                }
+                else if (AppSettings.OutputMode == "ASIO") {
+                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else
                 {
-                    _currentStream = Bass.CreateStream(music.Path,0,0,BassFlags.Default | BassFlags.AsyncFile);
+                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
                 }
                 if (_currentStream == 0)
                 {
@@ -665,7 +668,7 @@ namespace WinUIMusicPlayer.Services
                 Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _syncFailCallback); // 设置播放失败回调
                 ToggleEqualizer();
                 // 根据模式设置音量
-                if (!AppSettings.OutputMode.Contains("Wasapi"))
+                if (!AppSettings.OutputMode.Contains("Wasapi") && AppSettings.OutputMode != "ASIO")
                 {
                     // 在独占模式下，音量由WASAPI控制
                     Bass.ChannelSetAttribute(
@@ -697,10 +700,8 @@ namespace WinUIMusicPlayer.Services
         {
             if (_currentStream != 0)
             {
-                if (AppSettings.OutputMode.Contains("Wasapi"))
-                {
-                    StopWasapiPlayback();
-                }
+                StopWasapiPlayback();
+                StopAsioPlayback();
                 Bass.ChannelStop(_currentStream);
                 progressTimer.Stop();
                 AppSettings.isPlaying = false;
@@ -737,6 +738,8 @@ namespace WinUIMusicPlayer.Services
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
                     BassWasapi.Stop();
+                }else if (AppSettings.OutputMode == "ASIO") {
+                    BassAsio.Stop();
                 }
                 else
                 {
@@ -757,6 +760,8 @@ namespace WinUIMusicPlayer.Services
                     if (AppSettings.OutputMode.Contains("Wasapi"))
                     {
                         BassWasapi.Start();
+                    } else if (AppSettings.OutputMode == "ASIO") {
+                        BassAsio.Start();
                     }
                     else
                     {
@@ -803,6 +808,16 @@ namespace WinUIMusicPlayer.Services
                     else
                     {
                         // 如果独占模式启动失败，回退到共享模式
+                        Bass.ChannelPlay(_currentStream, false);
+                    }
+                } else if (AppSettings.OutputMode == "ASIO") {
+                    if (InitializePlayback())
+                    {
+                        BassAsio.Start();
+                    }
+                    else
+                    {
+                        // 如果ASIO模式启动失败，回退到共享模式
                         Bass.ChannelPlay(_currentStream, false);
                     }
                 }
@@ -865,6 +880,8 @@ namespace WinUIMusicPlayer.Services
                 else if (AppSettings.OutputMode.Contains("WasapiShared"))
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
+                } else if (AppSettings.OutputMode == "ASIO") {
+                    BassAsio.ChannelSetVolume(false, -1, volume / 100.0);
                 }
                 else
                 {
@@ -967,6 +984,7 @@ namespace WinUIMusicPlayer.Services
                 _currentStream = 0;
             }
             StopWasapiPlayback();
+            StopAsioPlayback();
             DisposeEq();
         }
 
@@ -986,6 +1004,29 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine(ex, $"停止WASAPI播放时出错");
             }
         }
+        private void StopAsioPlayback()
+        {
+            try
+            {
+                if (BassAsio.IsStarted)
+                {
+                    BassAsio.Stop();
+                }
+                var asioFree = BassAsio.Free();
+                if (!asioFree)
+                {
+                    Debug.WriteLine($"释放ASIO失败: {Bass.LastError}");
+                }
+                else {
+                    Debug.WriteLine($"释放ASIO成功");
+                }
+                AppSettings.isPlaying = false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex, $"停止ASIO播放时出错");
+            }
+        }
         public void DisposeEq()
         {
             _peakEQ?.Dispose();
@@ -1003,14 +1044,9 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Elapsed -= ProgressTimer_Elapsed;
                 progressTimer.Dispose();
                 progressTimer = null;
-            }
-            if (BassWasapi.IsStarted)
-            {
-                BassWasapi.Stop(true);
-            }
+            }           
             _syncEndCallback -= OnPlayBackEnded;
             _syncFailCallback -= OnPlaybackFailed;
-            BassWasapi.Free();
             BassManager.Free();
         }
     }

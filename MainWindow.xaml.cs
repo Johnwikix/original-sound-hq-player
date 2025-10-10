@@ -186,7 +186,7 @@ namespace WinUIMusicPlayer
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);
-                RefreshDevice();
+                //RefreshDevice();
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
