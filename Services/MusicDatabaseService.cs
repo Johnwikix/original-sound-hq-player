@@ -887,7 +887,7 @@ namespace WinUIMusicPlayer.Services
         public static async Task SaveSettingAsync()
         {
             SaveSettings settings = await GetSettings();
-            SaveSettings newSettings = new SaveSettings();
+            SaveSettings newSettings = new SaveSettings();           
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
@@ -941,6 +941,7 @@ namespace WinUIMusicPlayer.Services
             }
             else
             {
+                newSettings.Id = settings.Id;
                 await MusicDatabaseService.UpdateSettings(newSettings);
             }
         }

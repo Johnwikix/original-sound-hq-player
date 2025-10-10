@@ -207,7 +207,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
-
+  <ItemGroup>
+	  <TrimmerRootAssembly Include="TagLibSharp" />
+	  <TrimmerRootAssembly Include="ManagedBass.Tags" />
+	  <TrimmerRootAssembly Include="ManagedBass.Fx" />
+	  <TrimmerRootAssembly Include="ManagedBass.Wasapi" />
+      <TrimmerRootAssembly Include="ManagedBass.Dsd" />
+	  <TrimmerRootAssembly Include="ManagedBass.Enc" />
+	  <TrimmerRootAssembly Include="ManagedBass.Asio" />
+	  <TrimmerRootAssembly Include="ManagedBass" />
+	  <TrimmerRootAssembly Include="SQLite-net" />
+	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
+  </ItemGroup>
   <!--
     Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
     Explorer "Package and Publish" context menu entry to be enabled for this project even if
@@ -224,6 +235,7 @@
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
+	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefaultLanguage>en</DefaultLanguage>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>

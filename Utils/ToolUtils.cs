@@ -30,6 +30,7 @@ using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -516,8 +517,9 @@ namespace WinUIMusicPlayer.Utils
 
             try
             {
+                var typeInfo = AppJsonSerializerContextHelper.Default.DictionaryStringDouble;
                 // 使用System.Text.Json进行序列化
-                return JsonSerializer.Serialize(dict);
+                return JsonSerializer.Serialize(dict, typeInfo);
             }
             catch (Exception ex)
             {
@@ -549,7 +551,11 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 // 使用System.Text.Json进行反序列化  
-                return JsonSerializer.Deserialize<Dictionary<string, double>>(jsonString);
+                var typeInfo = AppJsonSerializerContextHelper.Default.DictionaryStringDouble;
+
+                // 2. 使用重载的 Deserialize 方法，传入 TypeInfo
+                return (Dictionary<string, double>)
+                    JsonSerializer.Deserialize(jsonString, typeInfo);
             }
             catch (Exception ex)
             {
