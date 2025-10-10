@@ -828,13 +828,6 @@ namespace WinUIMusicPlayer.ViewModel
                             BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
-                                Tag = deviceInfo.Name + " [DirectSound]",
-                                Id = i,
-                                OutputMode= "DirectSound"
-                            });
-                            BassOutputDevices.Add(new BassOutputDevice
-                            {
-                                Name = deviceInfo.Name,
                                 Tag = $"{deviceInfo.Name} [{ToolUtils.GetString("WasapiSharedText")}]",
                                 Id = i,
                                 OutputMode = "WasapiShared"
