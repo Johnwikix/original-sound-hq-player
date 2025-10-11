@@ -128,6 +128,8 @@ namespace WinUIMusicPlayer.Utils
                 ["favour"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.Order).ToImmutableList(),
                 ["playList"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.PlayListOrder).ToImmutableList()
             };
+        private static readonly string HashTag = "#";
+        private static readonly string ZhongChar = "中";
 
         public static string GetString(string key)
         {
@@ -627,55 +629,68 @@ namespace WinUIMusicPlayer.Utils
 
         public static string GetFirstLetterAdvanced(string text)
         {
+            // 1. 检查空值和长度
             if (string.IsNullOrEmpty(text))
-                return "#";
+                return CharStringCache.GetHashTag(); // 零分配
 
-            char firstChar = text.Trim()[0];
+            string trimmedText = text.Trim(); // 产生分配
+            if (trimmedText.Length == 0)
+                return CharStringCache.GetHashTag(); // 零分配
 
-            // 处理英文字符
+            char firstChar = trimmedText[0];
+
+            // 2. 处理英文字符 (零分配)
             if (firstChar >= 'A' && firstChar <= 'Z')
-                return firstChar.ToString();
+                return CharStringCache.GetLetter(firstChar); // 零分配
+
             if (firstChar >= 'a' && firstChar <= 'z')
-                return firstChar.ToString().ToUpper();
+            {
+                char upperChar = char.ToUpper(firstChar);
+                return CharStringCache.GetLetter(upperChar); // 零分配
+            }
 
-            // 处理数字
+            // 3. 处理数字
             if (char.IsDigit(firstChar))
-                return "#";
+                return CharStringCache.GetHashTag(); // 零分配
 
-            // 处理中文字符
+            // 4. 处理中文字符
             if (ChineseChar.IsValidChar(firstChar))
             {
                 try
                 {
-                    ChineseChar chineseChar = new ChineseChar(firstChar);
-                    // 获取拼音集合
+                    ChineseChar chineseChar = new ChineseChar(firstChar); // 库的固有分配
                     var pinyinCollection = chineseChar.Pinyins;
 
                     if (pinyinCollection is not null && pinyinCollection.Count > 0)
                     {
-                        // 获取第一个拼音，去掉声调数字，取首字母
                         string firstPinyin = pinyinCollection[0];
                         if (!string.IsNullOrEmpty(firstPinyin))
                         {
-                            // 去掉声调数字和其他符号，只保留字母
-                            string cleanPinyin = new string(firstPinyin.AsValueEnumerable().Where(char.IsLetter).ToArray());
-                            if (!string.IsNullOrEmpty(cleanPinyin))
+                            char firstLetter = '\0';
+
+                            // 使用 ZLinq 快速查找第一个字母 (性能高，分配低/零)
+                            foreach (char c in firstPinyin.AsValueEnumerable().Where(char.IsLetter))
                             {
-                                return cleanPinyin[0].ToString().ToUpper();
+                                firstLetter = c;
+                                break;
+                            }
+
+                            if (firstLetter != '\0')
+                            {
+                                char upperChar = char.ToUpper(firstLetter);
+                                return CharStringCache.GetLetter(upperChar); // 零分配
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    // 如果转换失败，返回默认值
-                    Console.WriteLine($"拼音转换失败: {ex.Message}");
-                    return "中";
+                    System.Diagnostics.Debug.WriteLine($"拼音转换失败: {ex.Message}");
+                    return CharStringCache.GetZhongChar(); // 零分配
                 }
             }
-
-            // 其他字符（符号等）
-            return "#";
+            // 5. 其他字符
+            return CharStringCache.GetHashTag(); // 零分配
         }
 
         public static string ConvertLyrics(string lyrics)
