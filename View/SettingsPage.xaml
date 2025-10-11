@@ -69,18 +69,6 @@
                     </StackPanel.ChildrenTransitions>
                     <controls:SettingsExpander x:Uid="SettingOutput" Margin="10,10,10,0">
                         <controls:SettingsExpander.Items>
-                            <!--<controls:SettingsCard x:Uid="SettingOutputMode">
-                                <ComboBox
-                                    x:Name="OutputModeComboBox"
-                                    Width="300"
-                                    SelectedValue="{x:Bind ViewModel.OutputModeTag, Mode=TwoWay}"
-                                    SelectedValuePath="Tag">
-                                    <ComboBoxItem x:Uid="WasapiExclusivePush" Tag="WasapiExclusivePush" />
-                                    <ComboBoxItem x:Uid="WasapiExclusiveEvent" Tag="WasapiExclusiveEvent" />
-                                    <ComboBoxItem x:Uid="WasapiShared" Tag="WasapiShared" />
-                                    <ComboBoxItem x:Uid="DirectSound" Tag="DirectSound" />
-                                </ComboBox>
-                            </controls:SettingsCard>-->
                             <controls:SettingsCard x:Uid="SettingOutputDevice">
                                 <ComboBox
                                     x:Name="OutputDeviceComboBox"
@@ -122,7 +110,7 @@
                                     SpinButtonPlacementMode="Inline"
                                     Value="{x:Bind ViewModel.DsdGain, Mode=TwoWay}" />
                             </controls:SettingsCard>
-                            <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}" Header="DSD Dop">
+                            <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}" Header="DSD Dop / DSD Native">
                                 <ToggleSwitch IsOn="{x:Bind ViewModel.IsDopEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>
                         </controls:SettingsExpander.Items>

@@ -34,6 +34,7 @@ namespace WinUIMusicPlayer.Services
         private SyncProcedure? _syncEndCallback;
         private SyncProcedure? _syncFailCallback;
         private WasapiProcedure _myWasapiProcedure;
+        private AsioProcedure _myAsioProcedure;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
@@ -71,7 +72,13 @@ namespace WinUIMusicPlayer.Services
             InitializingData();
             InitializeBass();
             InitializeBassWasapi();
-
+            InitializeProcedures();
+        }
+        private void InitializeProcedures()
+        {
+            // 设置回调
+            _myWasapiProcedure = OnWasapiProc;
+            _myAsioProcedure = OnAsioProc;
         }
         private async void InitializingData()
         {
@@ -446,9 +453,6 @@ namespace WinUIMusicPlayer.Services
                 {
                     return;
                 }
-
-                // 设置WASAPI回调
-                _myWasapiProcedure = OnWasapiProc;
             }
             catch (Exception ex)
             {
@@ -482,9 +486,7 @@ namespace WinUIMusicPlayer.Services
                         for (int i = 0; i < _eqFrequencies.Length; i++)
                         {
                             _bandIndices[i] = _peakEQ.AddBand(_eqFrequencies[i]);
-                            //Debug.WriteLine($"均衡器频段 {_eqFrequencies[i]}Hz 创建成功，Band索引: {_bandIndices[i]}");
                         }
-                        //Debug.WriteLine("均衡器初始化完成");
                     }
                 }
                 catch (Exception ex)
@@ -499,20 +501,16 @@ namespace WinUIMusicPlayer.Services
         {
             if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
             {
-                //Debug.WriteLine($"无效的频段索引: {bandIndex}");
                 return;
             }
             if (_peakEQ == null)
             {
-                //Debug.WriteLine("均衡器未初始化");
                 return;
             }
-
             try
             {
                 // 使用UpdateBand方法更新指定频段的增益
                 _peakEQ.UpdateBand(_bandIndices[bandIndex], gain);
-                //Debug.WriteLine($"频段 {_eqFrequencies[bandIndex]}Hz (Band {_bandIndices[bandIndex]}) 增益设置为 {gain}dB");
             }
             catch (Exception ex)
             {
@@ -572,7 +570,14 @@ namespace WinUIMusicPlayer.Services
             }            
             return result;
         }
-
+        private int OnAsioProc(bool input, int channel, IntPtr buffer, int length, IntPtr user)
+        {
+            if (_currentStream != 0)
+            {
+                return Bass.ChannelGetData(user.ToInt32(), buffer, length);
+            }
+            return 0;
+        }
         private bool InitializePlayback()
         {
             try
@@ -612,9 +617,25 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
                 else if (AppSettings.OutputMode == "ASIO") {
-                    BassAsio.ChannelEnableBass(false, 0, _currentStream, true);
-                    BassAsio.ChannelSetFormat(false, 0, AsioSampleFormat.Float);
-                    BassAsio.Rate = channelInfo.Frequency;
+                   
+                    if (AppSettings.IsDopEnabled 
+                        && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) 
+                        || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
+                        )
+                    {
+                        Bass.ChannelGetAttribute(_currentStream, ChannelAttribute.DSDRate, out float dsdRate);
+                        if (!BassAsio.SetDSD(true)) return false;
+                        BassAsio.Rate = dsdRate;
+                        if (!BassAsio.ChannelSetFormat(false, 0, AsioSampleFormat.DSD_MSB)) return false;
+                        if (!BassAsio.ChannelEnable(false, 0, _myAsioProcedure, new IntPtr(_currentStream))) return false;
+                        if (!BassAsio.ChannelJoin(false, 1, 0)) return false;
+                    }
+                    else
+                    {
+                        if (!BassAsio.ChannelEnableBass(false, 0, _currentStream, true)) return false;
+                        if (!BassAsio.ChannelSetFormat(false, 0, AsioSampleFormat.Float)) return false;
+                        BassAsio.Rate = channelInfo.Frequency;
+                    }
                     BassAsio.ChannelSetVolume(false, -1, volume);
                 }
                 Debug.WriteLine($"WASAPI模式启动成功");
@@ -650,7 +671,14 @@ namespace WinUIMusicPlayer.Services
                     _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
                 else if (AppSettings.OutputMode == "ASIO") {
-                    _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDRaw | BassFlags.Decode | BassFlags.AsyncFile);
+                    }
+                    else
+                    {
+                        _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
+                    }                    
                 }
                 else
                 {
@@ -667,7 +695,6 @@ namespace WinUIMusicPlayer.Services
                 // 根据模式设置音量
                 if (!AppSettings.OutputMode.Contains("Wasapi") && AppSettings.OutputMode != "ASIO")
                 {
-                    // 在独占模式下，音量由WASAPI控制
                     Bass.ChannelSetAttribute(
                         _currentStream,
                         ChannelAttribute.Volume,

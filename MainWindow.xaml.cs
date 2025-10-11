@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer
             H.NotifyIcon.WindowExtensions.Show(this, disableEfficiencyMode: true);
             if (AppSettings.IsProcessAboveNormal)
             {
-                PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+                PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
             }
             this.AppWindow.Closing += AppWindow_Closing;
             //重复启动显示窗口
@@ -167,7 +167,7 @@ namespace WinUIMusicPlayer
                 PowerManagementHelper.DisableEfficiencyMode();
                 if (AppSettings.IsProcessAboveNormal)
                 {
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
                 }
             }
             else {

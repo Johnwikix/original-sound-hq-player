@@ -643,7 +643,7 @@
     <value>Normal</value>
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
-    <value>Above Normal</value>
+    <value>High</value>
   </data>
   <data name="InfoBarTitleConverter" xml:space="preserve">
     <value>Audio Conversion</value>
@@ -850,7 +850,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>Using the original format DSD of PCM frames, DSD64 requires a minimum hardware of 176.4kHz, DSD128 requires hardware of 352.8kHz, and so on</value>
+    <value>In this mode, the equalizer will not take effect, Dop will only take effect under WasAPI monopoly, and Native will only take effect under ASIO. This mode only supports hardware volume adjustment. If there is a popping sound, please try increasing the ASIO device buffer</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Default Device</value>

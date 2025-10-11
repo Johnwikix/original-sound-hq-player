@@ -643,7 +643,7 @@
     <value>Normal</value>
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
-    <value>Por encima de lo normal</value>
+    <value>Alto</value>
   </data>
   <data name="InfoBarTitleConverter" xml:space="preserve">
     <value>Conversión de audio</value>
@@ -850,7 +850,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>A través del formato original del cuadro pcm, DSD 64 requiere un hardware mínimo de 176,4 khz, DSD 128 requiere un hardware de 352,8 kHz y así sucesivamente.</value>
+    <value>El igualador no entrará en vigor en este modo, el DOP solo entrará en vigor bajo el monopolio de wasapi, Native solo entrará en vigor bajo asio, en este modo solo se admite el ajuste de volumen del hardware, si hay un sonido explosivo, intente aumentar el amortiguador del dispositivo Asio</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Dispositivos predeterminados</value>

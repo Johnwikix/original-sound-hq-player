@@ -643,7 +643,7 @@
     <value>正常</value>
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
-    <value>高于正常</value>
+    <value>高</value>
   </data>
   <data name="InfoBarTitleConverter" xml:space="preserve">
     <value>音频转换</value>
@@ -850,7 +850,7 @@
     <value>DSD到PCM采样率</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>此模式下均衡器不会生效，Dop只在Wasapi独占下生效，dsd64需要最低176.4khz的硬件，dsd128需要352.8khz的硬件</value>
+    <value>此模式下均衡器不会生效，Dop只在Wasapi独占下生效，Native只在ASIO下生效，此模式下只支持硬件音量调整，如果出现爆音请尝试增加ASIO设备缓冲区</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>默认设备</value>

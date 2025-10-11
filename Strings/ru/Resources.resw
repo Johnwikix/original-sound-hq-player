@@ -643,7 +643,7 @@
     <value>Нормально.</value>
   </data>
   <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
-    <value>Выше нормального</value>
+    <value>Высокий</value>
   </data>
   <data name="InfoBarTitleConverter" xml:space="preserve">
     <value>Звуковое преобразование</value>
@@ -850,7 +850,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>В оригинальном формате DSD с PCM - фреймом для dsd64 требуется минимум 176,2 кГц, 24 - битное оборудование, для dsd128 требуется 352,4 кГц, 24 - битное оборудование и так далее.</value>
+    <value>В этом режиме эквалайзер не работает, Dop работает только под эксклюзивной лицензией Wasapi, Native работает только под ASIO, в этом режиме поддерживается только аппаратная регулировка громкости, попробуйте увеличить буфер устройства ASIO</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Устройства по умолчанию</value>

@@ -990,7 +990,7 @@ namespace WinUIMusicPlayer.ViewModel
 
                 case "AboveNormal":
                     AppSettings.IsProcessAboveNormal = true;
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.AboveNormal);
+                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
                     break;
             }
             if (_isInitized)
