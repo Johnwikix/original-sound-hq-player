@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Extensions;
 
@@ -12,7 +12,7 @@ internal static class HttpExtensions
 
         return string.Join(
             "&",
-            queries.Select(t => Uri.EscapeDataString(t.Key) + "=" + Uri.EscapeDataString(t.Value))
+            queries.AsValueEnumerable().Select(t => Uri.EscapeDataString(t.Key) + "=" + Uri.EscapeDataString(t.Value)).ToArray()
         );
     }
 }

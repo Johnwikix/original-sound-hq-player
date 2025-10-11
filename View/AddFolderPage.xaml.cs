@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
@@ -10,6 +9,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
+using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -115,13 +115,13 @@ namespace WinUIMusicPlayer.View
                 {
                     var items = await e.DataView.GetStorageItemsAsync();
                     // 筛选出文件夹
-                    IEnumerable<IStorageItem> folders = items.Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
+                    var folders = items.AsValueEnumerable().Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
 
                     if (folders.Any())
                     {
                         LoadingGrid.Visibility = Visibility.Visible;
                         AddFolderGrid.Visibility = Visibility.Collapsed;
-                        ViewModel.Grid_Drop(folders);
+                        ViewModel.Grid_Drop(folders.ToList());
                         LoadingGrid.Visibility = Visibility.Collapsed;
                         AddFolderGrid.Visibility = Visibility.Visible;
                     }

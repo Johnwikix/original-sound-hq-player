@@ -3,11 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using ZLinq;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
 
@@ -30,7 +30,7 @@ internal static class Crypto
 
         text = JsonSerializer.Serialize(@object);
         secretKey = new Random().RandomBytes(16);
-        secretKey = [.. secretKey.Select(n => (byte)base62[n % 62])];
+        secretKey = [.. secretKey.AsValueEnumerable().Select(n => (byte)base62[n % 62])];
         return new Dictionary<string, string>
         {
             {
@@ -48,7 +48,7 @@ internal static class Crypto
             {
                 "encSecKey",
                 RsaEncrypt(
-                        [.. secretKey.AsEnumerable().Reverse()] /*, publicKey*/
+                        [.. secretKey.AsValueEnumerable().Reverse()] /*, publicKey*/
                     )
                     .ToHexStringLower()
             },
@@ -173,7 +173,7 @@ internal static class Crypto
 
         _oid = _reader.ReadBytes(15);
         if (
-            !_oid.SequenceEqual(
+            !_oid.AsValueEnumerable().SequenceEqual(
                 new byte[]
                 {
                     0x30,

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
+
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -13,6 +13,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Extensions;
+using ZLinq;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
 
@@ -77,8 +78,8 @@ internal static partial class Request
             ["Cookie"] = string.Join(
                 "; ",
                 options
-                    .cookie.Cast<Cookie>()
-                    .Select(t => Uri.EscapeDataString(t.Name) + "=" + Uri.EscapeDataString(t.Value))
+                    .cookie.AsValueEnumerable().Cast<Cookie>()
+                    .Select(t => Uri.EscapeDataString(t.Name) + "=" + Uri.EscapeDataString(t.Value)).ToArray()
             ),
         };
         if (method == HttpMethod.Post)
@@ -166,9 +167,9 @@ internal static partial class Request
 
                     headers["Cookie"] = string.Join(
                         "; ",
-                        header.Select(t =>
+                        header.AsValueEnumerable().Select(t =>
                             Uri.EscapeDataString(t.Key) + "=" + Uri.EscapeDataString(t.Value)
-                        )
+                        ).ToArray()
                     );
                     data["header"] = JsonSerializer.Serialize(header);
                     data = Crypto.EApi(options.url, data);
@@ -208,7 +209,7 @@ internal static partial class Request
             }
 
             var cookieArray = new JsonArray();
-            temp1
+            temp1.AsValueEnumerable()
                 .Select(x => MyRegex2().Replace(x, string.Empty))
                 .Where(x => !string.IsNullOrEmpty(x))
                 .ToList()

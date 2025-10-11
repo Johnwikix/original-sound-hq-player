@@ -9,7 +9,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
@@ -18,6 +17,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
+using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -234,7 +234,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.PageType = "album";
             ViewModel.paramName = Album;
-            ViewModel.CurrentAlbum = AppData.allSongs.Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             ViewModel.CurrentAlbum.Album = Album;
             ViewModel.currentPage = typeof(SongCollectionPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
@@ -254,7 +254,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.PageType = "artist";
             ViewModel.paramName = artist;
-            ViewModel.CurrentArtist = AppData.allSongs.FirstOrDefault(m => m.Author == artist);
+            ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             ViewModel.CurrentArtist.Author = artist;
             ViewModel.currentPage = typeof(SongCollectionPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
@@ -447,7 +447,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ViewModel.CurrentPlayingMusic is not null)
                 {
-                    var selectedMusic = ViewModel.CurrentPlayingList.FirstOrDefault(music =>
+                    var selectedMusic = ViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
                     music.Id == ViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
@@ -761,7 +761,7 @@ namespace WinUIMusicPlayer.View
             {
                 Task.Run(() =>
                 {
-                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.FirstOrDefault(line => line.Time >= lyricLine.Time));
+                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));
                     ViewModel.UpdateLyricsToUI(index);
                     ViewModel._musicPlaybackService.isManualSelect = true;
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);

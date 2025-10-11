@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Extensions
 {
@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.Extensions
                 return [];
             }
             // 先将原始集合复制到列表中，这是为了执行高效的洗牌操作。
-            var list = originalCollection.ToList();
+            var list = originalCollection.AsValueEnumerable().ToList();
 
             Random rng = new Random();
             int n = list.Count;

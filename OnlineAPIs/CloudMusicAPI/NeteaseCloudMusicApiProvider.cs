@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Extensions;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
+using ZLinq;
 using static WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.NeteaseCloudMusicApiProvider;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
@@ -1887,7 +1887,7 @@ public static partial class CloudMusicApiProviders
                 KeyForwarding = "ids",
                 Transformer = t =>
                     "["
-                    + string.Join(",", t.Split(',').Select(m => "{\"id\":" + m.Trim() + "}"))
+                    + string.Join(",", t.Split(',').AsValueEnumerable().Select(m => "{\"id\":" + m.Trim() + "}").ToArray())
                     + "]",
             },
             new("ids") { Transformer = JsonArrayTransformer },

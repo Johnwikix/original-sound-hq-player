@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
@@ -14,6 +13,7 @@ using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
+using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
         {
-            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+            var music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
             if (music is not null)
             {
                 try
@@ -146,7 +146,7 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private async Task UpdateFile(Music music,DateTime updateTime)
+        private async Task UpdateFile(Music music, DateTime updateTime)
         {
             using (TagLib.File audioFile = TagLib.File.Create(music.Path))
             {
@@ -193,7 +193,7 @@ namespace WinUIMusicPlayer.View.SubView
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             ConfirmFlyout.Hide();
-            var music = AppData.allSongs.Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+            var music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
             if (music is not null)
             {
                 try

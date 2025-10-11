@@ -1,12 +1,8 @@
 ﻿using ManagedBass;
 using ManagedBass.Fx;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Manager
 {
@@ -23,7 +19,7 @@ namespace WinUIMusicPlayer.Manager
                 Debug.WriteLine($"Bass初始化失败: {Bass.LastError}");
                 return;
             }
-            _isInitialized = true; 
+            _isInitialized = true;
             LoadBassPlugins();
         }
 

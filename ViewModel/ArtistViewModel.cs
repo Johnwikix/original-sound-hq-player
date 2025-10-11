@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -112,7 +112,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 //_allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
                 MusicList.Clear();
-                var query = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author);
+                var query = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
                 foreach (var music in query)
                 {
                     MusicList.Add(music);
@@ -130,10 +130,10 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 //MusicList = new ObservableCollection<Music>(_allMusic);
-                groupedByFirstLetter = MusicList
+                groupedByFirstLetter = MusicList.AsValueEnumerable()
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
                         .OrderBy(group => group.Key)
-                        .Select(group => new MusicGroup(group.Key, group.ToList()))
+                        .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
                         .ToList();
                 GroupedMusicViewSource.Source = groupedByFirstLetter;
             }
@@ -200,7 +200,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayingArtist(object? sender, Music e)
         {
-            List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).OrderBy(m => m.Album).ToList();
+            List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (artists is not null && artists.Count > 0)
             {
                 if (parentPage is not null)

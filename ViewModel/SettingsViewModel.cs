@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ManagedBass;
 using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
@@ -316,7 +314,7 @@ namespace WinUIMusicPlayer.ViewModel
         //        }
         //    }
         //}
-      
+
         private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
         public ObservableCollection<BassOutputDevice> BassOutputDevices
         {
@@ -341,8 +339,9 @@ namespace WinUIMusicPlayer.ViewModel
                                 {
                                     AppSettings.BassOutputDeviceId = value.Id;
                                 }
-                                else {                                    
-                                    AppSettings.BassASIODeviceId = value.AsioId;                                    
+                                else
+                                {
+                                    AppSettings.BassASIODeviceId = value.AsioId;
                                 }
                                 AppSettings.DeviceName = value.Name;
                                 AppSettings.OutputMode = value.OutputMode;
@@ -661,9 +660,11 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private bool _isDopEnabled;
-        public bool IsDopEnabled { 
+        public bool IsDopEnabled
+        {
             get => _isDopEnabled;
-            set {
+            set
+            {
                 if (SetProperty(ref _isDopEnabled, value))
                 {
                     if (_isInitized)
@@ -765,7 +766,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
-            FontFamily = FontFamilyList.FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
+            FontFamily = FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
             IsDopEnabled = AppSettings.IsDopEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
@@ -778,7 +779,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
-            InitializeWasapiDevice();            
+            InitializeWasapiDevice();
             _isInitized = true;
         }
 
@@ -852,19 +853,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
             var deviceName = AppSettings.DeviceName;
             var outputMode = AppSettings.OutputMode;
-            var device= BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode==AppSettings.OutputMode);
+            var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
             if (device is null)
             {
                 SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == ToolUtils.GetString("DefaultDevice") && d.OutputMode == "[DirectSound]");
                 AppSettings.BassOutputDeviceId = -1;
             }
-            else {
+            else
+            {
                 SelectedDevice = device;
             }
         }
 
         public void InitializeAsioDevice()
-        {          
+        {
             int n = BassAsio.DeviceCount;
             for (int i = 0; i < n; i++)
             {

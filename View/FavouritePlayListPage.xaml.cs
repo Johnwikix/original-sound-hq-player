@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -13,6 +12,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
+using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -200,14 +200,12 @@ namespace WinUIMusicPlayer.View
                         menuItem.Click += async (s, args) =>
                         {
                             // 多选情况：添加所有选中的歌曲到播放列表
-                            if (uniqueSelectedMusics.Count() > 1)
+                            if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
                             {
                                 foreach (var music in uniqueSelectedMusics)
                                 {
                                     await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                                 }
-                                // 可以添加一个提示通知，表明多个歌曲已添加到播放列表
-                                Debug.WriteLine($"已添加 {uniqueSelectedMusics.Count()} 首歌曲到播放列表: {playlist.Name}");
                             }
                             // 单选情况：只添加当前右键点击的歌曲
                             else if (musicItem is not null)
@@ -246,7 +244,7 @@ namespace WinUIMusicPlayer.View
                             };
                             menuItem.Click += async (s, args) =>
                             {
-                                if (uniqueSelectedMusics.Count() > 1)
+                                if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
                                 {
                                     ViewModel.ShowTransmission();
                                     using (var usbWriter = new UsbWriterHelper())
@@ -259,7 +257,7 @@ namespace WinUIMusicPlayer.View
                                     }
                                     foreach (var music in uniqueSelectedMusics)
                                     {
-                                        var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
+                                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
                                         if (existingMusic is not null)
                                         {
                                             continue; // 如果已经存在，则跳过

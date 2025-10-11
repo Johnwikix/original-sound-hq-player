@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.Services
         public static async Task SavePlayList(List<Music> currentPlayingList)
         {
             await _dbConnection.DeleteAllAsync<LastPlayListState>();
-            var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
+            var musicIds = string.Join(",", currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
 
             var playListState = new LastPlayListState
             {
@@ -545,7 +545,7 @@ namespace WinUIMusicPlayer.Services
         }
         public static async Task DeleteAllMusicFromPlayList(int playListId, IEnumerable<int> musicIds)
         {
-            if (musicIds is null || musicIds.Count() == 0)
+            if (musicIds is null || musicIds.AsValueEnumerable().Count() == 0)
             {
                 return;
             }
@@ -702,16 +702,17 @@ namespace WinUIMusicPlayer.Services
 
         public static IEnumerable<Music> GetFavoriteMusicFromMem(string search = null)
         {
-            var query = AppData.allSongs.Where(m => m.IsFavorite == true);
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(m =>
+                return AppData.allSongs.AsValueEnumerable().Where(m => m.IsFavorite == true).Where(m =>
                     m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                     m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
                     m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
-                );
+                ).OrderByDescending(m => m.Order).ToList();
             }
-            return query.OrderByDescending(m => m.Order);
+            else {
+                return AppData.allSongs.AsValueEnumerable().Where(m => m.IsFavorite == true).OrderByDescending(m => m.Order).ToList();
+            }
         }
 
         public static IEnumerable<Music> GetArtistMusicFromMem(string artist, string search = null)
@@ -746,7 +747,7 @@ namespace WinUIMusicPlayer.Services
                     return query.Where(m =>
                         m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                         m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
-                        m.Author is not null && m.Author.ToLower().Contains(search.ToLower())                        
+                        m.Author is not null && m.Author.ToLower().Contains(search.ToLower())
                     ).Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Equals(folder.ToLower()))
                     .OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
                 }
@@ -887,7 +888,7 @@ namespace WinUIMusicPlayer.Services
         public static async Task SaveSettingAsync()
         {
             SaveSettings settings = await GetSettings();
-            SaveSettings newSettings = new SaveSettings();           
+            SaveSettings newSettings = new SaveSettings();
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
@@ -962,9 +963,9 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAsync<Music>(musicId);
                 AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
-                var usbMusicGroups = AppData.musicOnUsbDevice
+                var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
-                    .ToDictionary(g => g.Key, g => g.ToList());
+                    .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
                 foreach (var music in AppData.allSongs)
                 {
                     music.IsExistOnDevice = 0;
@@ -1031,7 +1032,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await _dbConnection.DeleteAllAsync<LastPlayListState>();
-                var musicIds = string.Join(",", currentPlayingList.Select(m => m.Id));
+                var musicIds = string.Join(",", currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
 
                 var playListState = new LastPlayListState
                 {
@@ -1090,7 +1091,7 @@ namespace WinUIMusicPlayer.Services
                 .ToList();
 
             // 只插入新的音乐文件
-            if (newMusicFiles.Any())
+            if (newMusicFiles.AsValueEnumerable().Any())
             {
                 await _dbConnection.InsertAllAsync(newMusicFiles);
             }
@@ -1135,7 +1136,7 @@ namespace WinUIMusicPlayer.Services
             var existingFolders = await _dbConnection.Table<Folder>().ToListAsync();
 
             // 检查新添加的文件夹是否已经在已存在的文件夹中
-            bool folderAlreadyExists = existingFolders.Any(f =>
+            bool folderAlreadyExists = existingFolders.AsValueEnumerable().Any(f =>
                 folder.Path.StartsWith(f.Path) || f.Path.StartsWith(folder.Path));
 
             if (!folderAlreadyExists)
@@ -1200,7 +1201,7 @@ namespace WinUIMusicPlayer.Services
         private async static Task<Music> updateMusic(Music music, string folderPath)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            var existingMusic = AppData.allSongs.Where(m => m.Path == music.Path).FirstOrDefault();
+            var existingMusic = AppData.allSongs.AsValueEnumerable().Where(m => m.Path == music.Path).FirstOrDefault();
             if (existingMusic is null)
             {
                 return null;
@@ -1274,7 +1275,7 @@ namespace WinUIMusicPlayer.Services
 
             var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             // 并行处理文件路径收集
-            var filePathTasks = _files.Select(async file =>
+            var filePathTasks = _files.AsValueEnumerable().Select(async file =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1293,9 +1294,9 @@ namespace WinUIMusicPlayer.Services
                     _rescanfolderSemaphore.Release();
                 }
             });
-            await Task.WhenAll(filePathTasks);
+            await Task.WhenAll(filePathTasks.ToList());
             //并行检查现有音乐文件
-            var checkTasks = _musicFilesInFolder.Select(async newMusic =>
+            var checkTasks = _musicFilesInFolder.AsValueEnumerable().Select(async newMusic =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1316,9 +1317,9 @@ namespace WinUIMusicPlayer.Services
                 }
             });
 
-            await Task.WhenAll(checkTasks);
+            await Task.WhenAll(checkTasks.ToList());
             // 并行执行删除操作
-            var deleteTasks = _toDelete.Select(async music =>
+            var deleteTasks = _toDelete.AsValueEnumerable().Select(async music =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1336,9 +1337,9 @@ namespace WinUIMusicPlayer.Services
                 }
             });
 
-            await Task.WhenAll(deleteTasks);
+            await Task.WhenAll(deleteTasks.ToList());
             //并行执行更新操作
-            var updateTasks = _toUpdate.Select(async music =>
+            var updateTasks = _toUpdate.AsValueEnumerable().Select(async music =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1351,7 +1352,7 @@ namespace WinUIMusicPlayer.Services
                 }
             }).ToArray();
             var results = await Task.WhenAll(updateTasks);
-            var validResults = results.Where(r => r is not null).ToList();
+            var validResults = results.AsValueEnumerable().Where(r => r is not null).ToList();
             if (validResults.Count != 0)
             {
                 await _dbConnection.UpdateAllAsync(validResults);
@@ -1359,7 +1360,7 @@ namespace WinUIMusicPlayer.Services
             }
 
             //完全批量处理
-            var addTasks = filePaths.Keys.Select(async path =>
+            var addTasks = filePaths.Keys.AsValueEnumerable().Select(async path =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1384,8 +1385,8 @@ namespace WinUIMusicPlayer.Services
                     _rescanfolderSemaphore.Release();
                 }
             });
-            var AddResults = await Task.WhenAll(addTasks);
-            var validMusic = AddResults.Where(m => m is not null).ToList();
+            var AddResults = await Task.WhenAll(addTasks.ToList());
+            var validMusic = AddResults.AsValueEnumerable().Where(m => m is not null).ToList();
             if (validMusic.Count != 0)
             {
                 await _dbConnection.InsertAllAsync(validMusic);
@@ -1422,7 +1423,7 @@ namespace WinUIMusicPlayer.Services
 
             var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             // 并行处理文件路径收集
-            var filePathTasks = files.Select(async file =>
+            var filePathTasks = files.AsValueEnumerable().Select(async file =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1441,9 +1442,9 @@ namespace WinUIMusicPlayer.Services
                     _rescanfolderSemaphore.Release();
                 }
             });
-            await Task.WhenAll(filePathTasks);
+            await Task.WhenAll(filePathTasks.ToList());
             //并行检查现有音乐文件
-            var checkTasks = musicFilesInFolder.Select(async newMusic =>
+            var checkTasks = musicFilesInFolder.AsValueEnumerable().Select(async newMusic =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1463,9 +1464,9 @@ namespace WinUIMusicPlayer.Services
                 }
             });
 
-            await Task.WhenAll(checkTasks);
+            await Task.WhenAll(checkTasks.ToList());
             // 并行执行删除操作
-            var deleteTasks = toDelete.Select(async music =>
+            var deleteTasks = toDelete.AsValueEnumerable().Select(async music =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1483,9 +1484,9 @@ namespace WinUIMusicPlayer.Services
                 }
             });
 
-            await Task.WhenAll(deleteTasks);
+            await Task.WhenAll(deleteTasks.ToList());
             //完全批量处理
-            var addTasks = filePaths.Keys.Select(async path =>
+            var addTasks = filePaths.Keys.AsValueEnumerable().Select(async path =>
             {
                 await _rescanfolderSemaphore.WaitAsync();
                 try
@@ -1510,8 +1511,8 @@ namespace WinUIMusicPlayer.Services
                     _rescanfolderSemaphore.Release();
                 }
             });
-            var AddResults = await Task.WhenAll(addTasks);
-            var validMusic = AddResults.Where(m => m is not null).ToList();
+            var AddResults = await Task.WhenAll(addTasks.ToList());
+            var validMusic = AddResults.AsValueEnumerable().Where(m => m is not null).ToList();
             if (validMusic.Count != 0)
             {
                 await _dbConnection.InsertAllAsync(validMusic);

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Management;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Reader
 {
@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer.Reader
                     foreach (var diskDrive in searcher.Get())
                     {
                         string deviceId = diskDrive["PNPDeviceID"]?.ToString() ?? string.Empty;
-                        string serialNumber = deviceId.Contains("\\") ? deviceId.Split('\\').Last() : string.Empty;
+                        string serialNumber = deviceId.Contains("\\") ? deviceId.Split('\\').AsValueEnumerable().Last() : string.Empty;
 
                         // 查找对应的分区和逻辑磁盘
                         using (var partitionSearcher = new ManagementObjectSearcher(

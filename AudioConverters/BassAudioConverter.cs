@@ -14,7 +14,7 @@ namespace WinUIMusicPlayer.AudioConverters
         public BassAudioConverter()
         {
             BassManager.Initialize();
-        }       
+        }
 
         /// <summary>
         /// 将任意音频文件转换为WAV格式
@@ -36,14 +36,15 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit | EncodeFlags.PCM;
                 }
-                else if ((originalResolution == 0 || originalResolution ==16) && !(Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff")) {
+                else if ((originalResolution == 0 || originalResolution == 16) && !(Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff"))
+                {
                     flags = EncodeFlags.ConvertFloatTo16BitInt | EncodeFlags.PCM;
                 }
                 var encoder = BassEnc.EncodeStart(stream, outputPath, flags, null);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
                 //16g限制
-                for (int i =0; i<= 1024*1024;i++)
+                for (int i = 0; i <= 1024 * 1024; i++)
                 {
                     var buffer = new byte[16384];
                     current += 16384;
@@ -58,7 +59,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             finally
             {
-                if (stream != 0 ) Bass.StreamFree(stream);
+                if (stream != 0) Bass.StreamFree(stream);
                 SaveMetaData(inputPath, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
@@ -84,9 +85,10 @@ namespace WinUIMusicPlayer.AudioConverters
                     var buffer = new byte[16384];
                     current += 16384;
                     var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0) {
+                    if (current % 1048576 == 0)
+                    {
                         progressEvent?.Invoke(this, (double)(current * 100) / length);
-                    }                    
+                    }
                     if (c <= 0) break;
                 }
                 BassEnc.EncodeStop(stream);
@@ -116,7 +118,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }                
+                }
                 EncodeFlags flags = EncodeFlags.Default;
                 var originalResolution = Bass.ChannelGetInfo(stream).OriginalResolution;
                 if (originalResolution >= 24 || Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff")
@@ -165,7 +167,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }               
+                }
                 var encoder = BassEnc_Ogg.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;

@@ -1,6 +1,5 @@
 ﻿using Microsoft.UI.Xaml.Data;
 using System;
-using System.Linq;
 using WinUIMusicPlayer.Model;
 using ZLinq;
 

@@ -14,10 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -98,7 +96,7 @@ namespace WinUIMusicPlayer.Utils
                 ["Artist"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Author, StringComparer).ToImmutableList(),
                 ["Album"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
                                                   .OrderBy(g => g.Key, StringComparer)
-                                                  .SelectMany(g => g
+                                                  .SelectMany(g => g.AsValueEnumerable()
                                                         .OrderBy(m => m.DiskNumber)
                                                         .ThenBy(m => m.TrackNumber)
                                                    ).ToImmutableList(),
@@ -116,7 +114,7 @@ namespace WinUIMusicPlayer.Utils
                 ["folderCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.LastLevelFolderPath, StringComparer).ToImmutableList(),
                 ["folder"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
                                                    .OrderBy(g => g.Key, StringComparer)
-                                                   .SelectMany(g => g
+                                                   .SelectMany(g => g.AsValueEnumerable()
                                                         .OrderBy(m => m.DiskNumber)
                                                         .ThenBy(m => m.TrackNumber)
                                                    ).ToImmutableList(),
@@ -142,7 +140,7 @@ namespace WinUIMusicPlayer.Utils
                 return key;
             }
         }
-        
+
         public enum PlayMode
         {
             SingleLoop,
@@ -207,7 +205,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
         {
-            byte[] imageData = picture.Data.Data.ToArray();
+            byte[] imageData = picture.Data.Data.AsValueEnumerable().ToArray();
             if (picture?.Data?.Data is null)
             {
                 return null;
@@ -360,9 +358,10 @@ namespace WinUIMusicPlayer.Utils
                 if (music.Extension.ToLower() == "dff")
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                    picture = res?.Pictures.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                    picture = res?.Pictures.AsValueEnumerable().Count() > 0 ? res?.Pictures[0]?.ImageData : null;
                 }
-                else {
+                else
+                {
                     using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                     {
                         IPicture[] pictures = audioFile.Tag.Pictures;
@@ -372,10 +371,11 @@ namespace WinUIMusicPlayer.Utils
                             IPicture coverPicture = pictures[0];
                             // 获取封面图片的字节数组
                             picture = coverPicture.Data.Data;
-                        }                        
+                        }
                     }
                 }
-                if (picture is null) {
+                if (picture is null)
+                {
                     picture = await GetPicByteFromNet(music, isManual);
                 }
                 return picture;
@@ -388,10 +388,10 @@ namespace WinUIMusicPlayer.Utils
 
         public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
         {
-            if (musicList is null) return Enumerable.Empty<Music>();
+            if (musicList is null) return System.Linq.Enumerable.Empty<Music>();
 
             // 如果没有数据，直接返回空集合，避免不必要的计算
-            if (!musicList.Any()) return musicList;
+            if (!musicList.AsValueEnumerable().Any()) return musicList;
 
             // 优先检查通用排序策略
             if (!string.IsNullOrEmpty(sortOrder) && SortStrategies.TryGetValue(sortOrder, out var sortFunc))
@@ -421,7 +421,7 @@ namespace WinUIMusicPlayer.Utils
         {
             if (musicList is null || musicList.Count <= 1) return;
 
-            var sortedList = SortMusicList(type, sortOrder, musicList).ToList();
+            var sortedList = SortMusicList(type, sortOrder, musicList).AsValueEnumerable().ToList();
 
             // 只有当排序结果与原列表不同时才进行更新
             if (!AreListsEqual(musicList, sortedList))
@@ -453,7 +453,7 @@ namespace WinUIMusicPlayer.Utils
         {
             BassManager.Initialize();
             int stream = 0;
-            AudioFileInfo fileInfo = new();            
+            AudioFileInfo fileInfo = new();
             try
             {
                 if (Path.GetExtension(filePath) == ".dff")
@@ -471,14 +471,15 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.BitRate = (int)bitrate;
                     fileInfo.SampleRate = info.Frequency * 16;
                     fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
-                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath,true);                    
+                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath, true);
                     fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
                     fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
                     fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
                     fileInfo.Year = int.TryParse(dict?.TextTags["TYER"], out int year) ? year : 0;
-                    fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;                    
+                    fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
                 }
-                else {
+                else
+                {
                     Track track = new(filePath);
                     fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(filePath) : track?.Title;
                     fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track?.Album;
@@ -489,22 +490,23 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.BitDepth = track?.BitDepth ?? 0;
                     fileInfo.BitRate = track?.Bitrate ?? 0;
                     fileInfo.Year = track?.Year ?? 0;
-                    fileInfo.Lyrics = track?.Lyrics?.Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics : string.Empty;
+                    fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics : string.Empty;
                     fileInfo.TrackNumber = track?.TrackNumber ?? 0;
                     fileInfo.DiskNumber = track?.DiscNumber ?? 0;
-                }               
+                }
                 return fileInfo;
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 fileInfo.Title = Path.GetFileNameWithoutExtension(filePath);
                 return fileInfo;
-            }            
+            }
         }
 
         public static bool IsMusicFile(string fileType)
         {
             var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv" };
-            return musicExtensions.Contains(fileType.ToLower());
+            return musicExtensions.AsValueEnumerable().Contains(fileType.ToLower());
         }
 
         // 将字典转换为JSON字符串的方法
@@ -736,7 +738,7 @@ namespace WinUIMusicPlayer.Utils
         {
             var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
                             .GroupBy(u => u.Title)
-                            .ToDictionary(g => g.Key, g => g.ToList());
+                            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
             foreach (var music in MusicList)
             {
                 music.IsExistOnDevice = 0;
@@ -780,7 +782,7 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
         }
 
-        public static async Task LoadImageAsync(string filePath, string album, BitmapImage bitmap, Music music)
+        public static async Task LoadImageAsync(Music music, BitmapImage bitmap)
         {
             await Task.Run(async () =>
             {
@@ -789,44 +791,41 @@ namespace WinUIMusicPlayer.Utils
                     byte[] picture = null;
                     if (music.Extension.ToLower() == "dff")
                     {
-                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(filePath);
-                        picture = res?.Pictures?.Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
+                        picture = res?.Pictures?.AsValueEnumerable().Count() > 0 ? res?.Pictures[0]?.ImageData : null;
                         if (picture is not null)
                         {
-                            await DecodePicture(picture, album, bitmap);
+                            await DecodePicture(picture, music.Album, bitmap);
                         }
-                    }else{
-                        using (var file = TagLib.File.Create(filePath))
+                    }
+                    else
+                    {
+                        using (var file = TagLib.File.Create(music.Path))
                         {
-                            picture = file.Tag.Pictures.FirstOrDefault()?.Data.Data;                            
+                            picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
                             if (picture is not null)
                             {
-                                await DecodePicture(picture, album, bitmap);
+                                await DecodePicture(picture, music.Album, bitmap);
                             }
                         }
                     }
-                    await GetPicFromNet(picture, album, music, bitmap);
+                    await GetPicFromNet(picture, music, bitmap);
                 }
                 catch (Exception)
                 {
                     try
                     {
-                        //Track track = new(filePath);
-                        //PictureInfo pic = track.EmbeddedPictures.Count() > 0 ? track.EmbeddedPictures[0] : null;
-                        //if (pic is not null)
-                        //{
-                        //    DecodePicture(pic?.PictureData, album, bitmap);
-                        //}
-                        await GetPicFromNet(null, album, music, bitmap);
+                        await GetPicFromNet(null, music, bitmap);
                     }
                     catch (Exception)
-                    { 
+                    {
                     }
                 }
             });
         }
 
-        private static async Task GetPicFromNet(byte[] picture,string album, Music music, BitmapImage bitmap) {
+        private static async Task GetPicFromNet(byte[] picture, Music music, BitmapImage bitmap)
+        {
             if (picture is null)
             {
                 if (!Directory.Exists(AppSettings.MusicCoverCache))
@@ -840,7 +839,8 @@ namespace WinUIMusicPlayer.Utils
                 if (System.IO.File.Exists(filePath))
                 {
                     picture = System.IO.File.ReadAllBytes(filePath);
-                } else if (!AppData.UnknownAlbums.Contains(album))
+                }
+                else if (!AppData.UnknownAlbums.Contains(music.Album))
                 {
                     if (AppSettings.isAutoLyricsEnabled)
                     {
@@ -853,12 +853,13 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture is not null)
                 {
-                    await DecodePicture(picture, album, bitmap);
+                    await DecodePicture(picture, music.Album, bitmap);
                 }
             }
         }
 
-        private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false) {
+        private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)
+        {
             byte[] picture = null;
             if (AppSettings.isAutoLyricsEnabled && !isManual)
             {
@@ -875,18 +876,20 @@ namespace WinUIMusicPlayer.Utils
                 {
                     picture = System.IO.File.ReadAllBytes(filePath);
                 }
-                else {
+                else
+                {
                     picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
                     if (picture is not null)
                     {
                         System.IO.File.WriteAllBytes(filePath, picture);
                     }
-                }                
+                }
             }
             return picture;
         }
 
-        private static async Task DecodePicture(byte[] picture,string album,BitmapImage bitmap) {
+        private static async Task DecodePicture(byte[] picture, string album, BitmapImage bitmap)
+        {
             InMemoryRandomAccessStream resizedStream = null;
             try
             {
@@ -922,9 +925,10 @@ namespace WinUIMusicPlayer.Utils
                     });
                 }
             }
-            catch {
+            catch
+            {
                 resizedStream?.Dispose();
-            }            
+            }
         }
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
@@ -1194,7 +1198,7 @@ namespace WinUIMusicPlayer.Utils
                 if (!line.StartsWith("#"))
                 {
                     Debug.WriteLine(Path.GetFileName(line));
-                    Music? music = AppData.allSongs.FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
+                    Music? music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
                     if (music is not null)
                     {
                         await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
@@ -1248,7 +1252,7 @@ namespace WinUIMusicPlayer.Utils
                     {
                     }
                 }
-                return [.. list.OrderBy(f => f.Name)];
+                return [.. list.AsValueEnumerable().OrderBy(f => f.Name)];
             }
             catch (Exception)
             {

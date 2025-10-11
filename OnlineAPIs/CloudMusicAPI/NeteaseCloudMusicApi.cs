@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -13,6 +12,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Extensions;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI.Utils;
+using ZLinq;
 
 namespace WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 
@@ -269,7 +269,7 @@ public sealed partial class NeteaseCloudMusicApi : IDisposable
             s = Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
             matchs = MyRegex().Matches(s);
             playlists = new JsonArray();
-            matchs
+            matchs.AsValueEnumerable()
                 .Cast<Match>()
                 .Select(match => new JsonObject
                 {

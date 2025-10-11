@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.Model
         {
             get
             {
-                return _cache.Values.Count(wr => wr.TryGetTarget(out _));
+                return _cache.Values.AsValueEnumerable().Count(wr => wr.TryGetTarget(out _));
             }
         }
 

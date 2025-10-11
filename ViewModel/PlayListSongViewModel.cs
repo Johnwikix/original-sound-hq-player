@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -184,7 +183,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         MusicList[i].PlayListOrder = MusicList.Count - i;
                     }
-                    await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.ToList());
+                    await MusicDatabaseService.UpdatePlayListMusicOrderBatch(_parentPage.ViewModel.currentPlayList.Id, MusicList.AsValueEnumerable().ToList());
                     await MusicDatabaseService.GetPlayListMusic();
                 }
             }
@@ -225,7 +224,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic is not null)
                 {
-                    var selectedMusic = MusicList.FirstOrDefault(music =>
+                    var selectedMusic = MusicList.AsValueEnumerable().FirstOrDefault(music =>
                         music.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
@@ -245,7 +244,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (MusicList is not null && MusicList.Count > 0)
             {
-                Music? currentMusic = MusicList.FirstOrDefault(m => m.Id == music.Id);
+                Music? currentMusic = MusicList.AsValueEnumerable().FirstOrDefault(m => m.Id == music.Id);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     if (currentMusic is not null)
@@ -268,10 +267,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 _musicPlaybackService.MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
-                _parentPage?.PlayMusic(music: uniqueSelectedMusics.First(), IsChangeList: true);
+                _parentPage?.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
@@ -295,12 +294,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 await MusicDatabaseService.DeleteAllMusicFromPlayList(_currentPlayListId, uniqueSelectedMusics.AsValueEnumerable().Select(item => item.Id).ToImmutableList());
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
-                    if (uniqueSelectedMusics.Contains(MusicList[i]))
+                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(MusicList[i]))
                     {
                         MusicList.RemoveAt(i);
                     }
@@ -324,7 +323,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
@@ -368,7 +367,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
         {
             progressBarValue = 0;
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 isMutiFile = true;
                 if (menuItem is not null && menuItem.Tag.ToString() is not null)
@@ -468,12 +467,12 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     string lyrics = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AppData.allSongs.Where(m => m.Id == item.Id).AsValueEnumerable().FirstOrDefault();
+                    Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
                     if (music is not null)
                     {
                         music.Lyrics = lyrics;
@@ -484,7 +483,7 @@ namespace WinUIMusicPlayer.ViewModel
             else
             {
                 string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-                Music? music = AppData.allSongs.Where(m => m.Id == SelectedMusic.Id).AsValueEnumerable().FirstOrDefault();
+                Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
                 if (music is not null)
                 {
                     music.Lyrics = lyrics;
@@ -496,12 +495,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
         {
-            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
             // 如果找到匹配项，则在其后插入新列表
-            if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.Any())
+            if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
-                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
-                var newMusicsToAdd = uniqueSelectedMusics
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
+                var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
                     .Where(music => !existingIds.Contains(music.Id)).ToList();
                 for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
                 {
@@ -513,11 +512,11 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public void AddMusicToCurrentPlayList(Music music)
         {
-            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
+            int index = _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.IndexOf(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(m => m.Id == _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingMusic.Id));
             // 如果找到匹配项，则在其后插入新列表
             if (index != -1 && music is not null)
             {
-                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Select(m => m.Id));
+                var existingIds = new HashSet<int>(_musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
                 if (!existingIds.Contains(music.Id))
                 {
                     _musicPlaybackService.MusicBrowseViewModel.CurrentPlayingList.Insert(index + 1, music);

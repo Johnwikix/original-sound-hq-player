@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -103,7 +103,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await MusicDatabaseService.UpdatePlayList(playList);
-                var existingPlayList = PlayLists.FirstOrDefault(p => p.Id == playList.Id);
+                var existingPlayList = PlayLists.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
                 if (existingPlayList is not null)
                 {
                     existingPlayList.Name = newName;

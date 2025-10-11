@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -84,7 +84,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     foreach (UsbDeviceSubFolder subFolder in subFolders)
                     {
-                        if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
+                        if (!subFoldersInDb.AsValueEnumerable().Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
                         {
                             await MusicDatabaseService.AddUsbDeviceSubFolder(subFolder);
                             await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, uniqueDeviceId, subFolder.Path, true);
@@ -93,7 +93,7 @@ namespace WinUIMusicPlayer.Services
                         }
                         else
                         {
-                            UsbDeviceSubFolder dbSubFolder = subFoldersInDb.First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
+                            UsbDeviceSubFolder dbSubFolder = subFoldersInDb.AsValueEnumerable().First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
                             if (dbSubFolder.LastModifiedTime != subFolder.LastModifiedTime)
                             {
                                 dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Services
                     // 处理删除
                     foreach (UsbDeviceSubFolder dbSubFolder in subFoldersInDb)
                     {
-                        if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
+                        if (!subFolders.AsValueEnumerable().Any(subFolder => subFolder.Path == dbSubFolder.Path))
                         {
                             await MusicDatabaseService.DeleteUsbDeviceSubFolder(dbSubFolder);
                             await MusicDatabaseService.DeleteUsbDeviceSubFolderByPath(dbSubFolder.Path, uniqueDeviceId);

@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
@@ -21,6 +20,7 @@ using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -395,8 +395,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void InitializeSortComboBox()
         {
-            var matchingItem = SortOptions.FirstOrDefault(item => item.Tag == AppData.sortOrder);
-            SelectedSortOption = matchingItem ?? SortOptions.FirstOrDefault();
+            var matchingItem = SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.sortOrder);
+            SelectedSortOption = matchingItem ?? SortOptions.AsValueEnumerable().FirstOrDefault();
             AppData.sortOrder = SelectedSortOption.Tag;
         }
 
@@ -797,7 +797,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayLastTrack()
         {
-            int index = CurrentPlayingList
+            int index = CurrentPlayingList.AsValueEnumerable()
                         .Select((music, i) => new { Music = music, Index = i })
                         .FirstOrDefault(x => x.Music.Id == CurrentPlayingMusic.Id)
                         ?.Index ?? -1;

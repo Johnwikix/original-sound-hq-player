@@ -2,7 +2,6 @@
 using ManagedBass.Asio;
 using ManagedBass.Dsd;
 using ManagedBass.Fx;
-using ManagedBass.Tags;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -10,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -31,28 +29,25 @@ namespace WinUIMusicPlayer.Services
     {
         private System.Timers.Timer progressTimer;
         public int _currentStream;
-        private SyncProcedure? _syncEndCallback;
-        private SyncProcedure? _syncFailCallback;
-        private WasapiProcedure _myWasapiProcedure;
-        private AsioProcedure _myAsioProcedure;
+        private readonly SyncProcedure _syncEndCallback;
+        private readonly SyncProcedure _syncFailCallback;
+        private readonly WasapiProcedure _myWasapiProcedure;
+        private readonly AsioProcedure _myAsioProcedure;
         public int? lastPlayedMusicId;
         public bool isManualSelect = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
         public bool isInitializing = true;
-        private NotificationService notificationService;
-        public List<LyricLine> _lyrics = new List<LyricLine>();
+        private readonly NotificationService notificationService;
+        public List<LyricLine> _lyrics = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
-        private TimeSpan _cachedLastCurrentTime = TimeSpan.Zero;
         private TimeSpan _cachedCurrentTime;
         private TimeSpan _cachedTotalTime;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly Lock _streamLock = new();
         private readonly Lock _waveChannelLock = new();
-        //private CancellationTokenSource _currentOperationCts;
-        private volatile bool _isDisposing = false;
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
         private double _totalSeconds;
         private double _currentSeconds;
@@ -70,13 +65,9 @@ namespace WinUIMusicPlayer.Services
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
-            InitializeBass();
-            InitializeBassWasapi();
-            InitializeProcedures();
-        }
-        private void InitializeProcedures()
-        {
-            // 设置回调
+            BassManager.Initialize();
+            _syncEndCallback = OnPlayBackEnded;
+            _syncFailCallback = OnPlaybackFailed;
             _myWasapiProcedure = OnWasapiProc;
             _myAsioProcedure = OnAsioProc;
         }
@@ -102,13 +93,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void InitializeBass()
-        {
-            BassManager.Initialize();
-            _syncEndCallback = OnPlayBackEnded;
-            _syncFailCallback = OnPlaybackFailed;
-        }
-
         private void OnPlaybackFailed(int Handle, int Channel, int Data, nint User)
         {
             AppSettings.isPlaying = false;
@@ -128,14 +112,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     if (_currentStream != 0)
                     {
-                        var positionBytes = Bass.ChannelGetPosition(_currentStream);
-                        var lengthBytes = Bass.ChannelGetLength(_currentStream);
-                        _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, lengthBytes);
-                        _currentSeconds = Bass.ChannelBytes2Seconds(_currentStream, positionBytes);
-                        if (_currentSeconds < (int)_totalSeconds)
-                        {
-                            _cachedLastCurrentTime = _cachedCurrentTime;
-                        }
+                        _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
+                        _currentSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetPosition(_currentStream));
                         UpdateProgressTimerUI();
                     }
                 }
@@ -269,7 +247,7 @@ namespace WinUIMusicPlayer.Services
                             MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
                             cancellationToken.ThrowIfCancellationRequested();
                             await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                            AppData.allSongs.FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id).Lyrics = lrcContent;
+                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id).Lyrics = lrcContent;
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }
@@ -387,7 +365,7 @@ namespace WinUIMusicPlayer.Services
                 });
                 return lyrics;
             }
-            return lyrics.OrderBy(l => l.Time).ToList();
+            return lyrics.AsValueEnumerable().OrderBy(l => l.Time).ToList();
         }
 
         public void AutoPlayNextTrack()
@@ -399,7 +377,7 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+                    int currentIndex = MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
                     MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
                     break;
@@ -440,9 +418,15 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayNextTrack()
         {
-            int currentIndex = MusicBrowseViewModel.CurrentPlayingList.ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
-            int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-            MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            try
+            {
+                int currentIndex = MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
+                int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
+                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+            }
+            catch
+            {
+            }
         }
 
         private void InitializeBassWasapi()
@@ -471,10 +455,10 @@ namespace WinUIMusicPlayer.Services
 
         public void ToggleEqualizer()
         {
-            if (AppSettings.IsEqualizerEnabled 
-                && !(AppSettings.IsDopEnabled 
-                && (AppSettings.OutputMode.Contains("WasapiExclusive") ||AppSettings.OutputMode == "ASIO")
-                && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))                    
+            if (AppSettings.IsEqualizerEnabled
+                && !(AppSettings.IsDopEnabled
+                && (AppSettings.OutputMode.Contains("WasapiExclusive") || AppSettings.OutputMode == "ASIO")
+                && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                )
             {
                 try
@@ -534,7 +518,7 @@ namespace WinUIMusicPlayer.Services
 
         private bool SwitchDevice(ChannelInfo channelInfo)
         {
-            bool result = false;                 
+            bool result = false;
             switch (AppSettings.OutputMode)
             {
                 case "WasapiShared":
@@ -542,32 +526,33 @@ namespace WinUIMusicPlayer.Services
                             channelInfo.Frequency,
                             channelInfo.Channels,
                             WasapiInitFlags.Shared,
-                            AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
+                            AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure);
                     break;
                 case "WasapiExclusivePush":
                     result = BassWasapi.Init(AppSettings.BassOutputDeviceId,
                             channelInfo.Frequency,
                             channelInfo.Channels,
                             WasapiInitFlags.Exclusive,
-                            AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
+                            AppSettings.Latency / 1000.0f, AppSettings.Latency / 8000.0f, _myWasapiProcedure);
                     break;
                 case "WasapiExclusiveEvent":
                     result = BassWasapi.Init(AppSettings.BassOutputDeviceId,
                             channelInfo.Frequency,
                             channelInfo.Channels,
                             WasapiInitFlags.Exclusive | WasapiInitFlags.EventDriven,
-                            AppSettings.Latency / 1000.0f, 0, _myWasapiProcedure, IntPtr.Zero);
+                            AppSettings.Latency / 1000.0f, AppSettings.Latency / 8000.0f, _myWasapiProcedure);
                     break;
                 case "ASIO":
-                    result = BassAsio.Init(AppSettings.BassASIODeviceId,AsioInitFlags.Thread);
+                    result = BassAsio.Init(AppSettings.BassASIODeviceId, AsioInitFlags.Thread);
                     break;
             }
-            if (AppSettings.OutputMode.Contains("Wasapi")) {
+            if (AppSettings.OutputMode.Contains("Wasapi"))
+            {
                 BassWasapi.GetInfo(out var info);
                 MaxDb = info.MaxVolume;
                 MinDb = info.MinVolume;
                 MiddleDb = (MinDb + MaxDb) / 2;
-            }            
+            }
             return result;
         }
         private int OnAsioProc(bool input, int channel, IntPtr buffer, int length, IntPtr user)
@@ -583,7 +568,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 // 初始化播放模式
-                Bass.ChannelGetInfo(_currentStream,out var channelInfo);      
+                Bass.ChannelGetInfo(_currentStream, out var channelInfo);
                 var result = SwitchDevice(channelInfo);
                 if (!result)
                 {
@@ -612,14 +597,15 @@ namespace WinUIMusicPlayer.Services
                         });
                     }
                     else
-                    {                        
+                    {
                         BassWasapi.SetVolume(WasapiVolumeTypes.LogaritmicCurve, (float)LinearToDb(volume));
                     }
                 }
-                else if (AppSettings.OutputMode == "ASIO") {
-                   
-                    if (AppSettings.IsDopEnabled 
-                        && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) 
+                else if (AppSettings.OutputMode == "ASIO")
+                {
+
+                    if (AppSettings.IsDopEnabled
+                        && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
                         || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                         )
                     {
@@ -656,7 +642,7 @@ namespace WinUIMusicPlayer.Services
                 BassDsd.DefaultGain = AppSettings.dsdGain;
                 BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
                 if (AppSettings.OutputMode.Contains("WasapiExclusive"))
-                {                    
+                {
                     if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                     {
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
@@ -670,7 +656,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Unicode | BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
                 }
-                else if (AppSettings.OutputMode == "ASIO") {
+                else if (AppSettings.OutputMode == "ASIO")
+                {
                     if (AppSettings.IsDopEnabled && (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
                     {
                         _currentStream = BassDsd.CreateStream(music.Path, 0, 0, BassFlags.DSDRaw | BassFlags.Decode | BassFlags.AsyncFile);
@@ -678,7 +665,7 @@ namespace WinUIMusicPlayer.Services
                     else
                     {
                         _currentStream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Float | BassFlags.AsyncFile | BassFlags.Decode);
-                    }                    
+                    }
                 }
                 else
                 {
@@ -701,8 +688,7 @@ namespace WinUIMusicPlayer.Services
                         volume
                     );
                 }
-                var lengthBytes = Bass.ChannelGetLength(_currentStream);
-                _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, lengthBytes);
+                _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
             }
             catch (Exception ex)
             {
@@ -734,24 +720,23 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public void Reset()
-        {
-            _isDisposing = true;
-            try
-            {
-                DisposeStream();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    MusicBrowseViewModel.IsPlaying = false;
-                });
-                AppSettings.isPlaying = false;
-                SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
-            }
-            finally
-            {
-                _isDisposing = false;
-            }
-        }
+        //public void Reset()
+        //{
+        //    try
+        //    {
+        //        DisposeStream();
+        //        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            MusicBrowseViewModel.IsPlaying = false;
+        //        });
+        //        AppSettings.isPlaying = false;
+        //        SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
+        //    }
+        //    finally
+        //    {
+        //        _isDisposing = false;
+        //    }
+        //}
 
         public void PlayButton()
         {
@@ -760,7 +745,9 @@ namespace WinUIMusicPlayer.Services
                 if (AppSettings.OutputMode.Contains("Wasapi"))
                 {
                     BassWasapi.Stop();
-                }else if (AppSettings.OutputMode == "ASIO") {
+                }
+                else if (AppSettings.OutputMode == "ASIO")
+                {
                     BassAsio.Stop();
                 }
                 else
@@ -782,7 +769,9 @@ namespace WinUIMusicPlayer.Services
                     if (AppSettings.OutputMode.Contains("Wasapi"))
                     {
                         BassWasapi.Start();
-                    } else if (AppSettings.OutputMode == "ASIO") {
+                    }
+                    else if (AppSettings.OutputMode == "ASIO")
+                    {
                         BassAsio.Start();
                     }
                     else
@@ -832,7 +821,9 @@ namespace WinUIMusicPlayer.Services
                         // 如果独占模式启动失败，回退到共享模式
                         Bass.ChannelPlay(_currentStream, false);
                     }
-                } else if (AppSettings.OutputMode == "ASIO") {
+                }
+                else if (AppSettings.OutputMode == "ASIO")
+                {
                     if (InitializePlayback())
                     {
                         BassAsio.Start();
@@ -902,7 +893,9 @@ namespace WinUIMusicPlayer.Services
                 else if (AppSettings.OutputMode.Contains("WasapiShared"))
                 {
                     BassWasapi.SetVolume(WasapiVolumeTypes.Session, (float)volume);
-                } else if (AppSettings.OutputMode == "ASIO") {
+                }
+                else if (AppSettings.OutputMode == "ASIO")
+                {
                     BassAsio.ChannelSetVolume(false, -1, volume);
                 }
                 else
@@ -979,7 +972,8 @@ namespace WinUIMusicPlayer.Services
         {
             if (linearValue <= 0)
                 return MinDb;
-            if (linearValue >= 1) {
+            if (linearValue >= 1)
+            {
                 return MaxDb;
             }
             // 映射到0到-65.25dB的范围
@@ -1037,7 +1031,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     Debug.WriteLine($"释放ASIO失败: {Bass.LastError}");
                 }
-                else {
+                else
+                {
                     Debug.WriteLine($"释放ASIO成功");
                 }
                 AppSettings.isPlaying = false;
@@ -1064,9 +1059,7 @@ namespace WinUIMusicPlayer.Services
                 progressTimer.Elapsed -= ProgressTimer_Elapsed;
                 progressTimer.Dispose();
                 progressTimer = null;
-            }           
-            _syncEndCallback -= OnPlayBackEnded;
-            _syncFailCallback -= OnPlaybackFailed;
+            }
             BassManager.Free();
         }
     }

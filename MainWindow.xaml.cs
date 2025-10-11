@@ -170,7 +170,8 @@ namespace WinUIMusicPlayer
                     PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
                 }
             }
-            else {
+            else
+            {
                 App.Current_Exit();
             }
         }
@@ -182,7 +183,7 @@ namespace WinUIMusicPlayer
                 themeStyleHelper.SetAppStyle();
                 themeStyleHelper.SetAppTheme();
                 var tasks = new Task[] {
-                        LoadMusicList(),                        
+                        LoadMusicList(),
                         AutoScanFolder()
                 };
                 await Task.WhenAll(tasks);

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using ZLinq;
@@ -104,7 +103,7 @@ namespace WinUIMusicPlayer.Services
                             }
                         }
 
-                        var currentPaths = _subFoldersDict.Keys.ToHashSet();
+                        var currentPaths = _subFoldersDict.Keys.AsValueEnumerable().ToHashSet();
                         foreach (var dbSubFolder in subFoldersInDb)
                         {
                             if (!currentPaths.Contains(dbSubFolder.Path))

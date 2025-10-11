@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -105,8 +105,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 MusicList.Clear();
                 var query = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
+                        .AsValueEnumerable()
                         .GroupBy(m => m.LastLevelFolderPath)
-                        .Select(g => g.First())
+                        .Select(g => g.AsValueEnumerable().First())
                         .OrderBy(m => m.LastLevelFolderPath);
                 foreach (var music in query)
                 {
@@ -125,10 +126,10 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 //MusicList = new ObservableCollection<Music>(_allMusic);
-                groupedByFirstLetter = MusicList
+                groupedByFirstLetter = MusicList.AsValueEnumerable()
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
                         .OrderBy(group => group.Key)
-                        .Select(group => new MusicGroup(group.Key, group.ToList()))
+                        .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
                         .ToList();
                 GroupedMusicViewSource.Source = groupedByFirstLetter;
             }
@@ -212,7 +213,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayingFolder(object? sender, Music e)
         {
-            List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).OrderBy(m => m.Album).ToList();
+            List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (folders is not null && folders.Count > 0)
             {
                 if (parentPage is not null)

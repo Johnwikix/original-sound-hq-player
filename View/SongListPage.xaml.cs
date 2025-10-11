@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -12,6 +11,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
+using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.View
                         menuItem.Click += async (s, args) =>
                         {
                             // 多选情况：添加所有选中的歌曲到播放列表
-                            if (uniqueSelectedMusics.Count() > 1)
+                            if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
                             {
                                 foreach (var music in uniqueSelectedMusics)
                                 {
@@ -221,7 +221,7 @@ namespace WinUIMusicPlayer.View
                             menuItem.Click += async (s, args) =>
                             {
                                 DateTime startTime = DateTime.Now;
-                                if (uniqueSelectedMusics.Count() > 1)
+                                if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
                                 {
                                     ViewModel.ShowTransmission();
                                     var usbWriter = new UsbWriterHelper();
@@ -232,7 +232,7 @@ namespace WinUIMusicPlayer.View
                                     await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
                                     foreach (var music in uniqueSelectedMusics)
                                     {
-                                        var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
+                                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
                                         if (existingMusic is not null)
                                         {
                                             continue; // 如果已经存在，则跳过

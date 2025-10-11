@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Helper;
@@ -10,6 +9,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList is not null && musicList.Count() > 0)
+                if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
                     showTransmission?.Invoke(this, EventArgs.Empty);
                     var usbWriter = new UsbWriterHelper();
@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.Services
                     UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                     foreach (var music in musicList)
                     {
-                        var existingMusic = AppData.musicOnUsbDevice.Where(m => m.Title == music.Title).FirstOrDefault();
+                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
                         if (existingMusic is not null)
                         {
                             continue; // 如果已经存在，则跳过
@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
-                if (musicList is not null && musicList.Count() > 0)
+                if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToFavour(musicList);
                     AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
@@ -295,7 +295,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
-                if (musicList is not null && musicList.Count() > 0)
+                if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
                     await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 }

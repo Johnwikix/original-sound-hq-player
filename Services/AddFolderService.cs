@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -85,9 +85,9 @@ namespace WinUIMusicPlayer.Services
             DateTime startTime = DateTime.Now;
             var files = await folder.GetFilesAsync();
             // 筛选出音乐文件
-            var musicFilesList = files.Where(file => ToolUtils.IsMusicFile(file.FileType)).ToList();
+            var musicFilesList = files.AsValueEnumerable().Where(file => ToolUtils.IsMusicFile(file.FileType)).ToList();
             // 并行处理音乐文件
-            var tasks = musicFilesList.Select(async file =>
+            var tasks = musicFilesList.AsValueEnumerable().Select(async file =>
             {
                 await semaphore.WaitAsync();
                 try
@@ -106,20 +106,20 @@ namespace WinUIMusicPlayer.Services
                     semaphore.Release(); // 释放信号量
                 }
             });
-            var results = await Task.WhenAll(tasks);
+            var results = await Task.WhenAll(tasks.ToList());
             // 添加有效结果到列表（线程安全）
             lock (musicFiles)
             {
-                foreach (var music in results.Where(m => m is not null))
+                foreach (var music in results.AsValueEnumerable().Where(m => m is not null))
                 {
                     musicFiles.Add(music);
                 }
             }
             // 递归扫描子文件夹 - 也可以并行处理
             var subfolders = await folder.GetFoldersAsync();
-            var subfolderTasks = subfolders.Select(subfolder =>
+            var subfolderTasks = subfolders.AsValueEnumerable().Select(subfolder =>
                 GetMusicFilesRecursive(subfolder, musicFiles));
-            await Task.WhenAll(subfolderTasks);
+            await Task.WhenAll(subfolderTasks.ToList());
             Debug.WriteLine($"扫描文件夹 {folder.Path} 完成，耗时: {(DateTime.Now - startTime).TotalSeconds} 秒");
         }
     }

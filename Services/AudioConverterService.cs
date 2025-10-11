@@ -24,27 +24,30 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 string outputPath = GenerateOutputPath(music.Path, type);
-                if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)) {
+                if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
+                {
                     BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
                     BassDsd.DefaultGain = AppSettings.dsdGain;
                 }
-                switch (type) {
+                switch (type)
+                {
                     case "wav":
-                        if (!music.Extension.Equals("wav", StringComparison.OrdinalIgnoreCase)) {
+                        if (!music.Extension.Equals("wav", StringComparison.OrdinalIgnoreCase))
+                        {
                             await Task.Run(() =>
                             {
                                 bassAudioConverter.ConvertToWav(music.Path, outputPath);
                             });
-                        }                       
+                        }
                         break;
-                    case "flac":                        
+                    case "flac":
                         if (!music.Extension.Equals("flac", StringComparison.OrdinalIgnoreCase))
                         {
                             await Task.Run(() =>
                             {
                                 bassAudioConverter.ConvertToFlac(music.Path, outputPath);
                             });
-                        }                       
+                        }
                         break;
                     case "mp3":
                         if (!music.Extension.Equals("mp3", StringComparison.OrdinalIgnoreCase))
@@ -53,7 +56,7 @@ namespace WinUIMusicPlayer.Services
                             {
                                 bassAudioConverter.ConvertToMp3(music.Path, outputPath);
                             });
-                        }                        
+                        }
                         break;
                     case "ogg":
                         if (!music.Extension.Equals("ogg", StringComparison.OrdinalIgnoreCase))
@@ -73,7 +76,7 @@ namespace WinUIMusicPlayer.Services
                             });
                         }
                         break;
-                }                
+                }
             }
             catch (Exception)
             {

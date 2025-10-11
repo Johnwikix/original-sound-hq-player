@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -111,8 +110,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             MusicList.Clear();
             var query = MusicDatabaseService.GetMusicListFromMem(AppData.searchText)
+                .AsValueEnumerable()
                 .GroupBy(m => m.Album)
-                .Select(g => g.First())
+                .Select(g => g.AsValueEnumerable().First())
                 .OrderBy(m => m.Album);
             foreach (var music in query)
             {
@@ -134,19 +134,17 @@ namespace WinUIMusicPlayer.ViewModel
             }
             _groupedByFirstLetter.Clear();
 
-            IEnumerable<IGrouping<string, Music>> groupedMusic;
+            System.Linq.ILookup<string, Music> groupedMusic;
 
             if (sortOrder == "Artist")
             {
-                groupedMusic = MusicList
-                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
-                    .OrderBy(group => group.Key);
+                groupedMusic = MusicList.AsValueEnumerable()
+                .ToLookup(item => ToolUtils.GetFirstLetterAdvanced(item.Author));
             }
             else
             {
-                groupedMusic = MusicList
-                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
-                    .OrderBy(group => group.Key);
+                groupedMusic = MusicList.AsValueEnumerable()
+                    .ToLookup(item => ToolUtils.GetFirstLetterAdvanced(item.Album));
             }
 
             // 重用或创建MusicGroup对象
@@ -187,7 +185,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void OnAlbumDetailChanged(object sender, Music cover)
         {
-            var musicToUpdate = MusicList
+            var musicToUpdate = MusicList.AsValueEnumerable()
                 .FirstOrDefault(music => music.Album == cover.Album);
             if (musicToUpdate is not null)
             {
@@ -220,7 +218,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayingAlbum(object? sender, Music e)
         {
-            List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).OrderBy(m => m.Album).ToList();
+            List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (albums is not null && albums.Count > 0)
             {
                 if (parentPage is not null && _musicBrowseViewModel is not null)
