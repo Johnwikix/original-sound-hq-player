@@ -8,13 +8,13 @@ using ZLinq;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
-using Windows.Storage.Pickers;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
+using Microsoft.Windows.Storage.Pickers;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -202,22 +202,20 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                FileOpenPicker openPicker = new FileOpenPicker();
-                openPicker.ViewMode = PickerViewMode.Thumbnail;
-                openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                var openPicker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);
+                // 添加m3u8文件筛选器
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
                 openPicker.FileTypeFilter.Add(".png");
-                WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
-                StorageFile file = await openPicker.PickSingleFileAsync();
+                openPicker.ViewMode = PickerViewMode.List;
+                // 显示文件选择器并获取结果
+                var filePickerResult = await openPicker.PickSingleFileAsync();
+                var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
+
                 if (file is not null)
                 {
-                    using (Stream stream = await file.OpenStreamForReadAsync())
-                    {
-                        albumCoverData = new byte[stream.Length];
-                        await stream.ReadAsync(albumCoverData, 0, (int)stream.Length);
-                        AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-                    }
+                    albumCoverData = await System.IO.File.ReadAllBytesAsync(file.Path);
+                    AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
                 }
             }
             catch (Exception ex)
@@ -228,21 +226,16 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveImageButton_Click(object sender, RoutedEventArgs e)
         {
-            var picker = new FileSavePicker();
+            var picker = new FileSavePicker(App.MainWindow.AppWindow.Id);
             picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
             picker.FileTypeChoices.Add("JPEG Image", new[] { ".jpg" });
             picker.SuggestedFileName = "SavedImage";
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-            StorageFile file = await picker.PickSaveFileAsync();
+            var file = await picker.PickSaveFileAsync();
             if (file is not null)
             {
                 try
                 {
-                    using (Stream stream = await file.OpenStreamForWriteAsync())
-                    {
-                        await stream.WriteAsync(albumCoverData, 0, albumCoverData.Length);
-                    }
-                    Console.WriteLine("图片已成功保存。");
+                    await System.IO.File.WriteAllBytesAsync(file.Path, albumCoverData);
                 }
                 catch (Exception ex)
                 {

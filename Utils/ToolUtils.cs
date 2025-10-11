@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Windows.ApplicationModel.Resources;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -35,6 +36,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
+using static SQLite.SQLite3;
 using DependencyObject = Microsoft.UI.Xaml.DependencyObject;
 using Path = System.IO.Path;
 
@@ -1149,19 +1151,12 @@ namespace WinUIMusicPlayer.Utils
 
         public async static Task<PlayList> OpenM3u8File()
         {
-            var picker = new FileOpenPicker();
-            // 设置文件选择器的视图
-            picker.ViewMode = PickerViewMode.List;
-            picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
-
+            var picker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);
             // 添加m3u8文件筛选器
             picker.FileTypeFilter.Add(".m3u8");
-
-            // 在WinUI3中需要设置文件选择器的窗口句柄
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, AppData.m_hWnd);
-
             // 显示文件选择器并获取结果
-            var file = await picker.PickSingleFileAsync();
+            var filePickerResult = await picker.PickSingleFileAsync();
+            var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
             if (file is not null)
             {
                 try
@@ -1288,16 +1283,18 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, AppData.m_hWnd);
-                savePicker.FileTypeChoices.Add("M3U8 播放列表", new List<string>() { ".m3u8" });
-                savePicker.SuggestedFileName = playList.Name;
-                var file = await savePicker.PickSaveFileAsync();
+                var fileSavePicker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(App.MainWindow.AppWindow.Id);
+
+                //var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+                //WinRT.Interop.InitializeWithWindow.Initialize(savePicker, AppData.m_hWnd);
+                fileSavePicker.FileTypeChoices.Add("M3U8 播放列表", new List<string>() { ".m3u8" });
+                fileSavePicker.SuggestedFileName = playList.Name;
+                var file = await fileSavePicker.PickSaveFileAsync();
                 if (file is not null)
                 {
                     IEnumerable<Music> musics = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id);
                     var m3u8Content = ToolUtils.GenerateM3U8Content(musics, playList.Name);
-                    await Windows.Storage.FileIO.WriteTextAsync(file, m3u8Content, Windows.Storage.Streams.UnicodeEncoding.Utf8);
+                    await System.IO.File.WriteAllTextAsync(file.Path, m3u8Content);
                 }
             }
             catch (Exception)

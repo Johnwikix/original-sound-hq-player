@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
-using Windows.Storage.Pickers;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
@@ -298,22 +298,16 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                FileOpenPicker openPicker = new FileOpenPicker();
+                FileOpenPicker openPicker = new FileOpenPicker(App.MainWindow.AppWindow.Id);
                 openPicker.ViewMode = PickerViewMode.Thumbnail;
-                openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
                 openPicker.FileTypeFilter.Add(".png");
-                WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
-                StorageFile file = await openPicker.PickSingleFileAsync();
+                var file = await openPicker.PickSingleFileAsync();
                 if (file is not null)
                 {
-                    using (Stream stream = await file.OpenStreamForReadAsync())
-                    {
-                        albumCoverData = new byte[stream.Length];
-                        await stream.ReadAsync(albumCoverData, 0, (int)stream.Length);
-                        AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-                    }
+                    albumCoverData = await System.IO.File.ReadAllBytesAsync(file.Path);
+                    AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
                 }
             }
             catch (Exception ex)
@@ -324,21 +318,16 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveImageButton_Click(object sender, RoutedEventArgs e)
         {
-            var picker = new FileSavePicker();
+            var picker = new FileSavePicker(App.MainWindow.AppWindow.Id);
             picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
             picker.FileTypeChoices.Add("JPEG Image", new[] { ".jpg" });
             picker.SuggestedFileName = "SavedImage";
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-            StorageFile file = await picker.PickSaveFileAsync();
+            var file = await picker.PickSaveFileAsync();
             if (file is not null)
             {
                 try
                 {
-                    using (Stream stream = await file.OpenStreamForWriteAsync())
-                    {
-                        await stream.WriteAsync(albumCoverData, 0, albumCoverData.Length);
-                    }
-                    Console.WriteLine("图片已成功保存。");
+                    await System.IO.File.WriteAllBytesAsync(file.Path, albumCoverData);
                 }
                 catch (Exception ex)
                 {

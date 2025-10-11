@@ -4,6 +4,7 @@ using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -1038,11 +1039,8 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async void ChangeCoverCacheLocation()
         {
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
-            var folder = await folderPicker.PickSingleFolderAsync();
+            var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
+            PickFolderResult folder = await folderPicker.PickSingleFolderAsync();
             if (folder is not null)
             {
                 MusicCoverCache = folder.Path;

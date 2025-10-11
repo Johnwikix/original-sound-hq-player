@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Windows.Storage.Pickers;
 using SQLite;
 using System;
 using System.Collections.Generic;
@@ -57,22 +58,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task AddFolderButton_Click()
         {
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, AppData.m_hWnd);
-            var folder = await folderPicker.PickSingleFolderAsync();
-            await AddFolderMusic(folder);
-            //try
-            //{
-            //    var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
-            //    PickFolderResult result = await folderPicker.PickSingleFolderAsync();
-            //    if (result is null) return;
-            //    await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
-            //}
-            //catch (Exception)
-            //{
-            //}
+            try
+            {
+                var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
+                PickFolderResult result = await folderPicker.PickSingleFolderAsync();
+                if (result is null) return;
+                await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
+            }
+            catch
+            {
+            }
         }
         private async Task AddFolderMusic(StorageFolder folder)
         {
