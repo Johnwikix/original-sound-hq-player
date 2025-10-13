@@ -87,6 +87,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
+                 services.AddSingleton<LyricsRefreshService>();
              }).Build();
 
         /// <summary>

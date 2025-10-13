@@ -654,9 +654,9 @@ namespace WinUIMusicPlayer.ViewModel
             LastLyricIndex = -1;
             UILyrics.Clear();
             // 设置播放服务中的歌词
-            await _musicPlaybackService.SetLyrics();
+            await _musicPlaybackService.LyricsRefreshService.SetLyrics();
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = _musicPlaybackService._lyrics;
+            List<LyricLine> parsedLyrics = _musicPlaybackService.LyricsRefreshService._lyrics;
             UILyrics.Clear();
             foreach (var lyric in parsedLyrics)
             {

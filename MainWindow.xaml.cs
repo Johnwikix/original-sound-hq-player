@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer
     public sealed partial class MainWindow : WinUIEx.WindowEx
     {
         public event EventHandler updateMusicList;
-        public event EventHandler SettingLoaded;
+        //public event EventHandler SettingLoaded;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
