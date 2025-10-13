@@ -224,21 +224,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void InitializeBassWasapi()
-        {
-            try
-            {
-                if (!BassWasapi.Init(-1))
-                {
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"初始化wasapi异常:{ex.Message}");
-            }
-        }
-
         private int OnWasapiProc(IntPtr buffer, int length, IntPtr user)
         {
             if (_currentStream != 0)
@@ -514,24 +499,6 @@ namespace WinUIMusicPlayer.Services
                 });
             }
         }
-
-        //public void Reset()
-        //{
-        //    try
-        //    {
-        //        DisposeStream();
-        //        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            MusicBrowseViewModel.IsPlaying = false;
-        //        });
-        //        AppSettings.isPlaying = false;
-        //        SetSource(MusicBrowseViewModel.CurrentPlayingMusic);
-        //    }
-        //    finally
-        //    {
-        //        _isDisposing = false;
-        //    }
-        //}
 
         public void PlayButton()
         {
