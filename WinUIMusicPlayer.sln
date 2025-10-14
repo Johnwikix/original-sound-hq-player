@@ -5,6 +5,8 @@ VisualStudioVersion = 18.0.11109.219
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinUIMusicPlayer", "WinUIMusicPlayer.csproj", "{33613539-FFB8-425B-968B-E089D2AFD276}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BassPlayerSharp", "..\BassPlayerSharp\BassPlayerSharp.csproj", "{39D1553F-7E0A-488D-9D54-9D834287058D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -17,6 +19,10 @@ Global
 		{33613539-FFB8-425B-968B-E089D2AFD276}.Release|x64.ActiveCfg = Release|x64
 		{33613539-FFB8-425B-968B-E089D2AFD276}.Release|x64.Build.0 = Release|x64
 		{33613539-FFB8-425B-968B-E089D2AFD276}.Release|x64.Deploy.0 = Release|x64
+		{39D1553F-7E0A-488D-9D54-9D834287058D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{39D1553F-7E0A-488D-9D54-9D834287058D}.Debug|x64.Build.0 = Debug|Any CPU
+		{39D1553F-7E0A-488D-9D54-9D834287058D}.Release|x64.ActiveCfg = Release|Any CPU
+		{39D1553F-7E0A-488D-9D54-9D834287058D}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
