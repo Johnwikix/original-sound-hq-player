@@ -27,43 +27,33 @@ namespace WinUIMusicPlayer.Services
 {
     public class BassMusicPlaybackService
     {
-        private System.Timers.Timer progressTimer;
         public int _currentStream;
         private readonly SyncProcedure _syncEndCallback;
         private readonly SyncProcedure _syncFailCallback;
         private readonly WasapiProcedure _myWasapiProcedure;
         private readonly AsioProcedure _myAsioProcedure;
         public int? lastPlayedMusicId;
-        public bool isManualSelect = false;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
         public bool isInitializing = true;
         private readonly NotificationService notificationService;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
-        private TimeSpan _cachedCurrentTime;
-        private TimeSpan _cachedTotalTime;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly Lock _streamLock = new();
         private readonly Lock _waveChannelLock = new();
         private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
-        private double _totalSeconds;
-        private double _currentSeconds;
         private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
         private double MinDb = -60;
         private double MaxDb = 0;
         private double MiddleDb = -30;
         private PeakEQ _peakEQ;
-        public LyricsRefreshService LyricsRefreshService { get; }
 
         public BassMusicPlaybackService(NotificationService notificationService)
         {
             this.notificationService = notificationService;
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            LyricsRefreshService = App.Services.GetRequiredService<LyricsRefreshService>();
-            progressTimer = new System.Timers.Timer(1000);
-            progressTimer.Elapsed += ProgressTimer_Elapsed;
             InitializingData();
             BassManager.Initialize();
             _syncEndCallback = OnPlayBackEnded;
@@ -104,68 +94,9 @@ namespace WinUIMusicPlayer.Services
             AutoPlayNextTrack();
         }
 
-        private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
-        {
-            try
-            {
-                if (AppSettings.isPlaying && !MusicBrowseViewModel.IsUserDraggingProgressSlider)
-                {
-                    if (_currentStream != 0)
-                    {
-                        _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
-                        _currentSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetPosition(_currentStream));
-                        UpdateProgressTimerUI();
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        private void UpdateProgressTimerUI()
-        {
-            if (_currentStream != 0)
-            {
-                _cachedCurrentTime = TimeSpan.FromSeconds(_currentSeconds);
-                _cachedTotalTime = TimeSpan.FromSeconds(_totalSeconds);
-                _timeStringBuilder.Clear();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (!isManualSelect)
-                    {
-                        try
-                        {
-                            MusicBrowseViewModel.ProgressSlider = _currentSeconds;
-                            if (_cachedTotalTime.TotalHours >= 1)
-                            {
-                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
-                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
-                                    .ToString();
-                            }
-                            else
-                            {
-                                MusicBrowseViewModel.PlayTimeText = _timeStringBuilder
-                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _cachedCurrentTime, _cachedTotalTime)
-                                    .ToString();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                    }
-                });
-                LyricsRefreshService.UpdateLyrics(_cachedCurrentTime);
-                _systemMediaControlsService.UpdateTimelineProperties(_cachedCurrentTime, _cachedTotalTime);
-            }
-        }
-
-        
-
         public void AutoPlayNextTrack()
         {
-            progressTimer?.Stop();
+            MusicBrowseViewModel.StopProgressTimer();
             switch (AppData.PlayMode)
             {
                 case PlayMode.SingleLoop:
@@ -189,7 +120,7 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd()
         {
-            progressTimer.Stop();
+            MusicBrowseViewModel.StopProgressTimer();
             if (_currentStream != 0)
             {
                 if (AppSettings.OutputMode.Contains("Wasapi"))
@@ -468,7 +399,7 @@ namespace WinUIMusicPlayer.Services
                         volume
                     );
                 }
-                _totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
+                //_totalSeconds = Bass.ChannelBytes2Seconds(_currentStream, Bass.ChannelGetLength(_currentStream));
             }
             catch (Exception ex)
             {
@@ -491,7 +422,7 @@ namespace WinUIMusicPlayer.Services
             if (_currentStream != 0)
             {
                 Bass.ChannelStop(_currentStream);
-                progressTimer.Stop();
+                MusicBrowseViewModel.StopProgressTimer();
                 AppSettings.isPlaying = false;
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -522,7 +453,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     MusicBrowseViewModel.IsPlaying = false;
                 });
-                progressTimer.Stop();
+                MusicBrowseViewModel.StopProgressTimer();
             }
             else
             {
@@ -563,7 +494,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     MusicBrowseViewModel.IsPlaying = true;
                 });
-                progressTimer.Start();
+                MusicBrowseViewModel.StartProgressTimer();
             }
         }
 
@@ -605,8 +536,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     SetEqualizer();
                 }
-                progressTimer.Start();
-                UpdateProgressTimerUI();
+                MusicBrowseViewModel.StartProgressTimer();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     try
@@ -813,15 +743,7 @@ namespace WinUIMusicPlayer.Services
         public void Dispose()
         {
             DisposeEq();
-            LyricsRefreshService?.Dispose();
             DisposeStream();
-            if (progressTimer is not null)
-            {
-                progressTimer.Stop();
-                progressTimer.Elapsed -= ProgressTimer_Elapsed;
-                progressTimer.Dispose();
-                progressTimer = null;
-            }
             BassManager.Free();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ManagedBass;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -11,8 +12,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
 using WinUIMusicPlayer.Model;
@@ -114,9 +117,9 @@ namespace WinUIMusicPlayer.ViewModel
                                 {
                                     Task.Run(() =>
                                     {
-                                        _musicPlaybackService.isManualSelect = true;
+                                        isManualSelect = true;
                                         _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                                        _musicPlaybackService.isManualSelect = false;
+                                        isManualSelect = false;
                                     });
                                 }
                             }
@@ -345,6 +348,12 @@ namespace WinUIMusicPlayer.ViewModel
         private DeviceWatcher deviceWatcher;
         private List<FileSystemWatcher> watchers = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
+        private System.Timers.Timer progressTimer;
+        private TimeSpan _totalTime;
+        private TimeSpan _currentTime;
+        public bool isManualSelect = false;
+        private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
+        public LyricsRefreshService LyricsRefreshService { get; set;}
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;
@@ -362,7 +371,64 @@ namespace WinUIMusicPlayer.ViewModel
             }
             SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
             StartWatchingUsbStorageDevices();
-            //UpdateDisplayTexts();           
+            progressTimer = new System.Timers.Timer(1000);
+            progressTimer.Elapsed += ProgressTimer_Elapsed;           
+        }
+        public void StartProgressTimer()
+        {
+            progressTimer?.Start();
+        }
+        public void StopProgressTimer()
+        {
+            progressTimer?.Stop();
+        }
+
+        private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                if (AppSettings.isPlaying && !IsUserDraggingProgressSlider)
+                {
+                    UpdateProgressTimerUI();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void UpdateProgressTimerUI() {
+            _totalTime = TimeSpan.FromSeconds(_musicPlaybackService.GetTotalPosition());
+            _currentTime = TimeSpan.FromSeconds(_musicPlaybackService.GetCurrentPosition());
+            _timeStringBuilder.Clear();
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!isManualSelect)
+                {
+                    try
+                    {
+                        ProgressSlider = _currentTime.TotalSeconds;
+                        if (_totalTime.TotalHours >= 1)
+                        {
+                            PlayTimeText = _timeStringBuilder
+                                .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _currentTime, _totalTime)
+                                .ToString();
+                        }
+                        else
+                        {
+                            PlayTimeText = _timeStringBuilder
+                                .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _currentTime, _totalTime)
+                                .ToString();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                    }
+                }
+            });
+            LyricsRefreshService.UpdateLyrics(_currentTime);
+            _systemMediaControlsService.UpdateTimelineProperties(_currentTime, _totalTime);
         }
         public void UpdateLyricsMargin()
         {
@@ -623,6 +689,11 @@ namespace WinUIMusicPlayer.ViewModel
             InitializeDatabase();
         }
 
+        public void SetLyricsService(LyricsRefreshService lyricsRefreshService)
+        {
+            LyricsRefreshService = lyricsRefreshService;
+        }
+
         private async void InitializeDatabase()
         {
             try
@@ -654,9 +725,9 @@ namespace WinUIMusicPlayer.ViewModel
             LastLyricIndex = -1;
             UILyrics.Clear();
             // 设置播放服务中的歌词
-            await _musicPlaybackService.LyricsRefreshService.SetLyrics();
+            await LyricsRefreshService.SetLyrics();
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = _musicPlaybackService.LyricsRefreshService._lyrics;
+            List<LyricLine> parsedLyrics = LyricsRefreshService._lyrics;
             UILyrics.Clear();
             foreach (var lyric in parsedLyrics)
             {
@@ -751,7 +822,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpdatePlayPauseButtonIcon()
         {
             App.MainWindow.UpdateTaskbarIcon();
-            //App.MainWindow.UpdateIconControl();
             _systemMediaControlsService.UpdateSystemMediaControlsState();
         }
 
@@ -769,16 +839,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void NextMusicButton_Click()
         {
-            //_musicPlaybackService.isManualSelect = true;
             _musicPlaybackService.PlayNextTrack();
-            //_musicPlaybackService.isManualSelect = false;
         }
 
         public void LastMusicButton_Click()
         {
-            //_musicPlaybackService.isManualSelect = true;
             PlayLastTrack();
-            //_musicPlaybackService.isManualSelect = false;
         }
 
         public void PlayMusic(Music music)

@@ -45,6 +45,7 @@ namespace WinUIMusicPlayer.View
 
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassMusicPlaybackService musicPlaybackService,
+            LyricsRefreshService lyricsRefreshService,
             NotificationService notificationService,
             MusicBrowseViewModel viewModel
             )
@@ -52,6 +53,7 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetMusicService(musicPlaybackService);
+            ViewModel.SetLyricsService(lyricsRefreshService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             ViewModel.IsInitialized = false;
@@ -520,6 +522,7 @@ namespace WinUIMusicPlayer.View
                 {
                     ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 });
+                ViewModel.UpdateProgressTimerUI();
             }
             catch (Exception ex)
             {
@@ -659,9 +662,9 @@ namespace WinUIMusicPlayer.View
                 double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.GetTotalPosition()));
                 _ = Task.Run(() =>
                 {
-                    ViewModel._musicPlaybackService.isManualSelect = true;
+                    ViewModel.isManualSelect = true;
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
-                    ViewModel._musicPlaybackService.isManualSelect = false;
+                    ViewModel.isManualSelect = false;
                 });
             }
         }
@@ -763,9 +766,9 @@ namespace WinUIMusicPlayer.View
                 {
                     int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));
                     ViewModel.UpdateLyricsToUI(index);
-                    ViewModel._musicPlaybackService.isManualSelect = true;
+                    ViewModel.isManualSelect = true;
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);
-                    ViewModel._musicPlaybackService.isManualSelect = false;
+                    ViewModel.isManualSelect = false;
                 });
             }
         }
