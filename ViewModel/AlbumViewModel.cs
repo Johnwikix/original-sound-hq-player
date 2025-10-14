@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -134,18 +135,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
             _groupedByFirstLetter.Clear();
 
-            System.Linq.ILookup<string, Music> groupedMusic;
+            IEnumerable<IGrouping<string, Music>> groupedMusic;
 
             if (sortOrder == "Artist")
             {
-                groupedMusic = MusicList.AsValueEnumerable()
-                .ToLookup(item => ToolUtils.GetFirstLetterAdvanced(item.Author));
+                groupedMusic = MusicList
+                    .AsValueEnumerable()
+                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
+                    .OrderBy(group => group.Key).ToList();
             }
             else
             {
-                groupedMusic = MusicList.AsValueEnumerable()
-                    .ToLookup(item => ToolUtils.GetFirstLetterAdvanced(item.Album));
+                groupedMusic = MusicList
+                    .AsValueEnumerable()
+                    .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Album))
+                    .OrderBy(group => group.Key).ToList();
             }
+
 
             // 重用或创建MusicGroup对象
             foreach (var group in groupedMusic)
