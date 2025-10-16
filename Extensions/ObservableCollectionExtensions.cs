@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.Extensions
             {
                 return [];
             }
-            // 先将原始集合复制到列表中，这是为了执行高效的洗牌操作。
+
             var list = originalCollection.AsValueEnumerable().ToList();
 
             Random rng = new Random();
@@ -40,7 +40,6 @@ namespace WinUIMusicPlayer.Extensions
                 list[n] = value;
             }
 
-            // 使用洗牌后的列表创建一个新的 ObservableCollection
             return new ObservableCollection<T>(list);
         }
     }
