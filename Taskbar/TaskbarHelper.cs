@@ -154,7 +154,6 @@ namespace WinUIMusicPlayer.Taskbar
                 _iconHandles[1] = AppSettings.isPlaying ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32) : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
                 _iconHandles[2] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\next.ico"), 32);
 
-                // 按钮1 
                 _buttons[0] = new ThumbButton
                 {
                     dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
@@ -164,7 +163,6 @@ namespace WinUIMusicPlayer.Taskbar
                     dwFlags = ThumbButtonFlags.Enabled
                 };
 
-                // 按钮2 
                 _buttons[1] = new ThumbButton
                 {
                     dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
@@ -174,7 +172,6 @@ namespace WinUIMusicPlayer.Taskbar
                     dwFlags = ThumbButtonFlags.Enabled
                 };
 
-                // 按钮3 
                 _buttons[2] = new ThumbButton
                 {
                     dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
@@ -220,26 +217,18 @@ namespace WinUIMusicPlayer.Taskbar
                 }
             }
 
-            // 调用默认的窗口过程
             return DefSubclassProc(hWnd, uMsg, wParam, lParam);
         }
 
-        // TaskbarHelper.cs 中添加更新按钮图标的方法
         public void UpdateButtonIcon(int buttonId, string iconPath, int size = 32)
         {
             try
             {
-                // 创建新图标
                 IntPtr newIcon = CreateIconFromImage(iconPath, size);
-                // 保存之前的图标句柄以便释放
                 IntPtr oldIcon = _iconHandles[buttonId];
-                // 更新图标句柄数组
                 _iconHandles[buttonId] = newIcon;
-                // 更新按钮结构
                 _buttons[buttonId].hIcon = newIcon;
-                // 更新任务栏按钮
                 _taskbarList.ThumbBarUpdateButtons(_hwnd, (uint)_buttons.Length, _buttons);
-                // 释放旧图标资源
                 if (oldIcon != IntPtr.Zero)
                 {
                     DestroyIcon(oldIcon);
@@ -254,7 +243,6 @@ namespace WinUIMusicPlayer.Taskbar
         // 处理任务栏按钮点击事件
         private void HandleThumbButtonClick(int buttonId)
         {
-            //System.Diagnostics.Debug.WriteLine($"任务栏按钮点击：按钮ID {buttonId}");
             if (buttonId == 0)
             {
                 _musicBrowseViewModel.LastMusicButton_Click();
@@ -272,13 +260,8 @@ namespace WinUIMusicPlayer.Taskbar
             {
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
-                UpdateButtonIcon(1, newIconPath); // 按钮2的ID是1
-                //System.Diagnostics.Debug.WriteLine("已将按钮2的图标更改为Button4.ico");
+                UpdateButtonIcon(1, newIconPath);
             }
-
-            // 触发事件
-            //ThumbButtonClicked?.Invoke(this, new ThumbButtonClickedEventArgs(buttonId));
-
         }
 
         public void UpdateTaskbarButtonIcon()
