@@ -53,6 +53,12 @@
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
+  <ItemGroup>
+	<None Include="Player\**\*">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<Link>%(Filename)%(Extension)</Link>
+	</None>
+  </ItemGroup>
   <ItemGroup Condition="'$(Platform)' == 'x86'">
 	<None Include="Libraries\x86\**\*">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

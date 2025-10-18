@@ -49,10 +49,12 @@ namespace WinUIMusicPlayer.Services
         private double MaxDb = 0;
         private double MiddleDb = -30;
         private PeakEQ _peakEQ;
+        private IpcService IpcService { get; set; }
 
         public BassMusicPlaybackService(NotificationService notificationService)
         {
             this.notificationService = notificationService;
+            IpcService = App.Services.GetRequiredService<IpcService>();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             InitializingData();
             BassManager.Initialize();
@@ -433,6 +435,7 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayButton()
         {
+            IpcService.Play();
             if (AppSettings.isPlaying)
             {
                 if (AppSettings.OutputMode.Contains("Wasapi"))
