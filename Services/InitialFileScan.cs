@@ -13,17 +13,12 @@ namespace WinUIMusicPlayer.Services
 {
     public class InitialFileScan
     {
-        // 保持这些列表为静态，用于收集整个扫描结果
-        private static List<Music> MusicsToUpdate = new List<Music>();
-        private static List<Music> MusicsToAdd = new List<Music>();
-        private static List<Music> MusicsToDelete = new List<Music>();
-        private static IEnumerable<Music> allSongsCache;
         public static async Task InitialScan()
         {
-            MusicsToUpdate.Clear();
-            MusicsToAdd.Clear();
-            MusicsToDelete.Clear();
-            allSongsCache = await MusicDatabaseService.GetMusicListAsync();
+            List<Music> MusicsToUpdate = [];
+            List<Music> MusicsToAdd = [];
+            List<Music> MusicsToDelete = [];
+            IEnumerable<Music> allSongsCache = await MusicDatabaseService.GetMusicListAsync();
             HashSet<string> allScannedFilePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var folderList = await MusicDatabaseService.GetFolders();
@@ -33,7 +28,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!string.IsNullOrEmpty(folder.Path))
                 {
-                    await ScanSingleFolder(folder.Path, allScannedFilePaths);
+                    await ScanSingleFolder(folder.Path, allScannedFilePaths, MusicsToUpdate, MusicsToAdd, allSongsCache);
                 }
             }
 
@@ -51,7 +46,7 @@ namespace WinUIMusicPlayer.Services
             await MusicDatabaseService.AddMusicList(MusicsToAdd);
             await MusicDatabaseService.UpdateMusicList(MusicsToUpdate);
             await MusicDatabaseService.DeletedMusicList(MusicsToDelete);
-            await Deduplication();
+            await Deduplication();            
         }
 
         public static async Task Deduplication()
@@ -65,7 +60,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         // 将原 GetFileModificationDates 重命名，并接收 allScannedFilePaths
-        public static async Task ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths)
+        public static async Task ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths,List<Music> MusicsToUpdate, List<Music> MusicsToAdd,IEnumerable<Music> allSongsCache)
         {
             if (!Directory.Exists(rootDirectory))
             {
