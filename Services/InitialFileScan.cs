@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -50,6 +51,17 @@ namespace WinUIMusicPlayer.Services
             await MusicDatabaseService.AddMusicList(MusicsToAdd);
             await MusicDatabaseService.UpdateMusicList(MusicsToUpdate);
             await MusicDatabaseService.DeletedMusicList(MusicsToDelete);
+            await Deduplication();
+        }
+
+        public static async Task Deduplication()
+        {
+            var allSongs = await MusicDatabaseService.GetMusicListAsync();
+            IEnumerable<Music> songsToDelete = allSongs.AsValueEnumerable().GroupBy(song => song.Path)
+                        .Where(group => group.Count() > 1)
+                        .SelectMany(group => group.Skip(1))
+                        .ToList();
+            await MusicDatabaseService.DeletedMusicList(songsToDelete);
         }
 
         // 将原 GetFileModificationDates 重命名，并接收 allScannedFilePaths
