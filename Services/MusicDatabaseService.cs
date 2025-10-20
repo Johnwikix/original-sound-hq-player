@@ -1198,39 +1198,39 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async static Task<Music> updateMusic(Music music, string folderPath)
+        private async static Task<Music> updateMusic(Music music)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            var existingMusic = AppData.allSongs.AsValueEnumerable().Where(m => m.Path == music.Path).FirstOrDefault();
-            if (existingMusic is null)
-            {
-                return null;
-            }
-            Music newMusic = await ToolUtils.GetMusicInfo(storageFile, folderPath);
+            //var existingMusic = AppData.allSongs.AsValueEnumerable().Where(m => m.Path == music.Path).FirstOrDefault();
+            //if (existingMusic is null)
+            //{
+            //    return null;
+            //}
+            Music newMusic = await ToolUtils.GetMusicInfo(storageFile);
             //Debug.WriteLine($"标题：{newMusic.Title}创建时间{newMusic.CreateTime.ToString()}");
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                existingMusic.Title = newMusic.Title;
-                existingMusic.Author = newMusic.Author;
-                existingMusic.Duration = newMusic.Duration;
-                existingMusic.Album = newMusic.Album;
-                existingMusic.FolderPath = newMusic.FolderPath;
-                existingMusic.LastLevelFolderPath = newMusic.LastLevelFolderPath;
-                existingMusic.BitDepth = newMusic.BitDepth;
-                existingMusic.BitRate = newMusic.BitRate;
-                existingMusic.SampleRate = newMusic.SampleRate;
-                existingMusic.Channel = newMusic.Channel;
-                if (string.IsNullOrEmpty(existingMusic.Lyrics))
+                music.Title = newMusic.Title;
+                music.Author = newMusic.Author;
+                music.Duration = newMusic.Duration;
+                music.Album = newMusic.Album;
+                music.FolderPath = newMusic.FolderPath;
+                music.LastLevelFolderPath = newMusic.LastLevelFolderPath;
+                music.BitDepth = newMusic.BitDepth;
+                music.BitRate = newMusic.BitRate;
+                music.SampleRate = newMusic.SampleRate;
+                music.Channel = newMusic.Channel;
+                if (string.IsNullOrEmpty(music.Lyrics))
                 {
-                    existingMusic.Lyrics = newMusic.Lyrics;
+                    music.Lyrics = newMusic.Lyrics;
                 }
-                existingMusic.TrackNumber = newMusic.TrackNumber;
-                existingMusic.DiskNumber = newMusic.DiskNumber;
-                existingMusic.Year = newMusic.Year;
-                existingMusic.UpdateTime = newMusic.UpdateTime;
-                existingMusic.CreateTime = newMusic.CreateTime;
+                music.TrackNumber = newMusic.TrackNumber;
+                music.DiskNumber = newMusic.DiskNumber;
+                music.Year = newMusic.Year;
+                music.UpdateTime = newMusic.UpdateTime;
+                music.CreateTime = newMusic.CreateTime;
             });
-            return existingMusic;
+            return music;
 
         }
 
@@ -1344,7 +1344,7 @@ namespace WinUIMusicPlayer.Services
                 await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
-                    return await updateMusic(music, folder.Path);
+                    return await updateMusic(music);
                 }
                 finally
                 {
@@ -1370,9 +1370,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         return null;
                     }
-
                     StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                    Music music = await ToolUtils.GetMusicInfo(storageFile, folder.Path);
+                    Music music = await ToolUtils.GetMusicInfo(storageFile);
                     return music;
                 }
                 catch (Exception ex)
@@ -1498,7 +1497,7 @@ namespace WinUIMusicPlayer.Services
                     }
 
                     StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                    Music music = await ToolUtils.GetMusicInfo(storageFile, folder.Path);
+                    Music music = await ToolUtils.GetMusicInfo(storageFile);
                     return music;
                 }
                 catch (Exception ex)
@@ -1519,6 +1518,79 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public static async Task AddMusicList(IEnumerable<Music> _toAdd)
+        {
+            var addTasks = _toAdd.AsValueEnumerable().Select(async m =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(m.Path);
+                    Music music = await ToolUtils.GetMusicInfo(storageFile);
+                    return music;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    return null;
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+            var AddResults = await Task.WhenAll(addTasks.ToList());
+            var validMusic = AddResults.AsValueEnumerable().Where(m => m is not null).ToList();
+            if (validMusic.Count != 0)
+            {
+                await _dbConnection.InsertAllAsync(validMusic);
+            }
+        }
+
+        public static async Task UpdateMusicList(IEnumerable<Music> _toUpdate) {
+            //并行执行更新操作
+            var updateTasks = _toUpdate.AsValueEnumerable().Select(async music =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    return await updateMusic(music);
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            }).ToArray();
+            var results = await Task.WhenAll(updateTasks);
+            var validResults = results.AsValueEnumerable().Where(r => r is not null).ToList();
+            if (validResults.Count != 0)
+            {
+                await _dbConnection.UpdateAllAsync(validResults);
+                Debug.WriteLine($"批量更新完成，共 {validResults.Count} 条记录");
+            }
+        }
+
+        public static async Task DeletedMusicList(IEnumerable<Music> toDelete)
+        {
+            // 并行执行删除操作
+            var deleteTasks = toDelete.AsValueEnumerable().Select(async music =>
+            {
+                await _rescanfolderSemaphore.WaitAsync();
+                try
+                {
+                    await _dbConnection.DeleteAsync(music);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                }
+                finally
+                {
+                    _rescanfolderSemaphore.Release();
+                }
+            });
+            await Task.WhenAll(deleteTasks.ToList());
+        }
 
         public static async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId)
         {

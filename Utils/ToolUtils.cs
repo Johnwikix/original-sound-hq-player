@@ -977,7 +977,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<Music> GetMusicInfo(StorageFile file, string folderPath)
+        public static async Task<Music> GetMusicInfo(StorageFile file)
         {
             string lastLevelDirectory = Path.GetDirectoryName(file.Path);
             DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);

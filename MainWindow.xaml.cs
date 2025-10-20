@@ -181,12 +181,9 @@ namespace WinUIMusicPlayer
             try
             {
                 themeStyleHelper.SetAppStyle();
-                themeStyleHelper.SetAppTheme();
-                var tasks = new Task[] {
-                        LoadMusicList(),
-                        AutoScanFolder()
-                };
-                await Task.WhenAll(tasks);
+                themeStyleHelper.SetAppTheme();               
+                await InitialFileScan.InitialScan();
+                await LoadMusicList();
                 //RefreshDevice();
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();

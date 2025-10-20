@@ -92,7 +92,7 @@ namespace WinUIMusicPlayer.Services
                 await semaphore.WaitAsync();
                 try
                 {
-                    Music music = await ToolUtils.GetMusicInfo(file, folder.Path);
+                    Music music = await ToolUtils.GetMusicInfo(file);
                     return music;
                 }
                 catch (Exception ex)
