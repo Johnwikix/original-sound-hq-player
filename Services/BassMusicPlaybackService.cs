@@ -42,7 +42,6 @@ namespace WinUIMusicPlayer.Services
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private readonly Lock _streamLock = new();
         private readonly Lock _waveChannelLock = new();
-        private readonly SystemMediaControlsService _systemMediaControlsService = App.Services.GetRequiredService<SystemMediaControlsService>();
         private readonly int[] _bandIndices = new int[10];
         private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
         private double MinDb = -60;
@@ -415,7 +414,7 @@ namespace WinUIMusicPlayer.Services
             {
                 Stop();
                 SetSource(music);
-                Play(isSettingChanged);
+                Play();
             }
         }
 
@@ -435,7 +434,6 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayButton()
         {
-            IpcService.Play();
             if (AppSettings.isPlaying)
             {
                 if (AppSettings.OutputMode.Contains("Wasapi"))

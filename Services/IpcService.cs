@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Windows.Media.Protection.PlayReady;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
@@ -52,7 +53,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 var request = new RequestMessage { Command = command, Data = data };
-                string requestJson = JsonSerializer.Serialize(request);
+                string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
 
                 // 2. 发送请求
                 await _writer.WriteLineAsync(requestJson);
@@ -68,46 +69,26 @@ namespace WinUIMusicPlayer.Services
                 }
 
                 // 4. 反序列化响应
-                return JsonSerializer.Deserialize<ResponseMessage>(responseJson);
+                return JsonSerializer.Deserialize(responseJson, PlayerJsonContext.Default.ResponseMessage);
             }
             catch (TimeoutException)
             {
-                return new ResponseMessage { Success = false, Message = "Connection timeout." };
+                return new ResponseMessage { Type = 0, Message = "Connection timeout." };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage { Success = false, Message = $"Communication error: {ex.Message}" };
+                return new ResponseMessage { Type = 0, Message = $"Communication error: {ex.Message}" };
             }
         }
 
-        /// <summary>
-        /// 将命令字符串发送给子进程的 PlaybackService
-        /// </summary>
-        /// <param name="command">要发送的格式化命令字符串（例如: CMD:PLAY）</param>
-        public void SendCommand(string command)
+        public void Play(string musicUrl)
         {
-            if (_writer != null && _client.IsConnected)
-            {
-                try
-                {
-                    _writer.WriteLine(command);
-                    // 因为 AutoFlush=true，所以 WriteLine 就会发送数据
-                }
-                catch (IOException ioEx)
-                {
-                    // 处理管道断开连接的错误（例如子进程崩溃或关闭）
-                    System.Diagnostics.Debug.WriteLine($"Error writing to command pipe: {ioEx.Message}");
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("Cannot send command: Pipe is not connected.");
-            }
+            _ = SendCommandAsync("Play", musicUrl);
         }
 
-        public void Play()
+        public void PlayButton()
         {
-            _ = SendCommandAsync("PLAY", "PLAYURL");
+            _ = SendCommandAsync("PlayButton", "");
         }
     }
 }
