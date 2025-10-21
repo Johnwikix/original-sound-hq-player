@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ManagedBass;
+using ManagedBass.Fx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -105,25 +106,42 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _progressSlider, value))
                 {
-                    if (IsMouseOverProgressBar)
-                    {
-                        if (!IsUserDraggingProgressSlider)
-                        {
-                            if (_musicPlaybackService._currentStream != 0)
-                            {
-                                double currentPlayPosition = _musicPlaybackService.GetCurrentPosition();
+                    HandleProgressSliderChange(value);
+                    
+                }
+            }
+        }
 
-                                if (Math.Abs(value - currentPlayPosition) > 2.0)
-                                {
-                                    Task.Run(() =>
-                                    {
-                                        isManualSelect = true;
-                                        _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                                        isManualSelect = false;
-                                    });
-                                }
-                            }
-                        }
+        private async void HandleProgressSliderChange(double value)
+        {
+            if (IsMouseOverProgressBar)
+            {
+                if (!IsUserDraggingProgressSlider)
+                {
+                    //if (_musicPlaybackService._currentStream != 0)
+                    //{
+                    //    double currentPlayPosition = _musicPlaybackService.GetCurrentPosition();
+
+                    //    if (Math.Abs(value - currentPlayPosition) > 2.0)
+                    //    {
+                    //        Task.Run(() =>
+                    //        {
+                    //            isManualSelect = true;
+                    //            _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
+                    //            isManualSelect = false;
+                    //        });
+                    //    }
+                    //}
+                    double currentPlayPosition = await _musicPlaybackService.GetCurrentPosition();
+
+                    if (Math.Abs(value - currentPlayPosition) > 2.0)
+                    {
+                        _ = Task.Run(() =>
+                        {
+                            isManualSelect = true;
+                            _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
+                            isManualSelect = false;
+                        });
                     }
                 }
             }
@@ -163,10 +181,11 @@ namespace WinUIMusicPlayer.ViewModel
                             _tempVolume = value;
                         }
                         _musicPlaybackService.volume = (float)value / 100;
-                        if (_musicPlaybackService._currentStream != 0)
-                        {
-                            _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
-                        }
+                        //if (_musicPlaybackService._currentStream != 0)
+                        //{
+                        //    _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
+                        //}
+                        _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
                     }
                 }
             }
@@ -342,7 +361,8 @@ namespace WinUIMusicPlayer.ViewModel
         public string paramName = "defualt";
         public int previousSelectedIndex = 0;
         public int currentPlayListId;
-        public BassMusicPlaybackService _musicPlaybackService;
+        //public BassMusicPlaybackService _musicPlaybackService;
+        public BassPlayerCommandService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
         private DeviceWatcher deviceWatcher;
@@ -387,7 +407,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (AppSettings.isPlaying && !IsUserDraggingProgressSlider)
+                if (!IsUserDraggingProgressSlider)
                 {
                     UpdateProgressTimerUI();
                 }
@@ -397,9 +417,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpdateProgressTimerUI() {
-            _totalTime = TimeSpan.FromSeconds(_musicPlaybackService.GetTotalPosition());
-            _currentTime = TimeSpan.FromSeconds(_musicPlaybackService.GetCurrentPosition());
+        public async void UpdateProgressTimerUI() {
+            _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
+            _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
             _timeStringBuilder.Clear();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -683,7 +703,13 @@ namespace WinUIMusicPlayer.ViewModel
             };
         }
 
-        public void SetMusicService(BassMusicPlaybackService musicPlaybackService)
+        //public void SetMusicService(BassMusicPlaybackService musicPlaybackService)
+        //{
+        //    _musicPlaybackService = musicPlaybackService;
+        //    InitializeDatabase();
+        //}
+
+        public void SetMusicService(BassPlayerCommandService musicPlaybackService)
         {
             _musicPlaybackService = musicPlaybackService;
             InitializeDatabase();

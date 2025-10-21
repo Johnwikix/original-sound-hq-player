@@ -1301,5 +1301,17 @@ namespace WinUIMusicPlayer.Utils
             {
             }
         }
+
+        public static string PlayModeToString(PlayMode playMode)
+        {
+            return playMode switch
+            {
+                PlayMode.SingleLoop => "SingleLoop",
+                PlayMode.ListLoop => "ListLoop",
+                PlayMode.RandomLoop => "RandomLoop",
+                PlayMode.RepeatOff => "RepeatOff",
+                _ => "ListLoop",
+            };
+        }
     }
 }

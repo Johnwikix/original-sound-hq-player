@@ -83,12 +83,13 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SongCollectionViewModel>();
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
-                 services.AddSingleton<BassMusicPlaybackService>();
+                 //services.AddSingleton<BassMusicPlaybackService>();
                  services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
+                 services.AddSingleton<BassPlayerCommandService>();
              }).Build();
 
         /// <summary>
@@ -195,7 +196,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                App.Services.GetRequiredService<BassMusicPlaybackService>().Dispose();
+                //App.Services.GetRequiredService<BassMusicPlaybackService>().Dispose();
                 _host.StopAsync().Wait();
                 _logger?.LogInformation("应用程序退出完成");
             }

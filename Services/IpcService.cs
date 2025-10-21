@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Windows.Media.Protection.PlayReady;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
 namespace WinUIMusicPlayer.Services
@@ -25,12 +26,12 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "BassPlayerSharp.exe",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                });
+                //Process.Start(new ProcessStartInfo
+                //{
+                //    FileName = "BassPlayerSharp.exe",
+                //    CreateNoWindow = true,
+                //    UseShellExecute = false,
+                //});
                 _client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
                 _client.Connect(); // 连接到服务进程
                 _reader = new StreamReader(_client);
@@ -43,10 +44,10 @@ namespace WinUIMusicPlayer.Services
             {
                 // 错误处理，例如子进程文件未找到
                 System.Diagnostics.Debug.WriteLine($"Error starting service: {ex.Message}");
-            }            
+            }
         }
 
-        
+
 
         public async Task<ResponseMessage> SendCommandAsync(string command, string data)
         {
@@ -67,7 +68,6 @@ namespace WinUIMusicPlayer.Services
                 {
                     throw new IOException("Server closed the pipe unexpectedly.");
                 }
-
                 // 4. 反序列化响应
                 return JsonSerializer.Deserialize(responseJson, PlayerJsonContext.Default.ResponseMessage);
             }
@@ -89,6 +89,43 @@ namespace WinUIMusicPlayer.Services
         public void PlayButton()
         {
             _ = SendCommandAsync("PlayButton", "");
+        }
+
+        public void UpdateSettings()
+        {
+            var settings = new IpcSetting
+            {
+                PlayMode = ToolUtils.PlayModeToString(AppData.PlayMode),
+                OutputMode = AppSettings.OutputMode,
+                BassOutputDeviceId = AppSettings.BassOutputDeviceId,
+                BassASIODeviceId = AppSettings.BassASIODeviceId,
+                Latency = AppSettings.Latency,
+                IsDopEnabled = AppSettings.IsDopEnabled,
+                dsdGain = AppSettings.dsdGain,
+                dsdPcmFreq = AppSettings.dsdPcmFreq,
+                IsEqualizerEnabled = AppSettings.IsEqualizerEnabled
+            };
+            _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
+        }
+
+        public void SetMusicUrl(string musicUrl)
+        {
+            _ = SendCommandAsync("SetMusicUrl", musicUrl);
+        }
+
+        public async Task<double> GetCurrentPostion()
+        {
+            return double.Parse((await SendCommandAsync("GetProgress", "")).Result);
+        }
+
+        public async Task<double> GetDuration()
+        {
+            return double.Parse((await SendCommandAsync("GetDuration", "")).Result);
+        }
+
+        public void SetPosition(double position)
+        {
+            _ = SendCommandAsync("ChangePosition", position.ToString());
         }
     }
 }

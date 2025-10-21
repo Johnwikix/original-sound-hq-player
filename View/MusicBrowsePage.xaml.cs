@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
         private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
 
         public MusicBrowseViewModel ViewModel { get; }
-        public MusicBrowsePage(BassMusicPlaybackService musicPlaybackService,
+        public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
             NotificationService notificationService,
             MusicBrowseViewModel viewModel
@@ -75,23 +75,23 @@ namespace WinUIMusicPlayer.View
                 //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
             equalizerDialog = new EqualizerDialog();
-            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
-            {
-                int feq = FrequencyIndexMap[frequency];
-                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            };
-            equalizerDialog.clearEqualizer += (s, e) =>
-            {
-                if (AppSettings.IsEqualizerEnabled)
-                {
-                    musicPlaybackService.ToggleEqualizer();
-                    musicPlaybackService.SetEqualizer();
-                }
-                else
-                {
-                    musicPlaybackService.ClearEqualizer();
-                }
-            };
+            //equalizerDialog.EqualizerGainChanged += (s, frequency) =>
+            //{
+            //    int feq = FrequencyIndexMap[frequency];
+            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            //};
+            //equalizerDialog.clearEqualizer += (s, e) =>
+            //{
+            //    if (AppSettings.IsEqualizerEnabled)
+            //    {
+            //        musicPlaybackService.ToggleEqualizer();
+            //        musicPlaybackService.SetEqualizer();
+            //    }
+            //    else
+            //    {
+            //        musicPlaybackService.ClearEqualizer();
+            //    }
+            //};
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();
@@ -520,7 +520,7 @@ namespace WinUIMusicPlayer.View
                 //ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
                 _ = Task.Run(async () =>
                 {
-                    ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
+                    ViewModel._musicPlaybackService.PlayMusic(music);
                 });
                 ViewModel.UpdateProgressTimerUI();
             }
@@ -654,19 +654,26 @@ namespace WinUIMusicPlayer.View
             ViewModel.IsUserDraggingProgressSlider = true;
         }
 
-        private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
+        private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.IsUserDraggingProgressSlider = false;
-            if (ViewModel._musicPlaybackService._currentStream != 0)
+            //if (ViewModel._musicPlaybackService._currentStream != 0)
+            //{
+            //    double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.GetTotalPosition()));
+            //    _ = Task.Run(() =>
+            //    {
+            //        ViewModel.isManualSelect = true;
+            //        ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+            //        ViewModel.isManualSelect = false;
+            //    });
+            //}
+            double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, await ViewModel._musicPlaybackService.GetTotalPosition()));
+            _ = Task.Run(() =>
             {
-                double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.GetTotalPosition()));
-                _ = Task.Run(() =>
-                {
-                    ViewModel.isManualSelect = true;
-                    ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
-                    ViewModel.isManualSelect = false;
-                });
-            }
+                ViewModel.isManualSelect = true;
+                ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+                ViewModel.isManualSelect = false;
+            });
         }
 
         private void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
