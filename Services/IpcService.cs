@@ -21,7 +21,7 @@ using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.T
 
 namespace WinUIMusicPlayer.Services
 {
-    public class IpcService : IDisposable
+    public class IpcService
     {
         private const string MmfName = "BassPlayerSharp_SharedMemory";
         private const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
@@ -55,12 +55,12 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "BassPlayerSharp.exe",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                });
+                //Process.Start(new ProcessStartInfo
+                //{
+                //    FileName = "BassPlayerSharp.exe",
+                //    CreateNoWindow = true,
+                //    UseShellExecute = false,
+                //});
 
                 _mmf = MemoryMappedFile.OpenExisting(MmfName);
                 _accessor = _mmf.CreateViewAccessor(0, MmfSize);
@@ -310,12 +310,31 @@ namespace WinUIMusicPlayer.Services
         }
 
         public void MusicEnd() {
-            _ = SendCommandAsync("MusicEnd", "");
+            _ = SendCommandAsync("MusicEnd", string.Empty);
+        }
+        public void ToggleEqualizer() {
+            _ = SendCommandAsync("ToggleEqualizer", string.Empty);
         }
 
-        void IDisposable.Dispose()
+        public void SetEqualizerGain(int bandIndex, float gain)
         {
-            throw new NotImplementedException();
+            var ipcEqGain = new IpcEqualizerGain {
+                bandIndex = bandIndex,
+                gain = gain
+            };
+            _ = SendCommandAsync("SetEqualizerGain", JsonSerializer.Serialize(ipcEqGain));
         }
+
+
+        public void SetEqualizer()
+        {
+            _ = SendCommandAsync("SetEqualizer", string.Empty);
+        }
+
+        public void ClearEqualizer()
+        {
+            _ = SendCommandAsync("ClearEqualizer", string.Empty);
+        }
+
     }
 }

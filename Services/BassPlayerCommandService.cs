@@ -150,6 +150,7 @@ namespace WinUIMusicPlayer.Services
 
         public void ToggleEqualizer()
         {
+            IpcService.ToggleEqualizer();
             //if (AppSettings.IsEqualizerEnabled
             //    && !(AppSettings.IsDopEnabled
             //    && (AppSettings.OutputMode.Contains("WasapiExclusive") || AppSettings.OutputMode == "ASIO")
@@ -178,6 +179,7 @@ namespace WinUIMusicPlayer.Services
 
         public void SetEqualizerGain(int bandIndex, float gain)
         {
+            IpcService.SetEqualizerGain(bandIndex, gain);
             //if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
             //{
             //    return;
@@ -199,6 +201,7 @@ namespace WinUIMusicPlayer.Services
 
         public void SetEqualizer()
         {
+            IpcService.SetEqualizer();
             //if (_peakEQ is null) return;
             //for (int i = 0; i < 10; i++)
             //{
@@ -208,6 +211,7 @@ namespace WinUIMusicPlayer.Services
 
         public void ClearEqualizer()
         {
+            IpcService.ClearEqualizer();
             //DisposeEq();
         }
 

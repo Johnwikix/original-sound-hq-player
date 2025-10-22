@@ -82,8 +82,9 @@ namespace WinUIMusicPlayer.View
             };
             equalizerDialog.clearEqualizer += (s, e) =>
             {
+                musicPlaybackService.UpdateSettings();
                 if (AppSettings.IsEqualizerEnabled)
-                {
+                {                    
                     musicPlaybackService.ToggleEqualizer();
                     musicPlaybackService.SetEqualizer();
                 }
