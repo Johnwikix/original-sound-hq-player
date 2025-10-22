@@ -23,7 +23,6 @@ namespace WinUIMusicPlayer.Services
 {
     public class IpcService : IDisposable
     {
-        // 共享内存配置 (必须和服务端保持一致!)
         private const string MmfName = "BassPlayerSharp_SharedMemory";
         private const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
         private const string ResponseSemaphoreName = "BassPlayerSharp_ResponseReady";
@@ -31,10 +30,8 @@ namespace WinUIMusicPlayer.Services
         private const int MaxMessageSize = 4096; // 必须和服务端一致
         private const int MaxResponseSize = 1024;
 
-        // 共享内存总大小 (请求区 + 响应区)
         private static readonly long MmfSize = MaxMessageSize + MaxResponseSize * 2;
 
-        // 偏移量 (必须和服务端一致)
         private const long RequestBufferOffset = 0;
         private static readonly long ResponseBufferOffset = MaxMessageSize;
         private static readonly long NotificationBufferOffset = MaxMessageSize + MaxResponseSize;
@@ -45,7 +42,6 @@ namespace WinUIMusicPlayer.Services
         private Semaphore _responseReadySemaphore;
         private Semaphore _notificationReadySemaphore;
 
-        // 用于防止多线程同时发送请求的本地锁
         private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
         private bool _isConnected = false;
 
@@ -59,12 +55,16 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                // 1. 打开现有的 MMF (假设服务器已经创建)
-                // OpenExisting 找不到会抛出异常
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "BassPlayerSharp.exe",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                });
+
                 _mmf = MemoryMappedFile.OpenExisting(MmfName);
                 _accessor = _mmf.CreateViewAccessor(0, MmfSize);
 
-                // 2. 打开现有的命名信号量 (假设服务器已经创建)
                 _requestReadySemaphore = Semaphore.OpenExisting(RequestSemaphoreName);
                 _responseReadySemaphore = Semaphore.OpenExisting(ResponseSemaphoreName);
                 _notificationReadySemaphore = Semaphore.OpenExisting(NotificationSemaphoreName);
@@ -74,13 +74,11 @@ namespace WinUIMusicPlayer.Services
             }
             catch (FileNotFoundException)
             {
-                // MMF 或信号量不存在，表示服务器未运行
                 Debug.WriteLine($"Shared Memory Connection Error: Server (MMF) is not running or not accessible.");
                 _isConnected = false;
             }
             catch (WaitHandleCannotBeOpenedException)
             {
-                // 信号量不存在
                 Debug.WriteLine($"Shared Memory Connection Error: Synchronization (Semaphore) not created by server.");
                 _isConnected = false;
             }
@@ -105,27 +103,19 @@ namespace WinUIMusicPlayer.Services
             {
                 try
                 {
-                    // 等待通知信号量
                     bool hasNotification = await Task.Run(() =>
-                        _notificationReadySemaphore.WaitOne(1000), cancellationToken); // 1秒超时，避免阻塞
-
+                        _notificationReadySemaphore.WaitOne(1000), cancellationToken);
                     if (cancellationToken.IsCancellationRequested) break;
 
                     if (hasNotification)
                     {
-                        // 读取通知数据
                         string notificationJson = ReadFromSharedMemory(NotificationBufferOffset);
-
                         if (!string.IsNullOrEmpty(notificationJson))
                         {
                             Debug.WriteLine($"Notification received: {notificationJson}");
-
-                            // 反序列化通知
                             var notification = JsonSerializer.Deserialize(
                                 notificationJson,
                                 PlayerJsonContext.Default.ResponseMessage);
-
-                            // 触发事件
                             NotificationReceived?.Invoke(notification);
                         }
                     }
@@ -174,25 +164,18 @@ namespace WinUIMusicPlayer.Services
                 var request = new RequestMessage { Command = command, Data = data };
                 string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
 
-                // 1. 写入请求
                 WriteToSharedMemory(RequestBufferOffset, requestJson);
                 Debug.WriteLine($"Sent request to MMF: {requestJson}");
 
-                // 2. 释放 Request 信号量，通知服务器可以读取请求
-                // Release(1) 确保计数不会超过 1
                 try { _requestReadySemaphore.Release(); }
                 catch (SemaphoreFullException) { Debug.WriteLine("Warning: Request semaphore was already signaled."); }
 
-                // 3. 等待 Response 信号量，等待服务器响应
-                // 这里使用 WaitOne 的异步包装，避免阻塞 UI 线程
-                bool responded = await Task.Run(() => _responseReadySemaphore.WaitOne(5000)); // 5秒超时
-
+                // 3. 等待 Response 信号量
+                bool responded = await Task.Run(() => _responseReadySemaphore.WaitOne(1000));
                 if (!responded)
                 {
-                    return new ResponseMessage { Type = 0, Message = "Server response timeout (5s)." };
+                    return new ResponseMessage { Type = 0, Message = "Server response timeout (1s)." };
                 }
-
-                // 4. 读取响应
                 string responseJson = ReadFromSharedMemory(ResponseBufferOffset);
                 Debug.WriteLine($"Received response from MMF: {responseJson}");
 
@@ -200,8 +183,6 @@ namespace WinUIMusicPlayer.Services
                 {
                     return new ResponseMessage { Type = 0, Message = "Received empty response from server." };
                 }
-
-                // 5. 反序列化响应
                 return JsonSerializer.Deserialize(responseJson, PlayerJsonContext.Default.ResponseMessage);
             }
             catch (Exception ex)
@@ -215,7 +196,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        // 辅助方法：将字符串写入 MMF (与服务端同步)
+        // 将字符串写入 MMF
         private void WriteToSharedMemory(long offset, string json)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(json);
@@ -223,39 +204,30 @@ namespace WinUIMusicPlayer.Services
 
             if (length > MaxMessageSize - sizeof(int))
             {
-                // 截断或抛出错误，这里选择截断
+                // 截断
                 length = MaxMessageSize - sizeof(int);
                 bytes = Encoding.UTF8.GetBytes(json[..((MaxMessageSize - sizeof(int)) / 3)]);
                 length = bytes.Length;
                 Debug.WriteLine("Warning: Client message truncated due to size limit.");
             }
 
-            // 1. 写入消息长度 (前 4 字节)
             _accessor.Write(offset, length);
-            // 2. 写入消息内容
             _accessor.WriteArray(offset + sizeof(int), bytes, 0, length);
         }
 
-        // 辅助方法：从 MMF 读取字符串 (与服务端同步)
+        //从 MMF 读取字符串 
         private string ReadFromSharedMemory(long offset)
         {
             try
             {
-                // 先读取消息的长度
                 int length = _accessor.ReadInt32(offset);
-
                 if (length <= 0 || length > MaxMessageSize - sizeof(int))
                 {
                     return string.Empty; // 无效长度
                 }
-
                 byte[] buffer = new byte[length];
-                // 从偏移量 offset + sizeof(int) 开始读取数据
                 _accessor.ReadArray(offset + sizeof(int), buffer, 0, length);
-
-                // 清空已读区域的长度，可选但有助于调试
                 _accessor.Write(offset, 0);
-
                 return Encoding.UTF8.GetString(buffer);
             }
             catch (Exception ex)
@@ -263,9 +235,7 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine($"Error reading from MMF: {ex.Message}");
                 return string.Empty;
             }
-        }
-
-        // 以下公共方法保持不变，因为它们只调用 SendCommandAsync
+        }        
 
         public void Play(string musicUrl)
         {
