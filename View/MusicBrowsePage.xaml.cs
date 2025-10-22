@@ -75,23 +75,23 @@ namespace WinUIMusicPlayer.View
                 //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
             equalizerDialog = new EqualizerDialog();
-            //equalizerDialog.EqualizerGainChanged += (s, frequency) =>
-            //{
-            //    int feq = FrequencyIndexMap[frequency];
-            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            //};
-            //equalizerDialog.clearEqualizer += (s, e) =>
-            //{
-            //    if (AppSettings.IsEqualizerEnabled)
-            //    {
-            //        musicPlaybackService.ToggleEqualizer();
-            //        musicPlaybackService.SetEqualizer();
-            //    }
-            //    else
-            //    {
-            //        musicPlaybackService.ClearEqualizer();
-            //    }
-            //};
+            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
+            {
+                int feq = FrequencyIndexMap[frequency];
+                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            };
+            equalizerDialog.clearEqualizer += (s, e) =>
+            {
+                if (AppSettings.IsEqualizerEnabled)
+                {
+                    musicPlaybackService.ToggleEqualizer();
+                    musicPlaybackService.SetEqualizer();
+                }
+                else
+                {
+                    musicPlaybackService.ClearEqualizer();
+                }
+            };
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();

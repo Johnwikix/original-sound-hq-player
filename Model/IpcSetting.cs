@@ -17,5 +17,7 @@ namespace WinUIMusicPlayer.Model
         public int dsdGain { get; set; } = 6;
         public int dsdPcmFreq { get; set; } = 88200;
         public bool IsEqualizerEnabled { get; set; } = false;
+        public float Volume { get; set; } = 0.5f;
+        public bool IsSettingChanged { get; set; } = false;
     }
 }

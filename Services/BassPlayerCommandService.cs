@@ -1,4 +1,5 @@
-﻿using ManagedBass;
+﻿using ABI.System;
+using ManagedBass;
 using ManagedBass.Asio;
 using ManagedBass.Dsd;
 using ManagedBass.Fx;
@@ -29,34 +30,53 @@ namespace WinUIMusicPlayer.Services
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
         public bool isInitializing = true;
-        private readonly NotificationService notificationService;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
-        private readonly Lock _streamLock = new();
-        private readonly Lock _waveChannelLock = new();
-        private readonly int[] _bandIndices = new int[10];
-        private readonly float[] _eqFrequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }; // 10频段
-        private double MinDb = -60;
-        private double MaxDb = 0;
-        private double MiddleDb = -30;
-        private PeakEQ _peakEQ;
         private IpcService IpcService { get; set; }
 
-        public BassPlayerCommandService(NotificationService notificationService)
+        public BassPlayerCommandService()
         {
-            this.notificationService = notificationService;
             IpcService = App.Services.GetRequiredService<IpcService>();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             InitializingData();
-            //BassManager.Initialize();
-            //_syncEndCallback = OnPlayBackEnded;
-            //_syncFailCallback = OnPlaybackFailed;
-            //_myWasapiProcedure = OnWasapiProc;
-            //_myAsioProcedure = OnAsioProc;
+            IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
 
-        public async void SetMusicUrl(string musicUrl) {
+        private void IpcService_NotificationReceived(ResponseMessage obj)
+        {
+            if (obj.Type == 5) {
+                AppSettings.isPlaying = bool.Parse(obj.Result);
+                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                if (AppSettings.isPlaying)
+                {
+                    MusicBrowseViewModel.StartProgressTimer();
+                }
+                else {
+                    MusicBrowseViewModel.StopProgressTimer();
+                }
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
+                });
+            }
+            if (obj.Type == 11) {
+                AppSettings.isPlaying = bool.Parse(obj.Result);
+                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
+                });
+                AutoPlayNextTrack();
+            }
+        }
+
+        public async void InitializeMusicUrl(string musicUrl) {
             IpcService.SetMusicUrl(musicUrl);
+            IpcService.UpdateSettings();
+        }
+
+        public void UpdateSettings() {
+            IpcService.UpdateSettings();
         }
 
         private async void InitializingData()
@@ -107,6 +127,7 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd()
         {
+            IpcService.MusicEnd();
             MusicBrowseViewModel.StopProgressTimer();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -139,68 +160,68 @@ namespace WinUIMusicPlayer.Services
         //    return 0;
         //}
 
-        //public void ToggleEqualizer()
-        //{
-        //    if (AppSettings.IsEqualizerEnabled
-        //        && !(AppSettings.IsDopEnabled
-        //        && (AppSettings.OutputMode.Contains("WasapiExclusive") || AppSettings.OutputMode == "ASIO")
-        //        && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
-        //       )
-        //    {
-        //        try
-        //        {
-        //            if (_currentStream != 0)
-        //            {
-        //                _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 1.0);
-        //                // 为每个频段添加Band
-        //                for (int i = 0; i < _eqFrequencies.Length; i++)
-        //                {
-        //                    _bandIndices[i] = _peakEQ.AddBand(_eqFrequencies[i]);
-        //                }
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Debug.WriteLine($"初始化均衡器时出错: {ex.Message}");
-        //            _peakEQ = null;
-        //        }
-        //    }
-        //}
+        public void ToggleEqualizer()
+        {
+            //if (AppSettings.IsEqualizerEnabled
+            //    && !(AppSettings.IsDopEnabled
+            //    && (AppSettings.OutputMode.Contains("WasapiExclusive") || AppSettings.OutputMode == "ASIO")
+            //    && (MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || MusicBrowseViewModel.CurrentPlayingMusic.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase)))
+            //   )
+            //{
+            //    try
+            //    {
+            //        if (_currentStream != 0)
+            //        {
+            //            _peakEQ = new PeakEQ(_currentStream, Q: 0, Bandwith: 1.0);
+            //            // 为每个频段添加Band
+            //            for (int i = 0; i < _eqFrequencies.Length; i++)
+            //            {
+            //                _bandIndices[i] = _peakEQ.AddBand(_eqFrequencies[i]);
+            //            }
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Debug.WriteLine($"初始化均衡器时出错: {ex.Message}");
+            //        _peakEQ = null;
+            //    }
+            //}
+        }
 
-        //public void SetEqualizerGain(int bandIndex, float gain)
-        //{
-        //    if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
-        //    {
-        //        return;
-        //    }
-        //    if (_peakEQ == null)
-        //    {
-        //        return;
-        //    }
-        //    try
-        //    {
-        //        // 使用UpdateBand方法更新指定频段的增益
-        //        _peakEQ.UpdateBand(_bandIndices[bandIndex], gain);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"设置均衡器参数失败: {ex.Message}");
-        //    }
-        //}
+        public void SetEqualizerGain(int bandIndex, float gain)
+        {
+            //if (bandIndex < 0 || bandIndex >= _eqFrequencies.Length)
+            //{
+            //    return;
+            //}
+            //if (_peakEQ == null)
+            //{
+            //    return;
+            //}
+            //try
+            //{
+            //    // 使用UpdateBand方法更新指定频段的增益
+            //    _peakEQ.UpdateBand(_bandIndices[bandIndex], gain);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"设置均衡器参数失败: {ex.Message}");
+            //}
+        }
 
-        //public void SetEqualizer()
-        //{
-        //    if (_peakEQ is null) return;
-        //    for (int i = 0; i < 10; i++)
-        //    {
-        //        _peakEQ.UpdateBand(_bandIndices[i], (float)AppSettings.equalizer[FloatToString[_eqFrequencies[i]]]);
-        //    }
-        //}
+        public void SetEqualizer()
+        {
+            //if (_peakEQ is null) return;
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    _peakEQ.UpdateBand(_bandIndices[i], (float)AppSettings.equalizer[FloatToString[_eqFrequencies[i]]]);
+            //}
+        }
 
-        //public void ClearEqualizer()
-        //{
-        //    DisposeEq();
-        //}
+        public void ClearEqualizer()
+        {
+            //DisposeEq();
+        }
 
         //private bool SwitchDevice(ChannelInfo channelInfo)
         //{
@@ -384,9 +405,9 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayMusic(Music music)
         {
-            IpcService.UpdateSettings();
             IpcService.Play(music.Path);
-            //MusicBrowseViewModel.StartProgressTimer();
+            MusicBrowseViewModel.StartProgressTimer();
+            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
         }
 
         //public void Stop()
@@ -404,8 +425,7 @@ namespace WinUIMusicPlayer.Services
         //}
 
         public void PlayButton()
-        {
-            IpcService.UpdateSettings();
+        {           
             IpcService.PlayButton();
             //if (AppSettings.isPlaying)
             //{
@@ -536,9 +556,9 @@ namespace WinUIMusicPlayer.Services
         //    }
         //}
 
-        public void ChangeWaveChannelTime(TimeSpan timeSpan)
+        public void ChangeWaveChannelTime(System.TimeSpan timeSpan)
         {
-            //IpcService.SetPosition(timeSpan.TotalSeconds);
+            IpcService.SetPosition(timeSpan.TotalSeconds);
             //lock (_waveChannelLock)
             //{
             //    if (_currentStream != 0)
@@ -551,6 +571,7 @@ namespace WinUIMusicPlayer.Services
 
         public void SetVolume(double volume)
         {
+            IpcService.ChangeVolume(volume);
             //if (_currentStream != 0)
             //{
             //    if (AppSettings.OutputMode.Contains("WasapiExclusive"))
@@ -592,7 +613,7 @@ namespace WinUIMusicPlayer.Services
             return await IpcService.GetDuration();
         }
 
-        public double AdjustPlaybackPosition(int seconds)
+        public async Task<double> AdjustPlaybackPosition(int seconds)
         {
             //double newPosition = 0;
             //if (AppSettings.isPlaying)
@@ -605,12 +626,12 @@ namespace WinUIMusicPlayer.Services
             //    }
             //}
             //return newPosition;
-            return 0;
+            return await IpcService.AdjustPlaybackPosition(seconds);
         }
 
         public void ChangingSetting()
         {
-            IpcService.UpdateSettings();
+            IpcService.UpdateSettings(true);
             //try
             //{
             //    //isManualPlayingNext = true;

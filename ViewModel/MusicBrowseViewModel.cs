@@ -180,6 +180,7 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             _tempVolume = value;
                         }
+                        AppData.Volume = (float)value / 100;
                         _musicPlaybackService.volume = (float)value / 100;
                         //if (_musicPlaybackService._currentStream != 0)
                         //{
@@ -428,6 +429,7 @@ namespace WinUIMusicPlayer.ViewModel
                     try
                     {
                         ProgressSlider = _currentTime.TotalSeconds;
+                        ProgressSliderMax = _totalTime.TotalSeconds;
                         if (_totalTime.TotalHours >= 1)
                         {
                             PlayTimeText = _timeStringBuilder
@@ -742,6 +744,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 UpdatePlayBar(CurrentPlayingMusic);
                 LoadLyricsToUI();
+                _musicPlaybackService.InitializeMusicUrl(CurrentPlayingMusic.Path);
             }
             _musicPlaybackService.isInitializing = false;
         }
@@ -831,6 +834,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
             _musicPlaybackService.UpdateCurrentPlayList();
             App.MainWindow.UpdateAppNotifyIconControl();
+            _musicPlaybackService.UpdateSettings();
+            
         }
         [RelayCommand]
         public void OnPlayButtonChanged()
@@ -942,9 +947,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AdjustPlaybackPosition(-5);
         }
-        public void AdjustPlaybackPosition(int seconds)
+        public async void AdjustPlaybackPosition(int seconds)
         {
-            ProgressSlider = _musicPlaybackService.AdjustPlaybackPosition(seconds);
+            ProgressSlider = await _musicPlaybackService.AdjustPlaybackPosition(seconds);
         }
         [RelayCommand]
         private void OnVolumeSliderIconButtonChanged()
