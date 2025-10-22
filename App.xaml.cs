@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime;
 using System.Threading.Tasks;
@@ -100,6 +101,12 @@ namespace WinUIMusicPlayer
         {
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
             this.InitializeComponent();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "BassPlayerSharp.exe",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            });
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;

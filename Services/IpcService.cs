@@ -55,13 +55,6 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                //Process.Start(new ProcessStartInfo
-                //{
-                //    FileName = "BassPlayerSharp.exe",
-                //    CreateNoWindow = true,
-                //    UseShellExecute = false,
-                //});
-
                 _mmf = MemoryMappedFile.OpenExisting(MmfName);
                 _accessor = _mmf.CreateViewAccessor(0, MmfSize);
 
