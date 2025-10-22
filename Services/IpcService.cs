@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging.Messages;
+using ManagedBass.Fx;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -146,7 +147,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// 断开连接并释放资源
         /// </summary>
-        public void Dispose()
+        public async Task Dispose()
         {
             _accessor?.Dispose();
             _mmf?.Dispose();
@@ -340,6 +341,11 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd() {
             _ = SendCommandAsync("MusicEnd", "");
+        }
+
+        void IDisposable.Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 }

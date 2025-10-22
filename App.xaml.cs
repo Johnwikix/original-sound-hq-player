@@ -196,7 +196,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //App.Services.GetRequiredService<BassMusicPlaybackService>().Dispose();
+                App.Services.GetRequiredService<BassPlayerCommandService>().Dispose().Wait();
                 _host.StopAsync().Wait();
                 _logger?.LogInformation("应用程序退出完成");
             }

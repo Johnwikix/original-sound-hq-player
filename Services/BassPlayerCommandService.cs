@@ -1,22 +1,11 @@
-﻿using ABI.System;
-using ManagedBass;
-using ManagedBass.Asio;
-using ManagedBass.Dsd;
-using ManagedBass.Fx;
-using ManagedBass.Wasapi;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
-using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -30,7 +19,6 @@ namespace WinUIMusicPlayer.Services
         public bool isSettingsChangeStop = false;
         public float volume = 0.5f;
         public bool isInitializing = true;
-        private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private IpcService IpcService { get; set; }
 
@@ -738,11 +726,9 @@ namespace WinUIMusicPlayer.Services
         //    _peakEQ = null;
         //}
 
-        //public void Dispose()
-        //{
-        //    DisposeEq();
-        //    DisposeStream();
-        //    BassManager.Free();
-        //}
+        public async Task Dispose()
+        {
+            await IpcService?.Dispose();
+        }
     }
 }
