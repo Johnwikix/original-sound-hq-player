@@ -168,6 +168,8 @@ namespace WinUIMusicPlayer.View.SubView
                     AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                     InitializeSliders();
                 }
+                AppSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+                AppSettings.OnEqUpdated();
             }
         }
     }

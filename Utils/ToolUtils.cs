@@ -580,7 +580,6 @@ namespace WinUIMusicPlayer.Utils
                    {"16kHz", 0}
                };
             }
-
         }
 
         public static string GetPlayModeText(PlayMode playMode)

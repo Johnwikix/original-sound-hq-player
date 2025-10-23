@@ -850,6 +850,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.dsdGain = settings.dsdGain;
                 AppSettings.dsdPcmFreq = settings.dsdPcmFreq;
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
+                AppSettings.equalizerStr = settings.equalizerStr;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
                 AppSettings.CoverSize = settings.CoverSize;
@@ -864,7 +865,6 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
                 AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
-                //AppSettings.IsGlobalFFmpegEnabled = settings.IsGlobalFFmpegEnabled;
                 AppSettings.CustomAcrylicOpacity = settings.CustomAcrylicOpacity;
                 AppSettings.CustomColorAlpha = settings.CustomColorAlpha;
                 AppSettings.CustomColorRed = settings.CustomColorRed;
@@ -918,7 +918,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
             newSettings.GlobalFont = AppSettings.GlobalFont.Source;
-            //newSettings.IsGlobalFFmpegEnabled = AppSettings.IsGlobalFFmpegEnabled;
             newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
             newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
             newSettings.CustomColorRed = AppSettings.CustomColorRed;

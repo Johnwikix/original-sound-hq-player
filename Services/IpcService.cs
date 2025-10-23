@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Messaging.Messages;
+﻿using ATL;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using ManagedBass.Fx;
 using System;
 using System.Collections.Generic;
@@ -105,7 +106,7 @@ namespace WinUIMusicPlayer.Services
                         string notificationJson = ReadFromSharedMemory(NotificationBufferOffset);
                         if (!string.IsNullOrEmpty(notificationJson))
                         {
-                            Debug.WriteLine($"Notification received: {notificationJson}");
+                            //Debug.WriteLine($"Notification received: {notificationJson}");
                             var notification = JsonSerializer.Deserialize(
                                 notificationJson,
                                 PlayerJsonContext.Default.ResponseMessage);
@@ -158,10 +159,14 @@ namespace WinUIMusicPlayer.Services
                 string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
 
                 WriteToSharedMemory(RequestBufferOffset, requestJson);
-                Debug.WriteLine($"Sent request to MMF: {requestJson}");
+                //Debug.WriteLine($"Sent request to MMF: {requestJson}");
 
-                try { _requestReadySemaphore.Release(); }
-                catch (SemaphoreFullException) { Debug.WriteLine("Warning: Request semaphore was already signaled."); }
+                try {
+                    _requestReadySemaphore.Release(); 
+                }
+                catch (SemaphoreFullException) { 
+                    Debug.WriteLine("Warning: Request semaphore was already signaled."); 
+                }
 
                 // 3. 等待 Response 信号量
                 bool responded = await Task.Run(() => _responseReadySemaphore.WaitOne(1000));
@@ -170,7 +175,7 @@ namespace WinUIMusicPlayer.Services
                     return new ResponseMessage { Type = 0, Message = "Server response timeout (1s)." };
                 }
                 string responseJson = ReadFromSharedMemory(ResponseBufferOffset);
-                Debug.WriteLine($"Received response from MMF: {responseJson}");
+                //Debug.WriteLine($"Received response from MMF: {responseJson}");
 
                 if (string.IsNullOrEmpty(responseJson))
                 {
@@ -259,9 +264,13 @@ namespace WinUIMusicPlayer.Services
             _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
         }
 
-        public void SetMusicUrl(string musicUrl)
+        public async Task UpdateEq() {
+            await SendCommandAsync("UpdateEq", AppSettings.equalizerStr);
+        }
+
+        public async Task SetMusicUrl(string musicUrl)
         {
-            _ = SendCommandAsync("SetMusicUrl", musicUrl);
+            await SendCommandAsync("SetMusicUrl", musicUrl);
         }
 
         public async Task<double> GetCurrentPostion()

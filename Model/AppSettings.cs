@@ -14,6 +14,7 @@ namespace WinUIMusicPlayer.Model
 
         public static event EventHandler OutputSettingsChanged;
         public static event EventHandler OutputSettingsUpdated;
+        public static event EventHandler EqUpdated;
 
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
 
@@ -52,6 +53,7 @@ namespace WinUIMusicPlayer.Model
         public static int DrillInAnimationTime { get; set; } = 400;
         public static bool IsProcessAboveNormal { get; set; } = false;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
+        public static string equalizerStr { get; set; } = string.Empty;
 
         public static Dictionary<string, double> equalizer = new()
         {
@@ -78,6 +80,9 @@ namespace WinUIMusicPlayer.Model
         public static void OnOutputSettingsUpdated()
         {
             OutputSettingsUpdated?.Invoke(null, EventArgs.Empty);
+        }
+        public static void OnEqUpdated() {
+            EqUpdated?.Invoke(null, EventArgs.Empty);
         }
         public static void EqualizerChanged()
         {

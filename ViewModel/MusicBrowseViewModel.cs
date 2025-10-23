@@ -387,6 +387,7 @@ namespace WinUIMusicPlayer.ViewModel
             _tempVolume = (double)(AppData.Volume * 100);
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
             AppSettings.OutputSettingsUpdated += AppSettings_OutputSettingsUpdated;
+            AppSettings.EqUpdated += AppSettings_OnEqUpdated;
             if (AppSettings.IsFolderWatchEnabled)
             {
                 StartWatchingFileFolder();
@@ -395,6 +396,11 @@ namespace WinUIMusicPlayer.ViewModel
             StartWatchingUsbStorageDevices();
             progressTimer = new System.Timers.Timer(1000);
             progressTimer.Elapsed += ProgressTimer_Elapsed;           
+        }
+
+        private void AppSettings_OnEqUpdated(object? sender, EventArgs e)
+        {
+            _musicPlaybackService.EqUpdate();
         }
 
         private void AppSettings_OutputSettingsUpdated(object? sender, EventArgs e)
