@@ -792,28 +792,28 @@ namespace WinUIMusicPlayer.ViewModel
             BassOutputDevices.Clear();
             BassOutputDevices.Add(new BassOutputDevice
             {
-                Name = ToolUtils.GetString("DefaultDevice"),
+                Name = "DefaultDevice",
                 Tag = ToolUtils.GetString("DefaultDevice") + " [DirectSound]",
                 Id = -1,
                 OutputMode = "DirectSound"
             });
             BassOutputDevices.Add(new BassOutputDevice
             {
-                Name = ToolUtils.GetString("DefaultDevice"),
+                Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiSharedText")}]",
                 Id = -1,
                 OutputMode = "WasapiShared"
             });
             BassOutputDevices.Add(new BassOutputDevice
             {
-                Name = ToolUtils.GetString("DefaultDevice"),
+                Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
                 Id = -1,
                 OutputMode = "WasapiExclusivePush"
             });
             BassOutputDevices.Add(new BassOutputDevice
             {
-                Name = ToolUtils.GetString("DefaultDevice"),
+                Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
                 Id = -1,
                 OutputMode = "WasapiExclusiveEvent"
