@@ -30,7 +30,6 @@ namespace WinUIMusicPlayer.Services
         private const string NotificationSemaphoreName = "BassPlayerSharp_NotificationReady";
         private const int MaxMessageSize = 4096; // 必须和服务端一致
         private const int MaxResponseSize = 1024;
-
         private static readonly long MmfSize = MaxMessageSize + MaxResponseSize * 2;
 
         private const long RequestBufferOffset = 0;
@@ -52,13 +51,15 @@ namespace WinUIMusicPlayer.Services
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
 
-        public IpcService()
-        {
+        //public IpcService()
+        //{
+        //}
+
+        public void Initializing() {
             try
             {
                 _mmf = MemoryMappedFile.OpenExisting(MmfName);
                 _accessor = _mmf.CreateViewAccessor(0, MmfSize);
-
                 _requestReadySemaphore = Semaphore.OpenExisting(RequestSemaphoreName);
                 _responseReadySemaphore = Semaphore.OpenExisting(ResponseSemaphoreName);
                 _notificationReadySemaphore = Semaphore.OpenExisting(NotificationSemaphoreName);
@@ -80,7 +81,7 @@ namespace WinUIMusicPlayer.Services
             {
                 Debug.WriteLine($"General Client Error: {ex.Message}");
                 _isConnected = false;
-            }
+            }           
         }
 
         private void StartNotificationListener()

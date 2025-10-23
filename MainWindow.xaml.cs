@@ -181,10 +181,15 @@ namespace WinUIMusicPlayer
             try
             {
                 themeStyleHelper.SetAppStyle();
-                themeStyleHelper.SetAppTheme();               
-                await InitialFileScan.InitialScan();
-                await LoadMusicList();
-                //RefreshDevice();
+                themeStyleHelper.SetAppTheme();
+                var longOpsTask = Task.Run(async () =>
+                {
+                    await InitialFileScan.InitialScan();
+                    await LoadMusicList();
+                });
+                await Task.Delay(1000);
+                App.Services.GetRequiredService<IpcService>().Initializing();
+                await Task.WhenAll(longOpsTask);
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
