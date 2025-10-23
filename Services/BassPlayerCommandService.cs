@@ -17,7 +17,7 @@ namespace WinUIMusicPlayer.Services
         public int? lastPlayedMusicId;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
-        public float volume = 0.5f;
+        //public float volume = 0.5f;
         public bool isInitializing = true;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private IpcService IpcService { get; set; }
@@ -55,6 +55,12 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
                 });
                 AutoPlayNextTrack();
+            }
+            if (obj.Type == 100) {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.Volume = double.Parse(obj.Result);
+                });
             }
         }
 
@@ -169,7 +175,7 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.Play(music.Path);
             MusicBrowseViewModel.StartProgressTimer();
-            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, volume, AppData.sortOrder);
+            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, (float)(MusicBrowseViewModel.Volume/100), AppData.sortOrder);
         }        
 
         public void PlayButton()

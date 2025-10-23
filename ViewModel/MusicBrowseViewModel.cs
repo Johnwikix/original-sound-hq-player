@@ -181,12 +181,12 @@ namespace WinUIMusicPlayer.ViewModel
                             _tempVolume = value;
                         }
                         AppData.Volume = (float)value / 100;
-                        _musicPlaybackService.volume = (float)value / 100;
+                        //_musicPlaybackService.volume = (float)value / 100;
                         //if (_musicPlaybackService._currentStream != 0)
                         //{
                         //    _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
                         //}
-                        _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
+                        _musicPlaybackService.SetVolume(AppData.Volume);
                     }
                 }
             }
@@ -751,7 +751,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task LoadPlayState()
         {
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            _musicPlaybackService.volume = AppData.Volume;
+            //_musicPlaybackService.volume = AppData.Volume;
             CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             if (CurrentPlayingMusic is not null)
             {
