@@ -402,6 +402,7 @@
                                     Command="{x:Bind ViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
                                     CommandParameter="CustomAcrylicStyle"
                                     GroupName="BackdropGroup"
+                                    Visibility="{x:Bind ViewModel.CheckSystemVersion()}"
                                     IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=CustomAcrylicStyle}"
                                     Tag="CustomAcrylicStyle" />
                                 <StackPanel Visibility="{x:Bind ViewModel.IsColorPickerVisible, Mode=OneWay}">

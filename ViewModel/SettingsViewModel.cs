@@ -889,6 +889,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public Visibility CheckSystemVersion() {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major == 10 && Environment.OSVersion.Version.Minor == 0)
+            {
+                // 获取内部版本号（Build）
+                int buildNumber = Environment.OSVersion.Version.Build;
+                if (buildNumber >= 22000)
+                {
+                    return Visibility.Visible;
+                }
+                else
+                {
+                    return Visibility.Collapsed;
+                }
+            }
+            return Visibility.Collapsed;
+        }
+
         [RelayCommand]
         private void OnBackdropTypeChanged(string type)
         {
