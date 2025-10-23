@@ -187,8 +187,9 @@ namespace WinUIMusicPlayer
                     await InitialFileScan.InitialScan();
                     await LoadMusicList();
                 });
-                await Task.Delay(1000);
+                await Task.Delay(500);
                 App.Services.GetRequiredService<IpcService>().Initializing();
+                await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
