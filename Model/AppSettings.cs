@@ -13,6 +13,7 @@ namespace WinUIMusicPlayer.Model
         public static int Latency { get; set; } = 400;
 
         public static event EventHandler OutputSettingsChanged;
+        public static event EventHandler OutputSettingsUpdated;
 
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
 
@@ -72,6 +73,11 @@ namespace WinUIMusicPlayer.Model
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        public static void OnOutputSettingsUpdated()
+        {
+            OutputSettingsUpdated?.Invoke(null, EventArgs.Empty);
         }
         public static void EqualizerChanged()
         {

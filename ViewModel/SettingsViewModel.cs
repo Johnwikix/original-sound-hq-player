@@ -50,6 +50,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppSettings.dsdGain = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
+                        AppSettings.OnOutputSettingsUpdated();
                     }
                 }
             }
@@ -672,6 +673,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppSettings.IsDopEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
+                        AppSettings.OnOutputSettingsUpdated();
                     }
                 }
             }
@@ -689,6 +691,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppSettings.dsdPcmFreq = int.Parse(value);
                         _ = MusicDatabaseService.SaveSettingAsync();
+                        AppSettings.OnOutputSettingsUpdated();
                     }
                 }
             }
