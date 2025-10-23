@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.Services
 
         private void IpcService_NotificationReceived(ResponseMessage obj)
         {
-            if (obj.Type == 5) {
+            if (obj.Type == MessageType.PlayState) {
                 AppSettings.isPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 if (AppSettings.isPlaying)
@@ -47,7 +47,7 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
                 });
             }
-            if (obj.Type == 11) {
+            if (obj.Type == MessageType.PlayEnded) {
                 AppSettings.isPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -56,7 +56,7 @@ namespace WinUIMusicPlayer.Services
                 });
                 AutoPlayNextTrack();
             }
-            if (obj.Type == 100) {
+            if (obj.Type == MessageType.VolumeWriteBack) {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     MusicBrowseViewModel.Volume = double.Parse(obj.Result);

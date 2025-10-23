@@ -173,14 +173,14 @@ namespace WinUIMusicPlayer.Services
                 bool responded = await Task.Run(() => _responseReadySemaphore.WaitOne(1000));
                 if (!responded)
                 {
-                    return new ResponseMessage { Type = 0, Message = "Server response timeout (1s)." };
+                    return new ResponseMessage { Type = MessageType.Failed, Message = "Server response timeout (1s)." };
                 }
                 string responseJson = ReadFromSharedMemory(ResponseBufferOffset);
-                //Debug.WriteLine($"Received response from MMF: {responseJson}");
+                Debug.WriteLine($"Received response from MMF: {responseJson}");
 
                 if (string.IsNullOrEmpty(responseJson))
                 {
-                    return new ResponseMessage { Type = 0, Message = "Received empty response from server." };
+                    return new ResponseMessage { Type = MessageType.Failed, Message = "Received empty response from server." };
                 }
                 return JsonSerializer.Deserialize(responseJson, PlayerJsonContext.Default.ResponseMessage);
             }
