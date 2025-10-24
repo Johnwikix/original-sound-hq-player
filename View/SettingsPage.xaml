@@ -562,7 +562,7 @@
                                 <HyperlinkButton x:Name="WebSite" x:Uid="OfficialWebSite" Command="{x:Bind ViewModel.OpenWebSiteCommand, Mode=OneWay}" />
                                 <HyperlinkButton x:Name="ThirdParty" x:Uid="ThirdPartyComponents" Click="ThirdParty_Click" />
                                 <HyperlinkButton x:Name="LogPath" x:Uid="LogPath" Command="{x:Bind ViewModel.OpenLogPathCommand, Mode=OneWay}" />
-                                <HyperlinkButton x:Name="Github" Content="Github" Command="{x:Bind ViewModel.OpenGithubCommand,Mode=OneWay}"/>
+                                <HyperlinkButton x:Name="GitHub" Content="GitHub" Command="{x:Bind ViewModel.OpenGitHubCommand,Mode=OneWay}"/>
                             </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
