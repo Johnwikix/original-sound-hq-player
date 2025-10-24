@@ -28,7 +28,6 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Music musicDetail;
         public EventHandler<Music> AlbumDetailChanged;
-        private double scaleFactor = 0;
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;

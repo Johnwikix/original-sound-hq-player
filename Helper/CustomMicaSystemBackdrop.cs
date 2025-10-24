@@ -157,16 +157,10 @@ namespace WinUIMusicPlayer.Helper
                         _micaController.Kind = MicaKind;
                         _micaController.TintColor = TintColor;
                         _micaController.TintOpacity = TintOpacity;
-                        //System.Diagnostics.Debug.WriteLine($"成功更新云母效果 - 类型: {MicaKind}, 颜色: {TintColor}, 不透明度: {TintOpacity}");
-                    }
-                    else
-                    {
-                        //System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
-                    //System.Diagnostics.Debug.WriteLine($"SetMicaProperties error: {ex.Message}");
                 }
             });
         }

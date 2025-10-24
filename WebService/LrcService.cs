@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.WebService
             {
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist);
             }
@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.WebService
                 Debug.WriteLine("GetLyricsAsync获取歌词的任务已被取消。");
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
             }

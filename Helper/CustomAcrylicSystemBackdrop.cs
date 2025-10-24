@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.Helper
                         //System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //System.Diagnostics.Debug.WriteLine($"SetAcrylicProperties error: {ex.Message}");
                 }

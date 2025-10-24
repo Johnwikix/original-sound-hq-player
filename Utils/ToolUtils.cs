@@ -130,8 +130,6 @@ namespace WinUIMusicPlayer.Utils
                 ["favour"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.Order).ToImmutableList(),
                 ["playList"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.PlayListOrder).ToImmutableList()
             };
-        private static readonly string HashTag = "#";
-        private static readonly string ZhongChar = "中";
 
         public static string GetString(string key)
         {
@@ -139,7 +137,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 return new ResourceLoader().GetString(key);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return key;
             }
@@ -348,7 +346,7 @@ namespace WinUIMusicPlayer.Utils
                     return bitmapImage;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
@@ -384,7 +382,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return picture;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return await GetPicByteFromNet(music, isManual);
             }
@@ -622,7 +620,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
@@ -958,7 +956,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 return System.IO.File.GetCreationTime(filePath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return DateTime.Now;
             }
@@ -970,7 +968,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 return System.IO.File.GetLastWriteTime(filePath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return DateTime.Now;
             }
@@ -1061,7 +1059,7 @@ namespace WinUIMusicPlayer.Utils
                     return music;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 AudioFileInfo wavFileInfo = ToolUtils.GetAudioInfo(file.Path);
                 try
@@ -1180,7 +1178,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     return playList;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return null;
                 }
