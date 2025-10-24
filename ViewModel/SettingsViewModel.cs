@@ -1077,5 +1077,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _ = Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
         }
+
+        [RelayCommand]
+        private void OpenGithub() {
+            _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/BassPlayerSharp"));
+        }
     }
 }
