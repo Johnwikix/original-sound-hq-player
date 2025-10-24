@@ -34,9 +34,9 @@
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <converters:AlbumArtConverter x:Key="AlbumArtConverter" />
-    <converters:SongCoverConverter x:Key="SongCoverConverter" />
+    <!--<converters:SongCoverConverter x:Key="SongCoverConverter" />
     <converters:FavourCoverConverter x:Key="FavourCoverConverter" />
     <converters:PlayListCoverConverter x:Key="PlayListCoverConverter" />
-    <converters:SongCollectionCoverConverter x:Key="SongCollectionCoverConverter" />
+    <converters:SongCollectionCoverConverter x:Key="SongCollectionCoverConverter" />-->
     <converters:AlbumSongsConverter x:Key="AlbumSongsConverter" />
 </ResourceDictionary>

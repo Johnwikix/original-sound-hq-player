@@ -857,7 +857,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
-                AppSettings.IsProcessAboveNormal = settings.IsProcessAboveNormal;
+                //AppSettings.IsProcessAboveNormal = settings.IsProcessAboveNormal;
                 AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
@@ -875,10 +875,10 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LyricsMargin = settings.LyricsMargin;
                 AppSettings.GlobalFontSize = settings.GlobalFontSize;
                 AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
-                AppSettings.IsSongCoverEnabled = settings.IsSongCoverEnabled;
-                AppSettings.IsPlayListCoverEnabled = settings.IsPlayListCoverEnabled;
-                AppSettings.IsFavouriteCoverEnabled = settings.IsFavouriteCoverEnabled;
-                AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
+                //AppSettings.IsSongCoverEnabled = settings.IsSongCoverEnabled;
+                //AppSettings.IsPlayListCoverEnabled = settings.IsPlayListCoverEnabled;
+                //AppSettings.IsFavouriteCoverEnabled = settings.IsFavouriteCoverEnabled;
+                //AppSettings.IsSongCollectionCoverEnabled = settings.IsSongCollectionCoverEnabled;
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
@@ -899,7 +899,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-            newSettings.IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
+            //newSettings.IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;
@@ -910,7 +910,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
-            newSettings.IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
+            //newSettings.IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
@@ -928,9 +928,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.LyricsMargin = AppSettings.LyricsMargin;
             newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
             newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-            newSettings.IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
-            newSettings.IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
-            newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
+            //newSettings.IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
+            //newSettings.IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
+            //newSettings.IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;

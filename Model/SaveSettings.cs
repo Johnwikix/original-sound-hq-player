@@ -24,10 +24,10 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Dark";
         public bool isCoverCacheEnabled { get; set; } = true;
-        public bool IsSongCoverEnabled { get; set; } = true;
-        public bool IsFavouriteCoverEnabled { get; set; } = true;
-        public bool IsSongCollectionCoverEnabled { get; set; } = true;
-        public bool IsPlayListCoverEnabled { get; set; } = true;
+        //public bool IsSongCoverEnabled { get; set; } = true;
+        //public bool IsFavouriteCoverEnabled { get; set; } = true;
+        //public bool IsSongCollectionCoverEnabled { get; set; } = true;
+        //public bool IsPlayListCoverEnabled { get; set; } = true;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
         public bool IsDopEnabled { get; set; } = false;
@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.Model
         public int EntranceAnimationTime { get; set; } = 200;
         public int SlideAnimationTime { get; set; } = 300;
         public int DrillInAnimationTime { get; set; } = 400;
-        public bool IsProcessAboveNormal { get; set; } = false;
+        //public bool IsProcessAboveNormal { get; set; } = false;
         public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public bool IsFolderWatchEnabled { get; set; } = true;
         public int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数

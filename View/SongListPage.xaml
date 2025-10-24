@@ -97,7 +97,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     Canvas.ZIndex="1"
-                                    Source="{x:Bind Converter={StaticResource SongCoverConverter}}"
+                                    Source="{x:Bind Converter={StaticResource AlbumArtConverter}}"
                                     Stretch="UniformToFill">
                                     <Image.Transitions>
                                         <TransitionCollection>

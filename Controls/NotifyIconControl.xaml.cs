@@ -196,10 +196,10 @@ namespace WinUIMusicPlayer.Controls
                     //window.RecoverTaskbarHelper();
                     window.InitializeTaskbarHelper();
                 }
-                if (AppSettings.IsProcessAboveNormal)
-                {
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
-                }
+                //if (AppSettings.IsProcessAboveNormal)
+                //{
+                //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
+                //}
             }
         }
 

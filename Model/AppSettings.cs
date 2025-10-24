@@ -40,10 +40,10 @@ namespace WinUIMusicPlayer.Model
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = true;
-        public static bool IsSongCoverEnabled { get; set; } = true;
-        public static bool IsFavouriteCoverEnabled { get; set; } = true;
-        public static bool IsSongCollectionCoverEnabled { get; set; } = true;
-        public static bool IsPlayListCoverEnabled { get; set; } = true;
+        //public static bool IsSongCoverEnabled { get; set; } = true;
+        //public static bool IsFavouriteCoverEnabled { get; set; } = true;
+        //public static bool IsSongCollectionCoverEnabled { get; set; } = true;
+        //public static bool IsPlayListCoverEnabled { get; set; } = true;
         //public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Model
         public static int EntranceAnimationTime { get; set; } = 200;
         public static int SlideAnimationTime { get; set; } = 300;
         public static int DrillInAnimationTime { get; set; } = 400;
-        public static bool IsProcessAboveNormal { get; set; } = false;
+        //public static bool IsProcessAboveNormal { get; set; } = false;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
 

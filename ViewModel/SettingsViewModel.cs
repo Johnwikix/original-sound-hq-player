@@ -79,12 +79,12 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _isRunningBackend, value);
         }
 
-        private bool _isProcessAboveNormal = false;
-        public bool IsProcessAboveNormal
-        {
-            get => _isProcessAboveNormal;
-            set => SetProperty(ref _isProcessAboveNormal, value);
-        }
+        //private bool _isProcessAboveNormal = false;
+        //public bool IsProcessAboveNormal
+        //{
+        //    get => _isProcessAboveNormal;
+        //    set => SetProperty(ref _isProcessAboveNormal, value);
+        //}
 
         private int _latency = 300;
         public int Latency
@@ -167,73 +167,73 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private bool _isSongCoverEnabled;
-        public bool IsSongCoverEnabled
-        {
-            get => _isSongCoverEnabled;
-            set
-            {
-                if (SetProperty(ref _isSongCoverEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsSongCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isSongCoverEnabled;
+        //public bool IsSongCoverEnabled
+        //{
+        //    get => _isSongCoverEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isSongCoverEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsSongCoverEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
-        private bool _isFavouriteCoverEnabled = false;
-        public bool IsFavouriteCoverEnabled
-        {
-            get => _isFavouriteCoverEnabled;
-            set
-            {
-                if (SetProperty(ref _isFavouriteCoverEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsFavouriteCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isFavouriteCoverEnabled = false;
+        //public bool IsFavouriteCoverEnabled
+        //{
+        //    get => _isFavouriteCoverEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isFavouriteCoverEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsFavouriteCoverEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
-        private bool _isPlayListCoverEnabled = false;
-        public bool IsPlayListCoverEnabled
-        {
-            get => _isPlayListCoverEnabled;
-            set
-            {
-                if (SetProperty(ref _isPlayListCoverEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsPlayListCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isPlayListCoverEnabled = false;
+        //public bool IsPlayListCoverEnabled
+        //{
+        //    get => _isPlayListCoverEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isPlayListCoverEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsPlayListCoverEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
-        private bool _isSongCollectionCoverEnabled = false;
-        public bool IsSongCollectionCoverEnabled
-        {
-            get => _isSongCollectionCoverEnabled;
-            set
-            {
-                if (SetProperty(ref _isSongCollectionCoverEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsSongCollectionCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isSongCollectionCoverEnabled = false;
+        //public bool IsSongCollectionCoverEnabled
+        //{
+        //    get => _isSongCollectionCoverEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isSongCollectionCoverEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsSongCollectionCoverEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
         private string _defaultEntryComboBoxTag = "AddFolder";
         public string DefaultEntryComboBoxTag
@@ -754,7 +754,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 初始化钻入动画时间
             DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             // 初始化进程优先级
-            IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
+            //IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
             // 初始化背景封面开关
             IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             // 初始化文件夹监视开关
@@ -777,10 +777,10 @@ namespace WinUIMusicPlayer.ViewModel
             LyricsMargin = AppSettings.LyricsMargin;
             IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             GlobalFontSize = AppSettings.GlobalFontSize;
-            IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
-            IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
-            IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
-            IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
+            //IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
+            //IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
+            //IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
+            //IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             InitializeWasapiDevice();
@@ -1001,26 +1001,26 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        [RelayCommand]
-        private void OnProcessPriorityChanged(string parameter)
-        {
-            switch (parameter)
-            {
-                case "Normal":
-                    AppSettings.IsProcessAboveNormal = false;
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
-                    break;
+        //[RelayCommand]
+        //private void OnProcessPriorityChanged(string parameter)
+        //{
+        //    switch (parameter)
+        //    {
+        //        case "Normal":
+        //            AppSettings.IsProcessAboveNormal = false;
+        //            PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.Normal);
+        //            break;
 
-                case "AboveNormal":
-                    AppSettings.IsProcessAboveNormal = true;
-                    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
-                    break;
-            }
-            if (_isInitized)
-            {
-                _ = MusicDatabaseService.SaveSettingAsync();
-            }
-        }
+        //        case "AboveNormal":
+        //            AppSettings.IsProcessAboveNormal = true;
+        //            PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
+        //            break;
+        //    }
+        //    if (_isInitized)
+        //    {
+        //        _ = MusicDatabaseService.SaveSettingAsync();
+        //    }
+        //}
 
         private void OnCoverSizeChanged(int value)
         {
