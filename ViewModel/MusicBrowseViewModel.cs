@@ -1,7 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ManagedBass;
-using ManagedBass.Fx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -118,22 +116,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (!IsUserDraggingProgressSlider)
                 {
-                    //if (_musicPlaybackService._currentStream != 0)
-                    //{
-                    //    double currentPlayPosition = _musicPlaybackService.GetCurrentPosition();
-
-                    //    if (Math.Abs(value - currentPlayPosition) > 2.0)
-                    //    {
-                    //        Task.Run(() =>
-                    //        {
-                    //            isManualSelect = true;
-                    //            _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                    //            isManualSelect = false;
-                    //        });
-                    //    }
-                    //}
                     double currentPlayPosition = await _musicPlaybackService.GetCurrentPosition();
-
                     if (Math.Abs(value - currentPlayPosition) > 2.0)
                     {
                         _ = Task.Run(() =>
@@ -181,11 +164,6 @@ namespace WinUIMusicPlayer.ViewModel
                             _tempVolume = value;
                         }
                         AppData.Volume = (float)value / 100;
-                        //_musicPlaybackService.volume = (float)value / 100;
-                        //if (_musicPlaybackService._currentStream != 0)
-                        //{
-                        //    _musicPlaybackService.SetVolume(_musicPlaybackService.volume);
-                        //}
                         _musicPlaybackService.SetVolume(AppData.Volume);
                     }
                 }
@@ -362,7 +340,6 @@ namespace WinUIMusicPlayer.ViewModel
         public string paramName = "defualt";
         public int previousSelectedIndex = 0;
         public int currentPlayListId;
-        //public BassMusicPlaybackService _musicPlaybackService;
         public BassPlayerCommandService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -717,12 +694,6 @@ namespace WinUIMusicPlayer.ViewModel
                 });
             };
         }
-
-        //public void SetMusicService(BassMusicPlaybackService musicPlaybackService)
-        //{
-        //    _musicPlaybackService = musicPlaybackService;
-        //    InitializeDatabase();
-        //}
 
         public void SetMusicService(BassPlayerCommandService musicPlaybackService)
         {

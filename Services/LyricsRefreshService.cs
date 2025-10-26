@@ -50,6 +50,13 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public void ResetLyrics()
+        {
+            if (_lyrics.Count == 0)
+                return;
+            MusicBrowseViewModel.UpdateLyricsToUI(0);
+        }
+
         public async Task SetLyrics()
         {
             CancelPreviousLyricsTask();

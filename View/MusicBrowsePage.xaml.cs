@@ -509,8 +509,7 @@ namespace WinUIMusicPlayer.View
         public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
             try
-            {
-                //_forceDrawTimer.Start();                
+            {            
                 ViewModel.CurrentPlayingMusic = music;
                 ViewModel.LoadLyricsToUI();
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
@@ -518,12 +517,12 @@ namespace WinUIMusicPlayer.View
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
-                //ViewModel._musicPlaybackService.PlayMusic(music, currentPos, isSettingChanged);
-                _ = Task.Run(async () =>
+                _ = Task.Run(() =>
                 {
                     ViewModel._musicPlaybackService.PlayMusic(music);
-                });
-                ViewModel.UpdateProgressTimerUI();
+                    ViewModel.UpdateProgressTimerUI();
+                    ViewModel.LyricsRefreshService.ResetLyrics();
+                });                
             }
             catch (Exception ex)
             {
