@@ -750,7 +750,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateLyricsToUI(int index)
         {
-            if (LastLyricIndex == index || !IsInPlayingDetailMode)
+            if (LastLyricIndex == index)
                 return;
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
