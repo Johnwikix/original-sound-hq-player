@@ -82,15 +82,18 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
                 {
-                    string frequency = slider.Tag?.ToString() ?? "Unknown";
-                    double value = Math.Round(slider.Value, 1);
-                    AppSettings.equalizer[frequency] = value;
-                    string? presetName = selectedItem.Tag.ToString();
-                    if (presetName == "Custom" && _isInitializedSliderValue)
+                    string frequency = slider.Tag?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(frequency))
                     {
-                        await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
-                    }
-                    EqualizerGainChanged?.Invoke(this, frequency);
+                        double value = Math.Round(slider.Value, 1);
+                        AppSettings.equalizer[frequency] = value;
+                        string? presetName = selectedItem.Tag.ToString();
+                        if (presetName == "Custom" && _isInitializedSliderValue)
+                        {
+                            await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
+                        }
+                        EqualizerGainChanged?.Invoke(this, frequency);
+                    }                    
                 }
             }
         }
@@ -150,7 +153,7 @@ namespace WinUIMusicPlayer.View.SubView
             if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
             {
                 string? presetName = selectedItem.Tag.ToString();
-                AppSettings.EqualizerPreset = presetName ?? "Custom";
+                AppSettings.EqualizerPreset = presetName ?? "Flat";
                 if (_presets.ContainsKey(presetName))
                 {
                     var presetValues = _presets[presetName];
