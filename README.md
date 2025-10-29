@@ -4,12 +4,12 @@ A modern and feature-rich music player application built with WinUI, designed to
 
 ## 🚀 Key Features
 
-- **🎵 Music Library Browsing:** Easily browse your local music library by song, artist, album, or genre.
-- **❤️ Favorite Playlists:** Create and manage custom playlists of your favorite songs.
-- **🎚️ Playback Controls:** Enjoy full playback controls, including play, pause, skip, shuffle, and repeat.
-- **💾 Audio Conversion:** Convert audio files to different formats.
-- **✨ Modern UI:** Experience a sleek and intuitive user interface built with WinUI.
-- **⚙️ Settings:** Customize the application's behavior and appearance through settings.
+- **Music Library Browsing:** Easily browse your local music library by song, artist, album, or genre.
+- **Favorite Playlists:** Create and manage custom playlists of your favorite songs.
+- **Playback Controls:** Enjoy full playback controls, including play, pause, skip, shuffle, and repeat.
+- **Audio Conversion:** Convert audio files to different formats.
+- **Modern UI:** Experience a sleek and intuitive user interface built with WinUI.
+- **Settings:** Customize the application's behavior and appearance through settings.
 - **USB Device Support:** Scan and import music from connected USB devices.
 - **Single Instance Application:** Ensures only one instance of the application runs at a time.
 - **Minimum Window Size Enforcement:** Prevents the window from being resized too small.
@@ -73,50 +73,6 @@ Follow these instructions to get the project up and running on your local machin
 
     *   Press `Ctrl+F5` or select "Start Without Debugging" from the "Debug" menu.
 
-## 📂 Project Structure
-
-```
-WinUIMusicPlayer/
-├── App.xaml.cs               # Application entry point and initialization
-├── MainWindow.xaml.cs          # Main window logic
-├── WinUIMusicPlayer.csproj    # Project file
-├── Package.appxmanifest       # Application manifest
-├── Model/                    # Data models
-│   ├── Music.cs
-│   ├── PlayList.cs
-│   └── UsbDeviceMusic.cs
-├── ViewModel/                # ViewModels
-│   ├── MusicBrowseViewModel.cs
-│   ├── SongListViewModel.cs
-│   ├── FavouritePlayListViewModel.cs
-│   └── PlayListViewModel.cs
-├── View/                     # Views (XAML pages)
-│   ├── MusicBrowsePage.xaml.cs
-│   ├── SongListPage.xaml.cs
-│   ├── FavouritePlayListPage.xaml.cs
-│   └── PlayListPage.xaml.cs
-│   └── SubView/
-│       └── ProgressDialog.xaml.cs
-├── Helper/                   # Helper classes
-│   ├── WindowSizeHelper.cs
-│   ├── SingleInstanceHelper.cs
-│   └── WindowHelper.cs       # (Potentially missing, inferred from SingleInstanceHelper)
-├── Services/                 # Services (e.g., navigation, audio playback)
-│   ├── NavigationService.cs
-│   ├── AudioPlayerService.cs
-│   ├── MusicDatabaseService.cs
-│   ├── FilePickerService.cs
-│   └── AudioConverterService.cs
-├── Utils/                    # Utility functions
-│   ├── ToolUtils.cs
-│   └── AppSettings.cs
-├── Reader/                   # Music metadata reader
-│   └── MusicReader.cs
-├── Assets/                   # Application assets (images, logos, etc.)
-├── app.manifest              # Application manifest file
-└── ...
-```
-
 ## 📸 Screenshots
 
 (Add screenshots of the application here to showcase its UI and features)
@@ -137,10 +93,8 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 📬 Contact
 
-If you have any questions or suggestions, feel free to contact me at [your-email@example.com](mailto:your-email@example.com).
+If you have any questions or suggestions, feel free to contact me at [dannypan9709@foxmail.com](dannypan9709@foxmail.com).
 
 ## 💖 Thanks
 
-Thank you for checking out the WinUI Music Player! I hope you find it useful and enjoyable.
-
-This README is written by [readme.ai](https://readme-generator-phi.vercel.app/).
+Thank you for checking out the Original Sound HQ Player! I hope you find it useful and enjoyable.
