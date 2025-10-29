@@ -62,7 +62,6 @@ public class CloudMusicSearchHelper
             cancellationToken.ThrowIfCancellationRequested();
             using JsonDocument document = await GetJsonElement(keyWords);
             JsonElement root = document.RootElement;
-            //Debug.WriteLine(root.ToString());
             cancellationToken.ThrowIfCancellationRequested();
             string songId = SearchForSongId(root, title, author);
             cancellationToken.ThrowIfCancellationRequested();
@@ -185,7 +184,6 @@ public class CloudMusicSearchHelper
                 }
                 catch (Exception)
                 {
-                    //Debug.WriteLine("No translated lyrics found.");
                 }
             }
             return lyrics;

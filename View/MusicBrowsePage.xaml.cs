@@ -30,7 +30,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {
-        //public MainWindow mainWindow;
         private bool isMouseOverVolumeSlider = false;
         private DispatcherTimer typingTimer;
         private NotificationService notificationService;
@@ -72,7 +71,6 @@ namespace WinUIMusicPlayer.View
             if (App.MainWindow is not null)
             {
                 App.MainWindow.updateMusicList += MainWindow_updateMusicList;
-                //App.MainWindow.updateSelectSection += MainWindow_updateSelectSection;
             }
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
@@ -180,16 +178,6 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        //public async Task ClosePage()
-        //{
-        //    await ViewModel._musicPlaybackService.DisposeAudio();
-        //    if (App.MainWindow is not null)
-        //    {
-        //        //App.MainWindow.updateSelectSection -= MainWindow_updateSelectSection;
-        //        App.MainWindow.updateMusicList -= MainWindow_updateMusicList;
-        //    }
-        //}
 
         private void InitializeTimer()
         {
@@ -654,16 +642,6 @@ namespace WinUIMusicPlayer.View
         private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.IsUserDraggingProgressSlider = false;
-            //if (ViewModel._musicPlaybackService._currentStream != 0)
-            //{
-            //    double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, ViewModel._musicPlaybackService.GetTotalPosition()));
-            //    _ = Task.Run(() =>
-            //    {
-            //        ViewModel.isManualSelect = true;
-            //        ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
-            //        ViewModel.isManualSelect = false;
-            //    });
-            //}
             double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, await ViewModel._musicPlaybackService.GetTotalPosition()));
             _ = Task.Run(() =>
             {

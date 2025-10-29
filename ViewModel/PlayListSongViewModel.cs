@@ -302,11 +302,6 @@ namespace WinUIMusicPlayer.ViewModel
                         MusicList.RemoveAt(i);
                     }
                 }
-                //foreach (Music item in uniqueSelectedMusics)
-                //{
-                //    //await MusicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, item.Id);
-                //    MusicList.Remove(item);
-                //}
             }
             else
             {

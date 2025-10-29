@@ -33,7 +33,6 @@ namespace WinUIMusicPlayer.Services
         public EventHandler<Music> playingAlbumMusic;
         public EventHandler<Music> playingArtistMusic;
         public EventHandler<Music> playingFolderMusic;
-        //public static EventHandler rescanFolderStart;
         public EventHandler rescanFolderEnd;
         public EventHandler hideTransmission;
         public EventHandler showTransmission;
@@ -81,8 +80,6 @@ namespace WinUIMusicPlayer.Services
             }
             flyout.Items.Add(playlistSubItem);
 
-
-            //List<UsbStorageDevice> usbStorageDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
             //USB设备相关菜单项
             if (AppData.usbStorageDevices is not null && AppData.usbStorageDevices.Count > 0)
             {
@@ -166,7 +163,7 @@ namespace WinUIMusicPlayer.Services
                         var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
                         if (existingMusic is not null)
                         {
-                            continue; // 如果已经存在，则跳过
+                            continue;
                         }
                         UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
                         usbDeviceMusic.Title = music.Title;
@@ -234,7 +231,6 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                //rescanFolderStart?.Invoke(this, EventArgs.Empty);
                 var menuItem = sender as MenuFlyoutItem;
                 var item = menuItem?.DataContext as Music;
                 if (item is not null)

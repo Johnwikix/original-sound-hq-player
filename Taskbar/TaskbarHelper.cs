@@ -74,7 +74,6 @@ namespace WinUIMusicPlayer.Taskbar
 
 
         // 缩略图按钮点击事件
-        //public event EventHandler<ThumbButtonClickedEventArgs> ThumbButtonClicked;
         private MusicBrowseViewModel _musicBrowseViewModel;
 
         public TaskbarHelper(IntPtr hwnd)

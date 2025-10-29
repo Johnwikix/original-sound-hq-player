@@ -8,7 +8,6 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
-        //public static MMDeviceCollection OutputDevices { get; set; }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int Latency { get; set; } = 400;
 
@@ -17,8 +16,6 @@ namespace WinUIMusicPlayer.Model
         public static event EventHandler EqUpdated;
 
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
-
-        //public static List<string> outputDeviceList = [];
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
@@ -27,7 +24,6 @@ namespace WinUIMusicPlayer.Model
         public static bool isPlaying { get; set; } = false;
         public static string LrcAPISource { get; set; } = "";
         public static string LrcAPIAuth { get; set; }
-        //public static bool isDsd { get; set; } = false;
         public static bool IsDopEnabled { get; set; } = false;
         public static int dsdGain { get; set; } = 6;
         public static int dsdPcmFreq { get; set; } = 88200;
@@ -40,18 +36,12 @@ namespace WinUIMusicPlayer.Model
         public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = true;
-        //public static bool IsSongCoverEnabled { get; set; } = true;
-        //public static bool IsFavouriteCoverEnabled { get; set; } = true;
-        //public static bool IsSongCollectionCoverEnabled { get; set; } = true;
-        //public static bool IsPlayListCoverEnabled { get; set; } = true;
-        //public static int maxCoverPreLoadNum { get; set; } = 100;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public static int EntranceAnimationTime { get; set; } = 200;
         public static int SlideAnimationTime { get; set; } = 300;
         public static int DrillInAnimationTime { get; set; } = 400;
-        //public static bool IsProcessAboveNormal { get; set; } = false;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
 
@@ -95,7 +85,6 @@ namespace WinUIMusicPlayer.Model
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
         public static double GlobalFontSize { get; set; } = 32;
         public static List<FontInfo> FontFamilyList { get; set; }
-        //public static bool IsGlobalFFmpegEnabled { get; set; } = false;
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
         public static int LyricsMargin { get; set; } = 20;

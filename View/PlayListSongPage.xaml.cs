@@ -87,20 +87,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private List<Music> GetUniqueSelectedItems()
-        //{
-        //    List<Music> uniqueItems = new List<Music>();
-        //    var selectedItems = MusicListView.SelectedItems;
-        //    foreach (var item in selectedItems)
-        //    {
-        //        if (item is Music music)
-        //        {
-        //            uniqueItems.Add(music);
-        //        }
-        //    }
-        //    return uniqueItems;
-        //}
-
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             ViewModel.MusicListView_DoubleTapped();
@@ -170,7 +156,6 @@ namespace WinUIMusicPlayer.View
                     {
                         menuItem.DataContext = musicItem;
                     }
-                    //List<UsbStorageDevice> usbDevices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
                     if (menuFlyout.Items.Count > 8)
                     {
                         MenuFlyoutSubItem fifthItem = menuFlyout.Items[3] as MenuFlyoutSubItem;
@@ -272,15 +257,6 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.MusicDetail_Click();
         }
-
-        //private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var button = sender as Button;
-        //    if (button is not null && button.Tag is Music music)
-        //    {
-        //        await ViewModel.IsFavouriteIconButton_Click(music);
-        //    }
-        //}
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {

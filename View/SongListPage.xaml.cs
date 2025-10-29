@@ -278,15 +278,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private async void IsFavouriteIconButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var button = sender as Button;
-        //    if (button is not null && button.Tag is Music music)
-        //    {
-        //        await ViewModel.IsFavouriteIconButton_Click(music);
-        //    }
-        //}
-
         private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)

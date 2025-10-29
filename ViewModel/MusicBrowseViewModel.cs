@@ -722,7 +722,6 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task LoadPlayState()
         {
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            //_musicPlaybackService.volume = AppData.Volume;
             CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             if (CurrentPlayingMusic is not null)
             {
@@ -918,7 +917,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _musicPlaybackService.MusicEnd();
             UpdatePlayPauseButtonIcon();
-            //_musicPlaybackService.Reset();
             ProgressSlider = 0;
         }
         [RelayCommand]
@@ -967,12 +965,10 @@ namespace WinUIMusicPlayer.ViewModel
                 if (IsFullScreen)
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
-                    //HideNavigationViewButtonVisibility = false;
                 }
                 else
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
-                    //HideNavigationViewButtonVisibility = true;
                 }
                 IsFullScreen = !IsFullScreen;
             }

@@ -87,7 +87,6 @@ namespace WinUIMusicPlayer.Utils
             [16000f] = "16kHz"
         };
 
-        //private static readonly StringComparer StringComparer = StringComparer.OrdinalIgnoreCase;
         private static readonly StringComparer StringComparer = StringComparer.CurrentCultureIgnoreCase;
 
         // 预定义的排序策略字典，避免字符串比较
@@ -628,36 +627,30 @@ namespace WinUIMusicPlayer.Utils
 
         public static string GetFirstLetterAdvanced(string text)
         {
-            // 1. 检查空值和长度
             if (string.IsNullOrEmpty(text))
-                return CharStringCache.GetHashTag(); // 零分配
+                return CharStringCache.GetHashTag();
 
-            string trimmedText = text.Trim(); // 产生分配
+            string trimmedText = text.Trim();
             if (trimmedText.Length == 0)
-                return CharStringCache.GetHashTag(); // 零分配
+                return CharStringCache.GetHashTag();
 
             char firstChar = trimmedText[0];
 
-            // 2. 处理英文字符 (零分配)
             if (firstChar >= 'A' && firstChar <= 'Z')
-                return CharStringCache.GetLetter(firstChar); // 零分配
+                return CharStringCache.GetLetter(firstChar);
 
             if (firstChar >= 'a' && firstChar <= 'z')
             {
                 char upperChar = char.ToUpper(firstChar);
-                return CharStringCache.GetLetter(upperChar); // 零分配
+                return CharStringCache.GetLetter(upperChar);
             }
-
-            // 3. 处理数字
             if (char.IsDigit(firstChar))
-                return CharStringCache.GetHashTag(); // 零分配
-
-            // 4. 处理中文字符
+                return CharStringCache.GetHashTag();
             if (ChineseChar.IsValidChar(firstChar))
             {
                 try
                 {
-                    ChineseChar chineseChar = new ChineseChar(firstChar); // 库的固有分配
+                    ChineseChar chineseChar = new ChineseChar(firstChar);
                     var pinyinCollection = chineseChar.Pinyins;
 
                     if (pinyinCollection is not null && pinyinCollection.Count > 0)
@@ -666,8 +659,6 @@ namespace WinUIMusicPlayer.Utils
                         if (!string.IsNullOrEmpty(firstPinyin))
                         {
                             char firstLetter = '\0';
-
-                            // 使用 ZLinq 快速查找第一个字母 (性能高，分配低/零)
                             foreach (char c in firstPinyin.AsValueEnumerable().Where(char.IsLetter))
                             {
                                 firstLetter = c;
@@ -677,7 +668,7 @@ namespace WinUIMusicPlayer.Utils
                             if (firstLetter != '\0')
                             {
                                 char upperChar = char.ToUpper(firstLetter);
-                                return CharStringCache.GetLetter(upperChar); // 零分配
+                                return CharStringCache.GetLetter(upperChar);
                             }
                         }
                     }
@@ -685,11 +676,10 @@ namespace WinUIMusicPlayer.Utils
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"拼音转换失败: {ex.Message}");
-                    return CharStringCache.GetZhongChar(); // 零分配
+                    return CharStringCache.GetZhongChar();
                 }
             }
-            // 5. 其他字符
-            return CharStringCache.GetHashTag(); // 零分配
+            return CharStringCache.GetHashTag();
         }
 
         public static string ConvertLyrics(string lyrics)
@@ -1173,7 +1163,6 @@ namespace WinUIMusicPlayer.Utils
                     string fileContent = await FileIO.ReadTextAsync(file);
                     if (!string.IsNullOrEmpty(fileContent))
                     {
-                        //Debug.WriteLine(fileContent);
                         ParseM3u8Content(fileContent, playListId);
                     }
                     return playList;
@@ -1281,9 +1270,6 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 var fileSavePicker = new Microsoft.Windows.Storage.Pickers.FileSavePicker(App.MainWindow.AppWindow.Id);
-
-                //var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-                //WinRT.Interop.InitializeWithWindow.Initialize(savePicker, AppData.m_hWnd);
                 fileSavePicker.FileTypeChoices.Add("M3U8 播放列表", new List<string>() { ".m3u8" });
                 fileSavePicker.SuggestedFileName = playList.Name;
                 var file = await fileSavePicker.PickSaveFileAsync();

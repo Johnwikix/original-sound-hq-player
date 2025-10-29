@@ -184,7 +184,6 @@ namespace WinUIMusicPlayer.View.SubView
             if (AppData.albumCoverCache.ContainsKey(music.Album))
             {
                 AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
-                //AppData.albumCoverCache.SetValue(music.Album, (BitmapImage)AlbumCoverImage.Source);
             }
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);

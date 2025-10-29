@@ -10,25 +10,6 @@ namespace WinUIMusicPlayer.Services
 {
     public class UsbDeviceSubFolderRescan
     {
-        //private  List<UsbDeviceSubFolder> usbDeviceSubFolders = new List<UsbDeviceSubFolder>();
-        //public  List<UsbDeviceSubFolder> RecordInitialFolderTimes(string folder, string uniqueDeviceId)
-        //{
-        //    UsbDeviceSubFolder folderItem = new UsbDeviceSubFolder
-        //    {
-        //        Path = folder,
-        //        LastModifiedTime = Directory.GetLastWriteTime(folder),
-        //        UniqueDeviceId = uniqueDeviceId
-        //    };
-        //    usbDeviceSubFolders.Add(folderItem);
-        //    Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.UniqueDeviceId}");
-        //    // 递归获取子文件夹
-        //    string[] subFolders = Directory.GetDirectories(folder);
-        //    foreach (string subFolderItem in subFolders)
-        //    {
-        //        RecordInitialFolderTimes(subFolderItem, uniqueDeviceId);
-        //    }
-        //    return usbDeviceSubFolders;
-        //}
         public List<UsbDeviceSubFolder> RecordInitialFolderTimes(string folder, string uniqueDeviceId)
         {
             // 创建本地列表，而不是使用类成员变量
@@ -40,7 +21,6 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        // 添加一个辅助方法来递归收集文件夹信息
         private void CollectFolderInfo(string folder, string uniqueDeviceId, List<UsbDeviceSubFolder> folderList)
         {
             try

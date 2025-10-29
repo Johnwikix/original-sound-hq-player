@@ -98,33 +98,6 @@ namespace WinUIMusicPlayer.View.SubView
             }
         }
 
-        //// 获取当前均衡器设置
-        //public Dictionary<string, double> GetEqualizerSettings()
-        //{
-        //    var settings = new Dictionary<string, double>();
-        //    foreach (var slider in _sliders)
-        //    {
-        //        if (slider.Tag?.ToString() is string frequency)
-        //        {
-        //            settings[frequency] = Math.Round(slider.Value, 1);
-        //        }
-        //    }
-        //    return settings;
-        //}
-
-        //// 设置均衡器值
-        //public void SetEqualizerSettings(Dictionary<string, double> settings)
-        //{
-        //    foreach (var slider in _sliders)
-        //    {
-        //        if (slider.Tag?.ToString() is string frequency &&
-        //            settings.ContainsKey(frequency))
-        //        {
-        //            slider.Value = settings[frequency];
-        //        }
-        //    }
-        //}
-
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;

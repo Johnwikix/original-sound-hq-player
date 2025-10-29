@@ -73,12 +73,9 @@ namespace WinUIMusicPlayer.Controls
         private void PlayMode_Click(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as ToggleMenuFlyoutItem;
-            //Debug.WriteLine(menuItem?.Name.ToString());
             if (menuItem is not null && menuItem.IsChecked == true)
             {
                 UncheckOtherItems(menuItem);
-
-                // 触发事件通知播放模式变更
                 switch (menuItem.Name)
                 {
                     case "IconRepeatAll":
@@ -173,13 +170,6 @@ namespace WinUIMusicPlayer.Controls
         {
             if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
             {
-                // 如果窗口最小化，则恢复它
-                //if (WindowHelper.IsIconic(AppData.m_hWnd))
-                //{
-                //    //WindowHelper.ShowWindow(AppData.m_hWnd, WindowHelper.SW_RESTORE);
-                //}
-                // 将窗口置于前台
-                //WindowHelper.SetForegroundWindow(AppData.m_hWnd);
                 window.Restore();
                 window.Activate();
                 window.SetForegroundWindow();
@@ -193,13 +183,8 @@ namespace WinUIMusicPlayer.Controls
                 if (!window.Visible)
                 {
                     window.Show();
-                    //window.RecoverTaskbarHelper();
                     window.InitializeTaskbarHelper();
                 }
-                //if (AppSettings.IsProcessAboveNormal)
-                //{
-                //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
-                //}
             }
         }
 

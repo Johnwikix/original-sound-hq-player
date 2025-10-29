@@ -20,7 +20,7 @@ namespace WinUIMusicPlayer.Helper
         // 透明度属性
         public double TintOpacity { get; set; } = 0.8;
         public double LuminosityOpacity { get; set; } = 0.7;
-        public Color TintColor { get; set; } = Color.FromArgb(255, 135, 206, 235); // SkyBlue
+        public Color TintColor { get; set; } = Color.FromArgb(255, 135, 206, 235);
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -41,7 +41,6 @@ namespace WinUIMusicPlayer.Helper
             // 监听窗口状态变更
             if (connectedTarget is Window window)
             {
-                //window.Activated += Window_Activated;
                 window.Closed += Window_Closed;
             }
 
@@ -82,7 +81,6 @@ namespace WinUIMusicPlayer.Helper
 
                 if (_currentTarget is Window window)
                 {
-                    //window.Activated += Window_Activated;
                     window.Closed += Window_Closed;
                 }
             }
@@ -157,16 +155,13 @@ namespace WinUIMusicPlayer.Helper
                         _acrylicController.TintColor = TintColor;
                         _acrylicController.TintOpacity = (float)TintOpacity;
                         _acrylicController.LuminosityOpacity = (float)LuminosityOpacity;
-                        //System.Diagnostics.Debug.WriteLine($"成功更新亚克力效果 - 颜色: {TintColor}, 不透明度: {TintOpacity}");
                     }
                     else
                     {
-                        //System.Diagnostics.Debug.WriteLine("队列执行时控制器已无效");
                     }
                 }
                 catch (Exception)
                 {
-                    //System.Diagnostics.Debug.WriteLine($"SetAcrylicProperties error: {ex.Message}");
                 }
             });
         }

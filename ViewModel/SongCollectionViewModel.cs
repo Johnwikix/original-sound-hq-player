@@ -56,13 +56,6 @@ namespace WinUIMusicPlayer.ViewModel
             get => _thirdTitle;
             set => SetProperty(ref _thirdTitle, value);
         }
-
-        //private Visibility _isAlbumImageVisible = Visibility.Visible;
-        //public Visibility IsAlbumImageVisible
-        //{
-        //    get => _isAlbumImageVisible;
-        //    set => SetProperty(ref _isAlbumImageVisible, value);
-        //}
         private ObservableCollection<PlayList> _playLists;
         public ObservableCollection<PlayList> PlayLists
         {
@@ -499,15 +492,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
             }
         }
-
-        //public async Task IsFavouriteIconButton_Click(Music music)
-        //{
-        //    if (music is not null)
-        //    {
-        //        await _parentPage.AddToFavourite(music);
-        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-        //    }
-        //}
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {

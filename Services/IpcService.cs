@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.Services
         private const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
         private const string ResponseSemaphoreName = "BassPlayerSharp_ResponseReady";
         private const string NotificationSemaphoreName = "BassPlayerSharp_NotificationReady";
-        private const int MaxMessageSize = 4096; // 必须和服务端一致
+        private const int MaxMessageSize = 4096;
         private const int MaxResponseSize = 1024;
         private static readonly long MmfSize = MaxMessageSize + MaxResponseSize * 2;
 
@@ -50,10 +50,6 @@ namespace WinUIMusicPlayer.Services
 
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
-
-        //public IpcService()
-        //{
-        //}
 
         public void Initializing() {
             try
@@ -107,7 +103,6 @@ namespace WinUIMusicPlayer.Services
                         string notificationJson = ReadFromSharedMemory(NotificationBufferOffset);
                         if (!string.IsNullOrEmpty(notificationJson))
                         {
-                            //Debug.WriteLine($"Notification received: {notificationJson}");
                             var notification = JsonSerializer.Deserialize(
                                 notificationJson,
                                 PlayerJsonContext.Default.ResponseMessage);
@@ -160,7 +155,6 @@ namespace WinUIMusicPlayer.Services
                 string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
 
                 WriteToSharedMemory(RequestBufferOffset, requestJson);
-                //Debug.WriteLine($"Sent request to MMF: {requestJson}");
 
                 try {
                     _requestReadySemaphore.Release(); 

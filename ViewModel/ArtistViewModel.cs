@@ -31,7 +31,6 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _groupedMusicViewSource, value);
         }
         private List<MusicGroup> groupedByFirstLetter = [];
-        //private List<Music>? _allMusic;
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
@@ -46,16 +45,6 @@ namespace WinUIMusicPlayer.ViewModel
                 IsSourceGrouped = true
             };
             parentPage.refreshPage += RefreshArtist;
-            //parentPage.refreshUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
-            //parentPage.clearUsbDeviceMusicList +=
-            //    (s, e) =>
-            //    {
-            //        ToolUtils.RefreshIcon(MusicList, "album");
-            //    };
             _contextMenuService = contextMenuService;
             _contextMenuService.showTransmission += (s, e) =>
             {
@@ -110,7 +99,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //_allMusic = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).GroupBy(m => m.Author).Select(g => g.First()).OrderBy(m => m.Author).ToList();
                 MusicList.Clear();
                 var query = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
                 foreach (var music in query)
@@ -129,7 +117,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList.AsValueEnumerable()
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
                         .OrderBy(group => group.Key)
@@ -143,16 +130,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        //public void SortMusicList(string sortOrder)
-        //{
-        //    //if (_allMusic.Count > 0)
-        //    //{
-        //    //    MusicList.Clear();
-        //    //MusicList = new ObservableCollection<Music>(ToolUtils.SortMusicList("artistCover", sortOrder, MusicList));
-        //        //LoadMoreArtistAsync(true);
-        //    //}
-        //}
-
         public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var gridView = sender as GridView;
@@ -162,10 +139,8 @@ namespace WinUIMusicPlayer.ViewModel
                 Music artist = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    //parentPage.LoadArtistMusic(artist);
                     _musicBrowseViewModel.PageType = "artist";
                     _musicBrowseViewModel.paramName = artist.Author;
-                    //currentArtistName = artist.Author;
                     _musicBrowseViewModel.CurrentArtist = artist;
                     _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
                     parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);

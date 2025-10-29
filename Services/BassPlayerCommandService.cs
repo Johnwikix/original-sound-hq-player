@@ -17,7 +17,6 @@ namespace WinUIMusicPlayer.Services
         public int? lastPlayedMusicId;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
-        //public float volume = 0.5f;
         public bool isInitializing = true;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private IpcService IpcService { get; set; }

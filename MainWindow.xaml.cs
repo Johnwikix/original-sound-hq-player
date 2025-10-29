@@ -65,12 +65,6 @@ namespace WinUIMusicPlayer
             themeStyleHelper.CustomStyleChanged += (s, e) => customStyleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
-            //H.NotifyIcon.WindowExtensions.Hide(this, enableEfficiencyMode: false);
-            //H.NotifyIcon.WindowExtensions.Show(this, disableEfficiencyMode: true);
-            //if (AppSettings.IsProcessAboveNormal)
-            //{
-            //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
-            //}
             this.AppWindow.Closing += AppWindow_Closing;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
@@ -160,15 +154,8 @@ namespace WinUIMusicPlayer
         {
             if (AppSettings.isRunningBackend)
             {
-                // 取消关闭操作
                 args.Cancel = true;
-                // 最小化到托盘
                 this.Hide();
-                //PowerManagementHelper.DisableEfficiencyMode();
-                //if (AppSettings.IsProcessAboveNormal)
-                //{
-                //    PowerManagementHelper.SetProcessPriority(Helper.ProcessPriorityClass.High);
-                //}
             }
             else
             {

@@ -125,7 +125,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //MusicList = new ObservableCollection<Music>(_allMusic);
                 groupedByFirstLetter = MusicList.AsValueEnumerable()
                         .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
                         .OrderBy(group => group.Key)
@@ -138,21 +137,6 @@ namespace WinUIMusicPlayer.ViewModel
                 Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
             }
         }
-
-        //public void SortMusicList(string sortOrder)
-        //{
-        //    if (MusicList is not null && MusicList.Count > 0)
-        //    {
-        //        //MusicList.Clear();
-        //        var query = ToolUtils.SortMusicList("folderCover", sortOrder, MusicList);
-        //        MusicList.Clear();
-        //        foreach (var music in query)
-        //        {
-        //            MusicList.Add(music);
-        //        }
-        //        //LoadMoreFolderAsync(true);
-        //    }
-        //}
 
         public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

@@ -51,13 +51,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _parentPage = parent;
             _parentPage.refreshPage += RefreshPage;
-            //_parentPage.refreshUsbDeviceMusicList += RefreshUsbDeviceMusicList;
-            //_parentPage.clearUsbDeviceMusicList += ClearUsbDeviceMusicList;
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
             _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
             _progressDialog.Title = ToolUtils.GetString("Processing");
-            //_messenger = messenger;
         }
 
         public void SetCurrentPage(SongListPage page)
@@ -79,7 +76,6 @@ namespace WinUIMusicPlayer.ViewModel
                 Debug.WriteLine("搜索条件未变更，保留当前视图状态");
             }
 
-            //ClearUsbDeviceMusicList(null, null);
             RefreshUsbDeviceMusicList(null, null);
         }
 
@@ -365,15 +361,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-
-        //public async Task IsFavouriteIconButton_Click(Music music)
-        //{
-        //    if (music is not null)
-        //    {
-        //        await _parentPage.AddToFavourite(music);
-        //        AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-        //    }
-        //}
 
         public void AuthorTextBlock_Tapped(string artist)
         {

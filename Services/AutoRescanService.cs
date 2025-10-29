@@ -18,8 +18,6 @@ namespace WinUIMusicPlayer.Services
             CollectFolderInfo(folder, folderId, result);
             return result;
         }
-
-        // 添加一个辅助方法来递归收集文件夹信息
         private static void CollectFolderInfo(string folder, int folderId, List<SubFolder> folderList)
         {
             try
@@ -133,78 +131,6 @@ namespace WinUIMusicPlayer.Services
             {
                 Debug.WriteLine($"Error: {ex.Message}");
             }
-        }
-
-        //    public static async Task AutoScan()
-        //    {
-        //        try
-        //        {
-        //            List<Folder> folders = await MusicDatabaseService.GetFolders();
-        //            int changeCount = 0;
-        //            foreach (Folder folder in folders)
-        //            {
-        //                //subFolderList.Clear();
-        //                List<SubFolder> subFolders = [];
-        //                await Task.Run(() =>
-        //                {
-        //                    subFolders = RecordInitialFolderTimes(folder.Path, folder.Id);
-        //                });
-        //                List<SubFolder> subFoldersInDb = await MusicDatabaseService.GetSubFolders(folder.Id);
-        //                if (subFoldersInDb is not null && subFoldersInDb.Count > 0)
-        //                {
-        //                    foreach (SubFolder subFolder in subFolders)
-        //                    {
-        //                        if (!subFoldersInDb.Any(dbSubFolder => dbSubFolder.Path == subFolder.Path))
-        //                        {
-        //                            await MusicDatabaseService.AddSubFolder(subFolder);
-        //                            await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false, true);
-        //                            Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
-        //                            changeCount++;
-        //                        }
-        //                        else
-        //                        {
-        //                            SubFolder dbSubFolder = subFoldersInDb.First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
-        //                            if (dbSubFolder.LastModifiedTime != subFolder.LastModifiedTime)
-        //                            {
-        //                                dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
-        //                                await MusicDatabaseService.UpdateSubFolder(dbSubFolder);
-        //                                await MusicDatabaseService.RescanFolderByPath(subFolder.Path, false, true);
-        //                                Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.FolderId}");
-        //                                changeCount++;
-        //                            }
-        //                        }
-        //                    }
-
-        //                    // 处理删除
-        //                    foreach (SubFolder dbSubFolder in subFoldersInDb)
-        //                    {
-        //                        if (!subFolders.Any(subFolder => subFolder.Path == dbSubFolder.Path))
-        //                        {
-        //                            await MusicDatabaseService.DeleteSubFolder(dbSubFolder);
-        //                            await MusicDatabaseService.DeleteSubFolderByPath(dbSubFolder.Path);
-        //                            Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path},time:{dbSubFolder.LastModifiedTime},folderId:{dbSubFolder.FolderId}");
-        //                        }
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    await MusicDatabaseService.InsertSubFolders(subFolders);
-        //                }
-        //                if (changeCount > 0)
-        //                {
-        //                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
-        //                    App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-        //                    {
-        //                        App.MainWindow.UpdateMusicList();
-        //                    });
-        //                }
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Debug.WriteLine($"Error: {ex.Message}");
-        //        }
-        //    }
-        //}}
+        }        
     }
 }
