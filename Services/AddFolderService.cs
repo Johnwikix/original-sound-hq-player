@@ -71,7 +71,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception innerEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");                     // 返回null以指示错误
+                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");
                 }
             }
             return null;
@@ -106,7 +106,6 @@ namespace WinUIMusicPlayer.Services
                 }
             });
             var results = await Task.WhenAll(tasks.ToList());
-            // 添加有效结果到列表（线程安全）
             lock (musicFiles)
             {
                 foreach (var music in results.AsValueEnumerable().Where(m => m is not null))
