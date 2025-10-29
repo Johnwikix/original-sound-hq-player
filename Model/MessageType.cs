@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WinUIMusicPlayer.Model
+﻿namespace WinUIMusicPlayer.Model
 {
     public static class MessageType
     {

@@ -71,7 +71,8 @@ namespace WinUIMusicPlayer.Model
         {
             OutputSettingsUpdated?.Invoke(null, EventArgs.Empty);
         }
-        public static void OnEqUpdated() {
+        public static void OnEqUpdated()
+        {
             EqUpdated?.Invoke(null, EventArgs.Empty);
         }
         public static void EqualizerChanged()

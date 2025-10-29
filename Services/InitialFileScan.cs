@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -46,7 +45,7 @@ namespace WinUIMusicPlayer.Services
             await MusicDatabaseService.AddMusicList(MusicsToAdd);
             await MusicDatabaseService.UpdateMusicList(MusicsToUpdate);
             await MusicDatabaseService.DeletedMusicList(MusicsToDelete);
-            await Deduplication();            
+            await Deduplication();
         }
 
         public static async Task Deduplication()
@@ -60,7 +59,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         // 将原 GetFileModificationDates 重命名，并接收 allScannedFilePaths
-        public static async Task ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths,List<Music> MusicsToUpdate, List<Music> MusicsToAdd,IEnumerable<Music> allSongsCache)
+        public static async Task ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths, List<Music> MusicsToUpdate, List<Music> MusicsToAdd, IEnumerable<Music> allSongsCache)
         {
             if (!Directory.Exists(rootDirectory))
             {

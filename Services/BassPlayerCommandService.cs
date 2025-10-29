@@ -2,7 +2,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
@@ -31,14 +30,16 @@ namespace WinUIMusicPlayer.Services
 
         private void IpcService_NotificationReceived(ResponseMessage obj)
         {
-            if (obj.Type == MessageType.PlayState) {
+            if (obj.Type == MessageType.PlayState)
+            {
                 AppSettings.isPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 if (AppSettings.isPlaying)
                 {
                     MusicBrowseViewModel.StartProgressTimer();
                 }
-                else {
+                else
+                {
                     MusicBrowseViewModel.StopProgressTimer();
                 }
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -46,7 +47,8 @@ namespace WinUIMusicPlayer.Services
                     MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
                 });
             }
-            if (obj.Type == MessageType.PlayEnded) {
+            if (obj.Type == MessageType.PlayEnded)
+            {
                 AppSettings.isPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -55,7 +57,8 @@ namespace WinUIMusicPlayer.Services
                 });
                 AutoPlayNextTrack();
             }
-            if (obj.Type == MessageType.VolumeWriteBack) {
+            if (obj.Type == MessageType.VolumeWriteBack)
+            {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     MusicBrowseViewModel.Volume = double.Parse(obj.Result);
@@ -63,17 +66,20 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async void InitializeMusicUrl(string musicUrl) {
+        public async void InitializeMusicUrl(string musicUrl)
+        {
             await IpcService.SetMusicUrl(musicUrl);
             await IpcService.UpdateEq();
-            IpcService.UpdateSettings();           
+            IpcService.UpdateSettings();
         }
 
-        public async void EqUpdate() {
+        public async void EqUpdate()
+        {
             await IpcService.UpdateEq();
         }
 
-        public void UpdateSettings() {
+        public void UpdateSettings()
+        {
             IpcService.UpdateSettings();
         }
 
@@ -97,7 +103,7 @@ namespace WinUIMusicPlayer.Services
             {
                 MusicBrowseViewModel.CurrentPlayingList = MusicBrowseViewModel.SequentialPlayingList.CreateShuffled();
             }
-        }       
+        }
 
         public void AutoPlayNextTrack()
         {
@@ -169,27 +175,27 @@ namespace WinUIMusicPlayer.Services
         public void ClearEqualizer()
         {
             IpcService.ClearEqualizer();
-        } 
+        }
         public void PlayMusic(Music music)
         {
             IpcService.Play(music.Path);
             MusicBrowseViewModel.StartProgressTimer();
-            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, (float)(MusicBrowseViewModel.Volume/100), AppData.sortOrder);
-        }        
+            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, (float)(MusicBrowseViewModel.Volume / 100), AppData.sortOrder);
+        }
 
         public void PlayButton()
-        {           
-            IpcService.PlayButton();           
-        }     
+        {
+            IpcService.PlayButton();
+        }
 
         public void ChangeWaveChannelTime(System.TimeSpan timeSpan)
         {
-            IpcService.SetPosition(timeSpan.TotalSeconds);           
+            IpcService.SetPosition(timeSpan.TotalSeconds);
         }
 
         public void SetVolume(double volume)
         {
-            IpcService.ChangeVolume(volume);            
+            IpcService.ChangeVolume(volume);
         }
 
         public async Task<double> GetCurrentPosition()
@@ -203,15 +209,15 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task<double> AdjustPlaybackPosition(int seconds)
-        {           
+        {
             return await IpcService.AdjustPlaybackPosition(seconds);
         }
 
         public void ChangingSetting()
         {
-            IpcService.UpdateSettings(true);           
+            IpcService.UpdateSettings(true);
         }
-        
+
         public async Task Dispose()
         {
             await IpcService?.Dispose();

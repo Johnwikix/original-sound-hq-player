@@ -12,7 +12,6 @@ using System.IO;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -796,7 +795,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public Visibility CheckSystemVersion() {
+        public Visibility CheckSystemVersion()
+        {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major == 10 && Environment.OSVersion.Version.Minor == 0)
             {
                 // 获取内部版本号（Build）
@@ -965,7 +965,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void OpenGitHub() {
+        private void OpenGitHub()
+        {
             _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/BassPlayerSharp"));
         }
     }

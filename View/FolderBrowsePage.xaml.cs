@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.View
         {
             base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
-        }  
+        }
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

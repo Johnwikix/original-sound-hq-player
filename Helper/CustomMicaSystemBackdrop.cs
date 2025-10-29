@@ -2,7 +2,6 @@
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
 using Windows.UI;
 
 namespace WinUIMusicPlayer.Helper

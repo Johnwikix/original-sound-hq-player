@@ -598,7 +598,8 @@ namespace WinUIMusicPlayer.Services
                     m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
                 ).OrderByDescending(m => m.Order).ToList();
             }
-            else {
+            else
+            {
                 return AppData.allSongs.AsValueEnumerable().Where(m => m.IsFavorite == true).OrderByDescending(m => m.Order).ToList();
             }
         }
@@ -1395,7 +1396,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task UpdateMusicList(IEnumerable<Music> _toUpdate) {
+        public static async Task UpdateMusicList(IEnumerable<Music> _toUpdate)
+        {
             //并行执行更新操作
             var updateTasks = _toUpdate.AsValueEnumerable().Select(async music =>
             {

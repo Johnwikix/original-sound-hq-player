@@ -131,6 +131,6 @@ namespace WinUIMusicPlayer.Services
             {
                 Debug.WriteLine($"Error: {ex.Message}");
             }
-        }        
+        }
     }
 }

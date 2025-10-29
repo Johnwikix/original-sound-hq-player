@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 SaveMetaData(inputPath, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
-        }       
+        }
 
         private void SaveMetaData(string inputFile, string outputPath)
         {

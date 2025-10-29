@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.View
             {
                 musicPlaybackService.UpdateSettings();
                 if (AppSettings.IsEqualizerEnabled)
-                {                    
+                {
                     musicPlaybackService.ToggleEqualizer();
                     musicPlaybackService.SetEqualizer();
                 }
@@ -497,7 +497,7 @@ namespace WinUIMusicPlayer.View
         public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
             try
-            {            
+            {
                 ViewModel.CurrentPlayingMusic = music;
                 ViewModel.LoadLyricsToUI();
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);

@@ -93,7 +93,7 @@ namespace WinUIMusicPlayer.View.SubView
                             await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
                         }
                         EqualizerGainChanged?.Invoke(this, frequency);
-                    }                    
+                    }
                 }
             }
         }

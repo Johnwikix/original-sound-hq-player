@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml.Controls;
-using System;
 using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,

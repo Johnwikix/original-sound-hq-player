@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref _progressSlider, value))
                 {
                     HandleProgressSliderChange(value);
-                    
+
                 }
             }
         }
@@ -351,7 +351,7 @@ namespace WinUIMusicPlayer.ViewModel
         private TimeSpan _currentTime;
         public bool isManualSelect = false;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
-        public LyricsRefreshService LyricsRefreshService { get; set;}
+        public LyricsRefreshService LyricsRefreshService { get; set; }
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;
@@ -372,7 +372,7 @@ namespace WinUIMusicPlayer.ViewModel
             SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
             StartWatchingUsbStorageDevices();
             progressTimer = new System.Timers.Timer(1000);
-            progressTimer.Elapsed += ProgressTimer_Elapsed;           
+            progressTimer.Elapsed += ProgressTimer_Elapsed;
         }
 
         private void AppSettings_OnEqUpdated(object? sender, EventArgs e)
@@ -408,7 +408,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void UpdateProgressTimerUI() {
+        public async void UpdateProgressTimerUI()
+        {
             _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
             _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
             _timeStringBuilder.Clear();
@@ -818,7 +819,7 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.UpdateCurrentPlayList();
             App.MainWindow.UpdateAppNotifyIconControl();
             _musicPlaybackService.UpdateSettings();
-            
+
         }
         [RelayCommand]
         public void OnPlayButtonChanged()

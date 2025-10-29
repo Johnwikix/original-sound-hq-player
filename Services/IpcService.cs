@@ -1,24 +1,14 @@
-﻿using ATL;
-using CommunityToolkit.Mvvm.Messaging.Messages;
-using ManagedBass.Fx;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Protection.PlayReady;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
-using static CommunityToolkit.Mvvm.ComponentModel.__Internals.__TaskExtensions.TaskAwaitableWithoutEndValidation;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -51,7 +41,8 @@ namespace WinUIMusicPlayer.Services
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
 
-        public void Initializing() {
+        public void Initializing()
+        {
             try
             {
                 _mmf = MemoryMappedFile.OpenExisting(MmfName);
@@ -77,7 +68,7 @@ namespace WinUIMusicPlayer.Services
             {
                 Debug.WriteLine($"General Client Error: {ex.Message}");
                 _isConnected = false;
-            }           
+            }
         }
 
         private void StartNotificationListener()
@@ -156,11 +147,13 @@ namespace WinUIMusicPlayer.Services
 
                 WriteToSharedMemory(RequestBufferOffset, requestJson);
 
-                try {
-                    _requestReadySemaphore.Release(); 
+                try
+                {
+                    _requestReadySemaphore.Release();
                 }
-                catch (SemaphoreFullException) { 
-                    Debug.WriteLine("Warning: Request semaphore was already signaled."); 
+                catch (SemaphoreFullException)
+                {
+                    Debug.WriteLine("Warning: Request semaphore was already signaled.");
                 }
 
                 // 3. 等待 Response 信号量
@@ -228,7 +221,7 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine($"Error reading from MMF: {ex.Message}");
                 return string.Empty;
             }
-        }        
+        }
 
         public void Play(string musicUrl)
         {
@@ -259,7 +252,8 @@ namespace WinUIMusicPlayer.Services
             _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
         }
 
-        public async Task UpdateEq() {
+        public async Task UpdateEq()
+        {
             await SendCommandAsync("UpdateEq", AppSettings.equalizerStr);
         }
 
@@ -298,24 +292,29 @@ namespace WinUIMusicPlayer.Services
             _ = SendCommandAsync("ChangeVolume", volume.ToString());
         }
 
-        public async Task<double> AdjustPlaybackPosition(int seconds) {
+        public async Task<double> AdjustPlaybackPosition(int seconds)
+        {
             var res = await SendCommandAsync("AdjustPlaybackPosition", seconds.ToString());
-            if (res.Type == 22) {
+            if (res.Type == 22)
+            {
                 return double.Parse(res.Result);
             }
             return 0;
         }
 
-        public void MusicEnd() {
+        public void MusicEnd()
+        {
             _ = SendCommandAsync("MusicEnd", string.Empty);
         }
-        public void ToggleEqualizer() {
+        public void ToggleEqualizer()
+        {
             _ = SendCommandAsync("ToggleEqualizer", string.Empty);
         }
 
         public void SetEqualizerGain(int bandIndex, float gain)
         {
-            var ipcEqGain = new IpcEqualizerGain {
+            var ipcEqGain = new IpcEqualizerGain
+            {
                 bandIndex = bandIndex,
                 gain = gain
             };
