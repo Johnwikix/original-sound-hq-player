@@ -870,4 +870,10 @@
   <data name="WasapiSharedText" xml:space="preserve">
     <value>Wasapi共享</value>
   </data>
+  <data name="MainGitHub.Content" xml:space="preserve">
+    <value>主程序GitHub</value>
+  </data>
+  <data name="PlayerGitHub.Content" xml:space="preserve">
+    <value>播放程序Github</value>
+  </data>
 </root>

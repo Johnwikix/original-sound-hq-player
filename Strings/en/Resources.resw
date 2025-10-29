@@ -870,4 +870,10 @@
   <data name="WasapiSharedText" xml:space="preserve">
     <value>Wasapi Shared</value>
   </data>
+  <data name="MainGitHub.Content" xml:space="preserve">
+    <value>Main Program GitHub</value>
+  </data>
+  <data name="PlayerGitHub.Content" xml:space="preserve">
+    <value>Audio program Github</value>
+  </data>
 </root>
