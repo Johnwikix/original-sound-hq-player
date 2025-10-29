@@ -231,6 +231,9 @@
 	  <TrimmerRootAssembly Include="SQLite-net" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="doc\img\" />
+  </ItemGroup>
   <!--
     Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
     Explorer "Package and Publish" context menu entry to be enabled for this project even if
