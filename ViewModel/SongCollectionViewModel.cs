@@ -159,9 +159,7 @@ namespace WinUIMusicPlayer.ViewModel
 
                 if (CurrentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
                 {
-                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentAlbum;
-                    //GetCover();
                     var musics = MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
                     FirstTitle = CurrentMusicObject.Album;
                     SecondTitle = string.Join(" · ", AppData.allSongs.AsValueEnumerable()
@@ -173,9 +171,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
-                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentArtist;
-                    //GetCover();
                     var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs.AsValueEnumerable()
@@ -189,9 +185,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
-                    //IsAlbumImageVisible = Visibility.Visible;
                     CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
-                    //GetCover();
                     var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs.AsValueEnumerable()
@@ -367,12 +361,6 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 }
-                //foreach (Music item in uniqueSelectedMusics)
-                //{
-                //    await MusicDatabaseService.RemoveMusic(item.Id);
-                //    ToolUtils.DeleteFileFromDisk(item.Path);
-                //    MusicList.Remove(item);
-                //}
             }
             else
             {

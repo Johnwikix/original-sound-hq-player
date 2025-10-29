@@ -195,7 +195,6 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         SelectedMusic = selectedMusic;
                         currentPage.OnScrollToMusic(selectedMusic);
-                        //_messenger.Send(new ScrollToMusicMessageHepler(selectedMusic));
                     }
                 }
             }

@@ -176,7 +176,6 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 SortMusicList(_currentSortOrder, false);
-                //ToolUtils.AlbumPageLoadCoverAsync(_groupedByFirstLetter);
             }
             catch (Exception ex)
             {
@@ -190,7 +189,6 @@ namespace WinUIMusicPlayer.ViewModel
                 .FirstOrDefault(music => music.Album == cover.Album);
             if (musicToUpdate is not null)
             {
-                //musicToUpdate.Cover = cover.Cover;
                 musicToUpdate.Year = cover.Year;
                 musicToUpdate.Album = cover.Album;
             }
@@ -205,10 +203,8 @@ namespace WinUIMusicPlayer.ViewModel
                 Music album = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    //parentPage.LoadAlbumMusic(album);
                     _musicBrowseViewModel.PageType = "album";
                     _musicBrowseViewModel.paramName = album.Album;
-                    //currentAlbumName = album.Album;
                     _musicBrowseViewModel.CurrentAlbum = album;
                     _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
                     parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);

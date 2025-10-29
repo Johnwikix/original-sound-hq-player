@@ -115,7 +115,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
             {
-                //_parentPage.LoadPlayListSong(playList);
                 _musicBrowseViewModel.PageType = "playlist";
                 _musicBrowseViewModel.paramName = playList.Name;
                 _musicBrowseViewModel.currentPlayList = playList;

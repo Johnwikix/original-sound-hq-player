@@ -181,14 +181,11 @@ namespace WinUIMusicPlayer.View
                                 {
                                     await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                                 }
-                                // 可以添加一个提示通知，表明多个歌曲已添加到播放列表
-                                //Debug.WriteLine($"已添加 {uniqueSelectedMusics.Count()} 首歌曲到播放列表: {playlist.Name}");
                             }
                             // 单选情况：只添加当前右键点击的歌曲
                             else if (musicItem is not null)
                             {
                                 await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
-                                //Debug.WriteLine($"已添加歌曲 '{musicItem.Title}' 到播放列表: {playlist.Name}");
                             }
                         };
                         addToPlaylistSubItem?.Items.Add(menuItem);

@@ -289,12 +289,6 @@ namespace WinUIMusicPlayer.Taskbar
             if (_isDisposed)
                 return;
 
-            //if (disposing)
-            //{
-            //    // 释放托管资源
-            //    ThumbButtonClicked = null;
-            //}
-
             // 释放非托管资源
             Uninitialize();
             ReleaseIcons();

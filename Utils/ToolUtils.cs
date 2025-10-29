@@ -1077,7 +1077,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception innerEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");                     // 返回null以指示错误
+                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");
                 }
 
             }

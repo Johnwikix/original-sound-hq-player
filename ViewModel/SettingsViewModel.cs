@@ -612,31 +612,16 @@ namespace WinUIMusicPlayer.ViewModel
         private void InitializeData()
         {
             _isInitized = false;
-            // 初始化封面大小  
             CoverSize = AppSettings.CoverSize;
-            // 初始化DSD增益  
             DsdGain = AppSettings.dsdGain;
-            // 初始化自动歌词开关  
             IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            // 初始化后台运行开关  
-            IsRunningBackend = AppSettings.isRunningBackend;
-            // 初始化延迟  
+            IsRunningBackend = AppSettings.isRunningBackend;  
             Latency = AppSettings.Latency;
-            // 初始化最大封面预加载数量  
-            //MaxCoverPreLoadNum = AppSettings.maxCoverPreLoadNum;
-            // 初始化封面缓存开关  
             IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-            // 初始化默认入口  
-            DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
-            // 初始化默认播放列表  
+            DefaultEntryComboBoxTag = AppSettings.DefualtEntry; 
             DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
-            // 初始化LRC API认证信息  
             LrcAPIAuth = AppSettings.LrcAPIAuth;
-            // 初始化LRC API源  
             LrcAPISource = AppSettings.LrcAPISource;
-            // 初始化输出模式  
-            //OutputModeTag = AppSettings.OutputMode;
-            // 初始化背景类型
             BackdropType = AppSettings.AppStyle;
             if (BackdropType != "CustomAcrylicStyle")
             {
@@ -651,29 +636,16 @@ namespace WinUIMusicPlayer.ViewModel
                                                  AppSettings.CustomColorRed,
                                                  AppSettings.CustomColorGreen,
                                                  AppSettings.CustomColorBlue);
-            // 初始化主题类型
             ThemeType = AppSettings.AppTheme;
-            // 初始化入口动画时间
             EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-            // 初始化滑动动画时间
             SlideAnimationTime = AppSettings.SlideAnimationTime;
-            // 初始化钻入动画时间
             DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            // 初始化进程优先级
-            //IsProcessAboveNormal = AppSettings.IsProcessAboveNormal;
-            // 初始化背景封面开关
             IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
-            // 初始化文件夹监视开关
             IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            // 初始化封面加载线程数
             CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
-            // 是否启用自定义窗口大小
             IsCustomAppSize = AppSettings.IsCustomAppSize;
-            // 高度
             AppHeight = AppSettings.AppHeight;
-            // 宽度
             AppWidth = AppSettings.AppWidth;
-            // 版本
             Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
             FontFamily = FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
@@ -683,10 +655,6 @@ namespace WinUIMusicPlayer.ViewModel
             LyricsMargin = AppSettings.LyricsMargin;
             IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             GlobalFontSize = AppSettings.GlobalFontSize;
-            //IsSongCoverEnabled = AppSettings.IsSongCoverEnabled;
-            //IsSongCollectionCoverEnabled = AppSettings.IsSongCollectionCoverEnabled;
-            //IsFavouriteCoverEnabled = AppSettings.IsFavouriteCoverEnabled;
-            //IsPlayListCoverEnabled = AppSettings.IsPlayListCoverEnabled;
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             InitializeWasapiDevice();
@@ -910,9 +878,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnCoverSizeChanged(int value)
         {
-            // 更新应用设置
             AppSettings.CoverSize = value;
-            // 保存设置
             if (_isInitized)
             {
                 _ = MusicDatabaseService.SaveSettingAsync();
@@ -921,9 +887,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnDefaultEntryComboBoxTagChanged(string value)
         {
-            // 更新应用设置
             AppSettings.DefualtEntry = value;
-            // 保存设置
             if (_isInitized)
             {
                 _ = MusicDatabaseService.SaveSettingAsync();

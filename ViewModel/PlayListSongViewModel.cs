@@ -55,7 +55,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         private MusicBrowsePage? _parentPage;
         private PlayListSongPage _currentPage;
-        //private string _lastSearchText = "";
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
         private int _currentPlayListId;
@@ -191,7 +190,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                //MusicList = new ObservableCollection<Music>(musics);
                 MusicList.Clear();
                 foreach (var music in musics)
                 {

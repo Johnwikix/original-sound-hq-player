@@ -17,8 +17,7 @@ using ZLinq;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class FavouritePlayListViewModel : ObservableObject
-    {
-        //public EventHandler MusicListViewUpdated;        
+    {      
         private ObservableCollection<Music> _musicList = [];
         public ObservableCollection<Music> MusicList
         {
