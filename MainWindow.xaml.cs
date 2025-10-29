@@ -25,17 +25,12 @@ using ZLinq;
 
 namespace WinUIMusicPlayer
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainWindow : WinUIEx.WindowEx
     {
         public event EventHandler updateMusicList;
-        //public event EventHandler SettingLoaded;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
-        //public event EventHandler updateSelectSection;
         public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
@@ -186,14 +181,6 @@ namespace WinUIMusicPlayer
             }
             catch (Exception)
             {
-            }
-        }
-
-        private async Task AutoScanFolder()
-        {
-            if (AppSettings.IsFolderWatchEnabled)
-            {
-                await AutoRescanService.AutoScan();
             }
         }
 
