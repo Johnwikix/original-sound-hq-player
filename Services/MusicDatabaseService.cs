@@ -758,7 +758,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;
-            newSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+            newSettings.equalizerStr = settings.equalizerStr;
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.CoverSize = AppSettings.CoverSize;
