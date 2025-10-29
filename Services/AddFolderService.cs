@@ -36,7 +36,6 @@ namespace WinUIMusicPlayer.Services
                     if (artists.Length > 0)
                     {
                         artist = artists[0]; // 取第一个艺术家
-                        Console.WriteLine("艺术家: " + string.Join(", ", artists));
                     }
                     if (!string.IsNullOrWhiteSpace(tag.Album))
                     {
