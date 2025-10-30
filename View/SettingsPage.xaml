@@ -275,26 +275,6 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
-                <!--<controls:SettingsExpander
-                    x:Uid="ListCoverEnable"
-                    Grid.Row="6"
-                    Margin="10,0,10,0"
-                    Description="{x:Bind tool:ToolUtils.GetString('ListCoverEnableTooltip')}">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard x:Uid="SongListCoverEnable">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsSongCoverEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="FavouriteListCoverEnabled">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsFavouriteCoverEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="SongCollectionListCoverEnable">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsSongCollectionCoverEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="PlayListCoverEnabled">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsPlayListCoverEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>-->
                 <!--  关闭按钮功能  -->
                 <controls:SettingsExpander x:Uid="CloseButtonFunction" Grid.Row="7" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
