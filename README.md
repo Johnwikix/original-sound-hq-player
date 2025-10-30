@@ -24,6 +24,12 @@
 - **DSD 输出**：支持 DSD DoP（封装为 PCM 帧）和 DSD Native（通过 ASIO 原始输出）两种方式。
 - **ASIO 支持**：原生支持 ASIO 输出，适配专业音频设备。
 
+## 🔊 独立音频核心模块
+
+原音 HQ 播放器的音频播放功能由独立模块 **BassPlayerSharp** 提供支持，该模块基于 `un4seen bass` 音频库构建，专注于实现高性能、低延迟的音频处理能力。
+
+仓库地址：[https://github.com/Johnwikix/BassPlayerSharp](https://github.com/Johnwikix/BassPlayerSharp)
+
 ## 📦 下载与安装
 
 **原音 HQ 播放器** 已上架 Microsoft Store，推荐通过官方商店获取，以确保最佳的安装和更新体验。
