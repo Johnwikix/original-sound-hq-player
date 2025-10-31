@@ -210,7 +210,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Click="CancelPlayingDetailButton_Click">
-                            <FontIcon FontSize="14" Glyph="&#xE70D;" />
+                            <FontIcon FontSize="16" Glyph="&#xE70D;" />
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Q" />
                             </Button.KeyboardAccelerators>
@@ -227,7 +227,7 @@
                                 <KeyboardAccelerator Key="F" />
                             </Button.KeyboardAccelerators>
                             <FontIcon
-                                FontSize="14"
+                                FontSize="16"
                                 x:Name="FullScreenIcon"
                                 Grid.Column="0"
                                 Margin="0"
@@ -246,7 +246,7 @@
                                 <KeyboardAccelerator Key="V" />
                             </Button.KeyboardAccelerators>
                             <FontIcon
-                                FontSize="14"
+                                FontSize="16"
                                 x:Name="VisibleIcon"
                                 Grid.Column="0"
                                 Margin="0"

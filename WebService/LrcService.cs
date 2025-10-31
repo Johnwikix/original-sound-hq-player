@@ -1,8 +1,4 @@
-﻿using Lyricify.Lyrics.Helpers;
-using Lyricify.Lyrics.Models;
-using Lyricify.Lyrics.Searchers;
-using Lyricify.Lyrics.Searchers.Helpers;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
