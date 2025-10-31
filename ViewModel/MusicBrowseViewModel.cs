@@ -332,6 +332,23 @@ namespace WinUIMusicPlayer.ViewModel
             get => _lyricsMargin;
             set => SetProperty(ref _lyricsMargin, value);
         }
+        
+        private bool _isPlayDetailButtonVisible = true;
+        public bool IsPlayDetailButtonVisible
+        {
+            get => _isPlayDetailButtonVisible;
+            set
+            {
+                if (SetProperty(ref _isPlayDetailButtonVisible, value))
+                {
+                    if (IsInitialized) {
+                        AppSettings.IsPlayDetailBtnVisible = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }                   
+                }
+            }
+        }
+
         public System.Type currentPage = typeof(SongListPage);
         public Music CurrentAlbum;
         public Music CurrentArtist;
@@ -356,6 +373,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             CurrentPlayMode = AppData.PlayMode;
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
+            IsPlayDetailButtonVisible = AppSettings.IsPlayDetailBtnVisible;
             LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
             UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
@@ -975,6 +993,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
 
         }
+
+        [RelayCommand]
+        private void PlayDetailButtonVisibleChanged() {
+            IsPlayDetailButtonVisible = !IsPlayDetailButtonVisible;
+        }
+
         private void OnSelectionChanged()
         {
             if (SortOptions.Count == 2)

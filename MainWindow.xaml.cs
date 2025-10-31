@@ -400,7 +400,7 @@ namespace WinUIMusicPlayer
 
         private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (IsPlayingDetail)
+            if (IsPlayingDetail && ContentFrame.Content.GetType() == typeof(MusicBrowsePage))
             {
                 NavigationViewControlGrid.Opacity = 0;
             }

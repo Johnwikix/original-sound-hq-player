@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer.Model
         public int dsdGain { get; set; } = 6;
         public int dsdPcmFreq { get; set; } = 88200;
         public string equalizerStr { get; set; }
+        public bool IsPlayDetailBtnVisible { get; set; } = true;
         public bool IsEqualizerEnabled { get; set; } = false;
         public int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public string EqualizerPreset { get; set; } = "Flat";
