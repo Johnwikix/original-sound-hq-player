@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Lyricify.Lyrics.Helpers;
+using Lyricify.Lyrics.Models;
+using Lyricify.Lyrics.Searchers;
+using Lyricify.Lyrics.Searchers.Helpers;
+using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
@@ -77,6 +81,19 @@ namespace WinUIMusicPlayer.WebService
             {
                 return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
             }
+        }
+
+        public static string GetLyricsFromHelper(string title, string album, string artist,TimeSpan duration) {
+            var search = SearchHelper.Search(new TrackMultiArtistMetadata()
+            {
+                Album = album,
+                AlbumArtists = new() { artist },
+                Artists = new() { artist },
+                DurationMs = (int?)duration.TotalMilliseconds,
+                Title = title,
+            }, Searchers.Netease, CompareHelper.MatchType.Medium).Result;
+            string res = Newtonsoft.Json.JsonConvert.SerializeObject(search, Newtonsoft.Json.Formatting.Indented);
+            return res;
         }
 
     }
