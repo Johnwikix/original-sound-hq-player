@@ -738,6 +738,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
+                AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
             }
         }
 
@@ -786,6 +787,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
             newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
+            newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
             if (settings is null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

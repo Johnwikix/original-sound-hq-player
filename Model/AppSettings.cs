@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer.Model
         public static int DrillInAnimationTime { get; set; } = 400;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
+        public static bool IsPlayDetailBtnVisible { get; set; } = true;
 
         public static Dictionary<string, double> equalizer = new()
         {

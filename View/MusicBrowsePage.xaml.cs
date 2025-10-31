@@ -800,7 +800,9 @@ namespace WinUIMusicPlayer.View
 
         private void TopControl_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.TopControlsOpacity = 0.0f;
+            if (!ViewModel.IsPlayDetailButtonVisible) {
+                ViewModel.TopControlsOpacity = 0.0f;
+            }           
         }
 
         private void CurrentPlayListTeachingTipPlayingDetailCloseButton_Click(object sender, RoutedEventArgs e)

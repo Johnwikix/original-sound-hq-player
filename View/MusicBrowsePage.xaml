@@ -205,18 +205,18 @@
                         </StackPanel.OpacityTransition>
                         <Button
                             x:Name="CancelPlayingDetailButton"
-                            Margin="10,0,10,0"
+                            Margin="10,0,0,0"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Click="CancelPlayingDetailButton_Click">
-                            <FontIcon Glyph="&#xE70D;" />
+                            <FontIcon FontSize="14" Glyph="&#xE70D;" />
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Q" />
                             </Button.KeyboardAccelerators>
                         </Button>
                         <Button
-                            Margin="0,0,10,0"
+                            Margin="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -227,11 +227,31 @@
                                 <KeyboardAccelerator Key="F" />
                             </Button.KeyboardAccelerators>
                             <FontIcon
+                                FontSize="14"
                                 x:Name="FullScreenIcon"
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
                                 Glyph="{x:Bind ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
+                        </Button>
+                        <Button
+                            Margin="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{x:Bind ViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}">
+                            <Button.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="V" />
+                            </Button.KeyboardAccelerators>
+                            <FontIcon
+                                FontSize="14"
+                                x:Name="VisibleIcon"
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                Glyph="{x:Bind ViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                         </Button>
                     </StackPanel>
                     <Grid Grid.Row="1" Grid.Column="0">
