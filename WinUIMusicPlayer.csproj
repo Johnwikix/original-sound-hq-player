@@ -97,7 +97,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
     <PackageReference Include="DffTagReader" Version="1.0.2" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.1" />
-    <PackageReference Include="Lyricify.Lyrics.Helper" Version="0.1.4" />
     <PackageReference Include="ManagedBass" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Asio" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.1" />

@@ -83,25 +83,25 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public static async Task<string> GetLyricsFromHelper(string title, string album, string artist,TimeSpan duration) {
-            var track = new TrackMultiArtistMetadata()
-            {
-                Album = album,
-                AlbumArtists = [artist],
-                Artists = [artist],
-                Title = title,
-                DurationMs = (int)duration.TotalMilliseconds
-            };
-            var search = await SearchHelper.Search(track, Searchers.Netease);
-            string? result = string.Empty;
-            if (search is NeteaseSearchResult neteaseResult)
-            {
-                var response = await ProviderHelper.NeteaseApi.GetLyric(neteaseResult.Id);
-                result = response?.Lrc?.Lyric;
-                result += response?.Tlyric?.Lyric;
-            }
-            return result;
-        }
+        //public static async Task<string> GetLyricsFromHelper(string title, string album, string artist,TimeSpan duration) {
+        //    var track = new TrackMultiArtistMetadata()
+        //    {
+        //        Album = album,
+        //        AlbumArtists = [artist],
+        //        Artists = [artist],
+        //        Title = title,
+        //        DurationMs = (int)duration.TotalMilliseconds
+        //    };
+        //    var search = await SearchHelper.Search(track, Searchers.Netease);
+        //    string? result = string.Empty;
+        //    if (search is NeteaseSearchResult neteaseResult)
+        //    {
+        //        var response = await ProviderHelper.NeteaseApi.GetLyric(neteaseResult.Id);
+        //        result = response?.Lrc?.Lyric;
+        //        result += response?.Tlyric?.Lyric;
+        //    }
+        //    return result;
+        //}
 
     }
 }
