@@ -934,7 +934,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
         {
-            //string res = LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
+            //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
             //Debug.WriteLine(res);
             return await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
         }
