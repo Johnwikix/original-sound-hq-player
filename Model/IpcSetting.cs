@@ -13,5 +13,6 @@
         public bool IsEqualizerEnabled { get; set; } = false;
         public float Volume { get; set; } = 0.5f;
         public bool IsSettingChanged { get; set; } = false;
+        public bool IsFadeEnabled { get; set; } = false;
     }
 }

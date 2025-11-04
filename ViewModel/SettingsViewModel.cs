@@ -585,6 +585,24 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private bool _isFadeEnabled;
+        public bool IsFadeEnabled
+        {
+            get => _isFadeEnabled;
+            set
+            {
+                if (SetProperty(ref _isFadeEnabled, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsFadeEnabled = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                        AppSettings.OnOutputSettingsUpdated();
+                    }
+                }
+            }
+        }
+
         private string _dsdPcmFreq = "88200";
         public string DsdPcmFreq
         {

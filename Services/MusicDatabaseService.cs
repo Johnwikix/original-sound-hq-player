@@ -739,6 +739,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
                 AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
+                AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
             }
         }
 
@@ -788,6 +789,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
             newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
             newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
+            newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             if (settings is null)
             {
                 await MusicDatabaseService.InsertSettings(newSettings);

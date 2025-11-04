@@ -876,4 +876,10 @@
   <data name="PlayerGitHub.Content" xml:space="preserve">
     <value>Audio program Github</value>
   </data>
+  <data name="FadeInOutDescription" xml:space="preserve">
+    <value>Only effective under DirectSound</value>
+  </data>
+  <data name="FadeInOut.Header" xml:space="preserve">
+    <value>Fade in and fade out</value>
+  </data>
 </root>

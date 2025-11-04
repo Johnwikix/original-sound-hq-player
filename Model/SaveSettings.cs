@@ -11,6 +11,7 @@ namespace WinUIMusicPlayer.Model
         public int Latency { get; set; } = 400;
         public int BassOutputDeviceId { get; set; } = -1;
         public int BassASIODeviceId { get; set; } = 0;
+        public bool IsFadeEnabled { get; set; } = false;
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public string DefualtEntry { get; set; }
         public string DefualtPlayList { get; set; }

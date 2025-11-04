@@ -247,7 +247,8 @@ namespace WinUIMusicPlayer.Services
                 dsdPcmFreq = AppSettings.dsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
                 Volume = AppData.Volume,
-                IsSettingChanged = IsSettingChanged
+                IsSettingChanged = IsSettingChanged,
+                IsFadeEnabled = AppSettings.IsFadeEnabled,
             };
             _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
         }

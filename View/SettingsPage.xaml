@@ -113,6 +113,9 @@
                             <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}" Header="DSD Dop / DSD Native">
                                 <ToggleSwitch IsOn="{x:Bind ViewModel.IsDopEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>
+                            <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}" x:Uid="FadeInOut">
+                                <ToggleSwitch IsOn="{x:Bind ViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                            </controls:SettingsCard>
                         </controls:SettingsExpander.Items>
                     </controls:SettingsExpander>
                     <controls:SettingsCard
