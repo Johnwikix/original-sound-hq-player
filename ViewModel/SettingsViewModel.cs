@@ -668,6 +668,7 @@ namespace WinUIMusicPlayer.ViewModel
             FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
             FontFamily = FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
             IsDopEnabled = AppSettings.IsDopEnabled;
+            IsFadeEnabled = AppSettings.IsFadeEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             LyricsMargin = AppSettings.LyricsMargin;
