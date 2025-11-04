@@ -2,7 +2,7 @@
 {
     public class IpcSetting
     {
-        public string PlayMode { get; set; } = "ListLoop";
+        //public string PlayMode { get; set; } = "ListLoop";
         public string OutputMode { get; set; } = "DirectSound";
         public int BassOutputDeviceId { get; set; } = -1;
         public int BassASIODeviceId { get; set; } = 0;

@@ -237,7 +237,7 @@ namespace WinUIMusicPlayer.Services
         {
             var settings = new IpcSetting
             {
-                PlayMode = ToolUtils.PlayModeToString(AppData.PlayMode),
+                //PlayMode = ToolUtils.PlayModeToString(AppData.PlayMode),
                 OutputMode = AppSettings.OutputMode,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
