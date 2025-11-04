@@ -332,5 +332,10 @@ namespace WinUIMusicPlayer.Services
             _ = SendCommandAsync("ClearEqualizer", string.Empty);
         }
 
+        public void FadeOut()
+        {
+            _ = SendCommandAsync("FadeOut", string.Empty);
+        }
+
     }
 }

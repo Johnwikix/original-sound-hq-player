@@ -13,11 +13,11 @@ namespace WinUIMusicPlayer.Model
 
         public static event EventHandler OutputSettingsChanged;
         public static event EventHandler OutputSettingsUpdated;
-        public static event EventHandler EqUpdated;
-
+        public static event EventHandler EqUpdated;        
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
+        public static bool IsFadeEnabled { get; set; } = true;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public static string DefualtEntry { get; set; } = "AddFolder";
         public static string DefualtPlayList { get; set; } = "song";
