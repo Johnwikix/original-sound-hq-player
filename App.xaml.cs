@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
@@ -149,7 +150,13 @@ namespace WinUIMusicPlayer
         }
         private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            _logger.LogError(e.Exception, "首次机会异常: {Message}", e.Exception.StackTrace);
+            var exception = e.Exception;
+            var errorMessage = new StringBuilder();
+            errorMessage.AppendLine($"首次机会异常发生：");
+            errorMessage.AppendLine($"异常类型：{exception.GetType().FullName}");
+            errorMessage.AppendLine($"异常消息：{exception.Message}");
+            errorMessage.AppendLine($"堆栈跟踪：{exception.StackTrace}");
+            _logger.LogError(exception, $"首次机会异常: {errorMessage}");
         }
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
