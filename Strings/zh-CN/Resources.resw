@@ -874,7 +874,7 @@
     <value>主程序GitHub</value>
   </data>
   <data name="PlayerGitHub.Content" xml:space="preserve">
-    <value>播放程序Github</value>
+    <value>播放程序GitHub</value>
   </data>
   <data name="FadeInOutDescription" xml:space="preserve">
     <value>只在DirectSound下生效</value>
