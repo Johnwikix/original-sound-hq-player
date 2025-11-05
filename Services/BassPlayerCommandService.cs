@@ -186,6 +186,15 @@ namespace WinUIMusicPlayer.Services
         public void PlayButton()
         {
             IpcService.PlayButton();
+            if (AppSettings.isPlaying) {
+                AppSettings.isPlaying = false;
+                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+                MusicBrowseViewModel.StopProgressTimer();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MusicBrowseViewModel.IsPlaying = AppSettings.isPlaying;
+                });
+            }
         }
 
         public void ChangeWaveChannelTime(System.TimeSpan timeSpan)
