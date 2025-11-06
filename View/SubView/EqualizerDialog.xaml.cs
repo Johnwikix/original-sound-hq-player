@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.View.SubView
                 else if (presetName == "Custom")
                 {
                     SaveSettings settings = await MusicDatabaseService.GetSettings();
-                    AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
+                    AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings?.equalizerStr);
                     InitializeSliders();
                 }
                 AppSettings.equalizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
