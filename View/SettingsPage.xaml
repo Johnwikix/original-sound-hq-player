@@ -56,7 +56,7 @@
                 </Grid.RowDefinitions>
                 <Grid.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
-                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                    <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </Grid.ChildrenTransitions>
                 <TextBlock
                     x:Uid="SettingAudio"

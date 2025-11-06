@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
+using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Manager;
@@ -447,16 +448,16 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
-        public static AudioFileInfo GetAudioInfo(string filePath)
+        public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)
         {
             BassManager.Initialize();
             int stream = 0;
             AudioFileInfo fileInfo = new();
             try
             {
-                if (Path.GetExtension(filePath) == ".dff")
+                if (Path.GetExtension(file.Path) == ".dff")
                 {
-                    stream = BassDsd.CreateStream(filePath, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
+                    stream = BassDsd.CreateStream(file.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
                     Bass.ChannelGetInfo(stream, out ChannelInfo info);
                     Bass.ChannelGetAttribute(
                                         stream,
@@ -464,40 +465,66 @@ namespace WinUIMusicPlayer.Utils
                                         out var bitrate
                     );
                     double totalSeconds = Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
-                    Bass.StreamFree(stream);
                     fileInfo.BitDepth = 1;
                     fileInfo.BitRate = (int)bitrate;
                     fileInfo.SampleRate = info.Frequency * 16;
                     fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
-                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(filePath, true);
-                    fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(filePath);
+                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(file.Path, true);
+                    fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(file.Path);
                     fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
                     fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
                     fileInfo.Year = int.TryParse(dict?.TextTags["TYER"], out int year) ? year : 0;
                     fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
                 }
                 else
-                {
-                    Track track = new(filePath);
-                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(filePath) : track?.Title;
-                    fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track?.Album;
-                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track?.Artist;
-                    fileInfo.Duration = TimeSpan.FromSeconds(track?.Duration ?? 0);
-                    fileInfo.SampleRate = (int)track?.SampleRate;
-                    fileInfo.ChannelCount = track?.ChannelsArrangement.NbChannels ?? 0;
-                    fileInfo.BitDepth = track?.BitDepth ?? 0;
-                    fileInfo.BitRate = track?.Bitrate ?? 0;
-                    fileInfo.Year = track?.Year ?? 0;
-                    fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0 ? track?.Lyrics[0].UnsynchronizedLyrics : string.Empty;
-                    fileInfo.TrackNumber = track?.TrackNumber ?? 0;
+                {                    
+                    MusicProperties musicProps = await file.Properties.GetMusicPropertiesAsync();
+                    stream = Bass.CreateStream(file.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
+                    Bass.ChannelGetInfo(stream, out ChannelInfo info);
+                    Track track = new(file.Path);
+                    fileInfo.Title = string.IsNullOrEmpty(musicProps?.Title)
+                                ? (string.IsNullOrEmpty(track?.Title)
+                                   ? Path.GetFileNameWithoutExtension(file.Path)
+                                        : track.Title)
+                                : musicProps.Title;
+                    fileInfo.Album = string.IsNullOrEmpty(track?.Album)
+                                        ? (string.IsNullOrEmpty(musicProps?.Album) ? "未知专辑" : musicProps.Album)
+                                     : track.Album;
+                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist)
+                                        ? (string.IsNullOrEmpty(musicProps?.Artist) ? "未知艺术家" : musicProps.Artist)
+                                    : track.Artist;
+                    fileInfo.Duration = (track?.Duration ?? 0) != 0
+                                        ? TimeSpan.FromSeconds(track.Duration)
+                                        : musicProps?.Duration ?? TimeSpan.Zero;
+                    fileInfo.SampleRate = info.Frequency;
+                    fileInfo.ChannelCount = info.Channels;
+                    fileInfo.BitDepth = info.OriginalResolution;
+                    fileInfo.BitRate = (track?.Bitrate ?? 0) != 0
+                                        ? (track?.Bitrate ?? 0)
+                                    : (int)(musicProps?.Bitrate ?? 0);
+                    fileInfo.Year = (track?.Year ?? 0) != 0
+                            ? track.Year ?? 0
+                            : (int)(musicProps?.Year ?? 0);
+                    fileInfo.TrackNumber = (track?.TrackNumber ?? 0) != 0
+                        ? track.TrackNumber ?? 0
+                        : (int)(musicProps?.TrackNumber ?? 0);
                     fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+                    fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
+                        ? track.Lyrics[0].UnsynchronizedLyrics
+                        : string.Empty;
                 }
                 return fileInfo;
             }
             catch (Exception)
             {
-                fileInfo.Title = Path.GetFileNameWithoutExtension(filePath);
+                fileInfo.Title = Path.GetFileNameWithoutExtension(file.Path);
                 return fileInfo;
+            }
+            finally {                 
+                if (stream != 0)
+                {
+                    Bass.StreamFree(stream);
+                }
             }
         }
 
@@ -972,7 +999,6 @@ namespace WinUIMusicPlayer.Utils
                 using (TagLib.File audioFile = TagLib.File.Create(file.Path))
                 {
                     Tag tag = audioFile.Tag;
-
                     string title = "未知标题";
                     string artist = "未知艺术家";
                     string album = "未知专辑";
@@ -1049,7 +1075,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception)
             {
-                AudioFileInfo wavFileInfo = ToolUtils.GetAudioInfo(file.Path);
+                AudioFileInfo wavFileInfo = await ToolUtils.GetAudioInfo(file);
                 try
                 {
                     var music = new Music
