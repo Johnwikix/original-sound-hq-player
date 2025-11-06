@@ -46,6 +46,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
                 await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
+            InitalizeSettings();
         }
 
         private static void InitalizeDbPath()
@@ -78,6 +79,58 @@ namespace WinUIMusicPlayer.Services
             catch (Exception)
             {
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            }
+        }
+
+        private static async void InitalizeSettings() {
+            SaveSettings settings = await GetSettings();            
+            if (settings is null)
+            {
+                SaveSettings newSettings = new SaveSettings();
+                newSettings.OutputMode = AppSettings.OutputMode;
+                newSettings.Latency = AppSettings.Latency;
+                newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+                newSettings.DefualtEntry = AppSettings.DefualtEntry;
+                newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
+                newSettings.LrcAPISource = AppSettings.LrcAPISource;
+                newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
+                newSettings.AppStyle = AppSettings.AppStyle;
+                newSettings.AppTheme = AppSettings.AppTheme;
+                newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+                newSettings.isRunningBackend = AppSettings.isRunningBackend;
+                newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+                newSettings.dsdGain = AppSettings.dsdGain;
+                newSettings.equalizerStr = AppSettings.equalizerStr;
+                newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+                newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
+                newSettings.CoverSize = AppSettings.CoverSize;
+                newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
+                newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
+                newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
+                newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
+                newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+                newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
+                newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
+                newSettings.AppHeight = AppSettings.AppHeight;
+                newSettings.AppWidth = AppSettings.AppWidth;
+                newSettings.GlobalFont = AppSettings.GlobalFont.Source;
+                newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
+                newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
+                newSettings.CustomColorRed = AppSettings.CustomColorRed;
+                newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
+                newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
+                newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
+                newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+                newSettings.LyricsMargin = AppSettings.LyricsMargin;
+                newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
+                newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
+                newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
+                newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
+                newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
+                newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
+                newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
+                newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
+                await MusicDatabaseService.InsertSettings(newSettings);
             }
         }
 
@@ -1055,11 +1108,6 @@ namespace WinUIMusicPlayer.Services
         private async static Task<Music> updateMusic(Music music)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            //var existingMusic = AppData.allSongs.AsValueEnumerable().Where(m => m.Path == music.Path).FirstOrDefault();
-            //if (existingMusic is null)
-            //{
-            //    return null;
-            //}
             Music newMusic = await ToolUtils.GetMusicInfo(storageFile);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
