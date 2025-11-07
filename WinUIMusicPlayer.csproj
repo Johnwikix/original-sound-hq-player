@@ -96,7 +96,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
     <PackageReference Include="DffTagReader" Version="1.0.2" />
-    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.1" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.3.2" />
     <PackageReference Include="ManagedBass" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Asio" Version="4.0.1" />
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.1" />
@@ -122,7 +122,7 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.7" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.8.0" />
-    <PackageReference Include="z440.atl.core" Version="7.5.0" />
+    <PackageReference Include="z440.atl.core" Version="7.6.0" />
     <PackageReference Include="ZLinq" Version="1.5.3" />
   </ItemGroup>
   <ItemGroup>
