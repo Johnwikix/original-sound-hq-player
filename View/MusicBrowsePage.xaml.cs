@@ -1,9 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -720,6 +723,34 @@ namespace WinUIMusicPlayer.View
             _ = equalizerDialog.ShowAsync();
         }
 
+        private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            // 1. 定义模糊效果
+            var gaussianBlurEffect = new GaussianBlurEffect
+            {
+                BlurAmount = blurAmount,
+                Source = new CompositionEffectSourceParameter("Source"),
+                Optimization = EffectOptimization.Balanced,
+                BorderMode = EffectBorderMode.Soft
+            };
+
+            // 2. 创建效果工厂
+            var effectFactory = compositor.CreateEffectFactory(gaussianBlurEffect);
+
+            var backdropBrush = compositor.CreateBackdropBrush();
+            var effectBrush = effectFactory.CreateBrush();
+            effectBrush.SetSourceParameter("Source", backdropBrush);
+
+            var spriteVisual = compositor.CreateSpriteVisual();
+            spriteVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
+            spriteVisual.Brush = effectBrush;
+
+            ElementCompositionPreview.SetElementChildVisual(element, spriteVisual);
+        }
+
         private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var textblock = (TextBlock)sender;
@@ -727,16 +758,18 @@ namespace WinUIMusicPlayer.View
             {
                 var currentScrollPosition = LyricViewer.VerticalOffset;
                 var point = new Point(0, currentScrollPosition);
-
+                ApplyBlurToArea(textblock, 0);
                 // 计算出目标位置并滚动
                 var targetPosition = textblock.TransformToVisual(LyricViewer).TransformPoint(point);
-
                 LyricViewer.ChangeView(
                     null,
                     (targetPosition.Y - LyricViewer.ActualHeight / 2) + 30,
                     null,
                     disableAnimation: false
                 );
+            }
+            else {
+                ApplyBlurToArea(textblock, 2);
             }
         }
 
@@ -759,7 +792,8 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                textBlock.Opacity = 1.0;
+                ApplyBlurToArea(textBlock, 0);
+                //textBlock.Opacity = 1.0;
             }
         }
 
@@ -769,11 +803,13 @@ namespace WinUIMusicPlayer.View
             {
                 if (!lyricLine.IsCurrent)
                 {
-                    textBlock.Opacity = 0.7;
+                    ApplyBlurToArea(textBlock, 2);
+                    //textBlock.Opacity = 0.7;
                 }
                 else
                 {
-                    textBlock.Opacity = 1.0;
+                    ApplyBlurToArea(textBlock, 0);
+                    //textBlock.Opacity = 1.0;
                 }
             }
         }

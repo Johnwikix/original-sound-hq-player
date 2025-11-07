@@ -227,11 +227,11 @@
                                 <KeyboardAccelerator Key="F" />
                             </Button.KeyboardAccelerators>
                             <FontIcon
-                                FontSize="16"
                                 x:Name="FullScreenIcon"
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
+                                FontSize="16"
                                 Glyph="{x:Bind ViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                         </Button>
                         <Button
@@ -246,11 +246,11 @@
                                 <KeyboardAccelerator Key="V" />
                             </Button.KeyboardAccelerators>
                             <FontIcon
-                                FontSize="16"
                                 x:Name="VisibleIcon"
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
+                                FontSize="16"
                                 Glyph="{x:Bind ViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                         </Button>
                     </StackPanel>
@@ -689,20 +689,27 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:DataType="model:LyricLine">
-                                            <TextBlock
-                                                x:Name="LyricsTextBlock"
-                                                Margin="0,8,0,8"
-                                                HorizontalAlignment="Stretch"
-                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                                PointerEntered="LyricsTextBlock_PointerEntered"
-                                                PointerExited="LyricsTextBlock_PointerExited"
-                                                SizeChanged="LyricsTextBlock_SizeChanged"
-                                                Text="{x:Bind Text}"
-                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                TextWrapping="WrapWholeWords" />
+                                            <Border
+                                                x:Name="BlurArea"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent">
+                                                <TextBlock
+                                                    x:Name="LyricsTextBlock"
+                                                    Margin="0"
+                                                    Padding="8"
+                                                    HorizontalAlignment="Stretch"
+                                                    FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                    FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                    FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                    Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                                                    PointerEntered="LyricsTextBlock_PointerEntered"
+                                                    PointerExited="LyricsTextBlock_PointerExited"
+                                                    SizeChanged="LyricsTextBlock_SizeChanged"
+                                                    Text="{x:Bind Text}"
+                                                    TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </Border>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
