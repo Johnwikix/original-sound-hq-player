@@ -12,8 +12,10 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.UI;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -44,7 +46,8 @@ namespace WinUIMusicPlayer.View
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
         private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
-
+        private TextBlock _currentAnimatingTextBlock;
+        private DispatcherTimer _currentAnimationTimer;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
@@ -752,14 +755,15 @@ namespace WinUIMusicPlayer.View
         }
 
         private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
+        {            
             var textblock = (TextBlock)sender;
             if ((!AppSettings.IsGlobalFontSizeEnabled && (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 36 || textblock.FontSize == 40 || textblock.FontSize == 44)) || (AppSettings.IsGlobalFontSizeEnabled && textblock.FontSize == AppSettings.GlobalFontSize))
             {
                 var currentScrollPosition = LyricViewer.VerticalOffset;
-                var point = new Point(0, currentScrollPosition);
+                var point = new Point(0, currentScrollPosition);                
                 ApplyBlurToArea(textblock, 0);
                 // 计算出目标位置并滚动
+
                 var targetPosition = textblock.TransformToVisual(LyricViewer).TransformPoint(point);
                 LyricViewer.ChangeView(
                     null,
@@ -767,10 +771,73 @@ namespace WinUIMusicPlayer.View
                     null,
                     disableAnimation: false
                 );
+                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
             }
             else {
                 ApplyBlurToArea(textblock, 2);
             }
+        }
+
+        private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
+        {
+            CancelCurrentAnimation();
+            // 初始化 Clip
+            var clipGeometry = new RectangleGeometry
+            {
+                Rect = new Windows.Foundation.Rect(0, 0, 0, textBlock.ActualHeight)
+            };
+            textBlock.Clip = clipGeometry;
+
+            var startTime = DateTime.Now;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) }; // ~60fps
+
+            timer.Tick += (s, e) =>
+            {
+                var elapsed = DateTime.Now - startTime;
+                var progress = Math.Min(1.0, elapsed.TotalSeconds / duration.TotalSeconds);
+                var width = textBlock.ActualWidth * progress;
+
+                clipGeometry.Rect = new Windows.Foundation.Rect(0, 0, width, textBlock.ActualHeight);
+
+                if (progress >= 1.0)
+                {
+                    timer.Stop();
+                    _currentAnimationTimer = null;
+                    _currentAnimatingTextBlock = null;
+                }
+            };
+            // 缓存当前动画
+            _currentAnimatingTextBlock = textBlock;
+            _currentAnimationTimer = timer;
+            timer.Start();
+        }
+
+        // 取消当前动画
+        public void CancelCurrentAnimation()
+        {
+            if (_currentAnimationTimer != null)
+            {
+                _currentAnimationTimer.Stop();
+                _currentAnimationTimer = null;
+            }
+
+            if (_currentAnimatingTextBlock != null)
+            {
+                _currentAnimatingTextBlock.Clip = null; // 清除裁剪,恢复完整显示
+                _currentAnimatingTextBlock = null;
+            }
+        }
+
+        private Color GetResourceColor(string key, Color fallbackColor)
+        {
+            if (Application.Current.Resources.TryGetValue(key, out object resourceValue))
+            {
+                if (resourceValue is SolidColorBrush solidBrush)
+                {
+                    return solidBrush.Color;
+                }
+            }
+            return fallbackColor;
         }
 
         private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)

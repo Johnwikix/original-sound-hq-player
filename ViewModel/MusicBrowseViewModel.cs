@@ -369,6 +369,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool isManualSelect = false;
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         public LyricsRefreshService LyricsRefreshService { get; set; }
+        public TimeSpan LyricsDurationTime = TimeSpan.Zero;
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
         {
             CurrentPlayMode = AppData.PlayMode;
@@ -775,6 +776,17 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (LastLyricIndex == index)
                 return;
+            TimeSpan duration = TimeSpan.Zero;
+            if (index >= 0 && index < UILyrics.Count)
+            {
+                int nextIndex = index + 1;
+                if (nextIndex < UILyrics.Count)
+                {
+                    TimeSpan currentTime = UILyrics[index].Time;
+                    TimeSpan nextTime = UILyrics[nextIndex].Time;
+                    LyricsDurationTime = nextTime.Subtract(currentTime);
+                }
+            }
             App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
                 try
@@ -782,7 +794,7 @@ namespace WinUIMusicPlayer.ViewModel
                     for (int i = 0; i < UILyrics.Count; i++)
                     {
                         var lyric = UILyrics[i];
-                        UILyrics[i].IsCurrent = (i == index);
+                        UILyrics[i].IsCurrent = (i == index);                        
                     }
                     LastLyricIndex = index;
                 }
