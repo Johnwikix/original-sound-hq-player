@@ -122,7 +122,7 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.7" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.8.0" />
-    <PackageReference Include="z440.atl.core" Version="7.6.0" />
+    <PackageReference Include="z440.atl.core" Version="7.7.0" />
     <PackageReference Include="ZLinq" Version="1.5.3" />
   </ItemGroup>
   <ItemGroup>

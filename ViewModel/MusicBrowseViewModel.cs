@@ -390,7 +390,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
             StartWatchingUsbStorageDevices();
-            progressTimer = new System.Timers.Timer(1000);
+            progressTimer = new System.Timers.Timer(200);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
         }
 

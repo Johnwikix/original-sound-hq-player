@@ -478,39 +478,23 @@ namespace WinUIMusicPlayer.Utils
                 }
                 else
                 {                    
-                    MusicProperties musicProps = await file.Properties.GetMusicPropertiesAsync();
                     stream = Bass.CreateStream(file.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
                     Bass.ChannelGetInfo(stream, out ChannelInfo info);
                     Track track = new(file.Path);
-                    fileInfo.Title = string.IsNullOrEmpty(musicProps?.Title)
-                                ? (string.IsNullOrEmpty(track?.Title)
-                                   ? Path.GetFileNameWithoutExtension(file.Path)
-                                        : track.Title)
-                                : musicProps.Title;
-                    fileInfo.Album = string.IsNullOrEmpty(track?.Album)
-                                        ? (string.IsNullOrEmpty(musicProps?.Album) ? "未知专辑" : musicProps.Album)
-                                     : track.Album;
-                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist)
-                                        ? (string.IsNullOrEmpty(musicProps?.Artist) ? "未知艺术家" : musicProps.Artist)
-                                    : track.Artist;
+                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path): track.Title;
+                    fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
+                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist;
                     fileInfo.Duration = (track?.Duration ?? 0) != 0
-                                        ? TimeSpan.FromSeconds(track.Duration)
-                                        : musicProps?.Duration ?? TimeSpan.Zero;
-                    fileInfo.SampleRate = info.Frequency;
+                                        ? TimeSpan.FromSeconds(track.Duration) : TimeSpan.FromSeconds(Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream)));
+                    fileInfo.SampleRate = (int)(track?.SampleRate ?? info.Frequency);
                     fileInfo.ChannelCount = info.Channels;
                     fileInfo.BitDepth = info.OriginalResolution;
-                    fileInfo.BitRate = (track?.Bitrate ?? 0) != 0
-                                        ? (track?.Bitrate ?? 0)
-                                    : (int)(musicProps?.Bitrate ?? 0);
-                    fileInfo.Year = (track?.Year ?? 0) != 0
-                            ? track.Year ?? 0
-                            : (int)(musicProps?.Year ?? 0);
-                    fileInfo.TrackNumber = (track?.TrackNumber ?? 0) != 0
-                        ? track.TrackNumber ?? 0
-                        : (int)(musicProps?.TrackNumber ?? 0);
+                    fileInfo.BitRate = track?.Bitrate ?? 0;
+                    fileInfo.Year = track?.Year ?? 0;
+                    fileInfo.TrackNumber = track?.TrackNumber ?? 0;
                     fileInfo.DiskNumber = track?.DiscNumber ?? 0;
                     fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
-                        ? track.Lyrics[0].UnsynchronizedLyrics
+                        ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics)
                         : string.Empty;
                 }
                 return fileInfo;
@@ -526,6 +510,32 @@ namespace WinUIMusicPlayer.Utils
                     Bass.StreamFree(stream);
                 }
             }
+        }
+
+        private static string ParseLyrics(IList<LyricsInfo.LyricsPhrase> SynchronizedLyrics)
+        {
+            string lyrics = string.Empty;
+            foreach (LyricsInfo.LyricsPhrase phrase in SynchronizedLyrics)
+            {
+                lyrics += "[" + EncodeTimecode_ms(phrase.TimestampStart) + "] " + phrase.Text + "\n";
+            }
+            return lyrics;
+        }
+
+        private static string EncodeTimecode_ms(int timestampMs)
+        {
+            // 确保时间戳不为负数（处理可能的异常值）
+            int ms = Math.Max(timestampMs, 0);
+
+            // 拆分时间单位
+            int totalSeconds = ms / 1000;
+            int milliseconds = ms % 1000;
+
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+
+            // 格式化输出（分:秒.毫秒，补零对齐）
+            return $"{minutes:D2}:{seconds:D2}.{milliseconds:D3}";
         }
 
         public static bool IsMusicFile(string fileType)
@@ -843,10 +853,24 @@ namespace WinUIMusicPlayer.Utils
                 {
                     try
                     {
-                        await GetPicFromNet(null, music, bitmap);
+                        Track track = new(music.Path);
+                        byte[] picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
+                            ? track?.EmbeddedPictures[0]?.PictureData
+                            : null;
+                        if (picture is not null)
+                        {
+                            await DecodePicture(picture, music.Album, bitmap);
+                        } else {
+                            await GetPicFromNet(null, music, bitmap);
+                        }
                     }
-                    catch (Exception)
+                    catch
                     {
+                        try
+                        {
+                            await GetPicFromNet(null, music, bitmap);
+                        }
+                        catch { }
                     }
                 }
             });
