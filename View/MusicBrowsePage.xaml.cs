@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
@@ -48,6 +49,8 @@ namespace WinUIMusicPlayer.View
         private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
         private TextBlock _currentAnimatingTextBlock;
         private DispatcherTimer _currentAnimationTimer;
+        private CancellationTokenSource _scrollCancellation;
+
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
@@ -100,9 +103,6 @@ namespace WinUIMusicPlayer.View
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();
-            //Task.Run(() => {
-            //    ViewModel.OnFileChanged(null, null);
-            //});
             ViewModel.IsInitialized = true;
             this.Loaded += OnPageLoaded;
         }
@@ -754,28 +754,60 @@ namespace WinUIMusicPlayer.View
             ElementCompositionPreview.SetElementChildVisual(element, spriteVisual);
         }
 
-        private void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
-        {            
+        private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
             var textblock = (TextBlock)sender;
-            if ((!AppSettings.IsGlobalFontSizeEnabled && (textblock.FontSize == 28 || textblock.FontSize == 32 || textblock.FontSize == 36 || textblock.FontSize == 40 || textblock.FontSize == 44)) || (AppSettings.IsGlobalFontSizeEnabled && textblock.FontSize == AppSettings.GlobalFontSize))
-            {
-                var currentScrollPosition = LyricViewer.VerticalOffset;
-                var point = new Point(0, currentScrollPosition);                
-                ApplyBlurToArea(textblock, 0);
-                // 计算出目标位置并滚动
+            bool isCurrentLyric = (!AppSettings.IsGlobalFontSizeEnabled &&
+                                  (textblock.FontSize == 28 || textblock.FontSize == 32 ||
+                                   textblock.FontSize == 36 || textblock.FontSize == 40 ||
+                                   textblock.FontSize == 44)) ||
+                                  (AppSettings.IsGlobalFontSizeEnabled &&
+                                   textblock.FontSize == AppSettings.GlobalFontSize);
 
-                var targetPosition = textblock.TransformToVisual(LyricViewer).TransformPoint(point);
-                LyricViewer.ChangeView(
-                    null,
-                    (targetPosition.Y - LyricViewer.ActualHeight / 2) + 30,
-                    null,
-                    disableAnimation: false
-                );
+            if (isCurrentLyric)
+            {
                 StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
+                var container = ToolUtils.FindParent<ListViewItem>(textblock);
+                if (container == null) return;
+                try
+                {
+                    _scrollCancellation?.Cancel();
+                    _scrollCancellation = new CancellationTokenSource();
+                    var transform = container.TransformToVisual(LyricViewer.Content as UIElement);
+                    var targetPoint = transform.TransformPoint(new Point(0, 0));
+                    double startOffset = LyricViewer.VerticalOffset;
+                    double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
+                    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
+                    //ApplyBlurToArea(textblock, 0);                    
+                }
+                catch (OperationCanceledException) { }
+                catch { }
             }
-            else {
-                ApplyBlurToArea(textblock, 2);
+        }
+
+        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken,int duration = 1000,int fps = 120)
+        {
+            double distance = targetOffset - startOffset;
+            if (Math.Abs(distance) < 1)
+            {
+                LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
+                return;
             }
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            while (stopwatch.ElapsedMilliseconds < duration)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+                // 计算进度 (0 到 1)
+                double progress = (double)stopwatch.ElapsedMilliseconds / duration;
+                progress = Math.Min(progress, 1.0);
+                double easedProgress = 1 - Math.Pow(1 - progress, 4);
+                // 计算当前偏移量
+                double currentOffset = startOffset + distance * easedProgress;
+                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: false);
+                await Task.Delay(1000 / fps, cancellationToken);
+            }
+            LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: false);
         }
 
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
@@ -859,8 +891,8 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                ApplyBlurToArea(textBlock, 0);
-                //textBlock.Opacity = 1.0;
+                //ApplyBlurToArea(textBlock, 0);
+                textBlock.Opacity = 1.0;
             }
         }
 
@@ -870,13 +902,13 @@ namespace WinUIMusicPlayer.View
             {
                 if (!lyricLine.IsCurrent)
                 {
-                    ApplyBlurToArea(textBlock, 2);
-                    //textBlock.Opacity = 0.7;
+                    //ApplyBlurToArea(textBlock, 2);
+                    textBlock.Opacity = 0.7;
                 }
                 else
                 {
-                    ApplyBlurToArea(textBlock, 0);
-                    //textBlock.Opacity = 1.0;
+                    //ApplyBlurToArea(textBlock, 0);
+                    textBlock.Opacity = 1.0;
                 }
             }
         }
