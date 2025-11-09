@@ -903,7 +903,7 @@ namespace WinUIMusicPlayer.View
                 if (!lyricLine.IsCurrent)
                 {
                     //ApplyBlurToArea(textBlock, 2);
-                    textBlock.Opacity = 0.7;
+                    textBlock.Opacity = 0;
                 }
                 else
                 {

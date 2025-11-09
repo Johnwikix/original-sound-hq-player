@@ -689,45 +689,38 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:DataType="model:LyricLine">
-                                            <Border
-                                                x:Name="BlurArea"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Background="Transparent">
-                                                <!--  使用 Grid 叠加两层 TextBlock  -->
-                                                <Grid>
-                                                    <!--  底层 TextBlock (未高亮/灰色)  -->
-                                                    <TextBlock
-                                                        x:Name="LyricsTextBlockBase"
-                                                        Margin="0"
-                                                        Padding="8"
-                                                        HorizontalAlignment="Stretch"
-                                                        FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                        FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                        FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                        Opacity="0.7"
-                                                        Text="{x:Bind Text}"
-                                                        TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                        TextWrapping="WrapWholeWords" />
+                                            <Grid>
+                                                <!--  底层 TextBlock (未高亮/灰色)  -->
+                                                <TextBlock
+                                                    x:Name="LyricsTextBlockBase"
+                                                    Margin="0"
+                                                    Padding="8"
+                                                    HorizontalAlignment="Stretch"
+                                                    FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                    FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                    FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                    Opacity="0.6"
+                                                    Text="{x:Bind Text}"
+                                                    TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                    TextWrapping="WrapWholeWords" />
 
-                                                    <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
-                                                    <TextBlock
-                                                        x:Name="LyricsTextBlock"
-                                                        Margin="0"
-                                                        Padding="8"
-                                                        HorizontalAlignment="Stretch"
-                                                        FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                        FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                        FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                        Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                                        PointerEntered="LyricsTextBlock_PointerEntered"
-                                                        PointerExited="LyricsTextBlock_PointerExited"
-                                                        SizeChanged="LyricsTextBlock_SizeChanged"
-                                                        Text="{x:Bind Text}"
-                                                        TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                        TextWrapping="WrapWholeWords" />
-                                                </Grid>
-                                            </Border>
+                                                <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
+                                                <TextBlock
+                                                    x:Name="LyricsTextBlock"
+                                                    Margin="0"
+                                                    Padding="8"
+                                                    HorizontalAlignment="Stretch"
+                                                    FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                    FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                    FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                    Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                                                    PointerEntered="LyricsTextBlock_PointerEntered"
+                                                    PointerExited="LyricsTextBlock_PointerExited"
+                                                    SizeChanged="LyricsTextBlock_SizeChanged"
+                                                    Text="{x:Bind Text}"
+                                                    TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                    TextWrapping="WrapWholeWords" />
+                                            </Grid>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
