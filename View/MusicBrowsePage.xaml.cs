@@ -766,7 +766,7 @@ namespace WinUIMusicPlayer.View
 
             if (isCurrentLyric)
             {
-                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
+                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);               
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
                 try
@@ -805,9 +805,66 @@ namespace WinUIMusicPlayer.View
                 // 计算当前偏移量
                 double currentOffset = startOffset + distance * easedProgress;
                 LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: false);
+                UpdateLyricsOpacity();
                 await Task.Delay(1000 / fps, cancellationToken);
             }
             LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: false);
+        }
+
+        private void UpdateLyricsOpacity(double maxOpacity = 0.6, double minOpacity = 0.01)
+        {
+            // 1. 确定参考点 (LyricViewer的中心点)
+            double viewerCenter = LyricViewer.VerticalOffset + (LyricViewer.ActualHeight / 2);
+            double maxDistance = LyricViewer.ActualHeight / 2.2;
+            // 遍历所有可见的歌词项
+            var panel = LyricsListView.ItemsPanelRoot as ItemsStackPanel;
+            if (panel == null) return;
+
+            for (int i = panel.FirstVisibleIndex; i <= panel.LastVisibleIndex; i++)
+            {
+                var itemContainer = LyricsListView.ContainerFromIndex(i) as ListViewItem;
+                if (itemContainer == null) continue;
+
+                // 2. 获取歌词项的内容 (DataTemplate中的Grid)
+                var lyricGrid = itemContainer.ContentTemplateRoot as Grid;
+                if (lyricGrid == null) continue;
+
+                // 找到底层 TextBlock
+                var baseTextBlock = lyricGrid.FindName("LyricsTextBlockBase") as TextBlock;
+                if (baseTextBlock == null) continue;
+
+                // 3. 计算歌词项中心点到 LyricViewer 中心的距离
+                var transform = itemContainer.TransformToVisual(LyricViewer.Content as UIElement);
+                var itemTop = transform.TransformPoint(new Point(0, 0)).Y;
+
+                // 歌词项的中心垂直位置
+                double itemCenter = itemTop + (itemContainer.ActualHeight / 2);
+
+                // 绝对距离
+                double distance = Math.Abs(itemCenter - viewerCenter);
+
+                // 4. 映射距离到透明度 [0.0, 1.0]
+                double opacity;
+
+                if (distance >= maxDistance)
+                {
+                    // 距离太远，设置为最低透明度（例如 0.2 或 0.0）
+                    opacity = minOpacity;
+                }
+                else
+                {
+                    // 使用线性插值：距离为0时透明度为1.0，距离为maxDistance时透明度为0.2
+                    // 1.0 - ((distance / maxDistance) * (1.0 - 0.2))
+                    double normalizedDistance = distance / maxDistance;
+                    // 假设当前播放行（IsCurrent）的 Opacity 是 1.0，最远的非当前行是 0.2
+                    opacity = maxOpacity - (normalizedDistance * (maxOpacity - minOpacity));
+                    // 确保透明度不低于设定的最小值
+                    opacity = Math.Max(opacity, minOpacity);
+                }
+
+                // 5. 应用透明度到底层 TextBlock
+                baseTextBlock.Opacity = opacity;
+            }
         }
 
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
@@ -834,6 +891,7 @@ namespace WinUIMusicPlayer.View
                 if (progress >= 1.0)
                 {
                     timer.Stop();
+                    textBlock.Clip = null;
                     _currentAnimationTimer = null;
                     _currentAnimatingTextBlock = null;
                 }
