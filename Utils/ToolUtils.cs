@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -379,9 +380,24 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return picture;
             }
-            catch (Exception)
+            catch
             {
-                return await GetPicByteFromNet(music, isManual);
+                try {
+                    Track track = new(music.Path);
+                    byte[] picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
+                        ? track?.EmbeddedPictures[0]?.PictureData
+                        : null;
+                    if (picture is not null)
+                    {
+                        return picture;
+                    }
+                    else
+                    {
+                        return await GetPicByteFromNet(music, isManual);
+                    }
+                } catch {
+                    return await GetPicByteFromNet(music, isManual);
+                }                
             }
         }
 
