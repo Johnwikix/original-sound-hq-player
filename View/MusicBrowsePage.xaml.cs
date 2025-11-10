@@ -932,7 +932,7 @@ namespace WinUIMusicPlayer.View
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken, int duration = 1000, int fps = 100)
+        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken, int duration = 400, int fps = 100)
         {
             double distance = targetOffset - startOffset;
             if (Math.Abs(distance) < 1)
@@ -951,7 +951,7 @@ namespace WinUIMusicPlayer.View
                 progress = Math.Min(progress, 1.0);
                 double easedProgress = 1 - Math.Pow(1 - progress, 3);
                 double currentOffset = startOffset + distance * easedProgress;
-                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: false);
+                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
                 nextFrameTimeMs += targetFrameTimeMs;
                 long timeToWait = nextFrameTimeMs - stopwatch.ElapsedMilliseconds;
                 if (timeToWait > 0)
