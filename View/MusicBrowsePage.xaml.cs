@@ -1037,7 +1037,7 @@ namespace WinUIMusicPlayer.View
             {
                 //var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 //ApplyBlurToArea(parentGrid, 0);
-                textBlock.Opacity = 0.8;
+                textBlock.Opacity = textBlock.Opacity + 0.2;
             }
         }
 
@@ -1054,7 +1054,7 @@ namespace WinUIMusicPlayer.View
                 else
                 {
                     //ApplyBlurToArea(parentGrid, 0);
-                    textBlock.Opacity = 0.8;
+                    textBlock.Opacity = textBlock.Opacity + 0.2;
                 }
             }
         }
