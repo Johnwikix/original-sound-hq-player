@@ -50,6 +50,7 @@ namespace WinUIMusicPlayer.View
         private TextBlock _currentAnimatingTextBlock;
         private DispatcherTimer _currentAnimationTimer;
         private CancellationTokenSource _scrollCancellation;
+        private bool _isBlurApplied = false;
 
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
@@ -674,22 +675,22 @@ namespace WinUIMusicPlayer.View
                 ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
                 ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
                 ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("ControlBarToDetail", BottomControlBar);
-                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
+                //ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
                 TopPanel.Visibility = Visibility.Collapsed;
                 ContentFrame.Visibility = Visibility.Collapsed;
                 AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
                 ViewModel.InfoBarIsOpen = false;
                 PlayingDetail.Visibility = Visibility.Visible;
                 BottomControlBar.Visibility = Visibility.Collapsed;
-                PlayingDetailControlBar.Visibility = Visibility.Visible;
+                PlayingDetailControlBar.Visibility = Visibility.Visible;                
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
+                //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
                 ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
+                //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
                 ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
             }
         }
@@ -726,33 +727,123 @@ namespace WinUIMusicPlayer.View
             _ = equalizerDialog.ShowAsync();
         }
 
-        private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
+        private void ApplyVerticalGradientBlurToLyricViewer()
         {
             if (!AppSettings.IsBackgroundCoverEnabled) return;
+
+            // 检查是否已经应用了模糊效果
+            if (_isBlurApplied) return;
+
+            var element = LyricViewer;
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
-            // 1. 定义模糊效果
-            var gaussianBlurEffect = new GaussianBlurEffect
+            // 创建容器视觉层
+            var containerVisual = compositor.CreateContainerVisual();
+            containerVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
+
+            // 1. 清晰层（中间部分）
+            var clearBrush = compositor.CreateBackdropBrush();
+            var clearVisual = compositor.CreateSpriteVisual();
+            clearVisual.Brush = clearBrush;
+            clearVisual.Size = containerVisual.Size;
+
+            // 2. 创建顶部模糊层
+            var topBlurEffect = new GaussianBlurEffect
             {
-                BlurAmount = blurAmount,
+                BlurAmount = 2f,
                 Source = new CompositionEffectSourceParameter("Source"),
                 Optimization = EffectOptimization.Balanced,
                 BorderMode = EffectBorderMode.Soft
             };
 
-            // 2. 创建效果工厂
-            var effectFactory = compositor.CreateEffectFactory(gaussianBlurEffect);
+            var topEffectFactory = compositor.CreateEffectFactory(topBlurEffect);
+            var topBackdropBrush = compositor.CreateBackdropBrush();
+            var topEffectBrush = topEffectFactory.CreateBrush();
+            topEffectBrush.SetSourceParameter("Source", topBackdropBrush);
 
-            var backdropBrush = compositor.CreateBackdropBrush();
-            var effectBrush = effectFactory.CreateBrush();
-            effectBrush.SetSourceParameter("Source", backdropBrush);
+            var topBlurVisual = compositor.CreateSpriteVisual();
+            topBlurVisual.Size = containerVisual.Size;
+            topBlurVisual.Brush = topEffectBrush;
 
-            var spriteVisual = compositor.CreateSpriteVisual();
-            spriteVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
-            spriteVisual.Brush = effectBrush;
+            // 顶部渐变遮罩（从上到中间：不透明到透明）
+            var topGradient = compositor.CreateLinearGradientBrush();
+            topGradient.StartPoint = new System.Numerics.Vector2(0, 0);
+            topGradient.EndPoint = new System.Numerics.Vector2(0, 0.5f);
 
-            ElementCompositionPreview.SetElementChildVisual(element, spriteVisual);
+            var topStop1 = compositor.CreateColorGradientStop(0.0f, Windows.UI.Color.FromArgb(255, 255, 255, 255));
+            var topStop2 = compositor.CreateColorGradientStop(1.0f, Windows.UI.Color.FromArgb(0, 255, 255, 255));
+            topGradient.ColorStops.Add(topStop1);
+            topGradient.ColorStops.Add(topStop2);
+
+            var topMaskVisual = compositor.CreateSpriteVisual();
+            topMaskVisual.Size = containerVisual.Size;
+            topMaskVisual.Brush = topGradient;
+
+            topBlurVisual.Brush = compositor.CreateMaskBrush();
+            ((CompositionMaskBrush)topBlurVisual.Brush).Source = topEffectBrush;
+            ((CompositionMaskBrush)topBlurVisual.Brush).Mask = topGradient;
+
+            // 3. 创建底部模糊层
+            var bottomBlurEffect = new GaussianBlurEffect
+            {
+                BlurAmount = 2f,
+                Source = new CompositionEffectSourceParameter("Source"),
+                Optimization = EffectOptimization.Balanced,
+                BorderMode = EffectBorderMode.Soft
+            };
+
+            var bottomEffectFactory = compositor.CreateEffectFactory(bottomBlurEffect);
+            var bottomBackdropBrush = compositor.CreateBackdropBrush();
+            var bottomEffectBrush = bottomEffectFactory.CreateBrush();
+            bottomEffectBrush.SetSourceParameter("Source", bottomBackdropBrush);
+
+            var bottomBlurVisual = compositor.CreateSpriteVisual();
+            bottomBlurVisual.Size = containerVisual.Size;
+            bottomBlurVisual.Brush = bottomEffectBrush;
+
+            // 底部渐变遮罩（从中间到下：透明到不透明）
+            var bottomGradient = compositor.CreateLinearGradientBrush();
+            bottomGradient.StartPoint = new System.Numerics.Vector2(0, 0.5f);
+            bottomGradient.EndPoint = new System.Numerics.Vector2(0, 1.0f);
+
+            var bottomStop1 = compositor.CreateColorGradientStop(0.0f, Windows.UI.Color.FromArgb(0, 255, 255, 255));
+            var bottomStop2 = compositor.CreateColorGradientStop(1.0f, Windows.UI.Color.FromArgb(255, 255, 255, 255));
+            bottomGradient.ColorStops.Add(bottomStop1);
+            bottomGradient.ColorStops.Add(bottomStop2);
+
+            bottomBlurVisual.Brush = compositor.CreateMaskBrush();
+            ((CompositionMaskBrush)bottomBlurVisual.Brush).Source = bottomEffectBrush;
+            ((CompositionMaskBrush)bottomBlurVisual.Brush).Mask = bottomGradient;
+
+            // 组合所有层
+            containerVisual.Children.InsertAtTop(clearVisual);
+            containerVisual.Children.InsertAtTop(topBlurVisual);
+            containerVisual.Children.InsertAtTop(bottomBlurVisual);
+
+            ElementCompositionPreview.SetElementChildVisual(element, containerVisual);
+
+            // 标记已应用模糊效果
+            _isBlurApplied = true;
+        }
+
+        private void ClearBlurFromLyricViewer()
+        {
+            if (!_isBlurApplied) return;
+
+            ElementCompositionPreview.SetElementChildVisual(LyricViewer, null);
+            _isBlurApplied = false;
+        }
+
+        // 在LyricViewer的SizeChanged事件中调用
+        private void LyricViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // 尺寸变化时需要重新应用（先清除再应用）
+            if (_isBlurApplied)
+            {
+                ClearBlurFromLyricViewer();
+            }
+            ApplyVerticalGradientBlurToLyricViewer();
         }
 
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -764,16 +855,9 @@ namespace WinUIMusicPlayer.View
                                      textblock.FontSize == 44)) ||
                                     (AppSettings.IsGlobalFontSizeEnabled &&
                                      textblock.FontSize == AppSettings.GlobalFontSize);
-
-            var parentGrid = ToolUtils.FindParent<Grid>(textblock);
-
             if (isCurrentLyric)
             {
-                if (parentGrid != null)
-                {
-                    ApplyBlurToArea(parentGrid, 0);
-                }
-                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
+                //StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
                 try
@@ -784,22 +868,15 @@ namespace WinUIMusicPlayer.View
                     var targetPoint = transform.TransformPoint(new Point(0, 0));
                     double startOffset = LyricViewer.VerticalOffset;
                     double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
-                    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
-                    
+                    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);                    
                 }
                 catch (OperationCanceledException) { }
                 catch { }
             }
-            else
-            {
-                if (parentGrid != null)
-                {
-                    ApplyBlurToArea(parentGrid, 1);
-                }
-            }
+
         }
 
-        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken,int duration = 1000,int fps = 120)
+        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken,int duration = 1000,int fps = 100)
         {
             double distance = targetOffset - startOffset;
             if (Math.Abs(distance) < 1)
@@ -812,23 +889,25 @@ namespace WinUIMusicPlayer.View
             {
                 if (cancellationToken.IsCancellationRequested)
                     return;
-                // 计算进度 (0 到 1)
                 double progress = (double)stopwatch.ElapsedMilliseconds / duration;
                 progress = Math.Min(progress, 1.0);
                 double easedProgress = 1 - Math.Pow(1 - progress, 4);
-                // 计算当前偏移量
                 double currentOffset = startOffset + distance * easedProgress;
-                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: false);
-                UpdateLyricsOpacity();
+                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
                 await Task.Delay(1000 / fps, cancellationToken);
             }
-            LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: false);
+            LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
         }
-
+        private void LyricViewer_ViewChanging(object sender, ScrollViewerViewChangingEventArgs e)
+        {
+            UpdateLyricsOpacity();
+        }
         private void UpdateLyricsOpacity(double maxOpacity = 0.6, double minOpacity = 0.01)
         {
-            double viewerCenter = LyricViewer.VerticalOffset + (LyricViewer.ActualHeight / 2);
-            double maxDistance = LyricViewer.ActualHeight / 2.2;
+            double viewerHeight = LyricViewer.ActualHeight;
+            double viewerCenter = LyricViewer.VerticalOffset + (viewerHeight / 2);
+            double maxDistance = viewerHeight / 2.2;
+            double opacityRange = maxOpacity - minOpacity;
             var panel = LyricsListView.ItemsPanelRoot as ItemsStackPanel;
             if (panel == null) return;
             for (int i = panel.FirstVisibleIndex; i <= panel.LastVisibleIndex; i++)
@@ -858,8 +937,7 @@ namespace WinUIMusicPlayer.View
                 else
                 {
                     double normalizedDistance = distance / maxDistance;
-                    opacity = maxOpacity - (normalizedDistance * (maxOpacity - minOpacity));
-                    opacity = Math.Max(opacity, minOpacity);
+                    opacity = maxOpacity - (normalizedDistance * opacityRange);
                 }
                 baseTextBlock.Opacity = opacity;
             }
@@ -947,9 +1025,9 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                ApplyBlurToArea(parentGrid, 0);
-                //textBlock.Opacity = 1.0;
+                //var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                //ApplyBlurToArea(parentGrid, 0);
+                textBlock.Opacity = 0.8;
             }
         }
 
@@ -957,16 +1035,16 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock && textBlock.DataContext is LyricLine lyricLine)
             {
-                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                //var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (!lyricLine.IsCurrent)
                 {
-                    ApplyBlurToArea(parentGrid, 1);
-                    //textBlock.Opacity = 0;
+                    //ApplyBlurToArea(parentGrid, 1);
+                    textBlock.Opacity = 0;
                 }
                 else
                 {
-                    ApplyBlurToArea(parentGrid, 0);
-                    //textBlock.Opacity = 1.0;
+                    //ApplyBlurToArea(parentGrid, 0);
+                    textBlock.Opacity = 0.8;
                 }
             }
         }
