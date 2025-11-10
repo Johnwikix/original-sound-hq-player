@@ -830,8 +830,11 @@ namespace WinUIMusicPlayer.View
 
         private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
         {
-            if (!AppSettings.IsBackgroundCoverEnabled) return;
             if (element is null) return;
+            if (!AppSettings.IsBackgroundCoverEnabled) {
+                ElementCompositionPreview.SetElementChildVisual(element, null);
+                return;
+            }            
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
@@ -1086,14 +1089,15 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {                
-                if (!AppSettings.IsGradientBlurEnabled)
+                if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
                 {
-                    var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                    ApplyBlurToArea(parentGrid, 0);
+                    textBlock.Opacity = textBlock.Opacity + 0.2;
                 }
                 else
                 {
-                    textBlock.Opacity = textBlock.Opacity + 0.2;
+                    var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                    ApplyBlurToArea(parentGrid, 0);
+                    
                 }
             }
         }
@@ -1105,23 +1109,23 @@ namespace WinUIMusicPlayer.View
                 var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (!lyricLine.IsCurrent)
                 {
-                    if (!AppSettings.IsGradientBlurEnabled)
+                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
                     {
-                        ApplyBlurToArea(parentGrid, 1);
+                        textBlock.Opacity = 0;                       
                     }
                     else {
-                        textBlock.Opacity = 0;
+                        ApplyBlurToArea(parentGrid, 1);
                     }
                 }
                 else
                 {
-                    if (!AppSettings.IsGradientBlurEnabled)
+                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
                     {
-                        ApplyBlurToArea(parentGrid, 0);
+                        textBlock.Opacity = textBlock.Opacity + 0.2;                       
                     }
                     else
                     {
-                        textBlock.Opacity = textBlock.Opacity + 0.2;
+                        ApplyBlurToArea(parentGrid, 0);
                     }
                 }
             }
