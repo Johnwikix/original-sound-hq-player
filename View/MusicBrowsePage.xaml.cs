@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
@@ -876,6 +877,7 @@ namespace WinUIMusicPlayer.View
 
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken, int duration = 1000, int fps = 100)
         {
             double distance = targetOffset - startOffset;
