@@ -754,7 +754,7 @@ namespace WinUIMusicPlayer.View
             {
                 BlurAmount = 2f,
                 Source = new CompositionEffectSourceParameter("Source"),
-                Optimization = EffectOptimization.Balanced,
+                Optimization = EffectOptimization.Speed,
                 BorderMode = EffectBorderMode.Soft
             };
 
@@ -790,7 +790,7 @@ namespace WinUIMusicPlayer.View
             {
                 BlurAmount = 2f,
                 Source = new CompositionEffectSourceParameter("Source"),
-                Optimization = EffectOptimization.Balanced,
+                Optimization = EffectOptimization.Speed,
                 BorderMode = EffectBorderMode.Soft
             };
 
