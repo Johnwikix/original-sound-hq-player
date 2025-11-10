@@ -828,6 +828,36 @@ namespace WinUIMusicPlayer.View
             _isBlurApplied = true;
         }
 
+        private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
+        {
+            if (!AppSettings.IsBackgroundCoverEnabled) return;
+            if (element is null) return;
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            // 1. 定义模糊效果
+            var gaussianBlurEffect = new GaussianBlurEffect
+            {
+                BlurAmount = blurAmount,
+                Source = new CompositionEffectSourceParameter("Source"),
+                Optimization = EffectOptimization.Balanced,
+                BorderMode = EffectBorderMode.Soft
+            };
+
+            // 2. 创建效果工厂
+            var effectFactory = compositor.CreateEffectFactory(gaussianBlurEffect);
+
+            var backdropBrush = compositor.CreateBackdropBrush();
+            var effectBrush = effectFactory.CreateBrush();
+            effectBrush.SetSourceParameter("Source", backdropBrush);
+
+            var spriteVisual = compositor.CreateSpriteVisual();
+            spriteVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
+            spriteVisual.Brush = effectBrush;
+
+            ElementCompositionPreview.SetElementChildVisual(element, spriteVisual);
+        }
+
         private void ClearBlurFromLyricViewer()
         {
             if (!_isBlurApplied) return;
@@ -840,11 +870,13 @@ namespace WinUIMusicPlayer.View
         private void LyricViewer_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // 尺寸变化时需要重新应用（先清除再应用）
-            if (_isBlurApplied)
-            {
-                ClearBlurFromLyricViewer();
+            if (AppSettings.IsGradientBlurEnabled) {
+                if (_isBlurApplied)
+                {
+                    ClearBlurFromLyricViewer();
+                }
+                ApplyVerticalGradientBlurToLyricViewer();
             }
-            ApplyVerticalGradientBlurToLyricViewer();
         }
 
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -856,8 +888,13 @@ namespace WinUIMusicPlayer.View
                                      textblock.FontSize == 44)) ||
                                     (AppSettings.IsGlobalFontSizeEnabled &&
                                      textblock.FontSize == AppSettings.GlobalFontSize);
+            var parentGrid = ToolUtils.FindParent<Grid>(textblock);
             if (isCurrentLyric)
             {
+                if (!AppSettings.IsGradientBlurEnabled)
+                {
+                    ApplyBlurToArea(parentGrid, 0);
+                }
                 //StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
@@ -869,12 +906,26 @@ namespace WinUIMusicPlayer.View
                     var targetPoint = transform.TransformPoint(new Point(0, 0));
                     double startOffset = LyricViewer.VerticalOffset;
                     double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
-                    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);                    
+                    if (AppSettings.IsAnimateScrollEnabled)
+                    {
+                        await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
+                    }
+                    else
+                    {
+                        LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: false);
+                    }
+
                 }
                 catch (OperationCanceledException) { }
                 catch { }
             }
-
+            else
+            {
+                if (!AppSettings.IsGradientBlurEnabled)
+                {
+                    ApplyBlurToArea(parentGrid, 1);
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1034,10 +1085,16 @@ namespace WinUIMusicPlayer.View
         private void LyricsTextBlock_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)
-            {
-                //var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                //ApplyBlurToArea(parentGrid, 0);
-                textBlock.Opacity = textBlock.Opacity + 0.2;
+            {                
+                if (!AppSettings.IsGradientBlurEnabled)
+                {
+                    var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                    ApplyBlurToArea(parentGrid, 0);
+                }
+                else
+                {
+                    textBlock.Opacity = textBlock.Opacity + 0.2;
+                }
             }
         }
 
@@ -1045,16 +1102,27 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock && textBlock.DataContext is LyricLine lyricLine)
             {
-                //var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (!lyricLine.IsCurrent)
                 {
-                    //ApplyBlurToArea(parentGrid, 1);
-                    textBlock.Opacity = 0;
+                    if (!AppSettings.IsGradientBlurEnabled)
+                    {
+                        ApplyBlurToArea(parentGrid, 1);
+                    }
+                    else {
+                        textBlock.Opacity = 0;
+                    }
                 }
                 else
                 {
-                    //ApplyBlurToArea(parentGrid, 0);
-                    textBlock.Opacity = textBlock.Opacity + 0.2;
+                    if (!AppSettings.IsGradientBlurEnabled)
+                    {
+                        ApplyBlurToArea(parentGrid, 0);
+                    }
+                    else
+                    {
+                        textBlock.Opacity = textBlock.Opacity + 0.2;
+                    }
                 }
             }
         }
