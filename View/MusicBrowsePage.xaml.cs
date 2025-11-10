@@ -876,7 +876,7 @@ namespace WinUIMusicPlayer.View
 
         }
 
-        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken,int duration = 1000,int fps = 100)
+        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken, int duration = 1000, int fps = 100)
         {
             double distance = targetOffset - startOffset;
             if (Math.Abs(distance) < 1)
@@ -885,18 +885,26 @@ namespace WinUIMusicPlayer.View
                 return;
             }
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            long targetFrameTimeMs = 1000 / fps; 
+            long nextFrameTimeMs = 0;  
             while (stopwatch.ElapsedMilliseconds < duration)
             {
                 if (cancellationToken.IsCancellationRequested)
                     return;
                 double progress = (double)stopwatch.ElapsedMilliseconds / duration;
                 progress = Math.Min(progress, 1.0);
-                double easedProgress = 1 - Math.Pow(1 - progress, 4);
+                double easedProgress = 1 - Math.Pow(1 - progress, 3);
                 double currentOffset = startOffset + distance * easedProgress;
-                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
-                await Task.Delay(1000 / fps, cancellationToken);
+                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: false);
+                nextFrameTimeMs += targetFrameTimeMs;
+                long timeToWait = nextFrameTimeMs - stopwatch.ElapsedMilliseconds;
+                if (timeToWait > 0)
+                {
+                    await Task.Delay((int)timeToWait, cancellationToken);
+                }
             }
-            LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
+
+            //LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
         }
         private void LyricViewer_ViewChanging(object sender, ScrollViewerViewChangingEventArgs e)
         {
