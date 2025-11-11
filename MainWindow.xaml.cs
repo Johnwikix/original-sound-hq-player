@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using WinUIEx;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;

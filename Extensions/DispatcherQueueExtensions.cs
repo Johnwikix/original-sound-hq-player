@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace WinUIMusicPlayer.Utils
+namespace WinUIMusicPlayer.Extensions
 {
     public static class DispatcherQueueExtensions
     {
