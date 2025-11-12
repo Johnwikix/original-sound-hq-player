@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,7 +121,7 @@ namespace WinUIMusicPlayer.View
         private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
         {
             if (element is null) return;
-            if (!AppSettings.IsBackgroundCoverEnabled)
+            if (!AppSettings.IsBackgroundCoverEnabled || AppSettings.IsGradientBlurEnabled)
             {
                 ElementCompositionPreview.SetElementChildVisual(element, null);
                 return;
@@ -157,7 +158,6 @@ namespace WinUIMusicPlayer.View
         // 在LyricViewer的SizeChanged事件中调用
         private void LyricViewer_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // 尺寸变化时需要重新应用（先清除再应用）
             if (AppSettings.IsGradientBlurEnabled)
             {
                 if (_isBlurApplied)
@@ -166,8 +166,17 @@ namespace WinUIMusicPlayer.View
                 }
                 ApplyVerticalGradientBlurToLyricViewer();
             }
+            else {
+                ClearBlurFromLyricViewer();
+            }
         }
 
+        private void LyricViewer_ViewChanged(ScrollView sender, object args)
+        {
+            UpdateLyricsOpacity();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             var textblock = (TextBlock)sender;
@@ -180,10 +189,7 @@ namespace WinUIMusicPlayer.View
             var parentGrid = ToolUtils.FindParent<Grid>(textblock);
             if (isCurrentLyric)
             {
-                if (!AppSettings.IsGradientBlurEnabled)
-                {
-                    ApplyBlurToArea(parentGrid, 0);
-                }
+                ApplyBlurToArea(parentGrid, 0);
                 //StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
@@ -195,25 +201,22 @@ namespace WinUIMusicPlayer.View
                     var targetPoint = transform.TransformPoint(new Point(0, 0));
                     double startOffset = LyricViewer.VerticalOffset;
                     double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
-                    if (AppSettings.IsAnimateScrollEnabled)
-                    {
-                        await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
-                    }
-                    else
-                    {
-                        LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: false);
-                    }
-
+                    //if (AppSettings.IsAnimateScrollEnabled)
+                    //{
+                    //    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
+                    //}
+                    //else
+                    //{
+                    //    LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);    
+                    //}
+                    LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);
                 }
                 catch (OperationCanceledException) { }
                 catch { }
             }
             else
             {
-                if (!AppSettings.IsGradientBlurEnabled)
-                {
-                    ApplyBlurToArea(parentGrid, 1);
-                }
+                ApplyBlurToArea(parentGrid, 1);
             }
         }
 
@@ -223,7 +226,8 @@ namespace WinUIMusicPlayer.View
             double distance = targetOffset - startOffset;
             if (Math.Abs(distance) < 1)
             {
-                LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
+                //LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
+                LyricViewer.ScrollTo(0, targetOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
                 return;
             }
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -237,7 +241,8 @@ namespace WinUIMusicPlayer.View
                 progress = Math.Min(progress, 1.0);
                 double easedProgress = 1 - Math.Pow(1 - progress, 3);
                 double currentOffset = startOffset + distance * easedProgress;
-                LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
+                //LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
+                LyricViewer.ScrollTo(0, currentOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
                 nextFrameTimeMs += targetFrameTimeMs;
                 long timeToWait = nextFrameTimeMs - stopwatch.ElapsedMilliseconds;
                 if (timeToWait > 0)
@@ -246,10 +251,7 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-        private void LyricViewer_ViewChanging(object sender, ScrollViewerViewChangingEventArgs e)
-        {
-            UpdateLyricsOpacity();
-        }
+
         private void UpdateLyricsOpacity(double maxOpacity = 0.6, double minOpacity = 0.01)
         {
             double viewerHeight = LyricViewer.ActualHeight;

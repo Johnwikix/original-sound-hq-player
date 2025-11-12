@@ -882,4 +882,10 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>Уйти</value>
   </data>
+  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
+    <value>Скользящая прокрутка</value>
+  </data>
+  <data name="GradientBlurEnabled.Header" xml:space="preserve">
+    <value>Постепенное размывание</value>
+  </data>
 </root>

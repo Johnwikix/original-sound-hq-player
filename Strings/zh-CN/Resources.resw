@@ -882,4 +882,10 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>淡入淡出</value>
   </data>
+  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
+    <value>平滑滚动</value>
+  </data>
+  <data name="GradientBlurEnabled.Header" xml:space="preserve">
+    <value>渐变模糊</value>
+  </data>
 </root>

@@ -882,4 +882,10 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>フェードアウト</value>
   </data>
+  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
+    <value>スムーズスクロール</value>
+  </data>
+  <data name="GradientBlurEnabled.Header" xml:space="preserve">
+    <value>グラデーションブラー</value>
+  </data>
 </root>

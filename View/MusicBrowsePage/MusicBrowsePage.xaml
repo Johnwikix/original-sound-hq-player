@@ -645,13 +645,13 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <!--  添加歌词显示列表  -->
-                        <ScrollViewer
+                        <ScrollView
                             x:Name="LyricViewer"
                             Grid.Row="1"
                             Margin="0"
                             SizeChanged="LyricViewer_SizeChanged"
                             VerticalScrollBarVisibility="Hidden"
-                            ViewChanging="LyricViewer_ViewChanging">
+                            ViewChanged="LyricViewer_ViewChanged">
                             <StackPanel>
                                 <StackPanel Height="1080" />
                                 <ListView
@@ -728,7 +728,7 @@
                                 </ListView>
                                 <StackPanel Height="1080" />
                             </StackPanel>
-                        </ScrollViewer>
+                        </ScrollView>
                     </Grid>
                 </Grid>
                 <!--  底部控制区域  -->

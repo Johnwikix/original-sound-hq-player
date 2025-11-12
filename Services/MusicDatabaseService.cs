@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Media;
+﻿using ATL;
+using Microsoft.UI.Xaml.Media;
 using SQLite;
 using System;
 using System.Collections.Concurrent;
@@ -86,50 +87,7 @@ namespace WinUIMusicPlayer.Services
             SaveSettings settings = await GetSettings();            
             if (settings is null)
             {
-                SaveSettings newSettings = new SaveSettings();
-                newSettings.OutputMode = AppSettings.OutputMode;
-                newSettings.Latency = AppSettings.Latency;
-                newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-                newSettings.DefualtEntry = AppSettings.DefualtEntry;
-                newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-                newSettings.LrcAPISource = AppSettings.LrcAPISource;
-                newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
-                newSettings.AppStyle = AppSettings.AppStyle;
-                newSettings.AppTheme = AppSettings.AppTheme;
-                newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-                newSettings.isRunningBackend = AppSettings.isRunningBackend;
-                newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-                newSettings.dsdGain = AppSettings.dsdGain;
-                newSettings.equalizerStr = AppSettings.equalizerStr;
-                newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-                newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
-                newSettings.CoverSize = AppSettings.CoverSize;
-                newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-                newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-                newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
-                newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
-                newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-                newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
-                newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
-                newSettings.AppHeight = AppSettings.AppHeight;
-                newSettings.AppWidth = AppSettings.AppWidth;
-                newSettings.GlobalFont = AppSettings.GlobalFont.Source;
-                newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
-                newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
-                newSettings.CustomColorRed = AppSettings.CustomColorRed;
-                newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
-                newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
-                newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-                newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-                newSettings.LyricsMargin = AppSettings.LyricsMargin;
-                newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
-                newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-                newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
-                newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
-                newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
-                newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
-                newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
-                newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
+                SaveSettings newSettings = SaveCurrentSettings(new SaveSettings());
                 await MusicDatabaseService.InsertSettings(newSettings);
             }
         }
@@ -793,13 +751,27 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
                 AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
+                //AppSettings.IsAnimateScrollEnabled = settings.IsAnimateScrollEnabled;
+                AppSettings.IsGradientBlurEnabled = settings.IsGradientBlurEnabled;
             }
         }
 
         public static async Task SaveSettingAsync()
         {
             SaveSettings settings = await GetSettings();
-            SaveSettings newSettings = new SaveSettings();
+            SaveSettings newSettings = SaveCurrentSettings(new SaveSettings(), settings?.equalizerStr);
+            if (settings is null)
+            {
+                await MusicDatabaseService.InsertSettings(newSettings);
+            }
+            else
+            {
+                newSettings.Id = settings.Id;
+                await MusicDatabaseService.UpdateSettings(newSettings);
+            }
+        }
+
+        private static SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {            
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.Latency = AppSettings.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
@@ -813,7 +785,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;
-            newSettings.equalizerStr = settings?.equalizerStr ?? AppSettings.equalizerStr;
+            newSettings.equalizerStr = equalizerStr ?? AppSettings.equalizerStr;
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.CoverSize = AppSettings.CoverSize;
@@ -843,15 +815,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
             newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
-            if (settings is null)
-            {
-                await MusicDatabaseService.InsertSettings(newSettings);
-            }
-            else
-            {
-                newSettings.Id = settings.Id;
-                await MusicDatabaseService.UpdateSettings(newSettings);
-            }
+            //newSettings.IsAnimateScrollEnabled = AppSettings.IsAnimateScrollEnabled;
+            newSettings.IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
+            return newSettings;
         }
 
         public static async Task SavePlayStateAsync(SavePlayState playState)

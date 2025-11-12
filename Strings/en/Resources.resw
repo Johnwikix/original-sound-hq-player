@@ -882,4 +882,10 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>Fade in and fade out</value>
   </data>
+  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
+    <value>Smooth scrolling</value>
+  </data>
+  <data name="GradientBlurEnabled.Header" xml:space="preserve">
+    <value>Gradient Blur</value>
+  </data>
 </root>

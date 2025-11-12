@@ -52,7 +52,10 @@ namespace WinUIMusicPlayer.View
         private DispatcherTimer _currentAnimationTimer;
         private CancellationTokenSource _scrollCancellation;
         private bool _isBlurApplied = false;
-
+        private ScrollingScrollOptions _scrollOptions = new ScrollingScrollOptions(
+                            ScrollingAnimationMode.Enabled,
+                            ScrollingSnapPointsMode.Default
+                        );
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
