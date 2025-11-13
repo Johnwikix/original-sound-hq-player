@@ -201,14 +201,6 @@ namespace WinUIMusicPlayer.View
                     var targetPoint = transform.TransformPoint(new Point(0, 0));
                     double startOffset = LyricViewer.VerticalOffset;
                     double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
-                    //if (AppSettings.IsAnimateScrollEnabled)
-                    //{
-                    //    await AnimateScrollAsync(startOffset, targetOffset, _scrollCancellation.Token);
-                    //}
-                    //else
-                    //{
-                    //    LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);    
-                    //}
                     LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);
                 }
                 catch (OperationCanceledException) { }
@@ -217,38 +209,6 @@ namespace WinUIMusicPlayer.View
             else
             {
                 ApplyBlurToArea(parentGrid, 1);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async Task AnimateScrollAsync(double startOffset, double targetOffset, CancellationToken cancellationToken, int duration = 400, int fps = 100)
-        {
-            double distance = targetOffset - startOffset;
-            if (Math.Abs(distance) < 1)
-            {
-                //LyricViewer.ChangeView(null, targetOffset, null, disableAnimation: true);
-                LyricViewer.ScrollTo(0, targetOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
-                return;
-            }
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            long targetFrameTimeMs = 1000 / fps;
-            long nextFrameTimeMs = 0;
-            while (stopwatch.ElapsedMilliseconds < duration)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-                double progress = (double)stopwatch.ElapsedMilliseconds / duration;
-                progress = Math.Min(progress, 1.0);
-                double easedProgress = 1 - Math.Pow(1 - progress, 3);
-                double currentOffset = startOffset + distance * easedProgress;
-                //LyricViewer.ChangeView(null, currentOffset, null, disableAnimation: true);
-                LyricViewer.ScrollTo(0, currentOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
-                nextFrameTimeMs += targetFrameTimeMs;
-                long timeToWait = nextFrameTimeMs - stopwatch.ElapsedMilliseconds;
-                if (timeToWait > 0)
-                {
-                    await Task.Delay((int)timeToWait, cancellationToken);
-                }
             }
         }
 
