@@ -431,6 +431,7 @@
                                         Opacity="0.5"
                                         PointerEntered="ProgressSlider_PointerEntered"
                                         PointerExited="ProgressSlider_PointerExited"
+                                        Style="{StaticResource GhostSliderStyle}"
                                         ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
                                         Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
                                     <Grid
