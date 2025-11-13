@@ -171,11 +171,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void LyricViewer_ViewChanged(ScrollView sender, object args)
-        {
-            UpdateLyricsOpacity();
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -209,47 +204,6 @@ namespace WinUIMusicPlayer.View
             else
             {
                 ApplyBlurToArea(parentGrid, 1);
-            }
-        }
-
-        private void UpdateLyricsOpacity(double maxOpacity = 0.6, double minOpacity = 0.01)
-        {
-            double viewerHeight = LyricViewer.ActualHeight;
-            double viewerCenter = LyricViewer.VerticalOffset + (viewerHeight / 2);
-            double maxDistance = viewerHeight / 2.2;
-            double opacityRange = maxOpacity - minOpacity;
-            var panel = LyricsListView.ItemsPanelRoot as ItemsStackPanel;
-            if (panel == null) return;
-            for (int i = panel.FirstVisibleIndex; i <= panel.LastVisibleIndex; i++)
-            {
-                var itemContainer = LyricsListView.ContainerFromIndex(i) as ListViewItem;
-                if (itemContainer == null) continue;
-
-                var lyricGrid = itemContainer.ContentTemplateRoot as Grid;
-                if (lyricGrid == null) continue;
-
-                var baseTextBlock = lyricGrid.FindName("LyricsTextBlockBase") as TextBlock;
-                if (baseTextBlock == null) continue;
-
-                var transform = itemContainer.TransformToVisual(LyricViewer.Content as UIElement);
-                var itemTop = transform.TransformPoint(new Point(0, 0)).Y;
-
-                double itemCenter = itemTop + (itemContainer.ActualHeight / 2);
-
-                double distance = Math.Abs(itemCenter - viewerCenter);
-
-                double opacity;
-
-                if (distance >= maxDistance)
-                {
-                    opacity = minOpacity;
-                }
-                else
-                {
-                    double normalizedDistance = distance / maxDistance;
-                    opacity = maxOpacity - (normalizedDistance * opacityRange);
-                }
-                baseTextBlock.Opacity = opacity;
             }
         }
 

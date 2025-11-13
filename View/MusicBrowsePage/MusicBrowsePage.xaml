@@ -3,9 +3,11 @@
     x:Class="WinUIMusicPlayer.View.MusicBrowsePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -650,8 +652,15 @@
                             Grid.Row="1"
                             Margin="0"
                             SizeChanged="LyricViewer_SizeChanged"
-                            VerticalScrollBarVisibility="Hidden"
-                            ViewChanged="LyricViewer_ViewChanged">
+                            VerticalScrollBarVisibility="Hidden">
+                            <interactivity:Interaction.Behaviors>
+                                <behaviors:ScrollBasedOpacityBehavior
+                                    MaxDistanceRatio="2.2"
+                                    MaxOpacity="0.65"
+                                    MinOpacity="0.01"
+                                    TargetElementName="LyricsTextBlockBase"
+                                    TargetListView="{x:Bind LyricsListView}" />
+                            </interactivity:Interaction.Behaviors>
                             <StackPanel>
                                 <StackPanel Height="1080" />
                                 <ListView

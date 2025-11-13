@@ -431,11 +431,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
             _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
-            if (AppSettings.IsFadeEnabled) {
-                if (_totalTime - _currentTime <= TimeSpan.FromMilliseconds(1000)) {
-                    _musicPlaybackService.FadeOut();
-                }
-            }
+            //if (AppSettings.IsFadeEnabled)
+            //{
+            //    if (_totalTime - _currentTime <= TimeSpan.FromMilliseconds(1000))
+            //    {
+            //        _musicPlaybackService.FadeOut();
+            //    }
+            //}
             _timeStringBuilder.Clear();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
