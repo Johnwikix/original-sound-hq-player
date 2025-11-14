@@ -1,12 +1,12 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
-using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Composition;
 using Microsoft.Xaml.Interactivity;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
+using System.Numerics;
 using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Behaviors
@@ -82,13 +82,13 @@ namespace WinUIMusicPlayer.Behaviors
         private ItemsStackPanel _cachedPanel;
         private UIElement _cachedScrollContent;
         private double _cachedMaxDistance = 0;
-        private double _cached0pacityRange = 0.59;
+        private double _cachedOpacityRange = 0.59;
 
-        // 容器缓存字典 - 索引到容器的映射
+        private Dictionary<int, Visual> _visualCache = new Dictionary<int, Visual>();
         private Dictionary<int, TextBlock> _targetElementCache = new Dictionary<int, TextBlock>();
         // 之前的 ListView 引用，用于取消订阅
         private ListView _previousListView;
-        private Point _reusePoint = new Point(0,0);
+        private readonly Point _reusePoint = new Point(0, 0);
 
         protected override void OnAttached()
         {
@@ -118,6 +118,7 @@ namespace WinUIMusicPlayer.Behaviors
             // 取消订阅
             UnsubscribeFromListView(_previousListView);
             _targetElementCache.Clear();
+            _visualCache.Clear();
         }
 
         private static void OnTargetListViewChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -168,6 +169,7 @@ namespace WinUIMusicPlayer.Behaviors
             listView.Loaded -= OnListViewLoaded;
 
             _targetElementCache.Clear();
+            _visualCache.Clear();
         }
 
         private void OnListViewLoaded(object sender, RoutedEventArgs e)
@@ -188,9 +190,10 @@ namespace WinUIMusicPlayer.Behaviors
             if (args.InRecycleQueue)
             {
                 // 容器被回收，从缓存中移除
-                if (args.ItemIndex >= 0 && _targetElementCache.ContainsKey(args.ItemIndex))
+                if (args.ItemIndex >= 0)
                 {
                     _targetElementCache.Remove(args.ItemIndex);
+                    _visualCache.Remove(args.ItemIndex);
                 }
             }
             else
@@ -198,7 +201,12 @@ namespace WinUIMusicPlayer.Behaviors
                 // 容器被准备或重用，更新缓存
                 if (args.ItemContainer is ListViewItem item && args.ItemIndex >= 0)
                 {
-                    _targetElementCache[args.ItemIndex] = FindElementByName(item, TargetElementName) as TextBlock;
+                    var targetElement = FindElementByName(item, TargetElementName) as TextBlock;
+                    if (targetElement != null)
+                    {
+                        _targetElementCache[args.ItemIndex] = targetElement;
+                        _visualCache[args.ItemIndex] = ElementCompositionPreview.GetElementVisual(targetElement);
+                    }
                 }
             }
         }
@@ -208,15 +216,22 @@ namespace WinUIMusicPlayer.Behaviors
             if (TargetListView == null) return;
 
             _targetElementCache.Clear();
+            _visualCache.Clear();
             _cachedPanel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
 
             if (_cachedPanel == null) return;
+
             for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
             {
                 var itemContainer = TargetListView.ContainerFromIndex(i) as ListViewItem;
                 if (itemContainer != null)
                 {
-                    _targetElementCache[i] = FindElementByName(itemContainer, TargetElementName) as TextBlock;
+                    var targetElement = FindElementByName(itemContainer, TargetElementName) as TextBlock;
+                    if (targetElement != null)
+                    {
+                        _targetElementCache[i] = targetElement;
+                        _visualCache[i] = ElementCompositionPreview.GetElementVisual(targetElement);
+                    }
                 }
             }
         }
@@ -237,25 +252,31 @@ namespace WinUIMusicPlayer.Behaviors
             _cachedPanel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
             _cachedScrollContent = AssociatedObject.Content as UIElement;
             _cachedMaxDistance = AssociatedObject.ActualHeight / MaxDistanceRatio;
-            _cached0pacityRange = MaxOpacity - MinOpacity;
+            _cachedOpacityRange = MaxOpacity - MinOpacity;
         }
 
         private void UpdateOpacity()
         {
             if (AssociatedObject is null || TargetListView is null || _cachedPanel is null || _cachedScrollContent is null)
                 return;
+
             double viewerCenter = AssociatedObject.VerticalOffset + (AssociatedObject.ActualHeight * 0.5);
 
             for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
             {
-                _targetElementCache.TryGetValue(i, out var targetElement);
-                if (targetElement == null) continue;
+                if (!_targetElementCache.TryGetValue(i, out var targetElement) || targetElement == null)
+                    continue;
+
                 double itemCenter = targetElement.TransformToVisual(_cachedScrollContent).TransformPoint(_reusePoint).Y + (targetElement.ActualHeight * 0.5);
                 double distance = Math.Abs(itemCenter - viewerCenter);
-                double opacity = distance >= _cachedMaxDistance
-                    ? MinOpacity
-                    : MaxOpacity - ((distance / _cachedMaxDistance) * _cached0pacityRange);
-                targetElement.Opacity = opacity;
+                float opacity = distance >= _cachedMaxDistance
+                    ? (float)MinOpacity
+                    : (float)(MaxOpacity - ((distance / _cachedMaxDistance) * _cachedOpacityRange));
+
+                if (_visualCache.TryGetValue(i, out var visual) && visual is not null)
+                {
+                    visual.Opacity = opacity;
+                }
             }
         }
 
@@ -264,10 +285,10 @@ namespace WinUIMusicPlayer.Behaviors
             if (parent is FrameworkElement fe && fe.Name == name)
                 return fe;
 
-            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            int childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
             for (int i = 0; i < childCount; i++)
             {
-                var child = VisualTreeHelper.GetChild(parent, i);
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
                 var result = FindElementByName(child, name);
                 if (result != null) return result;
             }
