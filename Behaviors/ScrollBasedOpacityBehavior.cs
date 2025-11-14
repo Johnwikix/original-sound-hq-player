@@ -1,12 +1,10 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Xaml.Interactivity;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Behaviors
@@ -78,22 +76,35 @@ namespace WinUIMusicPlayer.Behaviors
             set => SetValue(TargetElementNameProperty, value);
         }
 
+        // 缓存的变量
+        private ItemsStackPanel _cachedPanel;
+        private UIElement _cachedScrollContent;
+        private double _cachedMaxDistance = 0;
+        private double _cached0pacityRange = 0.59;
+
         protected override void OnAttached()
         {
             base.OnAttached();
-            if (AssociatedObject != null)
+            if (AssociatedObject is not null)
             {
                 AssociatedObject.ViewChanged += OnViewChanged;
+                AssociatedObject.SizeChanged += OnSizeChanged;
             }
         }
 
         protected override void OnDetaching()
         {
             base.OnDetaching();
-            if (AssociatedObject != null)
+            if (AssociatedObject is not null)
             {
                 AssociatedObject.ViewChanged -= OnViewChanged;
+                AssociatedObject.SizeChanged -= OnSizeChanged;
             }
+        }
+
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateCachedValues();
         }
 
         private void OnViewChanged(ScrollView sender, object args)
@@ -101,36 +112,33 @@ namespace WinUIMusicPlayer.Behaviors
             UpdateOpacity();
         }
 
+        private void UpdateCachedValues()
+        {
+            if (AssociatedObject is null || TargetListView is null) return;
+            _cachedPanel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
+            _cachedScrollContent = AssociatedObject.Content as UIElement;
+            _cachedMaxDistance = AssociatedObject.ActualHeight / MaxDistanceRatio;
+            _cached0pacityRange = MaxOpacity - MinOpacity;
+        }
+
         private void UpdateOpacity()
         {
-            if (AssociatedObject == null || TargetListView == null) return;
-
-            double viewerHeight = AssociatedObject.ActualHeight;
-            double viewerCenter = AssociatedObject.VerticalOffset + (viewerHeight / 2);
-            double maxDistance = viewerHeight / MaxDistanceRatio;
-            double opacityRange = MaxOpacity - MinOpacity;
-
-            var panel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
-            if (panel == null) return;
-
-            for (int i = panel.FirstVisibleIndex; i <= panel.LastVisibleIndex; i++)
+            if (AssociatedObject is null || TargetListView is null || _cachedPanel is null || _cachedScrollContent is null) return;
+            double viewerCenter = AssociatedObject.VerticalOffset + (AssociatedObject.ActualHeight * 0.5);
+            for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
             {
                 var itemContainer = TargetListView.ContainerFromIndex(i) as ListViewItem;
                 if (itemContainer == null) continue;
 
-                var targetElement = FindElementByName(itemContainer, TargetElementName) as TextBlock;
-                if (targetElement == null) continue;
-
-                var transform = itemContainer.TransformToVisual(AssociatedObject.Content as UIElement);
-                var itemTop = transform.TransformPoint(new Point(0, 0)).Y;
-                double itemCenter = itemTop + (itemContainer.ActualHeight / 2);
+                var transform = itemContainer.TransformToVisual(_cachedScrollContent);
+                var itemTop = transform.TransformPoint(default).Y;
+                double itemCenter = itemTop + (itemContainer.ActualHeight * 0.5);
                 double distance = Math.Abs(itemCenter - viewerCenter);
 
-                double opacity = distance >= maxDistance
+                double opacity = distance >= _cachedMaxDistance
                     ? MinOpacity
-                    : MaxOpacity - ((distance / maxDistance) * opacityRange);
-
-                targetElement.Opacity = opacity;
+                    : MaxOpacity - ((distance / _cachedMaxDistance) * _cached0pacityRange);
+                itemContainer.Opacity = opacity;
             }
         }
 
