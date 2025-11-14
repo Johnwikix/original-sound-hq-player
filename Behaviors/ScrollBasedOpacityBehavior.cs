@@ -100,7 +100,7 @@ namespace WinUIMusicPlayer.Behaviors
             }
 
             // 如果已经有 TargetListView，立即订阅
-            if (TargetListView != null)
+            if (TargetListView is not null)
             {
                 SubscribeToListView(TargetListView);
             }
@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.Behaviors
         private static void OnTargetListViewChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var behavior = d as ScrollBasedOpacityBehavior;
-            if (behavior == null) return;
+            if (behavior is null) return;
 
             // 取消之前的订阅
             if (e.OldValue is ListView oldListView)
@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private void SubscribeToListView(ListView listView)
         {
-            if (listView == null) return;
+            if (listView is null) return;
 
             _previousListView = listView;
 
@@ -158,7 +158,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private void UnsubscribeFromListView(ListView listView)
         {
-            if (listView == null) return;
+            if (listView is null) return;
 
             if (listView.ItemsSource is INotifyCollectionChanged observableCollection)
             {
@@ -202,7 +202,7 @@ namespace WinUIMusicPlayer.Behaviors
                 if (args.ItemContainer is ListViewItem item && args.ItemIndex >= 0)
                 {
                     var targetElement = FindElementByName(item, TargetElementName) as TextBlock;
-                    if (targetElement != null)
+                    if (targetElement is not null)
                     {
                         _targetElementCache[args.ItemIndex] = targetElement;
                         _visualCache[args.ItemIndex] = ElementCompositionPreview.GetElementVisual(targetElement);
@@ -213,21 +213,21 @@ namespace WinUIMusicPlayer.Behaviors
 
         private void RefreshContainerCache()
         {
-            if (TargetListView == null) return;
+            if (TargetListView is null) return;
 
             _targetElementCache.Clear();
             _visualCache.Clear();
             _cachedPanel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
 
-            if (_cachedPanel == null) return;
+            if (_cachedPanel is null) return;
 
             for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
             {
                 var itemContainer = TargetListView.ContainerFromIndex(i) as ListViewItem;
-                if (itemContainer != null)
+                if (itemContainer is not null)
                 {
                     var targetElement = FindElementByName(itemContainer, TargetElementName) as TextBlock;
-                    if (targetElement != null)
+                    if (targetElement is not null)
                     {
                         _targetElementCache[i] = targetElement;
                         _visualCache[i] = ElementCompositionPreview.GetElementVisual(targetElement);
