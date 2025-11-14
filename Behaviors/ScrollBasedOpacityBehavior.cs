@@ -85,10 +85,10 @@ namespace WinUIMusicPlayer.Behaviors
         private double _cached0pacityRange = 0.59;
 
         // 容器缓存字典 - 索引到容器的映射
-        private Dictionary<int, ListViewItem> _containerCache = new Dictionary<int, ListViewItem>();
-
+        private Dictionary<int, TextBlock> _targetElementCache = new Dictionary<int, TextBlock>();
         // 之前的 ListView 引用，用于取消订阅
         private ListView _previousListView;
+        private Point _reusePoint = new Point(0,0);
 
         protected override void OnAttached()
         {
@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.Behaviors
 
             // 取消订阅
             UnsubscribeFromListView(_previousListView);
-            _containerCache.Clear();
+            _targetElementCache.Clear();
         }
 
         private static void OnTargetListViewChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -149,18 +149,10 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 observableCollection.CollectionChanged += OnItemsSourceCollectionChanged;
             }
-
             // 订阅容器准备和清理事件
             listView.ContainerContentChanging += OnContainerContentChanging;
-
             // 订阅 Loaded 事件，确保容器已生成
             listView.Loaded += OnListViewLoaded;
-
-            // 如果已经加载，立即刷新缓存
-            //if (listView.IsLoaded)
-            //{
-            //    RefreshContainerCache();
-            //}
         }
 
         private void UnsubscribeFromListView(ListView listView)
@@ -175,7 +167,7 @@ namespace WinUIMusicPlayer.Behaviors
             listView.ContainerContentChanging -= OnContainerContentChanging;
             listView.Loaded -= OnListViewLoaded;
 
-            _containerCache.Clear();
+            _targetElementCache.Clear();
         }
 
         private void OnListViewLoaded(object sender, RoutedEventArgs e)
@@ -196,9 +188,9 @@ namespace WinUIMusicPlayer.Behaviors
             if (args.InRecycleQueue)
             {
                 // 容器被回收，从缓存中移除
-                if (args.ItemIndex >= 0 && _containerCache.ContainsKey(args.ItemIndex))
+                if (args.ItemIndex >= 0 && _targetElementCache.ContainsKey(args.ItemIndex))
                 {
-                    _containerCache.Remove(args.ItemIndex);
+                    _targetElementCache.Remove(args.ItemIndex);
                 }
             }
             else
@@ -206,7 +198,7 @@ namespace WinUIMusicPlayer.Behaviors
                 // 容器被准备或重用，更新缓存
                 if (args.ItemContainer is ListViewItem item && args.ItemIndex >= 0)
                 {
-                    _containerCache[args.ItemIndex] = item;
+                    _targetElementCache[args.ItemIndex] = FindElementByName(item, TargetElementName) as TextBlock;
                 }
             }
         }
@@ -215,7 +207,7 @@ namespace WinUIMusicPlayer.Behaviors
         {
             if (TargetListView == null) return;
 
-            _containerCache.Clear();
+            _targetElementCache.Clear();
             _cachedPanel = TargetListView.ItemsPanelRoot as ItemsStackPanel;
 
             if (_cachedPanel == null) return;
@@ -224,7 +216,7 @@ namespace WinUIMusicPlayer.Behaviors
                 var itemContainer = TargetListView.ContainerFromIndex(i) as ListViewItem;
                 if (itemContainer != null)
                 {
-                    _containerCache[i] = itemContainer;
+                    _targetElementCache[i] = FindElementByName(itemContainer, TargetElementName) as TextBlock;
                 }
             }
         }
@@ -256,13 +248,9 @@ namespace WinUIMusicPlayer.Behaviors
 
             for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
             {
-                _containerCache.TryGetValue(i, out var itemContainer);
-                if (itemContainer is null) continue;
-                var targetElement = FindElementByName(itemContainer, TargetElementName) as TextBlock;
+                _targetElementCache.TryGetValue(i, out var targetElement);
                 if (targetElement == null) continue;
-                var transform = itemContainer.TransformToVisual(_cachedScrollContent);
-                var itemTop = transform.TransformPoint(default).Y;
-                double itemCenter = itemTop + (itemContainer.ActualHeight * 0.5);
+                double itemCenter = targetElement.TransformToVisual(_cachedScrollContent).TransformPoint(_reusePoint).Y + (targetElement.ActualHeight * 0.5);
                 double distance = Math.Abs(itemCenter - viewerCenter);
                 double opacity = distance >= _cachedMaxDistance
                     ? MinOpacity
