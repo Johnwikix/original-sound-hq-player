@@ -655,7 +655,7 @@
                             VerticalScrollBarVisibility="Hidden">
                             <interactivity:Interaction.Behaviors>
                                 <behaviors:ScrollBasedOpacityBehavior
-                                    MaxDistanceRatio="2.2"
+                                    MaxDistanceRatio="2.3"
                                     MaxOpacity="0.65"
                                     MinOpacity="0.01"
                                     TargetElementName="LyricsTextBlockBase"
