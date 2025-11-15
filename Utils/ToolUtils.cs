@@ -963,117 +963,90 @@ namespace WinUIMusicPlayer.Utils
 
         private static async Task DecodePicture(byte[] picture, string album, BitmapImage bitmap, CancellationToken ct)
         {
-            InMemoryRandomAccessStream stream = null;
-            InMemoryRandomAccessStream outputStream = null;
-            SoftwareBitmap softwareBitmap = null;
-
-            try
+            await Task.Run(async () =>
             {
-                // 创建独立的字节副本,避免并发问题
-                var pictureBuffer = picture.AsBuffer();
-
-                stream = new InMemoryRandomAccessStream();
-                await stream.WriteAsync(pictureBuffer);
-                stream.Seek(0);
-
-                ct.ThrowIfCancellationRequested();
-
-                // 关键修复:捕获解码器异常
-                BitmapDecoder decoder;
+                SoftwareBitmap softwareBitmap = null;
                 try
                 {
-                    decoder = await BitmapDecoder.CreateAsync(stream);
-                }
-                catch (Exception ex) when (ex is COMException || ex.HResult == unchecked((int)0x88982F50)) // WINCODEC_ERR_COMPONENTNOTFOUND
-                {
-                    // 图片数据损坏或格式不支持
-                    Debug.WriteLine($"Failed to decode album art for {album}: {ex.Message}");
-                    return;
-                }
-
-                ct.ThrowIfCancellationRequested();
-
-                // 计算缩放尺寸
-                double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                uint newWidth = (uint)AppSettings.CoverSize;
-                uint newHeight = (uint)(newWidth / aspectRatio);
-
-                var transform = new BitmapTransform
-                {
-                    ScaledWidth = newWidth,
-                    ScaledHeight = newHeight,
-                    InterpolationMode = BitmapInterpolationMode.Fant
-                };
-
-                // 解码并缩放
-                softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                    BitmapPixelFormat.Bgra8,
-                    BitmapAlphaMode.Premultiplied,
-                    transform,
-                    ExifOrientationMode.RespectExifOrientation,
-                    ColorManagementMode.DoNotColorManage
-                );
-
-                ct.ThrowIfCancellationRequested();
-
-                // 编码为 PNG
-                outputStream = new InMemoryRandomAccessStream();
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outputStream);
-                encoder.SetSoftwareBitmap(softwareBitmap);
-
-                try
-                {
-                    await encoder.FlushAsync();
-                }
-                catch (Exception ex) when (ex is COMException)
-                {
-                    Debug.WriteLine($"Failed to encode album art for {album}: {ex.Message}");
-                    return;
-                }
-
-                outputStream.Seek(0);
-                ct.ThrowIfCancellationRequested();
-                // 在 UI 线程设置图片
-                var finalOutputStream = outputStream;
-                outputStream = null; // 防止在 finally 中被释放
-
-                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                {
-                    try
+                    using (var stream = new InMemoryRandomAccessStream())
                     {
-                        if (!ct.IsCancellationRequested)
+                        await stream.WriteAsync(picture.AsBuffer());
+                        stream.Seek(0);
+
+                        if (ct.IsCancellationRequested) return;
+
+                        // 解码
+                        var decoder = await BitmapDecoder.CreateAsync(stream);
+
+                        // 直接在解码时缩放（更高效）
+                        double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+                        uint newWidth = (uint)AppSettings.CoverSize;
+                        uint newHeight = (uint)(newWidth / aspectRatio);
+
+                        var transform = new BitmapTransform
                         {
-                            await bitmap.SetSourceAsync(finalOutputStream);
+                            ScaledWidth = newWidth,
+                            ScaledHeight = newHeight,
+                            InterpolationMode = BitmapInterpolationMode.Fant
+                        };
 
-                            if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
-                            {
-                                AppData.albumCoverCache.TryAdd(album, bitmap);
-                            }
+                        softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                            BitmapPixelFormat.Bgra8,
+                            BitmapAlphaMode.Premultiplied,
+                            transform,
+                            ExifOrientationMode.RespectExifOrientation,
+                            ColorManagementMode.DoNotColorManage
+                        );
+
+                        if (ct.IsCancellationRequested)
+                        {
+                            softwareBitmap?.Dispose();
+                            return;
                         }
+
+                        // 编码到新stream
+                        var outputStream = new InMemoryRandomAccessStream();
+                        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outputStream);
+                        encoder.SetSoftwareBitmap(softwareBitmap);
+                        await encoder.FlushAsync();
+                        outputStream.Seek(0);
+
+                        if (ct.IsCancellationRequested)
+                        {
+                            outputStream?.Dispose();
+                            return;
+                        }
+
+                        // 在UI线程设置
+                        App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            if (ct.IsCancellationRequested)
+                            {
+                                outputStream?.Dispose();
+                                return;
+                            }
+
+                            try
+                            {
+                                await bitmap.SetSourceAsync(outputStream);
+                                if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                                {
+                                    AppData.albumCoverCache.TryAdd(album, bitmap);
+                                }
+                            }
+                            finally
+                            {
+                                outputStream?.Dispose();
+                            }
+                        });
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Failed to set bitmap source for {album}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        finalOutputStream?.Dispose();
-                    }
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                outputStream?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                outputStream?.Dispose();
-            }
-            finally
-            {
-                softwareBitmap?.Dispose();
-                stream?.Dispose();
-            }
+                }
+                catch (OperationCanceledException) { }
+                finally
+                {
+                    softwareBitmap?.Dispose();
+                }
+            }, ct);
         }
 
         public static async Task<string> GetLyricsFromNet(Music musicDetail)
