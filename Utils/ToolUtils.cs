@@ -845,7 +845,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     if (ct.IsCancellationRequested) return;
 
-                    byte[] picture = null;
+                    byte[]? picture = null;
                     if (music.Extension.ToLower() == "dff")
                     {
                         var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
@@ -875,7 +875,7 @@ namespace WinUIMusicPlayer.Utils
                 catch (OperationCanceledException) { }
                 catch (Exception) {
                     try {
-                        byte[] picture = null;
+                        byte[]? picture = null;
                         Track track = new(music.Path);
                         picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
                             ? track?.EmbeddedPictures[0]?.PictureData
