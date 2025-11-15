@@ -873,7 +873,25 @@ namespace WinUIMusicPlayer.Utils
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (Exception) { /* 保持原有的异常处理 */ }
+                catch (Exception) {
+                    try {
+                        byte[] picture = null;
+                        Track track = new(music.Path);
+                        picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
+                            ? track?.EmbeddedPictures[0]?.PictureData
+                            : null;
+                        if (picture is not null && !ct.IsCancellationRequested)
+                        {
+                            await DecodePicture(picture, music.Album, bitmap, ct);
+                        }
+                        if (!ct.IsCancellationRequested)
+                        {
+                            await GetPicFromNet(picture, music, bitmap, ct);
+                        }
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception) { }
+                }
             }, ct);
         }
 

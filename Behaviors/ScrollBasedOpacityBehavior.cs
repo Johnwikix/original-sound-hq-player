@@ -259,27 +259,42 @@ namespace WinUIMusicPlayer.Behaviors
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateOpacity()
         {
-            if (AssociatedObject is null || TargetListView is null || _cachedPanel is null || _cachedScrollContent is null)
-                return;
-
-            double viewerCenter = AssociatedObject.VerticalOffset + (AssociatedObject.ActualHeight * 0.5);
-
-            for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
+            try
             {
-                if (!_targetElementCache.TryGetValue(i, out var targetElement) || targetElement == null)
-                    continue;
+                if (AssociatedObject is null || TargetListView is null || _cachedPanel is null || _cachedScrollContent is null)
+                    return;
+                double viewerCenter = AssociatedObject.VerticalOffset + (AssociatedObject.ActualHeight * 0.5);
 
-                double itemCenter = targetElement.TransformToVisual(_cachedScrollContent).TransformPoint(_reusePoint).Y + (targetElement.ActualHeight * 0.5);
-                double distance = Math.Abs(itemCenter - viewerCenter);
-                float opacity = distance >= _cachedMaxDistance
-                    ? (float)MinOpacity
-                    : (float)(MaxOpacity - ((distance / _cachedMaxDistance) * _cachedOpacityRange));
-
-                if (_visualCache.TryGetValue(i, out var visual) && visual is not null)
+                for (int i = _cachedPanel.FirstVisibleIndex; i <= _cachedPanel.LastVisibleIndex; i++)
                 {
-                    visual.Opacity = opacity;
+                    if (!_targetElementCache.TryGetValue(i, out var targetElement) || targetElement is null)
+                    {
+                        if (TargetListView.ContainerFromIndex(i) is not ListViewItem itemContainer) return;
+                        targetElement = FindElementByName(itemContainer, TargetElementName) as TextBlock;
+                        if (targetElement is null) return;
+                        _targetElementCache[i] = targetElement;
+                    }                    
+                    double itemCenter = targetElement.TransformToVisual(_cachedScrollContent).TransformPoint(_reusePoint).Y + (targetElement.ActualHeight * 0.5);
+                    double distance = Math.Abs(itemCenter - viewerCenter);
+                    float opacity = distance >= _cachedMaxDistance
+                        ? (float)MinOpacity
+                        : (float)(MaxOpacity - ((distance / _cachedMaxDistance) * _cachedOpacityRange));
+
+                    if (_visualCache.TryGetValue(i, out var visual) && visual is not null)
+                    {
+                        visual.Opacity = opacity;
+                    }
+                    else
+                    {
+                        visual = ElementCompositionPreview.GetElementVisual(targetElement);
+                        if (visual is null) return;
+                        _visualCache[i] = visual;
+                        visual.Opacity = opacity;
+                    }
                 }
             }
+            catch {
+            }            
         }
 
         private FrameworkElement FindElementByName(DependencyObject parent, string name)
