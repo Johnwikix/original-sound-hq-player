@@ -115,7 +115,6 @@
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="SkiaSharp.Views.WinUI" Version="3.119.1" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
@@ -273,6 +272,7 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <UserSecretsId>4aeb06b5-7bbb-4348-aff3-50338e7e8ffd</UserSecretsId>
 	<CETCompat>false</CETCompat>
+	<SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <IsPublishable>True</IsPublishable>
