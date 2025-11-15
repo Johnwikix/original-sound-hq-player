@@ -63,7 +63,7 @@
             ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-            VirtualizingStackPanel.VirtualizationMode="Recycling"
+            VirtualizingStackPanel.VirtualizationMode="Standard"
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">

@@ -1,12 +1,13 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Composition;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
-using Microsoft.UI.Composition;
 using Microsoft.Xaml.Interactivity;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Behaviors
@@ -255,6 +256,7 @@ namespace WinUIMusicPlayer.Behaviors
             _cachedOpacityRange = MaxOpacity - MinOpacity;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateOpacity()
         {
             if (AssociatedObject is null || TargetListView is null || _cachedPanel is null || _cachedScrollContent is null)

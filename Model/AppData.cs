@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -10,6 +11,8 @@ namespace WinUIMusicPlayer.Model
     public static class AppData
     {
         public static readonly ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
+        // 新增：正在加载的专辑，避免重复加载
+        public static readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLoadLocks = new();
         //public static WeakImageCache albumCoverCache = new();
         public static readonly HashSet<string> UnknownAlbums = [
                 "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"

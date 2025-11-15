@@ -22,7 +22,7 @@
                     ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"
                     SelectionMode="None"
-                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    VirtualizingStackPanel.VirtualizationMode="Standard">
                     <GridView.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
