@@ -520,16 +520,21 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void StartWatchingUsbStorageDevices()
         {
-            // 定义设备选择器以筛选 USB 存储设备
-            string deviceSelector = StorageDevice.GetDeviceSelector();
-            // 创建设备监视器
-            deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-            // 注册设备添加、移除和枚举完成事件
-            deviceWatcher.Added += DeviceWatcher_Added;
-            deviceWatcher.Removed += DeviceWatcher_Removed;
-            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-            // 启动设备监视器
-            deviceWatcher.Start();
+            try
+            {
+                // 定义设备选择器以筛选 USB 存储设备
+                string deviceSelector = StorageDevice.GetDeviceSelector();
+                // 创建设备监视器
+                deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
+                // 注册设备添加、移除和枚举完成事件
+                deviceWatcher.Added += DeviceWatcher_Added;
+                deviceWatcher.Removed += DeviceWatcher_Removed;
+                deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
+                // 启动设备监视器
+                deviceWatcher.Start();
+            }
+            catch {
+            }
         }
 
         private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
