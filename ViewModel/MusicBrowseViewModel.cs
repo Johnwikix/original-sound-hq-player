@@ -540,7 +540,6 @@ namespace WinUIMusicPlayer.ViewModel
         private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         {
             // 当 USB 存储设备插入时触发            
-            System.Diagnostics.Debug.WriteLine($"USB 存储设备已插入: {args.Name},{args}");
             Task.Delay(1500).Wait(); // 等待设备稳定
             await ReadUsbDevice();
         }
@@ -548,7 +547,6 @@ namespace WinUIMusicPlayer.ViewModel
         private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
         {
             // 当 USB 存储设备移除时触发            
-            System.Diagnostics.Debug.WriteLine($"USB 存储设备已移除");
             await ReadUsbDevice();
         }
 
