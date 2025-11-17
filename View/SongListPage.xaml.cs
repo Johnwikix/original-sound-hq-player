@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -302,6 +303,16 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+        }
+
+        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                // 容器离开可视区域,被回收
+                var item = args.Item as Music;
+                Debug.WriteLine($"{item?.Album} Container in recycle queue");
+            }
         }
     }
 }
