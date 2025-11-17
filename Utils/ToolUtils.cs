@@ -835,7 +835,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
         public static async Task LoadImageAsync(Music music, BitmapImage bitmap, CancellationToken ct)
-        {
+        {            
             await Task.Run(async () =>
             {
                 try
@@ -863,6 +863,10 @@ namespace WinUIMusicPlayer.Utils
                                 await DecodePicture(picture, music.Album, bitmap, ct);
                             }
                         }
+                    }
+                    if (!ct.IsCancellationRequested)
+                    {
+                        await GetPicFromNet(picture, music, bitmap, ct);
                     }
                 }
                 catch (OperationCanceledException) { }
