@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
+using System.Diagnostics;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -58,6 +59,17 @@ namespace WinUIMusicPlayer.View
         private void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             ViewModel.AlbumGridView_ItemClick(sender, e);
+        }
+
+        private void AlbumGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                if (args.Item is Music music)
+                {
+                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                }
+            }
         }
     }
 }

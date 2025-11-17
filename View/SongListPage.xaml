@@ -58,13 +58,13 @@
     <Grid>
         <ListView
             x:Name="MusicListView"
+            ContainerContentChanging="MusicListView_ContainerContentChanging"
             DoubleTapped="MusicListView_DoubleTapped"
             ItemContainerStyle="{StaticResource ListViewItemStyle}"
             ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended"
-            ContainerContentChanging="MusicListView_ContainerContentChanging"
             VirtualizingStackPanel.VirtualizationMode="Standard">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">

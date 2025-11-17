@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -309,9 +310,10 @@ namespace WinUIMusicPlayer.View
         {
             if (args.InRecycleQueue)
             {
-                // 容器离开可视区域,被回收
-                var item = args.Item as Music;
-                Debug.WriteLine($"{item?.Album} Container in recycle queue");
+                if (args.Item is Music music)
+                {
+                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                }
             }
         }
     }
