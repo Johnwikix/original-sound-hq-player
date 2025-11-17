@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -326,6 +327,17 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+        }
+
+        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                if (args.Item is Music music)
+                {
+                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                }
+            }
         }
     }
 }

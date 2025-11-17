@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -285,6 +286,17 @@ namespace WinUIMusicPlayer.View
                 }
                 return string.Empty;
             });
+        }
+
+        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                if (args.Item is Music music)
+                {
+                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                }
+            }
         }
     }
 }

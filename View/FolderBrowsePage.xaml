@@ -18,6 +18,7 @@
                     Margin="10,0,0,0"
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
+                    ContainerContentChanging="FolderGridView_ContainerContentChanging"
                     ItemClick="FolderGridView_ItemClick"
                     ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"

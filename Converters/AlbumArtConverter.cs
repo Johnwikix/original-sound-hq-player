@@ -142,15 +142,12 @@ namespace WinUIMusicPlayer.Converters
             }
             catch (OperationCanceledException)
             {
-                System.Diagnostics.Debug.WriteLine($"Album art loading cancelled for {key}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to load album art for {key}: {ex.Message}");
             }
             finally
             {
-                // 尝试清理引用（允许并发其它路径也做清理，使用 TryRemove）
                 _pendingImages.TryRemove(key, out _);
                 _loadingTasks.TryRemove(key, out _);
                 _cancellationTokens.TryRemove(key, out _);

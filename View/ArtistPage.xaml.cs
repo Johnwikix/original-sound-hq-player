@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using WinUIMusicPlayer.Converters;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
@@ -44,6 +46,17 @@ namespace WinUIMusicPlayer.View
         private void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             ViewModel.Artist_RightTapped(sender, e);
+        }
+
+        private void ArtistsGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                if (args.Item is Music music)
+                {
+                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                }
+            }
         }
     }
 

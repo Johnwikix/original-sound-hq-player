@@ -19,6 +19,7 @@
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="ArtistGridView_ItemClick"
+                    ContainerContentChanging="ArtistsGridView_ContainerContentChanging"
                     ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Artist_RightTapped"
                     SelectionMode="None"

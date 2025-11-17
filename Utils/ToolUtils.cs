@@ -864,10 +864,6 @@ namespace WinUIMusicPlayer.Utils
                             }
                         }
                     }
-                    if (!ct.IsCancellationRequested)
-                    {
-                        await GetPicFromNet(picture, music, bitmap, ct);
-                    }
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception) {
@@ -887,12 +883,19 @@ namespace WinUIMusicPlayer.Utils
                         }
                     }
                     catch (OperationCanceledException) { }
-                    catch (Exception) { }
+                    catch
+                    {
+                        try
+                        {
+                            await GetPicFromNet(null, music, bitmap, ct);
+                        }
+                        catch { }
+                    }
                 }
             }, ct);
         }
 
-        private static async Task GetPicFromNet(byte[] picture, Music music, BitmapImage bitmap, CancellationToken ct)
+        private static async Task GetPicFromNet(byte[]? picture, Music music, BitmapImage bitmap, CancellationToken ct)
         {
             if (picture is null)
             {

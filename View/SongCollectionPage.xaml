@@ -164,6 +164,7 @@
         <ListView
             x:Name="MusicListView"
             Grid.Row="1"
+            ContainerContentChanging="MusicListView_ContainerContentChanging"
             DoubleTapped="MusicListView_DoubleTapped"
             ItemContainerStyle="{StaticResource ListViewItemStyle}"
             ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
