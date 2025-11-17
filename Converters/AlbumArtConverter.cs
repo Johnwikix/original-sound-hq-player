@@ -14,7 +14,7 @@ namespace WinUIMusicPlayer.Converters
         private static readonly ConcurrentDictionary<string, BitmapImage> _pendingImages = new();
         private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokens = new();
         private static readonly ConcurrentDictionary<string, Task> _loadingTasks = new();
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<int, byte>> _albumToMusicIds = new();
+        private static readonly ConcurrentDictionary<string, int> _albumRefCounts = new();
         private static readonly ConcurrentDictionary<int, string> _musicIdToAlbumKey = new();
         private static readonly SemaphoreSlim _semaphore = new(AppSettings.CoverLoadThreadCount);
 
@@ -66,74 +66,55 @@ namespace WinUIMusicPlayer.Converters
         /// </summary>
         public static void OnMusicUnloaded(int musicId)
         {
-            // 直接通过反向索引查找关联的 albumKey
-            if (!_musicIdToAlbumKey.TryRemove(musicId, out var albumKey) || albumKey is null)
+            // 通过反向映射快速定位 albumKey
+            if (!_musicIdToAlbumKey.TryRemove(musicId, out var albumKey) || string.IsNullOrEmpty(albumKey))
             {
                 return;
             }
 
-            // 从 album -> musicId 集合中移除该 id
-            if (_albumToMusicIds.TryGetValue(albumKey, out var set))
+            // 原子减少引用计数
+            int newCount = _albumRefCounts.AddOrUpdate(albumKey, 0, (_, v) => Math.Max(0, v - 1));
+            if (newCount == 0)
             {
-                set.TryRemove(musicId, out _);
-
-                // 如果集合为空，说明没有可视项再需要该 album，尝试取消加载
-                if (set.IsEmpty)
+                // 取消并释放 CTS（如果存在）
+                if (_cancellationTokens.TryRemove(albumKey, out var cts))
                 {
-                    // 取消 CTS（如果存在）
-                    if (_cancellationTokens.TryRemove(albumKey, out var cts))
-                    {
-                        try { cts.Cancel(); }
-                        catch { }
-                        cts.Dispose();
-                    }
-
-                    // 清理 pending 与 loadingTask（LoadImageAsync 的 finally 也会尝试清理，但这里做一次快速清理以释放引用）
-                    _pendingImages.TryRemove(albumKey, out _);
-                    _loadingTasks.TryRemove(albumKey, out _);
-                    _albumToMusicIds.TryRemove(albumKey, out _);
+                    try { cts.Cancel(); } catch { }
+                    cts.Dispose();
                 }
+
+                // 清理其它引用以便 GC 回收
+                _pendingImages.TryRemove(albumKey, out _);
+                _loadingTasks.TryRemove(albumKey, out _);
+                _albumRefCounts.TryRemove(albumKey, out _);
             }
         }
 
         private static void RegisterMusicForAlbum(int musicId, string albumKey)
         {
-            // 如果此 musicId 之前已关联其他 album，先从旧集合中移除
+            // 如果此前关联了不同的 album，先减少旧 album 的计数
             if (_musicIdToAlbumKey.TryGetValue(musicId, out var existingKey) && existingKey != albumKey)
             {
-                if (_albumToMusicIds.TryGetValue(existingKey, out var oldSet))
+                int newOldCount = _albumRefCounts.AddOrUpdate(existingKey, 0, (_, v) => Math.Max(0, v - 1));
+                if (newOldCount == 0)
                 {
-                    oldSet.TryRemove(musicId, out _);
-                    if (oldSet.IsEmpty)
+                    // 清理旧 album 的资源（快速释放引用）
+                    _albumRefCounts.TryRemove(existingKey, out _);
+                    if (_cancellationTokens.TryRemove(existingKey, out var oldCts))
                     {
-                        // 清理旧集合的残留（非必须，但能尽早释放资源）
-                        _albumToMusicIds.TryRemove(existingKey, out _);
-                        if (_cancellationTokens.TryRemove(existingKey, out var oldCts))
-                        {
-                            try { oldCts.Cancel(); } catch { }
-                            oldCts.Dispose();
-                        }
+                        try { oldCts.Cancel(); } catch { }
+                        oldCts.Dispose();
                     }
+                    _pendingImages.TryRemove(existingKey, out _);
+                    _loadingTasks.TryRemove(existingKey, out _);
                 }
             }
 
-            // 记录反向索引
+            // 记录反向索引（覆盖以前的映射）
             _musicIdToAlbumKey[musicId] = albumKey;
 
-            // 将 musicId 添加到 album -> set 中（线程安全）
-            _albumToMusicIds.AddOrUpdate(
-                albumKey,
-                key =>
-                {
-                    var cd = new ConcurrentDictionary<int, byte>();
-                    cd.TryAdd(musicId, 0);
-                    return cd;
-                },
-                (_, existing) =>
-                {
-                    existing.TryAdd(musicId, 0);
-                    return existing;
-                });
+            // 增加 album 的引用计数
+            _albumRefCounts.AddOrUpdate(albumKey, 1, (_, v) => v + 1);
         }
 
         private static async Task LoadImageAsync(BitmapImage bitmap, Music music, string key, CancellationToken cancellationToken)
