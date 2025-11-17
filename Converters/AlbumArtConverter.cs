@@ -14,13 +14,8 @@ namespace WinUIMusicPlayer.Converters
         private static readonly ConcurrentDictionary<string, BitmapImage> _pendingImages = new();
         private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokens = new();
         private static readonly ConcurrentDictionary<string, Task> _loadingTasks = new();
-
-        // album -> set of musicIds (使用 ConcurrentDictionary<int,byte> 作为线程安全的 set)
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<int, byte>> _albumToMusicIds = new();
-
-        // musicId -> albumKey 的反向索引，避免在卸载时遍历所有 album
         private static readonly ConcurrentDictionary<int, string> _musicIdToAlbumKey = new();
-
         private static readonly SemaphoreSlim _semaphore = new(AppSettings.CoverLoadThreadCount);
 
         public object Convert(object value, Type targetType, object parameter, string language)
