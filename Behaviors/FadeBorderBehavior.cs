@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is FadeBorderBehavior behavior && e.NewValue is Brush brush)
+            if (d is FadeBorderBehavior behavior && e.NewValue is Brush brush && App.MainWindow.IsPlayingDetail)
             {
                 behavior.TransitionToNewBrush(brush);
             }
@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is FadeBorderBehavior behavior && e.OldValue is ImageSource source)
+            if (d is FadeBorderBehavior behavior && e.OldValue is ImageSource source && App.MainWindow.IsPlayingDetail)
             {
                 behavior.TransitionWithImageSource(source);
             }

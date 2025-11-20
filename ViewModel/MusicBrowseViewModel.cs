@@ -816,7 +816,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var albumCoverData = await ToolUtils.GetRawImage(music);
             BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-            await UpdateCover(DetailCover);
+            UpdateCover(DetailCover);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
@@ -827,7 +827,7 @@ namespace WinUIMusicPlayer.ViewModel
             _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
         }
 
-        private async Task UpdateCover(BitmapImage cover)
+        private void UpdateCover(BitmapImage cover)
         {
             if (cover != null)
             {
