@@ -1,14 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -348,6 +351,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private ImageSource? _lyricPageBackgroundSource = null;
+        public ImageSource? LyricPageBackgroundSource
+        {
+            get => _lyricPageBackgroundSource;
+            set => SetProperty(ref _lyricPageBackgroundSource, value);
+        }
 
         public System.Type currentPage = typeof(SongListPage);
         public Music CurrentAlbum;
@@ -431,13 +440,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
             _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
-            //if (AppSettings.IsFadeEnabled)
-            //{
-            //    if (_totalTime - _currentTime <= TimeSpan.FromMilliseconds(1000))
-            //    {
-            //        _musicPlaybackService.FadeOut();
-            //    }
-            //}
             _timeStringBuilder.Clear();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -814,6 +816,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var albumCoverData = await ToolUtils.GetRawImage(music);
             BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
+            await UpdateCover(DetailCover);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
@@ -822,6 +825,18 @@ namespace WinUIMusicPlayer.ViewModel
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
             _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
+        }
+
+        private async Task UpdateCover(BitmapImage cover)
+        {
+            if (cover != null)
+            {
+                LyricPageBackgroundSource = cover;
+            }
+            else
+            {
+                LyricPageBackgroundSource = null;
+            }
         }
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
