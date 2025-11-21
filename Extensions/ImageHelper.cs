@@ -1,4 +1,7 @@
-﻿using Microsoft.UI;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -6,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -557,9 +561,74 @@ namespace WinUIMusicPlayer.Extensions
         {
             bitmap.AdjustContrast(isDarkmode ? -1 : -20);
             bitmap.AddMask(isDarkmode);
-            bitmap.ScaleImage(2);
+            bitmap.ScaleImage(0.5);
             var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
             bitmap.GaussianBlur(ref rect, 80f, false);
+        }
+
+        public static async Task<WriteableBitmap> ApplyMicaEffectWin2DAsync(
+                    this IRandomAccessStream imageStream,
+                    bool isDarkMode)
+        {
+            const int TargetWidth = 200;
+            float blurAmount = 10.0f;
+            var device = CanvasDevice.GetSharedDevice();
+            imageStream.Seek(0);
+            using var canvasBitmap = await CanvasBitmap.LoadAsync(device, imageStream);
+            int originalWidth = (int)canvasBitmap.SizeInPixels.Width;
+            int originalHeight = (int)canvasBitmap.SizeInPixels.Height;
+            float scaleFactor;
+            int targetWidth;
+            int targetHeight;
+            if (originalWidth > TargetWidth)
+            {
+                scaleFactor = (float)TargetWidth / originalWidth;
+                targetWidth = TargetWidth;
+                targetHeight = (int)Math.Round(originalHeight * scaleFactor);
+            }
+            else
+            {
+                scaleFactor = 1.0f;
+                targetWidth = originalWidth;
+                targetHeight = originalHeight;
+                if (targetWidth < 100)
+                {
+                    blurAmount = 5.0f;
+                }
+            }
+            // 构建 GPU 效果链 (Transform2DEffect 和 GaussianBlurEffect)
+            var scaledSource = new Transform2DEffect { Source = canvasBitmap, TransformMatrix = Matrix3x2.CreateScale(scaleFactor) };
+            var blurEffect = new GaussianBlurEffect { Source = scaledSource, BlurAmount = blurAmount, Optimization = EffectOptimization.Speed };
+            using var renderTarget = new CanvasRenderTarget(device, targetWidth, targetHeight, canvasBitmap.Dpi);
+            using (var ds = renderTarget.CreateDrawingSession())
+            {
+                ds.Clear(Colors.Black);
+                ds.DrawImage(blurEffect);
+
+                // 绘制渐变遮罩
+                Windows.UI.Color color1 = isDarkMode ? Windows.UI.Color.FromArgb(90, 0, 0, 0) : Windows.UI.Color.FromArgb(90, 255, 255, 255);
+                Windows.UI.Color color2 = isDarkMode ? Windows.UI.Color.FromArgb(120, 0, 0, 0) : Windows.UI.Color.FromArgb(120, 255, 255, 255);
+
+                using var brush = new CanvasLinearGradientBrush(device, color1, color2)
+                {
+                    StartPoint = new Vector2(0, 0),
+                    EndPoint = new Vector2(0, targetHeight)
+                };
+
+                ds.FillRectangle(0, 0, targetWidth, targetHeight, brush);
+            }
+            using SoftwareBitmap resultSoftwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(renderTarget);
+
+            var writeableBitmap = new WriteableBitmap(targetWidth, targetHeight);
+            using (var converted = SoftwareBitmap.Convert(
+                resultSoftwareBitmap,
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Premultiplied))
+            {
+                // 复制像素数据到最终的 WriteableBitmap
+                converted.CopyToBuffer(writeableBitmap.PixelBuffer);
+            }
+            return writeableBitmap;
         }
 
         #endregion

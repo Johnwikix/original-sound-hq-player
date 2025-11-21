@@ -30,8 +30,8 @@
                                 CenterX="0.5"
                                 CenterY="0.5"
                                 Rotation="0"
-                                ScaleX="1.4"
-                                ScaleY="1.4" />
+                                ScaleX="1.5"
+                                ScaleY="1.5" />
                         </ImageBrush.RelativeTransform>
                     </ImageBrush>
                 </Border.Background>

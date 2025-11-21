@@ -350,23 +350,6 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static Bitmap FromByteArrayToBitmap(byte[] data)
-        {
-            if (data == null || data.Length == 0)
-                throw new ArgumentException("图像数据不能为空", nameof(data));
-
-            using var memory = new MemoryStream(data);
-            // 注意：需要复制流数据，因为 Bitmap 需要保持流打开
-            // 所以我们创建一个新的 Bitmap 对象
-            var bitmap = new Bitmap(memory);
-
-            // 创建副本以避免流被关闭后 Bitmap 失效
-            var result = new Bitmap(bitmap);
-            bitmap.Dispose();
-
-            return result;
-        }
-
         public static bool GetIsLightTheme()
         {
             using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");

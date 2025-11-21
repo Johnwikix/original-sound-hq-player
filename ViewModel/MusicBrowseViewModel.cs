@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
+using Windows.Storage.Streams;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -844,24 +845,26 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (cover != null)
                 {
-                    var bitmap = FromByteArrayToBitmap(cover);
-                    var mica = await Task.Run(() =>
+                    bool isDarkMode = true;
+                    if (AppSettings.AppTheme == "Light")
                     {
-
-                        bool isDarkMode = true;
-                        if (AppSettings.AppTheme == "Light")
-                        {
-                            isDarkMode = false;
-                        }
-                        else if (AppSettings.AppTheme == "Default")
-                        {
-                            isDarkMode = !GetIsLightTheme();
-                        }
-                        var color = bitmap.GetMajorColor().AdjustColor(isDarkMode);
-                        bitmap.ApplyMicaEffect(isDarkMode);
-                        return bitmap;
-                    });
-                    LyricPageBackgroundSource = await mica.ToBitmapImageAsync();
+                        isDarkMode = false;
+                    }
+                    else if (AppSettings.AppTheme == "Default")
+                    {
+                        // 注意：GetIsLightTheme() 最好是同步方法
+                        isDarkMode = !GetIsLightTheme();
+                    }
+                    // 【优化】: 保持将 byte[] 转换为流，但确保使用 using 块管理资源
+                    using var stream = new InMemoryRandomAccessStream();
+                    using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
+                    {
+                        dataWriter.WriteBytes(cover);
+                        await dataWriter.StoreAsync();
+                        await dataWriter.FlushAsync();
+                    }
+                    stream.Seek(0);
+                    LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(stream, isDarkMode);
                 }
                 else
                 {
