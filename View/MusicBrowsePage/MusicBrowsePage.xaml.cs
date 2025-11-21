@@ -145,7 +145,6 @@ namespace WinUIMusicPlayer.View
         {
 
             ChangeAcrylicBrushBackground();
-            AcrylicBrushBackground.Background = acrylicBrush;
             ChangeAcrylicBrushBackgroundOpacity();
         }
 
@@ -160,12 +159,12 @@ namespace WinUIMusicPlayer.View
             {
                 acrylicBrush.TintColor = Colors.White;
             }
+            ViewModel.ThemeChangedUpdateCover();
         }
 
         public void ChangeAcrylicBrushBackgroundOpacity()
         {
             ViewModel.IsAcrylicBrushOpacity = ViewModel.MusicDetailCover is not null && ViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
-            AcrylicBrushBackground.Background.Opacity = ViewModel.IsAcrylicBrushOpacity ? 1.0 : 0;
         }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)

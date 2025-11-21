@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -11,7 +10,6 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -20,6 +18,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -816,7 +815,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var albumCoverData = await ToolUtils.GetRawImage(music);
             BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-            UpdateCover(DetailCover);
+            await UpdateCover(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
@@ -827,15 +826,43 @@ namespace WinUIMusicPlayer.ViewModel
             _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
         }
 
-        private void UpdateCover(BitmapImage cover)
+        public async void ThemeChangedUpdateCover()
         {
-            if (cover != null)
+            var albumCoverData = await ToolUtils.GetRawImage(CurrentPlayingMusic);
+            await UpdateCover(albumCoverData);
+        }
+
+        private async Task UpdateCover(byte[] cover)
+        {
+            try
             {
-                LyricPageBackgroundSource = cover;
+                if (cover != null)
+                {
+                    var bitmap = FromByteArrayToBitmap(cover);
+                    var mica = await Task.Run(() =>
+                    {                        
+                        
+                        bool isDarkMode = true;
+                        if (AppSettings.AppTheme == "Light") { 
+                            isDarkMode = false;
+                        }
+                        else if (AppSettings.AppTheme == "Default")
+                        {
+                            isDarkMode = !GetIsLightTheme();
+                        }
+                        var color = bitmap.GetMajorColor().AdjustColor(isDarkMode);
+                        bitmap.ApplyMicaEffect(isDarkMode);
+                        return bitmap;
+                    });
+                    LyricPageBackgroundSource = await mica.ToBitmapImageAsync();
+                }
+                else
+                {
+                    LyricPageBackgroundSource = null;
+                }
             }
-            else
-            {
-                LyricPageBackgroundSource = null;
+            catch {
+                LyricPageBackgroundSource = await ConvertByteArrayToBitmapImage(cover);
             }
         }
 

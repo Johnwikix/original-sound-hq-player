@@ -9,11 +9,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
+using Microsoft.Win32;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -346,6 +348,38 @@ namespace WinUIMusicPlayer.Utils
             {
                 return null;
             }
+        }
+
+        public static Bitmap FromByteArrayToBitmap(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                throw new ArgumentException("图像数据不能为空", nameof(data));
+
+            using var memory = new MemoryStream(data);
+            // 注意：需要复制流数据，因为 Bitmap 需要保持流打开
+            // 所以我们创建一个新的 Bitmap 对象
+            var bitmap = new Bitmap(memory);
+
+            // 创建副本以避免流被关闭后 Bitmap 失效
+            var result = new Bitmap(bitmap);
+            bitmap.Dispose();
+
+            return result;
+        }
+
+        public static bool GetIsLightTheme()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            if (key != null)
+            {
+                var value = key.GetValue("AppsUseLightTheme");
+                if (value is int { } v)
+                {
+                    return v > 0;
+                }
+            }
+
+            return true; // 默认为浅色模式
         }
 
         public static async Task<byte[]> GetRawImage(Music music, bool isManual = false)
