@@ -191,7 +191,13 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsPlaying
         {
             get => _isPlaying;
-            set => SetProperty(ref _isPlaying, value);
+            set
+            {
+                if (SetProperty(ref _isPlaying, value))
+                {
+                    _musicBrowsePage.BeginOrPauseLyricImgAnimation(value);
+                }
+            }
         }
         private bool _isMouseOverProgressBar = false;
         public bool IsMouseOverProgressBar
@@ -840,10 +846,11 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     var bitmap = FromByteArrayToBitmap(cover);
                     var mica = await Task.Run(() =>
-                    {                        
-                        
+                    {
+
                         bool isDarkMode = true;
-                        if (AppSettings.AppTheme == "Light") { 
+                        if (AppSettings.AppTheme == "Light")
+                        {
                             isDarkMode = false;
                         }
                         else if (AppSettings.AppTheme == "Default")
@@ -861,8 +868,9 @@ namespace WinUIMusicPlayer.ViewModel
                     LyricPageBackgroundSource = null;
                 }
             }
-            catch {
-                LyricPageBackgroundSource = await ConvertByteArrayToBitmapImage(cover);
+            catch
+            {
+                LyricPageBackgroundSource = null;
             }
         }
 

@@ -56,6 +56,7 @@ namespace WinUIMusicPlayer.View
                             ScrollingAnimationMode.Enabled,
                             ScrollingSnapPointsMode.Default
                         );
+        private Storyboard? _lyricImgRTAni;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
@@ -139,6 +140,42 @@ namespace WinUIMusicPlayer.View
                 return true;
             }
             return false;
+        }
+
+        public void BeginOrPauseLyricImgAnimation(bool play)
+        {
+            var transformTarget = ContentGridBrushTransform;
+
+            if (_lyricImgRTAni == null)
+            {
+                double currentAngle = transformTarget.Rotation;
+                _lyricImgRTAni = new Storyboard
+                {
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                var rotationAnimation = new DoubleAnimation
+                {
+                    From = currentAngle,
+                    To = currentAngle + 360,
+                    Duration = new Duration(TimeSpan.FromSeconds(200)),
+                    EnableDependentAnimation = true
+                };
+                Storyboard.SetTarget(rotationAnimation, transformTarget);
+                Storyboard.SetTargetProperty(rotationAnimation, "Rotation"); 
+                _lyricImgRTAni.Children.Add(rotationAnimation);
+                _lyricImgRTAni.Begin();
+            }
+            else
+            {
+                if (play)
+                {
+                    _lyricImgRTAni.Resume();
+                }
+                else
+                {
+                    _lyricImgRTAni.Pause();
+                }
+            }
         }
 
         private void SetAcrylicBrushBackground()
@@ -517,7 +554,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
                 ViewModel._musicPlaybackService.PlayMusic(music);
                 ViewModel.UpdateProgressTimerUI();
-                ViewModel.LyricsRefreshService.ResetLyrics();
+                ViewModel.LyricsRefreshService.ResetLyrics();                
             }
             catch (Exception ex)
             {

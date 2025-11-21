@@ -339,7 +339,7 @@ namespace WinUIMusicPlayer.Extensions
 
             if (isDarkMode && l < 0.3f) l = 0.3f;
             if (!isDarkMode && l > 0.7f) l = 0.7f;
-
+            l = 0.2f;
             HslToRgb(h, s, l, out float r, out float g, out float b);
 
             byte R = (byte)Math.Max(0, Math.Min(255, r * 255));
@@ -479,8 +479,8 @@ namespace WinUIMusicPlayer.Extensions
 
         public static void AddMask(this Bitmap bitmap, bool darkmode)
         {
-            var color1 = darkmode ? Color.FromArgb(150, 0, 0, 0) : Color.FromArgb(160, 255, 255, 255);
-            var color2 = darkmode ? Color.FromArgb(180, 0, 0, 0) : Color.FromArgb(200, 255, 255, 255);
+            var color1 = darkmode ? Color.FromArgb(90, 0, 0, 0) : Color.FromArgb(90, 255, 255, 255);
+            var color2 = darkmode ? Color.FromArgb(120, 0, 0, 0) : Color.FromArgb(120, 255, 255, 255);
             using Graphics g = Graphics.FromImage(bitmap);
             using LinearGradientBrush brush = new(
                 new Rectangle(0, 0, bitmap.Width, bitmap.Height),

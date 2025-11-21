@@ -23,13 +23,15 @@
                         x:Name="ContentGridBackground"
                         ImageSource="{x:Bind ViewModel.LyricPageBackgroundSource, Mode=OneWay}"
                         Opacity="{x:Bind ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
-                        Stretch="UniformToFill">
+                        Stretch="Fill">
                         <ImageBrush.RelativeTransform>
-                            <TransformGroup>
-                                <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1.0" ScaleY="1.0" />
-                                <RotateTransform x:Name="LyricImgRT" Angle="0" CenterX="0.5" CenterY="0.5" />
-                                <TranslateTransform />
-                            </TransformGroup>
+                            <CompositeTransform
+                                x:Name="ContentGridBrushTransform"
+                                CenterX="0.5"
+                                CenterY="0.5"
+                                Rotation="0"
+                                ScaleX="1.4"
+                                ScaleY="1.4" />
                         </ImageBrush.RelativeTransform>
                     </ImageBrush>
                 </Border.Background>
