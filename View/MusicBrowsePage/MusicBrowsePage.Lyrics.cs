@@ -210,63 +210,51 @@ namespace WinUIMusicPlayer.View
 
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
         {
-            Debug.WriteLine($"开始动画: {textBlock.Text} 持续时间: {duration.TotalSeconds}秒");
             CancelCurrentAnimation();
-
-            textBlock.UpdateLayout();
-
-            // 使用 RenderSize（实际渲染尺寸）
-            var targetWidth = (float)textBlock.RenderSize.Width;
-            Debug.WriteLine($"ActualWidth: {textBlock.ActualWidth}, RenderSize.Width: {targetWidth}");
-
+            var targetWidth = (float)textBlock.ActualWidth;
             if (targetWidth <= 0)
             {
-                Debug.WriteLine("警告: TextBlock宽度为0");
                 return;
             }
-
-            var visual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview.GetElementVisual(textBlock);
+            var visual = ElementCompositionPreview.GetElementVisual(textBlock);
             var compositor = visual.Compositor;
-
             var clip = compositor.CreateInsetClip();
             clip.LeftInset = 0;
             clip.TopInset = 0;
             clip.BottomInset = 0;
             clip.RightInset = targetWidth;
-
             visual.Clip = clip;
-
             var animation = compositor.CreateScalarKeyFrameAnimation();
             animation.Duration = duration;
             animation.InsertKeyFrame(0.0f, targetWidth);
-            animation.InsertKeyFrame(1.0f, 0.0f);
-
-            var batch = compositor.CreateScopedBatch(Microsoft.UI.Composition.CompositionBatchTypes.Animation);
-            clip.StartAnimation("RightInset", animation);
-
-            batch.Completed += (s, e) =>
-            {
-                visual.Clip = null;
-                _currentCompositionBatch = null;
-                _currentAnimatingTextBlock = null;
-                Debug.WriteLine($"动画完成: {textBlock.Text}");
-            };
-            batch.End();
-
+            animation.InsertKeyFrame(1.0f, 0.0f, compositor.CreateLinearEasingFunction());
+            var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
             _currentAnimatingTextBlock = textBlock;
             _currentCompositionBatch = batch;
+            _currentCompositionClip = clip;
+            batch.Completed += OnCompositionBatchCompleted;
+            clip.StartAnimation("RightInset", animation);            
+            batch.End();
+        }
+
+        private void OnCompositionBatchCompleted(object sender, CompositionBatchCompletedEventArgs args)
+        {
+            var batch = (CompositionScopedBatch)sender;
+            batch.Completed -= OnCompositionBatchCompleted;
+            _currentCompositionBatch = null;
+            _currentCompositionClip = null;
+            _currentAnimatingTextBlock?.Clip = null;
+            _currentAnimatingTextBlock = null;
         }
 
         // 取消当前动画
         public void CancelCurrentAnimation()
         {
-            if (_currentCompositionBatch != null)
-            {
-                _currentCompositionBatch = null;
-            }
-            _currentAnimationTimer?.Stop();
-            _currentAnimationTimer = null;
-            _currentAnimatingTextBlock?.Clip = null; // 清除裁剪,恢复完整显示
+            _currentCompositionBatch?.Completed -= OnCompositionBatchCompleted;
+            _currentCompositionBatch = null;
+            _currentCompositionClip?.StopAnimation("RightInset");
+            _currentCompositionClip = null;
+            _currentAnimatingTextBlock?.Clip = null;
             _currentAnimatingTextBlock = null;
         }
 

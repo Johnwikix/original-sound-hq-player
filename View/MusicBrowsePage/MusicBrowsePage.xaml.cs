@@ -49,8 +49,8 @@ namespace WinUIMusicPlayer.View
         private string lastSearchText = string.Empty;
         private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
         private TextBlock _currentAnimatingTextBlock;
-        private DispatcherTimer _currentAnimationTimer;
-        private Microsoft.UI.Composition.CompositionScopedBatch _currentCompositionBatch;
+        private CompositionScopedBatch _currentCompositionBatch;
+        private InsetClip _currentCompositionClip;
         private CancellationTokenSource _scrollCancellation;
         private bool _isBlurApplied = false;
         private ScrollingScrollOptions _scrollOptions = new ScrollingScrollOptions(
