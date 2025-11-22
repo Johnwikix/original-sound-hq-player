@@ -51,22 +51,18 @@ namespace WinUIMusicPlayer.Services
                 _responseReadySemaphore = Semaphore.OpenExisting(ResponseSemaphoreName);
                 _notificationReadySemaphore = Semaphore.OpenExisting(NotificationSemaphoreName);
                 _isConnected = true;
-                Debug.WriteLine($"Successfully connected to Shared Memory: {MmfName}");
                 StartNotificationListener();
             }
             catch (FileNotFoundException)
             {
-                Debug.WriteLine($"Shared Memory Connection Error: Server (MMF) is not running or not accessible.");
                 _isConnected = false;
             }
             catch (WaitHandleCannotBeOpenedException)
             {
-                Debug.WriteLine($"Shared Memory Connection Error: Synchronization (Semaphore) not created by server.");
                 _isConnected = false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"General Client Error: {ex.Message}");
                 _isConnected = false;
             }
         }
@@ -80,7 +76,6 @@ namespace WinUIMusicPlayer.Services
         private async Task ListenForNotificationsAsync(CancellationToken cancellationToken)
         {
             Debug.WriteLine("Notification listener started...");
-
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
@@ -107,12 +102,9 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Notification listener error: {ex.Message}");
                     await Task.Delay(500, cancellationToken); // 出错后短暂等待
                 }
             }
-
-            Debug.WriteLine("Notification listener stopped.");
         }
 
         /// <summary>
@@ -144,9 +136,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var request = new RequestMessage { Command = command, Data = data };
                 string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
-
                 WriteToSharedMemory(RequestBufferOffset, requestJson);
-
                 try
                 {
                     _requestReadySemaphore.Release();
@@ -163,8 +153,6 @@ namespace WinUIMusicPlayer.Services
                     return new ResponseMessage { Type = MessageType.Failed, Message = "Server response timeout (1s)." };
                 }
                 string responseJson = ReadFromSharedMemory(ResponseBufferOffset);
-                Debug.WriteLine($"Received response from MMF: {responseJson}");
-
                 if (string.IsNullOrEmpty(responseJson))
                 {
                     return new ResponseMessage { Type = MessageType.Failed, Message = "Received empty response from server." };
@@ -237,7 +225,6 @@ namespace WinUIMusicPlayer.Services
         {
             var settings = new IpcSetting
             {
-                //PlayMode = ToolUtils.PlayModeToString(AppData.PlayMode),
                 OutputMode = AppSettings.OutputMode,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,

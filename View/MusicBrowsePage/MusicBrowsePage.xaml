@@ -722,7 +722,7 @@
                                                     <TextBlock
                                                         x:Name="LyricsTextBlockBase"
                                                         Margin="0"
-                                                        Padding="8"
+                                                        Padding="0,8,0,8"
                                                         HorizontalAlignment="Stretch"
                                                         FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                         FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -736,7 +736,7 @@
                                                     <TextBlock
                                                         x:Name="LyricsTextBlock"
                                                         Margin="0"
-                                                        Padding="8"
+                                                        Padding="0,8,0,8"
                                                         HorizontalAlignment="Stretch"
                                                         FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                         FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"

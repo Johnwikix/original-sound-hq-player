@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -184,8 +185,8 @@ namespace WinUIMusicPlayer.View
             var parentGrid = ToolUtils.FindParent<Grid>(textblock);
             if (isCurrentLyric)
             {
-                ApplyBlurToArea(parentGrid, 0);
-                //StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
+                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
+                ApplyBlurToArea(parentGrid, 0);                
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
                 try
@@ -209,53 +210,64 @@ namespace WinUIMusicPlayer.View
 
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
         {
+            Debug.WriteLine($"开始动画: {textBlock.Text} 持续时间: {duration.TotalSeconds}秒");
             CancelCurrentAnimation();
-            // 初始化 Clip
-            var clipGeometry = new RectangleGeometry
+
+            textBlock.UpdateLayout();
+
+            // 使用 RenderSize（实际渲染尺寸）
+            var targetWidth = (float)textBlock.RenderSize.Width;
+            Debug.WriteLine($"ActualWidth: {textBlock.ActualWidth}, RenderSize.Width: {targetWidth}");
+
+            if (targetWidth <= 0)
             {
-                Rect = new Windows.Foundation.Rect(0, 0, 0, textBlock.ActualHeight)
-            };
-            textBlock.Clip = clipGeometry;
+                Debug.WriteLine("警告: TextBlock宽度为0");
+                return;
+            }
 
-            var startTime = DateTime.Now;
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) }; // ~60fps
+            var visual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview.GetElementVisual(textBlock);
+            var compositor = visual.Compositor;
 
-            timer.Tick += (s, e) =>
+            var clip = compositor.CreateInsetClip();
+            clip.LeftInset = 0;
+            clip.TopInset = 0;
+            clip.BottomInset = 0;
+            clip.RightInset = targetWidth;
+
+            visual.Clip = clip;
+
+            var animation = compositor.CreateScalarKeyFrameAnimation();
+            animation.Duration = duration;
+            animation.InsertKeyFrame(0.0f, targetWidth);
+            animation.InsertKeyFrame(1.0f, 0.0f);
+
+            var batch = compositor.CreateScopedBatch(Microsoft.UI.Composition.CompositionBatchTypes.Animation);
+            clip.StartAnimation("RightInset", animation);
+
+            batch.Completed += (s, e) =>
             {
-                var elapsed = DateTime.Now - startTime;
-                var progress = Math.Min(1.0, elapsed.TotalSeconds / duration.TotalSeconds);
-                var width = textBlock.ActualWidth * progress;
-
-                clipGeometry.Rect = new Windows.Foundation.Rect(0, 0, width, textBlock.ActualHeight);
-
-                if (progress >= 1.0)
-                {
-                    timer.Stop();
-                    textBlock.Clip = null;
-                    _currentAnimationTimer = null;
-                    _currentAnimatingTextBlock = null;
-                }
+                visual.Clip = null;
+                _currentCompositionBatch = null;
+                _currentAnimatingTextBlock = null;
+                Debug.WriteLine($"动画完成: {textBlock.Text}");
             };
-            // 缓存当前动画
+            batch.End();
+
             _currentAnimatingTextBlock = textBlock;
-            _currentAnimationTimer = timer;
-            timer.Start();
+            _currentCompositionBatch = batch;
         }
 
         // 取消当前动画
         public void CancelCurrentAnimation()
         {
-            if (_currentAnimationTimer != null)
+            if (_currentCompositionBatch != null)
             {
-                _currentAnimationTimer.Stop();
-                _currentAnimationTimer = null;
+                _currentCompositionBatch = null;
             }
-
-            if (_currentAnimatingTextBlock != null)
-            {
-                _currentAnimatingTextBlock.Clip = null; // 清除裁剪,恢复完整显示
-                _currentAnimatingTextBlock = null;
-            }
+            _currentAnimationTimer?.Stop();
+            _currentAnimationTimer = null;
+            _currentAnimatingTextBlock?.Clip = null; // 清除裁剪,恢复完整显示
+            _currentAnimatingTextBlock = null;
         }
 
         private Color GetResourceColor(string key, Color fallbackColor)
