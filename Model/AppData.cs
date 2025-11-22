@@ -13,7 +13,6 @@ namespace WinUIMusicPlayer.Model
         public static readonly ConcurrentDictionary<string, BitmapImage> albumCoverCache = [];
         // 新增：正在加载的专辑，避免重复加载
         public static readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLoadLocks = new();
-        //public static WeakImageCache albumCoverCache = new();
         public static readonly HashSet<string> UnknownAlbums = [
                 "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"
          ];

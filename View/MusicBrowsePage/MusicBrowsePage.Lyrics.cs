@@ -121,7 +121,7 @@ namespace WinUIMusicPlayer.View
         private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
         {
             if (element is null) return;
-            if (!AppSettings.IsBackgroundCoverEnabled || AppSettings.IsGradientBlurEnabled)
+            if (!AppSettings.IsBackgroundCoverEnabled || AppSettings.IsGradientBlurEnabled || ViewModel.LyricPageBackgroundSource is null)
             {
                 ElementCompositionPreview.SetElementChildVisual(element, null);
                 return;

@@ -11,6 +11,7 @@ namespace WinUIMusicPlayer.Behaviors
 {
     public class FadeBorderBehavior : Behavior<Border>
     {
+        private Storyboard _currentImageTransitionStoryboard;
         public Brush Brush
         {
             get { return (Brush)GetValue(BrushProperty); }
@@ -72,6 +73,13 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
+            if (_currentImageTransitionStoryboard != null)
+            {
+                _currentImageTransitionStoryboard.Stop();
+                AssociatedObject.Child = null;
+                _currentImageTransitionStoryboard = null;
+            }
+
             var cover = new Border
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -98,12 +106,15 @@ namespace WinUIMusicPlayer.Behaviors
             // 2. 设置动画目标和属性
             Storyboard.SetTarget(ani, cover);
             Storyboard.SetTargetProperty(ani, "Opacity");
-
-            // 3. 注册完成事件
+            _currentImageTransitionStoryboard = storyboard; 
             storyboard.Completed += (s, e) =>
             {
                 AssociatedObject.Child = null;
                 AssociatedObject.Background = newBrush;
+                if (storyboard == _currentImageTransitionStoryboard)
+                {
+                    _currentImageTransitionStoryboard = null;
+                }
             };
 
             // 4. 启动动画
@@ -114,9 +125,18 @@ namespace WinUIMusicPlayer.Behaviors
         {
             if (oldSource == null || AssociatedObject == null) return;
             if (AssociatedObject.Background is not ImageBrush image) return;
+
+            if (_currentImageTransitionStoryboard != null)
+            {
+                _currentImageTransitionStoryboard.Stop();
+                AssociatedObject.Child = null;
+                _currentImageTransitionStoryboard = null;
+            }
+
             CompositeTransform transformClone = null;
             if (image.RelativeTransform is CompositeTransform composite)
             {
+                // 手动复制 Transform 以确保旧 ImageBrush 上的 Transform 独立于新 ImageBrush
                 transformClone = new CompositeTransform
                 {
                     CenterX = composite.CenterX,
@@ -143,26 +163,34 @@ namespace WinUIMusicPlayer.Behaviors
                 Background = oldBrush,
                 CornerRadius = AssociatedObject.CornerRadius
             };
+
+            // 将旧图像的 Border 作为当前 Border 的 Child 叠加在其上方
             AssociatedObject.Child = cover;
 
             var ani = new DoubleAnimation
             {
                 From = 1,
                 To = 0,
-                Duration = Duration.TimeSpan, // 修正 Duration
+                Duration = Duration.TimeSpan,
                 EasingFunction = new CubicEase()
             };
 
-            // 替换 BeginAnimation 为 Storyboard 逻辑
             var storyboard = new Storyboard();
             storyboard.Children.Add(ani);
 
             Storyboard.SetTarget(ani, cover);
             Storyboard.SetTargetProperty(ani, "Opacity");
 
+            // 🛑 关键：更新和清理 Storyboard 引用
+            _currentImageTransitionStoryboard = storyboard;
+
             storyboard.Completed += (s, e) =>
             {
                 AssociatedObject.Child = null;
+                if (storyboard == _currentImageTransitionStoryboard)
+                {
+                    _currentImageTransitionStoryboard = null;
+                }
             };
 
             storyboard.Begin(); // 启动 Storyboard

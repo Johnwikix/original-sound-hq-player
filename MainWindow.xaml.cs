@@ -19,6 +19,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Taskbar;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -111,7 +112,10 @@ namespace WinUIMusicPlayer
             _ = DispatcherQueue.EnqueueAsync(() =>
             {
                 SetAppStyle();
-            });
+                if (AppSettings.AppTheme == "Default") {
+                    App.Services.GetRequiredService<MusicBrowseViewModel>().ThemeChangedUpdateCover();
+                }                
+            });            
         }
         //ÏÔÊ¾´°¿Ú
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)

@@ -900,9 +900,10 @@ namespace WinUIMusicPlayer.ViewModel
                 App.MainWindow?.SetAppTheme();
                 if (_isInitized)
                 {
+                    App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
+                    App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
                     _ = MusicDatabaseService.SaveSettingAsync();
-                }
-                App.Services.GetRequiredService<MusicBrowsePage>().ChangeAcrylicBrushBackground();
+                }                
             }
             catch (Exception ex)
             {

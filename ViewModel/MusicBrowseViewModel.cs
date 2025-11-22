@@ -19,7 +19,7 @@ using System.Timers;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
 using Windows.Storage.Streams;
-using WinUIMusicPlayer.Extensions;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -835,6 +835,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void ThemeChangedUpdateCover()
         {
+            if (CurrentPlayingMusic is null) return;
             var albumCoverData = await ToolUtils.GetRawImage(CurrentPlayingMusic);
             await UpdateCover(albumCoverData);
         }
@@ -863,7 +864,6 @@ namespace WinUIMusicPlayer.ViewModel
                         await dataWriter.StoreAsync();
                         await dataWriter.FlushAsync();
                     }
-                    stream.Seek(0);
                     LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(stream, isDarkMode);
                 }
                 else

@@ -178,6 +178,15 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void DisposeLyricImgAnimation()
+        {
+            if (_lyricImgRTAni != null)
+            {
+                _lyricImgRTAni.Stop();
+                _lyricImgRTAni = null;
+            }
+        }
+
         private void SetAcrylicBrushBackground()
         {
 
@@ -195,7 +204,11 @@ namespace WinUIMusicPlayer.View
             else
             {
                 acrylicBrush.TintColor = Colors.White;
-            }
+            }            
+        }
+
+        public void ThemeChangedUpdateCover()
+        {
             ViewModel.ThemeChangedUpdateCover();
         }
 
