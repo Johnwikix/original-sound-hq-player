@@ -17,12 +17,19 @@ namespace WinUIMusicPlayer.Helper
     {
         private static float blurAmount = 10.0f;
         private static int TargetWidth = 200;
+        private static CanvasDevice device = CanvasDevice.GetSharedDevice();
         public static async Task<WriteableBitmap> ApplyMicaEffectWin2DAsync(
-                   this IRandomAccessStream imageStream,
+                   this byte[] cover,
                    bool isDarkMode)
         {
-            var device = CanvasDevice.GetSharedDevice();
-            imageStream.Seek(0);
+            using var imageStream = new InMemoryRandomAccessStream();
+            using (var dataWriter = new DataWriter(imageStream.GetOutputStreamAt(0)))
+            {
+                dataWriter.WriteBytes(cover);
+                await dataWriter.StoreAsync();
+                await dataWriter.FlushAsync();
+            }
+            imageStream.Seek(0);        
             using var canvasBitmap = await CanvasBitmap.LoadAsync(device, imageStream);
             int originalWidth = (int)canvasBitmap.SizeInPixels.Width;
             int originalHeight = (int)canvasBitmap.SizeInPixels.Height;

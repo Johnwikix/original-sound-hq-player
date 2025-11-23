@@ -856,15 +856,7 @@ namespace WinUIMusicPlayer.ViewModel
                         // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();
                     }
-                    // 【优化】: 保持将 byte[] 转换为流，但确保使用 using 块管理资源
-                    using var stream = new InMemoryRandomAccessStream();
-                    using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
-                    {
-                        dataWriter.WriteBytes(cover);
-                        await dataWriter.StoreAsync();
-                        await dataWriter.FlushAsync();
-                    }
-                    LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(stream, isDarkMode);
+                    LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
                 }
                 else
                 {
