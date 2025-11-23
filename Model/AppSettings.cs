@@ -93,6 +93,7 @@ namespace WinUIMusicPlayer.Model
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
         public static int LyricsMargin { get; set; } = 20;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
+        public static bool IsWFWLyrics { get; set; } = true;
 
     }
 }

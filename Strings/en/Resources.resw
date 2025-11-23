@@ -882,10 +882,13 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>Fade in and fade out</value>
   </data>
-  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
-    <value>Smooth scrolling</value>
+  <data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>Word for word lyrics effect</value>
   </data>
   <data name="GradientBlurEnabled.Header" xml:space="preserve">
     <value>Gradient Blur</value>
+  </data>
+  <data name="WFWLyricsDescription" xml:space="preserve">
+    <value>Effect preview, not actual word for word lyrics</value>
   </data>
 </root>

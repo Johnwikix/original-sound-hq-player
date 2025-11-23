@@ -45,10 +45,6 @@ namespace WinUIMusicPlayer.Helper
                     scaleFactor = 1.0f;
                     targetWidth = originalWidth;
                     targetHeight = originalHeight;
-                    if (targetWidth < 100)
-                    {
-                        blurAmount = 5.0f;
-                    }
                 }
                 // 构建 GPU 效果链 (Transform2DEffect 和 GaussianBlurEffect)
                 using var scaledSource = new Transform2DEffect { Source = canvasBitmap, TransformMatrix = Matrix3x2.CreateScale(scaleFactor) };

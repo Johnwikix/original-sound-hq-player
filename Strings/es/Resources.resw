@@ -882,8 +882,8 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>Desvanecerse</value>
   </data>
-  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
-    <value>Rollo suave</value>
+  <data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>Efecto letra literal</value>
   </data>
   <data name="GradientBlurEnabled.Header" xml:space="preserve">
     <value>Gradiente inexistente</value>

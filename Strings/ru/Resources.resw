@@ -882,10 +882,13 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>Уйти</value>
   </data>
-  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
-    <value>Скользящая прокрутка</value>
+  <data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>Эффект дословного текста</value>
   </data>
   <data name="GradientBlurEnabled.Header" xml:space="preserve">
     <value>Постепенное размывание</value>
+  </data>
+  <data name="WFWLyricsDescription" xml:space="preserve">
+    <value>Предварительный просмотр эффектов, а не буквальный текст</value>
   </data>
 </root>

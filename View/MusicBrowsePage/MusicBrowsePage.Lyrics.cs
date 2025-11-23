@@ -211,6 +211,7 @@ namespace WinUIMusicPlayer.View
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
         {
             CancelCurrentAnimation();
+            if(!AppSettings.IsWFWLyrics) return;
             var targetWidth = (float)textBlock.ActualWidth;
             if (targetWidth <= 0)
             {

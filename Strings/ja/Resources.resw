@@ -882,10 +882,13 @@
   <data name="FadeInOut.Header" xml:space="preserve">
     <value>フェードアウト</value>
   </data>
-  <data name="AnimateScrollEnabled.Header" xml:space="preserve">
-    <value>スムーズスクロール</value>
+  <data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>逐語歌詞効果</value>
   </data>
   <data name="GradientBlurEnabled.Header" xml:space="preserve">
     <value>グラデーションブラー</value>
+  </data>
+  <data name="WFWLyricsDescription" xml:space="preserve">
+    <value>効果のプレビュー、本当の逐語歌詞ではありません</value>
   </data>
 </root>

@@ -621,22 +621,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        //private bool _isAnimateScrollEnabled;
-        //public bool IsAnimateScrollEnabled
-        //{
-        //    get => _isAnimateScrollEnabled;
-        //    set
-        //    {
-        //        if (SetProperty(ref _isAnimateScrollEnabled, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppSettings.IsAnimateScrollEnabled = value;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
+        private bool _isWFWLyrics;
+        public bool IsWFWLyrics
+        {
+            get => _isWFWLyrics;
+            set
+            {
+                if (SetProperty(ref _isWFWLyrics, value))
+                {
+                    if (_isInitized)
+                    {
+                        AppSettings.IsWFWLyrics = value;
+                        _ = MusicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
         private bool _isGradientBlurEnabled;
         public bool IsGradientBlurEnabled
         {
@@ -708,7 +708,7 @@ namespace WinUIMusicPlayer.ViewModel
             GlobalFontSize = AppSettings.GlobalFontSize;
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
-            //IsAnimateScrollEnabled = AppSettings.IsAnimateScrollEnabled;
+            IsWFWLyrics = AppSettings.IsWFWLyrics;
             IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
             InitializeWasapiDevice();
             _isInitized = true;
