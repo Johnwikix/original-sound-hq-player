@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -170,39 +169,41 @@ namespace WinUIMusicPlayer.Services
         private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics)
         {
             string[] lines = lrcContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
             foreach (string line in lines)
             {
                 string trimmedLine = line.Trim();
                 if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
                     continue;
 
-                // 匹配时间标签 [mm:ss.xx]
-                Match timeMatch = Regex.Match(trimmedLine, @"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
+                Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
                 if (timeMatch.Success)
                 {
+                    // 提取捕获组
                     int minutes = int.Parse(timeMatch.Groups[1].Value);
                     int seconds = int.Parse(timeMatch.Groups[2].Value);
-                    string millisecondStr = timeMatch.Groups[3].Value;
+                    string millisecondStr = timeMatch.Groups[4].Value;
+
                     int milliseconds;
 
-                    // 根据毫秒部分的长度处理不同格式
                     if (millisecondStr.Length == 2)
                     {
                         milliseconds = int.Parse(millisecondStr) * 10;
                     }
-                    else
+                    else 
                     {
                         milliseconds = int.Parse(millisecondStr);
                     }
 
                     TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
 
-                    // 提取歌词文本（时间标签后的所有内容）
                     string text = trimmedLine.Substring(timeMatch.Length).Trim();
 
-                    // 如果是空行或元信息行（如作词作曲），跳过或添加为特殊行
                     if (string.IsNullOrEmpty(text))
                         continue;
+
+                    int currentPosition = 0;
+                    string currentLine = trimmedLine;
 
                     bool found = false;
                     foreach (var lyric in lyrics)
@@ -235,6 +236,7 @@ namespace WinUIMusicPlayer.Services
                 });
                 return lyrics;
             }
+
             return lyrics.AsValueEnumerable().OrderBy(l => l.Time).ToList();
         }
 

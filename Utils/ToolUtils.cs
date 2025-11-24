@@ -389,7 +389,7 @@ namespace WinUIMusicPlayer.Utils
                         }
                     }
                 }
-                if (picture is null)
+                if (picture is null || picture.Length == 0)
                 {
                     picture = await GetPicByteFromNet(music, isManual);
                 }
@@ -402,7 +402,7 @@ namespace WinUIMusicPlayer.Utils
                     byte[] picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
                         ? track?.EmbeddedPictures[0]?.PictureData
                         : null;
-                    if (picture is not null)
+                    if (picture is not null && picture.Length > 0)
                     {
                         return picture;
                     }
@@ -864,7 +864,7 @@ namespace WinUIMusicPlayer.Utils
                     {
                         var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
                         picture = res?.Pictures?.AsValueEnumerable().Count() > 0 ? res?.Pictures[0]?.ImageData : null;
-                        if (picture is not null && !ct.IsCancellationRequested)
+                        if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                         {
                             await DecodePicture(picture, music.Album, bitmap, ct);
                         }
@@ -875,7 +875,7 @@ namespace WinUIMusicPlayer.Utils
                         {
                             if (ct.IsCancellationRequested) return;
                             picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
-                            if (picture is not null && !ct.IsCancellationRequested)
+                            if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                             {
                                 await DecodePicture(picture, music.Album, bitmap, ct);
                             }
@@ -894,7 +894,7 @@ namespace WinUIMusicPlayer.Utils
                         picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
                             ? track?.EmbeddedPictures[0]?.PictureData
                             : null;
-                        if (picture is not null && !ct.IsCancellationRequested)
+                        if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                         {
                             await DecodePicture(picture, music.Album, bitmap, ct);
                         }
@@ -918,7 +918,7 @@ namespace WinUIMusicPlayer.Utils
 
         private static async Task GetPicFromNet(byte[]? picture, Music music, BitmapImage bitmap, CancellationToken ct)
         {
-            if (picture is null)
+            if (picture is null || picture.Length == 0)
             {
                 if (!Directory.Exists(AppSettings.MusicCoverCache))
                 {

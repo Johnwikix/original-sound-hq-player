@@ -80,7 +80,11 @@ namespace WinUIMusicPlayer.Helper
                 }
                 return writeableBitmap;
             }
-            finally {
+            catch {
+                return null;
+            }
+            finally
+            {
             }
         }
     }
