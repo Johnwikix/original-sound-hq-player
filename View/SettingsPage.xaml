@@ -203,15 +203,6 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind ViewModel.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="CoverLoadThreadCount" Description="{x:Bind tool:ToolUtils.GetString('CoverLoadThreadCountDescription')}">
-                            <NumberBox
-                                x:Name="CoverLoadThreadCountNumberBox"
-                                Width="300"
-                                Maximum="16"
-                                Minimum="1"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.CoverLoadThreadCount, Mode=TwoWay}" />
-                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverDiskCache">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock
@@ -237,6 +228,12 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="WFWLyricsEnabled" Description="{x:Bind tool:ToolUtils.GetString('WFWLyricsDescription')}">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsWFWLyrics, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="GradientBlurEnabled">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsGradientBlurEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
                             <ComboBox
@@ -287,12 +284,6 @@
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind ViewModel.LyricsMargin, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="WFWLyricsEnabled" Description="{x:Bind tool:ToolUtils.GetString('WFWLyricsDescription')}">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsWFWLyrics, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="GradientBlurEnabled">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsGradientBlurEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

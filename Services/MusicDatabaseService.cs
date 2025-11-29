@@ -731,7 +731,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
-                AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
+                //AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
@@ -794,7 +794,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
+            //newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;

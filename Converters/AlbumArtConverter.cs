@@ -16,7 +16,6 @@ namespace WinUIMusicPlayer.Converters
         private static readonly ConcurrentDictionary<string, Task> _loadingTasks = new();
         private static readonly ConcurrentDictionary<string, int> _albumRefCounts = new();
         private static readonly ConcurrentDictionary<int, string> _musicIdToAlbumKey = new();
-        private static readonly SemaphoreSlim _semaphore = new(AppSettings.CoverLoadThreadCount);
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -121,24 +120,14 @@ namespace WinUIMusicPlayer.Converters
         {
             try
             {
-                await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                try
+                cancellationToken.ThrowIfCancellationRequested();
+                // 再次检查缓存（在等待信号量期间可能被其它线程加载）
+                if (AppData.albumCoverCache.ContainsKey(key))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // 再次检查缓存（在等待信号量期间可能被其它线程加载）
-                    if (AppData.albumCoverCache.ContainsKey(key))
-                    {
-                        return;
-                    }
-
-                    await ToolUtils.LoadImageAsync(music, bitmap, cancellationToken).ConfigureAwait(true);
+                    return;
                 }
-                finally
-                {
-                    _semaphore.Release();
-                }
+
+                await ToolUtils.LoadImageAsync(music, bitmap, cancellationToken).ConfigureAwait(true);
             }
             catch (OperationCanceledException)
             {

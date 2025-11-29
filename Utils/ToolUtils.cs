@@ -918,38 +918,43 @@ namespace WinUIMusicPlayer.Utils
 
         private static async Task GetPicFromNet(byte[]? picture, Music music, BitmapImage bitmap, CancellationToken ct)
         {
-            if (picture is null || picture.Length == 0)
+            try
             {
-                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                if (picture is null || picture.Length == 0)
                 {
-                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                }
-                if (ct.IsCancellationRequested) return;
-                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                if (System.IO.File.Exists(filePath))
-                {
-                    picture = System.IO.File.ReadAllBytes(filePath);
-                }
-                else if (!AppData.UnknownAlbums.Contains(music.Album))
-                {
-                    if (AppSettings.isAutoLyricsEnabled)
+                    if (!Directory.Exists(AppSettings.MusicCoverCache))
                     {
-                        picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
-                        if (picture is not null)
+                        Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                    }
+                    if (ct.IsCancellationRequested) return;
+                    string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        picture = System.IO.File.ReadAllBytes(filePath);
+                    }
+                    else if (!AppData.UnknownAlbums.Contains(music.Album))
+                    {
+                        if (AppSettings.isAutoLyricsEnabled)
                         {
-                            System.IO.File.WriteAllBytes(filePath, picture);
+                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
+                            if (picture is not null)
+                            {
+                                System.IO.File.WriteAllBytes(filePath, picture);
+                            }
                         }
                     }
-                }
-                if (picture is not null)
-                {
-                    if (ct.IsCancellationRequested) return;
-                    await DecodePicture(picture, music.Album, bitmap, ct);
+                    if (picture is not null)
+                    {
+                        if (ct.IsCancellationRequested) return;
+                        await DecodePicture(picture, music.Album, bitmap, ct);
+                    }
                 }
             }
+            catch (OperationCanceledException) { }
+            catch { }
         }
 
         private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)

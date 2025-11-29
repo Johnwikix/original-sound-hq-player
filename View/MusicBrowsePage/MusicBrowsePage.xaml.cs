@@ -158,7 +158,7 @@ namespace WinUIMusicPlayer.View
                 {
                     From = currentAngle,
                     To = currentAngle + 360,
-                    Duration = new Duration(TimeSpan.FromSeconds(100)),
+                    Duration = new Duration(TimeSpan.FromSeconds(67)),
                     EnableDependentAnimation = true
                 };
                 Storyboard.SetTarget(rotationAnimation, transformTarget);
