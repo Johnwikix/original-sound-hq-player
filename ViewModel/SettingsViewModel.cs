@@ -656,7 +656,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public SettingsViewModel()
         {
+            Debug.WriteLine(DateTime.Now.Millisecond);
             InitializeData();
+            Debug.WriteLine(DateTime.Now.Millisecond);
         }
 
         private void InitializeData()
