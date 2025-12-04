@@ -290,7 +290,7 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
+                if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
                 {
                     textBlock.Opacity = textBlock.Opacity + 0.2;
                 }
@@ -310,7 +310,7 @@ namespace WinUIMusicPlayer.View
                 var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (!lyricLine.IsCurrent)
                 {
-                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
+                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
                     {
                         textBlock.Opacity = 0;
                     }
@@ -321,7 +321,7 @@ namespace WinUIMusicPlayer.View
                 }
                 else
                 {
-                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled)
+                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
                     {
                         textBlock.Opacity = textBlock.Opacity + 0.2;
                     }

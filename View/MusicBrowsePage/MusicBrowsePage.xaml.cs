@@ -559,9 +559,9 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                ViewModel.CurrentPlayingMusic = music;
-                ViewModel.LoadLyricsToUI();
+                ViewModel.CurrentPlayingMusic = music;                
                 ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
+                ViewModel.LoadLyricsToUI();
                 ViewModel.UpdateLyricsMargin();
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
