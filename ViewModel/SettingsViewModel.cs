@@ -370,23 +370,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        //private int _coverLoadThreadCount = 8;
-        //public int CoverLoadThreadCount
-        //{
-        //    get => _coverLoadThreadCount;
-        //    set
-        //    {
-        //        if (SetProperty(ref _coverLoadThreadCount, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppSettings.CoverLoadThreadCount = value;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
-
         private string _version = string.Empty;
         public string Version
         {
@@ -694,7 +677,6 @@ namespace WinUIMusicPlayer.ViewModel
             DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            //CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
             IsCustomAppSize = AppSettings.IsCustomAppSize;
             AppHeight = AppSettings.AppHeight;
             AppWidth = AppSettings.AppWidth;
