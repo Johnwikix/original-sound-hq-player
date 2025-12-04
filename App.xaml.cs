@@ -100,13 +100,7 @@ namespace WinUIMusicPlayer
         public App()
         {
             GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-            this.InitializeComponent();
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "BassPlayerSharp.exe",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-            });
+            this.InitializeComponent();            
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;
@@ -193,6 +187,12 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "BassPlayerSharp.exe",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                });
                 await _host.StartAsync();
                 // 创建并激活主窗口
                 MainWindow = new MainWindow();
