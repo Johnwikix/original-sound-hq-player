@@ -271,10 +271,10 @@ namespace WinUIMusicPlayer.Services
         private async void AddToPlaylistMenuItem_Click(object sender, RoutedEventArgs e, string type)
         {
             var menuItem = sender as MenuFlyoutItem;
-            var data = menuItem.DataContext as dynamic;
+            var data = menuItem?.DataContext as dynamic;
 
-            Music item = data.Item as Music;
-            PlayList playlist = data.Playlist;
+            Music item = data?.Item as Music;
+            PlayList playlist = data?.Playlist;
 
             if (item is not null)
             {

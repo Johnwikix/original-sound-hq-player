@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _isConnected = false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _isConnected = false;
             }
@@ -100,7 +100,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     break;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await Task.Delay(500, cancellationToken); // 出错后短暂等待
                 }

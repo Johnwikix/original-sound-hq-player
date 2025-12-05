@@ -117,9 +117,7 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
-    <PackageReference Include="System.Formats.Asn1" Version="10.0.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.0" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.0" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.9.0" />
     <PackageReference Include="z440.atl.core" Version="7.9.0" />
@@ -222,13 +220,6 @@
   </ItemGroup>
   <ItemGroup>
 	  <TrimmerRootAssembly Include="TagLibSharp" />
-	  <TrimmerRootAssembly Include="ManagedBass.Tags" />
-	  <TrimmerRootAssembly Include="ManagedBass.Fx" />
-	  <TrimmerRootAssembly Include="ManagedBass.Wasapi" />
-      <TrimmerRootAssembly Include="ManagedBass.Dsd" />
-	  <TrimmerRootAssembly Include="ManagedBass.Enc" />
-	  <TrimmerRootAssembly Include="ManagedBass.Asio" />
-	  <TrimmerRootAssembly Include="ManagedBass" />
 	  <TrimmerRootAssembly Include="SQLite-net" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
   </ItemGroup>
