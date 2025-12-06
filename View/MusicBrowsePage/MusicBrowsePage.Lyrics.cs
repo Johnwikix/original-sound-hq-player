@@ -236,7 +236,7 @@ namespace WinUIMusicPlayer.View
                           .OfType<BlurEffectControl>()
                           .FirstOrDefault();
 
-                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(1500));
+                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(blurControl.GetBlurEffectManager().BlurAmount, TimeSpan.FromMilliseconds(1000));
             }
         }
 
@@ -248,7 +248,7 @@ namespace WinUIMusicPlayer.View
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1500));
+                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1000));
             }
         }
     }
