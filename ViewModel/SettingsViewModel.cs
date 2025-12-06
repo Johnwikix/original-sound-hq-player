@@ -629,7 +629,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (_isInitized)
                     {
-                        AppSettings.IsGradientBlurEnabled = value;
+                        //AppSettings.IsGradientBlurEnabled = value;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -693,7 +693,7 @@ namespace WinUIMusicPlayer.ViewModel
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             IsWFWLyrics = AppSettings.IsWFWLyrics;
-            IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
+            //IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
             InitializeWasapiDevice();
             _isInitized = true;
         }

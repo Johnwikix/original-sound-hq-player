@@ -752,7 +752,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
-                AppSettings.IsGradientBlurEnabled = settings.IsGradientBlurEnabled;
+                //AppSettings.IsGradientBlurEnabled = settings.IsGradientBlurEnabled;
             }
         }
 
@@ -816,7 +816,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            newSettings.IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
+            //newSettings.IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
             return newSettings;
         }
 
