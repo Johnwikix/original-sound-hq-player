@@ -10,7 +10,6 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -236,11 +235,11 @@ namespace WinUIMusicPlayer.View
                 var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (parentGrid != null)
                 {
-                    var blurControl = parentGrid.Children
+                    var blurControl = parentGrid.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(1000));
+                    blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(500));
                 }
             }
         }
@@ -252,11 +251,11 @@ namespace WinUIMusicPlayer.View
                 var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
                 if (parentGrid != null)
                 {
-                    var blurControl = parentGrid.Children
+                    var blurControl = parentGrid.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1000));
+                    blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(500));
                 }
             }
         }

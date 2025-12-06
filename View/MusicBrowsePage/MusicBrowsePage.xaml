@@ -664,6 +664,7 @@
                             </Grid.RowDefinitions>
                             <!--  添加歌词显示列表  -->
                             <dev:OpacityMaskView
+                                x:Name="MaskView"
                                 Grid.Row="1"
                                 Margin="0,20,0,20"
                                 Padding="0"
