@@ -727,7 +727,10 @@
                                             </ListView.ItemContainerStyle>
                                             <ListView.ItemTemplate>
                                                 <DataTemplate x:DataType="model:LyricLine">
-                                                    <Grid>
+                                                    <Grid
+                                                        x:Name="LyricsLineGrid"
+                                                        PointerEntered="Grid_PointerEntered"
+                                                        PointerExited="LyricsLineGrid_PointerExited">
                                                         <TextBlock
                                                             x:Name="LyricsTextBlockBase"
                                                             Margin="0"
@@ -751,8 +754,6 @@
                                                             FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
                                                             FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
                                                             Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                                            PointerEntered="LyricsTextBlock_PointerEntered"
-                                                            PointerExited="LyricsTextBlock_PointerExited"
                                                             SizeChanged="LyricsTextBlock_SizeChanged"
                                                             Text="{x:Bind Text}"
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
@@ -760,7 +761,7 @@
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
                                                             BlurAmount="4"
-                                                            IsBlurEnabled="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}" />
+                                                            IsBlurEnabled="True" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>

@@ -817,5 +817,6 @@ namespace WinUIMusicPlayer.View
         {
             CurrentPlayListTeachingTip.IsOpen = false;
         }
+        
     }
 }

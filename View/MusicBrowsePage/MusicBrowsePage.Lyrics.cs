@@ -228,35 +228,27 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void LyricsTextBlock_PointerEntered(object sender, PointerRoutedEventArgs e)
+        private void Grid_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock)
+            if (sender is Grid grid )
             {
-                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                if (parentGrid != null)
-                {
-                    var blurControl = parentGrid.Children.AsValueEnumerable()
-                        .OfType<BlurEffectControl>()
-                        .FirstOrDefault();
+                var blurControl = grid?.Children.AsValueEnumerable()
+                          .OfType<BlurEffectControl>()
+                          .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(500));
-                }
+                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(1500));
             }
         }
 
-        private void LyricsTextBlock_PointerExited(object sender, PointerRoutedEventArgs e)
+        private void LyricsLineGrid_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock && textBlock.DataContext is LyricLine lyricLine)
+            if (sender is Grid grid)
             {
-                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                if (parentGrid != null)
-                {
-                    var blurControl = parentGrid.Children.AsValueEnumerable()
+                var blurControl = grid?.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(500));
-                }
+                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1500));
             }
         }
     }
