@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -16,6 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Xml.Linq;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
 using Windows.Storage.Streams;
@@ -1172,6 +1174,6 @@ namespace WinUIMusicPlayer.ViewModel
             catch (Exception)
             {
             }
-        }
+        }        
     }
 }

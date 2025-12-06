@@ -6,6 +6,7 @@ using Microsoft.Xaml.Interactivity;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Behaviors
 {
@@ -44,6 +45,9 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
+            if (!AppSettings.IsBackgroundCoverEnabled) {
+                return;
+            }
             if (d is FadeBorderBehavior behavior && e.OldValue is ImageSource source && App.MainWindow.IsPlayingDetail)
             {
                 behavior.TransitionWithImageSource(source);

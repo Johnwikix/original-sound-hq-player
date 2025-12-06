@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Effects;
+﻿using DevWinUI;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -119,59 +120,6 @@ namespace WinUIMusicPlayer.View
             _isBlurApplied = true;
         }
 
-        private void ApplyBlurToArea(FrameworkElement element, float blurAmount)
-        {
-            if (element is null) return;
-            if (!AppSettings.IsBackgroundCoverEnabled || AppSettings.IsGradientBlurEnabled || ViewModel.LyricPageBackgroundSource is null)
-            {
-                ElementCompositionPreview.SetElementChildVisual(element, null);
-                return;
-            }
-            var visual = ElementCompositionPreview.GetElementVisual(element);
-            var compositor = visual.Compositor;
-            // 创建高斯模糊效果
-            var gaussianBlurEffect = new GaussianBlurEffect
-            {
-                BlurAmount = blurAmount,
-                Source = new CompositionEffectSourceParameter("Source"),
-                Optimization = EffectOptimization.Balanced,
-                BorderMode = EffectBorderMode.Soft
-            };
-            // 创建效果工厂
-            var effectFactory = compositor.CreateEffectFactory(gaussianBlurEffect);
-            var backdropBrush = compositor.CreateBackdropBrush();
-            var effectBrush = effectFactory.CreateBrush();
-            effectBrush.SetSourceParameter("Source", backdropBrush);
-            var spriteVisual = compositor.CreateSpriteVisual();
-            spriteVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
-            spriteVisual.Brush = effectBrush;
-            ElementCompositionPreview.SetElementChildVisual(element, spriteVisual);
-        }
-
-        private void ClearBlurFromLyricViewer()
-        {
-            if (!_isBlurApplied) return;
-
-            ElementCompositionPreview.SetElementChildVisual(LyricViewer, null);
-            _isBlurApplied = false;
-        }
-
-        // 在LyricViewer的SizeChanged事件中调用
-        private void LyricViewer_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (AppSettings.IsGradientBlurEnabled)
-            {
-                if (_isBlurApplied)
-                {
-                    ClearBlurFromLyricViewer();
-                }
-                ApplyVerticalGradientBlurToLyricViewer();
-            }
-            else {
-                ClearBlurFromLyricViewer();
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -185,8 +133,7 @@ namespace WinUIMusicPlayer.View
             var parentGrid = ToolUtils.FindParent<Grid>(textblock);
             if (isCurrentLyric)
             {
-                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);
-                ApplyBlurToArea(parentGrid, 0);                
+                StartTimerAnimation(textblock, ViewModel.LyricsDurationTime);               
                 var container = ToolUtils.FindParent<ListViewItem>(textblock);
                 if (container == null) return;
                 try
@@ -201,10 +148,6 @@ namespace WinUIMusicPlayer.View
                 }
                 catch (OperationCanceledException) { }
                 catch { }
-            }
-            else
-            {
-                ApplyBlurToArea(parentGrid, 1);
             }
         }
 
@@ -290,15 +233,14 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is TextBlock textBlock)
             {
-                if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
+                var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
+                if (parentGrid != null)
                 {
-                    textBlock.Opacity = textBlock.Opacity + 0.2;
-                }
-                else
-                {
-                    var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                    ApplyBlurToArea(parentGrid, 0);
+                    var blurControl = parentGrid.Children
+                        .OfType<BlurEffectControl>()
+                        .FirstOrDefault();
 
+                    blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(4, TimeSpan.FromMilliseconds(1000));
                 }
             }
         }
@@ -308,27 +250,13 @@ namespace WinUIMusicPlayer.View
             if (sender is TextBlock textBlock && textBlock.DataContext is LyricLine lyricLine)
             {
                 var parentGrid = ToolUtils.FindParent<Grid>(textBlock);
-                if (!lyricLine.IsCurrent)
+                if (parentGrid != null)
                 {
-                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
-                    {
-                        textBlock.Opacity = 0;
-                    }
-                    else
-                    {
-                        ApplyBlurToArea(parentGrid, 1);
-                    }
-                }
-                else
-                {
-                    if (AppSettings.IsGradientBlurEnabled || !AppSettings.IsBackgroundCoverEnabled || ViewModel.LyricPageBackgroundSource is null)
-                    {
-                        textBlock.Opacity = textBlock.Opacity + 0.2;
-                    }
-                    else
-                    {
-                        ApplyBlurToArea(parentGrid, 0);
-                    }
+                    var blurControl = parentGrid.Children
+                        .OfType<BlurEffectControl>()
+                        .FirstOrDefault();
+
+                    blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1000));
                 }
             }
         }

@@ -665,7 +665,7 @@
                             <!--  添加歌词显示列表  -->
                             <dev:OpacityMaskView
                                 Grid.Row="1"
-                                Margin="0"
+                                Margin="0,20,0,20"
                                 Padding="0"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch">
@@ -684,9 +684,8 @@
                                     </LinearGradientBrush>
                                 </dev:OpacityMaskView.OpacityMask>
                                 <ScrollView
-                                    x:Name="LyricViewer"                                    
+                                    x:Name="LyricViewer"
                                     Margin="0"
-                                    SizeChanged="LyricViewer_SizeChanged"
                                     VerticalScrollBarVisibility="Hidden">
                                     <StackPanel>
                                         <StackPanel Height="1080" />
@@ -728,7 +727,6 @@
                                             <ListView.ItemTemplate>
                                                 <DataTemplate x:DataType="model:LyricLine">
                                                     <Grid>
-                                                        <!--  底层 TextBlock (未高亮/灰色)  -->
                                                         <TextBlock
                                                             x:Name="LyricsTextBlockBase"
                                                             Margin="0"
@@ -737,7 +735,7 @@
                                                             FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                             FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
                                                             FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                            Opacity="0.6"
+                                                            Opacity="0.5"
                                                             Text="{x:Bind Text}"
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                             TextWrapping="WrapWholeWords" />
@@ -758,6 +756,10 @@
                                                             Text="{x:Bind Text}"
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                             TextWrapping="WrapWholeWords" />
+                                                        <dev:BlurEffectControl
+                                                            x:Name="BlurEffectControlSample"
+                                                            BlurAmount="4"
+                                                            IsBlurEnabled="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>
