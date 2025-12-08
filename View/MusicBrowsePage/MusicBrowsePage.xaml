@@ -18,12 +18,14 @@
     mc:Ignorable="d">
     <Grid Margin="0">
         <Grid>
-            <Border Grid.Row="0" Grid.Column="0">
+            <Border
+                Grid.Row="0"
+                Grid.Column="0"
+                Visibility="{x:Bind ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
                 <Border.Background>
                     <ImageBrush
                         x:Name="ContentGridBackground"
                         ImageSource="{x:Bind ViewModel.LyricPageBackgroundSource, Mode=OneWay}"
-                        Opacity="{x:Bind ViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToBackGroundOpacityConverter}, Mode=OneWay}"
                         Stretch="Fill">
                         <ImageBrush.RelativeTransform>
                             <CompositeTransform
