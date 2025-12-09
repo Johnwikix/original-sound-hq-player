@@ -885,8 +885,8 @@
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Word for word lyrics effect</value>
   </data>
-  <data name="GradientBlurEnabled.Header" xml:space="preserve">
-    <value>Gradient Blur</value>
+  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>Lyrics Blur Amount</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Effect preview, not actual word for word lyrics</value>

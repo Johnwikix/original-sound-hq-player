@@ -620,16 +620,16 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private bool _isGradientBlurEnabled;
-        public bool IsGradientBlurEnabled
+        private double _lyricsBlurAmount;
+        public double LyricsBlurAmount
         {
-            get => _isGradientBlurEnabled;
+            get => _lyricsBlurAmount;
             set {
-                if (SetProperty(ref _isGradientBlurEnabled, value))
+                if (SetProperty(ref _lyricsBlurAmount, value))
                 {
                     if (_isInitized)
                     {
-                        //AppSettings.IsGradientBlurEnabled = value;
+                        AppSettings.LyricsBlurAmount = value / 10;
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -693,7 +693,7 @@ namespace WinUIMusicPlayer.ViewModel
             MusicCoverCache = AppSettings.MusicCoverCache;
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             IsWFWLyrics = AppSettings.IsWFWLyrics;
-            //IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
+            LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
             InitializeWasapiDevice();
             _isInitized = true;
         }

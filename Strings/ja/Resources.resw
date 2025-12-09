@@ -885,8 +885,8 @@
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>逐語歌詞効果</value>
   </data>
-  <data name="GradientBlurEnabled.Header" xml:space="preserve">
-    <value>グラデーションブラー</value>
+  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>歌詞の曖昧さ</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>効果のプレビュー、本当の逐語歌詞ではありません</value>

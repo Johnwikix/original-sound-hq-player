@@ -885,8 +885,8 @@
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>逐字歌词效果</value>
   </data>
-  <data name="GradientBlurEnabled.Header" xml:space="preserve">
-    <value>渐变模糊</value>
+  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>歌词模糊程度</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>效果预览，并非真正的逐字歌词</value>

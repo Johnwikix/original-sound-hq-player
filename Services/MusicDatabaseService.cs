@@ -731,7 +731,6 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppSettings.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
-                //AppSettings.CoverLoadThreadCount = settings.CoverLoadThreadCount;
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
@@ -752,7 +751,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
-                //AppSettings.IsGradientBlurEnabled = settings.IsGradientBlurEnabled;
+                AppSettings.LyricsBlurAmount = settings.LyricsBlurAmount;
             }
         }
 
@@ -794,7 +793,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            //newSettings.CoverLoadThreadCount = AppSettings.CoverLoadThreadCount;
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
@@ -816,7 +814,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            //newSettings.IsGradientBlurEnabled = AppSettings.IsGradientBlurEnabled;
+            newSettings.LyricsBlurAmount = AppSettings.LyricsBlurAmount;
             return newSettings;
         }
 

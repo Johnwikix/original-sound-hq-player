@@ -248,7 +248,7 @@ namespace WinUIMusicPlayer.View
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(4, TimeSpan.FromMilliseconds(1000));
+                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(1000));
             }
         }
     }

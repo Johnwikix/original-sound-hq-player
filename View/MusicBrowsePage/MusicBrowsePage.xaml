@@ -736,7 +736,7 @@
                                                         <TextBlock
                                                             x:Name="LyricsTextBlockBase"
                                                             Margin="0"
-                                                            Padding="10"
+                                                            Padding="10,20,10,20"
                                                             HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                             FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                             FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -750,7 +750,7 @@
                                                         <TextBlock
                                                             x:Name="LyricsTextBlock"
                                                             Margin="0"
-                                                            Padding="10"
+                                                            Padding="10,20,10,20"
                                                             HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                             FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                             FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -762,7 +762,7 @@
                                                             TextWrapping="WrapWholeWords" />
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
-                                                            BlurAmount="4"
+                                                            BlurAmount="{x:Bind model:AppSettings.LyricsBlurAmount}"
                                                             IsBlurEnabled="True" />
                                                     </Grid>
                                                 </DataTemplate>

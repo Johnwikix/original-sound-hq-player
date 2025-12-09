@@ -232,9 +232,13 @@
                         <controls:SettingsCard x:Uid="WFWLyricsEnabled" Description="{x:Bind tool:ToolUtils.GetString('WFWLyricsDescription')}">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsWFWLyrics, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <!--<controls:SettingsCard x:Uid="GradientBlurEnabled">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsGradientBlurEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>-->
+                        <controls:SettingsCard x:Uid="LyricsBlurAmount">
+                            <Slider
+                                Maximum="100"
+                                Minimum="10"
+                                TickFrequency="10"
+                                Value="{x:Bind ViewModel.LyricsBlurAmount, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
                             <ComboBox
                                 x:Name="LyricsFontFamily"

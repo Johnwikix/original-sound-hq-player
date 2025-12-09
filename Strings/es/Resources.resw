@@ -885,7 +885,7 @@
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Efecto letra literal</value>
   </data>
-  <data name="GradientBlurEnabled.Header" xml:space="preserve">
-    <value>Gradiente inexistente</value>
+  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>Cantidad de borrosidad de la letra</value>
   </data>
 </root>

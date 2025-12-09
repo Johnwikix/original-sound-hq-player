@@ -24,8 +24,7 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorGreen { get; set; } = 128;
         public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Dark";
-        //public bool IsAnimateScrollEnabled { get; set; } = true;
-        //public bool IsGradientBlurEnabled { get; set; } = false;
+        public double LyricsBlurAmount { get; set; } = 5;
         public bool isCoverCacheEnabled { get; set; } = true;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;

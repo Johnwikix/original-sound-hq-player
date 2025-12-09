@@ -885,8 +885,8 @@
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Эффект дословного текста</value>
   </data>
-  <data name="GradientBlurEnabled.Header" xml:space="preserve">
-    <value>Постепенное размывание</value>
+  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>Степень двусмысленности текста</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Предварительный просмотр эффектов, а не буквальный текст</value>
