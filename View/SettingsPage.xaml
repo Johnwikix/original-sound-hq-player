@@ -234,9 +234,11 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
-                                Maximum="100"
+                                Maximum="80"
                                 Minimum="10"
-                                TickFrequency="10"
+                                SnapsTo="Ticks"
+                                TickFrequency="5"
+                                TickPlacement="Outside"
                                 Value="{x:Bind ViewModel.LyricsBlurAmount, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
