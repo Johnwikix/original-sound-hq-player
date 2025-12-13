@@ -74,14 +74,15 @@ namespace WinUIMusicPlayer.Helper
             _isConnected = false;
             _currentTarget = null;
 
+
             if (disconnectedTarget is FrameworkElement element)
             {
                 element.ActualThemeChanged -= RootElement_ActualThemeChanged;
-            }
 
-            if (disconnectedTarget is Window window)
-            {
-                window.Closed -= Window_Closed;
+                if (_currentTarget is Window window)
+                {
+                    window.Closed += Window_Closed;
+                }
             }
 
             if (_micaController is not null)
@@ -116,21 +117,16 @@ namespace WinUIMusicPlayer.Helper
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
         {
-            if (_backdropConfiguration is not null)
+            if (_backdropConfiguration is null) return;
+
+            _backdropConfiguration.Theme = element.ActualTheme switch
             {
-                switch (element.ActualTheme)
-                {
-                    case ElementTheme.Dark:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Dark;
-                        break;
-                    case ElementTheme.Light:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Light;
-                        break;
-                    case ElementTheme.Default:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Default;
-                        break;
-                }
-            }
+                ElementTheme.Dark => SystemBackdropTheme.Dark,
+                ElementTheme.Light => SystemBackdropTheme.Light,
+                ElementTheme.Default => SystemBackdropTheme.Default,
+                _ => SystemBackdropTheme.Default
+            };
+            UpdateUiColor(element.ActualTheme);
         }
 
         // 设置云母效果的属性
@@ -184,6 +180,21 @@ namespace WinUIMusicPlayer.Helper
             {
                 _backdropConfiguration.IsInputActive = isActive;
             }
+        }
+
+        private void UpdateUiColor(ElementTheme elementTheme)
+        {
+            var isDarkTheme = elementTheme switch
+            {
+                ElementTheme.Dark => true,
+                ElementTheme.Light => false,
+                ElementTheme.Default => Application.Current.RequestedTheme == ApplicationTheme.Dark,
+                _ => true
+            };
+            TintColor = isDarkTheme
+                ? Color.FromArgb(255, 32, 32, 32)
+                : Color.FromArgb(255, 255, 255, 255);
+            SetMicaProperties();
         }
     }
 }

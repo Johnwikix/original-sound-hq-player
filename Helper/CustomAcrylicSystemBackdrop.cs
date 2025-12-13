@@ -2,8 +2,8 @@
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
 using Windows.UI;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -117,21 +117,16 @@ namespace WinUIMusicPlayer.Helper
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
         {
-            if (_backdropConfiguration is not null)
+            if (_backdropConfiguration is null) return;
+
+            _backdropConfiguration.Theme = element.ActualTheme switch
             {
-                switch (element.ActualTheme)
-                {
-                    case ElementTheme.Dark:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Dark;
-                        break;
-                    case ElementTheme.Light:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Light;
-                        break;
-                    case ElementTheme.Default:
-                        _backdropConfiguration.Theme = SystemBackdropTheme.Default;
-                        break;
-                }
-            }
+                ElementTheme.Dark => SystemBackdropTheme.Dark,
+                ElementTheme.Light => SystemBackdropTheme.Light,
+                ElementTheme.Default => SystemBackdropTheme.Default,
+                _ => SystemBackdropTheme.Default
+            };
+            UpdateUiColor(element.ActualTheme);            
         }
 
         // 设置亚克力效果的属性
@@ -156,11 +151,8 @@ namespace WinUIMusicPlayer.Helper
                         _acrylicController.TintOpacity = (float)TintOpacity;
                         _acrylicController.LuminosityOpacity = (float)LuminosityOpacity;
                     }
-                    else
-                    {
-                    }
                 }
-                catch (Exception)
+                catch
                 {
                 }
             });
@@ -182,6 +174,29 @@ namespace WinUIMusicPlayer.Helper
             {
                 _backdropConfiguration.IsInputActive = isActive;
             }
+        }
+
+        private void UpdateUiColor(ElementTheme elementTheme)
+        {
+            if (!IsDefaultColor(TintColor)) return;
+            var isDarkTheme = elementTheme switch
+            {
+                ElementTheme.Dark => true,
+                ElementTheme.Light => false,
+                ElementTheme.Default => Application.Current.RequestedTheme == ApplicationTheme.Dark,
+                _ => true
+            };
+            TintColor = isDarkTheme
+                ? Color.FromArgb(255, 32, 32, 32)
+                : Color.FromArgb(255, 255, 255, 255);
+            SetAcrylicProperties();
+        }
+
+        private bool IsDefaultColor(Color color)
+        {
+            // 检查是否是默认的深色或浅色
+            return (color.A == 255 && color.R == 32 && color.G == 32 && color.B == 32) ||
+                   (color.A == 255 && color.R == 255 && color.G == 255 && color.B == 255);
         }
     }
 }

@@ -676,12 +676,12 @@
                                     <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
                                         <GradientStop Offset="0" Color="#0000FFFF" />
                                         <GradientStop Offset="0.05" Color="#00FFFFFF" />
-                                        <GradientStop Offset="0.2" Color="#0FFFFFFF" />
-                                        <GradientStop Offset="0.3" Color="#5FFFFFFF" />
-                                        <GradientStop Offset="0.4" Color="#FFFFFFFF" />
-                                        <GradientStop Offset="0.6" Color="#FFFFFFFF" />
-                                        <GradientStop Offset="0.7" Color="#5FFFFFFF" />
-                                        <GradientStop Offset="0.8" Color="#0FFFFFFF" />
+                                        <GradientStop Offset="0.15" Color="#0FFFFFFF" />
+                                        <GradientStop Offset="0.25" Color="#5FFFFFFF" />
+                                        <GradientStop Offset="0.35" Color="#FFFFFFFF" />
+                                        <GradientStop Offset="0.65" Color="#FFFFFFFF" />
+                                        <GradientStop Offset="0.75" Color="#5FFFFFFF" />
+                                        <GradientStop Offset="0.85" Color="#0FFFFFFF" />
                                         <GradientStop Offset="0.95" Color="#00FFFFFF" />
                                         <GradientStop Offset="1" Color="#0000FFFF" />
                                     </LinearGradientBrush>

@@ -206,7 +206,6 @@ namespace WinUIMusicPlayer
 
         public void SetAppTheme()
         {
-            themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
         }
 
