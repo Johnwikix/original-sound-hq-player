@@ -18,9 +18,9 @@ namespace WinUIMusicPlayer.Helper
         private bool _isConnected = false;
 
         // 透明度属性
-        public double TintOpacity { get; set; } = 0.8;
-        public double LuminosityOpacity { get; set; } = 0.7;
-        public Color TintColor { get; set; } = Color.FromArgb(255, 135, 206, 235);
+        public double TintOpacity { get; set; } = 0.5;
+        public double LuminosityOpacity { get; set; } = 0.8;
+        public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -159,12 +159,13 @@ namespace WinUIMusicPlayer.Helper
         }
 
         // 提供一个公共方法，用于动态更新亚克力效果的透明度
-        public void UpdateProperties(double tintOpacity, double luminosityOpacity, Color tintColor)
+        public void UpdateProperties(double tintOpacity, double luminosityOpacity, Color? tintColor = null)
         {
             TintOpacity = tintOpacity;
             LuminosityOpacity = luminosityOpacity;
-            TintColor = tintColor;
-
+            if (tintColor is not null) {
+                TintColor = tintColor.Value;
+            }
             SetAcrylicProperties();
         }
 

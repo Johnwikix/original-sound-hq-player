@@ -18,8 +18,8 @@ namespace WinUIMusicPlayer.Helper
 
         // Mica效果属性
         public MicaKind MicaKind { get; set; } = MicaKind.Base;
-        public Color TintColor { get; set; } = Color.FromArgb(255, 135, 206, 235); // SkyBlue
-        public float TintOpacity { get; set; } = 0.8f;
+        public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
+        public float TintOpacity { get; set; } = 1.0f;
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -193,7 +193,7 @@ namespace WinUIMusicPlayer.Helper
             };
             TintColor = isDarkTheme
                 ? Color.FromArgb(255, 32, 32, 32)
-                : Color.FromArgb(255, 255, 255, 255);
+                : Color.FromArgb(220, 255, 255, 255);
             SetMicaProperties();
         }
     }

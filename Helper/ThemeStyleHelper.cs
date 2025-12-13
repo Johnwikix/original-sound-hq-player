@@ -1,4 +1,5 @@
-﻿using Microsoft.UI;
+﻿using DevWinUI;
+using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -18,88 +19,77 @@ namespace WinUIMusicPlayer.Helper
 
         private Window _window;
         private AppWindow _appWindow;
+        private CustomAcrylicSystemBackdrop _acrylicSystemBackdrop;
+        private CustomMicaSystemBackdrop _micaSystemBackdrop;
+        private TransparentTintBackdrop _transparentTintBackdrop;
 
         public ThemeStyleHelper(Window window, AppWindow appWindow)
         {
             _window = window;
             _appWindow = appWindow;
+            _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop();
+            _micaSystemBackdrop = new CustomMicaSystemBackdrop();
+            _transparentTintBackdrop = new TransparentTintBackdrop(Colors.Transparent);
 
         }
+
+        private static Color GetUiColor() {
+            var isDarkTheme = AppSettings.AppTheme switch
+            {
+                "Dark" => true,
+                "Light" => false,
+                "Default" => Application.Current.RequestedTheme == ApplicationTheme.Dark,
+                _ => true
+            };
+            return isDarkTheme
+                ? Color.FromArgb(255, 32, 32, 32)
+                : Color.FromArgb(255, 255, 255, 255);
+        }
+
         public void SetAppStyle()
         {
             try
             {
-                var uiColor = Color.FromArgb(255, 32, 32, 32);
-                if (AppSettings.AppTheme == "Default")
-                {
-                    if (Application.Current.RequestedTheme != ApplicationTheme.Dark)
-                    {
-                        uiColor = Color.FromArgb(255, 255, 255, 255);
-                    }
-                }
-                else
-                {
-                    if (AppSettings.AppTheme == "Light")
-                    {
-                        uiColor = Color.FromArgb(255, 255, 255, 255);
-                    }
-                }
+                
                 var backdrop = _window.SystemBackdrop as CustomAcrylicSystemBackdrop;
                 switch (AppSettings.AppStyle)
                 {
                     case "Acrylic":
                         if (backdrop is not null)
                         {
-                            backdrop.UpdateProperties(0.5f, 0.8f, uiColor);
+                            backdrop.UpdateProperties(0.5f, 0.8f, GetUiColor());
                         }
                         else
                         {
-                            _window.SystemBackdrop = null;
-                            var acrylic = new CustomAcrylicSystemBackdrop
-                            {
-                                TintOpacity = 0.5f,
-                                LuminosityOpacity = 0.8f,
-                                TintColor = uiColor
-                            };
-                            _window.SystemBackdrop = acrylic;
+                            _acrylicSystemBackdrop.TintOpacity = 0.5f;
+                            _acrylicSystemBackdrop.LuminosityOpacity = 0.8f;
+                            _acrylicSystemBackdrop.TintColor = GetUiColor();
+                            _window.SystemBackdrop = _acrylicSystemBackdrop;
                         }
                         break;
                     case "TransparentAcrylic":
-                        float colorOpacity = 0.4f;
                         if (backdrop is not null)
                         {
-                            backdrop.UpdateProperties(0, colorOpacity, uiColor);
+                            backdrop.UpdateProperties(0, 0.4f, GetUiColor());
                         }
                         else
                         {
-                            _window.SystemBackdrop = null;
-                            var customAcrylic = new CustomAcrylicSystemBackdrop
-                            {
-                                TintOpacity = 0,
-                                LuminosityOpacity = colorOpacity,
-                                TintColor = uiColor
-                            };
-                            _window.SystemBackdrop = customAcrylic;
-                        }
+                            _acrylicSystemBackdrop.TintOpacity = 0;
+                            _acrylicSystemBackdrop.LuminosityOpacity = 0.4f;
+                            _acrylicSystemBackdrop.TintColor = GetUiColor();
+                            _window.SystemBackdrop = _acrylicSystemBackdrop;
+                        }                        
                         break;
                     case "Mica":
                         if (_window.SystemBackdrop is not CustomMicaSystemBackdrop)
                         {
-                            _window.SystemBackdrop = null;
-                            var mica = new CustomMicaSystemBackdrop
-                            {
-                                MicaKind = MicaKind.Base,
-                                TintOpacity = 0.8f,
-                                TintColor = uiColor
-                            };
-                            _window.SystemBackdrop = mica;
+                            _window.SystemBackdrop = _micaSystemBackdrop;
                         }
                         break;
                     case "TransparentTint":
                         if (_window.SystemBackdrop is not TransparentTintBackdrop)
                         {
-                            _window.SystemBackdrop = null;
-                            _window.SystemBackdrop = new TransparentTintBackdrop(Colors.Transparent);
+                            _window.SystemBackdrop = _transparentTintBackdrop;
                         }
                         break;
                     case "CustomAcrylicStyle":
@@ -114,27 +104,20 @@ namespace WinUIMusicPlayer.Helper
                         }
                         else
                         {
-                            _window.SystemBackdrop = null;
-                            var customAcrylic = new CustomAcrylicSystemBackdrop
-                            {
-                                TintOpacity = 1.0,
-                                LuminosityOpacity = AppSettings.CustomAcrylicOpacity,
-                                TintColor = Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                AppSettings.CustomColorRed,
-                                                AppSettings.CustomColorGreen,
-                                                AppSettings.CustomColorBlue)
-                            };
-                            _window.SystemBackdrop = customAcrylic;
-                        }
+                            _acrylicSystemBackdrop.TintOpacity = 1.0;
+                            _acrylicSystemBackdrop.LuminosityOpacity = AppSettings.CustomAcrylicOpacity;
+                            _acrylicSystemBackdrop.TintColor = Color.FromArgb(AppSettings.CustomColorAlpha,
+                                                        AppSettings.CustomColorRed,
+                                                        AppSettings.CustomColorGreen,
+                                                        AppSettings.CustomColorBlue);
+                            _window.SystemBackdrop = _acrylicSystemBackdrop;
+                        }                        
                         break;
                     default:
-                        _window.SystemBackdrop = null;
-                        _window.SystemBackdrop = new CustomAcrylicSystemBackdrop
-                        {
-                            TintOpacity = 0.5f,
-                            LuminosityOpacity = 0.8f,
-                            TintColor = uiColor
-                        };
+                        _acrylicSystemBackdrop.TintOpacity = 0.5f;
+                        _acrylicSystemBackdrop.LuminosityOpacity = 0.8f;
+                        _acrylicSystemBackdrop.TintColor = GetUiColor();
+                        _window.SystemBackdrop = _acrylicSystemBackdrop;
                         break;
                 }
                 StyleChanged?.Invoke(this, EventArgs.Empty);
