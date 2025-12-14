@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer
             SetTitleBar(AppTitleBar);
             setWindow();
             AppData.m_hWnd = m_hwnd;
-            //this.Activated += MainWindow_Activated;
+            this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             // µ¼º½·þÎñ
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -71,6 +71,11 @@ namespace WinUIMusicPlayer
             SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+        {
+            InitializeTaskbarHelper();
         }
 
         private void setWindow()
