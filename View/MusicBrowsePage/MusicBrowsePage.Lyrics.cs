@@ -23,101 +23,7 @@ using ZLinq;
 namespace WinUIMusicPlayer.View
 {
     public sealed partial class MusicBrowsePage
-    {
-        private void ApplyVerticalGradientBlurToLyricViewer()
-        {
-            if (!AppSettings.IsBackgroundCoverEnabled) return;
-
-            if (_isBlurApplied) return;
-
-            var element = LyricViewer;
-            var visual = ElementCompositionPreview.GetElementVisual(element);
-            var compositor = visual.Compositor;
-
-            // 1. 创建容器视觉
-            var containerVisual = compositor.CreateContainerVisual();
-            containerVisual.Size = new System.Numerics.Vector2((float)element.ActualWidth, (float)element.ActualHeight);
-            // 2. 创建清晰层
-            var clearBrush = compositor.CreateBackdropBrush();
-            var clearVisual = compositor.CreateSpriteVisual();
-            clearVisual.Brush = clearBrush;
-            clearVisual.Size = containerVisual.Size;
-            // 3. 创建顶部模糊层
-            var topBlurEffect = new GaussianBlurEffect
-            {
-                BlurAmount = 2f,
-                Source = new CompositionEffectSourceParameter("Source"),
-                Optimization = EffectOptimization.Speed,
-                BorderMode = EffectBorderMode.Soft
-            };
-
-            var topEffectFactory = compositor.CreateEffectFactory(topBlurEffect);
-            var topBackdropBrush = compositor.CreateBackdropBrush();
-            var topEffectBrush = topEffectFactory.CreateBrush();
-            topEffectBrush.SetSourceParameter("Source", topBackdropBrush);
-            // 顶部模糊视觉
-            var topBlurVisual = compositor.CreateSpriteVisual();
-            topBlurVisual.Size = containerVisual.Size;
-            topBlurVisual.Brush = topEffectBrush;
-            // 顶部线性渐变遮罩（从上到中：不透明到透明）
-            var topGradient = compositor.CreateLinearGradientBrush();
-            topGradient.StartPoint = new System.Numerics.Vector2(0, 0);
-            topGradient.EndPoint = new System.Numerics.Vector2(0, 0.5f);
-            // 渐变停止点
-            var topStop1 = compositor.CreateColorGradientStop(0.0f, Windows.UI.Color.FromArgb(255, 255, 255, 255));
-            var topStop2 = compositor.CreateColorGradientStop(1.0f, Windows.UI.Color.FromArgb(0, 255, 255, 255));
-            topGradient.ColorStops.Add(topStop1);
-            topGradient.ColorStops.Add(topStop2);
-            // 顶部遮罩视觉
-            var topMaskVisual = compositor.CreateSpriteVisual();
-            topMaskVisual.Size = containerVisual.Size;
-            topMaskVisual.Brush = topGradient;
-            // 应用遮罩
-            topBlurVisual.Brush = compositor.CreateMaskBrush();
-            ((CompositionMaskBrush)topBlurVisual.Brush).Source = topEffectBrush;
-            ((CompositionMaskBrush)topBlurVisual.Brush).Mask = topGradient;
-            // 4. 创建底部模糊层
-            var bottomBlurEffect = new GaussianBlurEffect
-            {
-                BlurAmount = 2f,
-                Source = new CompositionEffectSourceParameter("Source"),
-                Optimization = EffectOptimization.Speed,
-                BorderMode = EffectBorderMode.Soft
-            };
-
-            var bottomEffectFactory = compositor.CreateEffectFactory(bottomBlurEffect);
-            var bottomBackdropBrush = compositor.CreateBackdropBrush();
-            var bottomEffectBrush = bottomEffectFactory.CreateBrush();
-            bottomEffectBrush.SetSourceParameter("Source", bottomBackdropBrush);
-
-            var bottomBlurVisual = compositor.CreateSpriteVisual();
-            bottomBlurVisual.Size = containerVisual.Size;
-            bottomBlurVisual.Brush = bottomEffectBrush;
-
-            // 底部渐变遮罩（从中间到下：透明到不透明）
-            var bottomGradient = compositor.CreateLinearGradientBrush();
-            bottomGradient.StartPoint = new System.Numerics.Vector2(0, 0.5f);
-            bottomGradient.EndPoint = new System.Numerics.Vector2(0, 1.0f);
-
-            var bottomStop1 = compositor.CreateColorGradientStop(0.0f, Windows.UI.Color.FromArgb(0, 255, 255, 255));
-            var bottomStop2 = compositor.CreateColorGradientStop(1.0f, Windows.UI.Color.FromArgb(255, 255, 255, 255));
-            bottomGradient.ColorStops.Add(bottomStop1);
-            bottomGradient.ColorStops.Add(bottomStop2);
-
-            bottomBlurVisual.Brush = compositor.CreateMaskBrush();
-            ((CompositionMaskBrush)bottomBlurVisual.Brush).Source = bottomEffectBrush;
-            ((CompositionMaskBrush)bottomBlurVisual.Brush).Mask = bottomGradient;
-
-            // 组合所有层
-            containerVisual.Children.InsertAtTop(clearVisual);
-            containerVisual.Children.InsertAtTop(topBlurVisual);
-            containerVisual.Children.InsertAtTop(bottomBlurVisual);
-
-            ElementCompositionPreview.SetElementChildVisual(element, containerVisual);
-
-            // 标记已应用模糊效果
-            _isBlurApplied = true;
-        }
+    {       
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -199,18 +105,6 @@ namespace WinUIMusicPlayer.View
             _currentCompositionClip = null;
             _currentAnimatingTextBlock?.Clip = null;
             _currentAnimatingTextBlock = null;
-        }
-
-        private Color GetResourceColor(string key, Color fallbackColor)
-        {
-            if (Application.Current.Resources.TryGetValue(key, out object resourceValue))
-            {
-                if (resourceValue is SolidColorBrush solidBrush)
-                {
-                    return solidBrush.Color;
-                }
-            }
-            return fallbackColor;
         }
 
         private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
