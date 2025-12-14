@@ -46,18 +46,15 @@ namespace WinUIMusicPlayer.View.SubView
                 App.MainWindow.themeChanged += MainWindow_themeChanged;
                 App.MainWindow.styleChanged += MainWindow_styleChanged;
                 App.MainWindow.customStyleChanged += MainWindow_customStyleChanged;
+                App.MainWindow.backdropInputState += MainWindow_backdropInputState;
             }
             Title = ToolUtils.GetString("AlbumDetailTitle");
             this.Closed += AlbumDetailWindow_Closed;
-            this.Activated += AlbumDetailWindow_Activated;
         }
 
-        private void AlbumDetailWindow_Activated(object sender, WindowActivatedEventArgs args)
+        private void MainWindow_backdropInputState(object? sender, bool e)
         {
-            if (AppSettings.IsUpdateBackDrop)
-            {
-                themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
-            }
+            themeStyleHelper?.UpdateBackdropActiveState(e);
         }
 
         private void AlbumDetailWindow_Closed(object sender, WindowEventArgs args)
@@ -67,8 +64,8 @@ namespace WinUIMusicPlayer.View.SubView
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
                 App.MainWindow.styleChanged -= MainWindow_styleChanged;
                 App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
+                App.MainWindow.backdropInputState -= MainWindow_backdropInputState;
             }
-            this.Activated -= AlbumDetailWindow_Activated;
             this.Closed -= AlbumDetailWindow_Closed;
         }
 

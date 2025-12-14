@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
+        public event EventHandler<bool> backdropInputState;
         public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
@@ -48,7 +49,7 @@ namespace WinUIMusicPlayer
             SetTitleBar(AppTitleBar);
             setWindow();
             AppData.m_hWnd = m_hwnd;
-            this.Activated += MainWindow_Activated;
+            //this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             // µ¼º½·þÎñ
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -209,6 +210,12 @@ namespace WinUIMusicPlayer
             themeStyleHelper.SetAppTheme();
         }
 
+        public void UpdateBackdropActiveState(bool isActive)
+        {
+            themeStyleHelper.UpdateBackdropActiveState(isActive);
+            backdropInputState?.Invoke(this, isActive);
+        }
+
         private void NavigateToDefaultPage()
         {
 
@@ -293,17 +300,7 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
-        {
-            if (AppSettings.IsUpdateBackDrop)
-            {
-                themeStyleHelper?.IsBackdropActive(args.WindowActivationState != WindowActivationState.Deactivated);
-            }
-            if (_taskbarHelper is null)
-            {
-                InitializeTaskbarHelper();
-            }
-        }
+
 
         public void InitializeTaskbarHelper()
         {

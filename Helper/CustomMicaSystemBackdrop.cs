@@ -15,11 +15,17 @@ namespace WinUIMusicPlayer.Helper
         // 保存 window 对象引用
         private ICompositionSupportsSystemBackdrop _currentTarget;
         private bool _isConnected = false;
-
+        private Window _window;
         // Mica效果属性
         public MicaKind MicaKind { get; set; } = MicaKind.Base;
         public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
         public float TintOpacity { get; set; } = 1.0f;
+        public bool IsInputActive = false;
+
+        public CustomMicaSystemBackdrop(Window window = null)
+        {
+            _window = window;
+        }
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -38,10 +44,8 @@ namespace WinUIMusicPlayer.Helper
             rootElement.ActualThemeChanged += RootElement_ActualThemeChanged;
 
             // 监听窗口状态变更
-            if (connectedTarget is Window window)
-            {
-                window.Closed += Window_Closed;
-            }
+            _window?.Closed += Window_Closed;
+            _window?.Activated += Window_Activated;
 
             // 创建并初始化云母控制器
             _micaController = new MicaController();
@@ -97,22 +101,23 @@ namespace WinUIMusicPlayer.Helper
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (_backdropConfiguration is not null)
+            if (IsInputActive)
             {
-                _backdropConfiguration.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
+                _backdropConfiguration?.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
+            }
+            else
+            {
+                _backdropConfiguration?.IsInputActive = true;
             }
         }
 
         private void Window_Closed(object sender, WindowEventArgs args)
         {
-            // 确保释放资源
-            if (_micaController is not null)
-            {
-                _micaController.Dispose();
-                _micaController = null;
-            }
-
+            _micaController?.Dispose();
+            _micaController = null;
             _backdropConfiguration = null;
+            _window.Closed -= Window_Closed;
+            _window.Activated -= Window_Activated;
         }
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
@@ -172,14 +177,6 @@ namespace WinUIMusicPlayer.Helper
         public static bool IsSupported()
         {
             return MicaController.IsSupported();
-        }
-
-        public void UpdateActiveState(bool isActive)
-        {
-            if (_backdropConfiguration is not null)
-            {
-                _backdropConfiguration.IsInputActive = isActive;
-            }
         }
 
         private void UpdateUiColor(ElementTheme elementTheme)

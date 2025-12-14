@@ -472,6 +472,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (_isInitized)
                     {
                         AppSettings.IsUpdateBackDrop = value;
+                        App.MainWindow?.UpdateBackdropActiveState(value);
                         _ = MusicDatabaseService.SaveSettingAsync();
                     }
                 }

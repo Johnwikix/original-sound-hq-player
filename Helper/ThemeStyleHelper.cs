@@ -27,8 +27,12 @@ namespace WinUIMusicPlayer.Helper
         {
             _window = window;
             _appWindow = appWindow;
-            _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop();
-            _micaSystemBackdrop = new CustomMicaSystemBackdrop();
+            _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop(window) { 
+                IsInputActive = AppSettings.IsUpdateBackDrop
+            };
+            _micaSystemBackdrop = new CustomMicaSystemBackdrop(window) {
+                IsInputActive = AppSettings.IsUpdateBackDrop
+            };
             _transparentTintBackdrop = new TransparentTintBackdrop(Colors.Transparent);
 
         }
@@ -145,22 +149,10 @@ namespace WinUIMusicPlayer.Helper
             }
         }
 
-        public void IsBackdropActive(bool IsActive)
+        public void UpdateBackdropActiveState(bool IsActive)
         {
-            try
-            {
-                if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop Acrylicbackdrop)
-                {
-                    Acrylicbackdrop.UpdateActiveState(IsActive);
-                }
-                else if (_window.SystemBackdrop is CustomMicaSystemBackdrop Micabackdrop)
-                {
-                    Micabackdrop.UpdateActiveState(IsActive);
-                }
-            }
-            catch (Exception)
-            {
-            }
+            _acrylicSystemBackdrop.IsInputActive = IsActive;
+            _micaSystemBackdrop.IsInputActive = IsActive;
         }
 
         public void SetAppTheme()

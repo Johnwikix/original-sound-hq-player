@@ -16,11 +16,18 @@ namespace WinUIMusicPlayer.Helper
         // 保存 window 对象引用
         private ICompositionSupportsSystemBackdrop _currentTarget;
         private bool _isConnected = false;
+        private Window _window;        
 
         // 透明度属性
         public double TintOpacity { get; set; } = 0.5;
         public double LuminosityOpacity { get; set; } = 0.8;
         public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
+        public bool IsInputActive = false;
+
+        public CustomAcrylicSystemBackdrop(Window window = null)
+        {
+            _window = window;
+        }
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
@@ -38,11 +45,8 @@ namespace WinUIMusicPlayer.Helper
             // 监听主题变更事件
             rootElement.ActualThemeChanged += RootElement_ActualThemeChanged;
 
-            // 监听窗口状态变更
-            if (connectedTarget is Window window)
-            {
-                window.Closed += Window_Closed;
-            }
+            _window?.Closed += Window_Closed;
+            _window?.Activated += Window_Activated;
 
             // 创建并初始化亚克力控制器
             _acrylicController = new DesktopAcrylicController();
@@ -97,22 +101,22 @@ namespace WinUIMusicPlayer.Helper
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (_backdropConfiguration is not null)
+            if (IsInputActive)
             {
-                _backdropConfiguration.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
+                _backdropConfiguration?.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
+            }
+            else
+            {
+                _backdropConfiguration?.IsInputActive = true;
             }
         }
-
         private void Window_Closed(object sender, WindowEventArgs args)
         {
-            // 确保释放资源
-            if (_acrylicController is not null)
-            {
-                _acrylicController.Dispose();
-                _acrylicController = null;
-            }
-
+            _acrylicController?.Dispose();
+            _acrylicController = null;
             _backdropConfiguration = null;
+            _window.Closed -= Window_Closed;
+            _window.Activated -= Window_Activated;
         }
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
@@ -134,8 +138,6 @@ namespace WinUIMusicPlayer.Helper
         {
             if (_acrylicController is null || _dispatcherQueue is null || !_isConnected)
             {
-                // 记录日志，帮助诊断问题
-                //System.Diagnostics.Debug.WriteLine("SetAcrylicProperties被调用，但控制器或调度队列无效");
                 return;
             }
 
@@ -167,14 +169,6 @@ namespace WinUIMusicPlayer.Helper
                 TintColor = tintColor.Value;
             }
             SetAcrylicProperties();
-        }
-
-        public void UpdateActiveState(bool isActive)
-        {
-            if (_backdropConfiguration is not null)
-            {
-                _backdropConfiguration.IsInputActive = isActive;
-            }
         }
 
         private void UpdateUiColor(ElementTheme elementTheme)
