@@ -832,7 +832,8 @@ namespace WinUIMusicPlayer.ViewModel
                 _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
-            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);
+            _systemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
+            _ = _systemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);           
         }
 
         public async void ThemeChangedUpdateCover()
