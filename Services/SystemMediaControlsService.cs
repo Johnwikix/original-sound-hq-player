@@ -11,6 +11,7 @@ namespace WinUIMusicPlayer.Services
     public class SystemMediaControlsService
     {
         public SystemMediaTransportControls SystemMediaControls { get; private set; }
+        private readonly SystemMediaTransportControlsTimelineProperties _timelineProperties = new();
         private MediaPlayer mediaPlayer;
         public event EventHandler PlayRequested;
         public event EventHandler PauseRequested;
@@ -18,7 +19,7 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler PreviousTrackRequested;
         public SystemMediaControlsService()
         {
-            InitializeSystemMediaTransportControls();
+            InitializeSystemMediaTransportControls();            
         }
 
         private void InitializeSystemMediaTransportControls()
@@ -114,16 +115,14 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (SystemMediaControls is null) return;
-                var timelineProperties = new SystemMediaTransportControlsTimelineProperties
-                {
-                    StartTime = TimeSpan.Zero,
-                    EndTime = totalDuration,
-                    Position = currentPosition,
-                    MinSeekTime = TimeSpan.Zero,
-                    MaxSeekTime = totalDuration
-                };
-                SystemMediaControls.UpdateTimelineProperties(timelineProperties);
+                if (SystemMediaControls is null || _timelineProperties is null) return; 
+                _timelineProperties.StartTime = TimeSpan.Zero;
+                _timelineProperties.EndTime = totalDuration;
+                _timelineProperties.Position = currentPosition;
+                _timelineProperties.MinSeekTime = TimeSpan.Zero;
+                _timelineProperties.MaxSeekTime = totalDuration;
+                SystemMediaControls.UpdateTimelineProperties(_timelineProperties);
+                //System.Diagnostics.Debug.WriteLine($"更新SMTC时间轴,当前时间:{currentPosition}，总时间：{totalDuration}");
             }
             catch (Exception ex)
             {
