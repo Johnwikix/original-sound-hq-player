@@ -731,7 +731,7 @@
                                                 <DataTemplate x:DataType="model:LyricLine">
                                                     <Grid
                                                         x:Name="LyricsLineGrid"
-                                                        PointerEntered="Grid_PointerEntered"
+                                                        PointerEntered="LyricsLineGrid_PointerEntered"
                                                         PointerExited="LyricsLineGrid_PointerExited">
                                                         <TextBlock
                                                             x:Name="LyricsTextBlockBase"
@@ -763,7 +763,8 @@
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
                                                             BlurAmount="{x:Bind model:AppSettings.LyricsBlurAmount}"
-                                                            IsBlurEnabled="True" />
+                                                            IsBlurEnabled="True"
+                                                            Visibility="Visible" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>

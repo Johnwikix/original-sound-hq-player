@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void Grid_PointerEntered(object sender, PointerRoutedEventArgs e)
+        private void LyricsLineGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is Grid grid )
             {
