@@ -24,7 +24,8 @@ namespace WinUIMusicPlayer.View
 {
     public sealed partial class MusicBrowsePage
     {       
-
+        private SolidColorBrush _transparentBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 128, 128, 128));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -135,7 +136,7 @@ namespace WinUIMusicPlayer.View
                     blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(1000));
                 }
                 else {
-                    grid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 128, 128, 128));
+                    grid.Background = _whiteBrush;
                 }                
             }
         }
@@ -154,7 +155,7 @@ namespace WinUIMusicPlayer.View
                 }
                 else
                 {
-                    grid.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                    grid.Background = _transparentBrush;
                 }
 
             }
