@@ -764,7 +764,7 @@
                                                             x:Name="BlurEffectControlSample"
                                                             BlurAmount="{x:Bind model:AppSettings.LyricsBlurAmount}"
                                                             IsBlurEnabled="True"
-                                                            Visibility="Visible" />
+                                                            Visibility="{x:Bind model:AppSettings.IsLyricsLineBlurEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>

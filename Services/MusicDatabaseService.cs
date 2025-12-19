@@ -752,6 +752,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
                 AppSettings.LyricsBlurAmount = settings.LyricsBlurAmount;
+                AppSettings.IsLyricsLineBlurEnabled = settings.IsLyricsLineBlurEnabled;
             }
         }
 
@@ -815,6 +816,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppSettings.LyricsBlurAmount;
+            newSettings.IsLyricsLineBlurEnabled = AppSettings.IsLyricsLineBlurEnabled;
             return newSettings;
         }
 
