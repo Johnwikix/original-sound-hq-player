@@ -731,6 +731,7 @@
                                                 <DataTemplate x:DataType="model:LyricLine">
                                                     <Grid
                                                         x:Name="LyricsLineGrid"
+                                                        CornerRadius="5"
                                                         PointerEntered="LyricsLineGrid_PointerEntered"
                                                         PointerExited="LyricsLineGrid_PointerExited">
                                                         <TextBlock
