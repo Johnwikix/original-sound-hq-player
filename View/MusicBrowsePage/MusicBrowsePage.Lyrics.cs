@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage
     {       
         private SolidColorBrush _transparentBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 128, 128, 128));
+        private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -127,17 +127,15 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Grid grid )
             {
-                if (AppSettings.LyricsBlurAmount >= 1)
-                {
-                    var blurControl = grid?.Children.AsValueEnumerable()
+                var blurControl = grid?.Children.AsValueEnumerable()
                           .OfType<BlurEffectControl>()
                           .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(1000));
-                }
-                else {
+                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+                if (AppSettings.LyricsBlurAmount < 1)
+                {
                     grid.Background = _whiteBrush;
-                }                
+                }             
             }
         }
 
@@ -145,15 +143,13 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Grid grid)
             {
-                if (AppSettings.LyricsBlurAmount>=1)
-                {
-                    var blurControl = grid?.Children.AsValueEnumerable()
+                var blurControl = grid?.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                    blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(1000));
-                }
-                else
+                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+
+                if (AppSettings.LyricsBlurAmount<1)
                 {
                     grid.Background = _transparentBrush;
                 }
