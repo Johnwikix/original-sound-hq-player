@@ -637,22 +637,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private bool _isLyricsLineBlurEnabled;
-        public bool IsLyricsLineBlurEnabled { 
-            get => _isLyricsLineBlurEnabled;
-            set {
-                if (SetProperty(ref _isLyricsLineBlurEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsLyricsLineBlurEnabled = value ;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-
         public SettingsViewModel()
         {
             Debug.WriteLine(DateTime.Now.Millisecond);
@@ -710,7 +694,6 @@ namespace WinUIMusicPlayer.ViewModel
             DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
             IsWFWLyrics = AppSettings.IsWFWLyrics;
             LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
-            IsLyricsLineBlurEnabled = AppSettings.IsLyricsLineBlurEnabled;
             InitializeWasapiDevice();
             _isInitized = true;
         }

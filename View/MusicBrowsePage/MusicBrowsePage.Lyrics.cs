@@ -127,7 +127,7 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Grid grid )
             {
-                if (AppSettings.IsLyricsLineBlurEnabled)
+                if (AppSettings.LyricsBlurAmount >= 1)
                 {
                     var blurControl = grid?.Children.AsValueEnumerable()
                           .OfType<BlurEffectControl>()
@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Grid grid)
             {
-                if (AppSettings.IsLyricsLineBlurEnabled)
+                if (AppSettings.LyricsBlurAmount>=1)
                 {
                     var blurControl = grid?.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()

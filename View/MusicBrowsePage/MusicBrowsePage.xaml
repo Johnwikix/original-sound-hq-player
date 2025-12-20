@@ -660,14 +660,9 @@
                             Grid.Row="1"
                             Grid.Column="1"
                             Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
                             <!--  添加歌词显示列表  -->
                             <dev:OpacityMaskView
                                 x:Name="MaskView"
-                                Grid.Row="1"
                                 Margin="0,20,0,20"
                                 Padding="0"
                                 HorizontalAlignment="Stretch"
@@ -731,41 +726,45 @@
                                                 <DataTemplate x:DataType="model:LyricLine">
                                                     <Grid
                                                         x:Name="LyricsLineGrid"
+                                                        Padding="0"
                                                         CornerRadius="5"
                                                         PointerEntered="LyricsLineGrid_PointerEntered"
                                                         PointerExited="LyricsLineGrid_PointerExited">
-                                                        <TextBlock
-                                                            x:Name="LyricsTextBlockBase"
-                                                            Margin="0"
-                                                            Padding="10,15,10,15"
-                                                            HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
-                                                            FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                            FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                            FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                            Opacity="0.5"
-                                                            Text="{x:Bind Text}"
-                                                            TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                            TextWrapping="WrapWholeWords" />
+                                                        <Grid Padding="20,0,20,0">
+                                                            <TextBlock
+                                                                x:Name="LyricsTextBlockBase"
+                                                                Margin="0"
+                                                                Padding="0,15,0,15"
+                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                                Opacity="0.5"
+                                                                Text="{x:Bind Text}"
+                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                                TextWrapping="WrapWholeWords" />
 
-                                                        <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
-                                                        <TextBlock
-                                                            x:Name="LyricsTextBlock"
-                                                            Margin="0"
-                                                            Padding="10,15,10,15"
-                                                            HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
-                                                            FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                            FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                            FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                            Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                                            SizeChanged="LyricsTextBlock_SizeChanged"
-                                                            Text="{x:Bind Text}"
-                                                            TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                            TextWrapping="WrapWholeWords" />
+                                                            <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
+                                                            <TextBlock
+                                                                x:Name="LyricsTextBlock"
+                                                                Margin="0"
+                                                                Padding="0,15,0,15"
+                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                                Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                                                                SizeChanged="LyricsTextBlock_SizeChanged"
+                                                                Text="{x:Bind Text}"
+                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                                TextWrapping="WrapWholeWords" />
+                                                        </Grid>
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
+                                                            Margin="0"
+                                                            HorizontalAlignment="Stretch"
                                                             BlurAmount="{x:Bind model:AppSettings.LyricsBlurAmount}"
-                                                            IsBlurEnabled="True"
-                                                            Visibility="{x:Bind model:AppSettings.IsLyricsLineBlurEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+                                                            IsBlurEnabled="True" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>

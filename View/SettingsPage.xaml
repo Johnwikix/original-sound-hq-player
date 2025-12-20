@@ -232,13 +232,13 @@
                         <controls:SettingsCard x:Uid="WFWLyricsEnabled" Description="{x:Bind tool:ToolUtils.GetString('WFWLyricsDescription')}">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsWFWLyrics, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="LyricsBlurAmount">
+                        <!--<controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsLyricsLineBlurEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
+                        </controls:SettingsCard>-->
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
                                 Maximum="80"
-                                Minimum="10"
+                                Minimum="0"
                                 SnapsTo="Ticks"
                                 TickFrequency="5"
                                 TickPlacement="Outside"
