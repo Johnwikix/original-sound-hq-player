@@ -695,6 +695,8 @@
                                             ItemClick="LyricsListView_ItemClick"
                                             ItemsSource="{x:Bind ViewModel.UILyrics, Mode=TwoWay}"
                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                            ScrollViewer.VerticalScrollMode="Disabled"
                                             SelectionMode="None">
                                             <ListView.ItemContainerStyle>
                                                 <Style TargetType="ListViewItem">
