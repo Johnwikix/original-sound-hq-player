@@ -103,20 +103,24 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        var autoLyrics = string.Empty;
+                        var autoLyrics = (string.Empty, string.Empty);
                         autoLyrics = await LrcService.GetLyricsAsync(
                             MusicBrowseViewModel.CurrentPlayingMusic.Title,
                             MusicBrowseViewModel.CurrentPlayingMusic.Album,
                             MusicBrowseViewModel.CurrentPlayingMusic.Author,
                             cancellationToken);
+                        if (!string.IsNullOrEmpty(autoLyrics.Item2)) {
+                            MusicBrowseViewModel.CurrentPlayingMusic.TranslatdeLyrics = autoLyrics.Item2;
+                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.TranslatdeLyrics = autoLyrics.Item2;
+                        }
 
-                        if (autoLyrics is not null)
+                        if (!string.IsNullOrEmpty(autoLyrics.Item1))
                         {
-                            lrcContent = autoLyrics;
-                            MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = lrcContent;
+                            lrcContent = autoLyrics.Item1;
+                            MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = autoLyrics.Item1;
                             cancellationToken.ThrowIfCancellationRequested();
                             await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id).Lyrics = lrcContent;
+                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics = lrcContent;
                             return SpliteContent(lrcContent, lyrics);
                         }
                     }

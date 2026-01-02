@@ -54,7 +54,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    public static async Task<string> GetSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
+    public static async Task<(string,string)> GetSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -71,11 +71,11 @@ public class CloudMusicSearchHelper
         }
         catch (OperationCanceledException)
         {
-            return null;
+            return (string.Empty, string.Empty);
         }
         catch (Exception)
         {
-            return null;
+            return (string.Empty, string.Empty);
         }
     }
 
@@ -165,7 +165,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static async Task<string> GetLyricsUrl(string songId, CancellationToken cancellationToken = default)
+    private static async Task<(string,string)> GetLyricsUrl(string songId, CancellationToken cancellationToken = default)
     {
         if (songId is not null)
         {
@@ -175,22 +175,23 @@ public class CloudMusicSearchHelper
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
             string lyrics = string.Empty;
+            string translatedLyrics = string.Empty;
             lyrics = (string)lyricResult["lrc"]!["lyric"]!;
             if (AppData.systemLanguage == "zh")
             {
                 try
                 {
-                    lyrics += (string)lyricResult["tlyric"]!["lyric"]!;
+                    translatedLyrics = (string)lyricResult["tlyric"]!["lyric"]!;
                 }
                 catch (Exception)
                 {
                 }
             }
-            return lyrics;
+            return (lyrics,translatedLyrics);
         }
         else
         {
-            return null;
+            return (string.Empty, string.Empty);
         }
     }
 

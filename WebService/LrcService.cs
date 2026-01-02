@@ -45,37 +45,38 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public static async Task<string> GetLyricsAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
+        public static async Task<(string,string)> GetLyricsAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
-                {
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
-                }
-                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
-                {
-                    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
-                }
-                var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadAsStringAsync(cancellationToken);
-                if (string.IsNullOrWhiteSpace(result))
-                {
-                    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
-                }
-                result += await CloudMusicSearchHelper.GetTranslateSongLyrics(title, album, artist, cancellationToken);
-                return result;
+                return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
+                //if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
+                //{
+                //    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                //}
+                //if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
+                //{
+                //    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
+                //}
+                //var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
+                //var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+                //response.EnsureSuccessStatusCode();
+                //var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                //if (string.IsNullOrWhiteSpace(result))
+                //{
+                //    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
+                //}
+                //result += await CloudMusicSearchHelper.GetTranslateSongLyrics(title, album, artist, cancellationToken);
+                //return result;
             }
             catch (OperationCanceledException)
             {
                 Debug.WriteLine("GetLyricsAsync获取歌词的任务已被取消。");
-                return null;
+                return (string.Empty, string.Empty);
             }
-            catch (Exception)
+            catch
             {
-                return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
+                return (string.Empty, string.Empty);
             }
         }
 

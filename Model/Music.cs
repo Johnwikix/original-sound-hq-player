@@ -78,6 +78,12 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _lyrics, value);
         }
 
+        private string _tranlatedLyrics;
+        public string TranslatdeLyrics {
+            get => _tranlatedLyrics;
+            set => SetProperty(ref _tranlatedLyrics, value);
+        }
+
         private int _playCount = 0;
         public int PlayCount
         {
