@@ -27,8 +27,9 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is FadeImageBehavior behavior && e.NewValue is ImageSource newSource)
+            if (d is FadeImageBehavior behavior)
             {
+                var newSource = e.NewValue as ImageSource;
                 behavior.TransitionToNewSource(newSource);
             }
         }
@@ -47,7 +48,7 @@ namespace WinUIMusicPlayer.Behaviors
         {
             if (AssociatedObject == null) return;
 
-            // 如果新旧 Source 相同，不执行动画
+            // 如果新旧完全一致（包括同为 null），则不执行动画
             if (AssociatedObject.Source == newSource) return;
 
             var parent = VisualTreeHelper.GetParent(AssociatedObject) as Panel;
@@ -57,50 +58,54 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
-            // 1. 彻底清理上一次未完成的动画和资源
             StopAndCleanup();
 
-            // 2. 创建临时 Image 
-            // 显式断开与 XAML 树的潜在绑定引用，只赋值必要的显示属性
-            _tempOverlayImage = new Image
+            // 只有当“旧图”存在时，才需要创建临时层来执行淡出
+            // 如果旧图本来就是空的，直接设置新图即可
+            if (AssociatedObject.Source != null)
             {
-                Source = AssociatedObject.Source, // 捕获当前的“旧图”
-                Stretch = AssociatedObject.Stretch,
-                HorizontalAlignment = AssociatedObject.HorizontalAlignment,
-                VerticalAlignment = AssociatedObject.VerticalAlignment,
-                Opacity = 1,
-                IsHitTestVisible = false // 优化性能：临时层不响应交互
-            };
+                _tempOverlayImage = new Image
+                {
+                    Source = AssociatedObject.Source,
+                    Stretch = AssociatedObject.Stretch,
+                    HorizontalAlignment = AssociatedObject.HorizontalAlignment,
+                    VerticalAlignment = AssociatedObject.VerticalAlignment,
+                    Opacity = 1,
+                    IsHitTestVisible = false
+                };
 
-            // 3. 层级管理：确保旧图在最顶层淡出
-            int currentZIndex = Canvas.GetZIndex(AssociatedObject);
-            Canvas.SetZIndex(_tempOverlayImage, currentZIndex + 1);
-            parent.Children.Add(_tempOverlayImage);
+                int currentZIndex = Canvas.GetZIndex(AssociatedObject);
+                Canvas.SetZIndex(_tempOverlayImage, currentZIndex + 1);
+                parent.Children.Add(_tempOverlayImage);
 
-            // 4. 切换原控件到新图
-            AssociatedObject.Source = newSource;
+                // 创建淡出动画
+                var ani = new DoubleAnimation
+                {
+                    From = 1,
+                    To = 0,
+                    Duration = Duration.TimeSpan,
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
 
-            // 5. 动画配置
-            var ani = new DoubleAnimation
+                _currentTransitionStoryboard = new Storyboard();
+                _currentTransitionStoryboard.Children.Add(ani);
+                Storyboard.SetTarget(ani, _tempOverlayImage);
+                Storyboard.SetTargetProperty(ani, "Opacity");
+
+                _currentTransitionStoryboard.Completed += (s, e) =>
+                {
+                    StopAndCleanup();
+                };
+
+                // 在旧图开始淡出的同时，把底层原图设为新值 (可能是 null)
+                AssociatedObject.Source = newSource;
+                _currentTransitionStoryboard.Begin();
+            }
+            else
             {
-                From = 1,
-                To = 0,
-                Duration = Duration.TimeSpan,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            _currentTransitionStoryboard = new Storyboard();
-            _currentTransitionStoryboard.Children.Add(ani);
-            Storyboard.SetTarget(ani, _tempOverlayImage);
-            Storyboard.SetTargetProperty(ani, "Opacity");
-
-            // 6. 【内存优化关键】完成后释放资源
-            _currentTransitionStoryboard.Completed += (s, e) =>
-            {
-                StopAndCleanup();
-            };
-
-            _currentTransitionStoryboard.Begin();
+                // 如果旧图是空的，直接更新 Source，无需动画（或可选做一个简单的淡入）
+                AssociatedObject.Source = newSource;
+            }
         }
 
         private void StopAndCleanup()
