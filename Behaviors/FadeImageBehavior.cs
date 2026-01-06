@@ -27,9 +27,6 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            // 假设 AppSettings 和 App.MainWindow 的逻辑依然适用
-            // if (!AppSettings.IsBackgroundCoverEnabled) return;
-
             if (d is FadeImageBehavior behavior && e.NewValue is ImageSource newSource)
             {
                 behavior.TransitionToNewSource(newSource);
