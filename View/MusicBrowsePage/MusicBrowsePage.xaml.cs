@@ -719,7 +719,7 @@ namespace WinUIMusicPlayer.View
 
         public void ShowPlayingDetail()
         {
-            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic is not null && AlbumCoverImage is not null)
+            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic is not null)
             {
                 ViewModel.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;

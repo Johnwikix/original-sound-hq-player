@@ -858,8 +858,11 @@
                                                 <Image
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
-                                                    Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}"
-                                                    Stretch="UniformToFill" />
+                                                    Stretch="UniformToFill">
+                                                    <interactivity:Interaction.Behaviors>
+                                                        <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
+                                                    </interactivity:Interaction.Behaviors>
+                                                </Image>
                                             </Grid>
                                             <Grid
                                                 Width="80"
