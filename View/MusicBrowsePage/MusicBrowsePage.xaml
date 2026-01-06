@@ -308,7 +308,11 @@
                                                 VerticalAlignment="Center"
                                                 CornerRadius="10">
                                                 <Grid>
-                                                    <Image Canvas.ZIndex="1" Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}" />
+                                                    <Image Canvas.ZIndex="1">
+                                                        <interactivity:Interaction.Behaviors>
+                                                            <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
+                                                        </interactivity:Interaction.Behaviors>
+                                                    </Image>
                                                     <Grid
                                                         HorizontalAlignment="Stretch"
                                                         VerticalAlignment="Stretch"

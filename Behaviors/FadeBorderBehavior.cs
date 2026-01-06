@@ -100,7 +100,7 @@ namespace WinUIMusicPlayer.Behaviors
                 From = 0,
                 To = 1,
                 Duration = Duration.TimeSpan,
-                EasingFunction = new CubicEase()
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
             };
 
             // 1. 创建 Storyboard
