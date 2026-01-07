@@ -128,6 +128,9 @@ namespace WinUIMusicPlayer.Services
                     {
                         Debug.WriteLine("歌词获取任务已被取消");
                     }
+                    var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
+                    await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
+                    AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
                     return null;
                 }
                 else
@@ -138,11 +141,17 @@ namespace WinUIMusicPlayer.Services
                         Time = TimeSpan.Zero,
                         IsCurrent = true
                     });
+                    var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
+                    await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
+                    AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
                     return lyrics;
                 }
             }
             else
             {
+                var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
+                await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
+                AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
                 return SpliteContent(lrcContent, lyrics);
             }
         }
