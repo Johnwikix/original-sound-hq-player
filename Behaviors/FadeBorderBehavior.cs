@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
-            if (d is FadeBorderBehavior behavior && App.MainWindow.IsPlayingDetail)
+            if (d is FadeBorderBehavior behavior)
             {
                 var oldSource = e.OldValue as ImageSource;
                 var newSource = e.NewValue as ImageSource;
