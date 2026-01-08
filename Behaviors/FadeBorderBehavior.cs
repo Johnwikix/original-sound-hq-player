@@ -14,23 +14,23 @@ namespace WinUIMusicPlayer.Behaviors
     {
         private Storyboard _currentImageTransitionStoryboard;
 
-        public Brush Brush
-        {
-            get { return (Brush)GetValue(BrushProperty); }
-            set { SetValue(BrushProperty, value); }
-        }
+        //public Brush Brush
+        //{
+        //    get { return (Brush)GetValue(BrushProperty); }
+        //    set { SetValue(BrushProperty, value); }
+        //}
 
-        public static readonly DependencyProperty BrushProperty =
-            DependencyProperty.Register("Brush", typeof(Brush), typeof(FadeBorderBehavior),
-                new PropertyMetadata(null, OnBrushChanged));
+        //public static readonly DependencyProperty BrushProperty =
+        //    DependencyProperty.Register("Brush", typeof(Brush), typeof(FadeBorderBehavior),
+        //        new PropertyMetadata(null, OnBrushChanged));
 
-        private static void OnBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is FadeBorderBehavior behavior && e.NewValue is Brush brush && App.MainWindow.IsPlayingDetail)
-            {
-                behavior.TransitionToNewBrush(brush);
-            }
-        }
+        //private static void OnBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        //{
+        //    //if (d is FadeBorderBehavior behavior && e.NewValue is Brush brush && App.MainWindow.IsPlayingDetail)
+        //    //{
+        //    //    behavior.TransitionToNewBrush(brush);
+        //    //}
+        //}
 
         public ImageSource Source
         {
@@ -77,68 +77,68 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register("Duration", typeof(Duration), typeof(FadeBorderBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(300))));
 
-        private void TransitionToNewBrush(Brush newBrush)
-        {
-            if (newBrush == null || AssociatedObject == null) return;
-            // 如果控件不可见，直接更新，不执行动画
-            if (AssociatedObject.Visibility == Visibility.Collapsed)
-            {
-                AssociatedObject.Background = newBrush;
-                return;
-            }
+        //private void TransitionToNewBrush(Brush newBrush)
+        //{
+        //    if (newBrush == null || AssociatedObject == null) return;
+        //    // 如果控件不可见，直接更新，不执行动画
+        //    //if (AssociatedObject.Visibility == Visibility.Collapsed)
+        //    //{
+        //    //    AssociatedObject.Background = newBrush;
+        //    //    return;
+        //    //}
 
-            var oldBrush = AssociatedObject.Background;
-            if (oldBrush == null)
-            {
-                AssociatedObject.Background = newBrush;
-                return;
-            }
+        //    var oldBrush = AssociatedObject.Background;
+        //    if (oldBrush == null)
+        //    {
+        //        AssociatedObject.Background = newBrush;
+        //        return;
+        //    }
 
-            if (_currentImageTransitionStoryboard != null)
-            {
-                _currentImageTransitionStoryboard.Stop();
-                AssociatedObject.Child = null;
-                _currentImageTransitionStoryboard = null;
-            }
+        //    if (_currentImageTransitionStoryboard != null)
+        //    {
+        //        _currentImageTransitionStoryboard.Stop();
+        //        AssociatedObject.Child = null;
+        //        _currentImageTransitionStoryboard = null;
+        //    }
 
-            var cover = new Border
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                Background = newBrush,
-                CornerRadius = AssociatedObject.CornerRadius,
-                Opacity = 0
-            };
+        //    var cover = new Border
+        //    {
+        //        HorizontalAlignment = HorizontalAlignment.Stretch,
+        //        VerticalAlignment = VerticalAlignment.Stretch,
+        //        Background = newBrush,
+        //        CornerRadius = AssociatedObject.CornerRadius,
+        //        Opacity = 0
+        //    };
 
-            AssociatedObject.Child = cover;
+        //    AssociatedObject.Child = cover;
 
-            var ani = new DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = Duration.TimeSpan,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
+        //    var ani = new DoubleAnimation
+        //    {
+        //        From = 0,
+        //        To = 1,
+        //        Duration = Duration.TimeSpan,
+        //        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        //    };
 
-            var storyboard = new Storyboard();
-            storyboard.Children.Add(ani);
+        //    var storyboard = new Storyboard();
+        //    storyboard.Children.Add(ani);
 
-            Storyboard.SetTarget(ani, cover);
-            Storyboard.SetTargetProperty(ani, "Opacity");
-            _currentImageTransitionStoryboard = storyboard;
+        //    Storyboard.SetTarget(ani, cover);
+        //    Storyboard.SetTargetProperty(ani, "Opacity");
+        //    _currentImageTransitionStoryboard = storyboard;
 
-            storyboard.Completed += (s, e) =>
-            {
-                AssociatedObject.Child = null;
-                AssociatedObject.Background = newBrush;
-                if (storyboard == _currentImageTransitionStoryboard)
-                {
-                    _currentImageTransitionStoryboard = null;
-                }
-            };
+        //    storyboard.Completed += (s, e) =>
+        //    {
+        //        AssociatedObject.Child = null;
+        //        AssociatedObject.Background = newBrush;
+        //        if (storyboard == _currentImageTransitionStoryboard)
+        //        {
+        //            _currentImageTransitionStoryboard = null;
+        //        }
+        //    };
 
-            storyboard.Begin();
-        }
+        //    storyboard.Begin();
+        //}
 
         private void TransitionWithImageSource(ImageSource newSource, ImageSource oldSource)
         {
