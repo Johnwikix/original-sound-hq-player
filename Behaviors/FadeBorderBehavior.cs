@@ -13,6 +13,7 @@ namespace WinUIMusicPlayer.Behaviors
     public class FadeBorderBehavior : Behavior<Border>
     {
         private Storyboard _currentImageTransitionStoryboard;
+
         public Brush Brush
         {
             get { return (Brush)GetValue(BrushProperty); }
@@ -31,8 +32,6 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
-
-
         public ImageSource Source
         {
             get { return (ImageSource)GetValue(SourceProperty); }
@@ -45,16 +44,28 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (!AppSettings.IsBackgroundCoverEnabled) {
+            if (!AppSettings.IsBackgroundCoverEnabled)
+            {
                 return;
             }
-            if (d is FadeBorderBehavior behavior && e.OldValue is ImageSource source && App.MainWindow.IsPlayingDetail)
+
+            if (d is FadeBorderBehavior behavior && App.MainWindow.IsPlayingDetail)
             {
-                behavior.TransitionWithImageSource(source);
+                var oldSource = e.OldValue as ImageSource;
+                var newSource = e.NewValue as ImageSource;
+
+                // 只要旧值存在就执行淡出动画（新值可以是 null）
+                if (oldSource != null)
+                {
+                    behavior.TransitionWithImageSource(newSource, oldSource);
+                }
+                else
+                {
+                    // 如果旧值是 null，直接设置新值（可能也是 null）
+                    behavior.SetImageSourceDirectly(newSource);
+                }
             }
         }
-
-
 
         public Duration Duration
         {
@@ -103,14 +114,13 @@ namespace WinUIMusicPlayer.Behaviors
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
             };
 
-            // 1. 创建 Storyboard
             var storyboard = new Storyboard();
             storyboard.Children.Add(ani);
 
-            // 2. 设置动画目标和属性
             Storyboard.SetTarget(ani, cover);
             Storyboard.SetTargetProperty(ani, "Opacity");
-            _currentImageTransitionStoryboard = storyboard; 
+            _currentImageTransitionStoryboard = storyboard;
+
             storyboard.Completed += (s, e) =>
             {
                 AssociatedObject.Child = null;
@@ -121,14 +131,16 @@ namespace WinUIMusicPlayer.Behaviors
                 }
             };
 
-            // 4. 启动动画
             storyboard.Begin();
         }
 
-        private void TransitionWithImageSource(ImageSource oldSource)
+        private void TransitionWithImageSource(ImageSource newSource, ImageSource oldSource)
         {
             if (oldSource == null || AssociatedObject == null) return;
-            if (AssociatedObject.Background is not ImageBrush image) return;
+
+            // 获取当前 Background 的 ImageBrush 配置
+            ImageBrush currentImageBrush = AssociatedObject.Background as ImageBrush;
+            if (currentImageBrush == null) return;
 
             if (_currentImageTransitionStoryboard != null)
             {
@@ -137,10 +149,10 @@ namespace WinUIMusicPlayer.Behaviors
                 _currentImageTransitionStoryboard = null;
             }
 
+            // 复制 Transform（用于旧图）
             CompositeTransform transformClone = null;
-            if (image.RelativeTransform is CompositeTransform composite)
+            if (currentImageBrush.RelativeTransform is CompositeTransform composite)
             {
-                // 手动复制 Transform 以确保旧 ImageBrush 上的 Transform 独立于新 ImageBrush
                 transformClone = new CompositeTransform
                 {
                     CenterX = composite.CenterX,
@@ -155,28 +167,51 @@ namespace WinUIMusicPlayer.Behaviors
                 };
             }
 
+            // 创建旧图的 ImageBrush
             var oldBrush = new ImageBrush()
             {
                 ImageSource = oldSource,
-                Stretch = image.Stretch,
-                RelativeTransform = transformClone // 使用手动复制的 Transform
+                Stretch = currentImageBrush.Stretch,
+                RelativeTransform = transformClone
             };
 
+            // 创建 Child Border 显示旧图（从 1 淡出到 0）
             var cover = new Border
             {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
                 Background = oldBrush,
-                CornerRadius = AssociatedObject.CornerRadius
+                CornerRadius = AssociatedObject.CornerRadius,
+                Opacity = 1
             };
 
-            // 将旧图像的 Border 作为当前 Border 的 Child 叠加在其上方
+            // 先立即设置新的 Background（可能是 null）
+            if (newSource != null)
+            {
+                var newBrush = new ImageBrush()
+                {
+                    ImageSource = newSource,
+                    Stretch = currentImageBrush.Stretch,
+                    RelativeTransform = currentImageBrush.RelativeTransform
+                };
+                AssociatedObject.Background = newBrush;
+            }
+            else
+            {
+                // 新值是 null，清空 Background
+                AssociatedObject.Background = null;
+            }
+
+            // Child 叠加在上方显示旧图
             AssociatedObject.Child = cover;
 
+            // 淡出动画：从 1 到 0
             var ani = new DoubleAnimation
             {
                 From = 1,
                 To = 0,
                 Duration = Duration.TimeSpan,
-                EasingFunction = new CubicEase()
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
 
             var storyboard = new Storyboard();
@@ -185,20 +220,57 @@ namespace WinUIMusicPlayer.Behaviors
             Storyboard.SetTarget(ani, cover);
             Storyboard.SetTargetProperty(ani, "Opacity");
 
-            // 🛑 关键：更新和清理 Storyboard 引用
             _currentImageTransitionStoryboard = storyboard;
 
             storyboard.Completed += (s, e) =>
             {
+                // 动画完成后，移除显示旧图的 Child
                 AssociatedObject.Child = null;
+
                 if (storyboard == _currentImageTransitionStoryboard)
                 {
                     _currentImageTransitionStoryboard = null;
                 }
             };
 
-            storyboard.Begin(); // 启动 Storyboard
+            storyboard.Begin();
+        }
+
+        private void SetImageSourceDirectly(ImageSource newSource)
+        {
+            if (AssociatedObject == null) return;
+
+            if (newSource != null)
+            {
+                ImageBrush currentImageBrush = AssociatedObject.Background as ImageBrush;
+                var newBrush = new ImageBrush()
+                {
+                    ImageSource = newSource,
+                    Stretch = currentImageBrush?.Stretch ?? Stretch.UniformToFill,
+                    RelativeTransform = currentImageBrush?.RelativeTransform
+                };
+                AssociatedObject.Background = newBrush;
+            }
+            else
+            {
+                AssociatedObject.Background = null;
+            }
+        }
+
+        protected override void OnDetaching()
+        {
+            if (_currentImageTransitionStoryboard != null)
+            {
+                _currentImageTransitionStoryboard.Stop();
+                _currentImageTransitionStoryboard = null;
+            }
+
+            if (AssociatedObject != null)
+            {
+                AssociatedObject.Child = null;
+            }
+
+            base.OnDetaching();
         }
     }
-
 }

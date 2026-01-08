@@ -89,71 +89,74 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
+            _lyricsCancellationTokenSource?.Cancel(); // 习惯性清理旧任务
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
+
+            var currentMusic = MusicBrowseViewModel.CurrentPlayingMusic;
+            if (currentMusic == null) return new List<LyricLine>();
+
             List<LyricLine> lyrics = new List<LyricLine>();
+            bool needUpdateDb = false;
+
+            // 1. 始终增加播放计数 (内存中)
+            currentMusic.PlayCount++;
+            var songInMemory = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == currentMusic.Id);
+            if (songInMemory != null) songInMemory.PlayCount = currentMusic.PlayCount;
+            needUpdateDb = true;
+
+            // 2. 确定歌词内容
+            if (string.IsNullOrWhiteSpace(lrcContent))
+            {
+                // 尝试从内存缓存获取
+                lrcContent = songInMemory?.Lyrics;
+
+                // 如果开启了自动歌词且缓存为空，则在线搜索
+                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.isAutoLyricsEnabled)
+                {
+                    try
+                    {
+                        var (lyric, trans) = await LrcService.GetLyricsAsync(
+                            currentMusic.Title, currentMusic.Album, currentMusic.Author, cancellationToken);
+
+                        if (!string.IsNullOrEmpty(lyric))
+                        {
+                            lrcContent = lyric;
+                            // 同步更新内存对象
+                            currentMusic.Lyrics = lyric;
+                            currentMusic.TranslatdeLyrics = trans;
+                            if (songInMemory != null)
+                            {
+                                songInMemory.Lyrics = lyric;
+                                songInMemory.TranslatdeLyrics = trans;
+                            }
+                            needUpdateDb = true;
+                        }
+                    }
+                    catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
+                }
+            }
+
+            // 3. 统一执行一次数据库 IO
+            if (needUpdateDb)
+            {
+                await MusicDatabaseService.UpdateMusicInfo(currentMusic);
+            }
+
+            // 4. 返回解析结果
             if (!string.IsNullOrWhiteSpace(lrcContent))
             {
                 return SpliteContent(lrcContent, lyrics);
             }
-            lrcContent = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics;
-            if (string.IsNullOrWhiteSpace(lrcContent))
-            {
-                if (AppSettings.isAutoLyricsEnabled)
-                {
-                    try
-                    {
-                        var autoLyrics = (string.Empty, string.Empty);
-                        autoLyrics = await LrcService.GetLyricsAsync(
-                            MusicBrowseViewModel.CurrentPlayingMusic.Title,
-                            MusicBrowseViewModel.CurrentPlayingMusic.Album,
-                            MusicBrowseViewModel.CurrentPlayingMusic.Author,
-                            cancellationToken);
-                        if (!string.IsNullOrEmpty(autoLyrics.Item2)) {
-                            MusicBrowseViewModel.CurrentPlayingMusic.TranslatdeLyrics = autoLyrics.Item2;
-                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.TranslatdeLyrics = autoLyrics.Item2;
-                        }
 
-                        if (!string.IsNullOrEmpty(autoLyrics.Item1))
-                        {
-                            lrcContent = autoLyrics.Item1;
-                            MusicBrowseViewModel.CurrentPlayingMusic.Lyrics = autoLyrics.Item1;
-                            cancellationToken.ThrowIfCancellationRequested();
-                            await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                            AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Lyrics = lrcContent;
-                            return SpliteContent(lrcContent, lyrics);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Debug.WriteLine("歌词获取任务已被取消");
-                    }
-                    var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
-                    await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                    AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
-                    return null;
-                }
-                else
-                {
-                    lyrics.Add(new LyricLine
-                    {
-                        Text = ToolUtils.GetString("LyricsGetFailed"),
-                        Time = TimeSpan.Zero,
-                        IsCurrent = true
-                    });
-                    var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
-                    await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                    AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
-                    return lyrics;
-                }
-            }
-            else
+            // 无歌词时的默认占位
+            lyrics.Add(new LyricLine
             {
-                var playCount = MusicBrowseViewModel.CurrentPlayingMusic.PlayCount++;
-                await MusicDatabaseService.UpdateMusicInfo(MusicBrowseViewModel.CurrentPlayingMusic);
-                AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.PlayCount = playCount;
-                return SpliteContent(lrcContent, lyrics);
-            }
+                Text = ToolUtils.GetString("LyricsGetFailed"),
+                Time = TimeSpan.Zero,
+                IsCurrent = true
+            });
+            return lyrics;
         }
 
         private void CancelPreviousLyricsTask()
