@@ -58,6 +58,13 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
+            // 如果控件不可见，直接更新，不执行动画
+            if (AssociatedObject.Visibility == Visibility.Collapsed)
+            {
+                AssociatedObject.Source = newSource;
+                return;
+            }
+
             StopAndCleanup();
 
             // 只有当“旧图”存在时，才需要创建临时层来执行淡出

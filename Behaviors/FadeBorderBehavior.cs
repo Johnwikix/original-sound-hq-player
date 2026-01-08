@@ -80,6 +80,12 @@ namespace WinUIMusicPlayer.Behaviors
         private void TransitionToNewBrush(Brush newBrush)
         {
             if (newBrush == null || AssociatedObject == null) return;
+            // 如果控件不可见，直接更新，不执行动画
+            if (AssociatedObject.Visibility == Visibility.Collapsed)
+            {
+                AssociatedObject.Background = newBrush;
+                return;
+            }
 
             var oldBrush = AssociatedObject.Background;
             if (oldBrush == null)
@@ -137,6 +143,12 @@ namespace WinUIMusicPlayer.Behaviors
         private void TransitionWithImageSource(ImageSource newSource, ImageSource oldSource)
         {
             if (oldSource == null || AssociatedObject == null) return;
+            // 如果控件不可见，直接更新，不执行动画
+            if (AssociatedObject.Visibility == Visibility.Collapsed)
+            {
+                SetImageSourceDirectly(newSource);
+                return;
+            }
 
             // 获取当前 Background 的 ImageBrush 配置
             ImageBrush currentImageBrush = AssociatedObject.Background as ImageBrush;
