@@ -1,5 +1,4 @@
 ﻿using ManagedBass;
-using ManagedBass.Fx;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -39,8 +38,6 @@ namespace WinUIMusicPlayer.Manager
                 "basswv.dll",
                 "bassalac.dll"
             };
-            var version = BassFx.Version;
-            Debug.WriteLine($"BassFx: {version}");
             foreach (var pluginPath in pluginPaths)
             {
                 var fullPath = Path.Combine(appPath, pluginPath);

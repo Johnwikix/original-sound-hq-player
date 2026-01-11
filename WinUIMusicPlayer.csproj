@@ -103,8 +103,6 @@
     <PackageReference Include="ManagedBass.Asio" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Fx" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Tags" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Wasapi" Version="4.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
