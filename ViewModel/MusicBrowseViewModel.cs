@@ -446,38 +446,43 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UpdateProgressTimerUI()
         {
-            _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
-            _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
-            _timeStringBuilder.Clear();
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                if (!isManualSelect)
+                _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
+                _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
+                _timeStringBuilder.Clear();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    try
+                    if (!isManualSelect)
                     {
-                        ProgressSlider = _currentTime.TotalSeconds;
-                        ProgressSliderMax = _totalTime.TotalSeconds;
-                        if (_totalTime.TotalHours >= 1)
+                        try
                         {
-                            PlayTimeText = _timeStringBuilder
-                                .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _currentTime, _totalTime)
-                                .ToString();
+                            ProgressSlider = _currentTime.TotalSeconds;
+                            ProgressSliderMax = _totalTime.TotalSeconds;
+                            if (_totalTime.TotalHours >= 1)
+                            {
+                                PlayTimeText = _timeStringBuilder
+                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _currentTime, _totalTime)
+                                    .ToString();
+                            }
+                            else
+                            {
+                                PlayTimeText = _timeStringBuilder
+                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _currentTime, _totalTime)
+                                    .ToString();
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            PlayTimeText = _timeStringBuilder
-                                .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _currentTime, _totalTime)
-                                .ToString();
+                            Debug.WriteLine(ex.Message);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.Message);
-                    }
-                }
-            });
-            LyricsRefreshService.UpdateLyrics(_currentTime);
-            _systemMediaControlsService.UpdateTimelineProperties(_currentTime, _totalTime);
+                });
+                LyricsRefreshService.UpdateLyrics(_currentTime);
+                _systemMediaControlsService.UpdateTimelineProperties(_currentTime, _totalTime);
+            }
+            catch {
+            }            
         }
         public void UpdateLyricsMargin()
         {

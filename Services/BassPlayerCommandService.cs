@@ -209,17 +209,35 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<double> GetCurrentPosition()
         {
-            return await IpcService.GetCurrentPostion();
+            try
+            {
+                return await IpcService.GetCurrentPostion();
+            }
+            catch {
+                return 0;
+            }            
         }
 
         public async Task<double> GetTotalPosition()
         {
-            return await IpcService.GetDuration();
+            try
+            {
+                return await IpcService.GetDuration();
+            }
+            catch {
+                return 0;
+            }            
         }
 
         public async Task<double> AdjustPlaybackPosition(int seconds)
         {
-            return await IpcService.AdjustPlaybackPosition(seconds);
+            try
+            {
+                return await IpcService.AdjustPlaybackPosition(seconds);
+            }
+            catch { 
+                return 0;
+            }            
         }
 
         public void ChangingSetting()
