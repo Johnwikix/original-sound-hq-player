@@ -205,7 +205,7 @@ namespace WinUIMusicPlayer
         }
 
         /// <summary>
-        public async static void Current_Exit()
+        public static void Current_Exit()
         {
             try
             {
