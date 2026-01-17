@@ -6,6 +6,7 @@
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:dev="using:DevWinUI"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
@@ -665,26 +666,30 @@
                             Grid.Column="1"
                             Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}">
                             <!--  添加歌词显示列表  -->
-                            <dev:OpacityMaskView
+                            <controls:OpacityMaskView
                                 x:Name="MaskView"
                                 Margin="0,20,0,20"
                                 Padding="0"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch">
-                                <dev:OpacityMaskView.OpacityMask>
-                                    <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Offset="0" Color="#0000FFFF" />
-                                        <GradientStop Offset="0.05" Color="#00FFFFFF" />
-                                        <GradientStop Offset="0.15" Color="#0FFFFFFF" />
-                                        <GradientStop Offset="0.25" Color="#5FFFFFFF" />
-                                        <GradientStop Offset="0.35" Color="#FFFFFFFF" />
-                                        <GradientStop Offset="0.65" Color="#FFFFFFFF" />
-                                        <GradientStop Offset="0.75" Color="#5FFFFFFF" />
-                                        <GradientStop Offset="0.85" Color="#0FFFFFFF" />
-                                        <GradientStop Offset="0.95" Color="#00FFFFFF" />
-                                        <GradientStop Offset="1" Color="#0000FFFF" />
-                                    </LinearGradientBrush>
-                                </dev:OpacityMaskView.OpacityMask>
+                                <controls:OpacityMaskView.OpacityMask>
+                                    <Rectangle Stretch="UniformToFill">
+                                        <Rectangle.Fill>
+                                            <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Offset="0" Color="#0000FFFF" />
+                                                <GradientStop Offset="0.05" Color="#00FFFFFF" />
+                                                <GradientStop Offset="0.15" Color="#0FFFFFFF" />
+                                                <GradientStop Offset="0.25" Color="#5FFFFFFF" />
+                                                <GradientStop Offset="0.35" Color="#FFFFFFFF" />
+                                                <GradientStop Offset="0.65" Color="#FFFFFFFF" />
+                                                <GradientStop Offset="0.75" Color="#5FFFFFFF" />
+                                                <GradientStop Offset="0.85" Color="#0FFFFFFF" />
+                                                <GradientStop Offset="0.95" Color="#00FFFFFF" />
+                                                <GradientStop Offset="1" Color="#0000FFFF" />
+                                            </LinearGradientBrush>
+                                        </Rectangle.Fill>
+                                    </Rectangle>                                    
+                                </controls:OpacityMaskView.OpacityMask>
                                 <ScrollView
                                     x:Name="LyricViewer"
                                     Margin="0"
@@ -778,7 +783,7 @@
                                         <StackPanel Height="1080" />
                                     </StackPanel>
                                 </ScrollView>
-                            </dev:OpacityMaskView>
+                            </controls:OpacityMaskView>
                         </Grid>
                     </Grid>
                     <!--  底部控制区域  -->
