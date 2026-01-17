@@ -37,4 +37,5 @@
     <converters:AlbumSongsConverter x:Key="AlbumSongsConverter" />
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:TextAlignmentToHorizontalAlignmentConverter x:Key="TextAlignmentToHorizontalAlignmentConverter" />
+    <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
 </ResourceDictionary>

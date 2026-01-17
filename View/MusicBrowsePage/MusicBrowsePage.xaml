@@ -745,6 +745,7 @@
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="Auto" />
                                                                 <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="20" />
                                                             </Grid.RowDefinitions>
                                                             <TextBlock
                                                                 x:Name="LyricsTextBlockBase"
@@ -777,7 +778,7 @@
                                                             <TextBlock
                                                                 x:Name="LyricsTransTextBlock"
                                                                 Grid.Row="1"
-                                                                Margin="0,0,0,20"
+                                                                Margin="0"
                                                                 HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                                 FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                                 FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -785,7 +786,8 @@
                                                                 Opacity="0.5"
                                                                 Text="{x:Bind TransLateText}"
                                                                 TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                                TextWrapping="WrapWholeWords" />
+                                                                TextWrapping="WrapWholeWords"
+                                                                Visibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}" />
 
                                                         </Grid>
                                                         <dev:BlurEffectControl
