@@ -1075,10 +1075,10 @@ namespace WinUIMusicPlayer.Utils
             }, ct);
         }
 
-        public static async Task<string> GetLyricsFromNet(Music musicDetail)
+        public static async Task<(string,string)> GetLyricsFromNet(Music musicDetail)
         {
             //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            return (await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author)).Item1;
+            return await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
         }
 
         public static DateTime GetSafeFileCreateTime(string filePath)

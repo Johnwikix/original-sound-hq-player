@@ -411,22 +411,24 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    string lyrics = await ToolUtils.GetLyricsFromNet(item);
+                    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
                     Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
                     if (music is not null)
                     {
                         music.Lyrics = lyrics;
+                        music.TranslatdeLyrics = transLrc;
                         await MusicDatabaseService.UpdateMusicInfo(music);
                     }
                 }
             }
             else
             {
-                string lyrics = await ToolUtils.GetLyricsFromNet(SelectedMusic);
+                (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic);
                 Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
                 if (music is not null)
                 {
                     music.Lyrics = lyrics;
+                    music.TranslatdeLyrics = transLrc;
                     await MusicDatabaseService.UpdateMusicInfo(music);
                 }
             }

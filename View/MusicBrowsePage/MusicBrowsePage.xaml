@@ -4,9 +4,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:dev="using:DevWinUI"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
@@ -688,7 +688,7 @@
                                                 <GradientStop Offset="1" Color="#0000FFFF" />
                                             </LinearGradientBrush>
                                         </Rectangle.Fill>
-                                    </Rectangle>                                    
+                                    </Rectangle>
                                 </controls:OpacityMaskView.OpacityMask>
                                 <ScrollView
                                     x:Name="LyricViewer"
@@ -742,10 +742,14 @@
                                                         PointerEntered="LyricsLineGrid_PointerEntered"
                                                         PointerExited="LyricsLineGrid_PointerExited">
                                                         <Grid Padding="20,0,20,0">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
                                                             <TextBlock
                                                                 x:Name="LyricsTextBlockBase"
-                                                                Margin="0"
-                                                                Padding="0,15,0,15"
+                                                                Grid.Row="0"
+                                                                Margin="0,5,0,5"
                                                                 HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                                 FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                                 FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -758,8 +762,8 @@
                                                             <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
                                                             <TextBlock
                                                                 x:Name="LyricsTextBlock"
-                                                                Margin="0"
-                                                                Padding="0,15,0,15"
+                                                                Grid.Row="0"
+                                                                Margin="0,5,0,5"
                                                                 HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                                 FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                                 FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
@@ -769,6 +773,20 @@
                                                                 Text="{x:Bind Text}"
                                                                 TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                                 TextWrapping="WrapWholeWords" />
+
+                                                            <TextBlock
+                                                                x:Name="LyricsTransTextBlock"
+                                                                Grid.Row="1"
+                                                                Margin="0,0,0,20"
+                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
+                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                                Opacity="0.5"
+                                                                Text="{x:Bind TransLateText}"
+                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                                TextWrapping="WrapWholeWords" />
+
                                                         </Grid>
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"

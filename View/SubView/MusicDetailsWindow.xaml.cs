@@ -227,7 +227,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            string lyrics = await ToolUtils.GetLyricsFromNet(musicDetail);
+            (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(musicDetail);
             if (lyrics is not null)
             {
                 LyricsTextBox.Text = lyrics;

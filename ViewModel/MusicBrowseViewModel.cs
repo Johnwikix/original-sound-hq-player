@@ -784,8 +784,7 @@ namespace WinUIMusicPlayer.ViewModel
             // 设置播放服务中的歌词
             await LyricsRefreshService.SetLyrics();
             // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = LyricsRefreshService._lyrics;
-            UILyrics.Clear();
+            List<LyricLine> parsedLyrics = LyricsRefreshService.Lyrics;
             foreach (var lyric in parsedLyrics)
             {
                 UILyrics.Add(lyric);

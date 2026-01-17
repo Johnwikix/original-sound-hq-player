@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,11 @@ namespace WinUIMusicPlayer.Services
 {
     public class LyricsRefreshService
     {
-        public List<LyricLine> _lyrics = [];
+        public List<LyricLine> Lyrics
+        {
+            get => field;
+            set => field = value;
+        } = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
         public LyricsRefreshService()
@@ -25,14 +30,14 @@ namespace WinUIMusicPlayer.Services
         }
         public void UpdateLyrics(TimeSpan currentPosition)
         {
-            if (_lyrics.Count == 0)
+            if (Lyrics.Count == 0)
                 return;
             // 查找当前应显示的歌词
             int currentIndex = -1;
-            for (int i = 0; i < _lyrics.Count; i++)
+            for (int i = 0; i < Lyrics.Count; i++)
             {
                 // 找到时间戳小于等于当前播放位置的最后一条歌词
-                if (_lyrics[i].Time <= currentPosition)
+                if (Lyrics[i].Time <= currentPosition)
                 {
                     currentIndex = i;
                 }
@@ -50,7 +55,7 @@ namespace WinUIMusicPlayer.Services
 
         public void ResetLyrics()
         {
-            if (_lyrics.Count == 0)
+            if (Lyrics.Count == 0)
                 return;
             MusicBrowseViewModel.UpdateLyricsToUI(0);
         }
@@ -58,12 +63,12 @@ namespace WinUIMusicPlayer.Services
         public async Task SetLyrics()
         {
             CancelPreviousLyricsTask();
-            _lyrics.Clear();
+            Lyrics.Clear();
             string? lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Path);
             var lyricsContent = await ParseLrcLyrics(lrcContent);
             if (lyricsContent is not null)
             {
-                _lyrics = lyricsContent;
+                Lyrics = lyricsContent;
             }
         }
 
@@ -89,6 +94,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
         {
+            string? transLrcStr = string.Empty;
             _lyricsCancellationTokenSource?.Cancel(); // 习惯性清理旧任务
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
@@ -110,7 +116,7 @@ namespace WinUIMusicPlayer.Services
             {
                 // 尝试从内存缓存获取
                 lrcContent = songInMemory?.Lyrics;
-
+                transLrcStr = songInMemory?.TranslatdeLyrics;
                 // 如果开启了自动歌词且缓存为空，则在线搜索
                 if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.isAutoLyricsEnabled)
                 {
@@ -146,7 +152,7 @@ namespace WinUIMusicPlayer.Services
             // 4. 返回解析结果
             if (!string.IsNullOrWhiteSpace(lrcContent))
             {
-                return SpliteContent(lrcContent, lyrics);
+                return SpliteContent(lrcContent,transLrcStr, lyrics);
             }
 
             // 无歌词时的默认占位
@@ -182,66 +188,49 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private List<LyricLine> SpliteContent(string lrcContent, List<LyricLine> lyrics)
+        private List<LyricLine> SpliteContent(string lrcContent, string? transLrc, List<LyricLine> lyrics)
         {
-            string[] lines = lrcContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
-            foreach (string line in lines)
+            lyrics.Clear();
+
+            // 1. 解析原文歌词（包含合并 100ms 内行的逻辑）
+            ParseLrcToLines(lrcContent, (time, text) =>
             {
-                string trimmedLine = line.Trim();
-                if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
-                    continue;
+                // 查找是否已有时间相近的行
+                var existingLine = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
 
-                Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
-                if (timeMatch.Success)
+                if (existingLine != null)
                 {
-                    // 提取捕获组
-                    int minutes = int.Parse(timeMatch.Groups[1].Value);
-                    int seconds = int.Parse(timeMatch.Groups[2].Value);
-                    string millisecondStr = timeMatch.Groups[4].Value;
-
-                    int milliseconds;
-
-                    if (millisecondStr.Length == 2)
-                    {
-                        milliseconds = int.Parse(millisecondStr) * 10;
-                    }
-                    else 
-                    {
-                        milliseconds = int.Parse(millisecondStr);
-                    }
-
-                    TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
-
-                    string text = trimmedLine.Substring(timeMatch.Length).Trim();
-
-                    if (string.IsNullOrEmpty(text))
-                        continue;
-
-                    int currentPosition = 0;
-                    string currentLine = trimmedLine;
-
-                    bool found = false;
-                    foreach (var lyric in lyrics)
-                    {
-                        if (Math.Abs((lyric.Time - time).TotalMilliseconds) <= 100)
-                        {
-                            lyric.Text += "\n" + text;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        lyrics.Add(new LyricLine
-                        {
-                            Time = time,
-                            Text = text,
-                            IsCurrent = false
-                        });
-                    }
+                    // 如果时间接近，合并文本（换行处理）
+                    existingLine.Text += "\n" + text;
                 }
+                else
+                {
+                    // 如果是新时间点，添加新行
+                    lyrics.Add(new LyricLine
+                    {
+                        Time = time,
+                        Text = text,
+                        IsCurrent = false
+                    });
+                }
+            });
+
+            // 2. 解析翻译歌词
+            if (!string.IsNullOrEmpty(transLrc))
+            {
+                ParseLrcToLines(transLrc, (time, transText) =>
+                {
+                    // 匹配原文中时间最接近的行
+                    var lyric = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
+                    if (lyric != null)
+                    {
+                        // 赋值翻译文本（如果有多行翻译，也可以考虑用 += "\n" + transText）
+                        lyric.TransLateText = transText;
+                    }
+                });
             }
+
+            // 3. 兜底处理：无歌词情况
             if (lyrics.Count == 0)
             {
                 lyrics.Add(new LyricLine
@@ -253,7 +242,46 @@ namespace WinUIMusicPlayer.Services
                 return lyrics;
             }
 
-            return lyrics.AsValueEnumerable().OrderBy(l => l.Time).ToList();
+            // 4. 按时间排序返回
+            return lyrics.OrderBy(l => l.Time).ToList();
+        }
+
+        /// <summary>
+        /// 核心解析逻辑：处理时间标签并提取文本
+        /// </summary>
+        private void ParseLrcToLines(string content, Action<TimeSpan, string> onLineParsed)
+        {
+            if (string.IsNullOrEmpty(content)) return;
+
+            string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
+
+            foreach (string line in lines)
+            {
+                string trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
+                    continue;
+
+                Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
+                if (timeMatch.Success)
+                {
+                    int minutes = int.Parse(timeMatch.Groups[1].Value);
+                    int seconds = int.Parse(timeMatch.Groups[2].Value);
+                    string millisecondStr = timeMatch.Groups[4].Value;
+
+                    int milliseconds = millisecondStr.Length == 2
+                        ? int.Parse(millisecondStr) * 10
+                        : int.Parse(millisecondStr);
+
+                    TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
+                    string text = trimmedLine.Substring(timeMatch.Length).Trim();
+
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        onLineParsed(time, text);
+                    }
+                }
+            }
         }
 
         public void Dispose()
