@@ -18,6 +18,7 @@
     <None Remove="Assets\next.ico" />
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
+    <None Remove="Controls\LyricsLineControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
@@ -154,6 +155,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Controls\LyricsLineControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\SilderDictionary.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
+using WinUIMusicPlayer.Controls;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using ZLinq;
@@ -26,6 +27,25 @@ namespace WinUIMusicPlayer.View
     {       
         private SolidColorBrush _transparentBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void LyricsLineControl_IsCurrentLineEvent(object sender, RoutedEventArgs e)
+        {
+            var lyricsLineControl = (LyricsLineControl)sender;
+            var container = ToolUtils.FindParent<ListViewItem>(lyricsLineControl);
+            if (container == null) return;
+            try
+            {
+                _scrollCancellation?.Cancel();
+                _scrollCancellation = new CancellationTokenSource();
+                var transform = container.TransformToVisual(LyricViewer.Content as UIElement);
+                var targetPoint = transform.TransformPoint(new Point(0, 0));
+                double startOffset = LyricViewer.VerticalOffset;
+                double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
+                LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);
+            }
+            catch (OperationCanceledException) { }
+            catch { }
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async void LyricsTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
         {

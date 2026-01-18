@@ -18,14 +18,49 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _tranLateText, value);
         }
 
-        private bool _isCurrent;
+        private bool _isCurrent = false;
         public bool IsCurrent
         {
             get => _isCurrent;
             set => SetProperty(ref _isCurrent, value);
         }
+        private TimeSpan _time = TimeSpan.Zero;
+        public TimeSpan Time { 
+            get => _time;
+            set => SetProperty(ref _time, value);
+        }
+        private TimeSpan _lineAnimateDuration = TimeSpan.Zero;
+        public TimeSpan LineAnimateDuration { 
+            get => _lineAnimateDuration; 
+            set => SetProperty(ref _lineAnimateDuration, value); 
+        }
 
-        public TimeSpan Time { get; set; }
+        public double DynamicLyricsSize(bool isEnable, double fontsize, bool IsLyricstype)
+        {
+            if (isEnable)
+            {
+                return fontsize;                
+            }
+            else {
+                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1440)
+                {
+                    return IsLyricstype ? 26.0 : 22.0;
+                }
+                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1920)
+                {
+                    return IsLyricstype ? 30.0 : 26.0;
+                }
+                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2160)
+                {
+                    return IsLyricstype ? 34.0 : 30.0;
+                }
+                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2560)
+                {
+                    return IsLyricstype ? 38.0 : 34.0;
+                }
+                return IsLyricstype ? 42.0 : 38.0;
+            }           
+        }
 
     }
 }

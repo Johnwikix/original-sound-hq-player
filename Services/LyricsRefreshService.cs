@@ -242,8 +242,26 @@ namespace WinUIMusicPlayer.Services
                 return lyrics;
             }
 
+            // 4. 按时间排序（必须先排序，才能计算相邻行差值）
+            var sortedLyrics = lyrics.OrderBy(l => l.Time).ToList();
+
+            // 5. 计算 LineAnimateDuration
+            for (int i = 0; i < sortedLyrics.Count; i++)
+            {
+                if (i < sortedLyrics.Count - 1)
+                {
+                    // 当前行持续时间 = 下一行时间 - 当前行时间
+                    sortedLyrics[i].LineAnimateDuration = sortedLyrics[i + 1].Time - sortedLyrics[i].Time;
+                }
+                else
+                {
+                    // 最后一行，默认为 5s
+                    sortedLyrics[i].LineAnimateDuration = TimeSpan.FromSeconds(5);
+                }
+            }
+
             // 4. 按时间排序返回
-            return lyrics.OrderBy(l => l.Time).ToList();
+            return sortedLyrics;
         }
 
         /// <summary>

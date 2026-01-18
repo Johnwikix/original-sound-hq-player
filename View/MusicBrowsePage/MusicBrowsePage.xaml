@@ -6,6 +6,7 @@
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
+    xmlns:customControls="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
@@ -440,6 +441,46 @@
                                                 VerticalAlignment="Bottom"
                                                 Text="{x:Bind ViewModel.PlayTimeText, Mode=TwoWay}" />
                                         </Grid>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup>
+                                                <VisualState x:Name="Narrow">
+                                                    <VisualState.StateTriggers>
+                                                        <AdaptiveTrigger MinWindowWidth="0" />
+                                                    </VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="24" />
+                                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="18" />
+                                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="18" />
+                                                        <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
+                                                        <Setter Target="PlayingDetailHRImage.Height" Value="14" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Normal">
+                                                    <VisualState.StateTriggers>
+                                                        <AdaptiveTrigger MinWindowWidth="1600" />
+                                                    </VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="32" />
+                                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="20" />
+                                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="20" />
+                                                        <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
+                                                        <Setter Target="PlayingDetailHRImage.Height" Value="14" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="Wide">
+                                                    <VisualState.StateTriggers>
+                                                        <AdaptiveTrigger MinWindowWidth="2000" />
+                                                    </VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="36" />
+                                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="22" />
+                                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="22" />
+                                                        <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="16" />
+                                                        <Setter Target="PlayingDetailHRImage.Height" Value="16" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
                                     </Grid>
                                     <!--  控制面板  -->
                                     <Grid x:Name="PlayingDetailControlBar" Grid.Row="2">
@@ -661,14 +702,11 @@
                                 </Grid>
                             </Grid>
                         </Grid>
-                        <Grid
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}">
+                        <Grid Grid.Row="1" Grid.Column="1">
                             <!--  添加歌词显示列表  -->
                             <controls:OpacityMaskView
                                 x:Name="MaskView"
-                                Margin="0,20,0,20"
+                                Margin="0"
                                 Padding="0"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch">
@@ -693,12 +731,12 @@
                                 <ScrollView
                                     x:Name="LyricViewer"
                                     Margin="0"
-                                    VerticalScrollBarVisibility="Hidden">
+                                    VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <StackPanel Height="1080" />
                                         <ListView
                                             x:Name="LyricsListView"
-                                            Margin="0"
+                                            Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}"
                                             VerticalAlignment="Stretch"
                                             IsItemClickEnabled="True"
                                             ItemClick="LyricsListView_ItemClick"
@@ -741,55 +779,19 @@
                                                         CornerRadius="5"
                                                         PointerEntered="LyricsLineGrid_PointerEntered"
                                                         PointerExited="LyricsLineGrid_PointerExited">
-                                                        <Grid Padding="20,0,20,0">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition Height="Auto" />
-                                                                <RowDefinition Height="Auto" />
-                                                                <RowDefinition Height="20" />
-                                                            </Grid.RowDefinitions>
-                                                            <TextBlock
-                                                                x:Name="LyricsTextBlockBase"
-                                                                Grid.Row="0"
-                                                                Margin="0,5,0,5"
-                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
-                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                                Opacity="0.5"
-                                                                Text="{x:Bind Text}"
-                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                                TextWrapping="WrapWholeWords" />
-
-                                                            <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
-                                                            <TextBlock
-                                                                x:Name="LyricsTextBlock"
-                                                                Grid.Row="0"
-                                                                Margin="0,5,0,5"
-                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
-                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                                Opacity="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-                                                                SizeChanged="LyricsTextBlock_SizeChanged"
-                                                                Text="{x:Bind Text}"
-                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                                TextWrapping="WrapWholeWords" />
-
-                                                            <TextBlock
-                                                                x:Name="LyricsTransTextBlock"
-                                                                Grid.Row="1"
-                                                                Margin="0"
-                                                                HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
-                                                                FontFamily="{x:Bind model:AppSettings.GlobalFont}"
-                                                                FontSize="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontSizeConverter}}"
-                                                                FontWeight="{x:Bind IsCurrent, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                                Opacity="0.5"
-                                                                Text="{x:Bind TransLateText}"
-                                                                TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                                TextWrapping="WrapWholeWords"
-                                                                Visibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}" />
-
-                                                        </Grid>
+                                                        <customControls:LyricsLineControl
+                                                            x:Name="LyricsLineControl"
+                                                            HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                                            FontFamily="{x:Bind model:AppSettings.GlobalFont}"
+                                                            IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
+                                                            IsCurrentLineEvent="LyricsLineControl_IsCurrentLineEvent"
+                                                            LineAnimateDuration="{x:Bind LineAnimateDuration, Mode=OneWay}"
+                                                            LyricsFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:True), Mode=OneWay}"
+                                                            LyricsText="{x:Bind Text}"
+                                                            TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                                            TranslateFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:False), Mode=OneWay}"
+                                                            TranslateText="{x:Bind TransLateText}"
+                                                            TranslateVisibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}" />
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
                                                             Margin="0"
@@ -1269,46 +1271,6 @@
                     </Grid>
                 </Grid>
             </Grid>
-            <VisualStateManager.VisualStateGroups>
-                <VisualStateGroup x:Name="WindowSizeStates">
-                    <VisualState x:Name="NarrowState">
-                        <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="0" />
-                        </VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="24" />
-                            <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="18" />
-                            <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="18" />
-                            <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
-                            <Setter Target="PlayingDetailHRImage.Height" Value="14" />
-                        </VisualState.Setters>
-                    </VisualState>
-                    <VisualState x:Name="MediumState">
-                        <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="1600" />
-                        </VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="32" />
-                            <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="20" />
-                            <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="20" />
-                            <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
-                            <Setter Target="PlayingDetailHRImage.Height" Value="14" />
-                        </VisualState.Setters>
-                    </VisualState>
-                    <VisualState x:Name="WideState">
-                        <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="2000" />
-                        </VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="36" />
-                            <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="22" />
-                            <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="22" />
-                            <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="16" />
-                            <Setter Target="PlayingDetailHRImage.Height" Value="16" />
-                        </VisualState.Setters>
-                    </VisualState>
-                </VisualStateGroup>
-            </VisualStateManager.VisualStateGroups>
         </Grid>
     </Grid>
 </Page>

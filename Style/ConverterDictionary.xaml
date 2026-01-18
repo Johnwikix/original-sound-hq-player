@@ -5,7 +5,7 @@
     xmlns:converters="using:WinUIMusicPlayer.Converters">
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
-    <converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />
+    <!--<converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />-->
     <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
     <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
     <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter" />
