@@ -44,21 +44,21 @@ namespace WinUIMusicPlayer.Model
             else {
                 if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1440)
                 {
-                    return IsLyricstype ? 26.0 : 20.0;
+                    return IsLyricstype ? 28.0 : 22.0;
                 }
                 if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1920)
                 {
-                    return IsLyricstype ? 30.0 : 24.0;
+                    return IsLyricstype ? 32.0 : 26.0;
                 }
                 if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2160)
                 {
-                    return IsLyricstype ? 34.0 : 28.0;
+                    return IsLyricstype ? 36.0 : 30.0;
                 }
                 if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2560)
                 {
-                    return IsLyricstype ? 38.0 : 32.0;
+                    return IsLyricstype ? 40.0 : 34.0;
                 }
-                return IsLyricstype ? 42.0 : 36.0;
+                return IsLyricstype ? 44.0 : 38.0;
             }           
         }
 
