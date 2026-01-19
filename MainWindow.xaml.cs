@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer
         {
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            SetTitleBar(AppTitleBar);
+            //SetTitleBar(AppTitleBar);
             setWindow();
             AppData.m_hWnd = m_hwnd;
             this.Activated += MainWindow_Activated;
