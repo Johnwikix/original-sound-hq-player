@@ -1,0 +1,835 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+		<xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+		<xsd:element name="root" msdata:IsDataSet="true">
+			<xsd:complexType>
+				<xsd:choice maxOccurs="unbounded">
+					<xsd:element name="metadata">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" />
+							</xsd:sequence>
+							<xsd:attribute name="name" use="required" type="xsd:string" />
+							<xsd:attribute name="type" type="xsd:string" />
+							<xsd:attribute name="mimetype" type="xsd:string" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="assembly">
+						<xsd:complexType>
+							<xsd:attribute name="alias" type="xsd:string" />
+							<xsd:attribute name="name" type="xsd:string" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="data">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="resheader">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" />
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+			</xsd:complexType>
+		</xsd:element>
+	</xsd:schema>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="AppTitle.Text" xml:space="preserve">
+    <value>Original-Sound HQ Player</value>
+  </data>
+	<data name="LoadingText.Text" xml:space="preserve">
+    <value>Daten werden geladen, bitte warten...</value>
+  </data>
+	<data name="SongTab.Text" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="AlbumTab.Text" xml:space="preserve">
+    <value>Alben</value>
+  </data>
+	<data name="AddFolder.Text" xml:space="preserve">
+    <value>Ordner hinzufügen</value>
+  </data>
+	<data name="MusicBrowse.Text" xml:space="preserve">
+    <value>Musik durchsuchen</value>
+  </data>
+	<data name="AppMainTitle" xml:space="preserve">
+    <value>Original-Sound HQ Player</value>
+  </data>
+	<data name="ArtistTab.Text" xml:space="preserve">
+    <value>Künstler</value>
+  </data>
+	<data name="FolderTab.Text" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+	<data name="FavouriteTab.Text" xml:space="preserve">
+    <value>Favoriten</value>
+  </data>
+	<data name="PlaylistTab.Text" xml:space="preserve">
+    <value>Wiedergabelisten</value>
+  </data>
+	<data name="Transmitting.Text" xml:space="preserve">
+    <value>Übertragung läuft</value>
+  </data>
+	<data name="USBDevice.PlaceholderText" xml:space="preserve">
+    <value>USB-Gerät</value>
+  </data>
+	<data name="SortOrder.Text" xml:space="preserve">
+    <value>Sortieren nach</value>
+  </data>
+	<data name="SortOrderDefault" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+	<data name="SortOrderA_Z" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+	<data name="SortOrderArtist" xml:space="preserve">
+    <value>Künstler</value>
+  </data>
+	<data name="SortOrderAlbum" xml:space="preserve">
+    <value>Album</value>
+  </data>
+	<data name="SearchMusic.PlaceholderText" xml:space="preserve">
+    <value>Musik suchen</value>
+  </data>
+	<data name="Settings.Text" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+	<data name="SettingAudio.Text" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+	<data name="SettingOutput.Header" xml:space="preserve">
+    <value>Ausgabeeinstellungen</value>
+  </data>
+	<data name="SettingOutputMode.Header" xml:space="preserve">
+    <value>Ausgabemodus</value>
+  </data>
+	<data name="WasapiExclusivePush.Content" xml:space="preserve">
+    <value>Wasapi Exklusiv (Push)</value>
+  </data>
+	<data name="WasapiExclusiveEvent.Content" xml:space="preserve">
+    <value>Wasapi Exklusiv (Event)</value>
+  </data>
+	<data name="WasapiShared.Content" xml:space="preserve">
+    <value>Wasapi Gemeinsam</value>
+  </data>
+	<data name="WaveOut.Content" xml:space="preserve">
+    <value>WaveOut</value>
+  </data>
+	<data name="DirectSound.Content" xml:space="preserve">
+    <value>DirectSound</value>
+  </data>
+	<data name="SettingOutputDevice.Header" xml:space="preserve">
+    <value>Ausgabegerät</value>
+  </data>
+	<data name="SettingBufferSize.Header" xml:space="preserve">
+    <value>Puffergröße (ms)</value>
+  </data>
+	<data name="SettingFunction.Text" xml:space="preserve">
+    <value>Funktionen</value>
+  </data>
+	<data name="DefaultEntryInterface.Header" xml:space="preserve">
+    <value>Standard-Startseite</value>
+  </data>
+	<data name="AddFolderCombox.Content" xml:space="preserve">
+    <value>Ordner hinzufügen</value>
+  </data>
+	<data name="MusicBrowseCombox.Content" xml:space="preserve">
+    <value>Musik durchsuchen</value>
+  </data>
+	<data name="AlbumCombox.Content" xml:space="preserve">
+    <value>Alben</value>
+  </data>
+	<data name="FavouriteCombox.Content" xml:space="preserve">
+    <value>Favoriten</value>
+  </data>
+	<data name="FolderCombox.Content" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+	<data name="PlaylistCombox.Content" xml:space="preserve">
+    <value>Wiedergabelisten</value>
+  </data>
+	<data name="SongCombox.Content" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="ArtistCombox.Content" xml:space="preserve">
+    <value>Künstler</value>
+  </data>
+	<data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
+    <value>Standard-Musikansicht</value>
+  </data>
+	<data name="SettingInterface.Header" xml:space="preserve">
+    <value>Oberfläche</value>
+  </data>
+	<data name="SettingCoverLyrics.Header" xml:space="preserve">
+    <value>Cover &amp; Songtexte</value>
+  </data>
+	<data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
+    <value>LrcAPI-Quelle</value>
+  </data>
+	<data name="CoverServiceLrcAPISourceDoc" xml:space="preserve">
+    <value>Dokumentation: https://docs.lrc.cx/docs/QuickStart/</value>
+  </data>
+	<data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
+    <value>LrcAPI-Authentifizierungscode</value>
+  </data>
+	<data name="CoverCache.Header" xml:space="preserve">
+    <value>Laufzeit-Cover-Cache</value>
+  </data>
+	<data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
+    <value>Max. Anzahl vorab geladener Cover</value>
+  </data>
+	<data name="AutoLyricMatching.Header" xml:space="preserve">
+    <value>Automatischer Cover/Songtext-Abgleich</value>
+  </data>
+	<data name="NeedConfigureLrcAPIService" xml:space="preserve">
+    <value>LrcAPI-Dienst muss konfiguriert werden</value>
+  </data>
+	<data name="CloseButtonFunction.Header" xml:space="preserve">
+    <value>Funktion der Schließen-Schaltfläche</value>
+  </data>
+	<data name="CloseApp.Content" xml:space="preserve">
+    <value>Anwendung schließen</value>
+  </data>
+	<data name="Backgrounder.Content" xml:space="preserve">
+    <value>Im Hintergrund ausführen</value>
+  </data>
+	<data name="Appearance.Text" xml:space="preserve">
+    <value>Erscheinungsbild</value>
+  </data>
+	<data name="AppStyle.Header" xml:space="preserve">
+    <value>Anwendungsstil</value>
+  </data>
+	<data name="MicaStyle.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+	<data name="AcrylicStyle.Content" xml:space="preserve">
+    <value>Acryl</value>
+  </data>
+	<data name="TransparentAcrylicStyle.Content" xml:space="preserve">
+    <value>Transparentes Acryl</value>
+  </data>
+	<data name="ThemeStyle.Header" xml:space="preserve">
+    <value>Anwendungs-Design</value>
+  </data>
+	<data name="SystemDefaultTheme.Content" xml:space="preserve">
+    <value>Systemstandard</value>
+  </data>
+	<data name="Dark.Content" xml:space="preserve">
+    <value>Dunkel</value>
+  </data>
+	<data name="Light.Content" xml:space="preserve">
+    <value>Hell</value>
+  </data>
+	<data name="FlyoutPlayItem.Text" xml:space="preserve">
+    <value>Abspielen</value>
+  </data>
+	<data name="FlyoutFavoriteItem.Text" xml:space="preserve">
+    <value>Favorit hinzufügen/entfernen</value>
+  </data>
+	<data name="FlyoutAddToPlaylistItem.Text" xml:space="preserve">
+    <value>Zur Wiedergabeliste hinzufügen</value>
+  </data>
+	<data name="FlyoutConvertItem.Text" xml:space="preserve">
+    <value>Konvertieren in</value>
+  </data>
+	<data name="FlyoutConvertWavItem.Text" xml:space="preserve">
+    <value>WAV</value>
+  </data>
+	<data name="FlyoutConvertMp3Item.Text" xml:space="preserve">
+    <value>MP3</value>
+  </data>
+	<data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
+    <value>FLAC</value>
+  </data>
+	<data name="FlyoutOpenLocationItem.Text" xml:space="preserve">
+    <value>Dateipfad öffnen</value>
+  </data>
+	<data name="FlyoutPropertiesItem.Text" xml:space="preserve">
+    <value>Eigenschaften</value>
+  </data>
+	<data name="FlyoutDeleteItem.Text" xml:space="preserve">
+    <value>Von Festplatte löschen</value>
+  </data>
+	<data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
+    <value>Aus Wiedergabeliste entfernen</value>
+  </data>
+	<data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
+    <value>Aus Favoriten entfernen</value>
+  </data>
+	<data name="SendToUsbDevice" xml:space="preserve">
+    <value>An USB-Gerät senden</value>
+  </data>
+	<data name="Path" xml:space="preserve">
+    <value>Pfad</value>
+  </data>
+	<data name="FreeSpace" xml:space="preserve">
+    <value>Freier Speicherplatz</value>
+  </data>
+	<data name="Rescan" xml:space="preserve">
+    <value>Neu scannen</value>
+  </data>
+	<data name="FlyoutProperties" xml:space="preserve">
+    <value>Eigenschaften</value>
+  </data>
+	<data name="FlyoutAddToPlaylist" xml:space="preserve">
+    <value>Zur Wiedergabeliste hinzufügen</value>
+  </data>
+	<data name="FlyoutPlay" xml:space="preserve">
+    <value>Abspielen</value>
+  </data>
+	<data name="FlyoutFavorite" xml:space="preserve">
+    <value>Zu Favoriten hinzufügen</value>
+  </data>
+	<data name="EnterPlaylistName" xml:space="preserve">
+    <value>Bitte Namen der Wiedergabeliste eingeben</value>
+  </data>
+	<data name="PrimaryButton" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+	<data name="CloseButton" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+	<data name="ModifyPlaylist" xml:space="preserve">
+    <value>Wiedergabeliste bearbeiten</value>
+  </data>
+	<data name="Converting" xml:space="preserve">
+    <value>Konvertierung läuft</value>
+  </data>
+	<data name="Processing" xml:space="preserve">
+    <value>Wird verarbeitet...</value>
+  </data>
+	<data name="AlbumDetailWindow.Title" xml:space="preserve">
+    <value>Albumeigenschaften</value>
+  </data>
+	<data name="AlbumDetailTitleBar.Text" xml:space="preserve">
+    <value>Albumdetails</value>
+  </data>
+	<data name="LoadingTextBlock.Text" xml:space="preserve">
+    <value>Speichervorgang läuft, bitte warten...</value>
+  </data>
+	<data name="GetImageFromNetButton.Content" xml:space="preserve">
+    <value>Online-Cover-Abgleich</value>
+  </data>
+	<data name="SaveImageButton.Content" xml:space="preserve">
+    <value>Lokal speichern</value>
+  </data>
+	<data name="SelectCoverImageButton.Content" xml:space="preserve">
+    <value>Cover bearbeiten</value>
+  </data>
+	<data name="TitleLabel.Text" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="YearLabel.Text" xml:space="preserve">
+    <value>Jahr</value>
+  </data>
+	<data name="ConfirmFlyout.Text" xml:space="preserve">
+    <value>Metadaten wirklich für alle Titel im Album speichern?</value>
+  </data>
+	<data name="ConfirmButton.Content" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+	<data name="CancelButton.Content" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+	<data name="SaveButton.Content" xml:space="preserve">
+    <value>In Datei schreiben</value>
+  </data>
+	<data name="CloseButtonItem.Content" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+	<data name="MusicDetailTitleBar.Text" xml:space="preserve">
+    <value>Musikdetails</value>
+  </data>
+	<data name="LoadingGrid.Text" xml:space="preserve">
+    <value>Speichervorgang läuft, bitte warten...</value>
+  </data>
+	<data name="TitleTextBlock.Text" xml:space="preserve">
+    <value>Titel:</value>
+  </data>
+	<data name="AuthorTextBlock.Text" xml:space="preserve">
+    <value>Künstler:</value>
+  </data>
+	<data name="AlbumTextBlock.Text" xml:space="preserve">
+    <value>Album:</value>
+  </data>
+	<data name="YearTextBlock.Text" xml:space="preserve">
+    <value>Jahr:</value>
+  </data>
+	<data name="TrackNumberBox.Text" xml:space="preserve">
+    <value>Titelnummer:</value>
+  </data>
+	<data name="LyricsTextBox.Content" xml:space="preserve">
+    <value>Online-Songtext-Abgleich</value>
+  </data>
+	<data name="DurationTextBlock.Text" xml:space="preserve">
+    <value>Dauer:</value>
+  </data>
+	<data name="BitDepthTextBlock.Text" xml:space="preserve">
+    <value>Bittiefe:</value>
+  </data>
+	<data name="BitRateTextBlock.Text" xml:space="preserve">
+    <value>Bitrate:</value>
+  </data>
+	<data name="SampleRateTextBlock.Text" xml:space="preserve">
+    <value>Samplerate:</value>
+  </data>
+	<data name="LastFolderNameTextBlock.Text" xml:space="preserve">
+    <value>Letztes Verzeichnis:</value>
+  </data>
+	<data name="PathTextBlock.Text" xml:space="preserve">
+    <value>Pfad:</value>
+  </data>
+	<data name="Lyrics.Text" xml:space="preserve">
+    <value>Songtext:</value>
+  </data>
+	<data name="MusicDetailTitle" xml:space="preserve">
+    <value>Musikdetails</value>
+  </data>
+	<data name="AlbumDetailTitle" xml:space="preserve">
+    <value>Albumdetails</value>
+  </data>
+	<data name="LyricsGetFailed" xml:space="preserve">
+    <value>Kein Songtext gefunden</value>
+  </data>
+	<data name="NoRecognizableLyrics" xml:space="preserve">
+    <value>Kein erkennbarer Songtext</value>
+  </data>
+	<data name="Display" xml:space="preserve">
+    <value>Anzeige</value>
+  </data>
+	<data name="LastSong" xml:space="preserve">
+    <value>Vorheriger Titel</value>
+  </data>
+	<data name="NextSong" xml:space="preserve">
+    <value>Nächster Titel</value>
+  </data>
+	<data name="PlayNPause" xml:space="preserve">
+    <value>Wiedergabe/Pause</value>
+  </data>
+	<data name="Exit" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+	<data name="TrayIconInitialized" xml:space="preserve">
+    <value>Tray-Icon initialisiert</value>
+  </data>
+	<data name="UnknownAlbum" xml:space="preserve">
+    <value>Unbekanntes Album</value>
+  </data>
+	<data name="UnknownArtist" xml:space="preserve">
+    <value>Unbekannter Künstler</value>
+  </data>
+	<data name="Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+	<data name="DSDPlaybackFailed" xml:space="preserve">
+    <value>DSD-Wiedergabe fehlgeschlagen</value>
+  </data>
+	<data name="SwitchingToSharedMode" xml:space="preserve">
+    <value>Versuchen Sie, den Ausgabemodus zu wechseln</value>
+  </data>
+	<data name="FileDoNotExist" xml:space="preserve">
+    <value>Datei existiert nicht</value>
+  </data>
+	<data name="UpdatingLyricsFailed" xml:space="preserve">
+    <value>Aktualisierung des Songtexts fehlgeschlagen</value>
+  </data>
+	<data name="NoMusicInUSBDevice" xml:space="preserve">
+    <value>Keine Musikdateien auf dem USB-Gerät gefunden</value>
+  </data>
+	<data name="FailedObtainCover" xml:space="preserve">
+    <value>Cover konnte nicht abgerufen werden</value>
+  </data>
+	<data name="FailedObtainLyrics" xml:space="preserve">
+    <value>Songtext konnte nicht abgerufen werden</value>
+  </data>
+	<data name="LyricsSaveToDataBase.Content" xml:space="preserve">
+    <value>Songtext in Datenbank speichern</value>
+  </data>
+	<data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
+    <value>Original-Sound HQ Player</value>
+  </data>
+	<data name="IconDisplay.Text" xml:space="preserve">
+    <value>Anzeigen</value>
+  </data>
+	<data name="IconLastSong.Text" xml:space="preserve">
+    <value>Vorheriger</value>
+  </data>
+	<data name="IconNextSong.Text" xml:space="preserve">
+    <value>Nächster</value>
+  </data>
+	<data name="IconPlayNPause.Text" xml:space="preserve">
+    <value>Abspielen</value>
+  </data>
+	<data name="IconExit.Text" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+	<data name="PleaseDragFolder" xml:space="preserve">
+    <value>Bitte Ordner ziehen, keine Dateien</value>
+  </data>
+	<data name="Warning" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+	<data name="IconListLoop" xml:space="preserve">
+    <value>Liste wiederholen</value>
+  </data>
+	<data name="IconRandomLoop" xml:space="preserve">
+    <value>Zufällig</value>
+  </data>
+	<data name="IconSinglePlayback" xml:space="preserve">
+    <value>Einmal abspielen</value>
+  </data>
+	<data name="IconSingleTuneCirculation" xml:space="preserve">
+    <value>Titel wiederholen</value>
+  </data>
+	<data name="IconSinglePlaybackValue.Text" xml:space="preserve">
+    <value>Einmal abspielen</value>
+  </data>
+	<data name="IconRandomLoopValue.Text" xml:space="preserve">
+    <value>Zufällige Wiedergabe</value>
+  </data>
+	<data name="IconListLoopValue.Text" xml:space="preserve">
+    <value>Liste wiederholen</value>
+  </data>
+	<data name="IconSingleTuneCirculationValue.Text" xml:space="preserve">
+    <value>Titel wiederholen</value>
+  </data>
+	<data name="IconSettings.Text" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+	<data name="IconPlay" xml:space="preserve">
+    <value>Abspielen</value>
+  </data>
+	<data name="IconPause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+	<data name="SettingDSDGain.Header" xml:space="preserve">
+    <value>DSD-Verstärkung (+db)</value>
+  </data>
+	<data name="EqualizerDialogTitle.Text" xml:space="preserve">
+    <value>Equalizer (dB)</value>
+  </data>
+	<data name="EqCustom.Content" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+	<data name="EqFlat.Content" xml:space="preserve">
+    <value>Linear</value>
+  </data>
+	<data name="EqRock.Content" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+	<data name="EqPop.Content" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+	<data name="EqJazz.Content" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+	<data name="EqClassical.Content" xml:space="preserve">
+    <value>Klassik</value>
+  </data>
+	<data name="EqElectronic.Content" xml:space="preserve">
+    <value>Electronic</value>
+  </data>
+	<data name="EqVocal.Content" xml:space="preserve">
+    <value>Gesang</value>
+  </data>
+	<data name="CoverSize.Header" xml:space="preserve">
+    <value>Größe der Cover-Vorschau</value>
+  </data>
+	<data name="CoverSizeToolTip" xml:space="preserve">
+    <value>0 für Originalgröße, 150-200 empfohlen</value>
+  </data>
+	<data name="IconVolume.Text" xml:space="preserve">
+    <value>Lautstärke</value>
+  </data>
+	<data name="AnimationSettings.Header" xml:space="preserve">
+    <value>Animationen</value>
+  </data>
+	<data name="EntranceAnimationTime.Header" xml:space="preserve">
+    <value>Eingangsanimation (ms)</value>
+  </data>
+	<data name="SlideAnimationTime.Header" xml:space="preserve">
+    <value>Gleitanimation (ms)</value>
+  </data>
+	<data name="DrillInAnimationTime.Header" xml:space="preserve">
+    <value>Drill-In-Animation (ms)</value>
+  </data>
+	<data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>Prozesspriorität</value>
+  </data>
+	<data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+	<data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>Hoch</value>
+  </data>
+	<data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>Audio-Konvertierung</value>
+  </data>
+	<data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>Zielformat entspricht dem Originalformat</value>
+  </data>
+	<data name="NumberOfSongs" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="PlayAll.Text" xml:space="preserve">
+    <value>Alle abspielen</value>
+  </data>
+	<data name="AddTo.Text" xml:space="preserve">
+    <value>Hinzufügen zu</value>
+  </data>
+	<data name="Edit.Text" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+	<data name="NumberOfAlbums" xml:space="preserve">
+    <value>Alben</value>
+  </data>
+	<data name="NumberOfArtists" xml:space="preserve">
+    <value>Künstler</value>
+  </data>
+	<data name="Artist" xml:space="preserve">
+    <value>Künstler</value>
+  </data>
+	<data name="Folder" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+	<data name="SaveLyricsTextBox.Content" xml:space="preserve">
+    <value>Songtext als .lrc lokal speichern</value>
+  </data>
+	<data name="RemoveFolderTitle" xml:space="preserve">
+    <value>Ordner wirklich entfernen?</value>
+  </data>
+	<data name="BackgroundCover.Header" xml:space="preserve">
+    <value>Cover-Hintergrund</value>
+  </data>
+	<data name="ReGetLyrics.Text" xml:space="preserve">
+    <value>Songtext erneut abrufen</value>
+  </data>
+	<data name="SettingsAbout.Text" xml:space="preserve">
+    <value>Über</value>
+  </data>
+	<data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>Drittanbieter-Komponenten</value>
+  </data>
+	<data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>Drittanbieter-Komponenten</value>
+  </data>
+	<data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+    <value>Zur aktuellen Wiedergabeliste hinzufügen</value>
+  </data>
+	<data name="CoverCacheDescription" xml:space="preserve">
+    <value>Originalbild-Cache für Albumcover</value>
+  </data>
+	<data name="AppTitleHeader.Header" xml:space="preserve">
+    <value>Original-Sound HQ Player</value>
+  </data>
+	<data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>Threads für Cover-Ladung</value>
+  </data>
+	<data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>Anzahl der Threads zum Laden von Covern (Neustart erforderlich)</value>
+  </data>
+	<data name="FolderWatchEnabled.Header" xml:space="preserve">
+    <value>Musikbibliothek-Überwachung</value>
+  </data>
+	<data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>CD-Nummer:</value>
+  </data>
+	<data name="ReadLyricsFromFile.Content" xml:space="preserve">
+    <value>Metadaten aus Datei neu einlesen</value>
+  </data>
+	<data name="saveConfirm.Text" xml:space="preserve">
+    <value>Metadaten wirklich in die Musikdatei schreiben?</value>
+  </data>
+	<data name="MainWindowSizeSettings.Header" xml:space="preserve">
+    <value>Fenstergröße</value>
+  </data>
+	<data name="IsCustomAppSize.Header" xml:space="preserve">
+    <value>Benutzerdefinierte Fenstergröße aktivieren</value>
+  </data>
+	<data name="AppHeight.Header" xml:space="preserve">
+    <value>Fensterhöhe</value>
+  </data>
+	<data name="AppWidth.Header" xml:space="preserve">
+    <value>Fensterbreite</value>
+  </data>
+	<data name="CustomAppSizeDescription" xml:space="preserve">
+    <value>Maße werden an die Bildschirm-DPI angepasst</value>
+  </data>
+	<data name="CreateTime.Text" xml:space="preserve">
+    <value>Erstellungszeit:</value>
+  </data>
+	<data name="SortOrderCreateTimeASC" xml:space="preserve">
+    <value>Erstellungsdatum aufsteigend</value>
+  </data>
+	<data name="SortOrderCreateTimeDESC" xml:space="preserve">
+    <value>Erstellungsdatum absteigend</value>
+  </data>
+	<data name="SortOrderUpdateTimeASC" xml:space="preserve">
+    <value>Änderungsdatum aufsteigend</value>
+  </data>
+	<data name="SortOrderUpdateTimeDESC" xml:space="preserve">
+    <value>Änderungsdatum absteigend</value>
+  </data>
+	<data name="UpdateTime.Text" xml:space="preserve">
+    <value>Änderungszeit:</value>
+  </data>
+	<data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>In Datenbank speichern</value>
+  </data>
+	<data name="ImportM3u8" xml:space="preserve">
+    <value>Aus m3u8 importieren</value>
+  </data>
+	<data name="ExportM3u8.Content" xml:space="preserve">
+    <value>Als m3u8 exportieren</value>
+  </data>
+	<data name="LogPath.Content" xml:space="preserve">
+    <value>Protokollverzeichnis</value>
+  </data>
+	<data name="LyricsFontFamily.Header" xml:space="preserve">
+    <value>Songtext-Schriftart</value>
+  </data>
+	<data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
+    <value>Globale FFmpeg-Dekodierung</value>
+  </data>
+	<data name="TransparentTintStyle.Content" xml:space="preserve">
+    <value>Transparent</value>
+  </data>
+	<data name="CustomAcrylicStyle.Content" xml:space="preserve">
+    <value>Benutzerdefiniertes Acryl</value>
+  </data>
+	<data name="CustomOpacity.Text" xml:space="preserve">
+    <value>Deckkraft</value>
+  </data>
+	<data name="IsUpdateBackDrop.Header" xml:space="preserve">
+    <value>Hintergrundaktualisierung bei Fokusverlust stoppen</value>
+  </data>
+	<data name="LyricsAlignment.Header" xml:space="preserve">
+    <value>Songtext-Ausrichtung</value>
+  </data>
+	<data name="Left.Content" xml:space="preserve">
+    <value>Links</value>
+  </data>
+	<data name="Center.Content" xml:space="preserve">
+    <value>Zentriert</value>
+  </data>
+	<data name="Right.Content" xml:space="preserve">
+    <value>Rechts</value>
+  </data>
+	<data name="LyricsMargin.Header" xml:space="preserve">
+    <value>Songtext-Seitenabstand</value>
+  </data>
+	<data name="SpectrumVisualization.Header" xml:space="preserve">
+    <value>Audio-Visualisierung</value>
+  </data>
+	<data name="LyricsFontSize.Header" xml:space="preserve">
+    <value>Schriftgröße (Songtext)</value>
+  </data>
+	<data name="AreUSureDeleteFromDisk" xml:space="preserve">
+    <value>Musik wirklich von der Festplatte löschen?</value>
+  </data>
+	<data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>Cover in Titelliste</value>
+  </data>
+	<data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>Listen-Cover</value>
+  </data>
+	<data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>Aktiviert Cover in Listen. Bei Performance-Problemen deaktivieren.</value>
+  </data>
+	<data name="SongCollectionListCoverEnable.Header" xml:space="preserve">
+    <value>Sammlungs-Cover</value>
+  </data>
+	<data name="FavouriteListCoverEnabled.Header" xml:space="preserve">
+    <value>Cover in Favoritenliste</value>
+  </data>
+	<data name="PlayListCoverEnabled.Header" xml:space="preserve">
+    <value>Cover in Wiedergabeliste</value>
+  </data>
+	<data name="ChangeMusicCoverCache.Content" xml:space="preserve">
+    <value>Cover-Cache-Speicherort ändern</value>
+  </data>
+	<data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="CoverDiskCache.Header" xml:space="preserve">
+    <value>Cover-Festplatten-Cache</value>
+  </data>
+	<data name="OfficialWebSite.Content" xml:space="preserve">
+    <value>Offizielle Webseite</value>
+  </data>
+	<data name="AlbumSongs.Text" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+	<data name="ExportM3u8List.Text" xml:space="preserve">
+    <value>Als m3u8 exportieren</value>
+  </data>
+	<data name="DSD2PCMFreq.Header" xml:space="preserve">
+    <value>DSD-zu-PCM Samplerate</value>
+  </data>
+	<data name="DsdDopDescription" xml:space="preserve">
+    <value>In diesem Modus ist der EQ inaktiv. DoP funktioniert nur mit Wasapi Exklusiv, Native nur mit ASIO. Nur Hardware-Lautstärke wird unterstützt. Bei Tonaussetzern ASIO-Puffer erhöhen.</value>
+  </data>
+	<data name="DefaultDevice" xml:space="preserve">
+    <value>Standardgerät</value>
+  </data>
+	<data name="FlyoutConvertOggItem.Text" xml:space="preserve">
+    <value>Ogg</value>
+  </data>
+	<data name="FlyoutConvertOpusItem.Text" xml:space="preserve">
+    <value>Opus</value>
+  </data>
+	<data name="WasapiExclusivePushText" xml:space="preserve">
+    <value>Wasapi Exklusiv (Push)</value>
+  </data>
+	<data name="WasapiExclusiveEventText" xml:space="preserve">
+    <value>Wasapi Exklusiv (Event)</value>
+  </data>
+	<data name="WasapiSharedText" xml:space="preserve">
+    <value>Wasapi Gemeinsam</value>
+  </data>
+	<data name="MainGitHub.Content" xml:space="preserve">
+    <value>Hauptprogramm GitHub</value>
+  </data>
+	<data name="PlayerGitHub.Content" xml:space="preserve">
+    <value>Player GitHub</value>
+  </data>
+	<data name="FadeInOutDescription" xml:space="preserve">
+    <value>Nur wirksam bei DirectSound</value>
+  </data>
+	<data name="FadeInOut.Header" xml:space="preserve">
+    <value>Ein-/Ausblenden</value>
+  </data>
+	<data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>Wort-für-Wort Songtexte</value>
+  </data>
+	<data name="LyricsBlurAmount.Header" xml:space="preserve">
+    <value>Unschärfegrad (Songtext)</value>
+  </data>
+	<data name="WFWLyricsDescription" xml:space="preserve">
+    <value>Vorschau-Effekt, keine echten Wort-für-Wort Songtexte</value>
+  </data>
+</root>

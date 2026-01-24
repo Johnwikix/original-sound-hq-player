@@ -129,12 +129,17 @@ namespace WinUIMusicPlayer
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
                 AppData.systemLanguage = "ru";
             }
+            else if (systemLanguages[0].StartsWith("de"))
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
+                AppData.systemLanguage = "de";
+            }
             else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
                 AppData.systemLanguage = "en";
             }
-            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
         }
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)

@@ -888,4 +888,7 @@
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>Cantidad de borrosidad de la letra</value>
   </data>
+  <data name="WFWLyricsDescription" xml:space="preserve">
+    <value>Vista previa del efecto, no es una traducción literal de la letra de la canción.</value>
+  </data>
 </root>
