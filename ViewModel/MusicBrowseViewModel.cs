@@ -811,9 +811,8 @@ namespace WinUIMusicPlayer.ViewModel
                 try
                 {
                     for (int i = 0; i < UILyrics.Count; i++)
-                    {
-                        var lyric = UILyrics[i];
-                        UILyrics[i].IsCurrent = (i == index);                        
+                    {                        
+                        UILyrics[i].IsCurrent = (i == index);
                     }
                     LastLyricIndex = index;
                 }

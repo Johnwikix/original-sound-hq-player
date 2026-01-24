@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -116,16 +117,14 @@ namespace WinUIMusicPlayer.Controls
             var control = d as LyricsLineControl;
             if (control == null) return;
 
-            bool isCurrentLine = (bool)e.NewValue;
-
-            // 触发 IsCurrentLineEvent 事件
-            control.IsCurrentLineEvent?.Invoke(control, new RoutedEventArgs());
+            bool isCurrentLine = (bool)e.NewValue;               
 
             // 控制动画
             if (isCurrentLine)
-            {
+            {                
                 // 开始动画
                 control.StartTimerAnimation(control.LyricsTextBlock, control.LineAnimateDuration);
+                control.IsCurrentLineEvent?.Invoke(control, new RoutedEventArgs());
             }
             else
             {

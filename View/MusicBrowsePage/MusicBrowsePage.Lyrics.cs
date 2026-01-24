@@ -35,8 +35,6 @@ namespace WinUIMusicPlayer.View
             if (container == null) return;
             try
             {
-                _scrollCancellation?.Cancel();
-                _scrollCancellation = new CancellationTokenSource();
                 var transform = container.TransformToVisual(LyricViewer.Content as UIElement);
                 var targetPoint = transform.TransformPoint(new Point(0, 0));
                 double startOffset = LyricViewer.VerticalOffset;
@@ -53,10 +51,10 @@ namespace WinUIMusicPlayer.View
             {
                 Task.Run(() =>
                 {
-                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));
-                    ViewModel.UpdateLyricsToUI(index);
+                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));                    
                     ViewModel.isManualSelect = true;
-                    ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);
+                    ViewModel.UpdateLyricsToUI(index);
+                    ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);                    
                     ViewModel.isManualSelect = false;
                 });
             }
