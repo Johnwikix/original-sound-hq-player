@@ -738,6 +738,7 @@
                                             x:Name="LyricsListView"
                                             Margin="{x:Bind ViewModel.LyricsMargin, Mode=OneWay}"
                                             VerticalAlignment="Stretch"
+                                            behaviors:LyricsAutoScrollBehavior.TargetScrollView="{x:Bind LyricViewer}"
                                             IsItemClickEnabled="True"
                                             ItemClick="LyricsListView_ItemClick"
                                             ItemsSource="{x:Bind ViewModel.UILyrics, Mode=TwoWay}"
@@ -784,14 +785,17 @@
                                                             HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                             FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                             IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
-                                                            IsCurrentLineEvent="LyricsLineControl_IsCurrentLineEvent"
                                                             LineAnimateDuration="{x:Bind LineAnimateDuration, Mode=OneWay}"
                                                             LyricsFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:True), Mode=OneWay}"
                                                             LyricsText="{x:Bind Text}"
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                             TranslateFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:False), Mode=OneWay}"
                                                             TranslateText="{x:Bind TransLateText}"
-                                                            TranslateVisibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}" />
+                                                            TranslateVisibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}">
+                                                            <interactivity:Interaction.Behaviors>
+                                                                <behaviors:LyricsAutoScrollBehavior />
+                                                            </interactivity:Interaction.Behaviors>
+                                                        </customControls:LyricsLineControl>
                                                         <dev:BlurEffectControl
                                                             x:Name="BlurEffectControlSample"
                                                             Margin="0"

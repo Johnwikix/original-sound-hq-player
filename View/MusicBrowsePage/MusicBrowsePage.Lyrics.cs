@@ -27,23 +27,6 @@ namespace WinUIMusicPlayer.View
     {
         private SolidColorBrush _transparentBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255));
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LyricsLineControl_IsCurrentLineEvent(object sender, RoutedEventArgs e)
-        {
-            var lyricsLineControl = (LyricsLineControl)sender;
-            var container = ToolUtils.FindParent<ListViewItem>(lyricsLineControl);
-            if (container == null) return;
-            try
-            {
-                var transform = container.TransformToVisual(LyricViewer.Content as UIElement);
-                var targetPoint = transform.TransformPoint(new Point(0, 0));
-                double startOffset = LyricViewer.VerticalOffset;
-                double targetOffset = targetPoint.Y - (LyricViewer.ActualHeight / 2) + (container.ActualHeight / 2);
-                LyricViewer.ScrollTo(0, targetOffset, _scrollOptions);
-            }
-            catch (OperationCanceledException) { }
-            catch { }
-        }       
 
         private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
         {

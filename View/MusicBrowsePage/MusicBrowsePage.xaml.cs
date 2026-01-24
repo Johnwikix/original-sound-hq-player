@@ -47,11 +47,7 @@ namespace WinUIMusicPlayer.View
         private EqualizerDialog equalizerDialog;
         private bool isSearching = false;
         private string lastSearchText = string.Empty;
-        private AcrylicBrush acrylicBrush = new AcrylicBrush { TintOpacity = 0.5 };
-        private ScrollingScrollOptions _scrollOptions = new ScrollingScrollOptions(
-                            ScrollingAnimationMode.Enabled,
-                            ScrollingSnapPointsMode.Default
-                        );
+        private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
         private Storyboard? _lyricImgRTAni;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
