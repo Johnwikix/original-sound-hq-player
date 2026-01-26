@@ -387,8 +387,10 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         public LyricsRefreshService LyricsRefreshService { get; set; }
         public TimeSpan LyricsDurationTime = TimeSpan.Zero;
-        public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService)
+        private AppObservableObj AppObservableObj { get;}
+        public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService,AppObservableObj  appObservableObj)
         {
+            AppObservableObj = appObservableObj;
             CurrentPlayMode = AppData.PlayMode;
             PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
             IsPlayDetailButtonVisible = AppSettings.IsPlayDetailBtnVisible;
