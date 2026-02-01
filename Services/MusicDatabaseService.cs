@@ -30,11 +30,8 @@ namespace WinUIMusicPlayer.Services
         private readonly ConcurrentBag<Music> _toUpdate = [];
         private List<StorageFile> _files = [];
         private List<Music> _musicFilesInFolder = null;
-        private AppObservableObj _appObservableObj{ get; }
+        private AppObservableObj _appObservableObj { get; set; }
 
-        public MusicDatabaseService(AppObservableObj appObservableObj) {
-            _appObservableObj = appObservableObj;
-        }
         public async Task Initialize()
         {
             InitalizeDbPath();
@@ -52,6 +49,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
                 await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
+            _appObservableObj = App.Services.GetRequiredService<AppObservableObj>();
             InitalizeSettings();
         }
 

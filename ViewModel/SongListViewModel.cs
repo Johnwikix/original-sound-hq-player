@@ -42,10 +42,10 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage? _parentPage;
         private AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        private SongListPage currentPage;
+        private SongListPage currentPage { get; set; }
         private string _lastSearchText = "";
-        private AudioConverterService _converterService;
-        private ProgressDialog _progressDialog;
+        private AudioConverterService _converterService { get; set; }
+        private ProgressDialog _progressDialog { get; set; }
         private int progressBarValue = 0;
         private bool isMutiFile = false;
 

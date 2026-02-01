@@ -42,8 +42,8 @@ namespace WinUIMusicPlayer.ViewModel
         private AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
-        private AudioConverterService _converterService { get; }
-        private ProgressDialog _progressDialog { get; }
+        private AudioConverterService _converterService { get; set; }
+        private ProgressDialog _progressDialog { get; set; }
         private int progressBarValue = 0;
         private bool isMutiFile = false;
         public FavouritePlayListViewModel(AudioConverterService converterService, MusicBrowsePage musicBrowsePage,AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)

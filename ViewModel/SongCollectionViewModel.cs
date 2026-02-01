@@ -68,8 +68,8 @@ namespace WinUIMusicPlayer.ViewModel
         private AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private SongCollectionPage _currentPage;
-        private AudioConverterService _converterService;
-        private ProgressDialog _progressDialog;
+        private AudioConverterService _converterService { get; set; }
+        private ProgressDialog _progressDialog{ get; set; }
         private string? _currentPageType;
         public string? CurrentPageType
         {

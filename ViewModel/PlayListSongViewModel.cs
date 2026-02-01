@@ -57,8 +57,8 @@ namespace WinUIMusicPlayer.ViewModel
         private AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private PlayListSongPage _currentPage { get; set; }
-        private AudioConverterService _converterService { get; }
-        private ProgressDialog _progressDialog { get; }
+        private AudioConverterService _converterService { get; set; }
+        private ProgressDialog _progressDialog { get; set; }
         private int _currentPlayListId;
         private int progressBarValue = 0;
         private bool isMutiFile = false;

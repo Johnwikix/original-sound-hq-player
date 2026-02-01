@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class AudioConverterService
     {
-        public EventHandler<double>? updateProgress;
+        public EventHandler<double>? updateProgress { get; set; }
         private BassAudioConverter bassAudioConverter;
         public AudioConverterService()
         {
