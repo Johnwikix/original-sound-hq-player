@@ -22,18 +22,18 @@ namespace WinUIMusicPlayer.Services
 {
     public class MusicDatabaseService
     {
-        private static SQLiteAsyncConnection _dbConnection;
-        private static string DbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-        private static AddFolderService addFolderService = new AddFolderService();
+        private SQLiteAsyncConnection _dbConnection;
+        private string DbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+        private readonly AddFolderService addFolderService = new();
+        private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
+        private readonly ConcurrentBag<Music> _toDelete = [];
+        private readonly ConcurrentBag<Music> _toUpdate = [];
+        private List<StorageFile> _files = [];
+        private List<Music> _musicFilesInFolder = null;
+        private AppObservableObj _appObservableObj{ get; }
 
-        private static SemaphoreSlim _rescanfolderSemaphore = new SemaphoreSlim(4, 4);
-        private static ConcurrentBag<Music> _toDelete = [];
-        private static ConcurrentBag<Music> _toUpdate = [];
-        private static List<StorageFile> _files = [];
-        private static List<Music> _musicFilesInFolder = null;
-
-
-        public MusicDatabaseService() {
+        public MusicDatabaseService(AppObservableObj appObservableObj) {
+            _appObservableObj = appObservableObj;
         }
         public async Task Initialize()
         {
@@ -701,11 +701,11 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playState);
             }
-            App.Services.GetRequiredService<AppObservableObj>().CurrentPlayMode = playState.PlayMode;
-            App.Services.GetRequiredService<AppObservableObj>().PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
+            _appObservableObj.CurrentPlayMode = playState.PlayMode;
+            _appObservableObj.PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
-            App.Services.GetRequiredService<AppObservableObj>().Volume = playState.Volume;
-            App.Services.GetRequiredService<AppObservableObj>().TempVolume = playState.Volume;
+            _appObservableObj.Volume = playState.Volume;
+            _appObservableObj.TempVolume = playState.Volume;
             AppData.sortOrder = playState.sortOrder;
         }
 
@@ -749,13 +749,13 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.CustomColorBlue = settings.CustomColorBlue;
                 AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
-                App.Services.GetRequiredService<AppObservableObj>().LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
+                _appObservableObj.LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
                 AppSettings.GlobalFontSize = settings.GlobalFontSize;
                 AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
-                App.Services.GetRequiredService<AppObservableObj>().IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
+                _appObservableObj.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
                 AppSettings.LyricsBlurAmount = settings.LyricsBlurAmount;
@@ -811,14 +811,14 @@ namespace WinUIMusicPlayer.Services
             newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
             newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            newSettings.LyricsMargin = (int)App.Services.GetRequiredService<AppObservableObj>().LyricsMargin.Left;
+            newSettings.LyricsMargin = (int)_appObservableObj.LyricsMargin.Left;
             newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
             newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
             newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
-            newSettings.IsPlayDetailBtnVisible = App.Services.GetRequiredService<AppObservableObj>().IsPlayDetailButtonVisible;
+            newSettings.IsPlayDetailBtnVisible = _appObservableObj.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppSettings.LyricsBlurAmount;
