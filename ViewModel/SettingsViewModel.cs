@@ -494,22 +494,22 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private int _lyricsMargin = 0;
-        public int LyricsMargin
-        {
-            get => _lyricsMargin;
-            set
-            {
-                if (SetProperty(ref _lyricsMargin, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.LyricsMargin = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private int _lyricsMargin = 0;
+        //public int LyricsMargin
+        //{
+        //    get => _lyricsMargin;
+        //    set
+        //    {
+        //        if (SetProperty(ref _lyricsMargin, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppObservableObj.LyricsMargin = new Thickness(value,0,value,0);
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
         private bool _isGlobalFontSizeEnabled = false;
         public bool IsGlobalFontSizeEnabled
         {
@@ -636,12 +636,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        public AppObservableObj AppObservableObj;
 
-        public SettingsViewModel()
+        public SettingsViewModel(AppObservableObj appObservableObj)
         {
-            Debug.WriteLine(DateTime.Now.Millisecond);
-            InitializeData();
-            Debug.WriteLine(DateTime.Now.Millisecond);
+            AppObservableObj = appObservableObj;
+            InitializeData();            
         }
 
         private void InitializeData()
@@ -687,7 +687,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsFadeEnabled = AppSettings.IsFadeEnabled;
             IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            LyricsMargin = AppSettings.LyricsMargin;
+            //LyricsMargin = AppSettings.LyricsMargin;
             IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             GlobalFontSize = AppSettings.GlobalFontSize;
             MusicCoverCache = AppSettings.MusicCoverCache;

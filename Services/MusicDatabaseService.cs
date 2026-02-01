@@ -1,4 +1,6 @@
 ﻿using ATL;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using SQLite;
 using System;
@@ -696,9 +698,11 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playState);
             }
-            AppData.PlayMode = playState.PlayMode;
+            App.Services.GetRequiredService<AppObservableObj>().CurrentPlayMode = playState.PlayMode;
+            App.Services.GetRequiredService<AppObservableObj>().PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
-            AppData.Volume = playState.Volume;
+            App.Services.GetRequiredService<AppObservableObj>().Volume = playState.Volume;
+            App.Services.GetRequiredService<AppObservableObj>().TempVolume = playState.Volume;
             AppData.sortOrder = playState.sortOrder;
         }
 
@@ -742,13 +746,13 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.CustomColorBlue = settings.CustomColorBlue;
                 AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
-                AppSettings.LyricsMargin = settings.LyricsMargin;
+                App.Services.GetRequiredService<AppObservableObj>().LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
                 AppSettings.GlobalFontSize = settings.GlobalFontSize;
                 AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppSettings.MusicCoverCache = settings.MusicCoverCache;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppSettings.IsDopEnabled = settings.IsDopEnabled;
-                AppSettings.IsPlayDetailBtnVisible = settings.IsPlayDetailBtnVisible;
+                App.Services.GetRequiredService<AppObservableObj>().IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
                 AppSettings.LyricsBlurAmount = settings.LyricsBlurAmount;
@@ -804,14 +808,14 @@ namespace WinUIMusicPlayer.Services
             newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
             newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            newSettings.LyricsMargin = AppSettings.LyricsMargin;
+            newSettings.LyricsMargin = (int)App.Services.GetRequiredService<AppObservableObj>().LyricsMargin.Left;
             newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
             newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
             newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
             newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
-            newSettings.IsPlayDetailBtnVisible = AppSettings.IsPlayDetailBtnVisible;
+            newSettings.IsPlayDetailBtnVisible = App.Services.GetRequiredService<AppObservableObj>().IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppSettings.LyricsBlurAmount;
@@ -898,7 +902,7 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
         }
 
-        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, float volume, string sortOrder)
+        public static async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)
         {
             try
             {

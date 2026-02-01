@@ -38,4 +38,5 @@
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:TextAlignmentToHorizontalAlignmentConverter x:Key="TextAlignmentToHorizontalAlignmentConverter" />
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    <converters:ThicknessToDoubleConverter x:Key="ThicknessToDoubleConverter" />
 </ResourceDictionary>

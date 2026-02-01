@@ -23,9 +23,9 @@ namespace WinUIMusicPlayer.Model
         public static IReadOnlyCollection<Music> allSongs = [];
         public static List<UsbDeviceMusic> musicOnUsbDevice = [];
         public static List<PlayListMusic> allPlayListMusics = [];
-        public static PlayMode PlayMode { get; set; }
+        //public static PlayMode PlayMode { get; set; }
         public static int? LastPlayedMusicId { get; set; }
-        public static float Volume { get; set; } = 0.5f;
+        //public static float Volume { get; set; } = 0.5f;
         public static string searchText = string.Empty;
         public static ObservableCollection<UsbStorageDevice> usbStorageDevices = [];
         public static UsbStorageDevice usbStorageDevice = new();

@@ -18,12 +18,14 @@ namespace WinUIMusicPlayer.Services
         public bool isSettingsChangeStop = false;
         public bool isInitializing = true;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
+        public AppObservableObj AppObservableObj { get; }
         private IpcService IpcService { get; set; }
 
-        public BassPlayerCommandService()
+        public BassPlayerCommandService(AppObservableObj appObservableObj)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+            AppObservableObj = appObservableObj;
             InitializingData();
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
@@ -61,7 +63,7 @@ namespace WinUIMusicPlayer.Services
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    MusicBrowseViewModel.Volume = double.Parse(obj.Result);
+                    AppObservableObj.Volume = double.Parse(obj.Result);
                 });
             }
         }
@@ -85,7 +87,7 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            MusicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
+            AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
             UpdateCurrentPlayList();
         }
 
@@ -95,33 +97,33 @@ namespace WinUIMusicPlayer.Services
             {
                 return;
             }
-            if (MusicBrowseViewModel.CurrentPlayMode != PlayMode.RandomLoop)
+            if (AppObservableObj.CurrentPlayMode != PlayMode.RandomLoop)
             {
-                MusicBrowseViewModel.CurrentPlayingList = MusicBrowseViewModel.SequentialPlayingList;
+                AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList;
             }
             else
             {
-                MusicBrowseViewModel.CurrentPlayingList = MusicBrowseViewModel.SequentialPlayingList.CreateShuffled();
+                AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList.CreateShuffled();
             }
         }
 
         public void AutoPlayNextTrack()
         {
             MusicBrowseViewModel.StopProgressTimer();
-            switch (AppData.PlayMode)
+            switch (AppObservableObj.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingMusic);
+                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    int currentIndex = MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
-                    int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+                    int currentIndex = AppObservableObj.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppObservableObj.CurrentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % AppObservableObj.CurrentPlayingList.Count;
+                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
                     Random random = new Random();
-                    int randomIndex = random.Next(MusicBrowseViewModel.CurrentPlayingList.Count);
-                    MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[randomIndex]);
+                    int randomIndex = random.Next(AppObservableObj.CurrentPlayingList.Count);
+                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[randomIndex]);
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();
@@ -146,9 +148,9 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                int currentIndex = MusicBrowseViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic.Id);
-                int nextIndex = (currentIndex + 1) % MusicBrowseViewModel.CurrentPlayingList.Count;
-                MusicBrowseViewModel.PlayMusic(MusicBrowseViewModel.CurrentPlayingList[nextIndex]);
+                int currentIndex = AppObservableObj.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppObservableObj.CurrentPlayingMusic.Id);
+                int nextIndex = (currentIndex + 1) % AppObservableObj.CurrentPlayingList.Count;
+                MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[nextIndex]);
             }
             catch
             {
@@ -180,7 +182,7 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.Play(music.Path);
             MusicBrowseViewModel.StartProgressTimer();
-            _ = MusicDatabaseService.SavePlayState([.. MusicBrowseViewModel.SequentialPlayingList], AppData.PlayMode, MusicBrowseViewModel.CurrentPlayingMusic?.Id, (float)(MusicBrowseViewModel.Volume / 100), AppData.sortOrder);
+            _ = MusicDatabaseService.SavePlayState([.. AppObservableObj.SequentialPlayingList], AppObservableObj.CurrentPlayMode, AppObservableObj.CurrentPlayingMusic?.Id, (float)(AppObservableObj.Volume), AppData.sortOrder);
         }
 
         public void PlayButton()

@@ -34,10 +34,11 @@ namespace WinUIMusicPlayer.ViewModel
         private string _lastSearchText = "";
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
+        private AppObservableObj AppObservableObj;
         private ArtistPage? currentPage;
         private ContextMenuService _contextMenuService;
 
-        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel)
+        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -61,6 +62,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             };
             _musicBrowseViewModel = musicBrowseViewModel;
+            AppObservableObj = appObservableObj;
         }
 
         public void UpdateUsbIcon()
@@ -76,7 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             parentPage.ViewModel.CurrentArtist = null;
-            parentPage.ViewModel.PageType = "artistBrowse";
+            parentPage.ViewModel.AppObservableObj.PageType = "artistBrowse";
             parentPage.DisableBackButton();
             if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
             {
@@ -139,7 +141,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Music artist = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    _musicBrowseViewModel.PageType = "artist";
+                    AppObservableObj.PageType = "artist";
                     _musicBrowseViewModel.paramName = artist.Author;
                     _musicBrowseViewModel.CurrentArtist = artist;
                     _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
@@ -180,7 +182,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage is not null)
                 {
-                    parentPage.ViewModel.SequentialPlayingList = new ObservableCollection<Music>(artists);
+                    AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(artists);
                     parentPage.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }

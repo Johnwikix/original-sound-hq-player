@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.View
             {
                 Task.Run(() =>
                 {
-                    int index = ViewModel.UILyrics.IndexOf(ViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));                    
+                    int index = ViewModel.AppObservableObj.UILyrics.IndexOf(ViewModel.AppObservableObj.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));                    
                     ViewModel.isManualSelect = true;
                     ViewModel.UpdateLyricsToUI(index);
                     ViewModel._musicPlaybackService.ChangeWaveChannelTime(lyricLine.Time);                    

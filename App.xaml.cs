@@ -57,9 +57,10 @@ namespace WinUIMusicPlayer
             })
              .ConfigureServices((context, services) =>
              {
-                 services.AddSingleton<DatabaseInitializerService>();
-                 services.AddHostedService<DatabaseInitializerService>(provider =>
-                     provider.GetRequiredService<DatabaseInitializerService>());
+                 //services.AddSingleton<AppInitializerService>();
+                 //services.AddHostedService<AppInitializerService>(provider =>
+                 //    provider.GetRequiredService<AppInitializerService>());
+                 services.AddHostedService<AppInitializerService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<AddFolderPage>();

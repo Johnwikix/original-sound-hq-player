@@ -94,7 +94,6 @@ namespace WinUIMusicPlayer
 
         public void UpdateAppNotifyIconControl()
         {
-            Debug.WriteLine(AppData.PlayMode);
             AppNotifyIconControl.UpdatePlayMode();
         }
 

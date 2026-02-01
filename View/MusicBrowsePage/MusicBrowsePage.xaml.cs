@@ -62,7 +62,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetLyricsService(lyricsRefreshService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            ViewModel.IsInitialized = false;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.ContentFrame = ContentFrame;
@@ -101,7 +100,6 @@ namespace WinUIMusicPlayer.View
             this.notificationService = notificationService;
             InitializeTimer();
             SetAcrylicBrushBackground();
-            ViewModel.IsInitialized = true;
             this.Loaded += OnPageLoaded;
         }
 
@@ -206,7 +204,7 @@ namespace WinUIMusicPlayer.View
 
         public void ChangeAcrylicBrushBackgroundOpacity()
         {
-            ViewModel.IsAcrylicBrushOpacity = ViewModel.MusicDetailCover is not null && ViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
+            ViewModel.AppObservableObj.IsAcrylicBrushOpacity = ViewModel.AppObservableObj.MusicDetailCover is not null && ViewModel.AppObservableObj.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
         }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
@@ -239,12 +237,12 @@ namespace WinUIMusicPlayer.View
         }
         public void ShowTransmission()
         {
-            ViewModel.ProcessRingVisibility = Visibility.Visible;
+            ViewModel.AppObservableObj.ProcessRingVisibility = Visibility.Visible;
         }
 
         public void HideTransmission()
         {
-            ViewModel.ProcessRingVisibility = Visibility.Collapsed;
+            ViewModel.AppObservableObj.ProcessRingVisibility = Visibility.Collapsed;
         }
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -275,7 +273,7 @@ namespace WinUIMusicPlayer.View
 
         public void SelectBarAlbum(string Album)
         {
-            ViewModel.PageType = "album";
+            ViewModel.AppObservableObj.PageType = "album";
             ViewModel.paramName = Album;
             ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             ViewModel.CurrentAlbum.Album = Album;
@@ -295,7 +293,7 @@ namespace WinUIMusicPlayer.View
 
         public void SelectBarArtist(string artist)
         {
-            ViewModel.PageType = "artist";
+            ViewModel.AppObservableObj.PageType = "artist";
             ViewModel.paramName = artist;
             ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             ViewModel.CurrentArtist.Author = artist;
@@ -316,12 +314,12 @@ namespace WinUIMusicPlayer.View
         public async Task AddToFavourite(Music music)
         {
             music.IsFavorite = !music.IsFavorite;
-            await MusicDatabaseService.AddToFavourite(music, ViewModel.CurrentPlayingMusic);
-            if (ViewModel.CurrentPlayingMusic is not null)
+            await MusicDatabaseService.AddToFavourite(music, ViewModel.AppObservableObj.CurrentPlayingMusic);
+            if (ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
             {
-                if (ViewModel.CurrentPlayingMusic.Id == music.Id)
+                if (ViewModel.AppObservableObj.CurrentPlayingMusic.Id == music.Id)
                 {
-                    ViewModel.CurrentPlayingMusic.IsFavorite = music.IsFavorite;
+                    ViewModel.AppObservableObj.CurrentPlayingMusic.IsFavorite = music.IsFavorite;
                 }
             }
         }
@@ -387,7 +385,7 @@ namespace WinUIMusicPlayer.View
         {
             if (ContentFrame.Content is SongCollectionPage)
             {
-                switch (ViewModel.PageType)
+                switch (ViewModel.AppObservableObj.PageType)
                 {
                     case "album":
                         ViewModel.currentPage = typeof(AlbumPage);
@@ -486,12 +484,12 @@ namespace WinUIMusicPlayer.View
 
         private void UpdateCurrentPlayList()
         {
-            if (ViewModel.CurrentPlayingList is not null)
+            if (ViewModel.AppObservableObj.CurrentPlayingList is not null)
             {
-                if (ViewModel.CurrentPlayingMusic is not null)
+                if (ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
                 {
-                    var selectedMusic = ViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
-                    music.Id == ViewModel.CurrentPlayingMusic.Id);
+                    var selectedMusic = ViewModel.AppObservableObj.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
+                    music.Id == ViewModel.AppObservableObj.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
                     {
@@ -550,10 +548,10 @@ namespace WinUIMusicPlayer.View
         {
             try
             {
-                ViewModel.CurrentPlayingMusic = music;                
-                ViewModel.UpdatePlayBar(ViewModel.CurrentPlayingMusic);
+                ViewModel.AppObservableObj.CurrentPlayingMusic = music;                
+                ViewModel.UpdatePlayBar(ViewModel.AppObservableObj.CurrentPlayingMusic);
                 ViewModel.LoadLyricsToUI();
-                ViewModel.UpdateLyricsMargin();
+                //ViewModel.UpdateLyricsMargin();
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
@@ -574,7 +572,7 @@ namespace WinUIMusicPlayer.View
                 if (ContentFrame.Content is SongCollectionPage)
                 {
                     var page = ContentFrame.Content as SongCollectionPage;
-                    page.SortMusicList(AppData.sortOrder, ViewModel.PageType);
+                    page.SortMusicList(AppData.sortOrder, ViewModel.AppObservableObj.PageType);
                 }
                 if (ContentFrame.Content is SongListPage)
                 {
@@ -710,9 +708,9 @@ namespace WinUIMusicPlayer.View
 
         public void ShowPlayingDetail()
         {
-            if (!ViewModel.IsInPlayingDetailMode && ViewModel.CurrentPlayingMusic is not null)
+            if (!ViewModel.AppObservableObj.IsInPlayingDetailMode && ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
             {
-                ViewModel.IsInPlayingDetailMode = true;
+                ViewModel.AppObservableObj.IsInPlayingDetailMode = true;
                 App.MainWindow.IsPlayingDetail = true;
                 App.MainWindow.NavigationViewCollapsed();
                 App.MainWindow?.AppTitleBarVisibility(false);
@@ -724,7 +722,7 @@ namespace WinUIMusicPlayer.View
                 TopPanel.Visibility = Visibility.Collapsed;
                 ContentFrame.Visibility = Visibility.Collapsed;
                 AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
-                ViewModel.InfoBarIsOpen = false;
+                ViewModel.AppObservableObj.InfoBarIsOpen = false;
                 PlayingDetail.Visibility = Visibility.Visible;
                 BottomControlBar.Visibility = Visibility.Collapsed;
                 PlayingDetailControlBar.Visibility = Visibility.Visible;                
@@ -742,7 +740,7 @@ namespace WinUIMusicPlayer.View
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.IsInPlayingDetailMode = false;
+            ViewModel.AppObservableObj.IsInPlayingDetailMode = false;
             App.MainWindow.IsPlayingDetail = false;
             App.MainWindow.NavigationViewExpanded();
             ChangeAcrylicBrushBackgroundOpacity();
@@ -789,13 +787,13 @@ namespace WinUIMusicPlayer.View
 
         private void TopControl_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.TopControlsOpacity = 1.0f;
+            ViewModel.AppObservableObj.TopControlsOpacity = 1.0f;
         }
 
         private void TopControl_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (!ViewModel.IsPlayDetailButtonVisible) {
-                ViewModel.TopControlsOpacity = 0.0f;
+            if (!ViewModel.AppObservableObj.IsPlayDetailButtonVisible) {
+                ViewModel.AppObservableObj.TopControlsOpacity = 0.0f;
             }           
         }
 

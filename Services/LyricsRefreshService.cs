@@ -24,9 +24,11 @@ namespace WinUIMusicPlayer.Services
         } = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
-        public LyricsRefreshService()
+        private AppObservableObj AppObservableObj { get; }
+        public LyricsRefreshService(AppObservableObj appObservableObj)
         {
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+            AppObservableObj = appObservableObj;
         }
         public void UpdateLyrics(TimeSpan currentPosition)
         {
@@ -64,7 +66,7 @@ namespace WinUIMusicPlayer.Services
         {
             CancelPreviousLyricsTask();
             Lyrics.Clear();
-            string? lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == MusicBrowseViewModel.CurrentPlayingMusic?.Id)?.Path);
+            string? lrcContent = GetLyricsContentFromLrc(AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == AppObservableObj.CurrentPlayingMusic?.Id)?.Path);
             var lyricsContent = await ParseLrcLyrics(lrcContent);
             if (lyricsContent is not null)
             {
@@ -99,7 +101,7 @@ namespace WinUIMusicPlayer.Services
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
 
-            var currentMusic = MusicBrowseViewModel.CurrentPlayingMusic;
+            var currentMusic = AppObservableObj.CurrentPlayingMusic;
             if (currentMusic == null) return new List<LyricLine>();
 
             List<LyricLine> lyrics = new List<LyricLine>();

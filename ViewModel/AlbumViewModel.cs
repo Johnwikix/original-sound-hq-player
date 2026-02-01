@@ -38,11 +38,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
+        private AppObservableObj AppObservableObj { get; }
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
         private string _currentSortOrder = "DefaultOrder";
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel)
+        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj)
         {
             parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
@@ -68,6 +69,7 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
+            AppObservableObj = appObservableObj;
         }
 
         public void UpdateUsbIcon()
@@ -84,7 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
 
             parentPage.ViewModel.CurrentAlbum = null;
-            parentPage.ViewModel.PageType = "albumBrowse";
+            AppObservableObj.PageType = "albumBrowse";
             parentPage.DisableBackButton();
             Entance();
         }
@@ -203,7 +205,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Music album = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    _musicBrowseViewModel.PageType = "album";
+                    AppObservableObj.PageType = "album";
                     _musicBrowseViewModel.paramName = album.Album;
                     _musicBrowseViewModel.CurrentAlbum = album;
                     _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
@@ -220,7 +222,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    _musicBrowseViewModel.SequentialPlayingList = new ObservableCollection<Music>(albums);
+                    AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(albums);
                     parentPage.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }

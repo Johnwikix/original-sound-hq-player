@@ -23,14 +23,16 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private MusicBrowsePage? _parentPage;
+        private AppObservableObj AppObservableObj { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel;
         private PlayListPage? _currentPage;
 
-        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel)
+        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj)
         {
             _parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
             _parentPage.addPlayListEvent += RefreshPlayList;
+            AppObservableObj = appObservableObj;
         }
 
         public void SetCurrentPage(PlayListPage page)
@@ -115,7 +117,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
             {
-                _musicBrowseViewModel.PageType = "playlist";
+                AppObservableObj.PageType = "playlist";
                 _musicBrowseViewModel.paramName = playList.Name;
                 _musicBrowseViewModel.currentPlayList = playList;
                 _musicBrowseViewModel.currentPlayListId = playList.Id;

@@ -33,62 +33,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject
-    {
-        private PlayMode _currentPlayMode = PlayMode.ListLoop;
-        public PlayMode CurrentPlayMode
-        {
-            get => _currentPlayMode;
-            set => SetProperty(ref _currentPlayMode, value);
-        }
-
-        private Music _currentPlayingMusic;
-        public Music CurrentPlayingMusic
-        {
-            get => _currentPlayingMusic;
-            set => SetProperty(ref _currentPlayingMusic, value);
-        }
-
-        private string _playModeFlyoutText;
-        public string PlayModeFlyoutText
-        {
-            get => _playModeFlyoutText;
-            set => SetProperty(ref _playModeFlyoutText, value);
-        }
-
-        private ObservableCollection<Music> _sequentialPlayingList;
-        public ObservableCollection<Music> SequentialPlayingList
-        {
-            get => _sequentialPlayingList;
-            set
-            {
-                SetProperty(ref _sequentialPlayingList, value);
-            }
-        }
-
-        private ObservableCollection<Music> _currentPlayingList;
-        public ObservableCollection<Music> CurrentPlayingList
-        {
-            get => _currentPlayingList;
-            set
-            {
-                SetProperty(ref _currentPlayingList, value);
-            }
-        }
-
-        private string _musicInfo;
-        public string MusicInfo
-        {
-            get => _musicInfo;
-            set => SetProperty(ref _musicInfo, value);
-        }
-
-        public BitmapImage _musicDetailCover;
-        public BitmapImage MusicDetailCover
-        {
-            get => _musicDetailCover;
-            set => SetProperty(ref _musicDetailCover, value);
-        }
-
+    {   
         private bool _isUserDraggingProgressSlider = false;
         public bool IsUserDraggingProgressSlider
         {
@@ -133,47 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }
-
-        private string _playTimeText = "00:00/00:00";
-        public string PlayTimeText
-        {
-            get => _playTimeText;
-            set => SetProperty(ref _playTimeText, value);
-        }
-
-        private double _progressSliderMax = 100;
-        public double ProgressSliderMax
-        {
-            get => _progressSliderMax;
-            set => SetProperty(ref _progressSliderMax, value);
-        }
-
-        private double _tempVolume = 50;
-        private double _volume = 50;
-        public double Volume
-        {
-            get => _volume;
-            set
-            {
-                if (SetProperty(ref _volume, value))
-                {
-                    if (IsInitialized)
-                    {
-                        if (value > 0)
-                        {
-                            IsMuted = false;
-                        }
-                        if (!IsMuted)
-                        {
-                            _tempVolume = value;
-                        }
-                        AppData.Volume = (float)value / 100;
-                        _musicPlaybackService.SetVolume(AppData.Volume);
-                    }
-                }
-            }
-        }
+        }        
 
         private SelectorBarItem _selectedPage;
 
@@ -189,6 +94,18 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private SortOption _selectedSortOption;
+        public SortOption SelectedSortOption
+        {
+            get => _selectedSortOption;
+            set
+            {
+                if (SetProperty(ref _selectedSortOption, value))
+                {
+                    OnSelectSortChanged();
+                }
+            }
+        }
 
         private bool _isPlaying = false;
         public bool IsPlaying
@@ -208,103 +125,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isMouseOverProgressBar;
             set => SetProperty(ref _isMouseOverProgressBar, value);
         }
-        private bool _isMuted = false;
-        public bool IsMuted
-        {
-            get => _isMuted;
-            set => SetProperty(ref _isMuted, value);
-        }
-        private bool _isInitialized = false;
-        public bool IsInitialized
-        {
-            get => _isInitialized;
-            set => SetProperty(ref _isInitialized, value);
-        }
-        private ObservableCollection<LyricLine> _uiLyrics;
-        public ObservableCollection<LyricLine> UILyrics
-        {
-            get => _uiLyrics;
-            set => SetProperty(ref _uiLyrics, value);
-        }
-        private int _lastLyricIndex = -1;
-        public int LastLyricIndex
-        {
-            get => _lastLyricIndex;
-            set => SetProperty(ref _lastLyricIndex, value);
-        }
-        private Visibility _usbDeviceVisibility = Visibility.Collapsed;
-        public Visibility UsbDeviceVisibility
-        {
-            get => _usbDeviceVisibility;
-            set => SetProperty(ref _usbDeviceVisibility, value);
-        }
-        private ObservableCollection<UsbStorageDevice> _usbStorageDevices;
-        public ObservableCollection<UsbStorageDevice> UsbStorageDevices
-        {
-            get => _usbStorageDevices;
-            set => SetProperty(ref _usbStorageDevices, value);
-        }
-        private int _usbSelectedIndex = 0;
-        public int UsbSelectedIndex
-        {
-            get => _usbSelectedIndex;
-            set => SetProperty(ref _usbSelectedIndex, value);
-        }
-        private Visibility _processRingVisibility = Visibility.Collapsed;
-        public Visibility ProcessRingVisibility
-        {
-            get => _processRingVisibility;
-            set => SetProperty(ref _processRingVisibility, value);
-        }
-        private bool _isFullScreen = false;
-        public bool IsFullScreen
-        {
-            get => _isFullScreen;
-            set => SetProperty(ref _isFullScreen, value);
-        }
-        private string _infoBarTitle = string.Empty;
-        public string InfoBarTitle
-        {
-            get => _infoBarTitle;
-            set => SetProperty(ref _infoBarTitle, value);
-        }
-        private bool _infoBarIsOpen = false;
-        public bool InfoBarIsOpen
-        {
-            get => _infoBarIsOpen;
-            set => SetProperty(ref _infoBarIsOpen, value);
-        }
-        private string _infoBarMessage = string.Empty;
-        public string InfoBarMessage
-        {
-            get => _infoBarMessage;
-            set => SetProperty(ref _infoBarMessage, value);
-        }
-        private string _pageType = string.Empty;
-        public string PageType
-        {
-            get => _pageType;
-            set => SetProperty(ref _pageType, value);
-        }
-        private bool _isInPlayingDetailMode = false;
-        public bool IsInPlayingDetailMode
-        {
-            get => _isInPlayingDetailMode;
-            set => SetProperty(ref _isInPlayingDetailMode, value);
-        }
-        private bool _isAcrylicBrushOpacity = false;
-        public bool IsAcrylicBrushOpacity
-        {
-            get => _isAcrylicBrushOpacity;
-            set => SetProperty(ref _isAcrylicBrushOpacity, value);
-        }
-
-        private float _topControlsOpacity = 1.0f;
-        public float TopControlsOpacity
-        {
-            get => _topControlsOpacity;
-            set => SetProperty(ref _topControlsOpacity, value);
-        }
+        
         private IEnumerable<SortOption> _allSortOptions = [
             new SortOption( "DefaultOrder", "SortOrderDefault"),
             new SortOption("A-Z", "SortOrderA_Z"),
@@ -319,52 +140,14 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption( "DefaultOrder", "SortOrderDefault"),
             new SortOption("Artist", "SortOrderArtist")
         ];
+
         private ObservableCollection<SortOption> _sortOptions;
         public ObservableCollection<SortOption> SortOptions
         {
             get => _sortOptions;
             set => SetProperty(ref _sortOptions, value);
         }
-        private SortOption _selectedSortOption;
-        public SortOption SelectedSortOption
-        {
-            get => _selectedSortOption;
-            set
-            {
-                if (SetProperty(ref _selectedSortOption, value))
-                {
-                    OnSelectSortChanged();
-                }
-            }
-        }
-        private Thickness _lyricsMargin;
-        public Thickness LyricsMargin
-        {
-            get => _lyricsMargin;
-            set => SetProperty(ref _lyricsMargin, value);
-        }
-        
-        private bool _isPlayDetailButtonVisible = true;
-        public bool IsPlayDetailButtonVisible
-        {
-            get => _isPlayDetailButtonVisible;
-            set
-            {
-                if (SetProperty(ref _isPlayDetailButtonVisible, value))
-                {
-                    if (IsInitialized) {
-                        AppSettings.IsPlayDetailBtnVisible = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }                   
-                }
-            }
-        }
-        private ImageSource? _lyricPageBackgroundSource = null;
-        public ImageSource? LyricPageBackgroundSource
-        {
-            get => _lyricPageBackgroundSource;
-            set => SetProperty(ref _lyricPageBackgroundSource, value);
-        }
+
 
         public System.Type currentPage = typeof(SongListPage);
         public Music CurrentAlbum;
@@ -387,19 +170,19 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
         public LyricsRefreshService LyricsRefreshService { get; set; }
         public TimeSpan LyricsDurationTime = TimeSpan.Zero;
-        private AppObservableObj AppObservableObj { get;}
+        public AppObservableObj AppObservableObj { get;}
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService,AppObservableObj  appObservableObj)
         {
             AppObservableObj = appObservableObj;
-            CurrentPlayMode = AppData.PlayMode;
-            PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
-            IsPlayDetailButtonVisible = AppSettings.IsPlayDetailBtnVisible;
-            LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
-            UILyrics = new ObservableCollection<LyricLine>();
+            //CurrentPlayMode = AppData.PlayMode;
+            //PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
+            //IsPlayDetailButtonVisible = AppSettings.IsPlayDetailBtnVisible;
+            //LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
+            //UILyrics = new ObservableCollection<LyricLine>();
             _systemMediaControlsService = systemMediaControlsService;
             InitializeSystemMediaControls();
-            Volume = (double)(AppData.Volume * 100);
-            _tempVolume = (double)(AppData.Volume * 100);
+            //Volume = (double)(AppData.Volume * 100);
+            //_tempVolume = (double)(AppData.Volume * 100);
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
             AppSettings.OutputSettingsUpdated += AppSettings_OutputSettingsUpdated;
             AppSettings.EqUpdated += AppSettings_OnEqUpdated;
@@ -460,16 +243,16 @@ namespace WinUIMusicPlayer.ViewModel
                         try
                         {
                             ProgressSlider = _currentTime.TotalSeconds;
-                            ProgressSliderMax = _totalTime.TotalSeconds;
+                            AppObservableObj.ProgressSliderMax = _totalTime.TotalSeconds;
                             if (_totalTime.TotalHours >= 1)
                             {
-                                PlayTimeText = _timeStringBuilder
+                                AppObservableObj.PlayTimeText = _timeStringBuilder
                                     .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _currentTime, _totalTime)
                                     .ToString();
                             }
                             else
                             {
-                                PlayTimeText = _timeStringBuilder
+                                AppObservableObj.PlayTimeText = _timeStringBuilder
                                     .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _currentTime, _totalTime)
                                     .ToString();
                             }
@@ -486,13 +269,13 @@ namespace WinUIMusicPlayer.ViewModel
             catch {
             }            
         }
-        public void UpdateLyricsMargin()
-        {
-            if (LyricsMargin.Left != AppSettings.LyricsMargin)
-            {
-                LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
-            }
-        }
+        //public void UpdateLyricsMargin()
+        //{
+        //    if (AppObservableObj.LyricsMargin.Left != AppSettings.LyricsMargin)
+        //    {
+        //        AppObservableObj.LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
+        //    }
+        //}
 
         public void AllSortOptions()
         {
@@ -577,9 +360,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                InfoBarIsOpen = true;
-                InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
-                InfoBarMessage = message;
+                AppObservableObj.InfoBarIsOpen = true;
+                AppObservableObj.InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
+                AppObservableObj.InfoBarMessage = message;
             });
         }
 
@@ -592,15 +375,15 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (AppData.usbStorageDevices.Count > 0)
                     {
-                        UsbDeviceVisibility = Visibility.Visible;
-                        UsbStorageDevices = AppData.usbStorageDevices;
-                        UsbSelectedIndex = 0;
+                        AppObservableObj.UsbDeviceVisibility = Visibility.Visible;
+                        AppObservableObj.UsbStorageDevices = AppData.usbStorageDevices;
+                        AppObservableObj.UsbSelectedIndex = 0;
                     }
                     else
                     {
-                        UsbSelectedIndex = -1;
-                        UsbDeviceVisibility = Visibility.Collapsed;
-                        UsbStorageDevices = null;
+                        AppObservableObj.UsbSelectedIndex = -1;
+                        AppObservableObj.UsbDeviceVisibility = Visibility.Collapsed;
+                        AppObservableObj.UsbStorageDevices = null;
                         AppData.musicOnUsbDevice.Clear();
                         ClearAllUsbStatus();
                     }
@@ -610,7 +393,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    UsbDeviceVisibility = Visibility.Collapsed;
+                    AppObservableObj.UsbDeviceVisibility = Visibility.Collapsed;
                 });
                 AppData.musicOnUsbDevice.Clear();
                 ClearAllUsbStatus();
@@ -691,12 +474,12 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    ProcessRingVisibility = Visibility.Visible;
+                    AppObservableObj.ProcessRingVisibility = Visibility.Visible;
                 });
                 await AutoRescanService.AutoScan();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    ProcessRingVisibility = Visibility.Collapsed;
+                    AppObservableObj.ProcessRingVisibility = Visibility.Collapsed;
                 });
             }
             finally
@@ -769,42 +552,42 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task LoadPlayState()
         {
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
-            if (CurrentPlayingMusic is not null)
+            AppObservableObj.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
+            if (AppObservableObj.CurrentPlayingMusic is not null)
             {
-                UpdatePlayBar(CurrentPlayingMusic);
+                UpdatePlayBar(AppObservableObj.CurrentPlayingMusic);
                 LoadLyricsToUI();
-                _musicPlaybackService.InitializeMusicUrl(CurrentPlayingMusic.Path);
+                _musicPlaybackService.InitializeMusicUrl(AppObservableObj.CurrentPlayingMusic.Path);
             }
             _musicPlaybackService.isInitializing = false;
         }
 
         public async void LoadLyricsToUI()
         {
-            LastLyricIndex = -1;
-            UILyrics.Clear();
+            AppObservableObj.LastLyricIndex = -1;
+            AppObservableObj.UILyrics.Clear();
             // 设置播放服务中的歌词
             await LyricsRefreshService.SetLyrics();
             // 解析歌词并添加到UI集合
             List<LyricLine> parsedLyrics = LyricsRefreshService.Lyrics;
             foreach (var lyric in parsedLyrics)
             {
-                UILyrics.Add(lyric);
+                AppObservableObj.UILyrics.Add(lyric);
             }
         }
 
         public void UpdateLyricsToUI(int index)
         {
-            if (LastLyricIndex == index)
+            if (AppObservableObj.LastLyricIndex == index)
                 return;
             TimeSpan duration = TimeSpan.Zero;
-            if (index >= 0 && index < UILyrics.Count)
+            if (index >= 0 && index < AppObservableObj.UILyrics.Count)
             {
                 int nextIndex = index + 1;
-                if (nextIndex < UILyrics.Count)
+                if (nextIndex < AppObservableObj.UILyrics.Count)
                 {
-                    TimeSpan currentTime = UILyrics[index].Time;
-                    TimeSpan nextTime = UILyrics[nextIndex].Time;
+                    TimeSpan currentTime = AppObservableObj.UILyrics[index].Time;
+                    TimeSpan nextTime = AppObservableObj.UILyrics[nextIndex].Time;
                     LyricsDurationTime = nextTime.Subtract(currentTime);
                 }
             }
@@ -812,11 +595,11 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 try
                 {
-                    for (int i = 0; i < UILyrics.Count; i++)
-                    {                        
-                        UILyrics[i].IsCurrent = (i == index);
+                    for (int i = 0; i < AppObservableObj.UILyrics.Count; i++)
+                    {
+                        AppObservableObj.UILyrics[i].IsCurrent = (i == index);
                     }
-                    LastLyricIndex = index;
+                    AppObservableObj.LastLyricIndex = index;
                 }
                 catch (Exception ex)
                 {
@@ -832,8 +615,8 @@ namespace WinUIMusicPlayer.ViewModel
             await UpdateCover(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                MusicDetailCover = DetailCover;
+                AppObservableObj.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+                AppObservableObj.MusicDetailCover = DetailCover;
                 _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
@@ -843,8 +626,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void ThemeChangedUpdateCover()
         {
-            if (CurrentPlayingMusic is null) return;
-            var albumCoverData = await ToolUtils.GetRawImage(CurrentPlayingMusic);
+            if (AppObservableObj.CurrentPlayingMusic is null) return;
+            var albumCoverData = await ToolUtils.GetRawImage(AppObservableObj.CurrentPlayingMusic);
             await UpdateCover(albumCoverData);
         }
 
@@ -864,16 +647,16 @@ namespace WinUIMusicPlayer.ViewModel
                         // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();
                     }
-                    LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
+                    AppObservableObj.LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
                 }
                 else
                 {
-                    LyricPageBackgroundSource = null;
+                    AppObservableObj.LyricPageBackgroundSource = null;
                 }
             }
             catch
             {
-                LyricPageBackgroundSource = null;
+                AppObservableObj.LyricPageBackgroundSource = null;
             }
         }
 
@@ -886,27 +669,27 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public void OnPlayModeChanged()
         {
-            switch (CurrentPlayMode)
+            switch (AppObservableObj.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    AppData.PlayMode = PlayMode.ListLoop;
-                    CurrentPlayMode = PlayMode.ListLoop;
-                    PlayModeFlyoutText = ToolUtils.GetString("IconListLoop");
+                    //AppData.PlayMode = PlayMode.ListLoop;
+                    AppObservableObj.CurrentPlayMode = PlayMode.ListLoop;
+                    AppObservableObj.PlayModeFlyoutText = ToolUtils.GetString("IconListLoop");
                     break;
                 case PlayMode.ListLoop:
-                    AppData.PlayMode = PlayMode.RandomLoop;
-                    CurrentPlayMode = PlayMode.RandomLoop;
-                    PlayModeFlyoutText = ToolUtils.GetString("IconRandomLoop");
+                    //AppData.PlayMode = PlayMode.RandomLoop;
+                    AppObservableObj.CurrentPlayMode = PlayMode.RandomLoop;
+                    AppObservableObj.PlayModeFlyoutText = ToolUtils.GetString("IconRandomLoop");
                     break;
                 case PlayMode.RandomLoop:
-                    AppData.PlayMode = PlayMode.RepeatOff;
-                    CurrentPlayMode = PlayMode.RepeatOff;
-                    PlayModeFlyoutText = ToolUtils.GetString("IconSinglePlayback");
+                    //AppData.PlayMode = PlayMode.RepeatOff;
+                    AppObservableObj.CurrentPlayMode = PlayMode.RepeatOff;
+                    AppObservableObj.PlayModeFlyoutText = ToolUtils.GetString("IconSinglePlayback");
                     break;
                 case PlayMode.RepeatOff:
-                    AppData.PlayMode = PlayMode.SingleLoop;
-                    CurrentPlayMode = PlayMode.SingleLoop;
-                    PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
+                    //AppData.PlayMode = PlayMode.SingleLoop;
+                    AppObservableObj.CurrentPlayMode = PlayMode.SingleLoop;
+                    AppObservableObj.PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
             _musicPlaybackService.UpdateCurrentPlayList();
@@ -971,24 +754,24 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayLastTrack()
         {
-            int index = CurrentPlayingList.AsValueEnumerable()
+            int index = AppObservableObj.CurrentPlayingList.AsValueEnumerable()
                         .Select((music, i) => new { Music = music, Index = i })
-                        .FirstOrDefault(x => x.Music.Id == CurrentPlayingMusic.Id)
+                        .FirstOrDefault(x => x.Music.Id == AppObservableObj.CurrentPlayingMusic.Id)
                         ?.Index ?? -1;
             if (index > 0)
             {
-                _musicBrowsePage.PlayMusic(CurrentPlayingList[index - 1]);
+                _musicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[index - 1]);
             }
-            else if (index == 0 && CurrentPlayingList.Count > 1)
+            else if (index == 0 && AppObservableObj.CurrentPlayingList.Count > 1)
             {
-                _musicBrowsePage.PlayMusic(CurrentPlayingList[CurrentPlayingList.Count - 1]);
+                _musicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[AppObservableObj.CurrentPlayingList.Count - 1]);
 
             }
         }
         [RelayCommand]
         private async Task OnPlayBarFavouriteButtonChanged()
         {
-            await _musicBrowsePage.AddToFavourite(CurrentPlayingMusic);
+            await _musicBrowsePage.AddToFavourite(AppObservableObj.CurrentPlayingMusic);
             NotifySubPageUpdateFavouriteState();
             AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
         }
@@ -1000,10 +783,10 @@ namespace WinUIMusicPlayer.ViewModel
             var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
             Task.WhenAll(
-                Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
-                Task.Run(() => songListPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
-                Task.Run(() => songCollectionPage.UpdateFavouriteMusic(CurrentPlayingMusic)),
-                Task.Run(() => playListSongPage.UpdateFavouriteMusic(CurrentPlayingMusic))
+                Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                Task.Run(() => songListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                Task.Run(() => playListSongPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic))
             );
         }
         [RelayCommand]
@@ -1030,8 +813,8 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnVolumeSliderIconButtonChanged()
         {
-            IsMuted = !IsMuted;
-            Volume = IsMuted ? 0 : _tempVolume;
+            AppObservableObj.IsMuted = !AppObservableObj.IsMuted;
+            AppObservableObj.Volume = AppObservableObj.IsMuted ? 0 : AppObservableObj.TempVolume;
         }
 
         [RelayCommand]
@@ -1047,16 +830,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void AdjustVolume(int delta)
         {
-            double newVolume = Volume + delta;
+            double newVolume = AppObservableObj.Volume + delta;
             newVolume = Math.Max(0, Math.Min(newVolume, 100));
-            Volume = newVolume;
+            AppObservableObj.Volume = newVolume;
         }
         [RelayCommand]
         private void OnFullScreenButtonChanged()
         {
             if (App.MainWindow.AppWindow is not null)
             {
-                if (IsFullScreen)
+                if (AppObservableObj.IsFullScreen)
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
                 }
@@ -1064,14 +847,14 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
                 }
-                IsFullScreen = !IsFullScreen;
+                AppObservableObj.IsFullScreen = !AppObservableObj.IsFullScreen;
             }
 
         }
 
         [RelayCommand]
         private void PlayDetailButtonVisibleChanged() {
-            IsPlayDetailButtonVisible = !IsPlayDetailButtonVisible;
+            AppObservableObj.IsPlayDetailButtonVisible = !AppObservableObj.IsPlayDetailButtonVisible;
         }
 
         private void OnSelectionChanged()
@@ -1085,63 +868,63 @@ namespace WinUIMusicPlayer.ViewModel
             switch (SelectedPage.Name)
             {
                 case "Song":
-                    PageType = "song";
+                    AppObservableObj.PageType = "song";
                     currentPage = typeof(SongListPage);
                     break;
                 case "Album":
                     if (CurrentAlbum is not null && !string.IsNullOrEmpty(CurrentAlbum.Album))
                     {
-                        PageType = "album";
+                        AppObservableObj.PageType = "album";
                         paramName = CurrentAlbum.Album;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        PageType = "albumBrowse";
+                        AppObservableObj.PageType = "albumBrowse";
                         currentPage = typeof(AlbumPage);
                     }
                     break;
                 case "Artist":
                     if (CurrentArtist is not null && !string.IsNullOrEmpty(CurrentArtist.Author))
                     {
-                        PageType = "artist";
+                        AppObservableObj.PageType = "artist";
                         paramName = CurrentArtist.Author;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        PageType = "artistBrowse";
+                        AppObservableObj.PageType = "artistBrowse";
                         currentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
                     if (CurrentFolder is not null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
                     {
-                        PageType = "folder";
+                        AppObservableObj.PageType = "folder";
                         paramName = CurrentFolder.LastLevelFolderPath;
                         currentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
-                        PageType = "folderBrowse";
+                        AppObservableObj.PageType = "folderBrowse";
                         currentPage = typeof(FolderBrowsePage);
                     }
                     break;
                 case "Favourite":
-                    PageType = "favourite";
+                    AppObservableObj.PageType = "favourite";
                     currentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
                     if (currentPlayList is not null)
                     {
-                        PageType = "playlist";
+                        AppObservableObj.PageType = "playlist";
                         paramName = currentPlayList.Name;
                         currentPlayListId = currentPlayList.Id;
                         currentPage = typeof(PlayListSongPage);
                     }
                     else
                     {
-                        PageType = "playlistBrowse";
+                        AppObservableObj.PageType = "playlistBrowse";
                         currentPage = typeof(PlayListPage);
                     }
                     break;

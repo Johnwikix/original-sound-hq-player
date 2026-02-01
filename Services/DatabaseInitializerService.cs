@@ -1,12 +1,17 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class DatabaseInitializerService : IHostedService
+    public class AppInitializerService : IHostedService
     {
-
+        private readonly AppObservableObj _appObservableObj;
+        public AppInitializerService(AppObservableObj appObservableObj)
+        {
+            this._appObservableObj = appObservableObj;
+        }
         // 应用启动时执行初始化
         public async Task StartAsync(CancellationToken cancellationToken)
         {
@@ -16,6 +21,7 @@ namespace WinUIMusicPlayer.Services
                  MusicDatabaseService.GetSettingsAsync()
             };
             await Task.WhenAll(tasks);
+            _appObservableObj.IsInitialized = true;
         }
 
         // 应用关闭时执行清理

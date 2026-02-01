@@ -11,7 +11,7 @@
         public int dsdGain { get; set; } = 6;
         public int dsdPcmFreq { get; set; } = 88200;
         public bool IsEqualizerEnabled { get; set; } = false;
-        public float Volume { get; set; } = 0.5f;
+        public double Volume { get; set; } = 0.5;
         public bool IsSettingChanged { get; set; } = false;
         public bool IsFadeEnabled { get; set; } = false;
     }

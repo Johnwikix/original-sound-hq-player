@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
@@ -233,7 +234,7 @@ namespace WinUIMusicPlayer.Services
                 dsdGain = AppSettings.dsdGain,
                 dsdPcmFreq = AppSettings.dsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
-                Volume = AppData.Volume,
+                Volume = App.Services.GetRequiredService<AppObservableObj>().Volume / 100,
                 IsSettingChanged = IsSettingChanged,
                 IsFadeEnabled = AppSettings.IsFadeEnabled,
             };
