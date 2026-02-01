@@ -66,6 +66,7 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage? _parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
         private AppObservableObj AppObservableObj { get; }
+        private MusicDatabaseService _musicDatabaseService { get; }
         private SongCollectionPage _currentPage;
         private AudioConverterService _converterService;
         private ProgressDialog _progressDialog;
@@ -80,7 +81,7 @@ namespace WinUIMusicPlayer.ViewModel
         private string? _currentFolderName;
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public SongCollectionViewModel(MusicBrowsePage parent, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj)
+        public SongCollectionViewModel(MusicBrowsePage parent, AudioConverterService converterService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
             _parentPage.refreshSong += RefreshSong;
@@ -90,6 +91,7 @@ namespace WinUIMusicPlayer.ViewModel
             _converterService.updateProgress += OnConverterProgressUpdated;
             _musicBrowseViewModel = musicBrowseViewModel;
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
         public void SetCurrentPage(SongCollectionPage page)
         {
@@ -162,7 +164,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (CurrentPageType == "album" && !string.IsNullOrEmpty(_currentAlbumName))
                 {
                     CurrentMusicObject = _parentPage.ViewModel.CurrentAlbum;
-                    var musics = MusicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
+                    var musics = _musicDatabaseService.GetAlbumMusicFromMem(_currentAlbumName, null);
                     FirstTitle = CurrentMusicObject.Album;
                     SecondTitle = string.Join(" · ", AppData.allSongs.AsValueEnumerable()
                         .Where(music => music.Album == CurrentMusicObject.Album)
@@ -174,7 +176,7 @@ namespace WinUIMusicPlayer.ViewModel
                 else if (CurrentPageType == "artist" && !string.IsNullOrEmpty(_currentArtistName))
                 {
                     CurrentMusicObject = _parentPage.ViewModel.CurrentArtist;
-                    var musics = MusicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
+                    var musics = _musicDatabaseService.GetArtistMusicFromMem(_currentArtistName, null);
                     FirstTitle = CurrentMusicObject.Author;
                     var authorAlbums = AppData.allSongs.AsValueEnumerable()
                         .Where(music => music.Author == CurrentMusicObject.Author)
@@ -188,7 +190,7 @@ namespace WinUIMusicPlayer.ViewModel
                 else if (CurrentPageType == "folder" && !string.IsNullOrEmpty(_currentFolderName))
                 {
                     CurrentMusicObject = _parentPage.ViewModel.CurrentFolder;
-                    var musics = MusicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
+                    var musics = _musicDatabaseService.GetFolderMusicFromMem(_currentFolderName, AppData.searchText);
                     FirstTitle = CurrentMusicObject?.LastLevelFolderPath;
                     var albums = AppData.allSongs.AsValueEnumerable()
                         .Where(music => music.LastLevelFolderPath == CurrentMusicObject.LastLevelFolderPath)
@@ -358,7 +360,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
                         {
-                            await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
+                            await _musicDatabaseService.RemoveMusic(MusicList[i].Id);
                             MusicList.RemoveAt(i);
                         }
                     }
@@ -370,7 +372,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                     {
-                        await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                        await _musicDatabaseService.RemoveMusic(SelectedMusic.Id);
                         MusicList.Remove(SelectedMusic);
                     }
                 }
@@ -399,7 +401,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
 
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         public void OpenInExplorer_Click()
@@ -479,7 +481,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (music is not null)
             {
                 await _parentPage.AddToFavourite(music);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             }
         }
 
@@ -495,7 +497,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         music.Lyrics = lyrics;
                         music.TranslatdeLyrics = transLrc;
-                        await MusicDatabaseService.UpdateMusicInfo(music);
+                        await _musicDatabaseService.UpdateMusicInfo(music);
                     }
                 }
             }
@@ -507,10 +509,10 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     music.Lyrics = lyrics;
                     music.TranslatdeLyrics = transLrc;
-                    await MusicDatabaseService.UpdateMusicInfo(music);
+                    await _musicDatabaseService.UpdateMusicInfo(music);
                 }
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         public void AuthorTextBlock_Tapped(string artist)

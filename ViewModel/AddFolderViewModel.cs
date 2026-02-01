@@ -21,9 +21,11 @@ namespace WinUIMusicPlayer.ViewModel
             get => _folderList;
             set => SetProperty(ref _folderList, value);
         }
+        private MusicDatabaseService _musicDatabaseService { get; }
 
-        public AddFolderViewModel()
-        {
+        public AddFolderViewModel(MusicDatabaseService musicDatabaseService)
+        {            
+            _musicDatabaseService = musicDatabaseService;
             _ = LoadFoldersAsync();
         }
 
@@ -31,7 +33,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                var folderList = await MusicDatabaseService.GetFolders();
+                var folderList = await _musicDatabaseService.GetFolders();
                 FolderList.Clear();
                 Debug.WriteLine(AppData.allSongs.AsValueEnumerable().Count());
                 foreach (var folder in folderList)
@@ -73,8 +75,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (folder is not null)
             {
-                await Task.Run(() => MusicDatabaseService.CheckFolderBeforeAdd(folder));
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                await Task.Run(() => _musicDatabaseService.CheckFolderBeforeAdd(folder));
+                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
                 await LoadFoldersAsync();
                 App.MainWindow?.UpdateMusicList();
             }
@@ -82,7 +84,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task RemoveFolderButton_Click(int folderId)
         {
-            await Task.Run(() => MusicDatabaseService.RemoveFolder(folderId));
+            await Task.Run(() => _musicDatabaseService.RemoveFolder(folderId));
             await LoadFoldersAsync();
             App.MainWindow?.UpdateMusicList();
         }

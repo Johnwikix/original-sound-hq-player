@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _progressSliderMax, value);
         }
 
-        private ObservableCollection<LyricLine> _uiLyrics;
+        private ObservableCollection<LyricLine> _uiLyrics = [];
         public ObservableCollection<LyricLine> UILyrics
         {
             get => _uiLyrics;
@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.Model
             get => _lyricsMargin;
             set {
                 if (SetProperty(ref _lyricsMargin, value)) {
-                    _ = MusicDatabaseService.SaveSettingAsync();
+                    _ = _musicDatabaseService.SaveSettingAsync();
                 }
             }
         }
@@ -157,7 +157,7 @@ namespace WinUIMusicPlayer.Model
                     if (IsInitialized)
                     {
                         //AppSettings.IsPlayDetailBtnVisible = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
+                        _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
             }
@@ -249,10 +249,12 @@ namespace WinUIMusicPlayer.Model
             get => _topControlsOpacity;
             set => SetProperty(ref _topControlsOpacity, value);
         }
+        private MusicDatabaseService _musicDatabaseService { get; }
 
-        public AppObservableObj()
+        public AppObservableObj(MusicDatabaseService musicDatabaseService)
         {
-            UILyrics = new ObservableCollection<LyricLine>();
+            _musicDatabaseService = musicDatabaseService;
+            //UILyrics = new ObservableCollection<LyricLine>();
         }
     }
 }

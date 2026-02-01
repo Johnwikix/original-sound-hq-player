@@ -24,15 +24,17 @@ namespace WinUIMusicPlayer.ViewModel
 
         private MusicBrowsePage? _parentPage;
         private AppObservableObj AppObservableObj { get; }
-        private MusicBrowseViewModel? _musicBrowseViewModel;
-        private PlayListPage? _currentPage;
+        private MusicDatabaseService _musicDatabaseService { get; }
+        private MusicBrowseViewModel? _musicBrowseViewModel { get; }
+        private PlayListPage? _currentPage { get; set; }
 
-        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj)
+        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
             _parentPage.addPlayListEvent += RefreshPlayList;
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         public void SetCurrentPage(PlayListPage page)
@@ -56,7 +58,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                var playlists = await MusicDatabaseService.GetPlayListAsync();
+                var playlists = await _musicDatabaseService.GetPlayListAsync();
                 PlayLists.Clear();
 
                 foreach (var playlist in playlists)
@@ -91,7 +93,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (playList is null) return;
 
-            await MusicDatabaseService.RemovePlayList(playList);
+            await _musicDatabaseService.RemovePlayList(playList);
             PlayLists.Remove(playList);
         }
 
@@ -104,7 +106,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (!string.IsNullOrEmpty(newName))
             {
                 playList.Name = newName;
-                await MusicDatabaseService.UpdatePlayList(playList);
+                await _musicDatabaseService.UpdatePlayList(playList);
                 var existingPlayList = PlayLists.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
                 if (existingPlayList is not null)
                 {

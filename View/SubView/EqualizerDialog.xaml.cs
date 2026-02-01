@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -90,7 +91,7 @@ namespace WinUIMusicPlayer.View.SubView
                         string? presetName = selectedItem.Tag.ToString();
                         if (presetName == "Custom" && _isInitializedSliderValue)
                         {
-                            await MusicDatabaseService.UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
+                            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
                         }
                         EqualizerGainChanged?.Invoke(this, frequency);
                     }
@@ -110,12 +111,12 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            SaveSettings settings = await MusicDatabaseService.GetSettings();
+            SaveSettings settings = await App.Services.GetRequiredService<MusicDatabaseService>().GetSettings();
             if (settings is not null)
             {
                 settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
                 settings.EqualizerPreset = AppSettings.EqualizerPreset;
-                await MusicDatabaseService.UpdateSettings(settings);
+                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateSettings(settings);
             }
             this.Hide();
         }
@@ -139,7 +140,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 else if (presetName == "Custom")
                 {
-                    SaveSettings settings = await MusicDatabaseService.GetSettings();
+                    SaveSettings settings = await App.Services.GetRequiredService<MusicDatabaseService>().GetSettings();
                     AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings?.equalizerStr);
                     InitializeSliders();
                 }

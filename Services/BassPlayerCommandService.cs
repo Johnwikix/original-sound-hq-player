@@ -20,12 +20,14 @@ namespace WinUIMusicPlayer.Services
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public AppObservableObj AppObservableObj { get; }
         private IpcService IpcService { get; set; }
+        private MusicDatabaseService _musicDatabaseService { get; }
 
-        public BassPlayerCommandService(AppObservableObj appObservableObj)
+        public BassPlayerCommandService(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
             InitializingData();
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
@@ -87,7 +89,7 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(await MusicDatabaseService.LoadPlayList());
+            AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(await _musicDatabaseService.LoadPlayList());
             UpdateCurrentPlayList();
         }
 
@@ -182,7 +184,7 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.Play(music.Path);
             MusicBrowseViewModel.StartProgressTimer();
-            _ = MusicDatabaseService.SavePlayState([.. AppObservableObj.SequentialPlayingList], AppObservableObj.CurrentPlayMode, AppObservableObj.CurrentPlayingMusic?.Id, (float)(AppObservableObj.Volume), AppData.sortOrder);
+            _ = _musicDatabaseService.SavePlayState([.. AppObservableObj.SequentialPlayingList], AppObservableObj.CurrentPlayMode, AppObservableObj.CurrentPlayingMusic?.Id, (float)(AppObservableObj.Volume), AppData.sortOrder);
         }
 
         public void PlayButton()

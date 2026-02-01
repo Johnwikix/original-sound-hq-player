@@ -32,13 +32,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private List<MusicGroup> groupedByFirstLetter = [];
         private string _lastSearchText = "";
-        private MusicBrowsePage? parentPage;
-        private MusicBrowseViewModel? _musicBrowseViewModel;
-        private AppObservableObj AppObservableObj;
-        private ArtistPage? currentPage;
-        private ContextMenuService _contextMenuService;
+        private MusicBrowsePage? parentPage { get; }
+        private MusicBrowseViewModel? _musicBrowseViewModel { get; }
+        private AppObservableObj AppObservableObj { get; }
+        private MusicDatabaseService _musicDatabaseService { get; }
+        private ArtistPage? currentPage { get; set; }
+        private ContextMenuService _contextMenuService { get; }
 
-        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj)
+        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -63,6 +64,7 @@ namespace WinUIMusicPlayer.ViewModel
             };
             _musicBrowseViewModel = musicBrowseViewModel;
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         public void UpdateUsbIcon()
@@ -102,7 +104,7 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 MusicList.Clear();
-                var query = (MusicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
+                var query = (_musicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
                 foreach (var music in query)
                 {
                     MusicList.Add(music);
@@ -177,7 +179,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayingArtist(object? sender, Music e)
         {
-            List<Music> artists = (MusicDatabaseService.GetArtistMusicFromMem(e.Author)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
+            List<Music> artists = (_musicDatabaseService.GetArtistMusicFromMem(e.Author)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (artists is not null && artists.Count > 0)
             {
                 if (parentPage is not null)

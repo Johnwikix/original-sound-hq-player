@@ -1288,7 +1288,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 try
                 {
-                    PlayList playList = await MusicDatabaseService.GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
+                    PlayList playList = await App.Services.GetRequiredService<MusicDatabaseService>().GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
                     int playListId = 0;
                     if (playList is not null)
                     {
@@ -1297,7 +1297,7 @@ namespace WinUIMusicPlayer.Utils
                     else
                     {
                         playList = new() { Name = Path.GetFileNameWithoutExtension(file.Name) };
-                        playListId = await MusicDatabaseService.InsertPlayList(playList);
+                        playListId = await App.Services.GetRequiredService<MusicDatabaseService>().InsertPlayList(playList);
                     }
 
                     string fileContent = await FileIO.ReadTextAsync(file);
@@ -1337,7 +1337,7 @@ namespace WinUIMusicPlayer.Utils
                     Music? music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
                     if (music is not null)
                     {
-                        await MusicDatabaseService.AddMusicToPlayList(playListId, music.Id);
+                        await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicToPlayList(playListId, music.Id);
                     }
                 }
             }
@@ -1415,7 +1415,7 @@ namespace WinUIMusicPlayer.Utils
                 var file = await fileSavePicker.PickSaveFileAsync();
                 if (file is not null)
                 {
-                    IEnumerable<Music> musics = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id);
+                    IEnumerable<Music> musics = App.Services.GetRequiredService<MusicDatabaseService>().GetMusicByPlayListIdFromMem(playList.Id);
                     var m3u8Content = ToolUtils.GenerateM3U8Content(musics, playList.Name);
                     await System.IO.File.WriteAllTextAsync(file.Path, m3u8Content);
                 }

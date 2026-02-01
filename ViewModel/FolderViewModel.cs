@@ -32,13 +32,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private List<MusicGroup> groupedByFirstLetter = [];
         private string _lastSearchText = "";
-        private MusicBrowsePage? parentPage;
-        private MusicBrowseViewModel? _musicBrowseViewModel;
+        private MusicBrowsePage? parentPage { get; }
+        private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         private AppObservableObj AppObservableObj { get; }
-        private FolderBrowsePage? currentPage;
-        private ContextMenuService _contextMenuService;
+        private MusicDatabaseService _musicDatabaseService { get; }
+        private FolderBrowsePage? currentPage { get; set; }
+        private ContextMenuService _contextMenuService { get; }
 
-        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj)
+        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             GroupedMusicViewSource = new CollectionViewSource
@@ -66,6 +67,7 @@ namespace WinUIMusicPlayer.ViewModel
             };
             _musicBrowseViewModel = musicBrowseViewModel;
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         public void UpdateUsbIcon()
@@ -106,7 +108,7 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 MusicList.Clear();
-                var query = (MusicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
+                var query = (_musicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
                         .AsValueEnumerable()
                         .GroupBy(m => m.LastLevelFolderPath)
                         .Select(g => g.AsValueEnumerable().First())
@@ -199,7 +201,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void PlayingFolder(object? sender, Music e)
         {
-            List<Music> folders = (MusicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
+            List<Music> folders = (_musicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (folders is not null && folders.Count > 0)
             {
                 if (parentPage is not null)

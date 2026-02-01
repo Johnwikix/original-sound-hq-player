@@ -26,12 +26,14 @@ namespace WinUIMusicPlayer.View
     public sealed partial class SongListPage : Page, INavigatable
     {
         public SongListViewModel ViewModel { get; }
-        public SongListPage(SongListViewModel viewModel)
+        private MusicDatabaseService _musicDatabaseService { get; }
+        public SongListPage(SongListViewModel viewModel, MusicDatabaseService musicDatabaseService)
         {
             InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -167,7 +169,7 @@ namespace WinUIMusicPlayer.View
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
                     addToPlaylistSubItem?.Items.Clear();
-                    var playlists = await MusicDatabaseService.GetPlayListAsync();
+                    var playlists = await _musicDatabaseService.GetPlayListAsync();
                     foreach (var playlist in playlists)
                     {
                         var menuItem = new MenuFlyoutItem
@@ -181,13 +183,13 @@ namespace WinUIMusicPlayer.View
                             {
                                 foreach (var music in uniqueSelectedMusics)
                                 {
-                                    await MusicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
+                                    await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                                 }
                             }
                             // 单选情况：只添加当前右键点击的歌曲
                             else if (musicItem is not null)
                             {
-                                await MusicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
+                                await _musicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
                             }
                         };
                         addToPlaylistSubItem?.Items.Add(menuItem);

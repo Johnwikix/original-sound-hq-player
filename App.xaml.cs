@@ -93,6 +93,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<BassPlayerCommandService>();
                  services.AddSingleton<AppObservableObj>();
+                 services.AddSingleton<MusicDatabaseService>();
              }).Build();
 
         /// <summary>

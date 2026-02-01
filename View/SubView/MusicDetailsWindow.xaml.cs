@@ -131,8 +131,8 @@ namespace WinUIMusicPlayer.View.SubView
                     music.DiskNumber = (int)DiskNumberBox.Value;
                     music.TrackNumber = (int)TrackNumberBox.Value;
                     music.Lyrics = LyricsTextBox.Text;
-                    await MusicDatabaseService.UpdateMusicInfo(music);
-                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                    await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
+                    AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
                     MusicDetailChanged?.Invoke(this, music);
                 }
                 catch (Exception ex)
@@ -177,12 +177,12 @@ namespace WinUIMusicPlayer.View.SubView
             music.TrackNumber = (int)TrackNumberBox.Value;
             music.Lyrics = LyricsTextBox.Text;
             music.UpdateTime = updateTime;
-            await MusicDatabaseService.UpdateMusicInfo(music);
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
             if (AppData.albumCoverCache.ContainsKey(music.Album))
             {
                 AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
             MusicDetailChanged?.Invoke(this, music);
         }
 

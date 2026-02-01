@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
-            IEnumerable<Music> musics = MusicDatabaseService.FindMusicListByAlbum(album.Album);
+            IEnumerable<Music> musics = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByAlbum(album.Album);
             Music result = null;
             // 避免重复写入标志位
             bool isResultAssigned = false;
@@ -138,7 +138,7 @@ namespace WinUIMusicPlayer.View.SubView
                 music.Album = AlbumTextBlock.Text;
                 music.Year = int.Parse(YearTextBlock.Text);
 
-                await MusicDatabaseService.UpdateMusicInfo(music);
+                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                 if (!isResultAssigned)
                 {
                     if (AppData.albumCoverCache.ContainsKey(music.Album))
@@ -149,7 +149,7 @@ namespace WinUIMusicPlayer.View.SubView
                     isResultAssigned = true;
                 }
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
             AlbumDetailChanged?.Invoke(this, result);
         }
 

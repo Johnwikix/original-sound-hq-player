@@ -21,12 +21,14 @@ namespace WinUIMusicPlayer.View
     {
         private NotificationService notificationService;
         public AddFolderViewModel ViewModel { get; }
-        public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel)
+        private MusicDatabaseService _musicDatabaseService { get; }
+        public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel, MusicDatabaseService musicDatabaseService)
         {
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
             this.notificationService = notificationService;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
@@ -56,7 +58,7 @@ namespace WinUIMusicPlayer.View
             var button = sender as Button;
             if (button is not null && button.Tag is int folderId)
             {
-                await Task.Run(() => MusicDatabaseService.RescanFolder(folderId));
+                await Task.Run(() => _musicDatabaseService.RescanFolder(folderId));
             }
             LoadingGrid.Visibility = Visibility.Collapsed;
             AddFolderGrid.Visibility = Visibility.Visible;

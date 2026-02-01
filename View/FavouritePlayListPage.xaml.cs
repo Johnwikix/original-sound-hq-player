@@ -26,14 +26,16 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FavouritePlayListPage : Page, INavigatable
     {
         public FavouritePlayListViewModel ViewModel { get; }
+        private MusicDatabaseService MusicDatabaseService { get; }
 
-        public FavouritePlayListPage(FavouritePlayListViewModel viewModel)
+        public FavouritePlayListPage(FavouritePlayListViewModel viewModel, MusicDatabaseService musicDatabaseService)
         {
             this.InitializeComponent();
             ViewModel = viewModel;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
+            MusicDatabaseService = musicDatabaseService;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)

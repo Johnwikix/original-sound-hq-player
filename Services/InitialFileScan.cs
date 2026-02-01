@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -17,10 +18,10 @@ namespace WinUIMusicPlayer.Services
             List<Music> MusicsToUpdate = [];
             List<Music> MusicsToAdd = [];
             List<Music> MusicsToDelete = [];
-            IEnumerable<Music> allSongsCache = await MusicDatabaseService.GetMusicListAsync();
+            IEnumerable<Music> allSongsCache = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
             HashSet<string> allScannedFilePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var folderList = await MusicDatabaseService.GetFolders();
+            var folderList = await App.Services.GetRequiredService<MusicDatabaseService>().GetFolders();
             Stopwatch totalSw = Stopwatch.StartNew();
 
             foreach (var folder in folderList)
@@ -42,20 +43,20 @@ namespace WinUIMusicPlayer.Services
             totalSw.Stop();
             Debug.WriteLine($"[Total Scan] Finished in: {totalSw.ElapsedMilliseconds} ms");
             Debug.WriteLine($"Scan Complete. Add: {MusicsToAdd.Count}, Update: {MusicsToUpdate.Count}, Delete: {MusicsToDelete.Count}");
-            await MusicDatabaseService.AddMusicList(MusicsToAdd);
-            await MusicDatabaseService.UpdateMusicList(MusicsToUpdate);
-            await MusicDatabaseService.DeletedMusicList(MusicsToDelete);
+            await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicList(MusicsToAdd);
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicList(MusicsToUpdate);
+            await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(MusicsToDelete);
             await Deduplication();
         }
 
         public static async Task Deduplication()
         {
-            var allSongs = await MusicDatabaseService.GetMusicListAsync();
+            var allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
             IEnumerable<Music> songsToDelete = allSongs.AsValueEnumerable().GroupBy(song => song.Path)
                         .Where(group => group.Count() > 1)
                         .SelectMany(group => group.Skip(1))
                         .ToList();
-            await MusicDatabaseService.DeletedMusicList(songsToDelete);
+            await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(songsToDelete);
         }
 
         // 将原 GetFileModificationDates 重命名，并接收 allScannedFilePaths

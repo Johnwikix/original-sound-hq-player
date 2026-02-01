@@ -49,11 +49,13 @@ namespace WinUIMusicPlayer.View
         private string lastSearchText = string.Empty;
         private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
         private Storyboard? _lyricImgRTAni;
+        private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
             LyricsRefreshService lyricsRefreshService,
             NotificationService notificationService,
-            MusicBrowseViewModel viewModel
+            MusicBrowseViewModel viewModel,
+            MusicDatabaseService musicDatabaseService
             )
         {
             this.InitializeComponent();
@@ -62,6 +64,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetLyricsService(lyricsRefreshService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
+            _musicDatabaseService = musicDatabaseService;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.ContentFrame = ContentFrame;
@@ -209,7 +212,7 @@ namespace WinUIMusicPlayer.View
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 refreshPage?.Invoke(this, false);
@@ -314,7 +317,7 @@ namespace WinUIMusicPlayer.View
         public async Task AddToFavourite(Music music)
         {
             music.IsFavorite = !music.IsFavorite;
-            await MusicDatabaseService.AddToFavourite(music, ViewModel.AppObservableObj.CurrentPlayingMusic);
+            await _musicDatabaseService.AddToFavourite(music, ViewModel.AppObservableObj.CurrentPlayingMusic);
             if (ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
             {
                 if (ViewModel.AppObservableObj.CurrentPlayingMusic.Id == music.Id)
@@ -469,7 +472,7 @@ namespace WinUIMusicPlayer.View
                 if (!string.IsNullOrEmpty(playlistName))
                 {
                     PlayList newPlaylist = new PlayList { Name = playlistName };
-                    await MusicDatabaseService.InsertPlayList(newPlaylist);
+                    await _musicDatabaseService.InsertPlayList(newPlaylist);
                     addPlayListEvent?.Invoke(this, newPlaylist);
                 }
             }

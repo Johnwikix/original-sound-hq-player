@@ -40,15 +40,17 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private MusicBrowsePage parentPage { get; }
         private AppObservableObj AppObservableObj { get; }
-        private FavouritePlayListPage currentPage;
-        private AudioConverterService _converterService;
-        private ProgressDialog _progressDialog;
+        private MusicDatabaseService _musicDatabaseService { get; }
+        private FavouritePlayListPage currentPage { get; set; }
+        private AudioConverterService _converterService { get; }
+        private ProgressDialog _progressDialog { get; }
         private int progressBarValue = 0;
         private bool isMutiFile = false;
-        public FavouritePlayListViewModel(AudioConverterService converterService, MusicBrowsePage musicBrowsePage,AppObservableObj appObservableObj)
+        public FavouritePlayListViewModel(AudioConverterService converterService, MusicBrowsePage musicBrowsePage,AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             parentPage = musicBrowsePage;
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
             parentPage.refreshPage += RefreshMusicList;
             _converterService = converterService;
             _converterService.updateProgress += OnConverterProgressUpdated;
@@ -113,7 +115,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void InitializeData()
         {
-            var musicList = MusicDatabaseService.GetFavoriteMusicFromMem(AppData.searchText);
+            var musicList = _musicDatabaseService.GetFavoriteMusicFromMem(AppData.searchText);
             LoadMusicAsync(musicList);
         }
 
@@ -188,8 +190,8 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     MusicList[i].Order = MusicList.Count - i;
                 }
-                await MusicDatabaseService.UpdateAllAsync([.. MusicList]);
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                await _musicDatabaseService.UpdateAllAsync([.. MusicList]);
+                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             }
         }
 
@@ -306,7 +308,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         music.Lyrics = lyrics;
                         music.TranslatdeLyrics = transLrc;
-                        await MusicDatabaseService.UpdateMusicInfo(music);
+                        await _musicDatabaseService.UpdateMusicInfo(music);
                     }
                 }
             }
@@ -318,10 +320,10 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     music.Lyrics = lyrics;
                     music.TranslatdeLyrics = transLrc;
-                    await MusicDatabaseService.UpdateMusicInfo(music);
+                    await _musicDatabaseService.UpdateMusicInfo(music);
                 }
             }
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
@@ -334,7 +336,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (ToolUtils.DeleteFileFromDisk((MusicList[i].Path)))
                         {
-                            await MusicDatabaseService.RemoveMusic(MusicList[i].Id);
+                            await _musicDatabaseService.RemoveMusic(MusicList[i].Id);
                             MusicList.RemoveAt(i);
                         }
                     }
@@ -344,7 +346,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                 {
-                    await MusicDatabaseService.RemoveMusic(SelectedMusic.Id);
+                    await _musicDatabaseService.RemoveMusic(SelectedMusic.Id);
                     MusicList.Remove(SelectedMusic);
                 }
             }
@@ -354,7 +356,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null)
             {
-                await MusicDatabaseService.CancelMusicsFavourite(uniqueSelectedMusics.AsValueEnumerable().ToList());
+                await _musicDatabaseService.CancelMusicsFavourite(uniqueSelectedMusics.AsValueEnumerable().ToList());
                 for (int i = MusicList.Count - 1; i >= 0; i--)
                 {
                     if (uniqueSelectedMusics.AsValueEnumerable().Contains(MusicList[i]))
@@ -370,7 +372,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
 
-                AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             }
         }
 
@@ -457,7 +459,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task CancelFavouriteIconButtonChange(Music music)
         {
             await parentPage.AddToFavourite(music);
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         public void AlbumTextBlock_Tapped(TextBlock textBlock)

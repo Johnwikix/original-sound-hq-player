@@ -171,9 +171,11 @@ namespace WinUIMusicPlayer.ViewModel
         public LyricsRefreshService LyricsRefreshService { get; set; }
         public TimeSpan LyricsDurationTime = TimeSpan.Zero;
         public AppObservableObj AppObservableObj { get;}
-        public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService,AppObservableObj  appObservableObj)
+        private MusicDatabaseService _musicDatabaseService { get; }
+        public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService,AppObservableObj  appObservableObj,MusicDatabaseService musicDatabaseService)
         {
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
             //CurrentPlayMode = AppData.PlayMode;
             //PlayModeFlyoutText = ToolUtils.GetPlayModeText(AppData.PlayMode);
             //IsPlayDetailButtonVisible = AppSettings.IsPlayDetailBtnVisible;
@@ -405,7 +407,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
             AppData.usbStorageDevice = usbStorageDevice;
-            List<UsbDeviceMusic> usbDeviceMusics = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+            List<UsbDeviceMusic> usbDeviceMusics = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
             if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
             {
                 // 检查是否需要重新扫描
@@ -413,7 +415,7 @@ namespace WinUIMusicPlayer.ViewModel
                 UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                 await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
                 Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-                AppData.musicOnUsbDevice = await MusicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+                AppData.musicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
                 Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
             }
             else
@@ -422,7 +424,7 @@ namespace WinUIMusicPlayer.ViewModel
                 string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
                 if (Directory.Exists(folderPath))
                 {
-                    AppData.musicOnUsbDevice = await MusicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
+                    AppData.musicOnUsbDevice = await _musicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
                 }
                 else
                 {
@@ -436,7 +438,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                List<Folder> folders = await MusicDatabaseService.GetFolders();
+                List<Folder> folders = await _musicDatabaseService.GetFolders();
                 foreach (var folder in folders)
                 {
                     if (!string.IsNullOrEmpty(folder.Path))
@@ -552,7 +554,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task LoadPlayState()
         {
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            AppObservableObj.CurrentPlayingMusic = await MusicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
+            AppObservableObj.CurrentPlayingMusic = await _musicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             if (AppObservableObj.CurrentPlayingMusic is not null)
             {
                 UpdatePlayBar(AppObservableObj.CurrentPlayingMusic);
@@ -773,7 +775,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             await _musicBrowsePage.AddToFavourite(AppObservableObj.CurrentPlayingMusic);
             NotifySubPageUpdateFavouriteState();
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         private void NotifySubPageUpdateFavouriteState()

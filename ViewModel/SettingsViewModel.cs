@@ -636,11 +636,13 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public AppObservableObj AppObservableObj;
+        public AppObservableObj AppObservableObj { get; }
+        private MusicDatabaseService MusicDatabaseService { get; }
 
-        public SettingsViewModel(AppObservableObj appObservableObj)
+        public SettingsViewModel(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
         {
             AppObservableObj = appObservableObj;
+            MusicDatabaseService = musicDatabaseService;
             InitializeData();            
         }
 

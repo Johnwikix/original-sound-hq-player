@@ -8,9 +8,11 @@ namespace WinUIMusicPlayer.Services
     public class AppInitializerService : IHostedService
     {
         private readonly AppObservableObj _appObservableObj;
-        public AppInitializerService(AppObservableObj appObservableObj)
+        private readonly MusicDatabaseService MusicDatabaseService;
+        public AppInitializerService(AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             this._appObservableObj = appObservableObj;
+            MusicDatabaseService = musicDatabaseService;
         }
         // 应用启动时执行初始化
         public async Task StartAsync(CancellationToken cancellationToken)

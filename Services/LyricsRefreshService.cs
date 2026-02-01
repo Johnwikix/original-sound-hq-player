@@ -24,11 +24,13 @@ namespace WinUIMusicPlayer.Services
         } = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
+        private MusicDatabaseService _musicDatabaseService { get; }
         private AppObservableObj AppObservableObj { get; }
-        public LyricsRefreshService(AppObservableObj appObservableObj)
+        public LyricsRefreshService(AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
         public void UpdateLyrics(TimeSpan currentPosition)
         {
@@ -148,7 +150,7 @@ namespace WinUIMusicPlayer.Services
             // 3. 统一执行一次数据库 IO
             if (needUpdateDb)
             {
-                await MusicDatabaseService.UpdateMusicInfo(currentMusic);
+                await _musicDatabaseService.UpdateMusicInfo(currentMusic);
             }
 
             // 4. 返回解析结果

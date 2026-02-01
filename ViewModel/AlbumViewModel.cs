@@ -38,12 +38,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
+        private MusicDatabaseService _musicDatabaseService { get; }
         private AppObservableObj AppObservableObj { get; }
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
         private string _currentSortOrder = "DefaultOrder";
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj)
+        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
@@ -70,6 +71,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             };
             AppObservableObj = appObservableObj;
+            _musicDatabaseService = musicDatabaseService;
         }
 
         public void UpdateUsbIcon()
@@ -111,7 +113,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void InitializeData()
         {
             MusicList.Clear();
-            var query = MusicDatabaseService.GetMusicListFromMem(AppData.searchText)
+            var query = _musicDatabaseService.GetMusicListFromMem(AppData.searchText)
                 .AsValueEnumerable()
                 .GroupBy(m => m.Album)
                 .Select(g => g.AsValueEnumerable().First())
@@ -217,7 +219,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayingAlbum(object? sender, Music e)
         {
-            List<Music> albums = MusicDatabaseService.GetAlbumMusicFromMem(e.Album).AsValueEnumerable().OrderBy(m => m.Album).ToList();
+            List<Music> albums = _musicDatabaseService.GetAlbumMusicFromMem(e.Album).AsValueEnumerable().OrderBy(m => m.Album).ToList();
             if (albums is not null && albums.Count > 0)
             {
                 if (parentPage is not null && _musicBrowseViewModel is not null)

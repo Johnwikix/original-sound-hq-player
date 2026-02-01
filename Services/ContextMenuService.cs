@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -67,7 +68,7 @@ namespace WinUIMusicPlayer.Services
                 Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
             };
             // 获取所有播放列表
-            List<PlayList> playlists = await MusicDatabaseService.GetPlayListAsync();
+            List<PlayList> playlists = await App.Services.GetRequiredService<MusicDatabaseService>().GetPlayListAsync();
             foreach (PlayList playlist in playlists)
             {
                 MenuFlyoutItem menuItem = new MenuFlyoutItem
@@ -138,15 +139,15 @@ namespace WinUIMusicPlayer.Services
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByAlbum(item.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByArtist(item.Author);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByArtist(item.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
                 if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
@@ -209,20 +210,20 @@ namespace WinUIMusicPlayer.Services
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByAlbum(music.Album);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByAlbum(music.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByArtist(music.Author);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByArtist(music.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByLastLevelFolderPath(music.LastLevelFolderPath);
                 }
                 if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
-                    await MusicDatabaseService.AddMusicListToFavour(musicList);
-                    AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+                    await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicListToFavour(musicList);
+                    AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
                 }
             }
         }
@@ -239,7 +240,7 @@ namespace WinUIMusicPlayer.Services
                     {
                         await Task.Run(async () =>
                         {
-                            await MusicDatabaseService.RescanFolderByPath(item.FolderPath);
+                            await App.Services.GetRequiredService<MusicDatabaseService>().RescanFolderByPath(item.FolderPath);
                         });
                     }
                 }
@@ -281,19 +282,19 @@ namespace WinUIMusicPlayer.Services
                 IEnumerable<Music> musicList = new List<Music>();
                 if (type == "album")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByAlbum(item.Album);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByAlbum(item.Album);
                 }
                 if (type == "artist")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByArtist(item.Author);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByArtist(item.Author);
                 }
                 if (type == "folder")
                 {
-                    musicList = MusicDatabaseService.FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
+                    musicList = App.Services.GetRequiredService<MusicDatabaseService>().FindMusicListByLastLevelFolderPath(item.LastLevelFolderPath);
                 }
                 if (musicList is not null && musicList.AsValueEnumerable().Count() > 0)
                 {
-                    await MusicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
+                    await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicListToPlayList(musicList, playlist.Id);
                 }
             }
         }

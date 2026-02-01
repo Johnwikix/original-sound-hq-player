@@ -42,8 +42,10 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
+        private MusicDatabaseService MusicDatabaseService { get; }
         public MainWindow()
         {
+            MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             //SetTitleBar(AppTitleBar);
