@@ -5,7 +5,6 @@
     xmlns:converters="using:WinUIMusicPlayer.Converters">
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
-    <!--<converters:BoolToFontSizeConverter x:Key="BoolToFontSizeConverter" />-->
     <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
     <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
     <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter" />
@@ -17,7 +16,6 @@
     <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
     <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
     <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />
-    <converters:RadioButtonTagToBoolConverter x:Key="RadioButtonTagToBoolConverter" />
     <converters:SampleRateBitDepthConverter x:Key="SampleRateBitDepthConverter" />
     <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
     <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
