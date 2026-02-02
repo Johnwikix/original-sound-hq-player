@@ -51,8 +51,8 @@ namespace WinUIMusicPlayer.View
                           .OfType<BlurEffectControl>()
                           .FirstOrDefault();
 
-                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                if (AppSettings.LyricsBlurAmount < 1)
+                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(ViewModel.AppObservableObj.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+                if (ViewModel.AppObservableObj.LyricsBlurAmount < 1)
                 {
                     grid.Background = _whiteBrush;
                 }             
@@ -67,9 +67,9 @@ namespace WinUIMusicPlayer.View
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
 
-                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(ViewModel.AppObservableObj.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
 
-                if (AppSettings.LyricsBlurAmount<1)
+                if (ViewModel.AppObservableObj.LyricsBlurAmount<1)
                 {
                     grid.Background = _transparentBrush;
                 }

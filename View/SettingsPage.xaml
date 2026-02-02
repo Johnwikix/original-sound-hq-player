@@ -89,13 +89,13 @@
                                     Minimum="100"
                                     SmallChange="10"
                                     SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.Latency, Mode=TwoWay}" />
+                                    Value="{x:Bind ViewModel.AppObservableObj.Latency, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="DSD2PCMFreq">
                                 <ComboBox
                                     Width="300"
-                                    IsEnabled="{x:Bind ViewModel.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
-                                    SelectedValue="{x:Bind ViewModel.DsdPcmFreq, Mode=TwoWay}"
+                                    IsEnabled="{x:Bind ViewModel.AppObservableObj.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
+                                    SelectedValue="{x:Bind ViewModel.AppObservableObj.DsdPcmFreq, Mode=TwoWay}"
                                     SelectedValuePath="Tag">
                                     <ComboBoxItem Content="44100Hz" Tag="44100" />
                                     <ComboBoxItem Content="88200Hz" Tag="88200" />
@@ -107,17 +107,17 @@
                                 <NumberBox
                                     x:Name="DSDGainNumberBox"
                                     Width="300"
-                                    IsEnabled="{x:Bind ViewModel.IsDopEnabled, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    IsEnabled="{x:Bind ViewModel.AppObservableObj.IsDopEnabled, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
                                     Minimum="0"
                                     SmallChange="1"
                                     SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.DsdGain, Mode=TwoWay}" />
+                                    Value="{x:Bind ViewModel.AppObservableObj.DsdGain, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}" Header="DSD Dop / DSD Native">
-                                <ToggleSwitch IsOn="{x:Bind ViewModel.IsDopEnabled, Mode=TwoWay}" />
+                                <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsDopEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="FadeInOut" Description="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}">
-                                <ToggleSwitch IsOn="{x:Bind ViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                                <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsFadeEnabled, Mode=TwoWay}" />
                             </controls:SettingsCard>
                         </controls:SettingsExpander.Items>
                     </controls:SettingsExpander>
@@ -146,7 +146,7 @@
                             <ComboBox
                                 x:Name="DefaultEntryComboBox"
                                 Width="300"
-                                SelectedValue="{x:Bind ViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
+                                SelectedValue="{x:Bind ViewModel.AppObservableObj.DefaultEntryComboBoxTag, Mode=TwoWay}"
                                 SelectedValuePath="Tag">
                                 <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
                                 <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
@@ -156,7 +156,7 @@
                             <ComboBox
                                 x:Name="DefualtPlayListComboBox"
                                 Width="300"
-                                SelectedValue="{x:Bind ViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
+                                SelectedValue="{x:Bind ViewModel.AppObservableObj.DefaultPlayListComboBoxTag, Mode=TwoWay}"
                                 SelectedValuePath="Tag">
                                 <ComboBoxItem x:Uid="SongCombox" Tag="song" />
                                 <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
@@ -174,7 +174,7 @@
                     Grid.Row="5"
                     Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                        <!--<controls:SettingsCard
                             x:Name="LrcAPISource"
                             x:Uid="CoverServiceLrcAPISource"
                             Click="LrcAPISource_Click"
@@ -192,7 +192,7 @@
                                 Width="300"
                                 Text="{x:Bind ViewModel.LrcAPIAuth, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
-                        </controls:SettingsCard>
+                        </controls:SettingsCard>-->
                         <controls:SettingsCard x:Uid="CoverSize" Description="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}">
                             <NumberBox
                                 x:Name="CoverSize"
@@ -201,7 +201,7 @@
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.CoverSize, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverDiskCache">
                             <StackPanel Orientation="Horizontal">
@@ -209,32 +209,29 @@
                                     Width="300"
                                     Margin="0,0,10,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind ViewModel.MusicCoverCache, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.AppObservableObj.MusicCoverCache, Mode=OneWay}"
                                     TextAlignment="Right"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="NoWrap">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip Content="{x:Bind ViewModel.MusicCoverCache, Mode=OneWay}" VerticalOffset="10" />
+                                        <ToolTip Content="{x:Bind ViewModel.AppObservableObj.MusicCoverCache, Mode=OneWay}" VerticalOffset="10" />
                                     </ToolTipService.ToolTip>
                                 </TextBlock>
                                 <Button x:Uid="ChangeMusicCoverCache" Command="{x:Bind ViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
                             </StackPanel>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsCoverCacheEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="WFWLyricsEnabled" Description="{x:Bind tool:ToolUtils.GetString('WFWLyricsDescription')}">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsWFWLyrics, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsWFWLyrics, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <!--<controls:SettingsCard x:Uid="LyricsBlurAmount">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsLyricsLineBlurEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>-->
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
                                 Maximum="80"
@@ -242,15 +239,15 @@
                                 SnapsTo="Ticks"
                                 TickFrequency="5"
                                 TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.LyricsBlurAmount, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.LyricsBlurAmount, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
                             <ComboBox
                                 x:Name="LyricsFontFamily"
                                 Width="300"
                                 ItemTemplate="{StaticResource FontComboboxTemplate}"
-                                ItemsSource="{x:Bind ViewModel.FontFamilyList, Mode=OneWay}"
-                                SelectedValue="{x:Bind ViewModel.FontFamily, Mode=TwoWay}" />
+                                ItemsSource="{x:Bind ViewModel.AppObservableObj.FontFamilyList, Mode=OneWay}"
+                                SelectedValue="{x:Bind ViewModel.AppObservableObj.FontFamily, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontSize">
                             <Grid Width="300">
@@ -261,7 +258,7 @@
                                 <ToggleSwitch
                                     Grid.Column="0"
                                     Margin="0,0,10,0"
-                                    IsOn="{x:Bind ViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
+                                    IsOn="{x:Bind ViewModel.AppObservableObj.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
                                 <NumberBox
                                     x:Name="LyricsFontSize"
                                     Grid.Column="1"
@@ -270,14 +267,14 @@
                                     Minimum="0"
                                     SmallChange="1"
                                     SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.GlobalFontSize, Mode=TwoWay}" />
+                                    Value="{x:Bind ViewModel.AppObservableObj.GlobalFontSize, Mode=TwoWay}" />
                             </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsAlignment">
                             <ComboBox
                                 x:Name="LyricsAlignmentComboBox"
                                 Width="300"
-                                SelectedValue="{x:Bind ViewModel.LyricsAlignment, Mode=TwoWay}"
+                                SelectedValue="{x:Bind ViewModel.AppObservableObj.LyricsAlignment, Mode=TwoWay}"
                                 SelectedValuePath="Tag">
                                 <ComboBoxItem x:Uid="Left" Tag="Left" />
                                 <ComboBoxItem x:Uid="Center" Tag="Center" />
@@ -310,7 +307,7 @@
                                     Command="{x:Bind ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
                                     CommandParameter="Closed"
                                     GroupName="ClosedGroup"
-                                    IsChecked="{x:Bind ViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    IsChecked="{x:Bind ViewModel.AppObservableObj.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
                                     Tag="Closed" />
                                 <RadioButton
                                     x:Name="RunningBackendRadioButton"
@@ -318,7 +315,7 @@
                                     Command="{x:Bind ViewModel.BackgroundRunningChangedCommand, Mode=OneWay}"
                                     CommandParameter="RunningBackend"
                                     GroupName="ClosedGroup"
-                                    IsChecked="{x:Bind ViewModel.IsRunningBackend, Mode=TwoWay}"
+                                    IsChecked="{x:Bind ViewModel.AppObservableObj.IsRunningBackend, Mode=TwoWay}"
                                     Tag="RunningBackend" />
                             </StackPanel>
                         </controls:SettingsCard>
@@ -355,7 +352,7 @@
                     x:Uid="FolderWatchEnabled"
                     Grid.Row="9"
                     Margin="10,0,10,0">
-                    <ToggleSwitch IsOn="{x:Bind ViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsFolderWatchEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <!--  外观设置  -->
                 <TextBlock
@@ -370,7 +367,7 @@
                     Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsUpdateBackDrop">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsUpdateBackDrop, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
@@ -415,7 +412,7 @@
                                     IsChecked="{Binding ViewModel.BackdropType, Mode=TwoWay, Converter={StaticResource RadioButtonTagToBoolConverter}, ConverterParameter=CustomAcrylicStyle}"
                                     Tag="CustomAcrylicStyle"
                                     Visibility="{x:Bind ViewModel.CheckSystemVersion()}" />
-                                <StackPanel Visibility="{x:Bind ViewModel.IsColorPickerVisible, Mode=OneWay}">
+                                <StackPanel>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -431,7 +428,7 @@
                                             HorizontalAlignment="Stretch"
                                             Maximum="100"
                                             Minimum="0"
-                                            Value="{x:Bind ViewModel.CustomOpacity, Mode=TwoWay}" />
+                                            Value="{x:Bind ViewModel.AppObservableObj.CustomOpacity, Mode=TwoWay}" />
                                     </Grid>
                                     <ColorPicker
                                         ColorSpectrumShape="Ring"
@@ -442,7 +439,7 @@
                                         IsColorSliderVisible="True"
                                         IsHexInputVisible="False"
                                         IsMoreButtonVisible="True"
-                                        Color="{x:Bind ViewModel.CustomColor, Mode=TwoWay}" />
+                                        Color="{x:Bind ViewModel.AppObservableObj.CustomColor, Mode=TwoWay}" />
                                 </StackPanel>
                             </StackPanel>
                         </controls:SettingsCard>
@@ -499,7 +496,7 @@
                                 Minimum="0"
                                 SmallChange="10"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.EntranceAnimationTime, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.EntranceAnimationTime, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="SlideAnimationTime">
                             <NumberBox
@@ -510,7 +507,7 @@
                                 Minimum="0"
                                 SmallChange="10"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.SlideAnimationTime, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.SlideAnimationTime, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="DrillInAnimationTime">
                             <NumberBox
@@ -521,7 +518,7 @@
                                 Minimum="0"
                                 SmallChange="10"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.DrillInAnimationTime, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.DrillInAnimationTime, Mode=TwoWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
@@ -533,7 +530,7 @@
                     Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsCustomAppSize" Description="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsCustomAppSize, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppObservableObj.IsCustomAppSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AppWidth">
                             <NumberBox
@@ -543,7 +540,7 @@
                                 Minimum="1280"
                                 SmallChange="10"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppWidth, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.AppWidth, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AppHeight">
                             <NumberBox
@@ -553,7 +550,7 @@
                                 Minimum="720"
                                 SmallChange="10"
                                 SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppHeight, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppObservableObj.AppHeight, Mode=TwoWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
@@ -577,7 +574,7 @@
                         Margin="10"
                         VerticalAlignment="Center"
                         FontSize="14"
-                        Text="{x:Bind ViewModel.Version, Mode=OneWay}" />
+                        Text="{x:Bind ViewModel.AppObservableObj.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel Orientation="Horizontal">

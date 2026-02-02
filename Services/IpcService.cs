@@ -41,6 +41,10 @@ namespace WinUIMusicPlayer.Services
 
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
+        private AppObservableObj _appObservableObj;
+        public IpcService(AppObservableObj appObservableObj) {
+            _appObservableObj = appObservableObj;
+        }
 
         public void Initializing()
         {
@@ -229,14 +233,14 @@ namespace WinUIMusicPlayer.Services
                 OutputMode = AppSettings.OutputMode,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
-                Latency = AppSettings.Latency,
-                IsDopEnabled = AppSettings.IsDopEnabled,
-                dsdGain = AppSettings.dsdGain,
-                dsdPcmFreq = AppSettings.dsdPcmFreq,
+                Latency = _appObservableObj.Latency,
+                IsDopEnabled = _appObservableObj.IsDopEnabled,
+                dsdGain = _appObservableObj.DsdGain,
+                dsdPcmFreq = int.Parse(_appObservableObj.DsdPcmFreq),
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
-                Volume = App.Services.GetRequiredService<AppObservableObj>().Volume / 100,
+                Volume = _appObservableObj.Volume / 100,
                 IsSettingChanged = IsSettingChanged,
-                IsFadeEnabled = AppSettings.IsFadeEnabled,
+                IsFadeEnabled = _appObservableObj.IsFadeEnabled,
             };
             _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
         }

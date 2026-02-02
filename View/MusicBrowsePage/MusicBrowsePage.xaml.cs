@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            SelectBarItem(AppSettings.DefualtPlayList);
+            SelectBarItem(ViewModel.AppObservableObj.DefaultPlayListComboBoxTag);
             this.Loaded -= OnPageLoaded;
         }
 
@@ -207,7 +207,7 @@ namespace WinUIMusicPlayer.View
 
         public void ChangeAcrylicBrushBackgroundOpacity()
         {
-            ViewModel.AppObservableObj.IsAcrylicBrushOpacity = ViewModel.AppObservableObj.MusicDetailCover is not null && ViewModel.AppObservableObj.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
+            ViewModel.AppObservableObj.IsAcrylicBrushOpacity = ViewModel.AppObservableObj.MusicDetailCover is not null && ViewModel.AppObservableObj.IsInPlayingDetailMode && ViewModel.AppObservableObj.IsBackgroundCoverEnabled ? true : false;
         }
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
@@ -285,7 +285,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
                 }
                 else
                 {
@@ -305,7 +305,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
                 }
                 else
                 {
@@ -392,15 +392,15 @@ namespace WinUIMusicPlayer.View
                 {
                     case "album":
                         ViewModel.currentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
                         break;
                     case "artist":
                         ViewModel.currentPage = typeof(ArtistPage);
-                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
                         break;
                     case "folder":
                         ViewModel.currentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
                         break;
                     default:
                         break;
@@ -409,7 +409,7 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is PlayListSongPage)
             {
                 ViewModel.currentPage = typeof(PlayListPage);
-                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppObservableObj.DrillInAnimationTime);
             }
             DisableBackButton();
         }

@@ -922,22 +922,22 @@ namespace WinUIMusicPlayer.Utils
             {
                 if (picture is null || picture.Length == 0)
                 {
-                    if (!Directory.Exists(AppSettings.MusicCoverCache))
+                    if (!Directory.Exists(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache))
                     {
-                        Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                        Directory.CreateDirectory(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache);
                     }
                     if (ct.IsCancellationRequested) return;
                     string fileName = $"{music.Title}_{music.Album}_{music.Author}";
                     string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                     fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                    string filePath = System.IO.Path.Combine(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache, fileName + ".png");
                     if (System.IO.File.Exists(filePath))
                     {
                         picture = System.IO.File.ReadAllBytes(filePath);
                     }
                     else if (!AppData.UnknownAlbums.Contains(music.Album))
                     {
-                        if (AppSettings.isAutoLyricsEnabled)
+                        if (App.Services.GetRequiredService<AppObservableObj>().IsAutoLyricsEnabled)
                         {
                             picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
                             if (picture is not null)
@@ -960,17 +960,17 @@ namespace WinUIMusicPlayer.Utils
         private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)
         {
             byte[] picture = null;
-            if (AppSettings.isAutoLyricsEnabled && !isManual)
+            if (App.Services.GetRequiredService<AppObservableObj>().IsAutoLyricsEnabled && !isManual)
             {
                 var cancellationToken = new CancellationTokenSource();
-                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                if (!Directory.Exists(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache))
                 {
-                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                    Directory.CreateDirectory(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache);
                 }
                 string fileName = $"{music.Title}_{music.Album}_{music.Author}";
                 string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                 fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                string filePath = System.IO.Path.Combine(App.Services.GetRequiredService<AppObservableObj>().MusicCoverCache, fileName + ".png");
                 if (System.IO.File.Exists(filePath))
                 {
                     picture = System.IO.File.ReadAllBytes(filePath);
@@ -1006,7 +1006,7 @@ namespace WinUIMusicPlayer.Utils
 
                         // 直接在解码时缩放（更高效）
                         double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                        uint newWidth = (uint)AppSettings.CoverSize;
+                        uint newWidth = (uint)App.Services.GetRequiredService<AppObservableObj>().CoverSize;
                         uint newHeight = (uint)(newWidth / aspectRatio);
 
                         var transform = new BitmapTransform
@@ -1055,7 +1055,7 @@ namespace WinUIMusicPlayer.Utils
                             try
                             {
                                 await bitmap.SetSourceAsync(outputStream);
-                                if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                                if (!AppData.UnknownAlbums.Contains(album) && App.Services.GetRequiredService<AppObservableObj>().IsCoverCacheEnabled )
                                 {
                                     AppData.albumCoverCache.TryAdd(album, bitmap);
                                 }

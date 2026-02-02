@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Concurrent;
@@ -42,7 +43,7 @@ namespace WinUIMusicPlayer.Converters
             }
 
             // 创建 BitmapImage（仅在确实需要时）
-            var bitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
+            var bitmap = new BitmapImage { DecodePixelWidth = App.Services.GetRequiredService<AppObservableObj>().CoverSize };
 
             // 尝试把 bitmap 放入 pending 集合，若已有则使用已有的
             var sharedBitmap = _pendingImages.GetOrAdd(key, bitmap);

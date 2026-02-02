@@ -1,4 +1,5 @@
 ﻿using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
@@ -22,23 +23,24 @@ namespace WinUIMusicPlayer.Helper
         private CustomAcrylicSystemBackdrop _acrylicSystemBackdrop;
         private CustomMicaSystemBackdrop _micaSystemBackdrop;
         private TransparentTintBackdrop _transparentTintBackdrop;
+        private AppObservableObj _appObservableObj;
 
         public ThemeStyleHelper(Window window, AppWindow appWindow)
         {
             _window = window;
             _appWindow = appWindow;
             _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop(window) { 
-                IsInputActive = AppSettings.IsUpdateBackDrop
+                IsInputActive = App.Services.GetRequiredService<AppObservableObj>().IsUpdateBackDrop
             };
             _micaSystemBackdrop = new CustomMicaSystemBackdrop(window) {
-                IsInputActive = AppSettings.IsUpdateBackDrop
+                IsInputActive = App.Services.GetRequiredService<AppObservableObj>().IsUpdateBackDrop
             };
             _transparentTintBackdrop = new TransparentTintBackdrop(Colors.Transparent);
-
+            _appObservableObj = App.Services.GetRequiredService<AppObservableObj>();
         }
 
         private static Color GetUiColor() {
-            var isDarkTheme = AppSettings.AppTheme switch
+            var isDarkTheme = App.Services.GetRequiredService<AppObservableObj>().ThemeType switch
             {
                 "Dark" => true,
                 "Light" => false,
@@ -56,7 +58,7 @@ namespace WinUIMusicPlayer.Helper
             {
                 
                 var backdrop = _window.SystemBackdrop as CustomAcrylicSystemBackdrop;
-                switch (AppSettings.AppStyle)
+                switch (_appObservableObj.BackdropType)
                 {
                     case "Acrylic":
                         if (backdrop is not null)
@@ -96,27 +98,27 @@ namespace WinUIMusicPlayer.Helper
                             _window.SystemBackdrop = _transparentTintBackdrop;
                         }
                         break;
-                    case "CustomAcrylicStyle":
-                        if (backdrop is not null)
-                        {
-                            backdrop.UpdateProperties(1.0,
-                                            AppSettings.CustomAcrylicOpacity,
-                                            Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                AppSettings.CustomColorRed,
-                                                AppSettings.CustomColorGreen,
-                                                AppSettings.CustomColorBlue));
-                        }
-                        else
-                        {
-                            _acrylicSystemBackdrop.TintOpacity = 1.0;
-                            _acrylicSystemBackdrop.LuminosityOpacity = AppSettings.CustomAcrylicOpacity;
-                            _acrylicSystemBackdrop.TintColor = Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                        AppSettings.CustomColorRed,
-                                                        AppSettings.CustomColorGreen,
-                                                        AppSettings.CustomColorBlue);
-                            _window.SystemBackdrop = _acrylicSystemBackdrop;
-                        }                        
-                        break;
+                    //case "CustomAcrylicStyle":
+                    //    if (backdrop is not null)
+                    //    {
+                    //        backdrop.UpdateProperties(1.0,
+                    //                        _appObservableObj.CustomOpacity,
+                    //                        Color.FromArgb(_appObservableObj.CustomColor.A,
+                    //                            _appObservableObj.CustomColor.R,
+                    //                            _appObservableObj.CustomColor.G,
+                    //                            _appObservableObj.CustomColor.B));
+                    //    }
+                    //    else
+                    //    {
+                    //        _acrylicSystemBackdrop.TintOpacity = 1.0;
+                    //        _acrylicSystemBackdrop.LuminosityOpacity = _appObservableObj.CustomOpacity;
+                    //        _acrylicSystemBackdrop.TintColor = Color.FromArgb(_appObservableObj.CustomColor.A,
+                    //                            _appObservableObj.CustomColor.R,
+                    //                            _appObservableObj.CustomColor.G,
+                    //                            _appObservableObj.CustomColor.B);
+                    //        _window.SystemBackdrop = _acrylicSystemBackdrop;
+                    //    }                        
+                    //    break;
                     default:
                         _acrylicSystemBackdrop.TintOpacity = 0.5f;
                         _acrylicSystemBackdrop.LuminosityOpacity = 0.8f;
@@ -134,16 +136,16 @@ namespace WinUIMusicPlayer.Helper
 
         public void ChangeCustomAcrylicStyle()
         {
-            if (AppSettings.AppStyle == "CustomAcrylicStyle")
+            if (_appObservableObj.BackdropType == "CustomAcrylicStyle")
             {
                 if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop backdrop)
                 {
                     backdrop.UpdateProperties(1.0,
-                        AppSettings.CustomAcrylicOpacity,
-                        Color.FromArgb(AppSettings.CustomColorAlpha,
-                            AppSettings.CustomColorRed,
-                            AppSettings.CustomColorGreen,
-                            AppSettings.CustomColorBlue));
+                        _appObservableObj.CustomOpacity,
+                        Color.FromArgb(_appObservableObj.CustomColor.A,
+                                                _appObservableObj.CustomColor.R,
+                                                _appObservableObj.CustomColor.G,
+                                                _appObservableObj.CustomColor.B));
                     CustomStyleChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -162,7 +164,7 @@ namespace WinUIMusicPlayer.Helper
                 AppWindowTitleBar titleBar = _appWindow.TitleBar;
                 if (_window.Content is FrameworkElement rootElement)
                 {
-                    switch (AppSettings.AppTheme)
+                    switch (_appObservableObj.ThemeType)
                     {
                         case "Default":
                             titleBar.ButtonForegroundColor = null;

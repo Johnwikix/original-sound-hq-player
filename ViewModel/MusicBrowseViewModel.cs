@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
             AppSettings.OutputSettingsUpdated += AppSettings_OutputSettingsUpdated;
             AppSettings.EqUpdated += AppSettings_OnEqUpdated;
-            if (AppSettings.IsFolderWatchEnabled)
+            if (AppObservableObj.IsFolderWatchEnabled)
             {
                 StartWatchingFileFolder();
             }
@@ -468,7 +468,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (!await scanSemaphore.WaitAsync(0) || !AppSettings.IsFolderWatchEnabled)
+            if (!await scanSemaphore.WaitAsync(0) || !AppObservableObj.IsFolderWatchEnabled)
             {
                 return;
             }
@@ -640,11 +640,11 @@ namespace WinUIMusicPlayer.ViewModel
                 if (cover != null)
                 {
                     bool isDarkMode = true;
-                    if (AppSettings.AppTheme == "Light")
+                    if (AppObservableObj.ThemeType == "Light")
                     {
                         isDarkMode = false;
                     }
-                    else if (AppSettings.AppTheme == "Default")
+                    else if (AppObservableObj.ThemeType == "Default")
                     {
                         // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();
@@ -932,7 +932,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _musicBrowsePage.NavigatePage(currentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
+            _musicBrowsePage.NavigatePage(currentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppObservableObj.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
             _musicBrowsePage.DisableBackButton();
         }

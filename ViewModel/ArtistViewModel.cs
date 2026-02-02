@@ -147,7 +147,7 @@ namespace WinUIMusicPlayer.ViewModel
                     _musicBrowseViewModel.paramName = artist.Author;
                     _musicBrowseViewModel.CurrentArtist = artist;
                     _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
-                    parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppObservableObj.DrillInAnimationTime);
                 }
             }
         }

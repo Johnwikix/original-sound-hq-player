@@ -11,13 +11,15 @@ namespace WinUIMusicPlayer.Services
     {
         public EventHandler<double>? updateProgress { get; set; }
         private BassAudioConverter bassAudioConverter;
-        public AudioConverterService()
+        private AppObservableObj appObservableObj;
+        public AudioConverterService(AppObservableObj appObservableObj)
         {
             bassAudioConverter = new BassAudioConverter();
             bassAudioConverter.progressEvent += (sender, progress) =>
             {
                 OnProgressChanged(progress);
             };
+            this.appObservableObj = appObservableObj;
         }
         public async Task ConvertAudio2Wav(Music music, string type = "wav")
         {
@@ -26,8 +28,8 @@ namespace WinUIMusicPlayer.Services
                 string outputPath = GenerateOutputPath(music.Path, type);
                 if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                 {
-                    BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
-                    BassDsd.DefaultGain = AppSettings.dsdGain;
+                    BassDsd.DefaultFrequency = int.Parse(appObservableObj.DsdPcmFreq);
+                    BassDsd.DefaultGain = appObservableObj.DsdGain;
                 }
                 switch (type)
                 {

@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static string OutputMode { get; set; } = "DirectSound";
-        public static int Latency { get; set; } = 400;
+        //public static int Latency { get; set; } = 400;
 
         public static event EventHandler OutputSettingsChanged;
         public static event EventHandler OutputSettingsUpdated;
@@ -17,32 +17,32 @@ namespace WinUIMusicPlayer.Model
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
-        public static bool IsFadeEnabled { get; set; } = true;
+        //public static bool IsFadeEnabled { get; set; } = true;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
-        public static string DefualtEntry { get; set; } = "AddFolder";
-        public static string DefualtPlayList { get; set; } = "song";
+        //public static string DefualtEntry { get; set; } = "AddFolder";
+        //public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;
-        public static string LrcAPISource { get; set; } = "";
-        public static string LrcAPIAuth { get; set; }
-        public static bool IsDopEnabled { get; set; } = false;
+        //public static string LrcAPISource { get; set; } = "";
+        //public static string LrcAPIAuth { get; set; }
+        //public static bool IsDopEnabled { get; set; } = false;
         public static double LyricsBlurAmount { get; set; } = 5;
-        public static int dsdGain { get; set; } = 6;
-        public static int dsdPcmFreq { get; set; } = 88200;
-        public static string AppStyle { get; set; } = "TransparentAcrylic";
-        public static float CustomAcrylicOpacity { get; set; } = 0.5f;
-        public static byte CustomColorAlpha { get; set; } = 255;
-        public static byte CustomColorRed { get; set; } = 128;
-        public static byte CustomColorGreen { get; set; } = 128;
-        public static byte CustomColorBlue { get; set; } = 128;
-        public static string AppTheme { get; set; } = "Dark";
+        //public static int dsdGain { get; set; } = 6;
+        //public static int dsdPcmFreq { get; set; } = 88200;
+        //public static string AppStyle { get; set; } = "TransparentAcrylic";
+        //public static float CustomAcrylicOpacity { get; set; } = 0.5f;
+        //public static byte CustomColorAlpha { get; set; } = 255;
+        //public static byte CustomColorRed { get; set; } = 128;
+        //public static byte CustomColorGreen { get; set; } = 128;
+        //public static byte CustomColorBlue { get; set; } = 128;
+        //public static string AppTheme { get; set; } = "Dark";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
-        public static bool isCoverCacheEnabled { get; set; } = true;
+        //public static bool isCoverCacheEnabled { get; set; } = true;
         public static bool isRunningBackend { get; set; } = true;
-        public static bool isAutoLyricsEnabled { get; set; } = true;
-        public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
-        public static int EntranceAnimationTime { get; set; } = 200;
-        public static int SlideAnimationTime { get; set; } = 300;
-        public static int DrillInAnimationTime { get; set; } = 400;
+        //public static bool isAutoLyricsEnabled { get; set; } = true;
+        //public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
+        //public static int EntranceAnimationTime { get; set; } = 200;
+        //public static int SlideAnimationTime { get; set; } = 300;
+        //public static int DrillInAnimationTime { get; set; } = 400;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
         //public static bool IsPlayDetailBtnVisible { get; set; } = true;
@@ -62,7 +62,7 @@ namespace WinUIMusicPlayer.Model
         };
         public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
-        public static bool IsFolderWatchEnabled { get; set; } = true;
+        //public static bool IsFolderWatchEnabled { get; set; } = true;
         //public static int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数
         public static void OnOutputSettingsChanged()
         {
@@ -81,18 +81,18 @@ namespace WinUIMusicPlayer.Model
         {
             EqualizerChangedEvent?.Invoke(null, equalizer);
         }
-        public static bool IsCustomAppSize { get; set; } = false;
-        public static int AppWidth { get; set; } = 1440;
-        public static int AppHeight { get; set; } = 810;
+        //public static bool IsCustomAppSize { get; set; } = false;
+        //public static int AppWidth { get; set; } = 1440;
+        //public static int AppHeight { get; set; } = 810;
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
         public static double GlobalFontSize { get; set; } = 32;
-        public static List<FontInfo> FontFamilyList { get; set; }
-        public static bool IsUpdateBackDrop { get; set; } = false;
+        //public static List<FontInfo> FontFamilyList { get; set; }
+        //public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Center;
         //public static int LyricsMargin { get; set; } = 20;
-        public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
-        public static bool IsWFWLyrics { get; set; } = true;
+        //public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
+        //public static bool IsWFWLyrics { get; set; } = true;
 
     }
 }

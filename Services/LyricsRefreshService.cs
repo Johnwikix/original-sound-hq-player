@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.Services
                 lrcContent = songInMemory?.Lyrics;
                 transLrcStr = songInMemory?.TranslatdeLyrics;
                 // 如果开启了自动歌词且缓存为空，则在线搜索
-                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.isAutoLyricsEnabled)
+                if (string.IsNullOrWhiteSpace(lrcContent) && AppObservableObj.IsAutoLyricsEnabled)
                 {
                     try
                     {

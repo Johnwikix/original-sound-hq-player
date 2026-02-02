@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.ViewModel
                 _musicBrowseViewModel.currentPlayList = playList;
                 _musicBrowseViewModel.currentPlayListId = playList.Id;
                 _musicBrowseViewModel.currentPage = typeof(PlayListSongPage);
-                _parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppObservableObj.DrillInAnimationTime);
             }
         }
 

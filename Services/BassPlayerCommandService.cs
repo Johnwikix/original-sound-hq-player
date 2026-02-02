@@ -22,9 +22,9 @@ namespace WinUIMusicPlayer.Services
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
 
-        public BassPlayerCommandService(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
+        public BassPlayerCommandService(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService,IpcService ipcService)
         {
-            IpcService = App.Services.GetRequiredService<IpcService>();
+            IpcService = ipcService;
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;

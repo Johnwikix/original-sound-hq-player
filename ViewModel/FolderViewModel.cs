@@ -157,7 +157,7 @@ namespace WinUIMusicPlayer.ViewModel
                         _musicBrowseViewModel.paramName = folder.LastLevelFolderPath;
                         _musicBrowseViewModel.CurrentFolder = folder;
                         _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
-                        parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppObservableObj.DrillInAnimationTime);
                     }
                     catch (Exception ex)
                     {

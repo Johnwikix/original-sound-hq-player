@@ -43,10 +43,12 @@ namespace WinUIMusicPlayer
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
         private MusicDatabaseService MusicDatabaseService { get; }
+        private AppObservableObj _appObservableObj;
         public MainWindow()
-        {
-            MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
+        {                  
             InitializeComponent();
+            MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
+            _appObservableObj = App.Services.GetRequiredService<AppObservableObj>();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             //SetTitleBar(AppTitleBar);
             setWindow();
@@ -84,9 +86,9 @@ namespace WinUIMusicPlayer
         {
             this.SetIcon("Assets/icon.ico");
             Title = ToolUtils.GetString("AppMainTitle");
-            if (AppSettings.IsCustomAppSize)
+            if (_appObservableObj.IsCustomAppSize)
             {
-                this.CenterOnScreen(AppSettings.AppWidth, AppSettings.AppHeight);
+                this.CenterOnScreen(_appObservableObj.AppWidth, _appObservableObj.AppHeight);
             }
             else
             {
@@ -119,7 +121,7 @@ namespace WinUIMusicPlayer
             _ = DispatcherQueue.EnqueueAsync(() =>
             {
                 SetAppStyle();
-                if (AppSettings.AppTheme == "Default") {
+                if (_appObservableObj.ThemeType == "Default") {
                     App.Services.GetRequiredService<MusicBrowseViewModel>().ThemeChangedUpdateCover();
                 }                
             });            
@@ -185,7 +187,7 @@ namespace WinUIMusicPlayer
                 App.Services.GetRequiredService<IpcService>().Initializing();
                 await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
-                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
+                //AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
                 LoadingGrid.Visibility = Visibility.Collapsed;
@@ -227,22 +229,22 @@ namespace WinUIMusicPlayer
 
             foreach (var item in NavigationViewControl.MenuItems)
             {
-                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == AppSettings.DefualtEntry)
+                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == _appObservableObj.DefaultEntryComboBoxTag)
                 {
                     NavigationViewControl.SelectedItem = navigationViewItem;
                     break;
                 }
             }
-            switch (AppSettings.DefualtEntry)
+            switch (_appObservableObj.DefaultEntryComboBoxTag)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, _appObservableObj.EntranceAnimationTime);
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, _appObservableObj.EntranceAnimationTime);
                     break;
                 default:
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, _appObservableObj.EntranceAnimationTime);
                     break;
             }
         }
@@ -332,7 +334,7 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
+                _navigationService.Navigate(typeof(SettingsPage), this, null, _appObservableObj.EntranceAnimationTime);
             }
             else
             {
@@ -340,10 +342,10 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                        _navigationService.Navigate(typeof(AddFolderPage), null, null, _appObservableObj.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, _appObservableObj.EntranceAnimationTime);
                         break;
                 }
             }
