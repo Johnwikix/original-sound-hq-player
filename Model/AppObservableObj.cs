@@ -154,9 +154,9 @@ namespace WinUIMusicPlayer.Model
             {
                 if (SetProperty(ref _isPlayDetailButtonVisible, value))
                 {
+                    //AppSettings.IsPlayDetailBtnVisible = value;
                     if (IsInitialized)
                     {
-                        //AppSettings.IsPlayDetailBtnVisible = value;
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }

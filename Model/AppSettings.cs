@@ -22,8 +22,6 @@ namespace WinUIMusicPlayer.Model
         public static string DefualtEntry { get; set; } = "AddFolder";
         public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;
-        public static string LrcAPISource { get; set; } = "";
-        public static string LrcAPIAuth { get; set; }
         public static bool IsDopEnabled { get; set; } = false;
         public static double LyricsBlurAmount { get; set; } = 5;
         public static int dsdGain { get; set; } = 6;
@@ -63,7 +61,6 @@ namespace WinUIMusicPlayer.Model
         public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
         public static bool IsFolderWatchEnabled { get; set; } = true;
-        //public static int CoverLoadThreadCount { get; set; } = 8; // 专辑封面加载线程数
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);

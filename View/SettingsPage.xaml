@@ -174,7 +174,7 @@
                     Grid.Row="5"
                     Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                        <!--<controls:SettingsCard
                             x:Name="LrcAPISource"
                             x:Uid="CoverServiceLrcAPISource"
                             Click="LrcAPISource_Click"
@@ -192,7 +192,7 @@
                                 Width="300"
                                 Text="{x:Bind ViewModel.LrcAPIAuth, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
-                        </controls:SettingsCard>
+                        </controls:SettingsCard>-->
                         <controls:SettingsCard x:Uid="CoverSize" Description="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}">
                             <NumberBox
                                 x:Name="CoverSize"

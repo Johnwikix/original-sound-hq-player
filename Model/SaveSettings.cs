@@ -15,8 +15,6 @@ namespace WinUIMusicPlayer.Model
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
         public string DefualtEntry { get; set; }
         public string DefualtPlayList { get; set; }
-        public string LrcAPISource { get; set; } = "";
-        public string LrcAPIAuth { get; set; }
         public string AppStyle { get; set; } = "TransparentAcrylic";
         public float CustomAcrylicOpacity { get; set; } = 0.5f;
         public byte CustomColorAlpha { get; set; } = 255;

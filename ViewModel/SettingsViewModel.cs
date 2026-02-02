@@ -188,40 +188,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }
-        private string _lrcAPIAuth = string.Empty;
-        public string LrcAPIAuth
-        {
-            get => _lrcAPIAuth;
-            set
-            {
-                if (SetProperty(ref _lrcAPIAuth, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.LrcAPIAuth = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private string _lrcAPISource = "LRC";
-        public string LrcAPISource
-        {
-            get => _lrcAPISource;
-            set
-            {
-                if (SetProperty(ref _lrcAPISource, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.LrcAPISource = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        }      
 
         private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
         public ObservableCollection<BassOutputDevice> BassOutputDevices
@@ -657,8 +624,6 @@ namespace WinUIMusicPlayer.ViewModel
             IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             DefaultEntryComboBoxTag = AppSettings.DefualtEntry; 
             DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
-            LrcAPIAuth = AppSettings.LrcAPIAuth;
-            LrcAPISource = AppSettings.LrcAPISource;
             BackdropType = AppSettings.AppStyle;
             if (BackdropType != "CustomAcrylicStyle")
             {

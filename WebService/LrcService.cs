@@ -17,23 +17,24 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
-                {
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
-                }
-                if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
-                {
-                    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
-                }
-                var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                var response = await _httpClient.GetAsync(requestUrl);
-                response.EnsureSuccessStatusCode();
-                byte[] result = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-                if (result is null)
-                {
-                    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
-                }
-                return result;
+                //if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
+                //{
+                //    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
+                //}
+                //if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
+                //{
+                //    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
+                //}
+                //var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
+                //var response = await _httpClient.GetAsync(requestUrl);
+                //response.EnsureSuccessStatusCode();
+                //byte[] result = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                //if (result is null)
+                //{
+                //    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
+                //}
+                //return result;
+                return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
             }
             catch (OperationCanceledException)
             {

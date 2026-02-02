@@ -717,8 +717,6 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.Latency = settings.Latency;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.LrcAPISource = settings.LrcAPISource;
-                AppSettings.LrcAPIAuth = settings.LrcAPIAuth;
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;
                 AppSettings.isCoverCacheEnabled = settings.isCoverCacheEnabled;
@@ -781,8 +779,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.DefualtEntry = AppSettings.DefualtEntry;
             newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-            newSettings.LrcAPISource = AppSettings.LrcAPISource;
-            newSettings.LrcAPIAuth = AppSettings.LrcAPIAuth;
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
             newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
