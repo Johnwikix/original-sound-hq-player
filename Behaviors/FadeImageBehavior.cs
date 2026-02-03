@@ -34,6 +34,16 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
+        protected override void OnAttached()
+        {
+            base.OnAttached();
+            // 当重新挂载时，确保 Image 显示的是当前 Behavior 记录的最新的 Source
+            if (AssociatedObject != null && Source != null)
+            {
+                AssociatedObject.Source = Source;
+            }
+        }
+
         public Duration Duration
         {
             get { return (Duration)GetValue(DurationProperty); }
@@ -138,15 +148,6 @@ namespace WinUIMusicPlayer.Behaviors
                 // 重要：将 Source 置为空，断开对 ImageSource (BitmapImage) 的引用
                 // 这允许 GC 回收旧图片的内存
                 _tempOverlayImage.Source = null;
-                _tempOverlayImage = null;
-            }
-        }
-
-        private void RemoveTempImage(Panel parent)
-        {
-            if (_tempOverlayImage != null && parent != null)
-            {
-                parent.Children.Remove(_tempOverlayImage);
                 _tempOverlayImage = null;
             }
         }

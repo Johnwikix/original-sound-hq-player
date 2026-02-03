@@ -20,20 +20,21 @@ namespace WinUIMusicPlayer.Model
         [
             "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
         ];
-        public static IReadOnlyCollection<Music> allSongs = [];
-        public static List<UsbDeviceMusic> musicOnUsbDevice = [];
-        public static List<PlayListMusic> allPlayListMusics = [];
+        public static IReadOnlyCollection<Music> allSongs { get; set; } = [];
+        public static List<UsbDeviceMusic> musicOnUsbDevice { get; set; } = [];
+        public static List<PlayListMusic> allPlayListMusics { get; set; } = [];
         //public static PlayMode PlayMode { get; set; }
         public static int? LastPlayedMusicId { get; set; }
         //public static float Volume { get; set; } = 0.5f;
-        public static string searchText = string.Empty;
-        public static ObservableCollection<UsbStorageDevice> usbStorageDevices = [];
-        public static UsbStorageDevice usbStorageDevice = new();
+        public static string searchText { get; set; } = string.Empty;
+        public static ObservableCollection<UsbStorageDevice> usbStorageDevices { get; set; } = [];
+        public static UsbStorageDevice usbStorageDevice { get; set; } = new();
         public static string sortOrder { get; set; } = "DefaultOrder";
         public static IntPtr m_hWnd { get; set; } = IntPtr.Zero;
         public static double AppDpiScale { get; set; } = 1.0;
         public static string systemLanguage { get; set; } = "en";
-        public static int MaxSupportedSampleRate = 0;
-        public static int MaxSupportedBitDepth = 0;
+        public static int MaxSupportedSampleRate { get; set; } = 0;
+        public static int MaxSupportedBitDepth { get; set; } = 0;
+        public static bool IsPlayingDetail { get; set; } = false;
     }
 }

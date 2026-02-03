@@ -754,7 +754,7 @@ namespace WinUIMusicPlayer.Services
                 _appObservableObj.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
-                AppSettings.LyricsBlurAmount = settings.LyricsBlurAmount;
+                AppSettings.LyricsBlurAmount = Math.Clamp(settings.LyricsBlurAmount, 0, 1000);
             }
         }
 
@@ -815,7 +815,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsPlayDetailBtnVisible = _appObservableObj.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            newSettings.LyricsBlurAmount = AppSettings.LyricsBlurAmount;
+            newSettings.LyricsBlurAmount = Math.Clamp(AppSettings.LyricsBlurAmount, 0, 1000);
             return newSettings;
         }
 

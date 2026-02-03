@@ -649,16 +649,26 @@ namespace WinUIMusicPlayer.ViewModel
                         // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();
                     }
-                    AppObservableObj.LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async() =>
+                    {
+                        AppObservableObj.LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
+                    });
+                    
                 }
                 else
                 {
-                    AppObservableObj.LyricPageBackgroundSource = null;
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        AppObservableObj.LyricPageBackgroundSource = null;
+                    });                    
                 }
             }
             catch
             {
-                AppObservableObj.LyricPageBackgroundSource = null;
+                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                {
+                    AppObservableObj.LyricPageBackgroundSource = null;
+                });
             }
         }
 

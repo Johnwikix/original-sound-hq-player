@@ -25,10 +25,7 @@
                 Grid.Column="0"
                 Visibility="{x:Bind ViewModel.AppObservableObj.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
                 <Border.Background>
-                    <ImageBrush
-                        x:Name="ContentGridBackground"
-                        ImageSource="{x:Bind ViewModel.AppObservableObj.LyricPageBackgroundSource, Mode=OneWay}"
-                        Stretch="Fill">
+                    <ImageBrush x:Name="ContentGridBackground" Stretch="Fill">
                         <ImageBrush.RelativeTransform>
                             <CompositeTransform
                                 x:Name="ContentGridBrushTransform"

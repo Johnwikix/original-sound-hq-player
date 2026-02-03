@@ -714,7 +714,7 @@ namespace WinUIMusicPlayer.View
             if (!ViewModel.AppObservableObj.IsInPlayingDetailMode && ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
             {
                 ViewModel.AppObservableObj.IsInPlayingDetailMode = true;
-                App.MainWindow.IsPlayingDetail = true;
+                AppData.IsPlayingDetail = true;
                 App.MainWindow.NavigationViewCollapsed();
                 App.MainWindow?.AppTitleBarVisibility(false);
                 ChangeAcrylicBrushBackgroundOpacity();
@@ -744,7 +744,7 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.AppObservableObj.IsInPlayingDetailMode = false;
-            App.MainWindow.IsPlayingDetail = false;
+            AppData.IsPlayingDetail = false;
             App.MainWindow.NavigationViewExpanded();
             ChangeAcrylicBrushBackgroundOpacity();
             App.MainWindow?.AppTitleBarVisibility(true);

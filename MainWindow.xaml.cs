@@ -34,7 +34,6 @@ namespace WinUIMusicPlayer
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
         public event EventHandler<bool> backdropInputState;
-        public bool IsPlayingDetail = false;
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         private IntPtr m_hwnd;
@@ -407,7 +406,7 @@ namespace WinUIMusicPlayer
 
         private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (IsPlayingDetail && ContentFrame.Content.GetType() == typeof(MusicBrowsePage))
+            if (AppData.IsPlayingDetail && ContentFrame.Content.GetType() == typeof(MusicBrowsePage))
             {
                 NavigationViewControlGrid.Opacity = 0;
             }

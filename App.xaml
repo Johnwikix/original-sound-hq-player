@@ -15,12 +15,12 @@
                 <ResourceDictionary Source="ms-appx:///DevWinUI.Controls/Themes/Generic.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
-            <AcrylicBrush
+            <!--<AcrylicBrush
                 x:Key="CustomAcrylicInAppLuminosity"
                 FallbackColor="SkyBlue"
                 TintColor="SkyBlue"
                 TintLuminosityOpacity="0"
-                TintOpacity="0.0" />
+                TintOpacity="0.0" />-->
         </ResourceDictionary>
     </Application.Resources>
 </Application>
