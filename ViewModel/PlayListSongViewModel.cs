@@ -57,22 +57,14 @@ namespace WinUIMusicPlayer.ViewModel
         private AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private PlayListSongPage _currentPage { get; set; }
-        private AudioConverterService _converterService { get; set; }
-        private ProgressDialog _progressDialog { get; set; }
         private int _currentPlayListId;
-        private int progressBarValue = 0;
-        private bool isMutiFile = false;
 
-        public PlayListSongViewModel(MusicBrowsePage parent, AudioConverterService converterService, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService) 
+        public PlayListSongViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService) 
         {
             _parentPage = parent;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
             _parentPage.refreshPage += RefreshPlayList;
-            _converterService = converterService;
-            _progressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            _progressDialog.Title = ToolUtils.GetString("Processing");
-            _converterService.updateProgress += OnConverterProgressUpdated;
         }
 
         public void SetCurrentPage(PlayListSongPage page)
@@ -117,29 +109,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _parentPage.HideTransmission();
             }
-        }
-
-        private void OnConverterProgressUpdated(object sender, double progress)
-        {
-            if (_progressDialog is not null)
-            {
-                if (progressBarValue < (int)progress)
-                {
-                    progressBarValue = (int)progress;
-                }
-                if (isMutiFile)
-                {
-                    if (progressBarValue < 100)
-                    {
-                        _ = _progressDialog.UpdateProgress(progressBarValue);
-                    }
-                }
-                else
-                {
-                    _ = _progressDialog.UpdateProgress(progressBarValue);
-                }
-            }
-        }
+        }        
 
         public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
         {
@@ -322,14 +292,14 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    await _parentPage.AddToFavourite(item);
+                    await AppObservableObj.AddToFavourite(item);
                 }
             }
             else
             {
                 if (SelectedMusic is not null)
                 {
-                    await _parentPage.AddToFavourite(SelectedMusic);
+                    await AppObservableObj.AddToFavourite(SelectedMusic);
                 }
             }
 
@@ -361,49 +331,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
         {
-            progressBarValue = 0;
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            {
-                isMutiFile = true;
-                if (menuItem is not null && menuItem.Tag.ToString() is not null)
-                {
-                    _ = _progressDialog.UpdateProgress(progressBarValue);
-                    _progressDialog.RequestedTheme = AppSettings.elementTheme;
-                    _progressDialog.XamlRoot = _currentPage.XamlRoot;
-                    _ = _progressDialog.ShowAsync();
-                    List<Task> conversionTasks = new List<Task>();
-                    foreach (Music item in uniqueSelectedMusics)
-                    {
-                        Task conversionTask = _converterService.ConvertAudio2Wav(item, menuItem.Tag.ToString());
-                        conversionTasks.Add(conversionTask);
-                    }
-                    await Task.WhenAll(conversionTasks);
-                    _ = _progressDialog.UpdateProgress(100);
-                }
-            }
-            else
-            {
-                isMutiFile = false;
-                if (menuItem is not null && menuItem.Tag.ToString() is not null)
-                {
-                    if (SelectedMusic is not null)
-                    {
-                        if (SelectedMusic.Extension.ToLower() == menuItem?.Tag?.ToString()?.ToLower())
-                        {
-                            _parentPage?.ViewModel.UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
-                            return;
-                        }
-                        _progressDialog.RequestedTheme = AppSettings.elementTheme;
-                        _ = _progressDialog.UpdateProgress(progressBarValue);
-                        _ = _converterService.ConvertAudio2Wav(SelectedMusic, menuItem.Tag.ToString());
-                        if (progressBarValue < 100)
-                        {
-                            _progressDialog.XamlRoot = _currentPage.XamlRoot;
-                            _ = _progressDialog.ShowAsync();
-                        }
-                    }
-                }
-            }
+            _parentPage?.ViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
         public void AlbumTextBlock_Tapped(string albumName)
@@ -456,7 +384,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (music is not null)
             {
                 // 通过事件通知视图更新图标
-                await _parentPage.AddToFavourite(music);
+                await AppObservableObj.AddToFavourite(music);
                 AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             }
         }

@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.View
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            ViewModel.ConvertAudio_Click(menuItem, uniqueSelectedMusics);
+            ViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)

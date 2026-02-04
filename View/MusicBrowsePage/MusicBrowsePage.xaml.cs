@@ -318,18 +318,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public async Task AddToFavourite(Music music)
-        {
-            music.IsFavorite = !music.IsFavorite;
-            await _musicDatabaseService.AddToFavourite(music, ViewModel.AppObservableObj.CurrentPlayingMusic);
-            if (ViewModel.AppObservableObj.CurrentPlayingMusic is not null)
-            {
-                if (ViewModel.AppObservableObj.CurrentPlayingMusic.Id == music.Id)
-                {
-                    ViewModel.AppObservableObj.CurrentPlayingMusic.IsFavorite = music.IsFavorite;
-                }
-            }
-        }
+
 
 
         private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)

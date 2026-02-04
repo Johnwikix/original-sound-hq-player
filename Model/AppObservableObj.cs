@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Text;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -269,6 +270,19 @@ namespace WinUIMusicPlayer.Model
         {
             _musicDatabaseService = musicDatabaseService;
             //UILyrics = new ObservableCollection<LyricLine>();
+        }
+
+        public async Task AddToFavourite(Music music)
+        {
+            music.IsFavorite = !music.IsFavorite;
+            await _musicDatabaseService.AddToFavourite(music, CurrentPlayingMusic);
+            if (CurrentPlayingMusic is not null)
+            {
+                if (CurrentPlayingMusic.Id == music.Id)
+                {
+                    CurrentPlayingMusic.IsFavorite = music.IsFavorite;
+                }
+            }
         }
     }
 }
