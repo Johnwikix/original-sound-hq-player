@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Windows.Foundation;
@@ -12,7 +13,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
 {
     public class NavigationService : INavigationService
     {
-        private readonly Dictionary<Type, Type> _registeredPages = new Dictionary<Type, Type>();
+        private readonly ConcurrentDictionary<Type, Type> _registeredPages = new();
         private readonly IServiceProvider _serviceProvider;
 
         public Frame ContentFrame { get; set; }

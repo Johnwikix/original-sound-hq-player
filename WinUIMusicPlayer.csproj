@@ -34,7 +34,9 @@
     <None Remove="View\PlayListPage.xaml" />
     <None Remove="View\PlayListSongPage.xaml" />
     <None Remove="View\SettingsPage.xaml" />
+    <None Remove="View\SongArtistListPage.xaml" />
     <None Remove="View\SongCollectionPage.xaml" />
+    <None Remove="View\SongFolderListPage.xaml" />
     <None Remove="View\SongListPage.xaml" />
     <None Remove="View\SubView\AlbumDetailWindow.xaml" />
     <None Remove="View\SubView\EqualizerDialog.xaml" />
@@ -155,6 +157,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\SongFolderListPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\SongArtistListPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\LyricsLineControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

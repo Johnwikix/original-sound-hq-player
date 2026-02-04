@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
+using WinUIMusicPlayer.View;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -36,5 +37,6 @@ namespace WinUIMusicPlayer.Model
         public static int MaxSupportedSampleRate { get; set; } = 0;
         public static int MaxSupportedBitDepth { get; set; } = 0;
         public static bool IsPlayingDetail { get; set; } = false;
+        public static Type CurrentPage = typeof(SongListPage);
     }
 }

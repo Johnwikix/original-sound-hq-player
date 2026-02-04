@@ -87,9 +87,9 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
 
-            parentPage.ViewModel.CurrentAlbum = null;
+            //parentPage.ViewModel.CurrentAlbum = null;
             AppObservableObj.PageType = "albumBrowse";
-            parentPage.DisableBackButton();
+            //parentPage.DisableBackButton();
             Entance();
         }
 
@@ -205,13 +205,14 @@ namespace WinUIMusicPlayer.ViewModel
             if (item is not null)
             {
                 Music album = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null)
+                if (parentPage is not null && _musicBrowseViewModel is not null && album is not null)
                 {
                     AppObservableObj.PageType = "album";
-                    _musicBrowseViewModel.paramName = album.Album;
-                    _musicBrowseViewModel.CurrentAlbum = album;
-                    _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
-                    parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    AppObservableObj.CurrentAlbumObj = album;
+                    //_musicBrowseViewModel.paramName = album.Album;
+                    //_musicBrowseViewModel.CurrentAlbum = album;
+                    //_musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
+                    parentPage.NavigatePage(typeof(SongCollectionPage), new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
 
                 }
             }

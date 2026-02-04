@@ -33,7 +33,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject
-    {   
+    {
         private bool _isUserDraggingProgressSlider = false;
         public bool IsUserDraggingProgressSlider
         {
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }        
+        }
 
         private SelectorBarItem _selectedPage;
 
@@ -125,7 +125,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => _isMouseOverProgressBar;
             set => SetProperty(ref _isMouseOverProgressBar, value);
         }
-        
+
         private IEnumerable<SortOption> _allSortOptions = [
             new SortOption( "DefaultOrder", "SortOrderDefault"),
             new SortOption("A-Z", "SortOrderA_Z"),
@@ -149,12 +149,12 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
 
-        public System.Type currentPage = typeof(SongListPage);
-        public Music CurrentAlbum;
-        public Music CurrentArtist;
-        public Music CurrentFolder;
+        //public System.Type currentPage = typeof(SongListPage);
+        //public Music CurrentAlbum;
+        //public Music CurrentArtist;
+        //public Music CurrentFolder;
         public PlayList currentPlayList;
-        public string paramName = "defualt";
+        //public string paramName { get; set; } = "default";
         public int previousSelectedIndex = 0;
         public int currentPlayListId;
         public BassPlayerCommandService _musicPlaybackService;
@@ -876,75 +876,75 @@ namespace WinUIMusicPlayer.ViewModel
                 AllSortOptions();
             }
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
-            currentPage = typeof(SongListPage);
+            AppData.CurrentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
             {
                 case "Song":
                     AppObservableObj.PageType = "song";
-                    currentPage = typeof(SongListPage);
+                    AppData.CurrentPage = typeof(SongListPage);
                     break;
                 case "Album":
-                    if (CurrentAlbum is not null && !string.IsNullOrEmpty(CurrentAlbum.Album))
+                    if (AppObservableObj.CurrentAlbumObj is not null && !string.IsNullOrEmpty(AppObservableObj.CurrentAlbumObj.Album))
                     {
                         AppObservableObj.PageType = "album";
-                        paramName = CurrentAlbum.Album;
-                        currentPage = typeof(SongCollectionPage);
+                        //paramName = AppObservableObj.CurrentAlbumObj.Album;
+                        AppData.CurrentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
                         AppObservableObj.PageType = "albumBrowse";
-                        currentPage = typeof(AlbumPage);
+                        AppData.CurrentPage = typeof(AlbumPage);
                     }
                     break;
                 case "Artist":
-                    if (CurrentArtist is not null && !string.IsNullOrEmpty(CurrentArtist.Author))
+                    if (AppObservableObj.CurrentArtistObj is not null && !string.IsNullOrEmpty(AppObservableObj.CurrentArtistObj.Author))
                     {
                         AppObservableObj.PageType = "artist";
-                        paramName = CurrentArtist.Author;
-                        currentPage = typeof(SongCollectionPage);
+                        //paramName = AppObservableObj.CurrentArtistObj.Author;
+                        AppData.CurrentPage = typeof(SongArtistListPage);
                     }
                     else
                     {
                         AppObservableObj.PageType = "artistBrowse";
-                        currentPage = typeof(ArtistPage);
+                        AppData.CurrentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
-                    if (CurrentFolder is not null && !string.IsNullOrEmpty(CurrentFolder.LastLevelFolderPath))
+                    if (AppObservableObj.CurrentFolderObj is not null && !string.IsNullOrEmpty(AppObservableObj.CurrentFolderObj.LastLevelFolderPath))
                     {
                         AppObservableObj.PageType = "folder";
-                        paramName = CurrentFolder.LastLevelFolderPath;
-                        currentPage = typeof(SongCollectionPage);
+                        //paramName = AppObservableObj.CurrentFolderObj.LastLevelFolderPath;
+                        AppData.CurrentPage = typeof(SongFolderListPage);
                     }
                     else
                     {
                         AppObservableObj.PageType = "folderBrowse";
-                        currentPage = typeof(FolderBrowsePage);
+                        AppData.CurrentPage = typeof(FolderBrowsePage);
                     }
                     break;
                 case "Favourite":
                     AppObservableObj.PageType = "favourite";
-                    currentPage = typeof(FavouritePlayListPage);
+                    AppData.CurrentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
                     if (currentPlayList is not null)
                     {
                         AppObservableObj.PageType = "playlist";
-                        paramName = currentPlayList.Name;
+                        //paramName = currentPlayList.Name;
                         currentPlayListId = currentPlayList.Id;
-                        currentPage = typeof(PlayListSongPage);
+                        AppData.CurrentPage = typeof(PlayListSongPage);
                     }
                     else
                     {
                         AppObservableObj.PageType = "playlistBrowse";
-                        currentPage = typeof(PlayListPage);
+                        AppData.CurrentPage = typeof(PlayListPage);
                     }
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _musicBrowsePage.NavigatePage(currentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
+            _musicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
-            _musicBrowsePage.DisableBackButton();
+            //_musicBrowsePage.DisableBackButton();
         }
 
         private int GetSelectorBarItemIndex(SelectorBarItem item)

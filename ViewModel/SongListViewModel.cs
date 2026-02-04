@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (selectedMusic is not null)
                     {
                         SelectedMusic = selectedMusic;
-                        currentPage.OnScrollToMusic(selectedMusic);
+                        currentPage?.OnScrollToMusic(selectedMusic);
                     }
                 }
             }

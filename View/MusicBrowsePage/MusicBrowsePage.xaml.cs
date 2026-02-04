@@ -70,6 +70,8 @@ namespace WinUIMusicPlayer.View
             _navigationService.ContentFrame = ContentFrame;
             _navigationService.RegisterPage<FavouritePlayListPage>();
             _navigationService.RegisterPage<SongCollectionPage>();
+            _navigationService.RegisterPage<SongArtistListPage>();
+            _navigationService.RegisterPage<SongFolderListPage>();
             _navigationService.RegisterPage<AlbumPage>();
             _navigationService.RegisterPage<ArtistPage>();
             _navigationService.RegisterPage<FolderBrowsePage>();
@@ -259,33 +261,33 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void DisableBackButton()
-        {
-            if (App.MainWindow is not null)
-            {
-                if (ViewModel.currentPage == typeof(SongCollectionPage) || ViewModel.currentPage == typeof(PlayListSongPage))
-                {
-                    App.MainWindow.DisableEnableBackButton(true);
-                }
-                else
-                {
-                    App.MainWindow.DisableEnableBackButton(false);
-                }
-            }
-        }
+        //public void DisableBackButton()
+        //{
+        //    if (App.MainWindow is not null)
+        //    {
+        //        if (ViewModel.currentPage == typeof(SongCollectionPage) || ViewModel.currentPage == typeof(PlayListSongPage))
+        //        {
+        //            App.MainWindow.DisableEnableBackButton(true);
+        //        }
+        //        else
+        //        {
+        //            App.MainWindow.DisableEnableBackButton(false);
+        //        }
+        //    }
+        //}
 
         public void SelectBarAlbum(string Album)
         {
             ViewModel.AppObservableObj.PageType = "album";
-            ViewModel.paramName = Album;
-            ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
-            ViewModel.CurrentAlbum.Album = Album;
-            ViewModel.currentPage = typeof(SongCollectionPage);
+            //ViewModel.paramName = Album;
+            //ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            //ViewModel.CurrentAlbum.Album = Album;
+            //ViewModel.currentPage = typeof(SongCollectionPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else
                 {
@@ -297,15 +299,15 @@ namespace WinUIMusicPlayer.View
         public void SelectBarArtist(string artist)
         {
             ViewModel.AppObservableObj.PageType = "artist";
-            ViewModel.paramName = artist;
-            ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
-            ViewModel.CurrentArtist.Author = artist;
-            ViewModel.currentPage = typeof(SongCollectionPage);
+            //ViewModel.paramName = artist;
+            //ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
+            //ViewModel.CurrentArtist.Author = artist;
+            //ViewModel.currentPage = typeof(SongArtistListPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(ViewModel.currentPage, this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else
                 {
@@ -391,15 +393,15 @@ namespace WinUIMusicPlayer.View
                 switch (ViewModel.AppObservableObj.PageType)
                 {
                     case "album":
-                        ViewModel.currentPage = typeof(AlbumPage);
+                        AppData.CurrentPage = typeof(AlbumPage);
                         _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     case "artist":
-                        ViewModel.currentPage = typeof(ArtistPage);
+                        AppData.CurrentPage = typeof(ArtistPage);
                         _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     case "folder":
-                        ViewModel.currentPage = typeof(AlbumPage);
+                        AppData.CurrentPage = typeof(AlbumPage);
                         _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                         break;
                     default:
@@ -408,10 +410,10 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
-                ViewModel.currentPage = typeof(PlayListPage);
+                AppData.CurrentPage = typeof(PlayListPage);
                 _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }
-            DisableBackButton();
+            //DisableBackButton();
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {

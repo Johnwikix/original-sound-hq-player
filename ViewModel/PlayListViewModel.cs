@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             _parentPage.ViewModel.currentPlayList = null;
-            _parentPage.DisableBackButton();
+            //_parentPage.DisableBackButton();
             InitializingData();
         }
 
@@ -120,11 +120,11 @@ namespace WinUIMusicPlayer.ViewModel
             if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
             {
                 AppObservableObj.PageType = "playlist";
-                _musicBrowseViewModel.paramName = playList.Name;
+                //_musicBrowseViewModel.paramName = playList.Name;
                 _musicBrowseViewModel.currentPlayList = playList;
                 _musicBrowseViewModel.currentPlayListId = playList.Id;
-                _musicBrowseViewModel.currentPage = typeof(PlayListSongPage);
-                _parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                AppData.CurrentPage = typeof(PlayListSongPage);
+                _parentPage.NavigatePage(AppData.CurrentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }
         }
 

@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 IsSourceGrouped = true
             };
-            parentPage.DisableBackButton();
+            //parentPage.DisableBackButton();
             parentPage.refreshPage += RefreshFolder;
             _contextMenuService = contextMenuService;
             _contextMenuService.playingFolderMusic += PlayingFolder;
@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            parentPage.ViewModel.CurrentFolder = null;
+            //parentPage.ViewModel.CurrentFolder = null;
             AppObservableObj.PageType = "folderBrowse";
 
             if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
@@ -149,15 +149,16 @@ namespace WinUIMusicPlayer.ViewModel
             if (item is not null)
             {
                 Music folder = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null)
+                if (parentPage is not null && _musicBrowseViewModel is not null && folder is not null)
                 {
                     try
                     {
                         AppObservableObj.PageType = "folder";
-                        _musicBrowseViewModel.paramName = folder.LastLevelFolderPath;
-                        _musicBrowseViewModel.CurrentFolder = folder;
-                        _musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
-                        parentPage.NavigatePage(_musicBrowseViewModel.currentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        AppObservableObj.CurrentFolderObj = folder;
+                        //_musicBrowseViewModel.paramName = folder.LastLevelFolderPath;
+                        //_musicBrowseViewModel.CurrentFolder = folder;
+                        //_musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
+                        parentPage.NavigatePage(typeof(SongFolderListPage), new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                     }
                     catch (Exception ex)
                     {

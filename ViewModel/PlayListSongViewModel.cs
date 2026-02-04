@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            _parentPage.DisableBackButton();
+            //_parentPage.DisableBackButton();
             PlayListName = _parentPage.ViewModel.currentPlayList.Name;
             InitizeData();
             RefreshUsbDeviceMusicList(null, null);

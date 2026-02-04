@@ -15,6 +15,20 @@ namespace WinUIMusicPlayer.Model
 {
     public class AppObservableObj : ObservableObject
     {
+        public Music CurrentArtistObj {
+            get;
+            set => SetProperty(ref field, value);
+        }
+        public Music CurrentAlbumObj
+        {
+            get;
+            set => SetProperty(ref field, value);
+        }
+        public Music CurrentFolderObj
+        {
+            get;
+            set => SetProperty(ref field, value);
+        }
         private PlayMode _currentPlayMode = PlayMode.ListLoop;
         public PlayMode CurrentPlayMode
         {

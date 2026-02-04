@@ -375,15 +375,16 @@ namespace WinUIMusicPlayer
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
-            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+            //App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+            _navigationService.GoBack();
         }
 
         public void DisableEnableBackButton(bool isEnable = false)
         {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                NavigationViewControl.IsBackEnabled = isEnable;
-            });
+            //DispatcherQueue.TryEnqueue(() =>
+            //{
+            //    NavigationViewControl.IsBackEnabled = isEnable;
+            //});
         }
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)

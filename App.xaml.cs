@@ -69,7 +69,11 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<FavouritePlayListPage>();
                  services.AddSingleton<AlbumPage>();
                  services.AddSingleton<ArtistPage>();
+                 services.AddSingleton<SongArtistListPage>();
+                 services.AddSingleton<SongArtistViewModel>();
                  services.AddSingleton<FolderBrowsePage>();
+                 services.AddSingleton<SongFolderListPage>();
+                 services.AddSingleton<SongFolderListViewModel>();
                  services.AddSingleton<PlayListPage>();
                  services.AddSingleton<PlayListSongPage>();
                  services.AddSingleton<SongListPage>();
