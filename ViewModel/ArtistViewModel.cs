@@ -142,10 +142,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 Music artist = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null && artist is not null)
-                {
-                    //_musicBrowseViewModel.paramName = artist.Author;
-                    //_musicBrowseViewModel.CurrentArtist = artist;
-                    //_musicBrowseViewModel.currentPage = typeof(SongCollectionPage);   
+                {  
                     AppObservableObj.PageType = "artist";
                     AppObservableObj.CurrentArtistObj = artist;
                     parentPage.NavigatePage(typeof(SongArtistListPage), new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);             

@@ -7,6 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
     <Grid Margin="0">
@@ -16,10 +18,10 @@
                 <GridView
                     x:Name="AlbumGridView"
                     Margin="10,0,0,0"
+                    ContainerContentChanging="AlbumGridView_ContainerContentChanging"
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="AlbumGridView_ItemClick"
-                    ContainerContentChanging="AlbumGridView_ContainerContentChanging"
                     ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
                     RightTapped="Album_RightTapped"
                     SelectionMode="None"
@@ -27,12 +29,12 @@
                     <GridView.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="model:MusicGroup">
                                     <TextBlock
                                         Margin="10,0,5,5"
                                         FontSize="28"
                                         FontWeight="SemiBold"
-                                        Text="{Binding Key}" />
+                                        Text="{x:Bind Key}" />
                                 </DataTemplate>
                             </GroupStyle.HeaderTemplate>
                             <GroupStyle.HeaderContainerStyle>
@@ -41,7 +43,7 @@
                         </GroupStyle>
                     </GridView.GroupStyle>
                     <GridView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="model:Music">
                             <Grid
                                 Height="205"
                                 Margin="5,10,5,10"
@@ -69,7 +71,7 @@
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 Canvas.ZIndex="1"
-                                                Source="{Binding Converter={StaticResource AlbumArtConverter}}"
+                                                Source="{x:Bind Converter={StaticResource AlbumArtConverter}}"
                                                 Stretch="UniformToFill">
                                                 <Image.Transitions>
                                                     <TransitionCollection>
@@ -97,7 +99,7 @@
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Bottom"
                                         FontSize="16"
-                                        Glyph="{Binding IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                                        Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                                 </Grid>
                                 <TextBlock
                                     Grid.Row="1"
@@ -105,7 +107,7 @@
                                     MaxHeight="40"
                                     Margin="0"
                                     FontWeight="SemiBold"
-                                    Text="{Binding Album, Mode=OneWay}"
+                                    Text="{x:Bind Album, Mode=OneWay}"
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="Wrap" />
@@ -122,7 +124,7 @@
                                         HorizontalAlignment="Stretch"
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{Binding Author, Mode=OneWay}"
+                                        Text="{x:Bind Author, Mode=OneWay}"
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock
                                         Grid.Column="1"
@@ -130,7 +132,7 @@
                                         Margin="0"
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{Binding Album, Converter={StaticResource AlbumSongsConverter}, Mode=OneWay}" />
+                                        Text="{x:Bind tool:BindUtils.AlbumSongsConverter(Album)}" />
                                     <TextBlock
                                         x:Uid="AlbumSongs"
                                         Grid.Column="2"
@@ -153,17 +155,17 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     IsItemClickEnabled="True"
-                    ItemsSource="{Binding ViewModel.GroupedMusicViewSource.View.CollectionGroups, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View.CollectionGroups, Mode=OneWay}"
                     ScrollViewer.IsHorizontalScrollChainingEnabled="False"
                     ScrollViewer.IsVerticalScrollChainingEnabled="False"
                     ScrollViewer.ZoomMode="Disabled">
                     <GridView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="ICollectionViewGroup">
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="32"
-                                Text="{Binding Group.Key}" />
+                                Text="{x:Bind Group.(model:MusicGroup.Key), Mode=OneWay}" />
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>

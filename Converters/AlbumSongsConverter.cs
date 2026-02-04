@@ -11,9 +11,9 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is string album && !string.IsNullOrWhiteSpace(album))
             {
-                return AppData.allSongs.AsValueEnumerable().Where(m => m.Album == album).Count();
+                return AppData.allSongs.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
             }
-            return 0;
+            return "0";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

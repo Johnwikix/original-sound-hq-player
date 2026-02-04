@@ -280,15 +280,14 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppObservableObj.PageType = "album";
             ViewModel.AppObservableObj.CurrentAlbumObj = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
-            //ViewModel.paramName = Album;
-            //ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
-            //ViewModel.CurrentAlbum.Album = Album;
-            //ViewModel.currentPage = typeof(SongCollectionPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
                     _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                }
+                else if (ContentFrame.Content is SongCollectionPage) {
+                    App.MainWindow.UpdateMusicList();
                 }
                 else
                 {
@@ -301,15 +300,14 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppObservableObj.PageType = "artist";
             ViewModel.AppObservableObj.CurrentArtistObj = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
-            //ViewModel.paramName = artist;
-            //ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
-            //ViewModel.CurrentArtist.Author = artist;
-            //ViewModel.currentPage = typeof(SongArtistListPage);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
                     _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                }
+                else if (ContentFrame.Content is SongArtistListPage) {
+                    App.MainWindow.UpdateMusicList();
                 }
                 else
                 {
