@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPage()
         {
-            if (_parentPage is not null)
+            if (_parentPage is not null && AppObservableObj.CurrentArtistObj is not null)
             {
                 //CurrentPageType = AppObservableObj.PageType;
                 //_currentAlbumName = _parentPage.ViewModel.CurrentAlbum?.Album;

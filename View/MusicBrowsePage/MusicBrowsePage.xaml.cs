@@ -279,6 +279,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarAlbum(string Album)
         {
             ViewModel.AppObservableObj.PageType = "album";
+            ViewModel.AppObservableObj.CurrentAlbumObj = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             //ViewModel.paramName = Album;
             //ViewModel.CurrentAlbum = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             //ViewModel.CurrentAlbum.Album = Album;
@@ -299,6 +300,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarArtist(string artist)
         {
             ViewModel.AppObservableObj.PageType = "artist";
+            ViewModel.AppObservableObj.CurrentArtistObj = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             //ViewModel.paramName = artist;
             //ViewModel.CurrentArtist = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             //ViewModel.CurrentArtist.Author = artist;
@@ -390,23 +392,18 @@ namespace WinUIMusicPlayer.View
         {
             if (ContentFrame.Content is SongCollectionPage)
             {
-                switch (ViewModel.AppObservableObj.PageType)
-                {
-                    case "album":
-                        AppData.CurrentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-                        break;
-                    case "artist":
-                        AppData.CurrentPage = typeof(ArtistPage);
-                        _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-                        break;
-                    case "folder":
-                        AppData.CurrentPage = typeof(AlbumPage);
-                        _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-                        break;
-                    default:
-                        break;
-                }
+                AppData.CurrentPage = typeof(AlbumPage);
+                _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);               
+            }
+            if (ContentFrame.Content is SongArtistListPage)
+            {
+                AppData.CurrentPage = typeof(ArtistPage);
+                _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+            }
+            if (ContentFrame.Content is SongFolderListPage)
+            {
+                AppData.CurrentPage = typeof(FolderBrowsePage);
+                _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
