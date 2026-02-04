@@ -625,8 +625,8 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!string.IsNullOrEmpty(search))
                 {
-                    return query.Where(m =>
-                        m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()) ||
+                    return query.Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()))
+                        .Where(m =>
                         m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                         m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
                     ).OrderBy(m => m.Album).ToImmutableList();

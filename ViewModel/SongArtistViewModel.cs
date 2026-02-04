@@ -32,13 +32,6 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _selectedMusic, value);
         }
 
-        //private Music _currentMusicObject;
-        //public Music CurrentMusicObject
-        //{
-        //    get => _currentMusicObject;
-        //    set => SetProperty(ref _currentMusicObject, value);
-        //}
-
         private string _firstTitle;
         public string FirstTitle
         {
@@ -116,9 +109,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPage()
         {
-            if (_currentPage.Visibility is Microsoft.UI.Xaml.Visibility.Visible && _parentPage is not null && AppObservableObj.CurrentArtistObj is not null)
+            if ( _parentPage is not null && AppObservableObj.CurrentArtistObj is not null)
             {
-                var musics = _musicDatabaseService.GetArtistMusicFromMem(AppObservableObj.CurrentArtistObj.Author, null);
+                var musics = _musicDatabaseService.GetArtistMusicFromMem(AppObservableObj.CurrentArtistObj.Author, AppData.searchText);
                 FirstTitle = AppObservableObj.CurrentArtistObj.Author;
                 var authorAlbums = AppData.allSongs.AsValueEnumerable()
                     .Where(music => music.Author == AppObservableObj.CurrentArtistObj.Author)

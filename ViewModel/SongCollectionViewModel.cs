@@ -73,7 +73,7 @@ namespace WinUIMusicPlayer.ViewModel
         public SongCollectionViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
-            _parentPage.refreshSong += RefreshSong;            
+            //_parentPage.refreshSong += RefreshSong;            
             _musicBrowseViewModel = musicBrowseViewModel;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
@@ -112,10 +112,10 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
-        private void RefreshSong(object? sender, EventArgs e)
-        {
-            RefreshPage();
-        }
+        //private void RefreshSong(object? sender, EventArgs e)
+        //{
+        //    RefreshPage();
+        //}
 
         public void RefreshPage()
         {
