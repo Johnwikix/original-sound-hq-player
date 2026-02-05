@@ -16,16 +16,16 @@ namespace WinUIMusicPlayer.Model
 {
     public class AppObservableObj : ObservableObject
     {
-        public Music CurrentArtistObj {
+        public Music? CurrentArtistObj {
             get;
             set => SetProperty(ref field, value);
         }
-        public Music CurrentAlbumObj
+        public Music? CurrentAlbumObj
         {
             get;
             set => SetProperty(ref field, value);
         }
-        public Music CurrentFolderObj
+        public Music? CurrentFolderObj
         {
             get;
             set => SetProperty(ref field, value);

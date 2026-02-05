@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            //parentPage.ViewModel.CurrentFolder = null;
+            AppObservableObj.CurrentFolderObj = null;
             AppObservableObj.PageType = "folderBrowse";
 
             if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)

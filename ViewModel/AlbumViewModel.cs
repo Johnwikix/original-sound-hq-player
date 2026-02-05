@@ -86,8 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-
-            //parentPage.ViewModel.CurrentAlbum = null;
+            AppObservableObj.CurrentAlbumObj = null;
             AppObservableObj.PageType = "albumBrowse";
             //parentPage.DisableBackButton();
             Entance();

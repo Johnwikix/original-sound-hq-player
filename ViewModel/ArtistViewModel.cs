@@ -79,8 +79,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            //parentPage.ViewModel.CurrentArtist = null;
-            parentPage.ViewModel.AppObservableObj.PageType = "artistBrowse";
+            AppObservableObj.CurrentArtistObj = null;
+            AppObservableObj.PageType = "artistBrowse";
             //parentPage.DisableBackButton();
             if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
             {
