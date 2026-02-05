@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(await _musicDatabaseService.LoadPlayList());
+            AppObservableObj.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
             UpdateCurrentPlayList();
         }
 

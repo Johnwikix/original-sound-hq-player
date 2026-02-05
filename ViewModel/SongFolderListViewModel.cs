@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is not null && _parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = MusicList;
+                AppObservableObj.SequentialPlayingList = new(MusicList);
                 _parentPage.PlayMusic(music: music, IsChangeList: true);
             }
         }

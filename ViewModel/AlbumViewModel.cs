@@ -224,7 +224,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(albums);
+                    AppObservableObj.SequentialPlayingList = new(albums);
                     parentPage.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }

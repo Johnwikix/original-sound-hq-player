@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.ViewModel
         private bool isMutiFile { get; set; } = false;
         private AudioConverterService _converterService { get; set; }
 
-        public PlayList currentPlayList;
+        public PlayList currentPlayList { get; set; }
         public int previousSelectedIndex = 0;
         public int currentPlayListId;
         public BassPlayerCommandService _musicPlaybackService;

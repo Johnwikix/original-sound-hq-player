@@ -61,14 +61,10 @@ namespace WinUIMusicPlayer.Model
             }
         }
 
-        private ObservableCollection<Music> _currentPlayingList;
         public ObservableCollection<Music> CurrentPlayingList
         {
-            get => _currentPlayingList;
-            set
-            {
-                SetProperty(ref _currentPlayingList, value);
-            }
+            get;
+            set => SetProperty(ref field, value);
         }
 
         private string _musicInfo;

@@ -219,7 +219,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (selectedMusic is not null && parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = MusicList;
+                AppObservableObj.SequentialPlayingList = new(MusicList);
                 parentPage.PlayMusic(music: selectedMusic, IsChangeList: true);
             }
         }
@@ -261,7 +261,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else
             {
-                AppObservableObj.CurrentPlayingList = MusicList;
+                AppObservableObj.SequentialPlayingList = new(MusicList);
                 parentPage.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -445,7 +445,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is not null && parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = MusicList;
+                AppObservableObj.SequentialPlayingList = new(MusicList);
                 parentPage.PlayMusic(music: music, IsChangeList: true);
             }
         }
