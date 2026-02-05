@@ -16,268 +16,98 @@ namespace WinUIMusicPlayer.Model
 {
     public class AppObservableObj : ObservableObject
     {
-        public Music? CurrentArtistObj {
-            get;
-            set => SetProperty(ref field, value);
-        }
-        public Music? CurrentAlbumObj
-        {
-            get;
-            set => SetProperty(ref field, value);
-        }
-        public Music? CurrentFolderObj
-        {
-            get;
-            set => SetProperty(ref field, value);
-        }
-        private PlayMode _currentPlayMode = PlayMode.ListLoop;
-        public PlayMode CurrentPlayMode
-        {
-            get => _currentPlayMode;
-            set => SetProperty(ref _currentPlayMode, value);
-        }
+        // 简单属性重构
+        public Music? CurrentArtistObj { get; set => SetProperty(ref field, value); }
+        public Music? CurrentAlbumObj { get; set => SetProperty(ref field, value); }
+        public Music? CurrentFolderObj { get; set => SetProperty(ref field, value); }
+        public PlayMode CurrentPlayMode { get; set => SetProperty(ref field, value); } = PlayMode.ListLoop;
+        public Music CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<Music> SequentialPlayingList { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); }
+        public string MusicInfo { get; set => SetProperty(ref field, value); }
+        public BitmapImage MusicDetailCover { get; set => SetProperty(ref field, value); }
+        public bool IsMuted { get; set => SetProperty(ref field, value); } = false;
+        public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
+        public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
+        public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
+        public ObservableCollection<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
+        public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
+        public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
+        public bool IsInitialized { get; set => SetProperty(ref field, value); } = false;
+        public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }
+        public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
+        public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
+        public string InfoBarTitle { get; set => SetProperty(ref field, value); } = string.Empty;
+        public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
+        public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
+        public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
+        public bool IsAcrylicBrushOpacity { get; set => SetProperty(ref field, value); } = false;
+        public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
 
-        private Music _currentPlayingMusic;
-        public Music CurrentPlayingMusic
-        {
-            get => _currentPlayingMusic;
-            set => SetProperty(ref _currentPlayingMusic, value);
-        }
-
-        private string _playModeFlyoutText;
-        public string PlayModeFlyoutText
-        {
-            get => _playModeFlyoutText;
-            set => SetProperty(ref _playModeFlyoutText, value);
-        }
-
-        private ObservableCollection<Music> _sequentialPlayingList;
-        public ObservableCollection<Music> SequentialPlayingList
-        {
-            get => _sequentialPlayingList;
-            set
-            {
-                SetProperty(ref _sequentialPlayingList, value);
-            }
-        }
-
-        public ObservableCollection<Music> CurrentPlayingList
-        {
-            get;
-            set => SetProperty(ref field, value);
-        }
-
-        private string _musicInfo;
-        public string MusicInfo
-        {
-            get => _musicInfo;
-            set => SetProperty(ref _musicInfo, value);
-        }
-
-        public BitmapImage _musicDetailCover;
-        public BitmapImage MusicDetailCover
-        {
-            get => _musicDetailCover;
-            set => SetProperty(ref _musicDetailCover, value);
-        }
-
-        private bool _isMuted = false;
-        public bool IsMuted
-        {
-            get => _isMuted;
-            set => SetProperty(ref _isMuted, value);
-        }
-        private double _tempVolume = 50;
-        public double TempVolume
-        {
-            get => _tempVolume;
-            set => SetProperty(ref _tempVolume, value);
-        }
-        private double _volume = 50;
+        // 带有复杂逻辑的属性重构
         public double Volume
         {
-            get => _volume;
+            get => field;
             set
             {
-                if (SetProperty(ref _volume, value))
+                if (SetProperty(ref field, value))
                 {
                     if (IsInitialized)
                     {
-                        if (value > 0)
-                        {
-                            IsMuted = false;
-                        }
-                        if (!IsMuted)
-                        {
-                            TempVolume = value;
-                        }
-                        //AppData.Volume = (float)value / 100;
+                        if (value > 0) IsMuted = false;
+                        if (!IsMuted) TempVolume = value;
+
                         App.Services.GetRequiredService<BassPlayerCommandService>().SetVolume(value / 100);
-                        //_musicPlaybackService.SetVolume(AppData.Volume);
                     }
                 }
             }
-        }
+        } = 50;
 
-        private string _playTimeText = "00:00/00:00";
-        public string PlayTimeText
-        {
-            get => _playTimeText;
-            set => SetProperty(ref _playTimeText, value);
-        }
-
-        private double _progressSliderMax = 100;
-        public double ProgressSliderMax
-        {
-            get => _progressSliderMax;
-            set => SetProperty(ref _progressSliderMax, value);
-        }
-
-        private ObservableCollection<LyricLine> _uiLyrics = [];
-        public ObservableCollection<LyricLine> UILyrics
-        {
-            get => _uiLyrics;
-            set => SetProperty(ref _uiLyrics, value);
-        }
-        private int _lastLyricIndex = -1;
-        public int LastLyricIndex
-        {
-            get => _lastLyricIndex;
-            set => SetProperty(ref _lastLyricIndex, value);
-        }
-
-        private Thickness _lyricsMargin;
         public Thickness LyricsMargin
         {
-            get => _lyricsMargin;
-            set {
-                if (SetProperty(ref _lyricsMargin, value)) {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
                     _ = _musicDatabaseService.SaveSettingAsync();
                 }
             }
         }
 
-        private bool _isPlayDetailButtonVisible = true;
         public bool IsPlayDetailButtonVisible
         {
-            get => _isPlayDetailButtonVisible;
+            get => field;
             set
             {
-                if (SetProperty(ref _isPlayDetailButtonVisible, value))
+                if (SetProperty(ref field, value))
                 {
-                    //AppSettings.IsPlayDetailBtnVisible = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
             }
-        }
-        private ImageSource? _lyricPageBackgroundSource = null;
-        public ImageSource? LyricPageBackgroundSource
-        {
-            get => _lyricPageBackgroundSource;
-            set => SetProperty(ref _lyricPageBackgroundSource, value);
-        }
+        } = true;
 
-        private bool _isInitialized = false;
-        public bool IsInitialized
-        {
-            get => _isInitialized;
-            set => SetProperty(ref _isInitialized, value);
-        }
-
-        private Visibility _usbDeviceVisibility = Visibility.Collapsed;
-        public Visibility UsbDeviceVisibility
-        {
-            get => _usbDeviceVisibility;
-            set => SetProperty(ref _usbDeviceVisibility, value);
-        }
-        private ObservableCollection<UsbStorageDevice> _usbStorageDevices;
-        public ObservableCollection<UsbStorageDevice> UsbStorageDevices
-        {
-            get => _usbStorageDevices;
-            set => SetProperty(ref _usbStorageDevices, value);
-        }
-        private int _usbSelectedIndex = 0;
-        public int UsbSelectedIndex
-        {
-            get => _usbSelectedIndex;
-            set => SetProperty(ref _usbSelectedIndex, value);
-        }
-        private Visibility _processRingVisibility = Visibility.Collapsed;
-        public Visibility ProcessRingVisibility
-        {
-            get => _processRingVisibility;
-            set => SetProperty(ref _processRingVisibility, value);
-        }
-        private bool _isFullScreen = false;
-        public bool IsFullScreen
-        {
-            get => _isFullScreen;
-            set => SetProperty(ref _isFullScreen, value);
-        }
-        private string _infoBarTitle = string.Empty;
-        public string InfoBarTitle
-        {
-            get => _infoBarTitle;
-            set => SetProperty(ref _infoBarTitle, value);
-        }
-        private bool _infoBarIsOpen = false;
-        public bool InfoBarIsOpen
-        {
-            get => _infoBarIsOpen;
-            set => SetProperty(ref _infoBarIsOpen, value);
-        }
-        private string _infoBarMessage = string.Empty;
-        public string InfoBarMessage
-        {
-            get => _infoBarMessage;
-            set => SetProperty(ref _infoBarMessage, value);
-        }
-        private string _pageType = string.Empty;
-        public string PageType
-        {
-            get => _pageType;
-            set => SetProperty(ref _pageType, value);
-        }
-        private bool _isInPlayingDetailMode = false;
-        public bool IsInPlayingDetailMode
-        {
-            get => _isInPlayingDetailMode;
-            set => SetProperty(ref _isInPlayingDetailMode, value);
-        }
-        private bool _isAcrylicBrushOpacity = false;
-        public bool IsAcrylicBrushOpacity
-        {
-            get => _isAcrylicBrushOpacity;
-            set => SetProperty(ref _isAcrylicBrushOpacity, value);
-        }
-
-        private float _topControlsOpacity = 1.0f;
-        public float TopControlsOpacity
-        {
-            get => _topControlsOpacity;
-            set => SetProperty(ref _topControlsOpacity, value);
-        }
         private MusicDatabaseService _musicDatabaseService { get; }
 
         public AppObservableObj(MusicDatabaseService musicDatabaseService)
         {
             _musicDatabaseService = musicDatabaseService;
-            //UILyrics = new ObservableCollection<LyricLine>();
         }
 
         public async Task AddToFavourite(Music music)
         {
             music.IsFavorite = !music.IsFavorite;
             await _musicDatabaseService.AddToFavourite(music, CurrentPlayingMusic);
-            if (CurrentPlayingMusic is not null)
+            if (CurrentPlayingMusic?.Id == music.Id)
             {
-                if (CurrentPlayingMusic.Id == music.Id)
-                {
-                    CurrentPlayingMusic.IsFavorite = music.IsFavorite;
-                }
+                CurrentPlayingMusic.IsFavorite = music.IsFavorite;
             }
         }
     }
