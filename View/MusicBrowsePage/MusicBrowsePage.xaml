@@ -782,11 +782,12 @@
                                                             HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
                                                             FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                             IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
+                                                            IsGlobalFontSizeEnabled="{x:Bind model:AppSettings.IsGlobalFontSizeEnabled, Mode=OneWay}"
                                                             LineAnimateDuration="{x:Bind LineAnimateDuration, Mode=OneWay}"
-                                                            LyricsFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:True), Mode=OneWay}"
+                                                            LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                                             LyricsText="{x:Bind Text}"
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                                            TranslateFontSize="{x:Bind DynamicLyricsSize(model:AppSettings.IsGlobalFontSizeEnabled, model:AppSettings.GlobalFontSize, x:False), Mode=OneWay}"
+                                                            TranslateFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                                             TranslateText="{x:Bind TransLateText}"
                                                             TranslateVisibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}">
                                                             <interactivity:Interaction.Behaviors>

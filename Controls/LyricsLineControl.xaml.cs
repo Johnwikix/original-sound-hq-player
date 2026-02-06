@@ -1,27 +1,10 @@
-using Microsoft.UI.Composition;
-using Microsoft.UI.Text;
+ï»¿using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Hosting;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Text;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Controls
 {
@@ -30,19 +13,169 @@ namespace WinUIMusicPlayer.Controls
         private CompositionScopedBatch _currentCompositionBatch;
         private InsetClip _currentCompositionClip;
         private TextBlock _currentAnimatingTextBlock;
+        private bool _isUpdatingFontSize = false; // â­ é˜²æ­¢å¾ªç¯æ›´æ–°çš„æ ‡å¿—
 
         public LyricsLineControl()
         {
             this.InitializeComponent();
+            this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            // è®¢é˜…çª—å£å¤§å°å˜åŒ–
+            if (App.MainWindow != null)
+            {
+                App.MainWindow.SizeChanged += OnWindowSizeChanged;
+            }
+
+            // æ§ä»¶åŠ è½½æ—¶ç«‹å³æ›´æ–°ä¸€æ¬¡å­—ä½“å¤§å°
+            UpdateDynamicFontSizes();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             CancelCurrentAnimation();
+
+            // å–æ¶ˆè®¢é˜…
+            if (App.MainWindow != null)
+            {
+                App.MainWindow.SizeChanged -= OnWindowSizeChanged;
+            }
         }
 
-        // LyricsText ÒÀÀµÊôĞÔ
+        private void OnWindowSizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs e)
+        {
+            UpdateDynamicFontSizes();
+        }
+
+        // IsGlobalFontSizeEnabled ä¾èµ–å±æ€§
+        public static readonly DependencyProperty IsGlobalFontSizeEnabledProperty =
+            DependencyProperty.Register(
+                nameof(IsGlobalFontSizeEnabled),
+                typeof(bool),
+                typeof(LyricsLineControl),
+                new PropertyMetadata(false, OnIsGlobalFontSizeEnabledChanged));
+
+        public bool IsGlobalFontSizeEnabled
+        {
+            get => (bool)GetValue(IsGlobalFontSizeEnabledProperty);
+            set => SetValue(IsGlobalFontSizeEnabledProperty, value);
+        }
+
+        private static void OnIsGlobalFontSizeEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = d as LyricsLineControl;
+            control?.UpdateDynamicFontSizes();
+        }
+
+        // â­ ä¿®æ”¹ LyricsFontSize ä¾èµ–å±æ€§ - ç›‘å¬å¤–éƒ¨èµ‹å€¼
+        public static readonly DependencyProperty LyricsFontSizeProperty =
+            DependencyProperty.Register(
+                nameof(LyricsFontSize),
+                typeof(double),
+                typeof(LyricsLineControl),
+                new PropertyMetadata(32.0, OnLyricsFontSizeChanged));
+
+        public double LyricsFontSize
+        {
+            get => (double)GetValue(LyricsFontSizeProperty);
+            set => SetValue(LyricsFontSizeProperty, value);
+        }
+
+        private static void OnLyricsFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = d as LyricsLineControl;
+            if (control == null || control._isUpdatingFontSize) return;
+
+            // â­ å½“å¤–éƒ¨ä¿®æ”¹å­—ä½“å¤§å°æ—¶ï¼Œå¦‚æœä¸æ˜¯å…¨å±€å­—ä½“æ¨¡å¼ï¼Œç«‹å³ç”¨åŠ¨æ€å­—ä½“è¦†ç›–
+            if (!control.IsGlobalFontSizeEnabled)
+            {
+                // ä½¿ç”¨ Dispatcher å»¶è¿Ÿæ‰§è¡Œï¼Œç¡®ä¿æ‰€æœ‰ç»‘å®šéƒ½å·²å®Œæˆ
+                control.UpdateDynamicFontSizes();
+            }
+        }
+
+        // â­ TranslateFontSize ä¾èµ–å±æ€§ - åŒæ ·ç›‘å¬å¤–éƒ¨èµ‹å€¼
+        public static readonly DependencyProperty TranslateFontSizeProperty =
+            DependencyProperty.Register(
+                nameof(TranslateFontSize),
+                typeof(double),
+                typeof(LyricsLineControl),
+                new PropertyMetadata(24.0, OnTranslateFontSizeChanged));
+
+        public double TranslateFontSize
+        {
+            get => (double)GetValue(TranslateFontSizeProperty);
+            set => SetValue(TranslateFontSizeProperty, value);
+        }
+
+        private static void OnTranslateFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = d as LyricsLineControl;
+            if (control == null || control._isUpdatingFontSize) return;
+
+            // â­ å½“å¤–éƒ¨ä¿®æ”¹å­—ä½“å¤§å°æ—¶ï¼Œå¦‚æœä¸æ˜¯å…¨å±€å­—ä½“æ¨¡å¼ï¼Œç«‹å³ç”¨åŠ¨æ€å­—ä½“è¦†ç›–
+            if (!control.IsGlobalFontSizeEnabled)
+            {
+                control.UpdateDynamicFontSizes();
+            }
+        }
+
+        // â­ æ ¸å¿ƒæ–¹æ³•:æ›´æ–°åŠ¨æ€å­—ä½“å¤§å°
+        private void UpdateDynamicFontSizes()
+        {
+            // å¦‚æœå¯ç”¨äº†å…¨å±€å­—ä½“ï¼Œä¸åšä»»ä½•å¤„ç†
+            if (IsGlobalFontSizeEnabled)
+            {
+                return;
+            }
+
+            // æ£€æŸ¥çª—å£æ˜¯å¦å¯ç”¨
+            if (App.MainWindow?.AppWindow?.Size.Width == null)
+            {
+                return;
+            }
+
+            var width = App.MainWindow.AppWindow.Size.Width;
+            var scaledWidth = width / AppData.AppDpiScale;
+
+            // â­ è®¾ç½®æ ‡å¿—ï¼Œé˜²æ­¢è§¦å‘å±æ€§å˜åŒ–å›è°ƒ
+            _isUpdatingFontSize = true;
+
+            try
+            {
+                // æ›´æ–°æ­Œè¯å­—ä½“å¤§å°
+                LyricsFontSize = CalculateFontSize(scaledWidth, true);
+
+                // æ›´æ–°ç¿»è¯‘å­—ä½“å¤§å°
+                TranslateFontSize = CalculateFontSize(scaledWidth, false);
+            }
+            finally
+            {
+                // â­ æ¢å¤æ ‡å¿—
+                _isUpdatingFontSize = false;
+            }
+        }
+
+        // è®¡ç®—å­—ä½“å¤§å°
+        private double CalculateFontSize(double scaledWidth, bool isLyricsType)
+        {
+            if (scaledWidth <= 1440)
+                return isLyricsType ? 28.0 : 22.0;
+            if (scaledWidth <= 1920)
+                return isLyricsType ? 32.0 : 26.0;
+            if (scaledWidth <= 2160)
+                return isLyricsType ? 36.0 : 30.0;
+            if (scaledWidth <= 2560)
+                return isLyricsType ? 40.0 : 34.0;
+
+            return isLyricsType ? 44.0 : 38.0;
+        }
+
+        #region å…¶ä»–ä¾èµ–å±æ€§
+
         public static readonly DependencyProperty LyricsTextProperty =
             DependencyProperty.Register(
                 nameof(LyricsText),
@@ -56,7 +189,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(LyricsTextProperty, value);
         }
 
-        // TranslateText ÒÀÀµÊôĞÔ
         public static readonly DependencyProperty TranslateTextProperty =
             DependencyProperty.Register(
                 nameof(TranslateText),
@@ -70,7 +202,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(TranslateTextProperty, value);
         }
 
-        // TranslateVisibility ÒÀÀµÊôĞÔ
         public static readonly DependencyProperty TranslateVisibilityProperty =
             DependencyProperty.Register(
                 nameof(TranslateVisibility),
@@ -84,7 +215,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(TranslateVisibilityProperty, value);
         }
 
-        // LineAnimateDuration ÒÀÀµÊôĞÔ
         public static readonly DependencyProperty LineAnimateDurationProperty =
             DependencyProperty.Register(
                 nameof(LineAnimateDuration),
@@ -98,7 +228,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(LineAnimateDurationProperty, value);
         }
 
-        // IsCurrentLine ÒÀÀµÊôĞÔ - ºËĞÄÊôĞÔ
         public static readonly DependencyProperty IsCurrentLineProperty =
             DependencyProperty.Register(
                 nameof(IsCurrentLine),
@@ -117,32 +246,27 @@ namespace WinUIMusicPlayer.Controls
             var control = d as LyricsLineControl;
             if (control == null) return;
 
-            bool isCurrentLine = (bool)e.NewValue;               
+            bool isCurrentLine = (bool)e.NewValue;
 
-            // ¿ØÖÆ¶¯»­
             if (isCurrentLine)
-            {                
-                // ¿ªÊ¼¶¯»­
+            {
                 control.StartTimerAnimation(control.LyricsTextBlock, control.LineAnimateDuration);
                 control.IsCurrentLineEvent?.Invoke(control, new RoutedEventArgs());
             }
             else
             {
-                // ½áÊø¶¯»­
                 control.CancelCurrentAnimation();
             }
         }
 
-        // IsCurrentLineEvent Â·ÓÉÊÂ¼ş
         public event RoutedEventHandler IsCurrentLineEvent;
 
-        // FontFamily ÒÀÀµÊôĞÔ
         public new static readonly DependencyProperty FontFamilyProperty =
             DependencyProperty.Register(
                 nameof(FontFamily),
                 typeof(Microsoft.UI.Xaml.Media.FontFamily),
                 typeof(LyricsLineControl),
-                new PropertyMetadata(new FontFamily("Segoe UI")));
+                new PropertyMetadata(new Microsoft.UI.Xaml.Media.FontFamily("Segoe UI")));
 
         public new Microsoft.UI.Xaml.Media.FontFamily FontFamily
         {
@@ -150,35 +274,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(FontFamilyProperty, value);
         }
 
-        // LyricsFontSize ÒÀÀµÊôĞÔ - ¸è´Ê×ÖÌå´óĞ¡
-        public static readonly DependencyProperty LyricsFontSizeProperty =
-            DependencyProperty.Register(
-                nameof(LyricsFontSize),
-                typeof(double),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(32.0));
-
-        public double LyricsFontSize
-        {
-            get => (double)GetValue(LyricsFontSizeProperty);
-            set => SetValue(LyricsFontSizeProperty, value);
-        }
-
-        // TranslateFontSize ÒÀÀµÊôĞÔ - ·­Òë×ÖÌå´óĞ¡
-        public static readonly DependencyProperty TranslateFontSizeProperty =
-            DependencyProperty.Register(
-                nameof(TranslateFontSize),
-                typeof(double),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(24.0));
-
-        public double TranslateFontSize
-        {
-            get => (double)GetValue(TranslateFontSizeProperty);
-            set => SetValue(TranslateFontSizeProperty, value);
-        }
-
-        // TextAlignment ÒÀÀµÊôĞÔ
         public static readonly DependencyProperty TextAlignmentProperty =
             DependencyProperty.Register(
                 nameof(TextAlignment),
@@ -192,7 +287,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(TextAlignmentProperty, value);
         }
 
-        // HorizontalAlignment ÒÀÀµÊôĞÔ (¸²¸Ç»ùÀà)
         public new static readonly DependencyProperty HorizontalAlignmentProperty =
             DependencyProperty.Register(
                 nameof(HorizontalAlignment),
@@ -206,7 +300,6 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(HorizontalAlignmentProperty, value);
         }
 
-        // IsWFWLyrics ÒÀÀµÊôĞÔ - ¿ØÖÆÊÇ·ñÆôÓÃÖğ×Ö¶¯»­
         public static readonly DependencyProperty IsWFWLyricsProperty =
             DependencyProperty.Register(
                 nameof(IsWFWLyrics),
@@ -220,7 +313,9 @@ namespace WinUIMusicPlayer.Controls
             set => SetValue(IsWFWLyricsProperty, value);
         }
 
-        #region ¶¯»­·½·¨
+        #endregion
+
+        #region åŠ¨ç”»æ–¹æ³•
 
         private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
         {
@@ -229,10 +324,7 @@ namespace WinUIMusicPlayer.Controls
             if (!IsWFWLyrics) return;
 
             var targetWidth = (float)textBlock.ActualWidth;
-            if (targetWidth <= 0)
-            {
-                return;
-            }
+            if (targetWidth <= 0) return;
 
             var visual = ElementCompositionPreview.GetElementVisual(textBlock);
             var compositor = visual.Compositor;
@@ -276,7 +368,6 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
-        // È¡Ïûµ±Ç°¶¯»­
         public void CancelCurrentAnimation()
         {
             if (_currentCompositionBatch != null)

@@ -35,32 +35,5 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref _lineAnimateDuration, value); 
         }
 
-        public double DynamicLyricsSize(bool isEnable, double fontsize, bool IsLyricstype)
-        {
-            if (isEnable)
-            {
-                return fontsize;                
-            }
-            else {
-                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1440)
-                {
-                    return IsLyricstype ? 28.0 : 22.0;
-                }
-                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 1920)
-                {
-                    return IsLyricstype ? 32.0 : 26.0;
-                }
-                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2160)
-                {
-                    return IsLyricstype ? 36.0 : 30.0;
-                }
-                if ((App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale) <= 2560)
-                {
-                    return IsLyricstype ? 40.0 : 34.0;
-                }
-                return IsLyricstype ? 44.0 : 38.0;
-            }           
-        }
-
     }
 }
