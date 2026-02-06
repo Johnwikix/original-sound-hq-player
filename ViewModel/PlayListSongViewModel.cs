@@ -239,7 +239,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                AppObservableObj.SequentialPlayingList = new ObservableCollection<Music>(uniqueSelectedMusics);
+                AppObservableObj.SequentialPlayingList = new(uniqueSelectedMusics);
                 _parentPage?.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else

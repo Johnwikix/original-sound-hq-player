@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Services;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -20,10 +21,43 @@ namespace WinUIMusicPlayer.Model
         public Music? CurrentArtistObj { get; set => SetProperty(ref field, value); }
         public Music? CurrentAlbumObj { get; set => SetProperty(ref field, value); }
         public Music? CurrentFolderObj { get; set => SetProperty(ref field, value); }
-        public PlayMode CurrentPlayMode { get; set => SetProperty(ref field, value); } = PlayMode.ListLoop;
+        public PlayMode CurrentPlayMode
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (value == PlayMode.RandomLoop)
+                    {
+                        CurrentPlayingList = SequentialPlayingList.CreateShuffled();
+                    }
+                    else
+                    {
+                        CurrentPlayingList = SequentialPlayingList;
+                    }
+                }
+            }
+        } = PlayMode.ListLoop;
         public Music CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<Music> SequentialPlayingList { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<Music> SequentialPlayingList 
+        { 
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (CurrentPlayMode == PlayMode.RandomLoop)
+                    {
+                        CurrentPlayingList = value.CreateShuffled();
+                    }
+                    else {
+                        CurrentPlayingList = value;
+                    }
+                }
+            }
+        }
         public ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); }
         public string MusicInfo { get; set => SetProperty(ref field, value); }
         public BitmapImage MusicDetailCover { get; set => SetProperty(ref field, value); }

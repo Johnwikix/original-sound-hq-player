@@ -90,24 +90,24 @@ namespace WinUIMusicPlayer.Services
         private async void InitializingData()
         {
             AppObservableObj.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
-            UpdateCurrentPlayList();
+            //UpdateCurrentPlayList();
         }
 
-        public void UpdateCurrentPlayList(bool IsChangeList = true)
-        {
-            if (!IsChangeList)
-            {
-                return;
-            }
-            if (AppObservableObj.CurrentPlayMode != PlayMode.RandomLoop)
-            {
-                AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList;
-            }
-            else
-            {
-                AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList.CreateShuffled();
-            }
-        }
+        //public void UpdateCurrentPlayList(bool IsChangeList = true)
+        //{
+        //    if (!IsChangeList)
+        //    {
+        //        return;
+        //    }
+        //    if (AppObservableObj.CurrentPlayMode != PlayMode.RandomLoop)
+        //    {
+        //        AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList;
+        //    }
+        //    else
+        //    {
+        //        AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList.CreateShuffled();
+        //    }
+        //}
 
         public void AutoPlayNextTrack()
         {

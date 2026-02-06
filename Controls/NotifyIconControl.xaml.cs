@@ -97,7 +97,7 @@ namespace WinUIMusicPlayer.Controls
                         AppObservableObj.PlayModeFlyoutText = GetString("IconRandomLoop");
                         break;
                 }
-                MusicBrowseViewModel._musicPlaybackService.UpdateCurrentPlayList();
+                //MusicBrowseViewModel._musicPlaybackService.UpdateCurrentPlayList();
             }
             else
             {

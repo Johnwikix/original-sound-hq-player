@@ -779,7 +779,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppObservableObj.PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
-            _musicPlaybackService.UpdateCurrentPlayList();
+            //_musicPlaybackService.UpdateCurrentPlayList();
             App.MainWindow.UpdateAppNotifyIconControl();
             _musicPlaybackService.UpdateSettings();
 

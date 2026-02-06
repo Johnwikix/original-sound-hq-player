@@ -543,7 +543,7 @@ namespace WinUIMusicPlayer.View
                 //ViewModel.UpdateLyricsMargin();
                 UpdateViewList(music);
                 UpdateCurrentPlayList();
-                ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
+                //ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
                 ViewModel._musicPlaybackService.PlayMusic(music);
                 ViewModel.UpdateProgressTimerUI();
                 ViewModel.LyricsRefreshService.ResetLyrics();                
