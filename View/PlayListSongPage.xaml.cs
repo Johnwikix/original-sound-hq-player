@@ -1,3 +1,4 @@
+using DevWinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -272,7 +273,7 @@ namespace WinUIMusicPlayer.View
                 ContentDialog contentDialog = new ContentDialog
                 {
                     Title = ToolUtils.GetString("ModifyPlaylist"),
-                    Content = new TextBox { Text = $"{ViewModel.PlayListName}" },
+                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.PlayListName}" },
                     PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = this.XamlRoot
@@ -281,7 +282,7 @@ namespace WinUIMusicPlayer.View
                 ContentDialogResult result = await contentDialog.ShowAsync();
                 if (result == ContentDialogResult.Primary)
                 {
-                    TextBox textBox = (TextBox)contentDialog.Content;
+                    Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
                     return textBox.Text;
                 }
                 return string.Empty;
@@ -296,6 +297,30 @@ namespace WinUIMusicPlayer.View
                 {
                     AlbumArtConverter.OnMusicUnloaded(music.Id);
                 }
+            }
+        }
+
+        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = true;
+            }
+        }
+
+        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
             }
         }
     }

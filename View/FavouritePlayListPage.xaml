@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -65,8 +66,8 @@
         ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
         RightTapped="MusicListView_RightTapped"
         SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-        VirtualizingStackPanel.VirtualizationMode="Standard"
-        SelectionMode="Extended">
+        SelectionMode="Extended"
+        VirtualizingStackPanel.VirtualizationMode="Standard">
         <ListView.ItemTemplate>
             <DataTemplate x:DataType="model:Music">
                 <Grid>
@@ -151,11 +152,18 @@
                         Background="Transparent"
                         BorderThickness="0">
                         <Button.Content>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Tapped="AuthorTextBlock_Tapped"
-                                Text="{x:Bind Author, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <dev:AutoScrollView
+                                Margin="0"
+                                IsPlaying="False"
+                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                PointerEntered="AutoScrollHover_PointerEntered"
+                                PointerExited="AutoScrollHover_PointerExited">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Tapped="AuthorTextBlock_Tapped"
+                                    Text="{x:Bind Author, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </dev:AutoScrollView>
                         </Button.Content>
                     </Button>
                     <Button
@@ -167,11 +175,18 @@
                         Background="Transparent"
                         BorderThickness="0">
                         <Button.Content>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Tapped="AlbumTextBlock_Tapped"
-                                Text="{x:Bind Album, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <dev:AutoScrollView
+                                Margin="0"
+                                IsPlaying="False"
+                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                PointerEntered="AutoScrollHover_PointerEntered"
+                                PointerExited="AutoScrollHover_PointerExited">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Tapped="AlbumTextBlock_Tapped"
+                                    Text="{x:Bind Album, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </dev:AutoScrollView>
                         </Button.Content>
                     </Button>
                     <Image

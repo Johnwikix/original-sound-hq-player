@@ -1,3 +1,4 @@
+using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
@@ -794,6 +795,30 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTip.IsOpen = false;
+        }
+
+        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = true;
+            }
+        }
+
+        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
         }
     }
 }

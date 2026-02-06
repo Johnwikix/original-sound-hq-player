@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -12,18 +13,36 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style x:Key="ListViewItemStyle" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Style
+            x:Key="ListViewItemStyle"
+            BasedOn="{StaticResource DefaultListViewItemStyle}"
+            TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem x:Uid="FlyoutConvertWavItem" Click="ConvertAudio_Click" Tag="wav" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertMp3Item" Click="ConvertAudio_Click" Tag="mp3" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertFlacItem" Click="ConvertAudio_Click" Tag="flac" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertOggItem" Click="ConvertAudio_Click" Tag="ogg" />
-                            <MenuFlyoutItem x:Uid="FlyoutConvertOpusItem" Click="ConvertAudio_Click" Tag="opus" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertWavItem"
+                                Click="ConvertAudio_Click"
+                                Tag="wav" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertMp3Item"
+                                Click="ConvertAudio_Click"
+                                Tag="mp3" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertFlacItem"
+                                Click="ConvertAudio_Click"
+                                Tag="flac" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertOggItem"
+                                Click="ConvertAudio_Click"
+                                Tag="ogg" />
+                            <MenuFlyoutItem
+                                x:Uid="FlyoutConvertOpusItem"
+                                Click="ConvertAudio_Click"
+                                Tag="opus" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
                         <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
@@ -40,7 +59,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid x:Name="PlayListName" Grid.Row="0" Margin="10,0,10,10">
+        <Grid
+            x:Name="PlayListName"
+            Grid.Row="0"
+            Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -114,7 +136,10 @@
                     FontSize="14"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     TextTrimming="CharacterEllipsis" />
-                <Grid Grid.Row="3" Margin="10,0,10,0" VerticalAlignment="Bottom">
+                <Grid
+                    Grid.Row="3"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Bottom">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
@@ -132,7 +157,10 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-                    <Button Grid.Column="1" Margin="10,0,10,0" Command="{x:Bind ViewModel.ExportPlayListCommand, Mode=OneWay}">
+                    <Button
+                        Grid.Column="1"
+                        Margin="10,0,10,0"
+                        Command="{x:Bind ViewModel.ExportPlayListCommand, Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xEDE1;" />
@@ -167,8 +195,8 @@
                 ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
                 RightTapped="MusicListView_RightTapped"
                 SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-                VirtualizingStackPanel.VirtualizationMode="Standard"
-                SelectionMode="Extended">
+                SelectionMode="Extended"
+                VirtualizingStackPanel.VirtualizationMode="Standard">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Music">
                         <Grid>
@@ -232,7 +260,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon x:Name="IsFavouriteIcon" Foreground="Red" Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                <FontIcon
+                                    x:Name="IsFavouriteIcon"
+                                    Foreground="Red"
+                                    Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                             </Button>
                             <TextBlock
                                 Grid.Column="2"
@@ -250,11 +281,18 @@
                                 Background="Transparent"
                                 BorderThickness="0">
                                 <Button.Content>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Tapped="AuthorTextBlock_Tapped"
-                                        Text="{x:Bind Author, Mode=OneWay}"
-                                        TextTrimming="CharacterEllipsis" />
+                                    <dev:AutoScrollView
+                                        Margin="0"
+                                        IsPlaying="False"
+                                        PointerCanceled="AutoScrollHover_PointerCanceled"
+                                        PointerEntered="AutoScrollHover_PointerEntered"
+                                        PointerExited="AutoScrollHover_PointerExited">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Tapped="AuthorTextBlock_Tapped"
+                                            Text="{x:Bind Author, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </dev:AutoScrollView>
                                 </Button.Content>
                             </Button>
                             <Button
@@ -266,13 +304,20 @@
                                 Background="Transparent"
                                 BorderThickness="0">
                                 <Button.Content>
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Tapped="AlbumTextBlock_Tapped"
-                                        Text="{x:Bind Album, Mode=OneWay}"
-                                        TextTrimming="CharacterEllipsis" />
+                                    <dev:AutoScrollView
+                                        Margin="0"
+                                        IsPlaying="False"
+                                        PointerCanceled="AutoScrollHover_PointerCanceled"
+                                        PointerEntered="AutoScrollHover_PointerEntered"
+                                        PointerExited="AutoScrollHover_PointerExited">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Tapped="AlbumTextBlock_Tapped"
+                                            Text="{x:Bind Album, Mode=OneWay}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </dev:AutoScrollView>
                                 </Button.Content>
-                            </Button>                            
+                            </Button>
                             <Image
                                 Grid.Column="5"
                                 Height="14"
@@ -293,7 +338,10 @@
                                 BorderThickness="0"
                                 Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
-                                <FontIcon Margin="0,2,0,0" VerticalAlignment="Center" Glyph="&#xE710;" />
+                                <FontIcon
+                                    Margin="0,2,0,0"
+                                    VerticalAlignment="Center"
+                                    Glyph="&#xE710;" />
                             </Button>
                             <FontIcon
                                 x:Name="IsExistOnDeviceIcon"

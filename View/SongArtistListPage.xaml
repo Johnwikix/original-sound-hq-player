@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -282,11 +283,18 @@
                             Background="Transparent"
                             BorderThickness="0">
                             <Button.Content>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Tapped="AuthorTextBlock_Tapped"
-                                    Text="{x:Bind Author, Mode=OneWay}"
-                                    TextTrimming="CharacterEllipsis" />
+                                <dev:AutoScrollView
+                                    Margin="0"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Tapped="AuthorTextBlock_Tapped"
+                                        Text="{x:Bind Author, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis" />
+                                </dev:AutoScrollView>
                             </Button.Content>
                         </Button>
                         <Button
@@ -298,11 +306,18 @@
                             Background="Transparent"
                             BorderThickness="0">
                             <Button.Content>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Tapped="AlbumTextBlock_Tapped"
-                                    Text="{x:Bind Album, Mode=OneWay}"
-                                    TextTrimming="CharacterEllipsis" />
+                                <dev:AutoScrollView
+                                    Margin="0"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Tapped="AlbumTextBlock_Tapped"
+                                        Text="{x:Bind Album, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis" />
+                                </dev:AutoScrollView>
                             </Button.Content>
                         </Button>
                         <TextBlock

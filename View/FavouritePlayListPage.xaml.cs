@@ -1,3 +1,4 @@
+using DevWinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -339,6 +340,30 @@ namespace WinUIMusicPlayer.View
                 {
                     AlbumArtConverter.OnMusicUnloaded(music.Id);
                 }
+            }
+        }
+
+        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = true;
+            }
+        }
+
+        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
             }
         }
     }
