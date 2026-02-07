@@ -26,7 +26,6 @@ namespace WinUIMusicPlayer.View.SubView
     public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx
     {
         private Music musicDetail;
-        public EventHandler<Music> MusicDetailChanged;
         private NotificationService notificationService;
         private byte[] albumCoverData = null;
         private nint hwnd;
@@ -119,26 +118,20 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
         {
-            var music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music is not null)
+            try
             {
-                try
-                {
-                    music.Title = TitleTextBlock.Text;
-                    music.Author = AuthorTextBlock.Text;
-                    music.Album = AlbumTextBlock.Text;
-                    music.Year = (int)YearTextBlock.Value;
-                    music.DiskNumber = (int)DiskNumberBox.Value;
-                    music.TrackNumber = (int)TrackNumberBox.Value;
-                    music.Lyrics = LyricsTextBox.Text;
-                    await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
-                    AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
-                    MusicDetailChanged?.Invoke(this, music);
-                }
-                catch (Exception ex)
-                {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                }
+                musicDetail.Title = TitleTextBlock.Text;
+                musicDetail.Author = AuthorTextBlock.Text;
+                musicDetail.Album = AlbumTextBlock.Text;
+                musicDetail.Year = (int)YearTextBlock.Value;
+                musicDetail.DiskNumber = (int)DiskNumberBox.Value;
+                musicDetail.TrackNumber = (int)TrackNumberBox.Value;
+                musicDetail.Lyrics = LyricsTextBox.Text;
+                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(musicDetail);
+            }
+            catch (Exception ex)
+            {
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
         }
@@ -182,8 +175,6 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
             }
-            AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
-            MusicDetailChanged?.Invoke(this, music);
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

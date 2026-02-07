@@ -337,7 +337,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (music is not null)
             {
                 var musicDetailsWindow = new MusicDetailsWindow(music);
-                musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
+                //musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
                 musicDetailsWindow.Activate();
             }
         }
