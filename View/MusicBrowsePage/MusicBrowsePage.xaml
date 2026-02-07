@@ -168,8 +168,8 @@
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     FontSize="12"
-                                    ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}">
+                                    ItemsSource="{x:Bind ViewModel.AppObservableObj.SortOptions, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.AppObservableObj.SelectedSortOption, Mode=TwoWay}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate x:DataType="model:SortOption">
                                             <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
@@ -182,7 +182,7 @@
                                 x:Uid="SearchMusic"
                                 Width="200"
                                 Margin="0,0,10,0"
-                                TextChanged="SearchTextBox_TextChanged" />
+                                Text="{x:Bind ViewModel.AppObservableObj.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <InfoBar
@@ -1033,7 +1033,7 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="L" />
                                     </Button.KeyboardAccelerators>

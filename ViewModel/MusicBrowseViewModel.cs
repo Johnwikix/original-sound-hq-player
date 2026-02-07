@@ -96,19 +96,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private SortOption _selectedSortOption;
-        public SortOption SelectedSortOption
-        {
-            get => _selectedSortOption;
-            set
-            {
-                if (SetProperty(ref _selectedSortOption, value))
-                {
-                    OnSelectSortChanged();
-                }
-            }
-        }
-
         private bool _isPlaying = false;
         public bool IsPlaying
         {
@@ -128,27 +115,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _isMouseOverProgressBar, value);
         }
 
-        private IEnumerable<SortOption> _allSortOptions = [
-            new SortOption( "DefaultOrder", "SortOrderDefault"),
-            new SortOption("A-Z", "SortOrderA_Z"),
-            new SortOption("Artist", "SortOrderArtist"),
-            new SortOption("Album", "SortOrderAlbum"),
-            new SortOption("CreateTimeASC", "SortOrderCreateTimeASC"),
-            new SortOption("CreateTimeDESC", "SortOrderCreateTimeDESC"),
-            new SortOption("UpdateTimeASC", "SortOrderUpdateTimeASC"),
-            new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
-        ];
-        private IEnumerable<SortOption> _albumSortOptions = [
-            new SortOption( "DefaultOrder", "SortOrderDefault"),
-            new SortOption("Artist", "SortOrderArtist")
-        ];
-
-        private ObservableCollection<SortOption> _sortOptions;
-        public ObservableCollection<SortOption> SortOptions
-        {
-            get => _sortOptions;
-            set => SetProperty(ref _sortOptions, value);
-        }
+       
 
         private ProgressDialog _progressDialog { get; set; }
         private int progressBarValue { get; set; } = 0;
@@ -190,7 +157,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 StartWatchingFileFolder();
             }
-            SortOptions = new ObservableCollection<SortOption>(_allSortOptions);
+            AppObservableObj.SortOptions = new ObservableCollection<SortOption>(AppObservableObj.AllSortOptions);
             StartWatchingUsbStorageDevices();
             progressTimer = new System.Timers.Timer(200);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
@@ -356,20 +323,20 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void AllSortOptions()
         {
-            SortOptions.Clear();
-            foreach (var options in _allSortOptions)
+            AppObservableObj.SortOptions.Clear();
+            foreach (var options in AppObservableObj.AllSortOptions)
             {
-                SortOptions.Add(options);
+                AppObservableObj.SortOptions.Add(options);
             }
             UpdateDisplayTexts();
             InitializeSortComboBox();
         }
         public void AlbumSortOptions()
         {
-            SortOptions.Clear();
-            foreach (var options in _albumSortOptions)
+            AppObservableObj.SortOptions.Clear();
+            foreach (var options in AppObservableObj.AlbumSortOptions)
             {
-                SortOptions.Add(options);
+                AppObservableObj.SortOptions.Add(options);
             }
             UpdateDisplayTexts();
             InitializeSortComboBox();
@@ -377,9 +344,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void InitializeSortComboBox()
         {
-            var matchingItem = SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.sortOrder);
-            SelectedSortOption = matchingItem ?? SortOptions.AsValueEnumerable().FirstOrDefault();
-            AppData.sortOrder = SelectedSortOption.Tag;
+            var matchingItem = AppObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.sortOrder);
+            AppObservableObj.SelectedSortOption = matchingItem ?? AppObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault();
+            AppData.sortOrder = AppObservableObj.SelectedSortOption.Tag;
         }
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
@@ -389,7 +356,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateDisplayTexts()
         {
-            foreach (var option in SortOptions)
+            foreach (var option in AppObservableObj.SortOptions)
             {
                 option.DisplayText = ToolUtils.GetString(option.UidKey);
             }
@@ -629,7 +596,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task LoadPlayState()
         {
             _musicPlaybackService.lastPlayedMusicId = AppData.LastPlayedMusicId;
-            AppObservableObj.CurrentPlayingMusic = await _musicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
+            AppObservableObj.CurrentPlayingMusic = _musicDatabaseService.LoadCurrentPlayingMusic(AppData.LastPlayedMusicId);
             if (AppObservableObj.CurrentPlayingMusic is not null)
             {
                 UpdatePlayBar(AppObservableObj.CurrentPlayingMusic);
@@ -644,7 +611,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppObservableObj.LastLyricIndex = -1;
             AppObservableObj.UILyrics.Clear();
             // 设置播放服务中的歌词
-            await LyricsRefreshService.SetLyrics();
+            await LyricsRefreshService?.SetLyrics();
             // 解析歌词并添加到UI集合
             List<LyricLine> parsedLyrics = LyricsRefreshService.Lyrics;
             foreach (var lyric in parsedLyrics)
@@ -870,9 +837,9 @@ namespace WinUIMusicPlayer.ViewModel
             var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
             Task.WhenAll(
-                Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
-                Task.Run(() => songListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
-                Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                //Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                //Task.Run(() => songListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+                //Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
                 Task.Run(() => playListSongPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic))
             );
         }
@@ -946,7 +913,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnSelectionChanged()
         {
-            if (SortOptions.Count == 2)
+            if (AppObservableObj.SortOptions.Count == 2)
             {
                 AllSortOptions();
             }
@@ -1037,9 +1004,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (SelectedSortOption is not null)
+                if (AppObservableObj.SelectedSortOption is not null)
                 {
-                    AppData.sortOrder = SelectedSortOption.Tag;
+                    AppData.sortOrder = AppObservableObj.SelectedSortOption.Tag;
                     _musicBrowsePage.SelectSortOptionChanged();
                 }
             }

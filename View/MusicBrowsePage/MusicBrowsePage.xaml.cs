@@ -60,9 +60,9 @@ namespace WinUIMusicPlayer.View
             )
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
-            ViewModel.SetMusicService(musicPlaybackService);
+            ViewModel = viewModel;            
             ViewModel.SetLyricsService(lyricsRefreshService);
+            ViewModel.SetMusicService(musicPlaybackService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             _musicDatabaseService = musicDatabaseService;
@@ -511,22 +511,22 @@ namespace WinUIMusicPlayer.View
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                var songListPage = ContentFrame.Content as SongListPage;
-                var songCollectionPage = ContentFrame.Content as SongCollectionPage;
-                var FavouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
+                //var songListPage = ContentFrame.Content as SongListPage;
+                //var songCollectionPage = ContentFrame.Content as SongCollectionPage;
+                //var FavouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
                 var playListSongPage = ContentFrame.Content as PlayListSongPage;
-                if (songListPage is not null)
-                {
-                    songListPage.UpdateMusicListView();
-                }
-                if (songCollectionPage is not null)
-                {
-                    songCollectionPage.UpdateMusicListView();
-                }
-                if (FavouritePlayListPage is not null)
-                {
-                    FavouritePlayListPage.UpdateMusicListView();
-                }
+                //if (songListPage is not null)
+                //{
+                //    songListPage.UpdateMusicListView();
+                //}
+                //if (songCollectionPage is not null)
+                //{
+                //    songCollectionPage.UpdateMusicListView();
+                //}
+                //if (FavouritePlayListPage is not null)
+                //{
+                //    FavouritePlayListPage.UpdateMusicListView();
+                //}
                 if (playListSongPage is not null)
                 {
                     playListSongPage.UpdateMusicListView();
@@ -559,27 +559,27 @@ namespace WinUIMusicPlayer.View
         {
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
-                if (ContentFrame.Content is SongCollectionPage)
-                {
-                    var page = ContentFrame.Content as SongCollectionPage;
-                    page.SortMusicList(AppData.sortOrder, ViewModel.AppObservableObj.PageType);
-                }
-                if (ContentFrame.Content is SongListPage)
-                {
-                    var page = ContentFrame.Content as SongListPage;
-                    if (page is not null)
-                    {
-                        page.SortMusicList(AppData.sortOrder);
-                    }
-                }
-                if (ContentFrame.Content is FavouritePlayListPage)
-                {
-                    var page = ContentFrame.Content as FavouritePlayListPage;
-                    if (page is not null)
-                    {
-                        page.SortMusicList(AppData.sortOrder);
-                    }
-                }
+                //if (ContentFrame.Content is SongCollectionPage)
+                //{
+                //    var page = ContentFrame.Content as SongCollectionPage;
+                //    page.SortMusicList(AppData.sortOrder, ViewModel.AppObservableObj.PageType);
+                //}
+                //if (ContentFrame.Content is SongListPage)
+                //{
+                //    var page = ContentFrame.Content as SongListPage;
+                //    if (page is not null)
+                //    {
+                //        page.SortMusicList(AppData.sortOrder);
+                //    }
+                //}
+                //if (ContentFrame.Content is FavouritePlayListPage)
+                //{
+                //    var page = ContentFrame.Content as FavouritePlayListPage;
+                //    if (page is not null)
+                //    {
+                //        page.SortMusicList(AppData.sortOrder);
+                //    }
+                //}
                 if (ContentFrame.Content is AlbumPage)
                 {
                     var page = ContentFrame.Content as AlbumPage;

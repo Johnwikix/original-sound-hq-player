@@ -831,10 +831,10 @@ namespace WinUIMusicPlayer.Utils
 
         public static void ClearAllUsbStatus()
         {
-            App.Services.GetRequiredService<SongCollectionViewModel>().ClearUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<SongListViewModel>().ClearUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<FavouritePlayListViewModel>().ClearUsbDeviceMusicList();
-            App.Services.GetRequiredService<PlayListSongViewModel>().ClearUsbDeviceMusicList(null, null);
+            App.Services.GetRequiredService<AppObservableObj>().ClearUsbDevice();
+            //App.Services.GetRequiredService<SongCollectionViewModel>().ClearUsbDeviceMusicList(null, null);
+            //App.Services.GetRequiredService<SongListViewModel>().ClearUsbDeviceMusicList(null, null);            
+            //App.Services.GetRequiredService<PlayListSongViewModel>().ClearUsbDeviceMusicList(null, null);
             App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
@@ -844,7 +844,7 @@ namespace WinUIMusicPlayer.Utils
         {
             App.Services.GetRequiredService<SongCollectionViewModel>().RefreshUsbDeviceMusicList(null, null);
             App.Services.GetRequiredService<SongListViewModel>().RefreshUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<FavouritePlayListViewModel>().RefreshUsbDeviceMusicList();
+            //App.Services.GetRequiredService<FavouritePlayListViewModel>().RefreshUsbDeviceMusicList();
             App.Services.GetRequiredService<PlayListSongViewModel>().RefreshUsbDeviceMusicList(null, null);
             App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();

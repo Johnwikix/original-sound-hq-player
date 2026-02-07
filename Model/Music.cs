@@ -1,6 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using SQLite;
 using System;
+using System.Linq;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -110,6 +115,58 @@ namespace WinUIMusicPlayer.Model
         {
             get => _updateTime;
             set => SetProperty(ref _updateTime, value);
+        }
+        [RelayCommand]
+        public void Play(string page) 
+        {
+            switch (page) {
+                case "FavoriteSongsView":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().FavoriteSongs);
+                    App.Services.GetRequiredService<AppObservableObj>().FavoriteSongsSelectedMusic = this;
+                    break;
+                case "AllSongsView":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().AllSongsView.Cast<Music>()]);
+                    break;
+                case "AlbumSongsView":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().AlbumSongsView.Cast<Music>()]);
+                    break;
+                case "ArtistSongsView":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().ArtistSongsView.Cast<Music>()]);
+                    break;
+                case "FolderSongsView":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().FolderSongsView.Cast<Music>()]);
+                    break;
+            }
+            App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music: this, IsChangeList: true);
+        }
+
+        [RelayCommand]
+        public void AddMusicToCurrentPlayList()
+        {
+            App.Services.GetRequiredService<AppObservableObj>().AddMusicToCurrentPlayList(this);
+        }
+
+        [RelayCommand]
+        public void UpdateFavourite() {
+            IsFavorite = !IsFavorite;
+            if (IsFavorite)
+            {
+                Order = App.Services.GetRequiredService<AppObservableObj>().AllSongs
+                                         .Where(m => m.IsFavorite)
+                                         .OrderByDescending(m => m.Order)
+                                         .FirstOrDefault()?.Order + 1 ?? 1;
+                App.Services.GetRequiredService<AppObservableObj>().AddToFavoriteSongs(this);
+            }
+            else {
+                App.Services.GetRequiredService<AppObservableObj>().RemoveFromFavoriteSongs(this);
+                Order = 0;
+            }
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
+        }
+
+        public async void Remove() 
+        {
+            await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(this.Id);
         }
 
     }

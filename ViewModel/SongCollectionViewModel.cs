@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -18,12 +19,12 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SongCollectionViewModel : ObservableObject
     {
-        private ObservableCollection<Music> _musicList = [];
-        public ObservableCollection<Music> MusicList
-        {
-            get => _musicList;
-            set => SetProperty(ref _musicList, value);
-        }
+        //private ObservableCollection<Music> _musicList = [];
+        //public ObservableCollection<Music> MusicList
+        //{
+        //    get => _musicList;
+        //    set => SetProperty(ref _musicList, value);
+        //}
         private Music _selectedMusic;
         public Music SelectedMusic
         {
@@ -85,31 +86,31 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             //_parentPage?.DisableBackButton();
-            if (_musicBrowseViewModel?.SortOptions.Count == 2)
-            {
-                _musicBrowseViewModel?.AllSortOptions();
-            }
+            //if (_musicBrowseViewModel?.SortOptions.Count == 2)
+            //{
+            //    _musicBrowseViewModel?.AllSortOptions();
+            //}
             RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
         }
 
         
 
-        public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
-        {
+        //public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
+        //{
 
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                foreach (var music in MusicList)
-                {
-                    music.IsExistOnDevice = 0;
-                }
-            });
-        }
+        //    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //    {
+        //        foreach (var music in MusicList)
+        //        {
+        //            music.IsExistOnDevice = 0;
+        //        }
+        //    });
+        //}
 
         public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
-            ToolUtils.RefreshUsbDeviceMusicList(MusicList);
+            //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
         private void RefreshSong(object? sender, EventArgs e)
@@ -141,46 +142,46 @@ namespace WinUIMusicPlayer.ViewModel
             return await _parentPage.AreUSureDeleteFromDisk();
         }
 
-        [RelayCommand]
-        private void PlayMusic(Music music)
-        {
-            if (music is not null && _parentPage is not null)
-            {
-                AppObservableObj.SequentialPlayingList = new(MusicList);
-                _parentPage.PlayMusic(music: music, IsChangeList: true);
-            }
-        }
+        //[RelayCommand]
+        //private void PlayMusic(Music music)
+        //{
+        //    if (music is not null && _parentPage is not null)
+        //    {
+        //        AppObservableObj.SequentialPlayingList = new(MusicList);
+        //        _parentPage.PlayMusic(music: music, IsChangeList: true);
+        //    }
+        //}
 
-        public void SortMusicList(string sortOrder, string type)
-        {
-            var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
+        //public void SortMusicList(string sortOrder, string type)
+        //{
+        //    var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
 
-            if (MusicList.Count > 0)
-            {
-                ToolUtils.SortMusicListInPlace(type, order, MusicList);
-            }
-        }
+        //    if (MusicList.Count > 0)
+        //    {
+        //        ToolUtils.SortMusicListInPlace(type, order, MusicList);
+        //    }
+        //}
 
         public void LoadMusicAsync(IEnumerable<Music> musics, string type = null)
         {
-            try
-            {
-                MusicList.Clear();
-                foreach (var music in musics)
-                {
-                    MusicList.Add(music);
-                }
-                if (!string.IsNullOrEmpty(type))
-                {
-                    SortMusicList("DefaultOrder", type);
-                }
+            //try
+            //{
+            //    MusicList.Clear();
+            //    foreach (var music in musics)
+            //    {
+            //        MusicList.Add(music);
+            //    }
+            //    if (!string.IsNullOrEmpty(type))
+            //    {
+            //        SortMusicList("DefaultOrder", type);
+            //    }
 
-                UpdateMusicListView();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载音乐列表失败: {ex.Message}");
-            }
+            //    UpdateMusicListView();
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"加载音乐列表失败: {ex.Message}");
+            //}
         }
 
         public bool CompareMusicCollections(ObservableCollection<Music> collection1, ObservableCollection<Music> collection2)
@@ -210,20 +211,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
             return true;
         }
-        public void UpdateFavouriteMusic(Music music)
-        {
-            if (MusicList is not null && MusicList.Count > 0)
-            {
-                Music? currentMusic = MusicList.AsValueEnumerable().FirstOrDefault(m => m.Id == music.Id);
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (currentMusic is not null)
-                    {
-                        currentMusic.IsFavorite = music.IsFavorite;
-                    }
-                });
-            }
-        }
+        //public void UpdateFavouriteMusic(Music music)
+        //{
+        //    if (MusicList is not null && MusicList.Count > 0)
+        //    {
+        //        Music? currentMusic = MusicList.AsValueEnumerable().FirstOrDefault(m => m.Id == music.Id);
+        //        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            if (currentMusic is not null)
+        //            {
+        //                currentMusic.IsFavorite = music.IsFavorite;
+        //            }
+        //        });
+        //    }
+        //}
 
         public void UpdateMusicListView()
         {
@@ -231,7 +232,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (AppObservableObj.CurrentPlayingList is not null)
                 {
-                    var selectedMusic = MusicList.AsValueEnumerable().FirstOrDefault(music =>
+                    var selectedMusic = AppObservableObj.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
                         music.Id == AppObservableObj.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
@@ -251,8 +252,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic is not null && _parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList =
-                                        new ObservableCollection<Music>(MusicList);
+                AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AlbumSongsView.Cast<Music>()]);
                 _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -268,7 +268,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SelectedMusic is not null)
                 {
-                    AppObservableObj.SequentialPlayingList = new(MusicList);
+                    AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AlbumSongsView.Cast<Music>()]);
                     _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
                 }
             }
@@ -278,51 +278,73 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                for (int i = MusicList.Count - 1; i >= 0; i--)
+                for (int i = AppObservableObj.AllSongs.Count - 1; i >= 0; i--)
                 {
-                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(MusicList[i]))
+                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppObservableObj.AllSongs[i]))
                     {
-                        if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
+                        if (ToolUtils.DeleteFileFromDisk((AppObservableObj.AllSongs[i].Path)))
                         {
-                            await _musicDatabaseService.RemoveMusic(MusicList[i].Id);
-                            MusicList.RemoveAt(i);
+                            AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                         }
                     }
                 }
             }
             else
             {
-                if (SelectedMusic is not null)
+                if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                 {
-                    if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
-                    {
-                        await _musicDatabaseService.RemoveMusic(SelectedMusic.Id);
-                        MusicList.Remove(SelectedMusic);
-                    }
+                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                 }
             }
-
-            App.MainWindow.UpdateMusicList();
         }
+
+        //public async Task DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
+        //{
+        //    //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+        //    //{
+        //    //    for (int i = MusicList.Count - 1; i >= 0; i--)
+        //    //    {
+        //    //        if (uniqueSelectedMusics.AsValueEnumerable().Contains(MusicList[i]))
+        //    //        {
+        //    //            if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
+        //    //            {
+        //    //                await _musicDatabaseService.RemoveMusic(MusicList[i].Id);
+        //    //                MusicList.RemoveAt(i);
+        //    //            }
+        //    //        }
+        //    //    }
+        //    //}
+        //    //else
+        //    //{
+        //    //    if (SelectedMusic is not null)
+        //    //    {
+        //    //        if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
+        //    //        {
+        //    //            await _musicDatabaseService.RemoveMusic(SelectedMusic.Id);
+        //    //            MusicList.Remove(SelectedMusic);
+        //    //        }
+        //    //    }
+        //    //}
+
+        //    //App.MainWindow.UpdateMusicList();
+        //}
 
         public async Task SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    await AppObservableObj.AddToFavourite(item);
+                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == item.Id)?.UpdateFavourite();
                 }
             }
             else
             {
                 if (SelectedMusic is not null)
                 {
-                    await AppObservableObj.AddToFavourite(SelectedMusic);
+                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.UpdateFavourite();
                 }
             }
-
-            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         public void OpenInExplorer_Click()
@@ -353,15 +375,15 @@ namespace WinUIMusicPlayer.ViewModel
             _musicBrowseViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
         }
 
-        [RelayCommand]
-        private async void IsFavouriteIconButtonChange(Music music)
-        {
-            if (music is not null)
-            {
-                await AppObservableObj.AddToFavourite(music);
-                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-            }
-        }
+        //[RelayCommand]
+        //private async void IsFavouriteIconButtonChange(Music music)
+        //{
+        //    if (music is not null)
+        //    {
+        //        await AppObservableObj.AddToFavourite(music);
+        //        AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+        //    }
+        //}
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
@@ -415,27 +437,27 @@ namespace WinUIMusicPlayer.ViewModel
             if (music is not null)
             {
                 var musicDetailsWindow = new MusicDetailsWindow(music);
-                musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
+                //musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
                 musicDetailsWindow.Activate();
             }
         }
 
-        private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
-        {
-            foreach (var music in MusicList)
-            {
-                if (music.Path == musicItem.Path)
-                {
-                    music.Title = musicItem.Title;
-                    music.Author = musicItem.Author;
-                    music.Album = musicItem.Album;
-                    music.Year = musicItem.Year;
-                    music.TrackNumber = musicItem.TrackNumber;
-                    music.Lyrics = musicItem.Lyrics;
-                    break;
-                }
-            }
-        }
+        //private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
+        //{
+        //    foreach (var music in MusicList)
+        //    {
+        //        if (music.Path == musicItem.Path)
+        //        {
+        //            music.Title = musicItem.Title;
+        //            music.Author = musicItem.Author;
+        //            music.Album = musicItem.Album;
+        //            music.Year = musicItem.Year;
+        //            music.TrackNumber = musicItem.TrackNumber;
+        //            music.Lyrics = musicItem.Lyrics;
+        //            break;
+        //        }
+        //    }
+        //}
 
         public void ShowTransmission()
         {
@@ -458,10 +480,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = new(MusicList);
-                if (MusicList.Count > 0)
+                AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AlbumSongsView.Cast<Music>()]);
+                if (AppObservableObj.SequentialPlayingList.Count > 0)
                 {
-                    _parentPage.PlayMusic(music: MusicList[0], IsChangeList: true);
+                    _parentPage.PlayMusic(music: AppObservableObj.SequentialPlayingList[0], IsChangeList: true);
                 }
             }
         }

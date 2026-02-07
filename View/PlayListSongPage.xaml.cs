@@ -59,7 +59,7 @@ namespace WinUIMusicPlayer.View
 
         private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            ViewModel.MusicListView_DragItemsCompleted();
+            //ViewModel.MusicListView_DragItemsCompleted();
         }
 
         public void SortMusicList(string sortOrder)

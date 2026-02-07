@@ -6,6 +6,7 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -257,17 +258,17 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public Music GetMusic(int musicId)
-        {
-            try
-            {
-                return AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == musicId);
-            }
-            catch (SQLiteException)
-            {
-                return null;
-            }
-        }
+        //public Music GetMusic(int musicId)
+        //{
+        //    try
+        //    {
+        //        return AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == musicId);
+        //    }
+        //    catch (SQLiteException)
+        //    {
+        //        return null;
+        //    }
+        //}
 
         public async Task UpdateMusicInfo(Music music)
         {
@@ -555,6 +556,15 @@ namespace WinUIMusicPlayer.Services
             AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
+        public async Task LoadMusicList() {
+            AppData.allSongs = await GetMusicListAsync();
+            foreach (var song in AppData.allSongs) {
+                _appObservableObj.AllSongs.Add(song);
+            }
+            _appObservableObj.FavoriteSongs = GetFavoriteMusicFromMem();
+            //_appObservableObj.FavoriteSongsView.RefreshFilter();
+        }
+
 
         public async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
         {
@@ -602,20 +612,9 @@ namespace WinUIMusicPlayer.Services
             ).OrderBy(m => m.Title).ToImmutableList();
         }
 
-        public IEnumerable<Music> GetFavoriteMusicFromMem(string search = null)
+        public ObservableCollection<Music> GetFavoriteMusicFromMem(string search = null)
         {
-            if (!string.IsNullOrEmpty(search))
-            {
-                return AppData.allSongs.AsValueEnumerable().Where(m => m.IsFavorite == true).Where(m =>
-                    m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-                    m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
-                    m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
-                ).OrderByDescending(m => m.Order).ToList();
-            }
-            else
-            {
-                return AppData.allSongs.AsValueEnumerable().Where(m => m.IsFavorite == true).OrderByDescending(m => m.Order).ToList();
-            }
+            return new(_appObservableObj.AllSongs.Where(m => m.IsFavorite == true).OrderByDescending(m => m.Order));
         }
 
         public IEnumerable<Music> GetArtistMusicFromMem(string artist, string search = null)
@@ -870,33 +869,33 @@ namespace WinUIMusicPlayer.Services
             }
             await _dbConnection.UpdateAllAsync(musics);
         }
-        public async Task AddToFavourite(Music music, Music currentPlayingMusic)
+        public async Task AddToFavourite(Music music)
         {
-            Music lastFavouriteMusic = await _dbConnection.Table<Music>()
-                                          .Where(m => m.IsFavorite)
-                                          .OrderByDescending(m => m.Order)
-                                          .FirstOrDefaultAsync();
-            if (lastFavouriteMusic is not null)
-            {
-                if (music.IsFavorite)
-                {
-                    music.Order = lastFavouriteMusic.Order + 1;
-                }
-                else
-                {
-                    music.Order = 0;
-                }
-            }
-            else
-            {
-                music.Order = 1;
-            }
+            //Music lastFavouriteMusic = await _dbConnection.Table<Music>()
+            //                              .Where(m => m.IsFavorite)
+            //                              .OrderByDescending(m => m.Order)
+            //                              .FirstOrDefaultAsync();
+            //if (lastFavouriteMusic is not null)
+            //{
+            //    if (music.IsFavorite)
+            //    {
+            //        music.Order = lastFavouriteMusic.Order + 1;
+            //    }
+            //    else
+            //    {
+            //        music.Order = 0;
+            //    }
+            //}
+            //else
+            //{
+            //    music.Order = 1;
+            //}
             await _dbConnection.UpdateAsync(music);
         }
 
-        public async Task<Music> LoadCurrentPlayingMusic(int? lastPlayedMusicId)
+        public Music LoadCurrentPlayingMusic(int? lastPlayedMusicId)
         {
-            return await _dbConnection.Table<Music>().Where(m => m.Id == lastPlayedMusicId).FirstOrDefaultAsync();
+            return _appObservableObj?.AllSongs?.FirstOrDefault(m => m.Id == lastPlayedMusicId);
         }
 
         public async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)

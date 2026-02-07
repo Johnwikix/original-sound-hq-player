@@ -258,7 +258,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding DataContext.ViewModel.IsFavouriteIconButtonChangeCommand, ElementName=MusicListView, Mode=OneWay}"
+                                Command="{x:Bind UpdateFavouriteCommand, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
                                 <FontIcon
                                     x:Name="IsFavouriteIcon"

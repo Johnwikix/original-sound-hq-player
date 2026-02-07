@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
@@ -76,7 +77,7 @@ namespace WinUIMusicPlayer.View
 
         public void UpdateFavouriteMusic(Music music)
         {
-            ViewModel.UpdateFavouriteMusic(music);
+            //ViewModel.UpdateFavouriteMusic(music);
         }
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
@@ -104,8 +105,7 @@ namespace WinUIMusicPlayer.View
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
+            await ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems().ToList());
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -119,8 +119,7 @@ namespace WinUIMusicPlayer.View
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
+            ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
         }
 
         private IEnumerable<Music> GetUniqueSelectedItems()

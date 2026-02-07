@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
@@ -61,12 +62,12 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder, string type)
         {
-            ViewModel.SortMusicList(sortOrder, type);
+            //ViewModel.SortMusicList(sortOrder, type);
         }
 
         public void UpdateFavouriteMusic(Music music)
         {
-            ViewModel.UpdateFavouriteMusic(music);
+            //ViewModel.UpdateFavouriteMusic(music);
         }
 
         public void UpdateMusicListView()
@@ -304,7 +305,8 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    foreach (var music in ViewModel.MusicList)
+                    var musicList = ViewModel.AppObservableObj.AlbumSongsView.Cast<Music>();
+                    foreach (var music in musicList)
                     {
                         await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                     }

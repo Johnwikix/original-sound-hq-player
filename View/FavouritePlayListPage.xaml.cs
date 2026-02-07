@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
@@ -67,40 +68,40 @@ namespace WinUIMusicPlayer.View
 
         private void RefreshMusicList(object? sender, EventArgs e)
         {
-            ViewModel.InitializeData();
+            //ViewModel.InitializeData();
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            ViewModel.SortMusicList(sortOrder);
-        }
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    ViewModel.SortMusicList(sortOrder);
+        //}
 
-        public void UpdateFavouriteMusic(Music music)
-        {
-            if (music.IsFavorite)
-            {
-                AddMusicToTop(music);
-            }
-            else
-            {
-                RemoveMusic(music);
-            }
-        }
+        //public void UpdateFavouriteMusic(Music music)
+        //{
+        //    if (music.IsFavorite)
+        //    {
+        //        AddMusicToTop(music);
+        //    }
+        //    else
+        //    {
+        //        RemoveMusic(music);
+        //    }
+        //}
 
-        private void AddMusicToTop(Music newMusic)
-        {
-            ViewModel.AddMusicToTop(newMusic);
-        }
+        //private void AddMusicToTop(Music newMusic)
+        //{
+        //    ViewModel.AddMusicToTop(newMusic);
+        //}
 
-        private void RemoveMusic(Music musicToRemove)
-        {
-            ViewModel.RemoveMusic(musicToRemove);
-        }
+        //private void RemoveMusic(Music musicToRemove)
+        //{
+        //    ViewModel.RemoveMusic(musicToRemove);
+        //}
 
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
-        }
+        //public void UpdateMusicListView()
+        //{
+        //    ViewModel.UpdateMusicListView();
+        //}
 
         private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
@@ -126,8 +127,7 @@ namespace WinUIMusicPlayer.View
 
         private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
+            ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems().ToList());
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -137,8 +137,7 @@ namespace WinUIMusicPlayer.View
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
+            ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
         }
         private IEnumerable<Music> GetUniqueSelectedItems()
         {
@@ -295,7 +294,7 @@ namespace WinUIMusicPlayer.View
                                     usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                     AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }
-                                ViewModel.RefreshUsbDeviceMusicList();
+                                //ViewModel.RefreshUsbDeviceMusicList();
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
                         }
@@ -328,8 +327,7 @@ namespace WinUIMusicPlayer.View
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AppObservableObj.AddToCurrentPlayList(uniqueSelectedMusics);
+            ViewModel.AppObservableObj.AddToCurrentPlayList(GetUniqueSelectedItems());
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

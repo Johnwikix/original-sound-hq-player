@@ -67,20 +67,20 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        public void SortMusicList(string sortOrder, string type)
-        {
-            ViewModel.SortMusicList(sortOrder, type);
-        }
+        //public void SortMusicList(string sortOrder, string type)
+        //{
+        //    ViewModel.SortMusicList(sortOrder, type);
+        //}
 
-        public void UpdateFavouriteMusic(Music music)
-        {
-            ViewModel.UpdateFavouriteMusic(music);
-        }
+        //public void UpdateFavouriteMusic(Music music)
+        //{
+        //    ViewModel.UpdateFavouriteMusic(music);
+        //}
 
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
-        }
+        //public void UpdateMusicListView()
+        //{
+        //    ViewModel.UpdateMusicListView();
+        //}
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
@@ -312,7 +312,8 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    foreach (var music in ViewModel.MusicList)
+                    var musicList = ViewModel.AppObservableObj.ArtistSongsView.Cast<Music>();
+                    foreach (var music in musicList)
                     {
                         await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
                     }

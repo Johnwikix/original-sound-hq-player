@@ -259,7 +259,7 @@ namespace WinUIMusicPlayer
 
         public async Task LoadMusicList(string search = null)
         {
-            AppData.allSongs = await MusicDatabaseService.GetMusicListAsync();
+            await MusicDatabaseService.LoadMusicList();
             await MusicDatabaseService.GetPlayListMusic();
         }
 
