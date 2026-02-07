@@ -306,7 +306,7 @@ namespace WinUIMusicPlayer.View
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+            ViewModel.AppObservableObj.AddToCurrentPlayList(uniqueSelectedMusics);
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

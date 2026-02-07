@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private MusicBrowsePage? _parentPage { get; }
-        private AppObservableObj AppObservableObj { get; }
+        public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private PlayListSongPage _currentPage { get; set; }
         private int _currentPlayListId;

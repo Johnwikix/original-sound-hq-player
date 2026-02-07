@@ -8,15 +8,13 @@ namespace WinUIMusicPlayer.Extensions
     {
         public static void Shuffle<T>(this ObservableCollection<T> collection)
         {
-            Random rng = new Random();
+            Random rng = new();
             int n = collection.Count;
             while (n > 1)
             {
                 n--;
                 int k = rng.Next(n + 1);
-                T value = collection[k];
-                collection[k] = collection[n];
-                collection[n] = value;
+                (collection[n], collection[k]) = (collection[k], collection[n]);
             }
         }
 
@@ -29,15 +27,13 @@ namespace WinUIMusicPlayer.Extensions
 
             var list = originalCollection.AsValueEnumerable().ToList();
 
-            Random rng = new Random();
+            Random rng = new();
             int n = list.Count;
             while (n > 1)
             {
                 n--;
                 int k = rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                (list[n], list[k]) = (list[k], list[n]);
             }
 
             return new ObservableCollection<T>(list);

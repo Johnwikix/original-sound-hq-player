@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Services;
+using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Model
@@ -143,6 +144,45 @@ namespace WinUIMusicPlayer.Model
             {
                 CurrentPlayingMusic.IsFavorite = music.IsFavorite;
             }
+        }
+
+        public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
+        {
+            int index = GetCurrentIndex();
+
+            if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
+            {
+                var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
+                var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
+                    .Where(music => !existingIds.Contains(music.Id)).ToList();
+                for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
+                {
+                    CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
+                }
+            }
+        }
+
+        public void AddMusicToCurrentPlayList(Music music)
+        {
+            int index = GetCurrentIndex();
+            if (index != -1 && music is not null)
+            {
+                var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
+                if (!existingIds.Contains(music.Id))
+                {
+                    CurrentPlayingList.Insert(index + 1, music);
+                }
+            }
+        }
+
+        public int GetCurrentIndex()
+        {
+            for (int i = 0; i < CurrentPlayingList.Count; i++)
+            {
+                if (CurrentPlayingList[i].Id == CurrentPlayingMusic.Id)
+                    return i;
+            }
+            return -1;
         }
     }
 }
