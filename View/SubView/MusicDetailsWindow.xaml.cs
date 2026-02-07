@@ -136,9 +136,9 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private async Task UpdateFile(Music music, DateTime updateTime)
+        private async Task UpdateFile(DateTime updateTime)
         {
-            using (TagLib.File audioFile = TagLib.File.Create(music.Path))
+            using (TagLib.File audioFile = TagLib.File.Create(musicDetail.Path))
             {
                 Tag tag = audioFile.Tag;
                 tag.Pictures = Array.Empty<IPicture>();
@@ -162,36 +162,32 @@ namespace WinUIMusicPlayer.View.SubView
                 MusicDetail.Visibility = Visibility.Collapsed;
                 await Task.Run(() => audioFile.Save());
             }
-            music.Title = TitleTextBlock.Text;
-            music.Author = AuthorTextBlock.Text;
-            music.Album = AlbumTextBlock.Text;
-            music.Year = (int)YearTextBlock.Value;
-            music.DiskNumber = (int)DiskNumberBox.Value;
-            music.TrackNumber = (int)TrackNumberBox.Value;
-            music.Lyrics = LyricsTextBox.Text;
-            music.UpdateTime = updateTime;
-            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
-            if (AppData.albumCoverCache.ContainsKey(music.Album))
+            musicDetail.Title = TitleTextBlock.Text;
+            musicDetail.Author = AuthorTextBlock.Text;
+            musicDetail.Album = AlbumTextBlock.Text;
+            musicDetail.Year = (int)YearTextBlock.Value;
+            musicDetail.DiskNumber = (int)DiskNumberBox.Value;
+            musicDetail.TrackNumber = (int)TrackNumberBox.Value;
+            musicDetail.Lyrics = LyricsTextBox.Text;
+            musicDetail.UpdateTime = updateTime;
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(musicDetail);
+            if (AppData.albumCoverCache.ContainsKey(musicDetail.Album))
             {
-                AppData.albumCoverCache[music.Album] = (BitmapImage)AlbumCoverImage.Source;
+                AppData.albumCoverCache[musicDetail.Album] = (BitmapImage)AlbumCoverImage.Source;
             }
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             ConfirmFlyout.Hide();
-            var music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
-            if (music is not null)
+            try
             {
-                try
-                {
-                    DateTime newModificationTime = DateTime.Now;
-                    await UpdateFile(music, newModificationTime);
-                }
-                catch (Exception ex)
-                {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                }
+                DateTime newModificationTime = DateTime.Now;
+                await UpdateFile(newModificationTime);
+            }
+            catch (Exception ex)
+            {
+                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
         }
