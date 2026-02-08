@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ATL;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -238,7 +239,7 @@ namespace WinUIMusicPlayer.Services
                 IsSettingChanged = IsSettingChanged,
                 IsFadeEnabled = AppSettings.IsFadeEnabled,
             };
-            _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings));
+            _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings, IpcJsonContext.Default.IpcSetting));
         }
 
         public async Task UpdateEq()
@@ -307,7 +308,7 @@ namespace WinUIMusicPlayer.Services
                 bandIndex = bandIndex,
                 gain = gain
             };
-            _ = SendCommandAsync("SetEqualizerGain", JsonSerializer.Serialize(ipcEqGain));
+            _ = SendCommandAsync("SetEqualizerGain", JsonSerializer.Serialize(ipcEqGain, IpcEqualizerGainJsonContext.Default.IpcEqualizerGain));
         }
 
 

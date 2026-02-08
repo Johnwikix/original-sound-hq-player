@@ -76,9 +76,14 @@
                                 <ComboBox
                                     x:Name="OutputDeviceComboBox"
                                     Width="300"
-                                    DisplayMemberPath="Tag"
                                     ItemsSource="{x:Bind ViewModel.BassOutputDevices, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.SelectedDevice, Mode=TwoWay}" />
+                                    SelectedItem="{x:Bind ViewModel.SelectedDevice, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="model:BassOutputDevice">
+                                            <TextBlock Text="{x:Bind Tag}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="SettingBufferSize">
                                 <NumberBox
