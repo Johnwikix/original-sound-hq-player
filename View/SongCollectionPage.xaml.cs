@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
                     addToPlaylistSubItem.Items.Clear();
-                    var playlists = await _musicDatabaseService.GetPlayListAsync();
+                    List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
                     foreach (var playlist in playlists)
                     {
                         var menuItem = new MenuFlyoutItem
@@ -296,7 +296,7 @@ namespace WinUIMusicPlayer.View
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
         {
             PlayList.Items.Clear();
-            var playlists = await _musicDatabaseService.GetPlayListAsync();
+            List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
             foreach (var playlist in playlists)
             {
                 var menuItem = new MenuFlyoutItem

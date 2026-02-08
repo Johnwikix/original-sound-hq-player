@@ -12,7 +12,10 @@
 
     <Grid>
         <Grid x:Name="PlayList" Margin="0">
-            <ListView x:Name="PlayListView" ItemsSource="{x:Bind ViewModel.PlayLists, Mode=TwoWay}" SelectionChanged="PlayListView_SelectionChanged">
+            <ListView
+                x:Name="PlayListView"
+                ItemsSource="{x:Bind ViewModel.AppObservableObj.AllPlayList, Mode=TwoWay}"
+                SelectionChanged="PlayListView_SelectionChanged">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayList">
                         <Grid>
@@ -47,8 +50,14 @@
                                     <ToolTip x:Uid="ExportM3u8" />
                                 </ToolTipService.ToolTip>
                             </Button>
-                            <StackPanel x:Name="OpenPlayListPanel" Grid.Column="2" Orientation="Horizontal">
-                                <TextBlock VerticalAlignment="Center" FontSize="18" Text="{x:Bind Name, Mode=TwoWay}" />
+                            <StackPanel
+                                x:Name="OpenPlayListPanel"
+                                Grid.Column="2"
+                                Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Text="{x:Bind Name, Mode=TwoWay}" />
                             </StackPanel>
                             <Button
                                 x:Name="RemovePlayListButton"

@@ -257,10 +257,9 @@ namespace WinUIMusicPlayer
             updateMusicList?.Invoke(this, EventArgs.Empty);
         }
 
-        public async Task LoadMusicList(string search = null)
+        public async Task LoadMusicList()
         {
             await MusicDatabaseService.LoadMusicList();
-            await MusicDatabaseService.GetPlayListMusic();
         }
 
         public void RefreshDevice()

@@ -121,10 +121,9 @@ namespace WinUIMusicPlayer.ViewModel
         private int progressBarValue { get; set; } = 0;
         private bool isMutiFile { get; set; } = false;
         private AudioConverterService _converterService { get; set; }
-
-        public PlayList currentPlayList { get; set; }
+        
         public int previousSelectedIndex = 0;
-        public int currentPlayListId;
+        
         public BassPlayerCommandService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
         private MusicBrowsePage _musicBrowsePage;
@@ -832,16 +831,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void NotifySubPageUpdateFavouriteState()
         {
-            var songCollectionPage = App.Services.GetRequiredService<SongCollectionViewModel>();
-            var songListPage = App.Services.GetRequiredService<SongListViewModel>();
-            var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
-            var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
-            Task.WhenAll(
-                //Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
-                //Task.Run(() => songListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
-                //Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
-                Task.Run(() => playListSongPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic))
-            );
+            //var songCollectionPage = App.Services.GetRequiredService<SongCollectionViewModel>();
+            //var songListPage = App.Services.GetRequiredService<SongListViewModel>();
+            //var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
+            //var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
+            //Task.WhenAll(
+            //    //Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+            //    //Task.Run(() => songListPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+            //    //Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic)),
+            //    //Task.Run(() => playListSongPage.UpdateFavouriteMusic(AppObservableObj.CurrentPlayingMusic))
+            //);
         }
         [RelayCommand]
         private void OnStopButtonChanged()
@@ -966,10 +965,10 @@ namespace WinUIMusicPlayer.ViewModel
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
-                    if (currentPlayList is not null)
+                    if (AppObservableObj.CurrentPlayList is not null)
                     {
                         AppObservableObj.PageType = "playlist";
-                        currentPlayListId = currentPlayList.Id;
+                        AppObservableObj.CurrentPlayListId = AppObservableObj.CurrentPlayList.Id;
                         AppData.CurrentPage = typeof(PlayListSongPage);
                     }
                     else

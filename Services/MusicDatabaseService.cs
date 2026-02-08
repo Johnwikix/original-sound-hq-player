@@ -246,15 +246,28 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task<List<PlayList>> GetPlayListAsync()
+        //public async Task GetPlayListAsync()
+        //{
+        //    try
+        //    {
+        //        _appObservableObj.AllPlayList = new(await _dbConnection.Table<PlayList>().ToListAsync());
+        //    }
+        //    catch
+        //    {
+        //    }
+        //}
+
+        public async Task InitalPlayListAsync()
         {
             try
             {
-                return await _dbConnection.Table<PlayList>().ToListAsync();
+                var list = await _dbConnection.Table<PlayList>().ToListAsync();
+                foreach (var playList in list) {
+                    _appObservableObj.AllPlayList.Add(playList);
+                }
             }
-            catch (SQLiteException)
+            catch
             {
-                return new List<PlayList>();
             }
         }
 
@@ -274,63 +287,75 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.UpdateAsync(music);
         }
-
-        public IEnumerable<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
+        public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
             var query = AppData.allPlayListMusics
-                        .AsValueEnumerable()
-                        .Where(plm => plm.PlayListId == playListId)
-                        .Join(
-                            AppData.allSongs.AsValueEnumerable(),
-                            plm => plm.MusicId,
-                            m => m.Id,
-                            (plm, m) => new Music
-                            {
-                                Id = m.Id,
-                                Path = m.Path,
-                                Title = m.Title,
-                                Author = m.Author,
-                                Duration = m.Duration,
-                                Album = m.Album,
-                                FolderPath = m.FolderPath,
-                                LastLevelFolderPath = m.LastLevelFolderPath,
-                                Extension = m.Extension,
-                                Order = m.Order,
-                                BitDepth = m.BitDepth,
-                                BitRate = m.BitRate,
-                                SampleRate = m.SampleRate,
-                                IsFavorite = m.IsFavorite,
-                                TrackNumber = m.TrackNumber,
-                                Lyrics = m.Lyrics,
-                                PlayListOrder = plm.Order,
-                                CreateTime = m.CreateTime,
-                                UpdateTime = m.UpdateTime,
-                            }
-                        )
-                        .OrderByDescending(m => m.PlayListOrder);
+                .Where(plm => plm.PlayListId == playListId)
+                .Join(
+                    _appObservableObj.AllSongs,
+                    plm => plm.MusicId,
+                    m => m.Id,
+                    (plm, m) => new PlayListMusicItem
+                    {
+                        Music = m,           // 引用指向 AllSongs 中的对象
+                        PlayListOrder = plm.Order // 歌单特有顺序
+                    }
+                )
+                .OrderByDescending(vm => vm.PlayListOrder);
 
             if (!string.IsNullOrEmpty(search))
             {
-                return query.Where(m =>
-                     m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-                     m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
-                     m.Author is not null && m.Author.ToLower().Contains(search.ToLower())
-                 ).ToImmutableList();
+                return query.Where(vm =>
+                    (vm.Music.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (vm.Music.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (vm.Music.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
             }
-            return query.ToImmutableList();
+
+            return query;
         }
-        public async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<Music> musicList)
+        //public IEnumerable<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
+        //{
+        //    var query = AppData.allPlayListMusics
+        //                .Where(plm => plm.PlayListId == playListId)
+        //                .Join(
+        //                    _appObservableObj.AllSongs,
+        //                    plm => plm.MusicId,
+        //                    m => m.Id,
+        //                    (plm, m) =>
+        //                    {
+        //                        // Clone 是 Music 类里的一个方法，见下文
+        //                        var clone = m.Clone();
+        //                        clone.PlayListOrder = plm.Order; // 只改副本，不影响 AllSongs
+        //                        return clone;
+        //                    }
+        //                )
+        //                .OrderByDescending(m => m.PlayListOrder);
+
+        //    if (!string.IsNullOrEmpty(search))
+        //    {
+        //        var s = search.ToLower();
+        //        return query.Where(m =>
+        //            (m.Title != null && m.Title.ToLower().Contains(s)) ||
+        //            (m.Album != null && m.Album.ToLower().Contains(s)) ||
+        //            (m.Author != null && m.Author.ToLower().Contains(s))
+        //        );
+        //    }
+
+        //    return query;
+        //}
+        public async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<PlayListMusicItem> musicList)
         {
             try
             {
                 // 批量查询所有相关的 PlayListMusic 记录
-                var musicIds = musicList.AsValueEnumerable().Select(m => m.Id).ToList();
+                var musicIds = musicList.AsValueEnumerable().Select(m => m.Music.Id).ToList();
                 var playListMusics = await _dbConnection.Table<PlayListMusic>()
                     .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
                     .ToListAsync();
 
                 // 创建字典以便快速查找
-                var musicOrderDict = musicList.AsValueEnumerable().ToDictionary(m => m.Id, m => m.PlayListOrder);
+                var musicOrderDict = musicList.AsValueEnumerable().ToDictionary(m => m.Music.Id, m => m.PlayListOrder);
 
                 // 更新 Order 字段
                 foreach (var plm in playListMusics)
@@ -415,7 +440,6 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
-            AppData.allSongs = await GetMusicListAsync();
             AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
@@ -562,7 +586,8 @@ namespace WinUIMusicPlayer.Services
                 _appObservableObj.AllSongs.Add(song);
             }
             _appObservableObj.FavoriteSongs = GetFavoriteMusicFromMem();
-            //_appObservableObj.FavoriteSongsView.RefreshFilter();
+            await InitalPlayListAsync();
+            await GetPlayListMusic();
         }
 
 

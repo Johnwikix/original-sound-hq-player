@@ -117,7 +117,7 @@
                     Margin="20,0,10,0"
                     FontSize="30"
                     FontWeight="Bold"
-                    Text="{x:Bind ViewModel.PlayListName, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayList.Name, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="SecondaryTitleTextBlock"
@@ -192,13 +192,13 @@
                 ContainerContentChanging="MusicListView_ContainerContentChanging"
                 DoubleTapped="MusicListView_DoubleTapped"
                 ItemContainerStyle="{StaticResource ListViewItemStyle}"
-                ItemsSource="{x:Bind ViewModel.MusicList, Mode=TwoWay}"
+                ItemsSource="{x:Bind ViewModel.AppObservableObj.PlayListSongs, Mode=TwoWay}"
                 RightTapped="MusicListView_RightTapped"
                 SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
                 SelectionMode="Extended"
                 VirtualizingStackPanel.VirtualizationMode="Standard">
                 <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="model:Music">
+                    <DataTemplate x:DataType="model:PlayListMusicItem">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -219,8 +219,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding ElementName=MusicListView, Path=DataContext.ViewModel.PlayMusicCommand}"
-                                CommandParameter="{Binding}"
+                                Command="{x:Bind Music.PlayCommand, Mode=OneWay}"
+                                CommandParameter="PlayListSongs"
                                 CornerRadius="5"
                                 Style="{StaticResource PlayHoverButtonStyle}">
                                 <Grid Width="40" Height="40">
@@ -228,7 +228,7 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Canvas.ZIndex="1"
-                                        Source="{x:Bind Converter={StaticResource AlbumArtConverter}}"
+                                        Source="{x:Bind Music, Converter={StaticResource AlbumArtConverter}}"
                                         Stretch="UniformToFill">
                                         <Image.Transitions>
                                             <TransitionCollection>
@@ -258,19 +258,19 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{x:Bind UpdateFavouriteCommand, Mode=OneWay}"
+                                Command="{x:Bind Music.UpdateFavouriteCommand, Mode=OneWay}"
                                 CommandParameter="{x:Bind}">
                                 <FontIcon
                                     x:Name="IsFavouriteIcon"
                                     Foreground="Red"
-                                    Glyph="{x:Bind IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                    Glyph="{x:Bind Music.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                             </Button>
                             <TextBlock
                                 Grid.Column="2"
                                 Margin="5"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Text="{x:Bind Title, Mode=OneWay}"
+                                Text="{x:Bind Music.Title, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis" />
                             <Button
                                 Grid.Column="3"
@@ -290,7 +290,7 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             Tapped="AuthorTextBlock_Tapped"
-                                            Text="{x:Bind Author, Mode=OneWay}"
+                                            Text="{x:Bind Music.Author, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis" />
                                     </dev:AutoScrollView>
                                 </Button.Content>
@@ -313,7 +313,7 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             Tapped="AlbumTextBlock_Tapped"
-                                            Text="{x:Bind Album, Mode=OneWay}"
+                                            Text="{x:Bind Music.Album, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis" />
                                     </dev:AutoScrollView>
                                 </Button.Content>
@@ -323,12 +323,12 @@
                                 Height="14"
                                 Margin="5"
                                 VerticalAlignment="Center"
-                                Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                Source="{x:Bind Music, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                             <TextBlock
                                 Grid.Column="6"
                                 Margin="5"
                                 VerticalAlignment="Center"
-                                Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" />
+                                Text="{x:Bind Music.Duration, Converter={StaticResource TimeSpanToStringConverter}}" />
                             <Button
                                 Grid.Column="7"
                                 Margin="5"
@@ -336,8 +336,7 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{Binding DataContext.ViewModel.AddMusicToCurrentPlayListCommand, ElementName=MusicListView, Mode=OneWay}"
-                                CommandParameter="{x:Bind}">
+                                Command="{x:Bind Music.AddMusicToCurrentPlayListCommand, Mode=OneWay}">
                                 <FontIcon
                                     Margin="0,2,0,0"
                                     VerticalAlignment="Center"
@@ -347,7 +346,7 @@
                                 x:Name="IsExistOnDeviceIcon"
                                 Grid.Column="8"
                                 FontSize="14"
-                                Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                                Glyph="{x:Bind Music.IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>

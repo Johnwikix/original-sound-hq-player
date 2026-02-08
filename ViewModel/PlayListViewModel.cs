@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
@@ -15,15 +16,8 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class PlayListViewModel : ObservableObject
     {
-        private ObservableCollection<PlayList> _playLists = [];
-        public ObservableCollection<PlayList> PlayLists
-        {
-            get => _playLists;
-            set => SetProperty(ref _playLists, value);
-        }
-
         private MusicBrowsePage? _parentPage;
-        private AppObservableObj AppObservableObj { get; }
+        public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         private PlayListPage? _currentPage { get; set; }
@@ -32,7 +26,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
-            _parentPage.addPlayListEvent += RefreshPlayList;
+            //_parentPage.addPlayListEvent += RefreshPlayList;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
         }
@@ -44,57 +38,57 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            _parentPage.ViewModel.currentPlayList = null;
+            AppObservableObj.CurrentPlayList = null;
             //_parentPage.DisableBackButton();
-            InitializingData();
+            //InitializingData();
         }
 
-        private void RefreshPlayList(object? sender, PlayList playList)
-        {
-            PlayLists.Add(playList);
-        }
+        //private void RefreshPlayList(object? sender, PlayList playList)
+        //{
+        //    PlayLists.Add(playList);
+        //}
 
-        public async void InitializingData()
-        {
-            try
-            {
-                var playlists = await _musicDatabaseService.GetPlayListAsync();
-                PlayLists.Clear();
+        //public async void InitializingData()
+        //{
+        //    try
+        //    {
+        //        var playlists = await _musicDatabaseService.GetPlayListAsync();
+        //        PlayLists.Clear();
 
-                foreach (var playlist in playlists)
-                {
-                    PlayLists.Add(playlist);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载播放列表时出错: {ex.Message}");
-            }
-        }
+        //        foreach (var playlist in playlists)
+        //        {
+        //            PlayLists.Add(playlist);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载播放列表时出错: {ex.Message}");
+        //    }
+        //}
 
-        public void MainWindow_PlayListLoaded(object? sender, List<PlayList> playLists)
-        {
-            try
-            {
-                PlayLists.Clear();
+        //public void MainWindow_PlayListLoaded(object? sender, List<PlayList> playLists)
+        //{
+        //    try
+        //    {
+        //        PlayLists.Clear();
 
-                foreach (var playlist in playLists)
-                {
-                    PlayLists.Add(playlist);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"更新播放列表时出错: {ex.Message}");
-            }
-        }
+        //        foreach (var playlist in playLists)
+        //        {
+        //            PlayLists.Add(playlist);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"更新播放列表时出错: {ex.Message}");
+        //    }
+        //}
 
         public async void RemovePlayList(PlayList playList)
         {
             if (playList is null) return;
 
             await _musicDatabaseService.RemovePlayList(playList);
-            PlayLists.Remove(playList);
+            AppObservableObj.AllPlayList.Remove(playList);
         }
 
         public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
@@ -107,11 +101,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await _musicDatabaseService.UpdatePlayList(playList);
-                var existingPlayList = PlayLists.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
-                if (existingPlayList is not null)
-                {
-                    existingPlayList.Name = newName;
-                }
+                //var existingPlayList = AppObservableObj.AllPlayList.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
+                //existingPlayList?.Name = newName;
             }
         }
 
@@ -121,8 +112,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 AppObservableObj.PageType = "playlist";
                 //_musicBrowseViewModel.paramName = playList.Name;
-                _musicBrowseViewModel.currentPlayList = playList;
-                _musicBrowseViewModel.currentPlayListId = playList.Id;
+                AppObservableObj.CurrentPlayList = playList;
+                AppObservableObj.CurrentPlayListId = playList.Id;
                 AppData.CurrentPage = typeof(PlayListSongPage);
                 _parentPage.NavigatePage(AppData.CurrentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }

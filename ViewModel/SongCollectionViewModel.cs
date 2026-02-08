@@ -433,31 +433,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void MusicDetail_Click()
         {
-            var music = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == SelectedMusic.Id);
-            if (music is not null)
-            {
-                var musicDetailsWindow = new MusicDetailsWindow(music);
-                //musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
-                musicDetailsWindow.Activate();
-            }
+            var musicDetailsWindow = new MusicDetailsWindow(SelectedMusic);
+            musicDetailsWindow.Activate();
         }
-
-        //private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
-        //{
-        //    foreach (var music in MusicList)
-        //    {
-        //        if (music.Path == musicItem.Path)
-        //        {
-        //            music.Title = musicItem.Title;
-        //            music.Author = musicItem.Author;
-        //            music.Album = musicItem.Album;
-        //            music.Year = musicItem.Year;
-        //            music.TrackNumber = musicItem.TrackNumber;
-        //            music.Lyrics = musicItem.Lyrics;
-        //            break;
-        //        }
-        //    }
-        //}
 
         public void ShowTransmission()
         {

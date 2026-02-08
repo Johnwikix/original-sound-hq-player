@@ -214,32 +214,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void MusicDetail_Click()
         {
-            var music = AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == AppObservableObj.FavoriteSongsSelectedMusic.Id);
-            if (music is not null)
-            {
-                var musicDetailsWindow = new MusicDetailsWindow(music);
-                //musicDetailsWindow.MusicDetailChanged += MusicDetailsWindow_MusicDetailChanged;
-                musicDetailsWindow.Activate();
-            }
+            var musicDetailsWindow = new MusicDetailsWindow(AppObservableObj.FavoriteSongsSelectedMusic);
+            musicDetailsWindow.Activate();
         }
 
-        //private void MusicDetailsWindow_MusicDetailChanged(object? sender, Music musicItem)
-        //{
-        //    foreach (var music in MusicList)
-        //    {
-        //        if (music.Path == musicItem.Path)
-        //        {
-        //            music.Title = musicItem.Title;
-        //            music.Author = musicItem.Author;
-        //            music.Album = musicItem.Album;
-        //            music.Year = musicItem.Year;
-        //            music.DiskNumber = musicItem.DiskNumber;
-        //            music.TrackNumber = musicItem.TrackNumber;
-        //            music.Lyrics = musicItem.Lyrics;
-        //            break;
-        //        }
-        //    }
-        //}
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)

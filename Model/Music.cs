@@ -13,109 +13,32 @@ namespace WinUIMusicPlayer.Model
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
-        public string Path { get; set; }
-
-        private string _title;
-        public string Title
-        {
-            get => _title;
-            set => SetProperty(ref _title, value);
-        }
-
-        private string _author;
-        public string Author
-        {
-            get => _author;
-            set => SetProperty(ref _author, value);
-        }
-
-
+        public string Path { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string Author { get; set => SetProperty(ref field, value); } = string.Empty;
         public TimeSpan Duration { get; set; }
-        private string _album;
-        public string Album
-        {
-            get => _album;
-            set => SetProperty(ref _album, value);
-        }
+        public string Album { get; set => SetProperty(ref field, value); } = string.Empty;
 
-        public string FolderPath { get; set; }
-        public string _lastLevelFolderPath;
-        public string LastLevelFolderPath
-        {
-            get => _lastLevelFolderPath;
-            set => SetProperty(ref _lastLevelFolderPath, value);
-        }
-
-        public string Extension { get; set; }
-        public int Order { get; set; }
-        public int BitDepth { get; set; }
-        public int BitRate { get; set; }
-        public int SampleRate { get; set; }
+        public string FolderPath { get; set; } = string.Empty;
+        public string LastLevelFolderPath { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string Extension { get; set => SetProperty(ref field, value); } = string.Empty;
+        public int Order { get; set => SetProperty(ref field, value); } = 0;
+        public int BitDepth { get; set => SetProperty(ref field, value); } = 0;
+        public int BitRate { get; set => SetProperty(ref field, value); } = 0;
+        public int SampleRate { get; set => SetProperty(ref field, value); }
+        public int Channel { get; set => SetProperty(ref field, value); } = 0;
+        public int Year { get; set => SetProperty(ref field, value); } = 0;
+        public bool IsFavorite { get; set => SetProperty(ref field, value); } = false;
+        public int TrackNumber { get; set => SetProperty(ref field, value); } = 0;
+        public int DiskNumber { get; set => SetProperty(ref field, value); } = 0;
+        public string Lyrics { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string TranslatdeLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
+        public int PlayCount { get; set => SetProperty(ref field, value); } = 0;
         [Ignore]
-        public int PlayListOrder { get; set; }
-        public int Channel { get; set; }
-        public int Year { get; set; }
-        private bool _isFavorite = false;
-        public bool IsFavorite
-        {
-            get => _isFavorite;
-            set => SetProperty(ref _isFavorite, value);
-        }
+        public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
+        public DateTime CreateTime { get; set => SetProperty(ref field, value); }
+        public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
-        private int _trackNumber;
-        public int TrackNumber
-        {
-            get => _trackNumber;
-            set => SetProperty(ref _trackNumber, value);
-        }
-
-        private int _diskNumber;
-        public int DiskNumber
-        {
-            get => _diskNumber;
-            set => SetProperty(ref _diskNumber, value);
-        }
-
-        private string _lyrics;
-        public string Lyrics
-        {
-            get => _lyrics;
-            set => SetProperty(ref _lyrics, value);
-        }
-
-        private string _tranlatedLyrics;
-        public string TranslatdeLyrics {
-            get => _tranlatedLyrics;
-            set => SetProperty(ref _tranlatedLyrics, value);
-        }
-
-        private int _playCount = 0;
-        public int PlayCount
-        {
-            get => _playCount;
-            set => SetProperty(ref _playCount, value);
-        }
-
-        private int _isExistOnDevice = 0;
-        [Ignore]
-        public int IsExistOnDevice
-        {
-            get => _isExistOnDevice;
-            set => SetProperty(ref _isExistOnDevice, value);
-        }
-
-        private DateTime _createTime;
-        public DateTime CreateTime
-        {
-            get => _createTime;
-            set => SetProperty(ref _createTime, value);
-        }
-        private DateTime _updateTime;
-        public DateTime UpdateTime
-        {
-            get => _updateTime;
-            set => SetProperty(ref _updateTime, value);
-        }
         [RelayCommand]
         public void Play(string page) 
         {
@@ -123,6 +46,9 @@ namespace WinUIMusicPlayer.Model
                 case "FavoriteSongsView":
                     App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().FavoriteSongs);
                     App.Services.GetRequiredService<AppObservableObj>().FavoriteSongsSelectedMusic = this;
+                    break;
+                case "PlayListSongs":
+                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().PlayListSongs.Select(x => x.Music));
                     break;
                 case "AllSongsView":
                     App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().AllSongsView.Cast<Music>()]);
@@ -166,7 +92,10 @@ namespace WinUIMusicPlayer.Model
 
         public async void Remove() 
         {
-            await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(this.Id);
+            await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);
+            App.Services.GetRequiredService<AppObservableObj>().RemoveFromAllSongs(this);
+            App.Services.GetRequiredService<AppObservableObj>().RemoveFromFavoriteSongs(this);
+            App.Services.GetRequiredService<AppObservableObj>().RemoveFromPlayListSongs(this);
         }
 
     }

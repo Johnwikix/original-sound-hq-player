@@ -23,8 +23,7 @@ namespace WinUIMusicPlayer.Services
         {
             flyout = new MenuFlyout();
         }
-
-        private AlbumPage albumPage;
+        private AlbumPage albumPage;        
 
         public void SetAlbumPage(AlbumPage page)
         {
@@ -68,7 +67,7 @@ namespace WinUIMusicPlayer.Services
                 Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
             };
             // 获取所有播放列表
-            List<PlayList> playlists = await App.Services.GetRequiredService<MusicDatabaseService>().GetPlayListAsync();
+            List<PlayList> playlists = [.. App.Services.GetRequiredService<AppObservableObj>().AllPlayList];
             foreach (PlayList playlist in playlists)
             {
                 MenuFlyoutItem menuItem = new MenuFlyoutItem

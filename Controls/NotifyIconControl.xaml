@@ -21,7 +21,7 @@
             x:Name="NotifyIcon"
             x:FieldModifier="public"
             ContextMenuMode="SecondWindow"
-            DataContext="{Binding}"
+            DataContext="{x:Bind}"
             IconSource="ms-appx:///Assets/icon.ico"
             LeftClickCommand="{x:Bind ShowHideWindowCommand}"
             NoLeftClickDelay="True"

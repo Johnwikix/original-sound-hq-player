@@ -115,9 +115,8 @@ namespace WinUIMusicPlayer.View
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
+            await ViewModel.ConvertAudio_Click(GetUniqueSelectedItems(), menuItem);
         }
 
         private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
@@ -195,7 +194,7 @@ namespace WinUIMusicPlayer.View
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
                     addToPlaylistSubItem.Items.Clear();
-                    var playlists = await _musicDatabaseService.GetPlayListAsync();
+                    List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
                     foreach (var playlist in playlists)
                     {
                         var menuItem = new MenuFlyoutItem
@@ -303,7 +302,7 @@ namespace WinUIMusicPlayer.View
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
         {
             PlayList.Items.Clear();
-            var playlists = await _musicDatabaseService.GetPlayListAsync();
+            List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
             foreach (var playlist in playlists)
             {
                 var menuItem = new MenuFlyoutItem

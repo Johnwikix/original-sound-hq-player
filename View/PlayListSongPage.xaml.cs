@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
@@ -45,7 +46,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        public void OnScrollToMusic(Music selectedMusic)
+        public void OnScrollToMusic(PlayListMusicItem selectedMusic)
         {
             _ = Task.Delay(100).ContinueWith(_ =>
             {
@@ -59,30 +60,29 @@ namespace WinUIMusicPlayer.View
 
         private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            //ViewModel.MusicListView_DragItemsCompleted();
+            ViewModel.MusicListView_DragItemsCompleted();
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            ViewModel.SortMusicList(sortOrder);
-        }
+        //public void SortMusicList(string sortOrder)
+        //{
+        //    ViewModel.SortMusicList(sortOrder);
+        //}
 
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
-        }
+        //public void UpdateMusicListView()
+        //{
+        //    ViewModel.UpdateMusicListView();
+        //}
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
+            ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
         }
-        private IEnumerable<Music> GetUniqueSelectedItems()
+        private IEnumerable<PlayListMusicItem> GetUniqueSelectedItems()
         {
             var selectedItems = MusicListView.SelectedItems;
             foreach (var item in selectedItems)
             {
-                if (item is Music music)
+                if (item is PlayListMusicItem music)
                 {
                     yield return music;
                 }
@@ -97,20 +97,17 @@ namespace WinUIMusicPlayer.View
 
         private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
+            ViewModel.PlayMenuItem_Click(GetUniqueSelectedItems());
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
+            await ViewModel.DeleteMenuItem_Click(GetUniqueSelectedItems());
         }
 
         private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
+            await ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems());
         }
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
@@ -120,9 +117,8 @@ namespace WinUIMusicPlayer.View
 
         private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
             MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
+            await ViewModel.ConvertAudio_Click(GetUniqueSelectedItems(), menuItem);
         }
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -131,12 +127,12 @@ namespace WinUIMusicPlayer.View
             ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
             if (listViewItem is not null)
             {
-                var musicItem = listViewItem.Content as Model.Music;
+                var musicItem = listViewItem.Content as PlayListMusicItem;
                 // 检查当前指向的元素是否已在选中项列表中
                 bool isCurrentItemSelected = false;
                 foreach (var item in MusicListView.SelectedItems)
                 {
-                    if (item is Music selectedMusic && musicItem is not null && selectedMusic.Id == musicItem.Id)
+                    if (item is PlayListMusicItem selectedMusic && musicItem is not null && selectedMusic.Music == musicItem.Music)
                     {
                         isCurrentItemSelected = true;
                         break;
@@ -149,7 +145,7 @@ namespace WinUIMusicPlayer.View
                     listViewItem.IsSelected = true;
                     MusicListView.SelectedItem = musicItem;
                 }
-                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+                IEnumerable<PlayListMusicItem> uniqueSelectedMusics = GetUniqueSelectedItems();
                 // 设置右键菜单
                 if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem is not null)
                 {
@@ -193,19 +189,19 @@ namespace WinUIMusicPlayer.View
                                     {
                                         ViewModel.HideTransmission();
                                     };
-                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+                                    await usbWriter.WriteToUsb(uniqueSelectedMusics.Select(x=>x.Music), usbDevice);
                                     foreach (var music in uniqueSelectedMusics)
                                     {
-                                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Music.Title).FirstOrDefault();
                                         if (existingMusic is not null)
                                         {
                                             continue; // 如果已经存在，则跳过
                                         }
                                         UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                        usbDeviceMusic.Title = music.Title;
-                                        usbDeviceMusic.Author = music.Author;
-                                        usbDeviceMusic.Album = music.Album;
-                                        usbDeviceMusic.Extension = music.Extension;
+                                        usbDeviceMusic.Title = music.Music.Title;
+                                        usbDeviceMusic.Author = music.Music.Author;
+                                        usbDeviceMusic.Album = music.Music.Album;
+                                        usbDeviceMusic.Extension = music.Music.Extension;
                                         usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                         AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                     }
@@ -213,22 +209,22 @@ namespace WinUIMusicPlayer.View
                                 else if (musicItem is not null)
                                 {
                                     ViewModel.ShowTransmission();
-                                    List<Music> musicItems = new List<Music> { musicItem };
+                                    List<PlayListMusicItem> musicItems = new List<PlayListMusicItem> { musicItem };
                                     var usbWriter = new UsbWriterHelper();
                                     usbWriter.hideTransmission += (sender, args) =>
                                     {
                                         ViewModel.HideTransmission();
                                     };
-                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
+                                    await usbWriter.WriteToUsb(musicItems.Select(x=>x.Music), usbDevice);
                                     UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                    usbDeviceMusic.Title = musicItem.Title;
-                                    usbDeviceMusic.Author = musicItem.Author;
-                                    usbDeviceMusic.Album = musicItem.Album;
-                                    usbDeviceMusic.Extension = musicItem.Extension;
+                                    usbDeviceMusic.Title = musicItem.Music.Title;
+                                    usbDeviceMusic.Author = musicItem.Music.Author;
+                                    usbDeviceMusic.Album = musicItem.Music.Album;
+                                    usbDeviceMusic.Extension = musicItem.Music.Extension;
                                     usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                     AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }
-                                ViewModel.RefreshUsbDeviceMusicList(null, null);
+                                //ViewModel.RefreshUsbDeviceMusicList(null, null);
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
                         }
@@ -262,8 +258,7 @@ namespace WinUIMusicPlayer.View
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
+            ViewModel.AppObservableObj.AddToCurrentPlayList(GetUniqueSelectedItems().Select(x=>x.Music));
         }
 
         private void EditPlaylistName_Click(object sender, RoutedEventArgs e)
@@ -273,7 +268,7 @@ namespace WinUIMusicPlayer.View
                 ContentDialog contentDialog = new ContentDialog
                 {
                     Title = ToolUtils.GetString("ModifyPlaylist"),
-                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.PlayListName}" },
+                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.AppObservableObj.CurrentPlayList.Name}" },
                     PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = this.XamlRoot

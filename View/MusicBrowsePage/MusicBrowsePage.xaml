@@ -789,7 +789,7 @@
                                                             TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                             TranslateFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                                             TranslateText="{x:Bind TransLateText}"
-                                                            TranslateVisibility="{Binding TransLateText, Converter={StaticResource StringToVisibilityConverter}}">
+                                                            TranslateVisibility="{x:Bind TransLateText, Converter={StaticResource StringToVisibilityConverter}, Mode=OneWay}">
                                                             <interactivity:Interaction.Behaviors>
                                                                 <behaviors:LyricsAutoScrollBehavior />
                                                             </interactivity:Interaction.Behaviors>
