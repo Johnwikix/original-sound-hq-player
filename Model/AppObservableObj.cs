@@ -217,19 +217,17 @@ namespace WinUIMusicPlayer.Model
         public AppObservableObj(MusicDatabaseService musicDatabaseService)
         {
             _musicDatabaseService = musicDatabaseService;
-            AllSongsView = new AdvancedCollectionView(AllSongs, true) {
+            AllSongsView = new AdvancedCollectionView(AllSongs, false) // false 禁用内部反射排序
+            {
                 Filter = item =>
                 {
-                    var m = (Music)item;
-                    if (!string.IsNullOrWhiteSpace(SearchText))
-                    {
-                        string query = SearchText.ToLower();
-                        bool matches = (m.Title?.ToLower().Contains(query) ?? false) ||
-                                       (m.Author?.ToLower().Contains(query) ?? false) ||
-                                       (m.Album?.ToLower().Contains(query) ?? false);
-                        if (!matches) return false;
-                    }
-                    return true;
+                    if (item is not Music m) return false;
+                    if (string.IsNullOrWhiteSpace(SearchText)) return true;
+
+                    // AOT 安全且高性能的过滤逻辑
+                    return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                           (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                           (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
                 }
             };
             AllSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
@@ -267,8 +265,8 @@ namespace WinUIMusicPlayer.Model
                     }
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
-                        return (m.Title?.ToLower().Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Album?.ToLower().Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+                        return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                       (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
                     }
                     return true;
                 }
@@ -288,9 +286,9 @@ namespace WinUIMusicPlayer.Model
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
        
-                        return (m.Title?.ToLower().Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Author?.ToLower().Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Album?.ToLower().Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+                        return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                       (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                       (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
                     }
                     return true;
                 }
@@ -452,34 +450,74 @@ namespace WinUIMusicPlayer.Model
         public void OnSelectSortChanged()
         {
             if (SelectedSortOption == null) return;
-            UpdateViewSort(AllSongsView);
-            UpdateViewSort(AlbumSongsView);
-            UpdateViewSort(ArtistSongsView);
-            UpdateViewSort(FolderSongsView);
+            UpdateViewSort(AllSongsView, SongViewType.All);
+            UpdateViewSort(AlbumSongsView, SongViewType.Album);
+            UpdateViewSort(ArtistSongsView, SongViewType.Artist);
+            UpdateViewSort(FolderSongsView, SongViewType.Folder);
             UpdateCollectionSort(FavoriteSongs);
             UpdatePlayListCollectionSort(PlayListSongs);
         }
 
-        private void UpdateViewSort(AdvancedCollectionView view)
+        public enum SongViewType
+        {
+            All,
+            Album,
+            Artist,
+            Folder
+        }
+
+        private void UpdateViewSort(AdvancedCollectionView view, SongViewType viewType)
         {
             using (view.DeferRefresh())
             {
                 view.SortDescriptions.Clear();
 
-                // 使用模式匹配或映射来简化逻辑
-                var (propertyName, direction) = SelectedSortOption.Tag switch
-                {
-                    "A-Z" => (nameof(Music.Title), SortDirection.Ascending),
-                    "Artist" => (nameof(Music.Author), SortDirection.Ascending),
-                    "Album" => (nameof(Music.Album), SortDirection.Ascending),
-                    "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
-                    "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
-                    "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
-                    "DefaultOrder" => (nameof(Music.Title), SortDirection.Descending),
-                    _ => (nameof(Music.Title), SortDirection.Ascending)
-                };
+                // 获取用户选择的基础排序方案
+                var tag = SelectedSortOption.Tag?.ToString();
 
-                view.SortDescriptions.Add(new SortDescription(propertyName, direction));
+                // 逻辑拆分：如果是“默认排序”，根据视图类型走差异化逻辑
+                if (tag == "DefaultOrder")
+                {
+                    ApplyDefaultSort(view, viewType);
+                }
+                else
+                {
+                    // 其他通用排序逻辑
+                    var (propertyName, direction) = tag switch
+                    {
+                        "A-Z" => (nameof(Music.Title), SortDirection.Ascending),
+                        "Artist" => (nameof(Music.Author), SortDirection.Ascending),
+                        "Album" => (nameof(Music.Album), SortDirection.Ascending),
+                        "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
+                        "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
+                        "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
+                        _ => (nameof(Music.Title), SortDirection.Ascending)
+                    };
+                    view.SortDescriptions.Add(new SortDescription(propertyName, direction));
+                }
+            }
+        }
+
+        // 3. 处理差异化的默认排序（无反射）
+        private void ApplyDefaultSort(AdvancedCollectionView view, SongViewType viewType)
+        {
+            switch (viewType)
+            {
+                case SongViewType.Album:
+                    // 专辑视图：按轨道号排序
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+                    break;
+                case SongViewType.Artist:
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+                    break;
+                case SongViewType.Folder:
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+                    break;
+                default:
+                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+                    break;
             }
         }
 
