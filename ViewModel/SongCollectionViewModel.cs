@@ -19,26 +19,12 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SongCollectionViewModel : ObservableObject
     {
-        //private ObservableCollection<Music> _musicList = [];
-        //public ObservableCollection<Music> MusicList
-        //{
-        //    get => _musicList;
-        //    set => SetProperty(ref _musicList, value);
-        //}
         private Music _selectedMusic;
         public Music SelectedMusic
         {
             get => _selectedMusic;
             set => SetProperty(ref _selectedMusic, value);
         }
-
-        //private Music _currentMusicObject;
-        //public Music CurrentMusicObject
-        //{
-        //    get => _currentMusicObject;
-        //    set => SetProperty(ref _currentMusicObject, value);
-        //}
-
         private string _firstTitle;
         public string FirstTitle
         {
@@ -86,11 +72,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             //_parentPage?.DisableBackButton();
-            //if (_musicBrowseViewModel?.SortOptions.Count == 2)
-            //{
-            //    _musicBrowseViewModel?.AllSortOptions();
-            //}
-            RefreshUsbDeviceMusicList(null, null);
+            if (AppObservableObj.SortOptions.Count == 2)
+            {
+                _musicBrowseViewModel?.AllSortOptions();
+            }
+            //RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
         }
 
@@ -108,10 +94,10 @@ namespace WinUIMusicPlayer.ViewModel
         //    });
         //}
 
-        public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
-        {
-            //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
-        }
+        //public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
+        //{
+        //    //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
+        //}
 
         private void RefreshSong(object? sender, EventArgs e)
         {

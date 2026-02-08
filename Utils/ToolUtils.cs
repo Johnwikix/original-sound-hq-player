@@ -842,10 +842,10 @@ namespace WinUIMusicPlayer.Utils
 
         public static void RefreshAllUsbStatus()
         {
-            App.Services.GetRequiredService<SongCollectionViewModel>().RefreshUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<SongListViewModel>().RefreshUsbDeviceMusicList(null, null);
+            //App.Services.GetRequiredService<SongCollectionViewModel>().RefreshUsbDeviceMusicList(null, null);
+            //App.Services.GetRequiredService<SongListViewModel>().RefreshUsbDeviceMusicList(null, null);
             //App.Services.GetRequiredService<FavouritePlayListViewModel>().RefreshUsbDeviceMusicList();
-            App.Services.GetRequiredService<PlayListSongViewModel>().RefreshUsbDeviceMusicList(null, null);
+            //App.Services.GetRequiredService<PlayListSongViewModel>().RefreshUsbDeviceMusicList(null, null);
             App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
             App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();

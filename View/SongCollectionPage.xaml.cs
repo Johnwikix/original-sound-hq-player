@@ -283,7 +283,7 @@ namespace WinUIMusicPlayer.View
                                     usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
                                     AppData.musicOnUsbDevice.Add(usbDeviceMusic);
                                 }
-                                ViewModel.RefreshUsbDeviceMusicList(null, null);
+                                //ViewModel.RefreshUsbDeviceMusicList(null, null);
                             };
                             usbDeviceSubItem.Items.Add(menuItem);
                         }

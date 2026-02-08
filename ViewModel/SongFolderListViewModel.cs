@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel
             //{
             //    _musicBrowseViewModel?.AllSortOptions();
             //}
-            RefreshUsbDeviceMusicList(null, null);
+            //RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
         }
 
