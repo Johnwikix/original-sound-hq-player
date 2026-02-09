@@ -45,6 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             InitizeData();
             UpdateMusicListView();
+            App.MainWindow.IsBackBtnEnable = true;
             //RefreshUsbDeviceMusicList(null, null);
         }
 

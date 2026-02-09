@@ -39,6 +39,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             AppObservableObj.CurrentPlayList = null;
+            App.MainWindow.IsBackBtnEnable = false;
             //_parentPage.DisableBackButton();
             //InitializingData();
         }

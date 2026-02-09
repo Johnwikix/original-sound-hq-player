@@ -7,7 +7,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
 using WinUIEx;
@@ -27,13 +29,15 @@ using ZLinq;
 
 namespace WinUIMusicPlayer
 {
-    public sealed partial class MainWindow : WinUIEx.WindowEx
+    public sealed partial class MainWindow : WinUIEx.WindowEx, INotifyPropertyChanged
     {
         public event EventHandler updateMusicList;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
         public event EventHandler<bool> backdropInputState;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         private IntPtr m_hwnd;
@@ -41,6 +45,18 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private readonly INavigationService _navigationService;
+        public bool IsBackBtnEnable
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = true;
         private MusicDatabaseService MusicDatabaseService { get; }
         public MainWindow()
         {
@@ -72,6 +88,11 @@ namespace WinUIMusicPlayer
             SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)

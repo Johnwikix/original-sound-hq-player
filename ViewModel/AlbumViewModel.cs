@@ -90,6 +90,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppObservableObj.PageType = "albumBrowse";
             //parentPage.DisableBackButton();
             Entance();
+            App.MainWindow.IsBackBtnEnable = false;
         }
 
         private void RefreshAlbum(object? sender, bool e)

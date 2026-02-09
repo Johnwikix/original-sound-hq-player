@@ -760,6 +760,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _musicPlaybackService.PlayButton();
             UpdatePlayPauseButtonIcon();
+            
         }
 
 

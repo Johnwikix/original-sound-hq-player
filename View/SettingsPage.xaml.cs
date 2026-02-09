@@ -36,7 +36,7 @@ namespace WinUIMusicPlayer.View
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            LoadOutputDevices();
+            LoadOutputDevices();           
         }
 
         private void LoadOutputDevices()

@@ -73,7 +73,7 @@
                     Width="48"
                     BackRequested="NavigationViewControl_BackRequested"
                     IsBackButtonVisible="Visible"
-                    IsBackEnabled="True"
+                    IsBackEnabled="{x:Bind IsBackBtnEnable, Mode=OneWay}"
                     IsPaneOpen="False"
                     IsPaneToggleButtonVisible="False"
                     ItemInvoked="NavigationView_ItemInvoked"

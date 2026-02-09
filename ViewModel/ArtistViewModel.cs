@@ -92,6 +92,7 @@ namespace WinUIMusicPlayer.ViewModel
                 Debug.WriteLine("搜索条件未变更，保留当前视图状态");
             }
             ToolUtils.RefreshIcon(MusicList, "artist");
+            App.MainWindow.IsBackBtnEnable = false;
         }
 
         private void RefreshArtist(object? sender, bool e)

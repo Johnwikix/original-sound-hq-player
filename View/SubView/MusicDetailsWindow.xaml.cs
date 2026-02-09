@@ -27,13 +27,22 @@ namespace WinUIMusicPlayer.View.SubView
     /// </summary>
     public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx,INotifyPropertyChanged
     {
-        private Music MusicDetail { get; set; }
-        private NotificationService NotificationService { get; set; }
-        private byte[] AlbumCoverData { get; set; } = null;
+        private Music MusicDetail
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(AlbumCoverBitmap));
+                }
+            }
+        }       
         public BitmapImage AlbumCoverBitmap
         {
             get;
-            private set
+            set
             {
                 if (field != value)
                 {
@@ -54,6 +63,8 @@ namespace WinUIMusicPlayer.View.SubView
                 }
             }
         } = false;
+        private NotificationService NotificationService { get; set; }
+        private byte[] AlbumCoverData { get; set; } = null;
         private nint hwnd;
         private ThemeStyleHelper themeStyleHelper;
 
