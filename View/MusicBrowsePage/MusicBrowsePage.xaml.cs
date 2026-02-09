@@ -273,7 +273,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    ContentFrame.Navigate(typeof(SongCollectionPage));
+                    ContentFrame.Navigate(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else if (ContentFrame.Content is SongCollectionPage) {
                     App.MainWindow.UpdateMusicList();
@@ -293,7 +293,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    ContentFrame.Navigate(typeof(SongArtistListPage));
+                    ContentFrame.Navigate(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
                     App.MainWindow.UpdateMusicList();
