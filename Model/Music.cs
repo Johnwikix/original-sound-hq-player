@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -63,7 +64,7 @@ namespace WinUIMusicPlayer.Model
                     App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().FolderSongsView.Cast<Music>()]);
                     break;
             }
-            App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music: this, IsChangeList: true);
+            App.Services.GetRequiredService<MusicBrowseViewModel>().MusicBrowsePage.PlayMusic(music: this, IsChangeList: true);
         }
 
         [RelayCommand]
