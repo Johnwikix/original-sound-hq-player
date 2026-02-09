@@ -3,7 +3,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.Storage.Pickers;
 using System;
+using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
@@ -23,13 +25,40 @@ namespace WinUIMusicPlayer.View.SubView
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx
+    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx,INotifyPropertyChanged
     {
-        private Music musicDetail;
-        private NotificationService notificationService;
-        private byte[] albumCoverData = null;
+        private Music MusicDetail { get; set; }
+        private NotificationService NotificationService { get; set; }
+        private byte[] AlbumCoverData { get; set; } = null;
+        public BitmapImage AlbumCoverBitmap
+        {
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(AlbumCoverBitmap));
+                }
+            }
+        }
+        public bool IsLoading
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = false;
         private nint hwnd;
         private ThemeStyleHelper themeStyleHelper;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
@@ -49,6 +78,11 @@ namespace WinUIMusicPlayer.View.SubView
             }
             Title = ToolUtils.GetString("MusicDetailTitle");
             this.Closed += MusicDetailWindow_Closed;
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private void MainWindow_backdropInputState(object? sender, bool e)
@@ -73,7 +107,7 @@ namespace WinUIMusicPlayer.View.SubView
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 650, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
-            notificationService = App.Services.GetRequiredService<NotificationService>();
+            NotificationService = App.Services.GetRequiredService<NotificationService>();
         }
 
         private void MainWindow_customStyleChanged(object? sender, EventArgs e)
@@ -91,24 +125,42 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void InitalizeData(Music music)
         {
-            musicDetail = music;
-            TitleTextBlock.Text = music.Title;
-            AuthorTextBlock.Text = music.Author;
-            AlbumTextBlock.Text = music.Album;
-            TrackNumberBox.Value = music.TrackNumber;
-            LyricsTextBox.Text = music.Lyrics;
-            DurationTextBlock.Text = music.Duration.TotalHours >= 1 ? music.Duration.ToString(@"hh\:mm\:ss") : music.Duration.ToString(@"mm\:ss");
-            BitDepthTextBlock.Text = $"{music.BitDepth}bit";
-            BitRateTextBlock.Text = $"{music.BitRate}kbps";
-            SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
-            YearTextBlock.Value = music.Year;
-            LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
-            DiskNumberBox.Value = music.DiskNumber;
-            PathTextBlock.Text = music.Path;
-            albumCoverData = await ToolUtils.GetRawImage(music, true);
-            AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-            CreateTimeBlock.Text = music.CreateTime.ToString();
-            UpdateTimeBlock.Text = music.UpdateTime.ToString();
+            MusicDetail = music;  
+            AlbumCoverData = await ToolUtils.GetRawImage(music, true);
+            DispatcherQueue.TryEnqueue(async () => {
+                AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
+            });
+            
+        }
+
+        private string ConvertDuration(TimeSpan duration)
+        {
+            if (duration.TotalHours >= 1)
+            {
+                return duration.ToString(@"hh\:mm\:ss");
+            }
+            else
+            {
+                return duration.ToString(@"mm\:ss");
+            }
+        }
+        private string ConvertBitDepth(int bitDepth)
+        {
+            return $"{bitDepth}bit";
+        }
+
+        private string ConvertSampleRate(int sampleRate)
+        {
+            return $"{sampleRate}Hz";
+        }
+
+        private string ConvertBitRate(int bitRate)
+        {
+            return $"{bitRate}Kbps";
+        }
+
+        private string ConvertTime(DateTime time) {
+            return time.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -116,33 +168,35 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
+        private Visibility BoolToVisibility(bool isLoading) {
+            return isLoading ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private Visibility BoolToNVisibility(bool isLoading)
+        {
+            return isLoading ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                musicDetail.Title = TitleTextBlock.Text;
-                musicDetail.Author = AuthorTextBlock.Text;
-                musicDetail.Album = AlbumTextBlock.Text;
-                musicDetail.Year = (int)YearTextBlock.Value;
-                musicDetail.DiskNumber = (int)DiskNumberBox.Value;
-                musicDetail.TrackNumber = (int)TrackNumberBox.Value;
-                musicDetail.Lyrics = LyricsTextBox.Text;
-                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(musicDetail);
+                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
             }
             catch (Exception ex)
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
         }
 
         private async Task UpdateFile(DateTime updateTime)
         {
-            using (TagLib.File audioFile = TagLib.File.Create(musicDetail.Path))
+            using (TagLib.File audioFile = TagLib.File.Create(MusicDetail.Path))
             {
                 Tag tag = audioFile.Tag;
                 tag.Pictures = Array.Empty<IPicture>();
-                byte[] albumArtData = albumCoverData;
+                byte[] albumArtData = AlbumCoverData;
                 Picture albumArt = new Picture
                 {
                     Type = PictureType.FrontCover,
@@ -151,29 +205,21 @@ namespace WinUIMusicPlayer.View.SubView
                     Data = new ByteVector(albumArtData)
                 };
                 tag.Pictures = new IPicture[] { albumArt };
-                tag.Title = TitleTextBlock.Text;
-                tag.Album = AlbumTextBlock.Text;
-                tag.Performers = new string[] { AuthorTextBlock.Text };
-                tag.Track = (uint)TrackNumberBox.Value;
-                tag.Disc = (uint)DiskNumberBox.Value;
-                tag.Year = (uint)YearTextBlock.Value;
-                tag.Lyrics = LyricsTextBox.Text;
-                LoadingGrid.Visibility = Visibility.Visible;
-                MusicDetail.Visibility = Visibility.Collapsed;
+                tag.Title = MusicDetail.Title;
+                tag.Album = MusicDetail.Album;
+                tag.Performers = new string[] { MusicDetail.Author };
+                tag.Track = (uint)MusicDetail.TrackNumber;
+                tag.Disc = (uint)MusicDetail.DiskNumber;
+                tag.Year = (uint)MusicDetail.Year;
+                tag.Lyrics = MusicDetail.Lyrics;
+                IsLoading = true;
                 await Task.Run(() => audioFile.Save());
             }
-            musicDetail.Title = TitleTextBlock.Text;
-            musicDetail.Author = AuthorTextBlock.Text;
-            musicDetail.Album = AlbumTextBlock.Text;
-            musicDetail.Year = (int)YearTextBlock.Value;
-            musicDetail.DiskNumber = (int)DiskNumberBox.Value;
-            musicDetail.TrackNumber = (int)TrackNumberBox.Value;
-            musicDetail.Lyrics = LyricsTextBox.Text;
-            musicDetail.UpdateTime = updateTime;
-            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(musicDetail);
-            if (AppData.albumCoverCache.ContainsKey(musicDetail.Album))
+            MusicDetail.UpdateTime = updateTime;
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
+            if (AppData.albumCoverCache.ContainsKey(MusicDetail.Album))
             {
-                AppData.albumCoverCache[musicDetail.Album] = (BitmapImage)AlbumCoverImage.Source;
+                AppData.albumCoverCache[MusicDetail.Album] = AlbumCoverBitmap;
             }
         }
 
@@ -187,92 +233,81 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
         }
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
-            //if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-            //{
-            //    albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}
-            //else
-            //{
-            //    albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}
-            albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            if (albumCoverData is not null)
+            AlbumCoverData = await LrcService.GetCoverImageAsync(MusicDetail.Title, MusicDetail.Album, MusicDetail.Author);
+            if (AlbumCoverData is not null)
             {
-                AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
+                DispatcherQueue.TryEnqueue(async () => {
+                    AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
+                });                
             }
             else
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainCover"));
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainCover"));
             }
         }
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(musicDetail);
-            if (lyrics is not null)
+            (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(MusicDetail);
+            MusicDetail.Lyrics = lyrics ?? string.Empty;
+            MusicDetail.TranslatdeLyrics = transLrc ?? string.Empty;
+            if (lyrics is null && transLrc is null)
             {
-                LyricsTextBox.Text = lyrics;
-            }
-            else
-            {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
             }
         }
 
         private async void SaveLyrics_Click(object sender, RoutedEventArgs e)
         {
             char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(musicDetail.Path), invalidChars);
-            string targetBasePath = Path.GetDirectoryName(musicDetail.Path);
+            string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(MusicDetail.Path), invalidChars);
+            string targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
             _ = Task.Run(() =>
             {
                 string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                 string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(musicDetail.Lyrics));
+                System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Lyrics));
                 ToolUtils.OpenFileInExplorer(lrcFilePath);
             });
         }
 
         private async void OpenFile_Click(object sender, RoutedEventArgs e)
         {
-            ToolUtils.OpenFileInExplorer(musicDetail.Path);
+            ToolUtils.OpenFileInExplorer(MusicDetail.Path);
         }
 
         private void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
         {
             _ = Task.Run(async () =>
             {
-                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(musicDetail.Path);
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(MusicDetail.Path);
                 Music music = await ToolUtils.GetMusicInfo(storageFile);
                 if (music is not null)
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
-                        TitleTextBlock.Text = music.Title;
-                        AuthorTextBlock.Text = music.Author;
-                        AlbumTextBlock.Text = music.Album;
-                        if (!string.IsNullOrEmpty(music.Lyrics))
-                        {
-                            LyricsTextBox.Text = music.Lyrics;
-                        }
-                        TrackNumberBox.Value = music.TrackNumber;
-                        DurationTextBlock.Text = music.Duration.ToString(@"mm\:ss");
-                        BitDepthTextBlock.Text = $"{music.BitDepth}bit";
-                        BitRateTextBlock.Text = $"{music.BitRate}kbps";
-                        SampleRateTextBlock.Text = $"{music.SampleRate}Hz";
-                        YearTextBlock.Value = music.Year;
-                        LastFolderNameTextBlock.Text = music.LastLevelFolderPath;
-                        DiskNumberBox.Value = music.DiskNumber;
-                        PathTextBlock.Text = music.Path;
-                        CreateTimeBlock.Text = music.CreateTime.ToString();
-                        UpdateTimeBlock.Text = music.UpdateTime.ToString();
+                        MusicDetail.Title = music.Title;
+                        MusicDetail.Author = music.Author;
+                        MusicDetail.Album = music.Album;
+                        MusicDetail.Lyrics = music.Lyrics;
+                        MusicDetail.TrackNumber = music.TrackNumber;
+                        MusicDetail.Duration = music.Duration;
+                        MusicDetail.BitDepth = music.BitDepth;
+                        MusicDetail.BitRate = music.BitRate;
+                        MusicDetail.SampleRate = music.SampleRate;
+                        MusicDetail.Year = music.Year;
+                        MusicDetail.LastLevelFolderPath = music.LastLevelFolderPath;
+                        MusicDetail.DiskNumber = music.DiskNumber;
+                        MusicDetail.Path = music.Path;
+                        MusicDetail.CreateTime = music.CreateTime;
+                        MusicDetail.UpdateTime = music.UpdateTime;
                     });
                 }
             });
@@ -282,21 +317,25 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                FileOpenPicker openPicker = new FileOpenPicker(App.MainWindow.AppWindow.Id);
-                openPicker.ViewMode = PickerViewMode.Thumbnail;
+                FileOpenPicker openPicker = new(App.MainWindow.AppWindow.Id)
+                {
+                    ViewMode = PickerViewMode.Thumbnail
+                };
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
                 openPicker.FileTypeFilter.Add(".png");
                 var file = await openPicker.PickSingleFileAsync();
                 if (file is not null)
                 {
-                    albumCoverData = await System.IO.File.ReadAllBytesAsync(file.Path);
-                    AlbumCoverImage.Source = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
+                    AlbumCoverData = await System.IO.File.ReadAllBytesAsync(file.Path);
+                    DispatcherQueue.TryEnqueue(async () => {
+                        AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
+                    });
                 }
             }
             catch (Exception ex)
             {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
@@ -311,11 +350,11 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 try
                 {
-                    await System.IO.File.WriteAllBytesAsync(file.Path, albumCoverData);
+                    await System.IO.File.WriteAllBytesAsync(file.Path, AlbumCoverData);
                 }
                 catch (Exception ex)
                 {
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                    NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }
         }

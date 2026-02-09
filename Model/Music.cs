@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml.Controls;
 using SQLite;
 using System;
 using System.Linq;
@@ -97,5 +98,9 @@ namespace WinUIMusicPlayer.Model
             App.Services.GetRequiredService<AppObservableObj>().RemoveFromPlayListSongs(this);
         }
 
+        public static implicit operator RelativePanel(Music v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
