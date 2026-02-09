@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -24,9 +25,9 @@ namespace WinUIMusicPlayer.ViewModel
         public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
-        public FavouritePlayListViewModel(MusicBrowsePage musicBrowsePage,AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public FavouritePlayListViewModel(MusicBrowseViewModel musicBrowseViewModel,AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = musicBrowsePage;
+            parentPage = musicBrowseViewModel.MusicBrowsePage;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
             //parentPage.refreshPage += RefreshMusicList;

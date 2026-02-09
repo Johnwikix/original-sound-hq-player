@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -18,10 +19,11 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayListPage : Page, INavigatable
     {
         public PlayListViewModel ViewModel { get; }
-        public PlayListPage(PlayListViewModel viewModel)
+        public PlayListPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<PlayListViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
         }

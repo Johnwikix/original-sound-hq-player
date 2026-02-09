@@ -44,9 +44,9 @@ namespace WinUIMusicPlayer.ViewModel
         private ContextMenuService _contextMenuService;
         private string _currentSortOrder = "DefaultOrder";
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public AlbumViewModel(ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = parent;
+            parentPage = musicBrowseViewModel?.MusicBrowsePage;
             _musicBrowseViewModel = musicBrowseViewModel;
             GroupedMusicViewSource = new CollectionViewSource
             {

@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -30,14 +31,15 @@ namespace WinUIMusicPlayer.View
         public FavouritePlayListViewModel ViewModel { get; }
         private MusicDatabaseService MusicDatabaseService { get; }
 
-        public FavouritePlayListPage(FavouritePlayListViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public FavouritePlayListPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            MusicDatabaseService = musicDatabaseService;
+            MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)

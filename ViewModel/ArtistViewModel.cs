@@ -39,9 +39,9 @@ namespace WinUIMusicPlayer.ViewModel
         private ArtistPage? currentPage { get; set; }
         private ContextMenuService _contextMenuService { get; }
 
-        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public ArtistViewModel(ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = parent;
+            parentPage = musicBrowseViewModel?.MusicBrowsePage;
             GroupedMusicViewSource = new CollectionViewSource
             {
                 IsSourceGrouped = true

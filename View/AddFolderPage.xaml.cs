@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -19,16 +20,17 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class AddFolderPage : Page
     {
-        private NotificationService notificationService;
+        private NotificationService notificationService { get; }
         public AddFolderViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public AddFolderPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel =  App.Services.GetRequiredService<AddFolderViewModel>();
+            this.notificationService = App.Services.GetRequiredService<NotificationService>();
             DataContext = this;
-            this.notificationService = notificationService;
-            _musicDatabaseService = musicDatabaseService;
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)

@@ -38,9 +38,9 @@ namespace WinUIMusicPlayer.ViewModel
         private SongListPage currentPage { get; set; }
         private string _lastSearchText = "";
 
-        public SongListViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
-            _parentPage = parent;
+            _parentPage = musicBrowseViewModel?.MusicBrowsePage;
             //_parentPage.refreshPage += RefreshPage;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;

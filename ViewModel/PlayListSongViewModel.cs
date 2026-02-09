@@ -28,9 +28,9 @@ namespace WinUIMusicPlayer.ViewModel
         private PlayListSongPage _currentPage { get; set; }
         private int _currentPlayListId { get; set; }
 
-        public PlayListSongViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService) 
+        public PlayListSongViewModel(MusicBrowseViewModel musicBrowseViewModel,AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService) 
         {
-            _parentPage = parent;
+            _parentPage = musicBrowseViewModel?.MusicBrowsePage;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
             //_parentPage.refreshPage += RefreshPlayList;

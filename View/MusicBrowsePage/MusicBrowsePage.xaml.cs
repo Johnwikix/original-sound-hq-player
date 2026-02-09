@@ -44,46 +44,41 @@ namespace WinUIMusicPlayer.View
         public EventHandler refreshSong;
         public EventHandler<bool> refreshPage;
         //public EventHandler<PlayList> addPlayListEvent;
-        private readonly INavigationService _navigationService;
+        //private readonly INavigationService _navigationService;
         private EqualizerDialog equalizerDialog;
-        private bool isSearching = false;
-        private string lastSearchText = string.Empty;
         private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
         private Storyboard? _lyricImgRTAni;
         private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel ViewModel { get; }
-        public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
-            LyricsRefreshService lyricsRefreshService,
-            NotificationService notificationService,
-            MusicBrowseViewModel viewModel,
-            MusicDatabaseService musicDatabaseService
-            )
+        public MusicBrowsePage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;            
-            ViewModel.SetLyricsService(lyricsRefreshService);
+            var musicPlaybackService = App.Services.GetRequiredService<BassPlayerCommandService>();
+            ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();        
+            ViewModel.SetLyricsService(App.Services.GetRequiredService<LyricsRefreshService>());
             ViewModel.SetMusicService(musicPlaybackService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            _musicDatabaseService = musicDatabaseService;
-            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            _navigationService.ContentFrame = ContentFrame;
-            _navigationService.RegisterPage<FavouritePlayListPage>();
-            _navigationService.RegisterPage<SongCollectionPage>();
-            _navigationService.RegisterPage<SongArtistListPage>();
-            _navigationService.RegisterPage<SongFolderListPage>();
-            _navigationService.RegisterPage<AlbumPage>();
-            _navigationService.RegisterPage<ArtistPage>();
-            _navigationService.RegisterPage<FolderBrowsePage>();
-            _navigationService.RegisterPage<PlayListPage>();
-            _navigationService.RegisterPage<PlayListSongPage>();
-            _navigationService.RegisterPage<SongListPage>();
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
+            //var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
+            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            //_navigationService.ContentFrame = ContentFrame;
+            //_navigationService.RegisterPage<FavouritePlayListPage>();
+            //_navigationService.RegisterPage<SongCollectionPage>();
+            //_navigationService.RegisterPage<SongArtistListPage>();
+            //_navigationService.RegisterPage<SongFolderListPage>();
+            //_navigationService.RegisterPage<AlbumPage>();
+            //_navigationService.RegisterPage<ArtistPage>();
+            //_navigationService.RegisterPage<FolderBrowsePage>();
+            //_navigationService.RegisterPage<PlayListPage>();
+            //_navigationService.RegisterPage<PlayListSongPage>();
+            //_navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
             if (App.MainWindow is not null)
             {
                 App.MainWindow.updateMusicList += MainWindow_updateMusicList;
-            }
+            }            
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
             {
@@ -103,8 +98,7 @@ namespace WinUIMusicPlayer.View
                     musicPlaybackService.ClearEqualizer();
                 }
             };
-            this.notificationService = notificationService;
-            InitializeTimer();
+            this.notificationService = App.Services.GetRequiredService<NotificationService>();
             SetAcrylicBrushBackground();
             this.Loaded += OnPageLoaded;
         }
@@ -117,7 +111,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
         {
-            _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
+            ContentFrame.Navigate(currentPage);
         }
 
         public async Task<bool> AreUSureDeleteFromDisk()
@@ -235,12 +229,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void InitializeTimer()
-        {
-            typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(300);
-            typingTimer.Tick += TypingTimer_Tick;
-        }
         public void ShowTransmission()
         {
             ViewModel.AppObservableObj.ProcessRingVisibility = Visibility.Visible;
@@ -285,7 +273,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    ContentFrame.Navigate(typeof(SongCollectionPage));
                 }
                 else if (ContentFrame.Content is SongCollectionPage) {
                     App.MainWindow.UpdateMusicList();
@@ -305,7 +293,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    ContentFrame.Navigate(typeof(SongArtistListPage));
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
                     App.MainWindow.UpdateMusicList();
@@ -316,87 +304,29 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-
-
-
-        private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            typingTimer.Stop();
-            typingTimer.Start();
-        }
-
-        private async void TypingTimer_Tick(object sender, object e)
-        {
-            typingTimer.Stop();
-
-            try
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    // ∑¿÷π÷ÿ»Î
-                    if (isSearching)
-                    {
-                        return;
-                    }
-
-                    var currentText = SearchTextBox.Text;
-
-                    // ∑¿÷π÷ÿ∏¥À—À˜
-                    if (currentText == lastSearchText)
-                    {
-                        return;
-                    }
-
-                    isSearching = true;
-                    lastSearchText = currentText;
-
-                    try
-                    {
-                        AppData.searchText = currentText;
-                        if (ContentFrame?.Content is not null)
-                        {
-                            refreshPage?.Invoke(this, true);
-                            refreshSong?.Invoke(this, EventArgs.Empty);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
-                    }
-                    finally
-                    {
-                        isSearching = false;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"À—À˜¥¶¿Ì“Ï≥£: {ex.Message}");
-            }
-        }
+        
 
         public void BackButton()
         {
             if (ContentFrame.Content is SongCollectionPage)
             {
                 AppData.CurrentPage = typeof(AlbumPage);
-                _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(AlbumPage));
             }
             if (ContentFrame.Content is SongArtistListPage)
             {
                 AppData.CurrentPage = typeof(ArtistPage);
-                _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(ArtistPage));
             }
             if (ContentFrame.Content is SongFolderListPage)
             {
                 AppData.CurrentPage = typeof(FolderBrowsePage);
-                _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(FolderBrowsePage));
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
                 AppData.CurrentPage = typeof(PlayListPage);
-                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(PlayListPage));
             }
             //DisableBackButton();
         }

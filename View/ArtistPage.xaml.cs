@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -14,28 +15,22 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class ArtistPage : Page, INavigatable
+    public sealed partial class ArtistPage : Page
     {
         public ArtistViewModel ViewModel { get; }
-        public ArtistPage(ArtistViewModel viewModel)
+        public ArtistPage()
         {
-            ViewModel = viewModel;
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            ViewModel = App.Services.GetRequiredService<ArtistViewModel>();
             ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
-        }
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.ReceiveNavigation();
-            }
+            ViewModel.ReceiveNavigation();
         }  
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)

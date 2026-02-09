@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -28,13 +29,14 @@ namespace WinUIMusicPlayer.View
     {
         public SongCollectionViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public SongCollectionPage(SongCollectionViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public SongCollectionPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<SongCollectionViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
-            _musicDatabaseService = musicDatabaseService;
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
         }
 
         public void ReceiveNavigationParameter(object parameter)

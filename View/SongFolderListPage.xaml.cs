@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -35,13 +36,14 @@ namespace WinUIMusicPlayer.View
     {
         public SongFolderListViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public SongFolderListPage(SongFolderListViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public SongFolderListPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<SongFolderListViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
-            _musicDatabaseService = musicDatabaseService;
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
         }
 
         public void ReceiveNavigationParameter(object parameter)

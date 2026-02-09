@@ -63,21 +63,23 @@ namespace WinUIMusicPlayer
                  services.AddHostedService<AppInitializerService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
-                 services.AddSingleton<AddFolderPage>();
-                 services.AddSingleton<MusicBrowsePage>();
-                 services.AddSingleton<SettingsPage>();
-                 services.AddSingleton<FavouritePlayListPage>();
-                 services.AddSingleton<AlbumPage>();
-                 services.AddSingleton<ArtistPage>();
-                 services.AddSingleton<SongArtistListPage>();
+                 //services.AddSingleton<AddFolderPage>();
+                 //services.AddSingleton<MusicBrowsePage>();
+                 //services.AddSingleton<SettingsPage>();
+                 //services.AddSingleton<FavouritePlayListPage>();
+                 //services.AddSingleton<AlbumPage>();
+                 //services.AddSingleton<ArtistPage>();
+                 //services.AddSingleton<SongArtistListPage>();
+
+                 //services.AddSingleton<FolderBrowsePage>();
+                 //services.AddSingleton<SongFolderListPage>();
+
+                 //services.AddSingleton<PlayListPage>();
+                 //services.AddSingleton<PlayListSongPage>();
+                 //services.AddSingleton<SongListPage>();
+                 //services.AddSingleton<SongCollectionPage>();
                  services.AddSingleton<SongArtistViewModel>();
-                 services.AddSingleton<FolderBrowsePage>();
-                 services.AddSingleton<SongFolderListPage>();
                  services.AddSingleton<SongFolderListViewModel>();
-                 services.AddSingleton<PlayListPage>();
-                 services.AddSingleton<PlayListSongPage>();
-                 services.AddSingleton<SongListPage>();
-                 services.AddSingleton<SongCollectionPage>();
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<SettingsViewModel>();

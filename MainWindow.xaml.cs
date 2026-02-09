@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
-        private readonly INavigationService _navigationService;
+        //private readonly INavigationService _navigationService;
         public bool IsBackBtnEnable
         {
             get;
@@ -69,11 +69,11 @@ namespace WinUIMusicPlayer
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             // µ¼º½·þÎñ
-            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            _navigationService.RegisterPage<AddFolderPage>();
-            _navigationService.RegisterPage<MusicBrowsePage>();
-            _navigationService.RegisterPage<SettingsPage>();
+            //var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
+            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            //_navigationService.RegisterPage<AddFolderPage>();
+            //_navigationService.RegisterPage<MusicBrowsePage>();
+            //_navigationService.RegisterPage<SettingsPage>();
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -256,13 +256,13 @@ namespace WinUIMusicPlayer
             switch (AppSettings.DefualtEntry)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                    ContentFrame.Navigate(typeof(AddFolderPage));
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
                 default:
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    ContentFrame.Navigate(typeof(MusicBrowsePage));
                     break;
             }
         }
@@ -270,7 +270,7 @@ namespace WinUIMusicPlayer
         public void NavigateToSettingsPage()
         {
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
+            ContentFrame.Navigate(typeof(SettingsPage));
         }
 
         public void UpdateMusicList()
@@ -351,7 +351,7 @@ namespace WinUIMusicPlayer
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
+                ContentFrame.Navigate(typeof(SettingsPage));
             }
             else
             {
@@ -359,10 +359,10 @@ namespace WinUIMusicPlayer
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                        ContentFrame.Navigate(typeof(AddFolderPage));
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                        ContentFrame.Navigate(typeof(MusicBrowsePage));
                         break;
                 }
             }
@@ -373,7 +373,7 @@ namespace WinUIMusicPlayer
             if (ContentFrame.Content is not MusicBrowsePage)
             {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 0);
+                ContentFrame.Navigate(typeof(MusicBrowsePage));
             }
         }
 
@@ -395,7 +395,7 @@ namespace WinUIMusicPlayer
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
-            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+            App.Services.GetRequiredService<MusicBrowseViewModel>().MusicBrowsePage.BackButton();
         }
 
         //public void DisableEnableBackButton(bool isEnable = false)

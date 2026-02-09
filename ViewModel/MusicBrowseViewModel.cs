@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _isPlaying, value))
                 {
-                    _musicBrowsePage.BeginOrPauseLyricImgAnimation(value);
+                    MusicBrowsePage.BeginOrPauseLyricImgAnimation(value);
                 }
             }
         }
@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.ViewModel
         
         public BassPlayerCommandService _musicPlaybackService;
         private SystemMediaControlsService _systemMediaControlsService;
-        private MusicBrowsePage _musicBrowsePage;
+        public MusicBrowsePage MusicBrowsePage { get; set; }
         private DeviceWatcher deviceWatcher;
         private List<FileSystemWatcher> watchers = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
@@ -208,7 +208,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat)
         {
             await _progressDialog.UpdateProgress(progressBarValue);
-            _progressDialog.XamlRoot = _musicBrowsePage.XamlRoot;
+            _progressDialog.XamlRoot = MusicBrowsePage.XamlRoot;
             _ = _progressDialog.ShowAsync();
 
             var conversionTasks = musics.Select(music =>
@@ -234,7 +234,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             if (progressBarValue < 100)
             {
-                _progressDialog.XamlRoot = _musicBrowsePage.XamlRoot;
+                _progressDialog.XamlRoot = MusicBrowsePage.XamlRoot;
                 _ = _progressDialog.ShowAsync();
             }
         }
@@ -660,7 +660,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 AppObservableObj.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 AppObservableObj.MusicDetailCover = DetailCover;
-                _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
+                MusicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
             _systemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
@@ -715,7 +715,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {
-            _musicBrowsePage = musicBrowsePage;
+            MusicBrowsePage = musicBrowsePage;
             InitializeSortComboBox();
         }
 
@@ -796,13 +796,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                _musicBrowsePage.PlayMusic(music);
+                MusicBrowsePage.PlayMusic(music);
             });
         }
 
         public void ShowPlayingDetail()
         {
-            _musicBrowsePage.ShowPlayingDetail();
+            MusicBrowsePage.ShowPlayingDetail();
         }
 
 
@@ -814,11 +814,11 @@ namespace WinUIMusicPlayer.ViewModel
                         ?.Index ?? -1;
             if (index > 0)
             {
-                _musicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[index - 1]);
+                MusicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[index - 1]);
             }
             else if (index == 0 && AppObservableObj.CurrentPlayingList.Count > 1)
             {
-                _musicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[AppObservableObj.CurrentPlayingList.Count - 1]);
+                MusicBrowsePage.PlayMusic(AppObservableObj.CurrentPlayingList[AppObservableObj.CurrentPlayingList.Count - 1]);
 
             }
         }
@@ -980,7 +980,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _musicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
+            MusicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
             //_musicBrowsePage.DisableBackButton();
         }
@@ -1007,7 +1007,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (AppObservableObj.SelectedSortOption is not null)
                 {
                     AppData.sortOrder = AppObservableObj.SelectedSortOption.Tag;
-                    _musicBrowsePage.SelectSortOptionChanged();
+                    MusicBrowsePage.SelectSortOptionChanged();
                 }
             }
             catch (Exception)

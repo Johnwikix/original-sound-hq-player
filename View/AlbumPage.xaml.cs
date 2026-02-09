@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -5,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System.Diagnostics;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
@@ -16,28 +18,22 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class AlbumPage : Page, INavigatable
+    public sealed partial class AlbumPage : Page
     {
         public AlbumViewModel ViewModel { get; }
-        public AlbumPage(AlbumViewModel viewModel)
+        public AlbumPage()
         {
-            ViewModel = viewModel;
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            ViewModel = App.Services.GetRequiredService<AlbumViewModel>();
             ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
         }
 
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
-        }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.ReceiveNavigation();
-            }
+            ViewModel.ReceiveNavigation();
         }
 
         public void SortMusicList(string sortOrder = "DefaultOrder")

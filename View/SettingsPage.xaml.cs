@@ -17,12 +17,13 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SettingsPage : Page, INavigatable
+    public sealed partial class SettingsPage : Page
     {
         private ContentDialog? _thirdPartyDialog;
         public SettingsViewModel ViewModel { get; }
         public SettingsPage()
         {
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
             this.InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;

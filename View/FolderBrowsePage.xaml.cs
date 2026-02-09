@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -14,21 +15,18 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class FolderBrowsePage : Page, INavigatable
+    public sealed partial class FolderBrowsePage : Page
     {
         public FolderViewModel ViewModel { get; }
-        public FolderBrowsePage(FolderViewModel viewModel)
+        public FolderBrowsePage()
         {
-            ViewModel = viewModel;
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            ViewModel = App.Services.GetRequiredService<FolderViewModel>();
             ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
         }
 
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
-        }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
