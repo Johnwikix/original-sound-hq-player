@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
         {
-            ContentFrame.Navigate(currentPage);
+            ContentFrame.Navigate(currentPage,null, navigationTransitionInfo);
         }
 
         public async Task<bool> AreUSureDeleteFromDisk()
@@ -311,22 +311,22 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is SongCollectionPage)
             {
                 AppData.CurrentPage = typeof(AlbumPage);
-                ContentFrame.Navigate(typeof(AlbumPage));
+                ContentFrame.Navigate(typeof(AlbumPage),null,new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongArtistListPage)
             {
                 AppData.CurrentPage = typeof(ArtistPage);
-                ContentFrame.Navigate(typeof(ArtistPage));
+                ContentFrame.Navigate(typeof(ArtistPage),null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongFolderListPage)
             {
                 AppData.CurrentPage = typeof(FolderBrowsePage);
-                ContentFrame.Navigate(typeof(FolderBrowsePage));
+                ContentFrame.Navigate(typeof(FolderBrowsePage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
                 AppData.CurrentPage = typeof(PlayListPage);
-                ContentFrame.Navigate(typeof(PlayListPage));
+                ContentFrame.Navigate(typeof(PlayListPage), null, new DrillInNavigationTransitionInfo());
             }
             //DisableBackButton();
         }
