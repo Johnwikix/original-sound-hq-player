@@ -32,14 +32,6 @@ namespace WinUIMusicPlayer.ViewModel
             get => _selectedMusic;
             set => SetProperty(ref _selectedMusic, value);
         }
-
-        private bool _isCoverVisible = false;
-        public bool IsCoverVisible
-        {
-            get => _isCoverVisible;
-            set => SetProperty(ref _isCoverVisible, value);
-        }
-
         private MusicBrowsePage? _parentPage;
         public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -49,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
         public SongListViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
-            _parentPage.refreshPage += RefreshPage;
+            //_parentPage.refreshPage += RefreshPage;
             AppObservableObj = appObservableObj;
             _musicDatabaseService = musicDatabaseService;
         }
@@ -118,10 +110,10 @@ namespace WinUIMusicPlayer.ViewModel
             //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
-        private void RefreshPage(object? sender, bool e)
-        {
-            InitializeDatabase();
-        }
+        //private void RefreshPage(object? sender, bool e)
+        //{
+        //    InitializeDatabase();
+        //}
 
         public void SortMusicList(string sortOrder)
         {
@@ -161,7 +153,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (_parentPage is not null && AppObservableObj.CurrentPlayingMusic is not null)
+                if (AppObservableObj.CurrentPlayingMusic is not null)
                 {
                     var selectedMusic = AppObservableObj.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
                         music.Id == AppObservableObj.CurrentPlayingMusic.Id);
@@ -338,32 +330,33 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            {
-                foreach (Music item in uniqueSelectedMusics)
-                {
-                    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
-                    if (music is not null)
-                    {
-                        music.Lyrics = lyrics;
-                        music.TranslatdeLyrics = transLrc;
-                        await _musicDatabaseService.UpdateMusicInfo(music);
-                    }
-                }
-            }
-            else
-            {
-                (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-                Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
-                if (music is not null)
-                {
-                    music.Lyrics = lyrics;
-                    music.TranslatdeLyrics = transLrc;
-                    await _musicDatabaseService.UpdateMusicInfo(music);
-                }
-            }
-            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+            AppObservableObj.ReGetLyrics(uniqueSelectedMusics,SelectedMusic);
+            //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            //{
+            //    foreach (Music item in uniqueSelectedMusics)
+            //    {
+            //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
+            //        Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
+            //        if (music is not null)
+            //        {
+            //            music.Lyrics = lyrics;
+            //            music.TranslatdeLyrics = transLrc;
+            //            await _musicDatabaseService.UpdateMusicInfo(music);
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic);
+            //    Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
+            //    if (music is not null)
+            //    {
+            //        music.Lyrics = lyrics;
+            //        music.TranslatdeLyrics = transLrc;
+            //        await _musicDatabaseService.UpdateMusicInfo(music);
+            //    }
+            //}
+            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         [RelayCommand]

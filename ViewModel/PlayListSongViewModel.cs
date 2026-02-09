@@ -19,28 +19,14 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class PlayListSongViewModel : ObservableObject
     {
-        //private IEnumerable<Music> Playlist { get; set; }
-
         public PlayListMusicItem SelectedMusic { get; set => SetProperty(ref field, value); }
-
-        private Music _currentMusicObject;
-        public Music CurrentMusicObject
-        {
-            get => _currentMusicObject;
-            set => SetProperty(ref _currentMusicObject, value);
-        }
-        private string _secondTitle;
-        public string SecondTitle
-        {
-            get => _secondTitle;
-            set => SetProperty(ref _secondTitle, value);
-        }
-
+        public Music CurrentMusicObject { get; set => SetProperty(ref field, value); }
+        public string SecondTitle { get; set => SetProperty(ref field, value); }
         private MusicBrowsePage? _parentPage { get; }
         public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private PlayListSongPage _currentPage { get; set; }
-        private int _currentPlayListId;
+        private int _currentPlayListId { get; set; }
 
         public PlayListSongViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService) 
         {
@@ -147,15 +133,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        //public void SortMusicList(string sortOrder)
-        //{
-        //    var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-        //    if (AppObservableObj.PlayListSongs.Count > 0)
-        //    {
-        //        ToolUtils.SortMusicListInPlace("playList", order, AppObservableObj.PlayListSongs);
-        //    }
-        //}
-
         public void UpdateMusicListView()
         {
             try
@@ -168,7 +145,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (selectedMusic is not null)
                     {
                         SelectedMusic = selectedMusic;
-                        _currentPage.OnScrollToMusic(selectedMusic);
+                        _currentPage?.OnScrollToMusic(selectedMusic);
                     }
                 }
             }
@@ -177,21 +154,6 @@ namespace WinUIMusicPlayer.ViewModel
                 Debug.WriteLine($"滚动音乐失败: {ex.Message}");
             }
         }
-
-        //public void UpdateFavouriteMusic(Music music)
-        //{
-        //    if (AppObservableObj.PlayListSongs is not null && AppObservableObj.PlayListSongs.Count > 0)
-        //    {
-        //        Music? currentMusic = MusicList.AsValueEnumerable().FirstOrDefault(m => m.Id == music.Id);
-        //        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            if (currentMusic is not null)
-        //            {
-        //                currentMusic.IsFavorite = music.IsFavorite;
-        //            }
-        //        });
-        //    }
-        //}
 
         public void MusicListView_DoubleTapped()
         {
@@ -323,45 +285,35 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-
-        //[RelayCommand]
-        //private async void IsFavouriteIconButtonChange(Music music)
-        //{
-        //    if (music is not null)
-        //    {
-        //        // 通过事件通知视图更新图标
-        //        await AppObservableObj.AddToFavourite(music);
-        //        AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-        //    }
-        //}
         public async void ReGetLyrics_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            {
-                foreach (PlayListMusicItem item in uniqueSelectedMusics)
-                {
-                    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item.Music);
-                    Music? music = AppObservableObj.AllSongs.AsValueEnumerable().Where(m => m.Id == item.Music.Id).FirstOrDefault();
-                    if (music is not null)
-                    {
-                        music.Lyrics = lyrics;
-                        music.TranslatdeLyrics = transLrc;
-                        await _musicDatabaseService.UpdateMusicInfo(music);
-                    }
-                }
-            }
-            else
-            {
-                (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic.Music);
-                Music? music = AppObservableObj.AllSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Music.Id).FirstOrDefault();
-                if (music is not null)
-                {
-                    music.Lyrics = lyrics;
-                    music.TranslatdeLyrics = transLrc;
-                    await _musicDatabaseService.UpdateMusicInfo(music);
-                }
-            }
-            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+            AppObservableObj.ReGetLyrics(uniqueSelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
+            //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            //{
+            //    foreach (PlayListMusicItem item in uniqueSelectedMusics)
+            //    {
+            //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item.Music);
+            //        Music? music = AppObservableObj.AllSongs.AsValueEnumerable().Where(m => m.Id == item.Music.Id).FirstOrDefault();
+            //        if (music is not null)
+            //        {
+            //            music.Lyrics = lyrics;
+            //            music.TranslatdeLyrics = transLrc;
+            //            await _musicDatabaseService.UpdateMusicInfo(music);
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic.Music);
+            //    Music? music = AppObservableObj.AllSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Music.Id).FirstOrDefault();
+            //    if (music is not null)
+            //    {
+            //        music.Lyrics = lyrics;
+            //        music.TranslatdeLyrics = transLrc;
+            //        await _musicDatabaseService.UpdateMusicInfo(music);
+            //    }
+            //}
+            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
         }
 
         //public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)

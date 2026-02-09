@@ -115,7 +115,7 @@
                     Margin="20,0,10,0"
                     FontSize="30"
                     FontWeight="Bold"
-                    Text="{x:Bind ViewModel.FirstTitle, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.AppObservableObj.CurrentAlbumObj.Album, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="SecondaryTitleTextBlock"

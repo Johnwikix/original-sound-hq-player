@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using TagLib.Ape;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -217,7 +218,7 @@ namespace WinUIMusicPlayer.Model
         public AppObservableObj(MusicDatabaseService musicDatabaseService)
         {
             _musicDatabaseService = musicDatabaseService;
-            AllSongsView = new AdvancedCollectionView(AllSongs, false) // false 禁用内部反射排序
+            AllSongsView = new AdvancedCollectionView(AllSongs, true) // false 禁用内部反射排序
             {
                 Filter = item =>
                 {
@@ -660,6 +661,35 @@ namespace WinUIMusicPlayer.Model
                             break;
                         }
                     }
+                }
+            }
+        }
+
+        public async void ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics,Music selectedMusic)
+        {
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            {
+                foreach (Music item in uniqueSelectedMusics)
+                {
+                    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
+                    Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
+                    if (music is not null)
+                    {
+                        music.Lyrics = lyrics;
+                        music.TranslatdeLyrics = transLrc;
+                        await _musicDatabaseService.UpdateMusicInfo(music);
+                    }
+                }
+            }
+            else
+            {
+                (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(selectedMusic);
+                Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == selectedMusic.Id).FirstOrDefault();
+                if (music is not null)
+                {
+                    music.Lyrics = lyrics;
+                    music.TranslatdeLyrics = transLrc;
+                    await _musicDatabaseService.UpdateMusicInfo(music);
                 }
             }
         }
