@@ -45,7 +45,6 @@ namespace WinUIMusicPlayer.Model
             switch (page) {
                 case "FavoriteSongsView":
                     App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().FavoriteSongs);
-                    App.Services.GetRequiredService<AppObservableObj>().FavoriteSongsSelectedMusic = this;
                     break;
                 case "PlayListSongs":
                     App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().PlayListSongs.Select(x => x.Music));

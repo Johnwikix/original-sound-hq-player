@@ -86,18 +86,6 @@ namespace WinUIMusicPlayer.ViewModel
             RefreshPage();
         }
 
-        //public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
-        //{
-
-        //    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        foreach (var music in MusicList)
-        //        {
-        //            music.IsExistOnDevice = 0;
-        //        }
-        //    });
-        //}
-
         public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
         {
             //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
@@ -138,48 +126,6 @@ namespace WinUIMusicPlayer.ViewModel
             return await _parentPage.AreUSureDeleteFromDisk();
         }
 
-        //[RelayCommand]
-        //private void PlayMusic(Music music)
-        //{
-        //    if (music is not null && _parentPage is not null)
-        //    {
-        //        AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.FolderSongsView.Cast<Music>()]);
-        //        _parentPage.PlayMusic(music: music, IsChangeList: true);
-        //    }
-        //}
-
-        //public void SortMusicList(string sortOrder, string type)
-        //{
-        //    var order = string.IsNullOrEmpty(sortOrder) ? "DefaultOrder" : sortOrder;
-
-        //    if (MusicList.Count > 0)
-        //    {
-        //        ToolUtils.SortMusicListInPlace(type, order, MusicList);
-        //    }
-        //}
-
-        //public void LoadMusicAsync(IEnumerable<Music> musics, string type = null)
-        //{
-        //    try
-        //    {
-        //        MusicList.Clear();
-        //        foreach (var music in musics)
-        //        {
-        //            MusicList.Add(music);
-        //        }
-        //        if (!string.IsNullOrEmpty(type))
-        //        {
-        //            SortMusicList("DefaultOrder", type);
-        //        }
-
-        //        UpdateMusicListView();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载音乐列表失败: {ex.Message}");
-        //    }
-        //}
-
         public bool CompareMusicCollections(ObservableCollection<Music> collection1, ObservableCollection<Music> collection2)
         {
             if (ReferenceEquals(collection1, collection2))
@@ -207,20 +153,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
             return true;
         }
-        //public void UpdateFavouriteMusic(Music music)
-        //{
-        //    if (MusicList is not null && MusicList.Count > 0)
-        //    {
-        //        Music? currentMusic = MusicList.AsValueEnumerable().FirstOrDefault(m => m.Id == music.Id);
-        //        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //        {
-        //            if (currentMusic is not null)
-        //            {
-        //                currentMusic.IsFavorite = music.IsFavorite;
-        //            }
-        //        });
-        //    }
-        //}
 
         public void UpdateMusicListView()
         {
@@ -293,36 +225,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        //public async Task DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
-        //{
-        //    if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-        //    {
-        //        for (int i = MusicList.Count - 1; i >= 0; i--)
-        //        {
-        //            if (uniqueSelectedMusics.AsValueEnumerable().Contains(MusicList[i]))
-        //            {
-        //                if (ToolUtils.DeleteFileFromDisk(MusicList[i].Path))
-        //                {
-        //                    await _musicDatabaseService.RemoveMusic(MusicList[i].Id);
-        //                    MusicList.RemoveAt(i);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (SelectedMusic is not null)
-        //        {
-        //            if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
-        //            {
-        //                await _musicDatabaseService.RemoveMusic(SelectedMusic.Id);
-        //                MusicList.Remove(SelectedMusic);
-        //            }
-        //        }
-        //    }
-
-        //    App.MainWindow.UpdateMusicList();
-        //}
 
         public async Task SetAsFavoriteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {

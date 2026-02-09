@@ -507,32 +507,33 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        //private void UpdateViewList(Music music)
-        //{
-        //    DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        //var songListPage = ContentFrame.Content as SongListPage;
-        //        //var songCollectionPage = ContentFrame.Content as SongCollectionPage;
-        //        //var FavouritePlayListPage = ContentFrame.Content as FavouritePlayListPage;
-        //        //var playListSongPage = ContentFrame.Content as PlayListSongPage;
-        //        //if (songListPage is not null)
-        //        //{
-        //        //    songListPage.UpdateMusicListView();
-        //        //}
-        //        //if (songCollectionPage is not null)
-        //        //{
-        //        //    songCollectionPage.UpdateMusicListView();
-        //        //}
-        //        //if (FavouritePlayListPage is not null)
-        //        //{
-        //        //    FavouritePlayListPage.UpdateMusicListView();
-        //        //}
-        //        //if (playListSongPage is not null)
-        //        //{
-        //        //    playListSongPage.UpdateMusicListView();
-        //        //}
-        //    });
-        //}
+        private void UpdateViewList(Music music)
+        {
+            if (ContentFrame.Content is SongListPage songListPage)
+            {
+                songListPage?.UpdateMusicListView();
+            }
+            if (ContentFrame.Content is SongCollectionPage songCollectionPage)
+            {
+                songCollectionPage?.UpdateMusicListView();
+            }
+            if (ContentFrame.Content is SongArtistListPage artistListPage)
+            {
+                artistListPage?.UpdateMusicListView();
+            }
+            if (ContentFrame.Content is SongFolderListPage folderListPage)
+            {
+                folderListPage?.UpdateMusicListView();
+            }
+            if (ContentFrame.Content is FavouritePlayListPage favouritePlayListPage)
+            {
+                favouritePlayListPage?.UpdateMusicListView();
+            }
+            if (ContentFrame.Content is PlayListSongPage playListSongPage)
+            {
+                playListSongPage?.UpdateMusicListView();
+            }
+        }
 
         public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
@@ -542,7 +543,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel.UpdatePlayBar(ViewModel.AppObservableObj.CurrentPlayingMusic);
                 ViewModel.LoadLyricsToUI();
                 //ViewModel.UpdateLyricsMargin();
-                //UpdateViewList(music);
+                UpdateViewList(music);
                 UpdateCurrentPlayList();
                 //ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
                 ViewModel._musicPlaybackService.PlayMusic(music);

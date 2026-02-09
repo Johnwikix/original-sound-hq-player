@@ -77,10 +77,10 @@ namespace WinUIMusicPlayer.View
         //    ViewModel.UpdateFavouriteMusic(music);
         //}
 
-        //public void UpdateMusicListView()
-        //{
-        //    ViewModel.UpdateMusicListView();
-        //}
+        public void UpdateMusicListView()
+        {
+            ViewModel.UpdateMusicListView();
+        }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {

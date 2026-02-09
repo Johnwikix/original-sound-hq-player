@@ -68,10 +68,10 @@ namespace WinUIMusicPlayer.View
         //    ViewModel.SortMusicList(sortOrder);
         //}
 
-        //public void UpdateMusicListView()
-        //{
-        //    ViewModel.UpdateMusicListView();
-        //}
+        public void UpdateMusicListView()
+        {
+            ViewModel.UpdateMusicListView();
+        }
 
         private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
         {

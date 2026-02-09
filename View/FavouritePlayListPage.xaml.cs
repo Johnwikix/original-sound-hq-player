@@ -98,10 +98,10 @@ namespace WinUIMusicPlayer.View
         //    ViewModel.RemoveMusic(musicToRemove);
         //}
 
-        //public void UpdateMusicListView()
-        //{
-        //    ViewModel.UpdateMusicListView();
-        //}
+        public void UpdateMusicListView()
+        {
+            ViewModel.UpdateMusicListView();
+        }
 
         private async void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
