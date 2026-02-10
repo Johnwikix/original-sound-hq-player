@@ -34,9 +34,9 @@ namespace WinUIMusicPlayer.Model
         public bool IsEqualizerEnabled { get; set; } = false;
         public int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public string EqualizerPreset { get; set; } = "Flat";
-        public int EntranceAnimationTime { get; set; } = 200;
-        public int SlideAnimationTime { get; set; } = 300;
-        public int DrillInAnimationTime { get; set; } = 300;
+        public int EntranceAnimationTime { get; set; } = 300;
+        public int SlideAnimationTime { get; set; } = 400;
+        public int DrillInAnimationTime { get; set; } = 400;
         public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;

@@ -38,9 +38,9 @@ namespace WinUIMusicPlayer.Model
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
-        public static int EntranceAnimationTime { get; set; } = 200;
-        public static int SlideAnimationTime { get; set; } = 300;
-        public static int DrillInAnimationTime { get; set; } = 300;
+        public static int EntranceAnimationTime { get; set; } = 300;
+        public static int SlideAnimationTime { get; set; } = 400;
+        public static int DrillInAnimationTime { get; set; } = 400;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
         //public static bool IsPlayDetailBtnVisible { get; set; } = true;
