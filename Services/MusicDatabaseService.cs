@@ -586,6 +586,7 @@ namespace WinUIMusicPlayer.Services
                 _appObservableObj.AllSongs.Add(song);
             }
             _appObservableObj.FavoriteSongs = GetFavoriteMusicFromMem();
+            _appObservableObj.UpdateGroupedByFirstLetter(m=>m.Album, m => GetFirstLetterAdvanced(m.Album), _appObservableObj.AlbumCollectionSource);
             await InitalPlayListAsync();
             await GetPlayListMusic();
         }

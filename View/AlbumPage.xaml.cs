@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View
 
         public void SortMusicList(string sortOrder = "DefaultOrder")
         {
-            ViewModel.SortMusicList(sortOrder);
+            //ViewModel.SortMusicList(sortOrder);
         }
 
 
@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer.View
 
         public void OnAlbumDetailChanged(object sender, Music cover)
         {
-            ViewModel.OnAlbumDetailChanged(sender, cover);
+            //ViewModel.OnAlbumDetailChanged(sender, cover);
         }
 
         private void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)

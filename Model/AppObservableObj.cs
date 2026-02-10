@@ -2,7 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI.Collections;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -92,7 +94,10 @@ namespace WinUIMusicPlayer.Model
         public ObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
-        //public AdvancedCollectionView FavoriteSongsView { get; }
+        public CollectionViewSource AlbumCollectionSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource
+        {
+            IsSourceGrouped = true
+        };
         public AdvancedCollectionView AllSongsView { get; }
         public AdvancedCollectionView AlbumSongsView { get; }
         public AdvancedCollectionView ArtistSongsView { get; }
@@ -297,6 +302,93 @@ namespace WinUIMusicPlayer.Model
             FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
         }
 
+        public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource targetCVS)
+        {
+            IEnumerable<Music> filteredSource = AllSongs;
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                filteredSource = AllSongs.Where(m =>
+                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+            // 2. 对去重后的专辑进行首字母分组
+            var groups = filteredSource
+                .GroupBy(distinctSelector)
+                .Select(g => g.First())
+                .GroupBy(groupSelector)
+                .Select(g => new GenericGroup
+                {
+                    Key = g.Key,
+                    // 这里的 Items 现在是每个专辑只有一个代表对象
+                    Items = new ObservableCollection<Music>(g.OrderBy(distinctSelector))
+                })
+                .OrderBy(g => g.Key == "#" ? "ZZZ" : g.Key)
+                .ToList();
+
+            // 3. 赋值           
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                targetCVS.ItemsPath = new PropertyPath("Items");
+                targetCVS.Source = groups;
+            });            
+        }
+
+
+        private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource targetCVS)
+        {
+            var filteredSource = string.IsNullOrWhiteSpace(SearchText)
+                                        ? AllSongs
+                                        : AllSongs.Where(m =>
+                                            (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                            (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+            // 2. 去重 (每个专辑/艺术家取一个代表)
+            var distinctItems = filteredSource
+                .GroupBy(distinctSelector)
+                .Select(g => g.First());
+
+            // 3. 执行全局排序 (只对去重后的项排序)
+            IEnumerable<Music> sortedItems = distinctItems;
+
+            if (SelectedSortOption.Tag != "DefaultOrder")
+            {
+                Func<Music, object> keySelector = SelectedSortOption.Tag switch
+                {
+                    "A-Z" => m => m.Title,
+                    "Artist" => m => m.Author,
+                    "Album" => m => m.Album,
+                    "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
+                    "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
+                    _ => m => distinctSelector(m)
+                };
+
+                bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
+
+                sortedItems = isAscending
+                    ? distinctItems.OrderBy(keySelector)
+                    : distinctItems.OrderByDescending(keySelector);
+            }
+
+            // 4. 对排好序的项进行首字母分组
+            // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
+            var groups = sortedItems
+                .GroupBy(groupSelector)
+                .Select(g => new GenericGroup
+                {
+                    Key = g.Key,
+                    Items = new ObservableCollection<Music>(g) // 这里的顺序已经排好了
+                })
+                // 5. 组间排序（首字母索引 A-Z 永远升序，#在后）
+                .OrderBy(g => g.Key == "#" ? "ZZZ" : g.Key)
+                .ToList();
+
+            // 6. 更新视图数据源
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                targetCVS.ItemsPath = new PropertyPath("Items");
+                targetCVS.Source = groups;
+            });
+        }
+
         public async Task AddToFavourite(Music music)
         {
             music.IsFavorite = !music.IsFavorite;
@@ -362,6 +454,7 @@ namespace WinUIMusicPlayer.Model
                     ArtistSongsView.RefreshFilter();
                     FolderSongsView.RefreshFilter();
                     RefreshPlayListSongMapping();
+                    UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album),AlbumCollectionSource);
                 }
             }
             catch (TaskCanceledException)
@@ -386,6 +479,7 @@ namespace WinUIMusicPlayer.Model
                 "Album" => query.OrderBy(m => m.Album),
                 "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
                 "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
+                "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
                 "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
                 "DefaultOrder" => query.OrderByDescending(m => m.Order),
                 _ => query.OrderByDescending(m => m.Order)
@@ -457,6 +551,7 @@ namespace WinUIMusicPlayer.Model
             UpdateViewSort(FolderSongsView, SongViewType.Folder);
             UpdateCollectionSort(FavoriteSongs);
             UpdatePlayListCollectionSort(PlayListSongs);
+            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumCollectionSource);
         }
 
         public enum SongViewType
@@ -491,6 +586,7 @@ namespace WinUIMusicPlayer.Model
                         "Album" => (nameof(Music.Album), SortDirection.Ascending),
                         "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
                         "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
+                        "UpdateTimeASC" => (nameof(Music.UpdateTime), SortDirection.Ascending),
                         "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
                         _ => (nameof(Music.Title), SortDirection.Ascending)
                     };
@@ -534,6 +630,7 @@ namespace WinUIMusicPlayer.Model
                 "Album" => m => m.Album,
                 "CreateTimeASC" => m => m.CreateTime,
                 "CreateTimeDESC" => m => m.CreateTime,
+                "UpdateTimeASC" => m => m.UpdateTime,
                 "UpdateTimeDESC" => m => m.UpdateTime,
                 "DefaultOrder" => m => m.Order,
                 _ => m => m.Title
@@ -572,6 +669,7 @@ namespace WinUIMusicPlayer.Model
                 "Album" => item => item.Music?.Album,
                 "CreateTimeASC" => item => item.Music?.CreateTime,
                 "CreateTimeDESC" => item => item.Music?.CreateTime,
+                "UpdateTimeASC" => item => item.Music?.UpdateTime,
                 "UpdateTimeDESC" => item => item.Music?.UpdateTime,
                 "DefaultOrder" => item => item.PlayListOrder,
                 _ => item => item.PlayListOrder
