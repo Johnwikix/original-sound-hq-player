@@ -8,7 +8,7 @@ namespace WinUIMusicPlayer.Model
         [PrimaryKey]
         public int Id { get; set; } = 1;
         public string OutputMode { get; set; } = "DirectSound";
-        public int Latency { get; set; } = 400;
+        public int Latency { get; set; } = 300;
         public int BassOutputDeviceId { get; set; } = -1;
         public int BassASIODeviceId { get; set; } = 0;
         public bool IsFadeEnabled { get; set; } = false;
@@ -36,7 +36,7 @@ namespace WinUIMusicPlayer.Model
         public string EqualizerPreset { get; set; } = "Flat";
         public int EntranceAnimationTime { get; set; } = 200;
         public int SlideAnimationTime { get; set; } = 300;
-        public int DrillInAnimationTime { get; set; } = 400;
+        public int DrillInAnimationTime { get; set; } = 300;
         public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;

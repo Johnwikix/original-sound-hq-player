@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static string OutputMode { get; set; } = "DirectSound";
-        public static int Latency { get; set; } = 400;
+        public static int Latency { get; set; } = 300;
 
         public static event EventHandler OutputSettingsChanged;
         public static event EventHandler OutputSettingsUpdated;
@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.Model
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public static int EntranceAnimationTime { get; set; } = 200;
         public static int SlideAnimationTime { get; set; } = 300;
-        public static int DrillInAnimationTime { get; set; } = 400;
+        public static int DrillInAnimationTime { get; set; } = 300;
         public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
         //public static bool IsPlayDetailBtnVisible { get; set; } = true;

@@ -118,7 +118,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             var animation = new DoubleAnimation()
             {
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseInOut }
             };
 
             // 根据效果设置起始位置
@@ -169,7 +169,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 1.1,
                 To = 1.0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseInOut }
             };
 
             // Y轴缩放动画（手动创建新实例）
@@ -178,7 +178,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 1.1,
                 To = 1.0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseInOut }
             };
 
             // 透明度动画
@@ -216,7 +216,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 500,
                 To = 0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseInOut }
             };
 
             var opacityAnimation = new DoubleAnimation()
