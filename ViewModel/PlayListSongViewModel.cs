@@ -120,7 +120,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void MusicListView_DragItemsCompleted()
         {
-            if (AppData.sortOrder == "DefaultOrder")
+            if (AppObservableObj.SelectedSortOption.Tag.ToString() == "DefaultOrder")
             {
                 if (_parentPage is not null)
                 {

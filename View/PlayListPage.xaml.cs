@@ -31,12 +31,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
-        }
-
         private void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is PlayList playList)

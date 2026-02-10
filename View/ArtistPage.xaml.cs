@@ -29,15 +29,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.ReceiveNavigation();
-            }
-        }  
-
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             ViewModel.ArtistGridView_ItemClick(sender, e);

@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.Model
         public static string searchText { get; set; } = string.Empty;
         public static ObservableCollection<UsbStorageDevice> usbStorageDevices { get; set; } = [];
         public static UsbStorageDevice usbStorageDevice { get; set; } = new();
-        public static string sortOrder { get; set; } = "DefaultOrder";
+        public static string SortOrder { get; set; } = "DefaultOrder";
         public static IntPtr m_hWnd { get; set; } = IntPtr.Zero;
         public static double AppDpiScale { get; set; } = 1.0;
         public static string systemLanguage { get; set; } = "en";

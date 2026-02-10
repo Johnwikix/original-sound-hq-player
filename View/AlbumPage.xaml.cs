@@ -31,19 +31,11 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ReceiveNavigation();
         }
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            if (e.Parameter is MusicBrowsePage parentPage)
-            {
-                ViewModel.ReceiveNavigation();
-            }
-        }
 
-        public void SortMusicList(string sortOrder = "DefaultOrder")
-        {
-            //ViewModel.SortMusicList(sortOrder);
-        }
+        //public void SortMusicList(string sortOrder = "DefaultOrder")
+        //{
+        //    //ViewModel.SortMusicList(sortOrder);
+        //}
 
 
         private void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)

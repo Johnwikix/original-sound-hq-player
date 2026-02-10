@@ -40,12 +40,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
-        }
-
         public void OnScrollToMusic(PlayListMusicItem selectedMusic)
         {
             _ = Task.Delay(100).ContinueWith(_ =>

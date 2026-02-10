@@ -43,10 +43,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             //_parentPage?.DisableBackButton();
-            if (AppObservableObj.SortOptions.Count == 2)
-            {
-                _musicBrowseViewModel?.AllSortOptions();
-            }
             //RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
             UpdateMusicListView();

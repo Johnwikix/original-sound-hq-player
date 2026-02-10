@@ -155,10 +155,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <StackPanel
-                                Margin="0"
-                                Orientation="Horizontal"
-                                Visibility="{x:Bind ViewModel.AppObservableObj.PageType, Converter={StaticResource PageTypeStringToVisibleConverter}, Mode=OneWay}">
+                            <StackPanel Margin="0" Orientation="Horizontal">
                                 <ComboBox
                                     x:Name="SortByComboBox"
                                     Width="130"

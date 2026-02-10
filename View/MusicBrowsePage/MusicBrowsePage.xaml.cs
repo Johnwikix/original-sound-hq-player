@@ -39,15 +39,15 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {
         private bool isMouseOverVolumeSlider = false;
-        private DispatcherTimer typingTimer;
+        //private DispatcherTimer typingTimer;
         private NotificationService notificationService;
-        public EventHandler refreshSong;
-        public EventHandler<bool> refreshPage;
+        //public EventHandler refreshSong;
+        //public EventHandler<bool> refreshPage;
         //public EventHandler<PlayList> addPlayListEvent;
         private readonly INavigationService _navigationService;
         private EqualizerDialog equalizerDialog;
-        private bool isSearching = false;
-        private string lastSearchText = string.Empty;
+        //private bool isSearching = false;
+        //private string lastSearchText = string.Empty;
         private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
         private Storyboard? _lyricImgRTAni;
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.View
                 }
             };
             this.notificationService = notificationService;
-            InitializeTimer();
+            //InitializeTimer();
             SetAcrylicBrushBackground();
             this.Loaded += OnPageLoaded;
         }
@@ -216,11 +216,11 @@ namespace WinUIMusicPlayer.View
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
             AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-            if (ContentFrame is not null && ContentFrame.Content is not null)
-            {
-                refreshPage?.Invoke(this, false);
-                refreshSong?.Invoke(this, EventArgs.Empty);
-            }
+            //if (ContentFrame is not null && ContentFrame.Content is not null)
+            //{
+            //    refreshPage?.Invoke(this, false);
+            //    refreshSong?.Invoke(this, EventArgs.Empty);
+            //}
         }
 
         private void SelectBarItem(string name)
@@ -235,12 +235,12 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void InitializeTimer()
-        {
-            typingTimer = new DispatcherTimer();
-            typingTimer.Interval = TimeSpan.FromMilliseconds(300);
-            typingTimer.Tick += TypingTimer_Tick;
-        }
+        //private void InitializeTimer()
+        //{
+        //    typingTimer = new DispatcherTimer();
+        //    typingTimer.Interval = TimeSpan.FromMilliseconds(300);
+        //    typingTimer.Tick += TypingTimer_Tick;
+        //}
         public void ShowTransmission()
         {
             ViewModel.AppObservableObj.ProcessRingVisibility = Visibility.Visible;
@@ -320,61 +320,61 @@ namespace WinUIMusicPlayer.View
 
 
 
-        private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            typingTimer.Stop();
-            typingTimer.Start();
-        }
+        //private async void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //    typingTimer.Stop();
+        //    typingTimer.Start();
+        //}
 
-        private async void TypingTimer_Tick(object sender, object e)
-        {
-            typingTimer.Stop();
+        //private async void TypingTimer_Tick(object sender, object e)
+        //{
+        //    typingTimer.Stop();
 
-            try
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    // ∑¿÷π÷ÿ»Î
-                    if (isSearching)
-                    {
-                        return;
-                    }
+        //    try
+        //    {
+        //        DispatcherQueue.TryEnqueue(() =>
+        //        {
+        //            // ∑¿÷π÷ÿ»Î
+        //            if (isSearching)
+        //            {
+        //                return;
+        //            }
 
-                    var currentText = SearchTextBox.Text;
+        //            var currentText = SearchTextBox.Text;
 
-                    // ∑¿÷π÷ÿ∏¥À—À˜
-                    if (currentText == lastSearchText)
-                    {
-                        return;
-                    }
+        //            // ∑¿÷π÷ÿ∏¥À—À˜
+        //            if (currentText == lastSearchText)
+        //            {
+        //                return;
+        //            }
 
-                    isSearching = true;
-                    lastSearchText = currentText;
+        //            isSearching = true;
+        //            lastSearchText = currentText;
 
-                    try
-                    {
-                        AppData.searchText = currentText;
-                        if (ContentFrame?.Content is not null)
-                        {
-                            refreshPage?.Invoke(this, true);
-                            refreshSong?.Invoke(this, EventArgs.Empty);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
-                    }
-                    finally
-                    {
-                        isSearching = false;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"À—À˜¥¶¿Ì“Ï≥£: {ex.Message}");
-            }
-        }
+        //            try
+        //            {
+        //                AppData.searchText = currentText;
+        //                if (ContentFrame?.Content is not null)
+        //                {
+        //                    refreshPage?.Invoke(this, true);
+        //                    refreshSong?.Invoke(this, EventArgs.Empty);
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Debug.WriteLine($"À—À˜÷¥–– ß∞‹: {ex.Message}");
+        //            }
+        //            finally
+        //            {
+        //                isSearching = false;
+        //            }
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"À—À˜¥¶¿Ì“Ï≥£: {ex.Message}");
+        //    }
+        //}
 
         public void BackButton()
         {
@@ -507,7 +507,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void UpdateViewList(Music music)
+        public void UpdateViewList()
         {
             if (ContentFrame.Content is SongListPage songListPage)
             {
@@ -542,10 +542,8 @@ namespace WinUIMusicPlayer.View
                 ViewModel.AppObservableObj.CurrentPlayingMusic = music;                
                 ViewModel.UpdatePlayBar(ViewModel.AppObservableObj.CurrentPlayingMusic);
                 ViewModel.LoadLyricsToUI();
-                //ViewModel.UpdateLyricsMargin();
-                UpdateViewList(music);
+                UpdateViewList();
                 UpdateCurrentPlayList();
-                //ViewModel._musicPlaybackService.UpdateCurrentPlayList(IsChangeList);
                 ViewModel._musicPlaybackService.PlayMusic(music);
                 ViewModel.UpdateProgressTimerUI();
                 ViewModel.LyricsRefreshService.ResetLyrics();                
@@ -556,49 +554,49 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void SelectSortOptionChanged()
-        {
-            if (ContentFrame is not null && ContentFrame.Content is not null)
-            {
-                //if (ContentFrame.Content is SongCollectionPage)
-                //{
-                //    var page = ContentFrame.Content as SongCollectionPage;
-                //    page.SortMusicList(AppData.sortOrder, ViewModel.AppObservableObj.PageType);
-                //}
-                //if (ContentFrame.Content is SongListPage)
-                //{
-                //    var page = ContentFrame.Content as SongListPage;
-                //    if (page is not null)
-                //    {
-                //        page.SortMusicList(AppData.sortOrder);
-                //    }
-                //}
-                //if (ContentFrame.Content is FavouritePlayListPage)
-                //{
-                //    var page = ContentFrame.Content as FavouritePlayListPage;
-                //    if (page is not null)
-                //    {
-                //        page.SortMusicList(AppData.sortOrder);
-                //    }
-                //}
-                if (ContentFrame.Content is AlbumPage)
-                {
-                    var page = ContentFrame.Content as AlbumPage;
-                    if (page is not null)
-                    {
-                        page.SortMusicList(AppData.sortOrder);
-                    }
-                }
-                //if (ContentFrame.Content is PlayListSongPage)
-                //{
-                //    var page = ContentFrame.Content as PlayListSongPage;
-                //    if (page is not null)
-                //    {
-                //        page.SortMusicList(AppData.sortOrder);
-                //    }
-                //}
-            }
-        }
+        //public void SelectSortOptionChanged()
+        //{
+        //    if (ContentFrame is not null && ContentFrame.Content is not null)
+        //    {
+        //        //if (ContentFrame.Content is SongCollectionPage)
+        //        //{
+        //        //    var page = ContentFrame.Content as SongCollectionPage;
+        //        //    page.SortMusicList(AppData.sortOrder, ViewModel.AppObservableObj.PageType);
+        //        //}
+        //        //if (ContentFrame.Content is SongListPage)
+        //        //{
+        //        //    var page = ContentFrame.Content as SongListPage;
+        //        //    if (page is not null)
+        //        //    {
+        //        //        page.SortMusicList(AppData.sortOrder);
+        //        //    }
+        //        //}
+        //        //if (ContentFrame.Content is FavouritePlayListPage)
+        //        //{
+        //        //    var page = ContentFrame.Content as FavouritePlayListPage;
+        //        //    if (page is not null)
+        //        //    {
+        //        //        page.SortMusicList(AppData.sortOrder);
+        //        //    }
+        //        //}
+        //        if (ContentFrame.Content is AlbumPage)
+        //        {
+        //            var page = ContentFrame.Content as AlbumPage;
+        //            if (page is not null)
+        //            {
+        //                page.SortMusicList(AppData.sortOrder);
+        //            }
+        //        }
+        //        //if (ContentFrame.Content is PlayListSongPage)
+        //        //{
+        //        //    var page = ContentFrame.Content as PlayListSongPage;
+        //        //    if (page is not null)
+        //        //    {
+        //        //        page.SortMusicList(AppData.sortOrder);
+        //        //    }
+        //        //}
+        //    }
+        //}
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

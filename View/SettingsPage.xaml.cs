@@ -33,12 +33,6 @@ namespace WinUIMusicPlayer.View
             LoadOutputDevices();
         }
 
-        protected async override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            LoadOutputDevices();           
-        }
-
         private void LoadOutputDevices()
         {
             ViewModel.IsRealDevceChange = false;

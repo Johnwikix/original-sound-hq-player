@@ -43,12 +43,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        // 然后在 SongListPage 的 OnNavigatedTo 中接收参数
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
-        }
         public void OnScrollToMusic(Music selectedMusic)
         {
             _ = Task.Delay(100).ContinueWith(_ =>

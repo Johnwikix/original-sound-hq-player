@@ -21,14 +21,14 @@
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="FolderGridView_ItemClick"
-                    ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppObservableObj.FolderCollectionSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"
                     SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Standard">
                     <GridView.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
-                                <DataTemplate x:DataType="model:MusicGroup">
+                                <DataTemplate x:DataType="model:GenericGroup">
                                     <TextBlock
                                         Margin="10,0,5,5"
                                         FontSize="28"
@@ -130,7 +130,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     IsItemClickEnabled="True"
-                    ItemsSource="{x:Bind ViewModel.GroupedMusicViewSource.View.CollectionGroups, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppObservableObj.FolderCollectionSource.View.CollectionGroups, Mode=OneWay}"
                     ScrollViewer.IsHorizontalScrollChainingEnabled="False"
                     ScrollViewer.IsVerticalScrollChainingEnabled="False"
                     ScrollViewer.ZoomMode="Disabled">
@@ -140,7 +140,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="32"
-                                Text="{x:Bind Group.(model:MusicGroup.Key), Mode=OneWay}" />
+                                Text="{x:Bind Group.(model:GenericGroup.Key), Mode=OneWay}" />
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>

@@ -29,11 +29,6 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ReceiveNavigation();
         }
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
-        }
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

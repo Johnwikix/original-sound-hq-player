@@ -18,23 +18,23 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class FolderViewModel : ObservableObject
     {
-        private ObservableCollection<Music> _musicList = [];
-        public ObservableCollection<Music> MusicList
-        {
-            get => _musicList;
-            set => SetProperty(ref _musicList, value);
-        }
-        private CollectionViewSource _groupedMusicViewSource;
-        public CollectionViewSource GroupedMusicViewSource
-        {
-            get => _groupedMusicViewSource;
-            set => SetProperty(ref _groupedMusicViewSource, value);
-        }
-        private List<MusicGroup> groupedByFirstLetter = [];
-        private string _lastSearchText = "";
+        //private ObservableCollection<Music> _musicList = [];
+        //public ObservableCollection<Music> MusicList
+        //{
+        //    get => _musicList;
+        //    set => SetProperty(ref _musicList, value);
+        //}
+        //private CollectionViewSource _groupedMusicViewSource;
+        //public CollectionViewSource GroupedMusicViewSource
+        //{
+        //    get => _groupedMusicViewSource;
+        //    set => SetProperty(ref _groupedMusicViewSource, value);
+        //}
+        //private List<MusicGroup> groupedByFirstLetter = [];
+        //private string _lastSearchText = "";
         private MusicBrowsePage? parentPage { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
-        private AppObservableObj AppObservableObj { get; }
+        public AppObservableObj AppObservableObj { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FolderBrowsePage? currentPage { get; set; }
         private ContextMenuService _contextMenuService { get; }
@@ -42,12 +42,12 @@ namespace WinUIMusicPlayer.ViewModel
         public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
-            GroupedMusicViewSource = new CollectionViewSource
-            {
-                IsSourceGrouped = true
-            };
+            //GroupedMusicViewSource = new CollectionViewSource
+            //{
+            //    IsSourceGrouped = true
+            //};
             //parentPage.DisableBackButton();
-            parentPage.refreshPage += RefreshFolder;
+            //parentPage.refreshPage += RefreshFolder;
             _contextMenuService = contextMenuService;
             _contextMenuService.playingFolderMusic += PlayingFolder;
             _contextMenuService.rescanFolderEnd += RescanFolderEnd;
@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateUsbIcon()
         {
-            ToolUtils.RefreshIcon(MusicList, "folder");
+            //ToolUtils.RefreshIcon(MusicList, "folder");
         }
 
         public void SetCurrentPage(FolderBrowsePage page)
@@ -85,62 +85,62 @@ namespace WinUIMusicPlayer.ViewModel
             AppObservableObj.CurrentFolderObj = null;
             AppObservableObj.PageType = "folderBrowse";
 
-            if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
-            {
-                _lastSearchText = AppData.searchText;
-                InitializeData();
-            }
-            else
-            {
-                Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-            }
+            //if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
+            //{
+            //    _lastSearchText = AppData.searchText;
+            //    InitializeData();
+            //}
+            //else
+            //{
+            //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
+            //}
 
-            ToolUtils.RefreshIcon(MusicList, "folder");
+            //ToolUtils.RefreshIcon(MusicList, "folder");
         }
 
-        private void RefreshFolder(object? sender, bool e)
-        {
-            InitializeData();
-        }
+        //private void RefreshFolder(object? sender, bool e)
+        //{
+        //    InitializeData();
+        //}
 
-        private void InitializeData()
-        {
-            try
-            {
-                MusicList.Clear();
-                var query = (_musicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
-                        .AsValueEnumerable()
-                        .GroupBy(m => m.LastLevelFolderPath)
-                        .Select(g => g.AsValueEnumerable().First())
-                        .OrderBy(m => m.LastLevelFolderPath);
-                foreach (var music in query)
-                {
-                    MusicList.Add(music);
-                }
-                LoadMoreFolderAsync(true);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"初始化文件夹时出错: {ex.Message}");
-            }
-        }
+        //private void InitializeData()
+        //{
+        //    try
+        //    {
+        //        MusicList.Clear();
+        //        var query = (_musicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
+        //                .AsValueEnumerable()
+        //                .GroupBy(m => m.LastLevelFolderPath)
+        //                .Select(g => g.AsValueEnumerable().First())
+        //                .OrderBy(m => m.LastLevelFolderPath);
+        //        foreach (var music in query)
+        //        {
+        //            MusicList.Add(music);
+        //        }
+        //        LoadMoreFolderAsync(true);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"初始化文件夹时出错: {ex.Message}");
+        //    }
+        //}
 
-        private void LoadMoreFolderAsync(bool isFirstLoad = false)
-        {
-            try
-            {
-                groupedByFirstLetter = MusicList.AsValueEnumerable()
-                        .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
-                        .OrderBy(group => group.Key)
-                        .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
-                        .ToList();
-                GroupedMusicViewSource.Source = groupedByFirstLetter;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
-            }
-        }
+        //private void LoadMoreFolderAsync(bool isFirstLoad = false)
+        //{
+        //    try
+        //    {
+        //        groupedByFirstLetter = MusicList.AsValueEnumerable()
+        //                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
+        //                .OrderBy(group => group.Key)
+        //                .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
+        //                .ToList();
+        //        GroupedMusicViewSource.Source = groupedByFirstLetter;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
+        //    }
+        //}
 
         public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

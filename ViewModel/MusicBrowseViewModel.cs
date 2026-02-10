@@ -156,7 +156,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 StartWatchingFileFolder();
             }
-            AppObservableObj.SortOptions = new ObservableCollection<SortOption>(AppObservableObj.AllSortOptions);
             StartWatchingUsbStorageDevices();
             progressTimer = new System.Timers.Timer(200);
             progressTimer.Elapsed += ProgressTimer_Elapsed;
@@ -320,33 +319,31 @@ namespace WinUIMusicPlayer.ViewModel
         //    }
         //}
 
-        public void AllSortOptions()
-        {
-            AppObservableObj.SortOptions.Clear();
-            foreach (var options in AppObservableObj.AllSortOptions)
-            {
-                AppObservableObj.SortOptions.Add(options);
-            }
-            UpdateDisplayTexts();
-            InitializeSortComboBox();
-        }
-        public void AlbumSortOptions()
-        {
-            AppObservableObj.SortOptions.Clear();
-            foreach (var options in AppObservableObj.AlbumSortOptions)
-            {
-                AppObservableObj.SortOptions.Add(options);
-            }
-            UpdateDisplayTexts();
-            InitializeSortComboBox();
-        }
+        //public void AllSortOptions()
+        //{
+        //    AppObservableObj.SortOptions.Clear();
+        //    foreach (var options in AppObservableObj.AllSortOptions)
+        //    {
+        //        AppObservableObj.SortOptions.Add(options);
+        //    }
+        //    UpdateDisplayTexts();
+        //    InitializeSortComboBox();
+        //}
+        //public void AlbumSortOptions()
+        //{
+        //    AppObservableObj.SortOptions.Clear();
+        //    foreach (var options in AppObservableObj.AlbumSortOptions)
+        //    {
+        //        AppObservableObj.SortOptions.Add(options);
+        //    }
+        //    UpdateDisplayTexts();
+        //    InitializeSortComboBox();
+        //}
 
-        private void InitializeSortComboBox()
-        {
-            var matchingItem = AppObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.sortOrder);
-            AppObservableObj.SelectedSortOption = matchingItem ?? AppObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault();
-            AppData.sortOrder = AppObservableObj.SelectedSortOption.Tag;
-        }
+        //private void InitializeSortComboBox()
+        //{
+ 
+        //}
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
@@ -716,7 +713,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {
             _musicBrowsePage = musicBrowsePage;
-            InitializeSortComboBox();
+            //InitializeSortComboBox();
         }
 
         [RelayCommand]
@@ -913,10 +910,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnSelectionChanged()
         {
-            if (AppObservableObj.SortOptions.Count == 2)
-            {
-                AllSortOptions();
-            }
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
             AppData.CurrentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
@@ -998,21 +991,6 @@ namespace WinUIMusicPlayer.ViewModel
                 "PlayList" => 5,
                 _ => -1
             };
-        }
-
-        private void OnSelectSortChanged()
-        {
-            try
-            {
-                if (AppObservableObj.SelectedSortOption is not null)
-                {
-                    AppData.sortOrder = AppObservableObj.SelectedSortOption.Tag;
-                    _musicBrowsePage.SelectSortOptionChanged();
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }        
+        }      
     }
 }

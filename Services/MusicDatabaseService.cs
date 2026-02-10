@@ -586,9 +586,13 @@ namespace WinUIMusicPlayer.Services
                 _appObservableObj.AllSongs.Add(song);
             }
             _appObservableObj.FavoriteSongs = GetFavoriteMusicFromMem();
-            _appObservableObj.UpdateGroupedByFirstLetter(m=>m.Album, m => GetFirstLetterAdvanced(m.Album), _appObservableObj.AlbumCollectionSource);
+            _appObservableObj.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), _appObservableObj.AlbumCollectionSource);
+            _appObservableObj.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), _appObservableObj.ArtistCollectionSource);
+            _appObservableObj.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), _appObservableObj.FolderCollectionSource);
             await InitalPlayListAsync();
             await GetPlayListMusic();
+            var matchingItem = _appObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.SortOrder);
+            _appObservableObj.SelectedSortOption = matchingItem ?? _appObservableObj.SortOptions.AsValueEnumerable().FirstOrDefault();
         }
 
 
@@ -729,7 +733,7 @@ namespace WinUIMusicPlayer.Services
             AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
             _appObservableObj.Volume = playState.Volume;
             _appObservableObj.TempVolume = playState.Volume;
-            AppData.sortOrder = playState.sortOrder;
+            AppData.SortOrder = playState.sortOrder;
         }
 
         public async Task GetSettingsAsync()
