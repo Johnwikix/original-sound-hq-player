@@ -326,7 +326,7 @@ namespace WinUIMusicPlayer.Model
                     // 这里的 Items 现在是每个专辑只有一个代表对象
                     Items = new ObservableCollection<Music>(g.OrderBy(distinctSelector))
                 })
-                .OrderBy(g => g.Key == "#" ? "ZZZ" : g.Key)
+                .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
                 .ToList();
 
             // 3. 赋值           
@@ -384,7 +384,7 @@ namespace WinUIMusicPlayer.Model
                         Items = new ObservableCollection<Music>(g) // 这里的顺序已经排好了
                     })
                     // 5. 组间排序（首字母索引 A-Z 永远升序，#在后）
-                    .OrderBy(g => g.Key == "#" ? "ZZZ" : g.Key)
+                    .OrderBy(g => g.Key == "ZZZ" ? "#"  : g.Key)
                     .ToList();
 
                 // 6. 更新视图数据源
