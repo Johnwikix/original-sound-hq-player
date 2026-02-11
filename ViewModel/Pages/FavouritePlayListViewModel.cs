@@ -29,7 +29,6 @@ namespace WinUIMusicPlayer.ViewModel
             parentPage = musicBrowsePage;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
-            //parentPage.refreshPage += RefreshMusicList;
         }
 
         public void SetCurrentPage(FavouritePlayListPage page)
@@ -39,16 +38,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            //InitializeData();
-            //RefreshUsbDeviceMusicList();
             UpdateMusicListView();
             App.MainWindow.IsBackBtnEnable = false;
         }
-
-        //private void RefreshMusicList(object? sender, bool e)
-        //{
-        //    if (e) InitializeData();
-        //}
 
         public void ShowTransmission()
         {
@@ -150,32 +142,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            AppViewModel.ReGetLyrics(uniqueSelectedMusics, AppViewModel.FavoriteSongsSelectedMusic);
-            //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            //{
-            //    foreach (Music item in uniqueSelectedMusics)
-            //    {
-            //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-            //        Music? music = AppViewModel.AllSongs.FirstOrDefault(m => m.Id == item.Id);
-            //        if (music is not null)
-            //        {
-            //            music?.Lyrics = lyrics;
-            //            music?.TranslatdeLyrics = transLrc;
-            //            await _musicDatabaseService.UpdateMusicInfo(music);
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(AppViewModel.FavoriteSongsSelectedMusic);
-            //    Music? music = AppViewModel.AllSongs.FirstOrDefault(m => m.Id == AppViewModel.FavoriteSongsSelectedMusic.Id);
-            //    if (music is not null)
-            //    {
-            //        music.Lyrics = lyrics;
-            //        music.TranslatdeLyrics = transLrc;
-            //        await _musicDatabaseService.UpdateMusicInfo(music);
-            //    }
-            //}
+            AppViewModel.ReGetLyrics(uniqueSelectedMusics, AppViewModel.FavoriteSongsSelectedMusic);           
         }
 
         public async void DeleteMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
@@ -248,7 +215,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void AlbumTextBlock_Tapped(TextBlock textBlock)
         {
             string albumName = textBlock.Text;
-            // 假设 AlbumDetailsPage 是目标页面，将专辑名作为参数传递
             if (parentPage is not null)
             {
                 parentPage.SelectBarAlbum(albumName);

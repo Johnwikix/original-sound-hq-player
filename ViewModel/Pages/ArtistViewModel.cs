@@ -18,20 +18,6 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class ArtistViewModel : ObservableObject
     {
-        //private ObservableCollection<Music> _musicList = [];
-        //public ObservableCollection<Music> MusicList
-        //{
-        //    get => _musicList;
-        //    set => SetProperty(ref _musicList, value);
-        //}
-        //private CollectionViewSource _groupedMusicViewSource;
-        //public CollectionViewSource GroupedMusicViewSource
-        //{
-        //    get => _groupedMusicViewSource;
-        //    set => SetProperty(ref _groupedMusicViewSource, value);
-        //}
-        //private List<MusicGroup> groupedByFirstLetter = [];
-        //private string _lastSearchText = "";
         private MusicBrowsePage? parentPage { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
@@ -42,11 +28,6 @@ namespace WinUIMusicPlayer.ViewModel
         public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
-            //GroupedMusicViewSource = new CollectionViewSource
-            //{
-            //    IsSourceGrouped = true
-            //};
-            //parentPage.refreshPage += RefreshArtist;
             _contextMenuService = contextMenuService;
             _contextMenuService.showTransmission += (s, e) =>
             {
@@ -81,59 +62,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentArtistObj = null;
             AppViewModel.PageType = "artistBrowse";
-            //parentPage.DisableBackButton();
-            //if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
-            //{
-            //    _lastSearchText = AppData.searchText;
-            //    InitializeData();
-            //}
-            //else
-            //{
-            //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
-            //}
-            //ToolUtils.RefreshIcon(MusicList, "artist");
             App.MainWindow.IsBackBtnEnable = false;
-        }
-
-        //private void RefreshArtist(object? sender, bool e)
-        //{
-        //    InitializeData();
-        //}
-
-        //private void InitializeData()
-        //{
-        //    try
-        //    {
-        //        MusicList.Clear();
-        //        var query = (_musicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
-        //        foreach (var music in query)
-        //        {
-        //            MusicList.Add(music);
-        //        }
-        //        LoadMoreArtistAsync(true);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine($"初始化艺术家页面时出错: {ex.Message}");
-        //    }
-        //}
-
-        //private void LoadMoreArtistAsync(bool isFirstLoad = false)
-        //{
-        //    try
-        //    {
-        //        groupedByFirstLetter = MusicList.AsValueEnumerable()
-        //                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
-        //                .OrderBy(group => group.Key)
-        //                .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
-        //                .ToList();
-        //        GroupedMusicViewSource.Source = groupedByFirstLetter;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
-        //    }
-        //}
+        }        
 
         public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
