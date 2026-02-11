@@ -20,8 +20,7 @@ namespace WinUIMusicPlayer.Services
             await MusicDatabaseService.Initialize();
             var tasks = new Task[] {
                  MusicDatabaseService.GetPlayStateAsync(),
-                 MusicDatabaseService.GetSettingsAsync(),
-                 MusicDatabaseService.LoadMusicList()
+                 MusicDatabaseService.GetSettingsAsync()
             };
             await Task.WhenAll(tasks);
             _appObservableObj.IsInitialized = true;

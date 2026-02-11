@@ -198,7 +198,8 @@ namespace WinUIMusicPlayer
                 themeStyleHelper.SetAppTheme();
                 var longOpsTask = Task.Run(async () =>
                 {
-                    await InitialFileScan.InitialScan();                    
+                    await InitialFileScan.InitialScan();
+                    await LoadMusicList();
                 });
                 await Task.Delay(500);
                 App.Services.GetRequiredService<IpcService>().Initializing();
@@ -275,6 +276,11 @@ namespace WinUIMusicPlayer
         public void UpdateMusicList()
         {
             updateMusicList?.Invoke(this, EventArgs.Empty);
+        }
+
+        public async Task LoadMusicList()
+        {
+            await MusicDatabaseService.LoadMusicList();
         }
 
         public void RefreshDevice()
