@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -45,22 +46,22 @@ namespace WinUIMusicPlayer.Model
         {
             switch (page) {
                 case "FavoriteSongsView":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().FavoriteSongs);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FavoriteSongs);
                     break;
                 case "PlayListSongs":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new(App.Services.GetRequiredService<AppObservableObj>().PlayListSongs.Select(x => x.Music));
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().PlayListSongs.Select(x => x.Music));
                     break;
                 case "AllSongsView":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().AllSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().AllSongsView.Cast<Music>()]);
                     break;
                 case "AlbumSongsView":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().AlbumSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().AlbumSongsView.Cast<Music>()]);
                     break;
                 case "ArtistSongsView":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().ArtistSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().ArtistSongsView.Cast<Music>()]);
                     break;
                 case "FolderSongsView":
-                    App.Services.GetRequiredService<AppObservableObj>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppObservableObj>().FolderSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().FolderSongsView.Cast<Music>()]);
                     break;
             }
             App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music: this, IsChangeList: true);
@@ -69,7 +70,7 @@ namespace WinUIMusicPlayer.Model
         [RelayCommand]
         public void AddMusicToCurrentPlayList()
         {
-            App.Services.GetRequiredService<AppObservableObj>().AddMusicToCurrentPlayList(this);
+            App.Services.GetRequiredService<AppViewModel>().AddMusicToCurrentPlayList(this);
         }
 
         [RelayCommand]
@@ -77,14 +78,14 @@ namespace WinUIMusicPlayer.Model
             IsFavorite = !IsFavorite;
             if (IsFavorite)
             {
-                Order = App.Services.GetRequiredService<AppObservableObj>().AllSongs
+                Order = App.Services.GetRequiredService<AppViewModel>().AllSongs
                                          .Where(m => m.IsFavorite)
                                          .OrderByDescending(m => m.Order)
                                          .FirstOrDefault()?.Order + 1 ?? 1;
-                App.Services.GetRequiredService<AppObservableObj>().AddToFavoriteSongs(this);
+                App.Services.GetRequiredService<AppViewModel>().AddToFavoriteSongs(this);
             }
             else {
-                App.Services.GetRequiredService<AppObservableObj>().RemoveFromFavoriteSongs(this);
+                App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
                 Order = 0;
             }
             _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
@@ -93,9 +94,9 @@ namespace WinUIMusicPlayer.Model
         public async void Remove() 
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);
-            App.Services.GetRequiredService<AppObservableObj>().RemoveFromAllSongs(this);
-            App.Services.GetRequiredService<AppObservableObj>().RemoveFromFavoriteSongs(this);
-            App.Services.GetRequiredService<AppObservableObj>().RemoveFromPlayListSongs(this);
+            App.Services.GetRequiredService<AppViewModel>().RemoveFromAllSongs(this);
+            App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
+            App.Services.GetRequiredService<AppViewModel>().RemoveFromPlayListSongs(this);
         }
 
         public static implicit operator RelativePanel(Music v)

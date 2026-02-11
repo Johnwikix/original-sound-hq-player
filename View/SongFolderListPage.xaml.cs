@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
                     addToPlaylistSubItem.Items.Clear();
-                    List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
+                    List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
                     foreach (var playlist in playlists)
                     {
                         var menuItem = new MenuFlyoutItem
@@ -296,7 +296,7 @@ namespace WinUIMusicPlayer.View
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
         {
             PlayList.Items.Clear();
-            List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
+            List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
             foreach (var playlist in playlists)
             {
                 var menuItem = new MenuFlyoutItem
@@ -305,7 +305,7 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    var musicList = ViewModel.AppObservableObj.FolderSongsView.Cast<Music>();
+                    var musicList = ViewModel.AppViewModel.FolderSongsView.Cast<Music>();
                     foreach (var music in musicList)
                     {
                         await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
@@ -318,7 +318,7 @@ namespace WinUIMusicPlayer.View
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
             IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AppObservableObj.AddToCurrentPlayList(uniqueSelectedMusics);
+            ViewModel.AppViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

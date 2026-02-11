@@ -15,7 +15,7 @@
             x:Name="ArtistCollectionSource"
             IsSourceGrouped="True"
             ItemsPath="Items"
-            Source="{x:Bind ViewModel.AppObservableObj.ArtistPageSource}" />
+            Source="{x:Bind ViewModel.AppViewModel.ArtistPageSource}" />
     </Page.Resources>
     <Grid Margin="0">
         <SemanticZoom>

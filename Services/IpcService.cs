@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -235,7 +236,7 @@ namespace WinUIMusicPlayer.Services
                 dsdGain = AppSettings.dsdGain,
                 dsdPcmFreq = AppSettings.dsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
-                Volume = App.Services.GetRequiredService<AppObservableObj>().Volume / 100,
+                Volume = App.Services.GetRequiredService<AppViewModel>().Volume / 100,
                 IsSettingChanged = IsSettingChanged,
                 IsFadeEnabled = AppSettings.IsFadeEnabled,
             };

@@ -16,7 +16,7 @@ using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public partial class FolderViewModel : ObservableObject
+    public partial class ArtistViewModel : ObservableObject
     {
         //private ObservableCollection<Music> _musicList = [];
         //public ObservableCollection<Music> MusicList
@@ -34,31 +34,28 @@ namespace WinUIMusicPlayer.ViewModel
         //private string _lastSearchText = "";
         private MusicBrowsePage? parentPage { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        private FolderBrowsePage? currentPage { get; set; }
+        private ArtistPage? currentPage { get; set; }
         private ContextMenuService _contextMenuService { get; }
 
-        public FolderViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             //GroupedMusicViewSource = new CollectionViewSource
             //{
             //    IsSourceGrouped = true
             //};
-            //parentPage.DisableBackButton();
-            //parentPage.refreshPage += RefreshFolder;
+            //parentPage.refreshPage += RefreshArtist;
             _contextMenuService = contextMenuService;
-            _contextMenuService.playingFolderMusic += PlayingFolder;
-            _contextMenuService.rescanFolderEnd += RescanFolderEnd;
-            _contextMenuService.showTransmission += (s, eventArgs) =>
+            _contextMenuService.showTransmission += (s, e) =>
             {
                 if (parentPage is not null)
                 {
                     parentPage.ShowTransmission();
                 }
             };
-            _contextMenuService.hideTransmission += (s, eventArgs) =>
+            _contextMenuService.hideTransmission += (s, e) =>
             {
                 if (parentPage is not null)
                 {
@@ -66,25 +63,25 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             };
             _musicBrowseViewModel = musicBrowseViewModel;
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
 
         public void UpdateUsbIcon()
         {
-            //ToolUtils.RefreshIcon(MusicList, "folder");
+            //ToolUtils.RefreshIcon(MusicList, "artist");
         }
 
-        public void SetCurrentPage(FolderBrowsePage page)
+        public void SetCurrentPage(ArtistPage page)
         {
             currentPage = page;
         }
 
         public void ReceiveNavigation()
         {
-            AppObservableObj.CurrentFolderObj = null;
-            AppObservableObj.PageType = "folderBrowse";
-
+            AppViewModel.CurrentArtistObj = null;
+            AppViewModel.PageType = "artistBrowse";
+            //parentPage.DisableBackButton();
             //if (_lastSearchText != AppData.searchText || MusicList is null || MusicList.Count == 0)
             //{
             //    _lastSearchText = AppData.searchText;
@@ -94,11 +91,11 @@ namespace WinUIMusicPlayer.ViewModel
             //{
             //    Debug.WriteLine("搜索条件未变更，保留当前视图状态");
             //}
-
-            //ToolUtils.RefreshIcon(MusicList, "folder");
+            //ToolUtils.RefreshIcon(MusicList, "artist");
+            App.MainWindow.IsBackBtnEnable = false;
         }
 
-        //private void RefreshFolder(object? sender, bool e)
+        //private void RefreshArtist(object? sender, bool e)
         //{
         //    InitializeData();
         //}
@@ -108,29 +105,25 @@ namespace WinUIMusicPlayer.ViewModel
         //    try
         //    {
         //        MusicList.Clear();
-        //        var query = (_musicDatabaseService.GetMusicListFromMemWithFolderSearchOption(AppData.searchText))
-        //                .AsValueEnumerable()
-        //                .GroupBy(m => m.LastLevelFolderPath)
-        //                .Select(g => g.AsValueEnumerable().First())
-        //                .OrderBy(m => m.LastLevelFolderPath);
+        //        var query = (_musicDatabaseService.GetMusicListFromMem(AppData.searchText)).AsValueEnumerable().GroupBy(m => m.Author).Select(g => g.AsValueEnumerable().First()).OrderBy(m => m.Author);
         //        foreach (var music in query)
         //        {
         //            MusicList.Add(music);
         //        }
-        //        LoadMoreFolderAsync(true);
+        //        LoadMoreArtistAsync(true);
         //    }
         //    catch (Exception ex)
         //    {
-        //        System.Diagnostics.Debug.WriteLine($"初始化文件夹时出错: {ex.Message}");
+        //        System.Diagnostics.Debug.WriteLine($"初始化艺术家页面时出错: {ex.Message}");
         //    }
         //}
 
-        //private void LoadMoreFolderAsync(bool isFirstLoad = false)
+        //private void LoadMoreArtistAsync(bool isFirstLoad = false)
         //{
         //    try
         //    {
         //        groupedByFirstLetter = MusicList.AsValueEnumerable()
-        //                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.LastLevelFolderPath))
+        //                .GroupBy(item => ToolUtils.GetFirstLetterAdvanced(item.Author))
         //                .OrderBy(group => group.Key)
         //                .Select(group => new MusicGroup(group.Key, group.AsValueEnumerable().ToList()))
         //                .ToList();
@@ -138,77 +131,60 @@ namespace WinUIMusicPlayer.ViewModel
         //    }
         //    catch (Exception ex)
         //    {
-        //        Debug.WriteLine($"加载文件夹数据失败: {ex.Message}");
+        //        Debug.WriteLine($"加载专辑数据失败: {ex.Message}");
         //    }
         //}
 
-        public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
+        public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var gridView = sender as GridView;
             GridViewItem item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
             if (item is not null)
             {
-                Music folder = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null && folder is not null)
-                {
-                    try
-                    {
-                        AppObservableObj.PageType = "folder";
-                        AppObservableObj.CurrentFolderObj = folder;
-                        //_musicBrowseViewModel.paramName = folder.LastLevelFolderPath;
-                        //_musicBrowseViewModel.CurrentFolder = folder;
-                        //_musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
-                        parentPage.NavigatePage(typeof(SongFolderListPage), new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.Message);
-                    }
+                Music artist = item.Content as Music;
+                if (parentPage is not null && _musicBrowseViewModel is not null && artist is not null)
+                {  
+                    AppViewModel.PageType = "artist";
+                    AppViewModel.CurrentArtistObj = artist;
+                    parentPage.NavigatePage(typeof(SongArtistListPage), new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);             
                 }
             }
         }
 
-        public async void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        public async void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var originalSource = e.OriginalSource as FrameworkElement;
+            // 向上遍历查找 GridViewItem
             GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-
             if (clickedItem is not null)
             {
-                var folder = clickedItem.Content as Music;
+                // 从 GridViewItem 获取数据项
+                var artist = clickedItem.Content as Music;
 
-                if (folder is not null)
+                if (artist is not null)
                 {
+                    // 显示专辑右键菜单
                     await _contextMenuService.ShowAlbumContextMenu(
-                        folder,
+                        artist,
                         originalSource,
                         e.GetPosition(originalSource),
-                        "folder"
+                        "artist"
                     );
+                    _contextMenuService.playingArtistMusic += PlayingArtist;
                 }
             }
-
             e.Handled = true;
         }
 
-        private void RescanFolderEnd(object? sender, EventArgs e)
+        private void PlayingArtist(object? sender, Music e)
         {
-            var mainWindow = (App.MainWindow as MainWindow);
-            if (mainWindow is not null)
-            {
-                mainWindow.UpdateMusicList();
-            }
-        }
-
-        private void PlayingFolder(object? sender, Music e)
-        {
-            List<Music> folders = (_musicDatabaseService.GetFolderMusicFromMem(e.LastLevelFolderPath)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
-            if (folders is not null && folders.Count > 0)
+            List<Music> artists = (_musicDatabaseService.GetArtistMusicFromMem(e.Author)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
+            if (artists is not null && artists.Count > 0)
             {
                 if (parentPage is not null)
                 {
-                    AppObservableObj.SequentialPlayingList = new(folders);
-                    parentPage.PlayMusic(music: folders[0], IsChangeList: true);
+                    AppViewModel.SequentialPlayingList = new(artists);
+                    parentPage.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }
         }

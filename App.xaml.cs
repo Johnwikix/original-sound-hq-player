@@ -78,6 +78,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListSongPage>();
                  services.AddSingleton<SongListPage>();
                  services.AddSingleton<SongCollectionPage>();
+                 services.AddSingleton<AppViewModel>();
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<SettingsViewModel>();
@@ -95,8 +96,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
-                 services.AddSingleton<BassPlayerCommandService>();
-                 services.AddSingleton<AppObservableObj>();
+                 services.AddSingleton<BassPlayerCommandService>();                 
                  services.AddSingleton<MusicDatabaseService>();
              }).Build();
 

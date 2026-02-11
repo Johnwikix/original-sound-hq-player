@@ -62,7 +62,7 @@
             ContainerContentChanging="MusicListView_ContainerContentChanging"
             DoubleTapped="MusicListView_DoubleTapped"
             ItemContainerStyle="{StaticResource ListViewItemStyle}"
-            ItemsSource="{x:Bind ViewModel.AppObservableObj.AllSongsView, Mode=OneWay}"
+            ItemsSource="{x:Bind ViewModel.AppViewModel.AllSongsView, Mode=OneWay}"
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended"

@@ -19,12 +19,12 @@ namespace WinUIMusicPlayer.Controls
     public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl
     {
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         public NotifyIconControl()
         {
             this.InitializeComponent();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            AppObservableObj = App.Services.GetRequiredService<AppObservableObj>();
+            AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             DataContext = this;
         }
 
@@ -82,19 +82,19 @@ namespace WinUIMusicPlayer.Controls
                 {
                     case "IconRepeatAll":
                         UpdatePlayModeIcon(PlayMode.ListLoop);
-                        AppObservableObj.PlayModeFlyoutText = GetString("IconListLoop");
+                        AppViewModel.PlayModeFlyoutText = GetString("IconListLoop");
                         break;
                     case "IconRepeatOne":
                         UpdatePlayModeIcon(PlayMode.SingleLoop);
-                        AppObservableObj.PlayModeFlyoutText = GetString("IconSingleTuneCirculation");
+                        AppViewModel.PlayModeFlyoutText = GetString("IconSingleTuneCirculation");
                         break;
                     case "IconRepeatOff":
                         UpdatePlayModeIcon(PlayMode.RepeatOff);
-                        AppObservableObj.PlayModeFlyoutText = GetString("IconSinglePlayback");
+                        AppViewModel.PlayModeFlyoutText = GetString("IconSinglePlayback");
                         break;
                     case "IconShuffle":
                         UpdatePlayModeIcon(PlayMode.RandomLoop);
-                        AppObservableObj.PlayModeFlyoutText = GetString("IconRandomLoop");
+                        AppViewModel.PlayModeFlyoutText = GetString("IconRandomLoop");
                         break;
                 }
                 //MusicBrowseViewModel._musicPlaybackService.UpdateCurrentPlayList();
@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.Controls
         private void UpdatePlayModeIcon(PlayMode playMode)
         {
             //AppData.PlayMode = playMode;
-            AppObservableObj.CurrentPlayMode = playMode;
+            AppViewModel.CurrentPlayMode = playMode;
         }
 
         private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)
@@ -131,7 +131,7 @@ namespace WinUIMusicPlayer.Controls
         public void UpdatePlayMode()
         {
             var name = "IconRepeatOne";
-            switch (AppObservableObj.CurrentPlayMode)
+            switch (AppViewModel.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
                     name = "IconRepeatOne";

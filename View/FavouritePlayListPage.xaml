@@ -63,9 +63,9 @@
         ContainerContentChanging="MusicListView_ContainerContentChanging"
         DoubleTapped="MusicListView_DoubleTapped"
         ItemContainerStyle="{StaticResource ListViewItemStyle}"
-        ItemsSource="{x:Bind ViewModel.AppObservableObj.FavoriteSongs, Mode=TwoWay}"
+        ItemsSource="{x:Bind ViewModel.AppViewModel.FavoriteSongs, Mode=TwoWay}"
         RightTapped="MusicListView_RightTapped"
-        SelectedItem="{x:Bind ViewModel.AppObservableObj.FavoriteSongsSelectedMusic, Mode=TwoWay}"
+        SelectedItem="{x:Bind ViewModel.AppViewModel.FavoriteSongsSelectedMusic, Mode=TwoWay}"
         SelectionMode="Extended"
         VirtualizingStackPanel.VirtualizationMode="Standard">
         <ListView.ItemTemplate>

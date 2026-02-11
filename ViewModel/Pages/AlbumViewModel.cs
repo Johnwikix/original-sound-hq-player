@@ -39,21 +39,14 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowsePage? parentPage;
         private MusicBrowseViewModel? _musicBrowseViewModel;
         private MusicDatabaseService _musicDatabaseService { get; }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private AlbumPage? currentPage;
         private ContextMenuService _contextMenuService;
-        private string _currentSortOrder = "DefaultOrder";
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
-            //GroupedMusicViewSource = new CollectionViewSource
-            //{
-            //    IsSourceGrouped = true
-            //};
-
-            //parentPage.refreshPage += RefreshAlbum;
             _contextMenuService = contextMenuService;
             _contextMenuService.playingAlbumMusic += PlayingAlbum;
             _contextMenuService.showTransmission += (s, e) =>
@@ -70,7 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.HideTransmission();
                 }
             };
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
 
@@ -86,8 +79,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            AppObservableObj.CurrentAlbumObj = null;
-            AppObservableObj.PageType = "albumBrowse";
+            AppViewModel.CurrentAlbumObj = null;
+            AppViewModel.PageType = "albumBrowse";
             //parentPage.DisableBackButton();
             Entance();
             App.MainWindow.IsBackBtnEnable = false;
@@ -207,8 +200,8 @@ namespace WinUIMusicPlayer.ViewModel
                 Music album = item.Content as Music;
                 if (parentPage is not null && _musicBrowseViewModel is not null && album is not null)
                 {
-                    AppObservableObj.PageType = "album";
-                    AppObservableObj.CurrentAlbumObj = album;
+                    AppViewModel.PageType = "album";
+                    AppViewModel.CurrentAlbumObj = album;
                     //_musicBrowseViewModel.paramName = album.Album;
                     //_musicBrowseViewModel.CurrentAlbum = album;
                     //_musicBrowseViewModel.currentPage = typeof(SongCollectionPage);
@@ -225,7 +218,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (parentPage is not null && _musicBrowseViewModel is not null)
                 {
-                    AppObservableObj.SequentialPlayingList = new(albums);
+                    AppViewModel.SequentialPlayingList = new(albums);
                     parentPage.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }

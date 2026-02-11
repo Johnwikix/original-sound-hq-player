@@ -188,7 +188,7 @@ namespace WinUIMusicPlayer.View
                     }
                     var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
                     addToPlaylistSubItem.Items.Clear();
-                    List<PlayList> playlists = [.. ViewModel.AppObservableObj.AllPlayList];
+                    List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
                     foreach (var playlist in playlists)
                     {
                         var menuItem = new MenuFlyoutItem
@@ -322,7 +322,7 @@ namespace WinUIMusicPlayer.View
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.AppObservableObj.AddToCurrentPlayList(GetUniqueSelectedItems());
+            ViewModel.AppViewModel.AddToCurrentPlayList(GetUniqueSelectedItems());
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

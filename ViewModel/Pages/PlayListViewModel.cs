@@ -17,17 +17,17 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class PlayListViewModel : ObservableObject
     {
         private MusicBrowsePage? _parentPage;
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         private PlayListPage? _currentPage { get; set; }
 
-        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
+        public PlayListViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
             //_parentPage.addPlayListEvent += RefreshPlayList;
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
 
@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            AppObservableObj.CurrentPlayList = null;
+            AppViewModel.CurrentPlayList = null;
             App.MainWindow.IsBackBtnEnable = false;
             //_parentPage.DisableBackButton();
             //InitializingData();
@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (playList is null) return;
 
             await _musicDatabaseService.RemovePlayList(playList);
-            AppObservableObj.AllPlayList.Remove(playList);
+            AppViewModel.AllPlayList.Remove(playList);
         }
 
         public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
@@ -102,7 +102,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await _musicDatabaseService.UpdatePlayList(playList);
-                //var existingPlayList = AppObservableObj.AllPlayList.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
+                //var existingPlayList = AppViewModel.AllPlayList.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
                 //existingPlayList?.Name = newName;
             }
         }
@@ -111,10 +111,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
             {
-                AppObservableObj.PageType = "playlist";
+                AppViewModel.PageType = "playlist";
                 //_musicBrowseViewModel.paramName = playList.Name;
-                AppObservableObj.CurrentPlayList = playList;
-                AppObservableObj.CurrentPlayListId = playList.Id;
+                AppViewModel.CurrentPlayList = playList;
+                AppViewModel.CurrentPlayListId = playList.Id;
                 AppData.CurrentPage = typeof(PlayListSongPage);
                 _parentPage.NavigatePage(AppData.CurrentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
             }

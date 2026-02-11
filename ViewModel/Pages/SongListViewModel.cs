@@ -33,16 +33,16 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref _selectedMusic, value);
         }
         private MusicBrowsePage? _parentPage;
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private SongListPage currentPage { get; set; }
         private string _lastSearchText = "";
 
-        public SongListViewModel(MusicBrowsePage parent, AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public SongListViewModel(MusicBrowsePage parent, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
             //_parentPage.refreshPage += RefreshPage;
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
 
@@ -154,10 +154,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (AppObservableObj.CurrentPlayingMusic is not null)
+                if (AppViewModel.CurrentPlayingMusic is not null)
                 {
-                    var selectedMusic = AppObservableObj.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
-                        music.Id == AppObservableObj.CurrentPlayingMusic.Id);
+                    var selectedMusic = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
+                        music.Id == AppViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
                     {
@@ -176,7 +176,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic is not null && _parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AllSongsView.Cast<Music>()]);
+                AppViewModel.SequentialPlayingList = new([.. AppViewModel.AllSongsView.Cast<Music>()]);
                 _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -200,12 +200,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                AppObservableObj.SequentialPlayingList = new(uniqueSelectedMusics);
+                AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
                 _parentPage?.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
-                AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AllSongsView.Cast<Music>()]);
+                AppViewModel.SequentialPlayingList = new([.. AppViewModel.AllSongsView.Cast<Music>()]);
                 _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -247,13 +247,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                for (int i = AppObservableObj.AllSongs.Count - 1; i >= 0; i--)
+                for (int i = AppViewModel.AllSongs.Count - 1; i >= 0; i--)
                 {
-                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppObservableObj.AllSongs[i]))
+                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppViewModel.AllSongs[i]))
                     {
-                        if (ToolUtils.DeleteFileFromDisk((AppObservableObj.AllSongs[i].Path)))
+                        if (ToolUtils.DeleteFileFromDisk((AppViewModel.AllSongs[i].Path)))
                         {
-                            AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                            AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                         }
                     }
                 }
@@ -262,7 +262,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                 }
             }
         }
@@ -273,14 +273,14 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == item.Id)?.UpdateFavourite();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == item.Id)?.UpdateFavourite();
                 }
             }
             else
             {
                 if (SelectedMusic is not null)
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.UpdateFavourite();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.UpdateFavourite();
                 }
             }
         }
@@ -331,7 +331,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            AppObservableObj.ReGetLyrics(uniqueSelectedMusics,SelectedMusic);
+            AppViewModel.ReGetLyrics(uniqueSelectedMusics,SelectedMusic);
             //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             //{
             //    foreach (Music item in uniqueSelectedMusics)
@@ -363,7 +363,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public void AddMusicToCurrentPlayList(Music music)
         {
-            AppObservableObj.AddMusicToCurrentPlayList(music);
+            AppViewModel.AddMusicToCurrentPlayList(music);
         }
 
         [RelayCommand]
@@ -371,7 +371,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is not null)
             {
-                await AppObservableObj.AddToFavourite(music);
+                await AppViewModel.AddToFavourite(music);
                 AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
             }
         }
@@ -381,7 +381,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is not null && _parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = new([.. AppObservableObj.AllSongsView.Cast<Music>()]);
+                AppViewModel.SequentialPlayingList = new([.. AppViewModel.AllSongsView.Cast<Music>()]);
                 _parentPage.PlayMusic(music: music, IsChangeList: true);
             }
         }

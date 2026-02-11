@@ -18,15 +18,15 @@ namespace WinUIMusicPlayer.Services
         public bool isSettingsChangeStop = false;
         public bool isInitializing = true;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
 
-        public BassPlayerCommandService(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
+        public BassPlayerCommandService(AppViewModel appViewModel,MusicDatabaseService musicDatabaseService)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitializingData();
             IpcService.NotificationReceived += IpcService_NotificationReceived;
@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.Services
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppObservableObj.Volume = double.Parse(obj.Result);
+                    AppViewModel.Volume = double.Parse(obj.Result);
                 });
             }
         }
@@ -89,7 +89,7 @@ namespace WinUIMusicPlayer.Services
 
         private async void InitializingData()
         {
-            AppObservableObj.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
+            AppViewModel.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
             //UpdateCurrentPlayList();
         }
 
@@ -99,33 +99,33 @@ namespace WinUIMusicPlayer.Services
         //    {
         //        return;
         //    }
-        //    if (AppObservableObj.CurrentPlayMode != PlayMode.RandomLoop)
+        //    if (AppViewModel.CurrentPlayMode != PlayMode.RandomLoop)
         //    {
-        //        AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList;
+        //        AppViewModel.CurrentPlayingList = AppViewModel.SequentialPlayingList;
         //    }
         //    else
         //    {
-        //        AppObservableObj.CurrentPlayingList = AppObservableObj.SequentialPlayingList.CreateShuffled();
+        //        AppViewModel.CurrentPlayingList = AppViewModel.SequentialPlayingList.CreateShuffled();
         //    }
         //}
 
         public void AutoPlayNextTrack()
         {
             MusicBrowseViewModel.StopProgressTimer();
-            switch (AppObservableObj.CurrentPlayMode)
+            switch (AppViewModel.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingMusic);
+                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
-                    int currentIndex = AppObservableObj.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppObservableObj.CurrentPlayingMusic.Id);
-                    int nextIndex = (currentIndex + 1) % AppObservableObj.CurrentPlayingList.Count;
-                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[nextIndex]);
+                    int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
+                    int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
+                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RandomLoop:
                     Random random = new Random();
-                    int randomIndex = random.Next(AppObservableObj.CurrentPlayingList.Count);
-                    MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[randomIndex]);
+                    int randomIndex = random.Next(AppViewModel.CurrentPlayingList.Count);
+                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[randomIndex]);
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();
@@ -150,9 +150,9 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                int currentIndex = AppObservableObj.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppObservableObj.CurrentPlayingMusic.Id);
-                int nextIndex = (currentIndex + 1) % AppObservableObj.CurrentPlayingList.Count;
-                MusicBrowseViewModel.PlayMusic(AppObservableObj.CurrentPlayingList[nextIndex]);
+                int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
+                int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
+                MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
             }
             catch
             {
@@ -184,11 +184,11 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.Play(music.Path);
             MusicBrowseViewModel.StartProgressTimer();
-            _ = _musicDatabaseService.SavePlayState([.. AppObservableObj.SequentialPlayingList], 
-                AppObservableObj.CurrentPlayMode, 
-                AppObservableObj.CurrentPlayingMusic?.Id, 
-                (float)(AppObservableObj.Volume), 
-                AppObservableObj.SelectedSortOption.Tag.ToString());
+            _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList], 
+                AppViewModel.CurrentPlayMode, 
+                AppViewModel.CurrentPlayingMusic?.Id, 
+                (float)(AppViewModel.Volume), 
+                AppViewModel.SelectedSortOption.Tag.ToString());
         }
 
         public void PlayButton()

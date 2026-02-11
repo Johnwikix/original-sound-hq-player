@@ -81,7 +81,7 @@
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
                             Canvas.ZIndex="1"
-                            Source="{x:Bind ViewModel.AppObservableObj.CurrentAlbumObj, Converter={StaticResource AlbumArtConverter}, Mode=OneWay}"
+                            Source="{x:Bind ViewModel.AppViewModel.CurrentAlbumObj, Converter={StaticResource AlbumArtConverter}, Mode=OneWay}"
                             Stretch="UniformToFill" />
                     </Grid>
                     <Grid
@@ -115,7 +115,7 @@
                     Margin="20,0,10,0"
                     FontSize="30"
                     FontWeight="Bold"
-                    Text="{x:Bind ViewModel.AppObservableObj.CurrentAlbumObj.Album, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.AppViewModel.CurrentAlbumObj.Album, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
                     x:Name="SecondaryTitleTextBlock"
@@ -190,7 +190,7 @@
             ContainerContentChanging="MusicListView_ContainerContentChanging"
             DoubleTapped="MusicListView_DoubleTapped"
             ItemContainerStyle="{StaticResource ListViewItemStyle}"
-            ItemsSource="{x:Bind ViewModel.AppObservableObj.AlbumSongsView, Mode=OneWay}"
+            ItemsSource="{x:Bind ViewModel.AppViewModel.AlbumSongsView, Mode=OneWay}"
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended"

@@ -21,13 +21,13 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class FavouritePlayListViewModel : ObservableObject
     {
         private MusicBrowsePage parentPage { get; }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
-        public FavouritePlayListViewModel(MusicBrowsePage musicBrowsePage,AppObservableObj appObservableObj, MusicDatabaseService musicDatabaseService)
+        public FavouritePlayListViewModel(MusicBrowsePage musicBrowsePage,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = musicBrowsePage;
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             //parentPage.refreshPage += RefreshMusicList;
         }
@@ -64,14 +64,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (AppObservableObj.CurrentPlayingMusic is not null)
+                if (AppViewModel.CurrentPlayingMusic is not null)
                 {
-                    var selectedMusic = AppObservableObj.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
-                    music.Id == AppObservableObj.CurrentPlayingMusic.Id);
+                    var selectedMusic = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
+                    music.Id == AppViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
                     {
-                        AppObservableObj.FavoriteSongsSelectedMusic = selectedMusic;
+                        AppViewModel.FavoriteSongsSelectedMusic = selectedMusic;
                         currentPage?.OnScrollToMusic(selectedMusic);
                     }
                 }
@@ -84,13 +84,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task DragItems()
         {
-            if (AppObservableObj.SelectedSortOption.Tag == "DefaultOrder")
+            if (AppViewModel.SelectedSortOption.Tag == "DefaultOrder")
             {
-                for (int i = 0; i < AppObservableObj.FavoriteSongs.Count; i++)
+                for (int i = 0; i < AppViewModel.FavoriteSongs.Count; i++)
                 {
-                    AppObservableObj.FavoriteSongs[i].Order = AppObservableObj.FavoriteSongs.Count - i;
+                    AppViewModel.FavoriteSongs[i].Order = AppViewModel.FavoriteSongs.Count - i;
                 }
-                await _musicDatabaseService.UpdateAllAsync([.. AppObservableObj.FavoriteSongs]);
+                await _musicDatabaseService.UpdateAllAsync([.. AppViewModel.FavoriteSongs]);
             }
         }
 
@@ -123,14 +123,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (selectedMusic is not null && parentPage is not null)
             {
-                AppObservableObj.SequentialPlayingList = new(AppObservableObj.FavoriteSongs);
+                AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
                 parentPage.PlayMusic(music: selectedMusic, IsChangeList: true);
             }
         }
 
         public void MusicDetail_Click()
         {
-            var musicDetailsWindow = new MusicDetailsWindow(AppObservableObj.FavoriteSongsSelectedMusic);
+            var musicDetailsWindow = new MusicDetailsWindow(AppViewModel.FavoriteSongsSelectedMusic);
             musicDetailsWindow.Activate();
         }
 
@@ -138,25 +138,25 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                AppObservableObj.SequentialPlayingList = new(uniqueSelectedMusics);
+                AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
                 parentPage.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
-                AppObservableObj.SequentialPlayingList = new(AppObservableObj.FavoriteSongs);
-                parentPage.PlayMusic(music: AppObservableObj.FavoriteSongsSelectedMusic, IsChangeList: true);
+                AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
+                parentPage.PlayMusic(music: AppViewModel.FavoriteSongsSelectedMusic, IsChangeList: true);
             }
         }
 
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            AppObservableObj.ReGetLyrics(uniqueSelectedMusics, AppObservableObj.FavoriteSongsSelectedMusic);
+            AppViewModel.ReGetLyrics(uniqueSelectedMusics, AppViewModel.FavoriteSongsSelectedMusic);
             //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             //{
             //    foreach (Music item in uniqueSelectedMusics)
             //    {
             //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-            //        Music? music = AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == item.Id);
+            //        Music? music = AppViewModel.AllSongs.FirstOrDefault(m => m.Id == item.Id);
             //        if (music is not null)
             //        {
             //            music?.Lyrics = lyrics;
@@ -167,8 +167,8 @@ namespace WinUIMusicPlayer.ViewModel
             //}
             //else
             //{
-            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(AppObservableObj.FavoriteSongsSelectedMusic);
-            //    Music? music = AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == AppObservableObj.FavoriteSongsSelectedMusic.Id);
+            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(AppViewModel.FavoriteSongsSelectedMusic);
+            //    Music? music = AppViewModel.AllSongs.FirstOrDefault(m => m.Id == AppViewModel.FavoriteSongsSelectedMusic.Id);
             //    if (music is not null)
             //    {
             //        music.Lyrics = lyrics;
@@ -182,22 +182,22 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                for (int i = AppObservableObj.AllSongs.Count - 1; i >= 0; i--)
+                for (int i = AppViewModel.AllSongs.Count - 1; i >= 0; i--)
                 {
-                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppObservableObj.AllSongs[i]))
+                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppViewModel.AllSongs[i]))
                     {
-                        if (ToolUtils.DeleteFileFromDisk((AppObservableObj.AllSongs[i].Path)))
+                        if (ToolUtils.DeleteFileFromDisk((AppViewModel.AllSongs[i].Path)))
                         {
-                            AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == AppObservableObj.FavoriteSongsSelectedMusic.Id)?.Remove();
+                            AppViewModel.AllSongs.FirstOrDefault(m => m.Id == AppViewModel.FavoriteSongsSelectedMusic.Id)?.Remove();
                         }
                     }
                 }
             }
             else
             {
-                if (ToolUtils.DeleteFileFromDisk(AppObservableObj.FavoriteSongsSelectedMusic.Path))
+                if (ToolUtils.DeleteFileFromDisk(AppViewModel.FavoriteSongsSelectedMusic.Path))
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == AppObservableObj.FavoriteSongsSelectedMusic.Id)?.Remove();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == AppViewModel.FavoriteSongsSelectedMusic.Id)?.Remove();
                 }
             }
         }
@@ -208,21 +208,21 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == item.Id)?.UpdateFavourite();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == item.Id)?.UpdateFavourite();
                 }
             }
             else
             {
-                if (AppObservableObj.FavoriteSongsSelectedMusic is not null)
+                if (AppViewModel.FavoriteSongsSelectedMusic is not null)
                 {
-                    AppObservableObj.AllSongs.FirstOrDefault(m => m.Id == AppObservableObj.FavoriteSongsSelectedMusic.Id)?.UpdateFavourite();
+                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == AppViewModel.FavoriteSongsSelectedMusic.Id)?.UpdateFavourite();
                 }
             }
         }
 
         public void OpenInExplorer_Click()
         {
-            var filePath = AppObservableObj.FavoriteSongsSelectedMusic.Path;
+            var filePath = AppViewModel.FavoriteSongsSelectedMusic.Path;
             if (System.IO.File.Exists(filePath))
             {
                 try

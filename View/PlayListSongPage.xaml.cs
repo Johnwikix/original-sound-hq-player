@@ -252,7 +252,7 @@ namespace WinUIMusicPlayer.View
 
         private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.AppObservableObj.AddToCurrentPlayList(GetUniqueSelectedItems().Select(x=>x.Music));
+            ViewModel.AppViewModel.AddToCurrentPlayList(GetUniqueSelectedItems().Select(x=>x.Music));
         }
 
         private void EditPlaylistName_Click(object sender, RoutedEventArgs e)
@@ -262,7 +262,7 @@ namespace WinUIMusicPlayer.View
                 ContentDialog contentDialog = new ContentDialog
                 {
                     Title = ToolUtils.GetString("ModifyPlaylist"),
-                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.AppObservableObj.CurrentPlayList.Name}" },
+                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.AppViewModel.CurrentPlayList.Name}" },
                     PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = this.XamlRoot

@@ -25,14 +25,14 @@
             IconSource="ms-appx:///Assets/icon.ico"
             LeftClickCommand="{x:Bind ShowHideWindowCommand}"
             NoLeftClickDelay="True"
-            ToolTipText="{x:Bind AppObservableObj.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
+            ToolTipText="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem
                         x:Name="CurrentMusic"
                         Width="200"
                         Command="{x:Bind ShowPlayingDetailCommand}"
-                        Text="{x:Bind AppObservableObj.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
+                        Text="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE8D6;" />
                         </MenuFlyoutItem.Icon>
@@ -67,9 +67,9 @@
                     <MenuFlyoutSubItem
                         x:Name="PlayModeFlyout"
                         x:Uid="IconListLoopValue"
-                        Text="{x:Bind AppObservableObj.PlayModeFlyoutText, Mode=TwoWay}">
+                        Text="{x:Bind AppViewModel.PlayModeFlyoutText, Mode=TwoWay}">
                         <MenuFlyoutSubItem.Icon>
-                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="{x:Bind AppObservableObj.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="{x:Bind AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                         </MenuFlyoutSubItem.Icon>
                         <ToggleMenuFlyoutItem
                             x:Name="IconRepeatAll"
@@ -107,7 +107,7 @@
                     <MenuFlyoutSeparator />
                     <MenuFlyoutSubItem x:Name="Volume" x:Uid="IconVolume">
                         <MenuFlyoutSubItem.Icon>
-                            <FontIcon Glyph="{x:Bind AppObservableObj.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                            <FontIcon Glyph="{x:Bind AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                         </MenuFlyoutSubItem.Icon>
                         <MenuFlyoutItem
                             x:Name="VolumeUp"

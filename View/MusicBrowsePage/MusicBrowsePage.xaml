@@ -23,7 +23,7 @@
             <Border
                 Grid.Row="0"
                 Grid.Column="0"
-                Visibility="{x:Bind ViewModel.AppObservableObj.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+                Visibility="{x:Bind ViewModel.AppViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
                 <Border.Background>
                     <ImageBrush x:Name="ContentGridBackground" Stretch="Fill">
                         <ImageBrush.RelativeTransform>
@@ -38,7 +38,7 @@
                     </ImageBrush>
                 </Border.Background>
                 <interactivity:Interaction.Behaviors>
-                    <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppObservableObj.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
+                    <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
                 </interactivity:Interaction.Behaviors>
             </Border>
             <Grid
@@ -50,7 +50,7 @@
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
                 </Grid.ChildrenTransitions>
-                <Grid Margin="{x:Bind ViewModel.AppObservableObj.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
+                <Grid Margin="{x:Bind ViewModel.AppViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -131,7 +131,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 IsActive="True"
-                                Visibility="{x:Bind ViewModel.AppObservableObj.ProcessRingVisibility, Mode=OneWay}" />
+                                Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
                             <ComboBox
                                 x:Name="UsbDeviceCombox"
                                 x:Uid="USBDevice"
@@ -141,10 +141,10 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 FontSize="12"
-                                ItemsSource="{x:Bind ViewModel.AppObservableObj.UsbStorageDevices, Mode=OneWay}"
-                                SelectedIndex="{x:Bind ViewModel.AppObservableObj.UsbSelectedIndex, Mode=TwoWay}"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.UsbStorageDevices, Mode=OneWay}"
+                                SelectedIndex="{x:Bind ViewModel.AppViewModel.UsbSelectedIndex, Mode=TwoWay}"
                                 SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                                Visibility="{x:Bind ViewModel.AppObservableObj.UsbDeviceVisibility, Mode=OneWay}">
+                                Visibility="{x:Bind ViewModel.AppViewModel.UsbDeviceVisibility, Mode=OneWay}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate x:DataType="model:UsbStorageDevice">
                                         <StackPanel Orientation="Horizontal">
@@ -165,8 +165,8 @@
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     FontSize="12"
-                                    ItemsSource="{x:Bind ViewModel.AppObservableObj.SortOptions, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.AppObservableObj.SelectedSortOption, Mode=TwoWay}">
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate x:DataType="model:SortOption">
                                             <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
@@ -179,15 +179,15 @@
                                 x:Uid="SearchMusic"
                                 Width="200"
                                 Margin="0,0,10,0"
-                                Text="{x:Bind ViewModel.AppObservableObj.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <InfoBar
                         x:Name="InfoBar"
-                        Title="{x:Bind ViewModel.AppObservableObj.InfoBarTitle, Mode=OneWay}"
+                        Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
                         Grid.Row="1"
-                        IsOpen="{x:Bind ViewModel.AppObservableObj.InfoBarIsOpen, Mode=TwoWay}"
-                        Message="{x:Bind ViewModel.AppObservableObj.InfoBarMessage, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
+                        Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
                         Severity="Informational" />
                     <Frame
                         x:Name="ContentFrame"
@@ -214,7 +214,7 @@
                             x:Name="TopControl"
                             Grid.Row="0"
                             Grid.Column="0"
-                            Opacity="{x:Bind ViewModel.AppObservableObj.TopControlsOpacity, Mode=OneWay}"
+                            Opacity="{x:Bind ViewModel.AppViewModel.TopControlsOpacity, Mode=OneWay}"
                             Orientation="Horizontal"
                             PointerEntered="TopControl_PointerEntered"
                             PointerExited="TopControl_PointerExited">
@@ -250,7 +250,7 @@
                                     Margin="0"
                                     VerticalAlignment="Center"
                                     FontSize="16"
-                                    Glyph="{x:Bind ViewModel.AppObservableObj.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
+                                    Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
                             </Button>
                             <Button
                                 Margin="0"
@@ -269,7 +269,7 @@
                                     Margin="0"
                                     VerticalAlignment="Center"
                                     FontSize="16"
-                                    Glyph="{x:Bind ViewModel.AppObservableObj.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
+                                    Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                             </Button>
                         </StackPanel>
                         <Grid Grid.Row="1" Grid.Column="0">
@@ -306,7 +306,7 @@
                                                 <Grid>
                                                     <Image Canvas.ZIndex="1">
                                                         <interactivity:Interaction.Behaviors>
-                                                            <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppObservableObj.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
+                                                            <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
                                                         </interactivity:Interaction.Behaviors>
                                                     </Image>
                                                     <Grid
@@ -314,7 +314,7 @@
                                                         VerticalAlignment="Stretch"
                                                         Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                                         Canvas.ZIndex="0"
-                                                        Visibility="{x:Bind ViewModel.AppObservableObj.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                        Visibility="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                                         <Viewbox Stretch="Uniform">
                                                             <Border
                                                                 HorizontalAlignment="Stretch"
@@ -351,40 +351,40 @@
                                                 x:Name="PlayingDetailTitleTextBlock"
                                                 Margin="1"
                                                 HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                                 FontSize="22"
                                                 FontWeight="Bold"
                                                 TextAlignment="Left"
                                                 TextTrimming="CharacterEllipsis"
                                                 TextWrapping="NoWrap">
                                                 <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
+                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
                                                 </ToolTipService.ToolTip>
                                             </RichTextBlock>
                                             <RichTextBlock
                                                 x:Name="PlayingDetailAlbumTextBlock"
                                                 Margin="0,2,0,1"
                                                 HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                                 FontSize="16"
                                                 TextAlignment="Left"
                                                 TextTrimming="CharacterEllipsis"
                                                 TextWrapping="NoWrap">
                                                 <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Album, Mode=OneWay}" VerticalOffset="10" />
+                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}" VerticalOffset="10" />
                                                 </ToolTipService.ToolTip>
                                             </RichTextBlock>
                                             <RichTextBlock
                                                 x:Name="PlayingDetailArtistTextBlock"
                                                 Margin="0,2,0,1"
                                                 HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                                 FontSize="16"
                                                 TextAlignment="Left"
                                                 TextTrimming="CharacterEllipsis"
                                                 TextWrapping="NoWrap">
                                                 <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Author, Mode=OneWay}" VerticalOffset="10" />
+                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}" VerticalOffset="10" />
                                                 </ToolTipService.ToolTip>
                                             </RichTextBlock>
                                             <Grid Margin="0,2,0,1" HorizontalAlignment="Left">
@@ -397,12 +397,12 @@
                                                     Grid.Column="0"
                                                     Margin="0,0,10,0"
                                                     FontSize="12"
-                                                    Text="{x:Bind ViewModel.AppObservableObj.MusicInfo, Mode=OneWay}" />
+                                                    Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
                                                 <Image
                                                     x:Name="PlayingDetailHRImage"
                                                     Grid.Column="1"
                                                     Height="12"
-                                                    Source="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                                    Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                                             </Grid>
                                         </StackPanel>
                                         <Grid Grid.Column="1">
@@ -424,7 +424,7 @@
                                                 <Button.KeyboardAccelerators>
                                                     <KeyboardAccelerator Key="L" />
                                                 </Button.KeyboardAccelerators>
-                                                <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                                <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                                             </Button>
                                             <TextBlock
                                                 x:Name="PlayTimeTextBlockPlayingDetail"
@@ -433,7 +433,7 @@
                                                 Margin="10,0,0,5"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Bottom"
-                                                Text="{x:Bind ViewModel.AppObservableObj.PlayTimeText, Mode=TwoWay}" />
+                                                Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=TwoWay}" />
                                         </Grid>
                                         <VisualStateManager.VisualStateGroups>
                                             <VisualStateGroup>
@@ -488,7 +488,7 @@
                                             Grid.Row="0"
                                             Margin="0"
                                             VerticalAlignment="Center"
-                                            Maximum="{x:Bind ViewModel.AppObservableObj.ProgressSliderMax, Mode=TwoWay}"
+                                            Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
                                             Minimum="0"
                                             PointerEntered="ProgressSlider_PointerEntered"
                                             PointerExited="ProgressSlider_PointerExited"
@@ -548,7 +548,7 @@
                                                             MaxHeight="400"
                                                             Margin="0,24,0,0"
                                                             DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
-                                                            ItemsSource="{x:Bind ViewModel.AppObservableObj.CurrentPlayingList, Mode=OneWay}">
+                                                            ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                                             <ListView.ItemTemplate>
                                                                 <DataTemplate x:DataType="model:Music">
                                                                     <TextBlock
@@ -648,7 +648,7 @@
                                                 BorderBrush="Transparent"
                                                 BorderThickness="0"
                                                 Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
-                                                <FontIcon x:Name="PlayModeIconPlayingDetail" Glyph="{x:Bind ViewModel.AppObservableObj.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                                                <FontIcon x:Name="PlayModeIconPlayingDetail" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                                             </Button>
 
                                             <Button
@@ -665,7 +665,7 @@
                                                     Grid.Column="0"
                                                     Margin="0"
                                                     VerticalAlignment="Center"
-                                                    Glyph="{x:Bind ViewModel.AppObservableObj.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                                    Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                                                 <Button.Flyout>
                                                     <Flyout x:Name="VolumeFlyout" Placement="Right">
                                                         <Slider
@@ -677,7 +677,7 @@
                                                             PointerEntered="VolumeSlider_PointerEntered"
                                                             PointerExited="VolumeSlider_PointerExited"
                                                             PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                                            Value="{x:Bind ViewModel.AppObservableObj.Volume, Mode=TwoWay}" />
+                                                            Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
                                                     </Flyout>
                                                 </Button.Flyout>
                                             </Button>
@@ -730,12 +730,12 @@
                                         <StackPanel Height="1080" />
                                         <ListView
                                             x:Name="LyricsListView"
-                                            Margin="{x:Bind ViewModel.AppObservableObj.LyricsMargin, Mode=OneWay}"
+                                            Margin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                                             VerticalAlignment="Stretch"
                                             behaviors:LyricsAutoScrollBehavior.TargetScrollView="{x:Bind LyricViewer}"
                                             IsItemClickEnabled="True"
                                             ItemClick="LyricsListView_ItemClick"
-                                            ItemsSource="{x:Bind ViewModel.AppObservableObj.UILyrics, Mode=TwoWay}"
+                                            ItemsSource="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=TwoWay}"
                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                             ScrollViewer.VerticalScrollMode="Disabled"
@@ -830,7 +830,7 @@
                                 Margin="0"
                                 VerticalAlignment="Center"
                                 Loaded="ProgressSlider_Loaded"
-                                Maximum="{x:Bind ViewModel.AppObservableObj.ProgressSliderMax, Mode=TwoWay}"
+                                Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
                                 Minimum="0"
                                 PointerEntered="ProgressSlider_PointerEntered"
                                 PointerExited="ProgressSlider_PointerExited"
@@ -841,7 +841,7 @@
                                 Grid.Column="1"
                                 Margin="10,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="{x:Bind ViewModel.AppObservableObj.PlayTimeText, Mode=TwoWay}" />
+                                Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=TwoWay}" />
                         </Grid>
 
                         <Grid Grid.Row="1" Margin="0">
@@ -886,7 +886,7 @@
                                                     VerticalAlignment="Center"
                                                     Stretch="UniformToFill">
                                                     <interactivity:Interaction.Behaviors>
-                                                        <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppObservableObj.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
+                                                        <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
                                                     </interactivity:Interaction.Behaviors>
                                                 </Image>
                                             </Grid>
@@ -895,7 +895,7 @@
                                                 Height="80"
                                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                                 Canvas.ZIndex="0"
-                                                Visibility="{x:Bind ViewModel.AppObservableObj.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                Visibility="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                                 <FontIcon
                                                     Canvas.ZIndex="0"
                                                     FontSize="40"
@@ -933,7 +933,7 @@
                                             x:Name="MusicTitleTextBlock"
                                             FontSize="18"
                                             FontWeight="Bold"
-                                            Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis" />
                                     </dev:AutoScrollView>
                                     <Button
@@ -954,7 +954,7 @@
                                                 <TextBlock
                                                     FontSize="12"
                                                     Tapped="AlbumTextBlock_Tapped"
-                                                    Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                                     TextTrimming="WordEllipsis" />
                                             </dev:AutoScrollView>
                                         </Button.Content>
@@ -977,7 +977,7 @@
                                                 <TextBlock
                                                     FontSize="12"
                                                     Tapped="AuthorTextBlock_Tapped"
-                                                    Text="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                                     TextTrimming="WordEllipsis" />
                                             </dev:AutoScrollView>
                                         </Button.Content>
@@ -992,12 +992,12 @@
                                             Grid.Column="0"
                                             Margin="10,0,10,0"
                                             FontSize="12"
-                                            Text="{x:Bind ViewModel.AppObservableObj.MusicInfo, Mode=OneWay}" />
+                                            Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
                                         <Image
                                             x:Name="HRImage"
                                             Grid.Column="1"
                                             Height="12"
-                                            Source="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                            Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                                     </Grid>
                                 </Grid>
                             </StackPanel>
@@ -1030,11 +1030,11 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="L" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppObservableObj.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                                    <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                                 </Button>
 
                                 <Button
@@ -1206,7 +1206,7 @@
                                                 MaxHeight="400"
                                                 Margin="0,24,0,0"
                                                 DoubleTapped="CurrentPlayListView_DoubleTapped"
-                                                ItemsSource="{x:Bind ViewModel.AppObservableObj.CurrentPlayingList, Mode=OneWay}">
+                                                ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                                 <ListView.ItemTemplate>
                                                     <DataTemplate x:DataType="model:Music">
                                                         <TextBlock
@@ -1251,7 +1251,7 @@
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
-                                    <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppObservableObj.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                                    <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                                 </Button>
                                 <Button
                                     Margin="0"
@@ -1266,7 +1266,7 @@
                                         Grid.Column="0"
                                         Margin="0"
                                         VerticalAlignment="Center"
-                                        Glyph="{x:Bind ViewModel.AppObservableObj.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                        Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                                 </Button>
                                 <Slider
                                     x:Name="VolumeSlider"
@@ -1279,7 +1279,7 @@
                                     PointerEntered="VolumeSlider_PointerEntered"
                                     PointerExited="VolumeSlider_PointerExited"
                                     PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                    Value="{x:Bind ViewModel.AppObservableObj.Volume, Mode=TwoWay}" />
+                                    Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
                             </StackPanel>
                         </Grid>
 

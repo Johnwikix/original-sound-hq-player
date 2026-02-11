@@ -17,15 +17,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using TagLib.Ape;
 using WinUIMusicPlayer.Extensions;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
-namespace WinUIMusicPlayer.Model
+namespace WinUIMusicPlayer.ViewModel
 {
-    public class AppObservableObj : ObservableObject
+    public class AppViewModel : ObservableObject
     {
         public Music? CurrentArtistObj {
             get => field;
@@ -214,7 +215,7 @@ namespace WinUIMusicPlayer.Model
 
         private MusicDatabaseService _musicDatabaseService { get; }
 
-        public AppObservableObj(MusicDatabaseService musicDatabaseService)
+        public AppViewModel(MusicDatabaseService musicDatabaseService)
         {
             _musicDatabaseService = musicDatabaseService;
             AllSongsView = new AdvancedCollectionView(AllSongs, true) // false 禁用内部反射排序

@@ -831,7 +831,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static void ClearAllUsbStatus()
         {
-            App.Services.GetRequiredService<AppObservableObj>().ClearUsbDevice();
+            App.Services.GetRequiredService<AppViewModel>().ClearUsbDevice();
             //App.Services.GetRequiredService<SongCollectionViewModel>().ClearUsbDeviceMusicList(null, null);
             //App.Services.GetRequiredService<SongListViewModel>().ClearUsbDeviceMusicList(null, null);            
             //App.Services.GetRequiredService<PlayListSongViewModel>().ClearUsbDeviceMusicList(null, null);

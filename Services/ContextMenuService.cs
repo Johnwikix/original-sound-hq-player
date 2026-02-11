@@ -10,6 +10,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
+using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 namespace WinUIMusicPlayer.Services
@@ -67,7 +68,7 @@ namespace WinUIMusicPlayer.Services
                 Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
             };
             // 获取所有播放列表
-            List<PlayList> playlists = [.. App.Services.GetRequiredService<AppObservableObj>().AllPlayList];
+            List<PlayList> playlists = [.. App.Services.GetRequiredService<AppViewModel>().AllPlayList];
             foreach (PlayList playlist in playlists)
             {
                 MenuFlyoutItem menuItem = new MenuFlyoutItem

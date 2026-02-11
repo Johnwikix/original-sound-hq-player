@@ -471,7 +471,7 @@ namespace WinUIMusicPlayer.ViewModel
         //        {
         //            if (_isInitized)
         //            {
-        //                AppObservableObj.LyricsMargin = new Thickness(value,0,value,0);
+        //                AppViewModel.LyricsMargin = new Thickness(value,0,value,0);
         //                _ = MusicDatabaseService.SaveSettingAsync();
         //            }
         //        }
@@ -603,12 +603,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public AppObservableObj AppObservableObj { get; }
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService MusicDatabaseService { get; }
 
-        public SettingsViewModel(AppObservableObj appObservableObj,MusicDatabaseService musicDatabaseService)
+        public SettingsViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            AppObservableObj = appObservableObj;
+            AppViewModel = appViewModel;
             MusicDatabaseService = musicDatabaseService;
             InitializeData();            
         }

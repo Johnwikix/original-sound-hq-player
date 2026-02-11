@@ -24,10 +24,10 @@ namespace WinUIMusicPlayer.Services.NavigationService
         public NavigationService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            _easingFunction = new ExponentialEase()
+            _easingFunction = new PowerEase()
             {
                 EasingMode = EasingMode.EaseOut,
-                Exponent = 10
+                Power = 8
             };
         }
 

@@ -15,7 +15,7 @@
             x:Name="FolderCollectionSource"
             IsSourceGrouped="True"
             ItemsPath="Items"
-            Source="{x:Bind ViewModel.AppObservableObj.FolderPageSource}" />
+            Source="{x:Bind ViewModel.AppViewModel.FolderPageSource}" />
     </Page.Resources>
     <Grid Margin="0">
         <SemanticZoom>
