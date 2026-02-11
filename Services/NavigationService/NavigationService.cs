@@ -15,6 +15,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
     {
         private readonly ConcurrentDictionary<Type, Type> _registeredPages = new();
         private readonly IServiceProvider _serviceProvider;
+        private readonly EasingFunctionBase _easingFunction;
 
         public Frame ContentFrame { get; set; }
 
@@ -23,6 +24,11 @@ namespace WinUIMusicPlayer.Services.NavigationService
         public NavigationService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _easingFunction = new ExponentialEase()
+            {
+                EasingMode = EasingMode.EaseOut,
+                Exponent = 10
+            };
         }
 
         // 添加初始化方法
@@ -118,10 +124,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             var animation = new DoubleAnimation()
             {
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new PowerEase() { 
-                    EasingMode = EasingMode.EaseOut,
-                    Power = 7
-                }
+                EasingFunction = _easingFunction
             };
 
             // 根据效果设置起始位置
@@ -172,11 +175,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 1.1,
                 To = 1.0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new PowerEase()
-                {
-                    EasingMode = EasingMode.EaseOut,
-                    Power = 7
-                }
+                EasingFunction = _easingFunction
             };
 
             // Y轴缩放动画（手动创建新实例）
@@ -185,11 +184,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 1.1,
                 To = 1.0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new PowerEase()
-                {
-                    EasingMode = EasingMode.EaseOut,
-                    Power = 7
-                }
+                EasingFunction = _easingFunction
             };
 
             // 透明度动画
@@ -227,11 +222,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 500,
                 To = 0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = new PowerEase()
-                {
-                    EasingMode = EasingMode.EaseOut,
-                    Power = 7
-                }
+                EasingFunction = _easingFunction
             };
 
             var opacityAnimation = new DoubleAnimation()
