@@ -29,13 +29,15 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
         public ObservableCollection<MenuModel> AlbumMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        private MusicDatabaseService _musicDatabaseService;
         private MusicBrowsePage? parentPage;
         public AppViewModel AppViewModel { get; }
 
-        public AlbumViewModel(MusicBrowsePage parent,  MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public AlbumViewModel(MusicBrowsePage parent,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
             AppViewModel = appViewModel;
+            _musicDatabaseService = musicDatabaseService;
             InitalizeOption();
         }
 
@@ -130,7 +132,7 @@ namespace WinUIMusicPlayer.ViewModel
             var albums = AppViewModel.AllSongs
               .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
               .OrderBy(m => m.TrackNumber);
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddMusicListToPlayList(albums, playListId);
+            _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
     }
 }
