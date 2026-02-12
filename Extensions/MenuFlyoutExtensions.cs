@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Extensions
 
         private static MenuFlyoutItemBase CreateMenuItem(MenuModel model)
         {
-            if (model.Children != null && model.Children.Count() > 0)
+            if (model.Children != null && model.Children.Any())
             {
                 var subItem = new MenuFlyoutSubItem { Text = model.Title }; // 这里可以用资源加载器处理 Uid
                 foreach (var child in model.Children)
