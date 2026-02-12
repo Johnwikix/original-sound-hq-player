@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer.View
         public AlbumPage(AlbumViewModel viewModel)
         {
             ViewModel = viewModel;
-            ViewModel.SetCurrentPage(this);
+            //ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
         }

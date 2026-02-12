@@ -693,28 +693,6 @@ namespace WinUIMusicPlayer.Services
             return query.OrderBy(m => m.LastLevelFolderPath).ToImmutableList();
         }
 
-        public IEnumerable<Music> GetAlbumMusicFromMem(string album, string search = null)
-        {
-            var query = AppData.allSongs.AsValueEnumerable();
-            if (album is not null)
-            {
-                if (!string.IsNullOrEmpty(search))
-                {
-                    return query.Where(m =>
-                        m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-                        m.Author is not null && m.Author.ToLower().Contains(search.ToLower())
-                    ).OrderBy(m => m.TrackNumber).ToImmutableList();
-                }
-                else
-                {
-                    return query.Where(m => m.Album is not null && m.Album.ToLower().Equals(album.ToLower()))
-                         .OrderBy(m => m.TrackNumber).ToImmutableList();
-                }
-            }
-            return query.OrderBy(m => m.TrackNumber).ToImmutableList();
-        }
-
-
         public async Task GetPlayStateAsync()
         {
             var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();

@@ -218,6 +218,7 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel(MusicDatabaseService musicDatabaseService)
         {
             _musicDatabaseService = musicDatabaseService;
+            //AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             AllSongsView = new AdvancedCollectionView(AllSongs, true) // false 禁用内部反射排序
             {
                 Filter = item =>
@@ -295,6 +296,11 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             };
             FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+        }
+
+        private void AllPlayList_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)

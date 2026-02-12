@@ -7,11 +7,10 @@ namespace WinUIMusicPlayer.Model
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
-        private string _name;
         public string Name
         {
-            get => _name;
-            set => SetProperty(ref _name, value);
+            get;
+            set => SetProperty(ref field, value);
         }
     }
 }

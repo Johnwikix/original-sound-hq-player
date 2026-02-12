@@ -1,80 +1,63 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using TagLib.Ape;
+using Windows.Media.Playlists;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.View.SubView;
 using ZLinq;
+using ZLinq.Traversables;
 
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AlbumViewModel : ObservableObject
     {
-        //private ObservableCollection<Music> _musicList = [];
-        //public ObservableCollection<Music> MusicList
-        //{
-        //    get => _musicList;
-        //    set => SetProperty(ref _musicList, value);
-        //}
-        //private CollectionViewSource _groupedMusicViewSource;
-        //public CollectionViewSource GroupedMusicViewSource
-        //{
-        //    get => _groupedMusicViewSource;
-        //    set => SetProperty(ref _groupedMusicViewSource, value);
-        //}
-        //private List<MusicGroup> _groupedByFirstLetter = [];
-
-        //private readonly Queue<MusicGroup> _musicGroupPool = new();
-
-        //private string _lastSearchText = "";
-
+        public Music SelectedItem { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<MenuModel> AlbumMenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowsePage? parentPage;
-        private MusicBrowseViewModel? _musicBrowseViewModel;
-        private MusicDatabaseService _musicDatabaseService { get; }
         public AppViewModel AppViewModel { get; }
-        private AlbumPage? currentPage;
-        private ContextMenuService _contextMenuService;
 
-        public AlbumViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public AlbumViewModel(MusicBrowsePage parent,  MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
-            _musicBrowseViewModel = musicBrowseViewModel;
-            _contextMenuService = contextMenuService;
-            _contextMenuService.playingAlbumMusic += PlayingAlbum;
-            _contextMenuService.showTransmission += (s, e) =>
-            {
-                if (parentPage is not null)
-                {
-                    parentPage.ShowTransmission();
-                }
-            };
-            _contextMenuService.hideTransmission += (s, e) =>
-            {
-                if (parentPage is not null)
-                {
-                    parentPage.HideTransmission();
-                }
-            };
             AppViewModel = appViewModel;
-            _musicDatabaseService = musicDatabaseService;
+            InitalizeOption();
+        }
+
+        private void InitalizeOption() {
+            AlbumMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
+            AlbumMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour" ,Command = AddToFavourCommand});
+            AlbumMenuOptions.Add(new(){ Title = "添加到播放列表",Tag = "AddToPlayList",Children = []});
+            AlbumMenuOptions.Add(new() { Title = "属性", Tag = "Property",Command = ShowPropertyWindowCommand});
+            UpdateAlbumMenuOptionsPlayList();
+        }
+
+        public void UpdateAlbumMenuOptionsPlayList() {
+            var option = AlbumMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
+            option?.Children.Clear();
+            foreach (var item in AppViewModel.AllPlayList) {
+                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command=AddToPlayListCommand});
+            }
         }
 
         public void UpdateUsbIcon()
         {
             //ToolUtils.RefreshIcon(MusicList, "album");
-        }
-
-        public void SetCurrentPage(AlbumPage page)
-        {
-            currentPage = page;
         }
 
         public void ReceiveNavigation()
@@ -92,7 +75,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (item is not null)
             {
                 Music album = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null && album is not null)
+                if (parentPage is not null && album is not null)
                 {
                     AppViewModel.PageType = "album";
                     AppViewModel.CurrentAlbumObj = album;
@@ -102,44 +85,52 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void PlayingAlbum(object? sender, Music e)
+        public async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            List<Music> albums = _musicDatabaseService.GetAlbumMusicFromMem(e.Album).AsValueEnumerable().OrderBy(m => m.Album).ToList();
-            if (albums is not null && albums.Count > 0)
+            var frameworkElement = e.OriginalSource as FrameworkElement;
+            if (frameworkElement?.DataContext is Music clickedItem)
             {
-                if (parentPage is not null && _musicBrowseViewModel is not null)
+                SelectedItem = clickedItem;
+            }
+            e.Handled = true;
+        }
+        [RelayCommand]
+        private void Play(string tag) {
+            var albums = AppViewModel.AllSongs.AsValueEnumerable()
+                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album,StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.TrackNumber).ToList();
+            if (albums is not null &&albums.Count > 0)
+            {
+                if (parentPage is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(albums);
                     parentPage.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }
         }
-
-        public async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        [RelayCommand]
+        private void AddToFavour()
         {
-            var originalSource = e.OriginalSource as FrameworkElement;
-
-            // 向上遍历查找 GridViewItem
-            GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-
-            if (clickedItem is not null)
-            {
-                // 从 GridViewItem 获取数据项
-                var album = clickedItem.Content as Music;
-
-                if (album is not null)
-                {
-                    _contextMenuService.SetAlbumPage(currentPage);
-                    // 显示专辑右键菜单
-                    await _contextMenuService.ShowAlbumContextMenu(
-                        album,
-                        originalSource,
-                        e.GetPosition(originalSource),
-                        "album"
-                    );
-                }
+            var albums = AppViewModel.AllSongs.AsValueEnumerable()
+               .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+               .OrderBy(m => m.TrackNumber);
+            foreach (var album in albums) {
+                album.UpdateFavourite();
             }
-            e.Handled = true;
+        }
+        [RelayCommand]
+        private void ShowPropertyWindow() {
+            var albumDetailWindow = new AlbumDetailWindow(SelectedItem);
+            albumDetailWindow.Activate();
+        }
+
+        [RelayCommand]
+        private void AddToPlayList(int playListId)
+        {
+            var albums = AppViewModel.AllSongs
+              .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+              .OrderBy(m => m.TrackNumber);
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddMusicListToPlayList(albums, playListId);
         }
     }
 }
