@@ -316,6 +316,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)

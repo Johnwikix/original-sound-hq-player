@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,19 +20,9 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SongListViewModel : ObservableObject
     {
-        //private ObservableCollection<Music> _musicList = [];
-        //public ObservableCollection<Music> MusicList
-        //{
-        //    get => _musicList;
-        //    set => SetProperty(ref _musicList, value);
-        //}
-
-        private Music _selectedMusic;
-        public Music SelectedMusic
-        {
-            get => _selectedMusic;
-            set => SetProperty(ref _selectedMusic, value);
-        }
+        public Music SelectedMusic { get; set => SetProperty(ref field, value); }
+        public List<Music> SelectedMusics { get; set; } = [];
+        public ObservableCollection<MenuModel> SongListMenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowsePage? _parentPage;
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -44,6 +35,36 @@ namespace WinUIMusicPlayer.ViewModel
             //_parentPage.refreshPage += RefreshPage;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            InitalizeOption();
+        }
+
+        private void InitalizeOption()
+        {
+            SongListMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
+            SongListMenuOptions.Add(new() { Title = "添加/取消最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
+            SongListMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
+            SongListMenuOptions.Add(new() { Title = "转换为", Tag = "AddToPlayList", Children = [
+                new(){ Title="WAV",Tag="wav"},
+                new(){ Title="MP3",Tag="mp3"},
+                new(){ Title="FLAC",Tag="flac"},
+                new(){ Title="Ogg",Tag="ogg"},
+                new(){ Title="Opus",Tag="opus"},
+                ] });
+            SongListMenuOptions.Add(new() { Title = "添加到当前播放列表", Tag = "AddToPlayList"});
+            SongListMenuOptions.Add(new() { Title = "重新获取歌词", Tag = "AddToPlayList" });
+            SongListMenuOptions.Add(new() { Title = "打开文件位置", Tag = "AddToPlayList"});
+            SongListMenuOptions.Add(new() { Title = "属性", Tag = "AddToPlayList" });
+            SongListMenuOptions.Add(new() { Title = "从磁盘中删除", Tag = "AddToPlayList" });
+        }
+
+        public void UpdateAlbumMenuOptionsPlayList()
+        {
+            var option = SongListMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
+            option?.Children.Clear();
+            foreach (var item in AppViewModel.AllPlayList)
+            {
+                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
+            }
         }
 
         public void SetCurrentPage(SongListPage page)
@@ -332,32 +353,49 @@ namespace WinUIMusicPlayer.ViewModel
         public async void ReGetLyrics_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
             AppViewModel.ReGetLyrics(uniqueSelectedMusics,SelectedMusic);
-            //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            //{
-            //    foreach (Music item in uniqueSelectedMusics)
-            //    {
-            //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-            //        Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
-            //        if (music is not null)
-            //        {
-            //            music.Lyrics = lyrics;
-            //            music.TranslatdeLyrics = transLrc;
-            //            await _musicDatabaseService.UpdateMusicInfo(music);
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic);
-            //    Music? music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Id).FirstOrDefault();
-            //    if (music is not null)
-            //    {
-            //        music.Lyrics = lyrics;
-            //        music.TranslatdeLyrics = transLrc;
-            //        await _musicDatabaseService.UpdateMusicInfo(music);
-            //    }
-            //}
-            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+        }
+
+        [RelayCommand]
+        private void Play()
+        {
+            if (SelectedMusics.Count == 1)
+            {
+                if (_parentPage is not null)
+                {
+                    AppViewModel.SequentialPlayingList = new([.. AppViewModel.AllSongsView.Cast<Music>()]);
+                    _parentPage.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                }
+            }
+            else if (SelectedMusics.Count > 1) {
+                if (_parentPage is not null)
+                {
+                    AppViewModel.SequentialPlayingList = new(SelectedMusics);
+                    _parentPage.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                }
+            }
+        }
+        [RelayCommand]
+        private void AddToFavour()
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                foreach (var music in SelectedMusics)
+                {
+                    music.UpdateFavourite();
+                }
+            }
+        }
+
+        [RelayCommand]
+        private void AddToPlayList(int playListId)
+        {
+            //var albums = AppViewModel.AllSongs
+            //    .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+            //    .OrderBy(m => m.Album);
+            if (SelectedMusics.Count > 0)
+            {
+                _ = _musicDatabaseService.AddMusicListToPlayList(SelectedMusics, playListId);
+            }           
         }
 
         [RelayCommand]
