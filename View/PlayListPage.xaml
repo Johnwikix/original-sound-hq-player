@@ -15,7 +15,7 @@
             <ListView
                 x:Name="PlayListView"
                 ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=TwoWay}"
-                SelectionChanged="PlayListView_SelectionChanged">
+                SelectionMode="None">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayList">
                         <Grid>
@@ -50,15 +50,22 @@
                                     <ToolTip x:Uid="ExportM3u8" />
                                 </ToolTipService.ToolTip>
                             </Button>
-                            <StackPanel
-                                x:Name="OpenPlayListPanel"
+                            <Button
+                                x:Name="OpenPlayList"
                                 Grid.Column="2"
-                                Orientation="Horizontal">
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="18"
-                                    Text="{x:Bind Name, Mode=TwoWay}" />
-                            </StackPanel>
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                Command="{x:Bind EnterPlayListViewCommand, Mode=OneWay}">
+                                <Button.Content>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="18"
+                                        Text="{x:Bind Name, Mode=TwoWay}" />
+                                </Button.Content>
+                            </Button>
                             <Button
                                 x:Name="RemovePlayListButton"
                                 Grid.Column="3"

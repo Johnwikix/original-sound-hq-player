@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
@@ -90,20 +91,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             await _musicDatabaseService.RemovePlayList(playList);
             AppViewModel.AllPlayList.Remove(playList);
-        }
-
-        public void PlayListView_SelectionChanged(PlayList? playList)
-        {
-            if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)
-            {
-                AppViewModel.PageType = "playlist";
-                //_musicBrowseViewModel.paramName = playList.Name;
-                AppViewModel.CurrentPlayList = playList;
-                AppViewModel.CurrentPlayListId = playList.Id;
-                AppData.CurrentPage = typeof(PlayListSongPage);
-                _parentPage.NavigatePage(AppData.CurrentPage, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
-            }
-        }
+        }        
 
         public void ExportPlayList(PlayList playList)
         {
