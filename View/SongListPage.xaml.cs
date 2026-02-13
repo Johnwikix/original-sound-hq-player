@@ -130,26 +130,51 @@ namespace WinUIMusicPlayer.View
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
+
+            var frameworkElement = e.OriginalSource as FrameworkElement;
+            bool isCurrentItemSelected = false;
             ViewModel.SelectedMusics.Clear();
-            if (MusicListView.SelectedItems.Any() && MusicListView.SelectedItems.Count() > 1)
+            if (frameworkElement?.DataContext is Music clickedItem)
             {
+                if (clickedItem is null) return;
                 foreach (var item in MusicListView.SelectedItems)
                 {
                     if (item is Music selectedMusic)
                     {
                         ViewModel.SelectedMusics.Add(selectedMusic);
+                        if (selectedMusic.Id == clickedItem.Id) {
+                            isCurrentItemSelected = true;
+                        }                        
                     }
                 }
-            }
-            else {
-                var frameworkElement = e.OriginalSource as FrameworkElement;
-                if (frameworkElement?.DataContext is Music clickedItem)
-                {                    
+                if (!isCurrentItemSelected)
+                {
+                    MusicListView.SelectedItems.Clear();
+                    ViewModel.SelectedMusics.Clear();                    
                     ViewModel.SelectedMusic = clickedItem;
                     ViewModel.SelectedMusics.Add(clickedItem);
-                }                
+                }
             }
             e.Handled = true;
+            //if (MusicListView.SelectedItems.Any() && MusicListView.SelectedItems.Count() > 1)
+            //{
+            //    foreach (var item in MusicListView.SelectedItems)
+            //    {
+            //        if (item is Music selectedMusic)
+            //        {
+            //            ViewModel.SelectedMusics.Add(selectedMusic);
+            //        }
+            //    }
+            //}
+            //else {
+            //    var frameworkElement = e.OriginalSource as FrameworkElement;
+            //    if (frameworkElement?.DataContext is Music clickedItem)
+            //    {                    
+            //        ViewModel.SelectedMusic = clickedItem;
+            //        ViewModel.SelectedMusics.Add(clickedItem);
+            //    }                
+            //}
+
             //if (listViewItem is not null)
             //{
             //    var musicItem = listViewItem.Content as Model.Music;
