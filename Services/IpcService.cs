@@ -70,6 +70,13 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public async Task InitializeMusic(Music music)
+        {
+            await SetMusicUrl(music.Path);
+            await UpdateEq();
+            UpdateSettings();
+        }
+
         private void StartNotificationListener()
         {
             _notificationCts = new CancellationTokenSource();

@@ -205,11 +205,13 @@ namespace WinUIMusicPlayer
                 App.Services.GetRequiredService<IpcService>().Initializing();
                 await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
+                await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
+                App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
             }
             catch (Exception)
             {

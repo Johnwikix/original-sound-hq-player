@@ -66,18 +66,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ShowTransmission()
         {
-            if (_parentPage is not null)
-            {
-                _parentPage.ShowTransmission();
-            }
+            _parentPage?.ShowTransmission();
         }
 
         public void HideTransmission()
         {
-            if (_parentPage is not null)
-            {
-                _parentPage.HideTransmission();
-            }
+            _parentPage?.HideTransmission();
         }        
 
         //public void ClearUsbDeviceMusicList(object? sender, EventArgs e)

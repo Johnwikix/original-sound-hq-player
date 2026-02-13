@@ -4,6 +4,7 @@ using CommunityToolkit.WinUI.Collections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -217,7 +218,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public AppViewModel(MusicDatabaseService musicDatabaseService)
         {
-            _musicDatabaseService = musicDatabaseService;            
+            _musicDatabaseService = musicDatabaseService;       
             AllSongsView = new AdvancedCollectionView(AllSongs, true) // false 禁用内部反射排序
             {
                 Filter = item =>
@@ -296,11 +297,25 @@ namespace WinUIMusicPlayer.ViewModel
             };
             FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
+            AllSongs.CollectionChanged += AllSongs_CollectionChanged;
+        }
+
+        private void AllSongs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (IsInitialized) {
+                RefreshDataSource();
+            }
         }
 
         private void AllPlayList_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            UpdateMenuOptionsPlayList();
+        }
+
+        public void UpdateMenuOptionsPlayList() {
             App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<ArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
@@ -816,7 +831,26 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await _musicDatabaseService.UpdatePlayList(playList);
-                App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
+                App.Services.GetRequiredService<AppViewModel>().UpdateMenuOptionsPlayList();
+            }
+        }
+
+        public async Task RescanFolder(Music music)
+        {
+            try
+            {
+                if (music is not null)
+                {
+                    if (!string.IsNullOrEmpty(music.FolderPath))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            await App.Services.GetRequiredService<MusicDatabaseService>().RescanFolderByPath(music.FolderPath);
+                        });
+                    }
+                }
+            }
+            catch {
             }
         }
     }

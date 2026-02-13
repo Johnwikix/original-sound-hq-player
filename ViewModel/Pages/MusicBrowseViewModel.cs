@@ -597,7 +597,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
                 LoadLyricsToUI();
-                _musicPlaybackService.InitializeMusicUrl(AppViewModel.CurrentPlayingMusic.Path);
             }
             _musicPlaybackService.isInitializing = false;
         }

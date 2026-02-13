@@ -70,12 +70,12 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async void InitializeMusicUrl(string musicUrl)
-        {
-            await IpcService.SetMusicUrl(musicUrl);
-            await IpcService.UpdateEq();
-            IpcService.UpdateSettings();
-        }
+        //public async void InitializeMusicUrl(string musicUrl)
+        //{
+        //    await IpcService.SetMusicUrl(musicUrl);
+        //    await IpcService.UpdateEq();
+        //    IpcService.UpdateSettings();
+        //}
 
         public async void EqUpdate()
         {

@@ -209,6 +209,7 @@ namespace WinUIMusicPlayer.View
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
             AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+            await ViewModel.AppViewModel.AllSongs.ReplaceAllAsync(AppData.allSongs);
         }
 
         private void SelectBarItem(string name)

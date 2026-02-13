@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -8,44 +9,49 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.View.SubView;
 using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class ArtistViewModel : ObservableObject
     {
+        public Music SelectedItem { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<MenuModel> ArtistMenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowsePage? parentPage { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        private ArtistPage? currentPage { get; set; }
-        private ContextMenuService _contextMenuService { get; }
+        //private ArtistPage? currentPage { get; set; }
+        //private ContextMenuService _contextMenuService { get; }
 
-        public ArtistViewModel(MusicBrowsePage parent, ContextMenuService contextMenuService, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public ArtistViewModel(MusicBrowsePage parent, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
-            _contextMenuService = contextMenuService;
-            _contextMenuService.showTransmission += (s, e) =>
-            {
-                if (parentPage is not null)
-                {
-                    parentPage.ShowTransmission();
-                }
-            };
-            _contextMenuService.hideTransmission += (s, e) =>
-            {
-                if (parentPage is not null)
-                {
-                    parentPage.HideTransmission();
-                }
-            };
+            //_contextMenuService = contextMenuService;
+            //_contextMenuService.showTransmission += (s, e) =>
+            //{
+            //    if (parentPage is not null)
+            //    {
+            //        parentPage.ShowTransmission();
+            //    }
+            //};
+            //_contextMenuService.hideTransmission += (s, e) =>
+            //{
+            //    if (parentPage is not null)
+            //    {
+            //        parentPage.HideTransmission();
+            //    }
+            //};
             _musicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            InitalizeOption();
         }
 
         public void UpdateUsbIcon()
@@ -53,17 +59,34 @@ namespace WinUIMusicPlayer.ViewModel
             //ToolUtils.RefreshIcon(MusicList, "artist");
         }
 
-        public void SetCurrentPage(ArtistPage page)
-        {
-            currentPage = page;
-        }
+        //public void SetCurrentPage(ArtistPage page)
+        //{
+        //    currentPage = page;
+        //}
 
         public void ReceiveNavigation()
         {
             AppViewModel.CurrentArtistObj = null;
             AppViewModel.PageType = "artistBrowse";
             App.MainWindow.IsBackBtnEnable = false;
-        }        
+        }
+
+        private void InitalizeOption()
+        {
+            ArtistMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
+            ArtistMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
+            ArtistMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
+        }
+
+        public void UpdateAlbumMenuOptionsPlayList()
+        {
+            var option = ArtistMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
+            option?.Children.Clear();
+            foreach (var item in AppViewModel.AllPlayList)
+            {
+                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
+            }
+        }
 
         public void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
@@ -81,30 +104,30 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-            var originalSource = e.OriginalSource as FrameworkElement;
-            // 向上遍历查找 GridViewItem
-            GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-            if (clickedItem is not null)
-            {
-                // 从 GridViewItem 获取数据项
-                var artist = clickedItem.Content as Music;
+        //public async void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        //{
+        //    var originalSource = e.OriginalSource as FrameworkElement;
+        //    // 向上遍历查找 GridViewItem
+        //    GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
+        //    if (clickedItem is not null)
+        //    {
+        //        // 从 GridViewItem 获取数据项
+        //        var artist = clickedItem.Content as Music;
 
-                if (artist is not null)
-                {
-                    // 显示专辑右键菜单
-                    await _contextMenuService.ShowAlbumContextMenu(
-                        artist,
-                        originalSource,
-                        e.GetPosition(originalSource),
-                        "artist"
-                    );
-                    _contextMenuService.playingArtistMusic += PlayingArtist;
-                }
-            }
-            e.Handled = true;
-        }
+        //        if (artist is not null)
+        //        {
+        //            // 显示专辑右键菜单
+        //            await _contextMenuService.ShowAlbumContextMenu(
+        //                artist,
+        //                originalSource,
+        //                e.GetPosition(originalSource),
+        //                "artist"
+        //            );
+        //            _contextMenuService.playingArtistMusic += PlayingArtist;
+        //        }
+        //    }
+        //    e.Handled = true;
+        //}
 
         private void PlayingArtist(object? sender, Music e)
         {
@@ -117,6 +140,42 @@ namespace WinUIMusicPlayer.ViewModel
                     parentPage.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }
+        }
+
+        [RelayCommand]
+        private void Play()
+        {
+            var artists = AppViewModel.AllSongs.AsValueEnumerable()
+                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.Album).ToList();
+            if (artists is not null && artists.Count > 0)
+            {
+                if (parentPage is not null)
+                {
+                    AppViewModel.SequentialPlayingList = new(artists);
+                    parentPage.PlayMusic(music: artists[0], IsChangeList: true);
+                }
+            }
+        }
+        [RelayCommand]
+        private void AddToFavour()
+        {
+            var artists = AppViewModel.AllSongs.AsValueEnumerable()
+                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.Album);
+            foreach (var artist in artists)
+            {
+                artist.UpdateFavourite();
+            }
+        }
+
+        [RelayCommand]
+        private void AddToPlayList(int playListId)
+        {
+            var albums = AppViewModel.AllSongs
+                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.Album);
+            _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
     }
 }
