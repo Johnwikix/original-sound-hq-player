@@ -25,9 +25,6 @@ namespace WinUIMusicPlayer.View
 {
     public sealed partial class MusicBrowsePage
     {
-        private readonly SolidColorBrush _transparentBrush = new(Microsoft.UI.Colors.Transparent);
-        private readonly SolidColorBrush _whiteBrush = new(Color.FromArgb(25, 255, 255, 255));
-
         private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is LyricLine lyricLine)
@@ -50,11 +47,14 @@ namespace WinUIMusicPlayer.View
                 var blurControl = grid?.Children.AsValueEnumerable()
                           .OfType<BlurEffectControl>()
                           .FirstOrDefault();
-
                 blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
                 if (AppSettings.LyricsBlurAmount < 1)
                 {
-                    grid.Background = _whiteBrush;
+                    if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
+                    {
+                        var secondaryBrush = resourceValue as SolidColorBrush;
+                        grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
+                    }
                 }             
             }
         }
@@ -66,14 +66,11 @@ namespace WinUIMusicPlayer.View
                 var blurControl = grid?.Children.AsValueEnumerable()
                         .OfType<BlurEffectControl>()
                         .FirstOrDefault();
-
                 blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-
                 if (AppSettings.LyricsBlurAmount<1)
                 {
-                    grid.Background = _transparentBrush;
+                    grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 }
-
             }
         }
     }
