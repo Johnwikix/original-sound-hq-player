@@ -35,7 +35,6 @@ namespace WinUIMusicPlayer.Extensions
                 int k = rng.Next(n + 1);
                 (list[n], list[k]) = (list[k], list[n]);
             }
-
             return new ObservableCollection<T>(list);
         }
     }

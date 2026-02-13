@@ -25,8 +25,8 @@ namespace WinUIMusicPlayer.View
 {
     public sealed partial class MusicBrowsePage
     {
-        private SolidColorBrush _transparentBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        private SolidColorBrush _whiteBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255));
+        private readonly SolidColorBrush _transparentBrush = new(Microsoft.UI.Colors.Transparent);
+        private readonly SolidColorBrush _whiteBrush = new(Color.FromArgb(25, 255, 255, 255));
 
         private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
         {

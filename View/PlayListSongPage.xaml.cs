@@ -257,7 +257,7 @@ namespace WinUIMusicPlayer.View
 
         private void EditPlaylistName_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.EditPlayListName(async () =>
+            ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList,async () =>
             {
                 ContentDialog contentDialog = new ContentDialog
                 {

@@ -88,11 +88,11 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public ObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public ObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public Music FavoriteSongsSelectedMusic { get; set => SetProperty(ref field, value); }
         public ObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
         public ObservableCollection<GenericGroup> AlbumPageSource { get; set => SetProperty(ref field, value); } = [];
@@ -217,8 +217,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public AppViewModel(MusicDatabaseService musicDatabaseService)
         {
-            _musicDatabaseService = musicDatabaseService;
-            //AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
+            _musicDatabaseService = musicDatabaseService;            
             AllSongsView = new AdvancedCollectionView(AllSongs, true) // false 禁用内部反射排序
             {
                 Filter = item =>
@@ -296,6 +295,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             };
             FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+            AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
         }
 
         private void AllPlayList_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -803,6 +803,20 @@ namespace WinUIMusicPlayer.ViewModel
                     music.TranslatdeLyrics = transLrc;
                     await _musicDatabaseService.UpdateMusicInfo(music);
                 }
+            }
+        }
+
+        public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
+        {
+            if (playList is null || getNameCallback is null) return;
+
+            string newName = await getNameCallback();
+
+            if (!string.IsNullOrEmpty(newName))
+            {
+                playList.Name = newName;
+                await _musicDatabaseService.UpdatePlayList(playList);
+                App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
             }
         }
     }

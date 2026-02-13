@@ -20,22 +20,47 @@ namespace WinUIMusicPlayer.Extensions
         {
             if (d is MenuFlyout flyout)
             {
-                flyout.Items.Clear();
-                if (e.NewValue is IEnumerable<MenuModel> items)
-                {
-                    foreach (var item in items)
-                    {
-                        flyout.Items.Add(CreateMenuItem(item));
-                    }
-                }
+                // 核心逻辑：订阅 Opening 事件。
+                // 这样无论 Children 怎么变，在点开右键的一瞬间都会重新生成 UI
+                flyout.Opening -= Flyout_Opening;
+                flyout.Opening += Flyout_Opening;
+
+                // 初次构建
+                RebuildItems(flyout);
+            }
+        }
+
+        private static void Flyout_Opening(object sender, object e)
+        {
+            if (sender is MenuFlyout flyout)
+            {
+                RebuildItems(flyout);
+            }
+        }
+
+        private static void RebuildItems(MenuFlyout flyout)
+        {
+            var items = GetItemsSource(flyout);
+            if (items == null) return;
+
+            // 获取被点击条目的 DataContext (ConnectionItem/AlbumItem)
+            // 如果 Flyout 放在 Style 里，Target 就是 GridViewItem
+
+            flyout.Items.Clear();
+            foreach (var item in items)
+            {
+                flyout.Items.Add(CreateMenuItem(item));
             }
         }
 
         private static MenuFlyoutItemBase CreateMenuItem(MenuModel model)
         {
+            // 处理子菜单 (Children)
             if (model.Children != null && model.Children.Any())
             {
-                var subItem = new MenuFlyoutSubItem { Text = model.Title }; // 这里可以用资源加载器处理 Uid
+                var subItem = new MenuFlyoutSubItem { Text = model.Title };
+
+                // 递归创建子项
                 foreach (var child in model.Children)
                 {
                     subItem.Items.Add(CreateMenuItem(child));
@@ -43,13 +68,13 @@ namespace WinUIMusicPlayer.Extensions
                 return subItem;
             }
 
-            var menuItem = new MenuFlyoutItem
+            // 处理普通菜单项
+            return new MenuFlyoutItem
             {
                 Text = model.Title,
                 Command = model.Command,
                 CommandParameter = model.Tag
             };
-            return menuItem;
         }
     }
 }

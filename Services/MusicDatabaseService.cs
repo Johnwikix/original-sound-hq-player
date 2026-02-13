@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Media.Playlists;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -263,9 +264,10 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 var list = await _dbConnection.Table<PlayList>().ToListAsync();
-                foreach (var playList in list) {
-                    AppViewModel.AllPlayList.Add(playList);
-                }
+                await AppViewModel.AllPlayList.AddRangeAsync(list);
+                //foreach (var playList in list) {
+                //    AppViewModel.AllPlayList.Add(playList);
+                //}
             }
             catch
             {
@@ -583,9 +585,10 @@ namespace WinUIMusicPlayer.Services
 
         public async Task LoadMusicList() {
             AppData.allSongs = await GetMusicListAsync();
-            foreach (var song in AppData.allSongs) {
-                AppViewModel.AllSongs.Add(song);
-            }
+            await AppViewModel.AllSongs.AddRangeAsync(AppData.allSongs);
+            //foreach (var song in AppData.allSongs) {
+            //    AppViewModel.AllSongs.Add(song);
+            //}
             AppViewModel.FavoriteSongs = GetFavoriteMusicFromMem();
             //AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumCollectionSource);
             //AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistCollectionSource);

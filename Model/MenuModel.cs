@@ -7,12 +7,12 @@ using System.Windows.Input;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class MenuModel
+    public class MenuModel:ObservableObject
     {
-        public string Title { get; set; }     // 对应 x:Uid 或 Text
-        public string Glyph { get; set; }     // 图标（可选）
-        public object Tag { get; set; }       // 存放类似 "wav", "mp3" 的参数
+        public string Title { get; set => SetProperty(ref field, value); }
+        public string Glyph { get; set => SetProperty(ref field, value); }
+        public object Tag { get; set => SetProperty(ref field, value); }
         public ICommand Command { get; set; } // 绑定的事件
-        public ObservableCollection<MenuModel> Children { get; set; } // 子菜单
+        public ObservableCollection<MenuModel> Children { get; set => SetProperty(ref field, value); }
     }
 }

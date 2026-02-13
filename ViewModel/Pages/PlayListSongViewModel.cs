@@ -97,10 +97,10 @@ namespace WinUIMusicPlayer.ViewModel
             //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
 
-        private void RefreshPlayList(object? sender, bool e)
-        {
-            //if (e) InitizeData();
-        }
+        //private void RefreshPlayList(object? sender, bool e)
+        //{
+        //    //if (e) InitizeData();
+        //}
 
         private void InitizeData()
         {
@@ -377,14 +377,14 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.ExportPlayList(AppViewModel.CurrentPlayList);
         }
 
-        public async void EditPlayListName(Func<Task<string>> getNameCallback)
-        {
-            string newName = await getNameCallback();
-            if (!string.IsNullOrEmpty(newName))
-            {
-                AppViewModel.CurrentPlayList.Name = newName;
-                await _musicDatabaseService.UpdatePlayList(AppViewModel.CurrentPlayList);
-            }
-        }
+        //public async void EditPlayListName(Func<Task<string>> getNameCallback)
+        //{
+        //    string newName = await getNameCallback();
+        //    if (!string.IsNullOrEmpty(newName))
+        //    {
+        //        AppViewModel.CurrentPlayList.Name = newName;
+        //        await _musicDatabaseService.UpdatePlayList(AppViewModel.CurrentPlayList);
+        //    }
+        //}
     }
 }

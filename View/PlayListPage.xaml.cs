@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.View
         {
             if (sender is Button button && button.Tag is PlayList playList)
             {
-                ViewModel.EditPlayListName(playList, async () =>
+                ViewModel.AppViewModel.EditPlayListName(playList, async () =>
                 {
                     ContentDialog contentDialog = new ContentDialog
                     {

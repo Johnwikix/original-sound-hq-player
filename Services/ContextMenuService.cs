@@ -260,10 +260,10 @@ namespace WinUIMusicPlayer.Services
             if (item is not null)
             {
                 var albumDetailWindow = new AlbumDetailWindow(item);
-                if (albumPage is not null)
-                {
-                    albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
-                }
+                //if (albumPage is not null)
+                //{
+                //    albumDetailWindow.AlbumDetailChanged += albumPage.OnAlbumDetailChanged;
+                //}
                 albumDetailWindow.Activate();
             }
 

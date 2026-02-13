@@ -92,21 +92,6 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.AllPlayList.Remove(playList);
         }
 
-        public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
-        {
-            if (playList is null || getNameCallback is null) return;
-
-            string newName = await getNameCallback();
-
-            if (!string.IsNullOrEmpty(newName))
-            {
-                playList.Name = newName;
-                await _musicDatabaseService.UpdatePlayList(playList);
-                //var existingPlayList = AppViewModel.AllPlayList.AsValueEnumerable().FirstOrDefault(p => p.Id == playList.Id);
-                //existingPlayList?.Name = newName;
-            }
-        }
-
         public void PlayListView_SelectionChanged(PlayList? playList)
         {
             if (playList is not null && _parentPage is not null && _musicBrowseViewModel is not null)

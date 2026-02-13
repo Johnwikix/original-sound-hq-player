@@ -38,7 +38,7 @@
                         <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
                             <Setter Property="ContextFlyout">
                                 <Setter.Value>
-                                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.AlbumMenuOptions}" />
+                                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.AlbumMenuOptions, Mode=OneWay}" />
                                 </Setter.Value>
                             </Setter>
                         </Style>

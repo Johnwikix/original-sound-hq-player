@@ -46,7 +46,6 @@ namespace WinUIMusicPlayer.ViewModel
             AlbumMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour" ,Command = AddToFavourCommand});
             AlbumMenuOptions.Add(new(){ Title = "添加到播放列表",Tag = "AddToPlayList",Children = []});
             AlbumMenuOptions.Add(new() { Title = "属性", Tag = "Property",Command = ShowPropertyWindowCommand});
-            UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateAlbumMenuOptionsPlayList() {
@@ -87,17 +86,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-            var frameworkElement = e.OriginalSource as FrameworkElement;
-            if (frameworkElement?.DataContext is Music clickedItem)
-            {
-                SelectedItem = clickedItem;
-            }
-            e.Handled = true;
-        }
         [RelayCommand]
-        private void Play(string tag) {
+        private void Play() {
             var albums = AppViewModel.AllSongs.AsValueEnumerable()
                 .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album,StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber).ToList();
