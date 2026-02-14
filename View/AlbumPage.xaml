@@ -12,13 +12,6 @@
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
-    <Page.Resources>
-        <CollectionViewSource
-            x:Name="AlbumCollectionSource"
-            IsSourceGrouped="True"
-            ItemsPath="Items"
-            Source="{x:Bind ViewModel.AppViewModel.AlbumPageSource}" />
-    </Page.Resources>
     <Grid Margin="0">
         <SemanticZoom>
             <!--  详细视图 (ZoomedInView)  -->
@@ -30,7 +23,7 @@
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="AlbumGridView_ItemClick"
-                    ItemsSource="{x:Bind AlbumCollectionSource.View, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.AlbumCollectionSource.View, Mode=OneWay}"
                     RightTapped="Album_RightTapped"
                     SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">
@@ -172,7 +165,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     IsItemClickEnabled="True"
-                    ItemsSource="{x:Bind AlbumCollectionSource.View.CollectionGroups, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.AlbumCollectionSource.View.CollectionGroups, Mode=OneWay}"
                     ScrollViewer.IsHorizontalScrollChainingEnabled="False"
                     ScrollViewer.IsVerticalScrollChainingEnabled="False"
                     ScrollViewer.ZoomMode="Disabled">

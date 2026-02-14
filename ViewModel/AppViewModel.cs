@@ -95,9 +95,12 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<GenericGroup> AlbumPageSource { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<GenericGroup> ArtistPageSource { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<GenericGroup> FolderPageSource { get; set => SetProperty(ref field, value); } = [];
+        //public ObservableCollection<GenericGroup> AlbumPageSource { get; set => SetProperty(ref field, value); } = [];
+        //public ObservableCollection<GenericGroup> ArtistPageSource { get; set => SetProperty(ref field, value); } = [];
+        //public ObservableCollection<GenericGroup> FolderPageSource { get; set => SetProperty(ref field, value); } = [];
+        public CollectionViewSource AlbumCollectionSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
+        public CollectionViewSource ArtistCollectionSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
+        public CollectionViewSource FolderCollectionSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public AdvancedCollectionView AllSongsView { get; }
         public AdvancedCollectionView AlbumSongsView { get; }
         public AdvancedCollectionView ArtistSongsView { get; }
@@ -322,7 +325,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<SongFolderListViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
-        public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
+        public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource? viewSource = null)
         {
             IEnumerable<Music> filteredSource = AllSongs;
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -334,6 +337,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             // 2. 对去重后的专辑进行首字母分组
             var groups = filteredSource
+                .AsValueEnumerable()
                 .GroupBy(distinctSelector)
                 .Select(g => g.First())
                 .GroupBy(groupSelector)
@@ -344,16 +348,22 @@ namespace WinUIMusicPlayer.ViewModel
                     Items = new ObservableCollection<Music>(g.OrderBy(distinctSelector))
                 })
                 .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
-                .ToList();
-            source.Clear();
-            foreach (var group in groups)
+                .ToImmutableList();
+            //source.Clear();
+            //foreach (var group in groups)
+            //{
+            //    source.Add(group);
+            //}
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                source.Add(group);
-            }
+                viewSource?.ItemsPath = new PropertyPath("Items");
+                viewSource?.Source = groups;
+            });
+
         }
 
 
-        private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
+        private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector,CollectionViewSource? viewSource = null)
         {
             try
             {
@@ -393,6 +403,7 @@ namespace WinUIMusicPlayer.ViewModel
                 // 4. 对排好序的项进行首字母分组
                 // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
                 var groups = sortedItems
+                    .AsValueEnumerable()
                     .GroupBy(groupSelector)
                     .Select(g => new GenericGroup
                     {
@@ -401,14 +412,19 @@ namespace WinUIMusicPlayer.ViewModel
                     })
                     // 5. 组间排序（首字母索引 A-Z 永远升序，#在后）
                     .OrderBy(g => g.Key == "ZZZ" ? "#"  : g.Key)
-                    .ToList();
+                    .ToImmutableList();
 
                 // 6. 更新视图数据源
-                source.Clear();
-                foreach (var group in groups)
+                //source.Clear();
+                //foreach (var group in groups)
+                //{
+                //    source.Add(group);
+                //}
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    source.Add(group);
-                }
+                    viewSource?.ItemsPath = new PropertyPath("Items");
+                    viewSource?.Source = groups;
+                });
             }
             catch { }
         }
@@ -487,9 +503,9 @@ namespace WinUIMusicPlayer.ViewModel
             ArtistSongsView.RefreshFilter();
             FolderSongsView.RefreshFilter();
             RefreshPlayListSongMapping();
-            UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumCollectionSource);
+            UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistCollectionSource);
+            UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderCollectionSource);
             App.Services.GetRequiredService<MusicBrowsePage>().UpdateViewList();
         }
 
@@ -582,9 +598,9 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateViewSort(FolderSongsView, SongViewType.Folder);
             UpdateCollectionSort(FavoriteSongs);
             UpdatePlayListCollectionSort(PlayListSongs);
-            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumCollectionSource);
+            UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistCollectionSource);
+            UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderCollectionSource);
         }
 
         public enum SongViewType
