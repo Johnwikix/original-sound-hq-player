@@ -106,7 +106,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+            GCSettings.LatencyMode = GCLatencyMode.Interactive;
             this.InitializeComponent();            
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
