@@ -220,7 +220,8 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task DeleteMenuItem()
         {
-            if (SelectedMusics is not null && SelectedMusics.AsValueEnumerable().Count() > 1)
+            if (SelectedMusics is null) return;
+            if (SelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 await _musicDatabaseService.DeleteAllMusicFromPlayList(_currentPlayListId, SelectedMusics.AsValueEnumerable().Select(item => item.Music.Id).ToImmutableList());
                 foreach (var item in SelectedMusics)
@@ -230,11 +231,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else
             {
-                if (SelectedMusic is not null)
-                {
-                    await _musicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, SelectedMusic.Music.Id);
-                    AppViewModel.PlayListSongs.Remove(SelectedMusic);
-                }
+                await _musicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, SelectedMusic.Music.Id);
+                AppViewModel.PlayListSongs.Remove(SelectedMusic);
             }
             await _musicDatabaseService.GetPlayListMusic();
         }

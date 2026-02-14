@@ -423,21 +423,21 @@ namespace WinUIMusicPlayer.ViewModel
         //    }
         //}
 
-        public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
-        {
-            int index = GetCurrentIndex();
+        //public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
+        //{
+        //    int index = GetCurrentIndex();
 
-            if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
-            {
-                var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-                var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
-                    .Where(music => !existingIds.Contains(music.Id)).ToList();
-                for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
-                {
-                    CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
-                }
-            }
-        }
+        //    if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
+        //    {
+        //        var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
+        //        var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
+        //            .Where(music => !existingIds.Contains(music.Id)).ToList();
+        //        for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
+        //        {
+        //            CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
+        //        }
+        //    }
+        //}
 
         public void AddMusicToCurrentPlayList(Music music)
         {
