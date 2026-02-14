@@ -68,7 +68,7 @@
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended"
-            VirtualizingStackPanel.VirtualizationMode="Standard">
+            VirtualizingStackPanel.VirtualizationMode="Recycling">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
                     <Grid>

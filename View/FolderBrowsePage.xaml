@@ -32,7 +32,7 @@
                     ItemsSource="{x:Bind FolderCollectionSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"
                     SelectionMode="None"
-                    VirtualizingStackPanel.VirtualizationMode="Standard">
+                    VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <GridView.ItemContainerStyle>
                         <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
                             <Setter Property="ContextFlyout">
