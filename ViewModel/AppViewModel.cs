@@ -90,8 +90,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
-        public Music FavoriteSongsSelectedMusic { get; set => SetProperty(ref field, value); }
+        public ObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public ObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
@@ -317,6 +316,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<ArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)

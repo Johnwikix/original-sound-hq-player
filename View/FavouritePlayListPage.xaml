@@ -6,6 +6,7 @@
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
+    xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -19,7 +20,8 @@
             TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
-                    <MenuFlyout x:Name="menuFlyout">
+                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.FavouriteSongsMenuOptions, Mode=OneWay}" />
+                    <!--<MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="CancelFavoriteMenuItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
@@ -50,7 +52,7 @@
                         <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click" />
-                    </MenuFlyout>
+                    </MenuFlyout>-->
                 </Setter.Value>
             </Setter>
         </Style>
@@ -65,7 +67,7 @@
         ItemContainerStyle="{StaticResource ListViewItemStyle}"
         ItemsSource="{x:Bind ViewModel.AppViewModel.FavoriteSongs, Mode=TwoWay}"
         RightTapped="MusicListView_RightTapped"
-        SelectedItem="{x:Bind ViewModel.AppViewModel.FavoriteSongsSelectedMusic, Mode=TwoWay}"
+        SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
         SelectionMode="Extended"
         VirtualizingStackPanel.VirtualizationMode="Standard">
         <ListView.ItemTemplate>
