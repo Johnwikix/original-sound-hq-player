@@ -61,38 +61,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        private void RefreshMusicList(object? sender, EventArgs e)
-        {
-            //ViewModel.InitializeData();
-        }
-
-        //public void SortMusicList(string sortOrder)
-        //{
-        //    ViewModel.SortMusicList(sortOrder);
-        //}
-
-        //public void UpdateFavouriteMusic(Music music)
-        //{
-        //    if (music.IsFavorite)
-        //    {
-        //        AddMusicToTop(music);
-        //    }
-        //    else
-        //    {
-        //        RemoveMusic(music);
-        //    }
-        //}
-
-        //private void AddMusicToTop(Music newMusic)
-        //{
-        //    ViewModel.AddMusicToTop(newMusic);
-        //}
-
-        //private void RemoveMusic(Music musicToRemove)
-        //{
-        //    ViewModel.RemoveMusic(musicToRemove);
-        //}
-
         public void UpdateMusicListView()
         {
             ViewModel.UpdateMusicListView();
@@ -102,13 +70,6 @@ namespace WinUIMusicPlayer.View
         {
             Music selectedMusic = MusicListView.SelectedItem as Music;
             ViewModel.MusicListView_DoubleTapped(selectedMusic);
-        }
-
-
-        private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
         private IEnumerable<Music> GetUniqueSelectedItems()
@@ -122,13 +83,6 @@ namespace WinUIMusicPlayer.View
                 }
             }
         }
-
-        //private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
-        //{
-        //    IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-        //    MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-        //    ViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
-        //}
 
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -316,16 +270,6 @@ namespace WinUIMusicPlayer.View
             {
                 ViewModel.AuthorTextBlock_Tapped(textBlock);
             }
-        }
-
-        //private void MusicDetail_Click(object sender, RoutedEventArgs e)
-        //{
-        //    ViewModel.MusicDetail_Click();
-        //}
-
-        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.AppViewModel.AddToCurrentPlayList(GetUniqueSelectedItems());
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

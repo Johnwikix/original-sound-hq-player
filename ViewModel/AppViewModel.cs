@@ -833,7 +833,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 playList.Name = newName;
                 await _musicDatabaseService.UpdatePlayList(playList);
-                App.Services.GetRequiredService<AppViewModel>().UpdateMenuOptionsPlayList();
+                UpdateMenuOptionsPlayList();
             }
         }
 

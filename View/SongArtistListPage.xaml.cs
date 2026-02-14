@@ -257,8 +257,7 @@ namespace WinUIMusicPlayer.View
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
         {
             PlayList.Items.Clear();
-            List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
-            foreach (var playlist in playlists)
+            foreach (var playlist in ViewModel.AppViewModel.AllPlayList)
             {
                 var menuItem = new MenuFlyoutItem
                 {
@@ -267,10 +266,7 @@ namespace WinUIMusicPlayer.View
                 menuItem.Click += async (s, args) =>
                 {
                     var musicList = ViewModel.AppViewModel.ArtistSongsView.Cast<Music>();
-                    foreach (var music in musicList)
-                    {
-                        await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
-                    }
+                    await _musicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 };
                 PlayList.Items.Add(menuItem);
             }
