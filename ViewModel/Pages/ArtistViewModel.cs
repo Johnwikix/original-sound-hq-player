@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.Album);
             foreach (var artist in artists)
             {
-                artist.UpdateFavourite();
+                artist.AddToFavourite();
             }
         }
 

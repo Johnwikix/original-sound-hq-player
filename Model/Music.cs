@@ -91,6 +91,21 @@ namespace WinUIMusicPlayer.Model
             _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
         }
 
+        [RelayCommand]
+        public void AddToFavourite()
+        {            
+            if (!IsFavorite)
+            {
+                IsFavorite = true;
+                Order = App.Services.GetRequiredService<AppViewModel>().AllSongs
+                                         .Where(m => m.IsFavorite)
+                                         .OrderByDescending(m => m.Order)
+                                         .FirstOrDefault()?.Order + 1 ?? 1;
+                App.Services.GetRequiredService<AppViewModel>().AddToFavoriteSongs(this);
+            }
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
+        }
+
         public async void Remove() 
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);

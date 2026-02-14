@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.LastLevelFolderPath);
             foreach (var folder in folders)
             {
-                folder.UpdateFavourite();
+                folder.AddToFavourite();
             }
         }
 

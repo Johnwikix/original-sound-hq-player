@@ -107,7 +107,7 @@ namespace WinUIMusicPlayer.ViewModel
                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.TrackNumber);
             foreach (var album in albums) {
-                album.UpdateFavourite();
+                album.AddToFavourite();
             }
         }
         [RelayCommand]
