@@ -209,7 +209,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
         {
-            parentPage?.ViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
+            parentPage?.ViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem.Tag.ToString());
         }
 
         public void AlbumTextBlock_Tapped(TextBlock textBlock)

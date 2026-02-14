@@ -793,33 +793,31 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics,Music selectedMusic)
+        public async Task ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics,Music? selectedMusic = null)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 0)
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-                    Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
-                    if (music is not null)
-                    {
-                        music.Lyrics = lyrics;
-                        music.TranslatdeLyrics = transLrc;
-                        await _musicDatabaseService.UpdateMusicInfo(music);
-                    }
+                    //Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
+                    item.Lyrics = lyrics;
+                    item.TranslatdeLyrics = transLrc;
+                    await _musicDatabaseService.UpdateMusicInfo(item);
                 }
             }
-            else
-            {
-                (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(selectedMusic);
-                Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == selectedMusic.Id).FirstOrDefault();
-                if (music is not null)
-                {
-                    music.Lyrics = lyrics;
-                    music.TranslatdeLyrics = transLrc;
-                    await _musicDatabaseService.UpdateMusicInfo(music);
-                }
-            }
+            //else
+            //{
+            //    if (selectedMusic is null) return;
+            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(selectedMusic);
+            //    Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == selectedMusic.Id).FirstOrDefault();
+            //    if (music is not null)
+            //    {
+            //        music.Lyrics = lyrics;
+            //        music.TranslatdeLyrics = transLrc;
+            //        await _musicDatabaseService.UpdateMusicInfo(music);
+            //    }
+            //}
         }
 
         public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)

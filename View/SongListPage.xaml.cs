@@ -54,11 +54,6 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        public void SortMusicList(string sortOrder)
-        {
-            ViewModel.SortMusicList(sortOrder);
-        }
-
         public void UpdateMusicListView()
         {
             ViewModel.UpdateMusicListView();
@@ -80,27 +75,20 @@ namespace WinUIMusicPlayer.View
             ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
-        private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            MenuFlyoutItem menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
-        }
+        //private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        //{
 
-        private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
-        {
+        //    if (await ViewModel.IsDeleteFromDisk())
+        //    {
+        //        IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+        //        ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);
+        //    }
+        //}
 
-            if (await ViewModel.IsDeleteFromDisk())
-            {
-                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-                ViewModel?.DeleteMenuItem_Click(uniqueSelectedMusics);
-            }
-        }
-
-        private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            await ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems().ToList());
-        }
+        //private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
+        //{
+        //    await ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems().ToList());
+        //}
 
         private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
         {
@@ -111,10 +99,10 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
-        }
+        //private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
+        //{
+        //    ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
+        //}
 
         private IEnumerable<Music> GetUniqueSelectedItems()
         {
@@ -150,7 +138,7 @@ namespace WinUIMusicPlayer.View
                 if (!isCurrentItemSelected)
                 {
                     MusicListView.SelectedItems.Clear();
-                    ViewModel.SelectedMusics.Clear();                    
+                    ViewModel.SelectedMusics.Clear();
                     ViewModel.SelectedMusic = clickedItem;
                     ViewModel.SelectedMusics.Add(clickedItem);
                 }
@@ -334,16 +322,10 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicDetail_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.MusicDetail_Click();
-        }
-
-        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AppViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
-        }
+        //private void MusicDetail_Click(object sender, RoutedEventArgs e)
+        //{
+        //    ViewModel.MusicDetail_Click();
+        //}
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {

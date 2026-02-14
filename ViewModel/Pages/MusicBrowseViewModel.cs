@@ -183,9 +183,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
+        public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, string? tag)
         {
-            if (uniqueSelectedMusics is null || menuItem?.Tag?.ToString() is null)
+            if (uniqueSelectedMusics is null || tag is null)
                 return;
 
             progressBarValue = 0;
@@ -196,11 +196,11 @@ namespace WinUIMusicPlayer.ViewModel
 
             if (isMutiFile)
             {
-                await ConvertMultipleFiles(musicList, menuItem.Tag.ToString()!);
+                await ConvertMultipleFiles(musicList, tag);
             }
             else
             {
-                await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), menuItem.Tag.ToString()!);
+                await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), tag);
             }
         }
 
@@ -210,10 +210,9 @@ namespace WinUIMusicPlayer.ViewModel
             _progressDialog.XamlRoot = _musicBrowsePage.XamlRoot;
             _ = _progressDialog.ShowAsync();
 
-            var conversionTasks = musics.Select(music =>
-                _converterService.ConvertAudio2Wav(music, targetFormat));
-
-            await Task.WhenAll(conversionTasks);
+            foreach (Music music in musics) {
+                await _converterService.ConvertAudio2Wav(music, targetFormat);
+            }
             _ = _progressDialog.UpdateProgress(100);
         }
 

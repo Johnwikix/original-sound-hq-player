@@ -205,7 +205,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
         {
-            _musicBrowseViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem);
+            _musicBrowseViewModel?.ConvertAudio_Click(uniqueSelectedMusics, menuItem.Tag.ToString());
         }
 
         [RelayCommand]
