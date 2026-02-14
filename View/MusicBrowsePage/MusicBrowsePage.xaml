@@ -420,7 +420,7 @@
                                                 Background="Transparent"
                                                 BorderBrush="Transparent"
                                                 BorderThickness="0"
-                                                Command="{x:Bind ViewModel.PlayBarFavouriteButtonChangedCommand, Mode=OneWay}">
+                                                Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
                                                 <Button.KeyboardAccelerators>
                                                     <KeyboardAccelerator Key="L" />
                                                 </Button.KeyboardAccelerators>

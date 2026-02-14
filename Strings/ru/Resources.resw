@@ -303,16 +303,16 @@
   <data name="Light.Content" xml:space="preserve">
     <value>Светлая</value>
   </data>
-  <data name="FlyoutPlayItem.Text" xml:space="preserve">
+  <data name="FlyoutPlayItem" xml:space="preserve">
     <value>Воспроизвести</value>
   </data>
-  <data name="FlyoutFavoriteItem.Text" xml:space="preserve">
+  <data name="FlyoutFavoriteItem" xml:space="preserve">
     <value>Добавить/удалить из избранного</value>
   </data>
-  <data name="FlyoutAddToPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutAddToPlaylistItem" xml:space="preserve">
     <value>Добавить в плейлист</value>
   </data>
-  <data name="FlyoutConvertItem.Text" xml:space="preserve">
+  <data name="FlyoutConvertItem" xml:space="preserve">
     <value>Преобразовать в</value>
   </data>
   <data name="FlyoutConvertWavItem.Text" xml:space="preserve">
@@ -324,16 +324,16 @@
   <data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
     <value>Flac</value>
   </data>
-  <data name="FlyoutOpenLocationItem.Text" xml:space="preserve">
+  <data name="FlyoutOpenLocationItem" xml:space="preserve">
     <value>Открыть расположение файла</value>
   </data>
-  <data name="FlyoutPropertiesItem.Text" xml:space="preserve">
+  <data name="FlyoutPropertiesItem" xml:space="preserve">
     <value>Свойства</value>
   </data>
-  <data name="FlyoutDeleteItem.Text" xml:space="preserve">
+  <data name="FlyoutDeleteItem" xml:space="preserve">
     <value>Удалить с диска</value>
   </data>
-  <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutRemoveFromPlaylistItem" xml:space="preserve">
     <value>Удалить из плейлиста</value>
   </data>
   <data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
@@ -684,7 +684,7 @@
   <data name="BackgroundCover.Header" xml:space="preserve">
     <value>Фон обложки</value>
   </data>
-  <data name="ReGetLyrics.Text" xml:space="preserve">
+  <data name="ReGetLyrics" xml:space="preserve">
     <value>Повторно получить текст песни</value>
   </data>
   <data name="SettingsAbout.Text" xml:space="preserve">
@@ -696,7 +696,7 @@
   <data name="ThirdPartyComponentsText" xml:space="preserve">
     <value>Компонент третьей стороны</value>
   </data>
-  <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+  <data name="FlyoutAddToCurrentPlayList" xml:space="preserve">
     <value>Добавить в текущий список воспроизведения</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">

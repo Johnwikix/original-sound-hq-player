@@ -36,31 +36,28 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject
     {
-        private bool _isUserDraggingProgressSlider = false;
         public bool IsUserDraggingProgressSlider
         {
-            get => _isUserDraggingProgressSlider;
+            get => field;
             set
             {
-                if (SetProperty(ref _isUserDraggingProgressSlider, value))
+                if (SetProperty(ref field, value))
                 {
                 }
             }
-        }
+        } = false;
 
-        private double _progressSlider = 0;
         public double ProgressSlider
         {
-            get => _progressSlider;
+            get => field;
             set
             {
-                if (SetProperty(ref _progressSlider, value))
+                if (SetProperty(ref field, value))
                 {
                     HandleProgressSliderChange(value);
-
                 }
             }
-        }
+        } = 0;
 
         private async void HandleProgressSliderChange(double value)
         {
@@ -82,39 +79,35 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private SelectorBarItem _selectedPage;
-
         public SelectorBarItem SelectedPage
         {
-            get => _selectedPage;
+            get => field;
             set
             {
-                if (SetProperty(ref _selectedPage, value))
+                if (SetProperty(ref field, value))
                 {
                     OnSelectionChanged();
                 }
             }
         }
 
-        private bool _isPlaying = false;
         public bool IsPlaying
         {
-            get => _isPlaying;
+            get => field;
             set
             {
-                if (SetProperty(ref _isPlaying, value))
+                if (SetProperty(ref field, value))
                 {
                     _musicBrowsePage.BeginOrPauseLyricImgAnimation(value);
                 }
             }
-        }
-        private bool _isMouseOverProgressBar = false;
+        } = false;
+
         public bool IsMouseOverProgressBar
         {
-            get => _isMouseOverProgressBar;
-            set => SetProperty(ref _isMouseOverProgressBar, value);
-        }
-
+            get;
+            set => SetProperty(ref field, value);
+        } = false;
        
 
         private ProgressDialog _progressDialog { get; set; }
@@ -310,39 +303,6 @@ namespace WinUIMusicPlayer.ViewModel
             catch {
             }            
         }
-        //public void UpdateLyricsMargin()
-        //{
-        //    if (AppViewModel.LyricsMargin.Left != AppSettings.LyricsMargin)
-        //    {
-        //        AppViewModel.LyricsMargin = new Thickness(AppSettings.LyricsMargin, 0, AppSettings.LyricsMargin, 0);
-        //    }
-        //}
-
-        //public void AllSortOptions()
-        //{
-        //    AppViewModel.SortOptions.Clear();
-        //    foreach (var options in AppViewModel.AllSortOptions)
-        //    {
-        //        AppViewModel.SortOptions.Add(options);
-        //    }
-        //    UpdateDisplayTexts();
-        //    InitializeSortComboBox();
-        //}
-        //public void AlbumSortOptions()
-        //{
-        //    AppViewModel.SortOptions.Clear();
-        //    foreach (var options in AppViewModel.AlbumSortOptions)
-        //    {
-        //        AppViewModel.SortOptions.Add(options);
-        //    }
-        //    UpdateDisplayTexts();
-        //    InitializeSortComboBox();
-        //}
-
-        //private void InitializeSortComboBox()
-        //{
- 
-        //}
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
@@ -817,27 +777,14 @@ namespace WinUIMusicPlayer.ViewModel
 
             }
         }
-        [RelayCommand]
-        private async Task OnPlayBarFavouriteButtonChanged()
-        {
-            await AppViewModel.AddToFavourite(AppViewModel.CurrentPlayingMusic);
-            NotifySubPageUpdateFavouriteState();
-            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-        }
+        //[RelayCommand]
+        //private async Task OnPlayBarFavouriteButtonChanged()
+        //{
+        //    await AppViewModel.AddToFavourite(AppViewModel.CurrentPlayingMusic);
+        //    NotifySubPageUpdateFavouriteState();
+        //    AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+        //}
 
-        private void NotifySubPageUpdateFavouriteState()
-        {
-            //var songCollectionPage = App.Services.GetRequiredService<SongCollectionViewModel>();
-            //var songListPage = App.Services.GetRequiredService<SongListViewModel>();
-            //var favouritePlayListPage = App.Services.GetRequiredService<FavouritePlayListViewModel>();
-            //var playListSongPage = App.Services.GetRequiredService<PlayListSongViewModel>();
-            //Task.WhenAll(
-            //    //Task.Run(() => favouritePlayListPage.UpdateFavouriteMusic(AppViewModel.CurrentPlayingMusic)),
-            //    //Task.Run(() => songListPage.UpdateFavouriteMusic(AppViewModel.CurrentPlayingMusic)),
-            //    //Task.Run(() => songCollectionPage.UpdateFavouriteMusic(AppViewModel.CurrentPlayingMusic)),
-            //    //Task.Run(() => playListSongPage.UpdateFavouriteMusic(AppViewModel.CurrentPlayingMusic))
-            //);
-        }
         [RelayCommand]
         private void OnStopButtonChanged()
         {
@@ -973,7 +920,6 @@ namespace WinUIMusicPlayer.ViewModel
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
             _musicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
-            //_musicBrowsePage.DisableBackButton();
         }
 
         private int GetSelectorBarItemIndex(SelectorBarItem item)

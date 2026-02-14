@@ -111,29 +111,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
         }
 
-        //private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (await ViewModel.IsDeleteFromDisk())
-        //    {
-        //        IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-        //        ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
-        //    }
-        //}
-
-        //private void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
-        //{
-        //    ViewModel.SetAsFavoriteMenuItem_Click(GetUniqueSelectedItems().ToList());
-        //}
-
-        //private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
-        //{
-        //    ViewModel.OpenInExplorer_Click();
-        //}
-
-        //private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
-        //{
-        //    ViewModel.ReGetLyrics_Click(GetUniqueSelectedItems());
-        //}
         private IEnumerable<Music> GetUniqueSelectedItems()
         {
             var selectedItems = MusicListView.SelectedItems;

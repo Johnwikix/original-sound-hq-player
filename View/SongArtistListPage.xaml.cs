@@ -60,16 +60,6 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        //public void SortMusicList(string sortOrder, string type)
-        //{
-        //    ViewModel.SortMusicList(sortOrder, type);
-        //}
-
-        //public void UpdateFavouriteMusic(Music music)
-        //{
-        //    ViewModel.UpdateFavouriteMusic(music);
-        //}
-
         public void UpdateMusicListView()
         {
             ViewModel.UpdateMusicListView();
@@ -78,39 +68,7 @@ namespace WinUIMusicPlayer.View
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             ViewModel.MusicListView_DoubleTapped();
-        }
-
-        private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.PlayMenuItem_Click(uniqueSelectedMusics);
-        }
-
-        private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (await ViewModel.IsDeleteFromDisk())
-            {
-                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-                await ViewModel.DeleteMenuItem_Click(uniqueSelectedMusics);
-            }
-        }
-
-        private async void SetAsFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            await ViewModel.SetAsFavoriteMenuItem_Click(uniqueSelectedMusics);
-        }
-
-        private void OpenInExplorer_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.OpenInExplorer_Click();
-        }
-
-        private async void ConvertAudio_Click(object sender, RoutedEventArgs e)
-        {
-            MenuFlyoutItem? menuItem = sender as MenuFlyoutItem;
-            await ViewModel.ConvertAudio_Click(GetUniqueSelectedItems(), menuItem);
-        }
+        }       
 
         private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
@@ -130,166 +88,170 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void MusicDetail_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.MusicDetail_Click();
-        }
-        private void ReGetLyrics_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.ReGetLyrics_Click(uniqueSelectedMusics);
-        }
-
-        private IEnumerable<Music> GetUniqueSelectedItems()
-        {
-            var selectedItems = MusicListView.SelectedItems;
-            foreach (var item in selectedItems)
-            {
-                if (item is Music music)
-                {
-                    yield return music;
-                }
-            }
-        }
-
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var targetElement = e.OriginalSource as FrameworkElement;
-            ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
-            if (listViewItem is not null)
+            var frameworkElement = e.OriginalSource as FrameworkElement;
+            bool isCurrentItemSelected = false;
+            ViewModel.SelectedMusics.Clear();
+            if (frameworkElement?.DataContext is Music clickedItem)
             {
-                var musicItem = listViewItem.Content as Model.Music;
-                // 检查当前指向的元素是否已在选中项列表中
-                bool isCurrentItemSelected = false;
+                if (clickedItem is null) return;
                 foreach (var item in MusicListView.SelectedItems)
                 {
-                    if (item is Music selectedMusic && musicItem is not null && selectedMusic.Id == musicItem.Id)
+                    if (item is Music selectedMusic)
                     {
-                        isCurrentItemSelected = true;
-                        break;
+                        ViewModel.SelectedMusics.Add(selectedMusic);
+                        if (selectedMusic.Id == clickedItem.Id)
+                        {
+                            isCurrentItemSelected = true;
+                        }
                     }
                 }
-                // 如果当前项不在选中列表中，则清除现有选择并选中当前项
                 if (!isCurrentItemSelected)
                 {
                     MusicListView.SelectedItems.Clear();
-                    listViewItem.IsSelected = true;
-                    MusicListView.SelectedItem = musicItem;
-                }
-                IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-                // 设置右键菜单
-                if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem is not null)
-                {
-                    // 为菜单项设置DataContext
-                    foreach (var menuItem in flyout.Items)
-                    {
-                        menuItem.DataContext = musicItem;
-                    }
-                    var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
-                    addToPlaylistSubItem.Items.Clear();
-                    List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
-                    foreach (var playlist in playlists)
-                    {
-                        var menuItem = new MenuFlyoutItem
-                        {
-                            Text = playlist.Name
-                        };
-                        menuItem.Click += async (s, args) =>
-                        {
-                            // 多选情况：添加所有选中的歌曲到播放列表
-                            if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-                            {
-                                foreach (var music in uniqueSelectedMusics)
-                                {
-                                    await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
-                                }
-                            }
-                            // 单选情况：只添加当前右键点击的歌曲
-                            else if (musicItem is not null)
-                            {
-                                await _musicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
-                            }
-                        };
-                        addToPlaylistSubItem.Items.Add(menuItem);
-                    }
-                    if (menuFlyout.Items.Count > 9)
-                    {
-                        MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
-                        if (fifthItem is not null)
-                        {
-                            if (fifthItem.Tag.ToString() == "usbDevice")
-                            {
-                                menuFlyout.Items.RemoveAt(4);
-                            }
-                        }
-                    }
-                    if (AppData.usbStorageDevices is not null && AppData.usbStorageDevices.Count > 0)
-                    {
-                        MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
-                        {
-                            Text = ToolUtils.GetString("SendToUsbDevice"),
-                            Tag = "usbDevice",
-                        };
-                        foreach (var usbDevice in AppData.usbStorageDevices)
-                        {
-                            var menuItem = new MenuFlyoutItem
-                            {
-                                Text = $"{usbDevice.Name} , {ToolUtils.GetString("Path")}：{usbDevice.Path} , {ToolUtils.GetString("FreeSpace")}：{usbDevice.FreeSpaceInGB}GB",
-                                Tag = usbDevice.Path
-                            };
-                            menuItem.Click += async (s, args) =>
-                            {
-                                if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-                                {
-                                    ViewModel.ShowTransmission();
-                                    var usbWriter = new UsbWriterHelper();
-                                    usbWriter.hideTransmission += (sender, args) =>
-                                    {
-                                        ViewModel.HideTransmission();
-                                    };
-                                    await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
-                                    foreach (var music in uniqueSelectedMusics)
-                                    {
-                                        var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                                        if (existingMusic is not null)
-                                        {
-                                            continue; // 如果已经存在，则跳过
-                                        }
-                                        UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                        usbDeviceMusic.Title = music.Title;
-                                        usbDeviceMusic.Author = music.Author;
-                                        usbDeviceMusic.Album = music.Album;
-                                        usbDeviceMusic.Extension = music.Extension;
-                                        usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
-                                        AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                                    }
-                                }
-                                else if (musicItem is not null)
-                                {
-                                    ViewModel.ShowTransmission();
-                                    List<Music> musicItems = new List<Music> { musicItem };
-                                    var usbWriter = new UsbWriterHelper();
-                                    usbWriter.hideTransmission += (sender, args) =>
-                                    {
-                                        ViewModel.HideTransmission();
-                                    };
-                                    await usbWriter.WriteToUsb(musicItems, usbDevice);
-                                    UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
-                                    usbDeviceMusic.Title = musicItem.Title;
-                                    usbDeviceMusic.Author = musicItem.Author;
-                                    usbDeviceMusic.Album = musicItem.Album;
-                                    usbDeviceMusic.Extension = musicItem.Extension;
-                                    usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
-                                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                                }
-                                ViewModel.RefreshUsbDeviceMusicList(null, null);
-                            };
-                            usbDeviceSubItem.Items.Add(menuItem);
-                        }
-                        menuFlyout.Items.Insert(4, usbDeviceSubItem);
-                    }
+                    ViewModel.SelectedMusics.Clear();
+                    ViewModel.SelectedMusic = clickedItem;
+                    ViewModel.SelectedMusics.Add(clickedItem);
                 }
             }
+            e.Handled = true;
+            //var targetElement = e.OriginalSource as FrameworkElement;
+            //ListViewItem listViewItem = ToolUtils.FindParent<ListViewItem>(targetElement);
+            //if (listViewItem is not null)
+            //{
+            //    var musicItem = listViewItem.Content as Model.Music;
+            //    // 检查当前指向的元素是否已在选中项列表中
+            //    bool isCurrentItemSelected = false;
+            //    foreach (var item in MusicListView.SelectedItems)
+            //    {
+            //        if (item is Music selectedMusic && musicItem is not null && selectedMusic.Id == musicItem.Id)
+            //        {
+            //            isCurrentItemSelected = true;
+            //            break;
+            //        }
+            //    }
+            //    // 如果当前项不在选中列表中，则清除现有选择并选中当前项
+            //    if (!isCurrentItemSelected)
+            //    {
+            //        MusicListView.SelectedItems.Clear();
+            //        listViewItem.IsSelected = true;
+            //        MusicListView.SelectedItem = musicItem;
+            //    }
+            //    IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
+            //    // 设置右键菜单
+            //    if (listViewItem.ContextFlyout is MenuFlyout flyout && musicItem is not null)
+            //    {
+            //        // 为菜单项设置DataContext
+            //        foreach (var menuItem in flyout.Items)
+            //        {
+            //            menuItem.DataContext = musicItem;
+            //        }
+            //        var addToPlaylistSubItem = flyout.Items[2] as MenuFlyoutSubItem;
+            //        addToPlaylistSubItem.Items.Clear();
+            //        List<PlayList> playlists = [.. ViewModel.AppViewModel.AllPlayList];
+            //        foreach (var playlist in playlists)
+            //        {
+            //            var menuItem = new MenuFlyoutItem
+            //            {
+            //                Text = playlist.Name
+            //            };
+            //            menuItem.Click += async (s, args) =>
+            //            {
+            //                // 多选情况：添加所有选中的歌曲到播放列表
+            //                if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            //                {
+            //                    foreach (var music in uniqueSelectedMusics)
+            //                    {
+            //                        await _musicDatabaseService.AddMusicToPlayList(playlist.Id, music.Id);
+            //                    }
+            //                }
+            //                // 单选情况：只添加当前右键点击的歌曲
+            //                else if (musicItem is not null)
+            //                {
+            //                    await _musicDatabaseService.AddMusicToPlayList(playlist.Id, musicItem.Id);
+            //                }
+            //            };
+            //            addToPlaylistSubItem.Items.Add(menuItem);
+            //        }
+            //        if (menuFlyout.Items.Count > 9)
+            //        {
+            //            MenuFlyoutSubItem fifthItem = menuFlyout.Items[4] as MenuFlyoutSubItem;
+            //            if (fifthItem is not null)
+            //            {
+            //                if (fifthItem.Tag.ToString() == "usbDevice")
+            //                {
+            //                    menuFlyout.Items.RemoveAt(4);
+            //                }
+            //            }
+            //        }
+            //        if (AppData.usbStorageDevices is not null && AppData.usbStorageDevices.Count > 0)
+            //        {
+            //            MenuFlyoutSubItem usbDeviceSubItem = new MenuFlyoutSubItem
+            //            {
+            //                Text = ToolUtils.GetString("SendToUsbDevice"),
+            //                Tag = "usbDevice",
+            //            };
+            //            foreach (var usbDevice in AppData.usbStorageDevices)
+            //            {
+            //                var menuItem = new MenuFlyoutItem
+            //                {
+            //                    Text = $"{usbDevice.Name} , {ToolUtils.GetString("Path")}：{usbDevice.Path} , {ToolUtils.GetString("FreeSpace")}：{usbDevice.FreeSpaceInGB}GB",
+            //                    Tag = usbDevice.Path
+            //                };
+            //                menuItem.Click += async (s, args) =>
+            //                {
+            //                    if (uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            //                    {
+            //                        ViewModel.ShowTransmission();
+            //                        var usbWriter = new UsbWriterHelper();
+            //                        usbWriter.hideTransmission += (sender, args) =>
+            //                        {
+            //                            ViewModel.HideTransmission();
+            //                        };
+            //                        await usbWriter.WriteToUsb(uniqueSelectedMusics, usbDevice);
+            //                        foreach (var music in uniqueSelectedMusics)
+            //                        {
+            //                            var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+            //                            if (existingMusic is not null)
+            //                            {
+            //                                continue; // 如果已经存在，则跳过
+            //                            }
+            //                            UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
+            //                            usbDeviceMusic.Title = music.Title;
+            //                            usbDeviceMusic.Author = music.Author;
+            //                            usbDeviceMusic.Album = music.Album;
+            //                            usbDeviceMusic.Extension = music.Extension;
+            //                            usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+            //                            AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+            //                        }
+            //                    }
+            //                    else if (musicItem is not null)
+            //                    {
+            //                        ViewModel.ShowTransmission();
+            //                        List<Music> musicItems = new List<Music> { musicItem };
+            //                        var usbWriter = new UsbWriterHelper();
+            //                        usbWriter.hideTransmission += (sender, args) =>
+            //                        {
+            //                            ViewModel.HideTransmission();
+            //                        };
+            //                        await usbWriter.WriteToUsb(musicItems, usbDevice);
+            //                        UsbDeviceMusic usbDeviceMusic = new UsbDeviceMusic();
+            //                        usbDeviceMusic.Title = musicItem.Title;
+            //                        usbDeviceMusic.Author = musicItem.Author;
+            //                        usbDeviceMusic.Album = musicItem.Album;
+            //                        usbDeviceMusic.Extension = musicItem.Extension;
+            //                        usbDeviceMusic.UniqueDeviceId = AppData.usbStorageDevice.UniqueId;
+            //                        AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+            //                    }
+            //                    ViewModel.RefreshUsbDeviceMusicList(null, null);
+            //                };
+            //                usbDeviceSubItem.Items.Add(menuItem);
+            //            }
+            //            menuFlyout.Items.Insert(4, usbDeviceSubItem);
+            //        }
+            //    }
+            //}
         }
 
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
@@ -312,12 +274,6 @@ namespace WinUIMusicPlayer.View
                 };
                 PlayList.Items.Add(menuItem);
             }
-        }
-
-        private void FlyoutAddToCurrentPlayList_Click(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<Music> uniqueSelectedMusics = GetUniqueSelectedItems();
-            ViewModel.AppViewModel.AddToCurrentPlayList(uniqueSelectedMusics);
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

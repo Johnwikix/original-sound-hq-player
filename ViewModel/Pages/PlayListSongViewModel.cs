@@ -20,6 +20,8 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class PlayListSongViewModel : ObservableObject
     {
         public PlayListMusicItem SelectedMusic { get; set => SetProperty(ref field, value); }
+        public List<PlayListMusicItem> SelectedMusics { get; set; } = [];
+        public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
         public Music CurrentMusicObject { get; set => SetProperty(ref field, value); }
         public string SecondTitle { get; set => SetProperty(ref field, value); }
         private MusicBrowsePage? _parentPage { get; }
@@ -34,8 +36,40 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             //_parentPage.refreshPage += RefreshPlayList;
+            InitalizeOption();
+        }
+        private void InitalizeOption()
+        {
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPlayItem"), Tag = "Play", Command = PlayCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutFavoriteItem"), Tag = "AddToFavour", Command = AddToFavourCommand });
+            MenuOptions.Add(new()
+            {
+                Title = ToolUtils.GetString("FlyoutConvertItem"),
+                Tag = "ConvertAudio",
+                Children = [
+                new(){ Title="Wav",Tag="wav",Command=ConvertAudioCommand},
+                new(){ Title="Mp3",Tag="mp3",Command=ConvertAudioCommand},
+                new(){ Title="Flac",Tag="flac",Command=ConvertAudioCommand},
+                new(){ Title="Ogg",Tag="ogg",Command=ConvertAudioCommand},
+                new(){ Title="Opus",Tag="opus",Command=ConvertAudioCommand},
+                ]
+            });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToCurrentPlayList"), Tag = "AddMusicToCurrentPlayList", Command = AddToCurrentPlayListCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("ReGetLyrics"), Tag = "ReGetLyrics", Command = ReGetLyricsCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutOpenLocationItem"), Tag = "OpenInExplorer", Command = OpenInExplorerCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPropertiesItem"), Tag = "MusicDetail", Command = MusicDetailCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutRemoveFromPlaylistItem"), Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand });
         }
 
+        public void UpdateAlbumMenuOptionsPlayList()
+        {
+            var option = MenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
+            option?.Children.Clear();
+            foreach (var item in AppViewModel.AllPlayList)
+            {
+                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
+            }
+        }
         public void SetCurrentPage(PlayListSongPage page)
         {
             _currentPage = page;
@@ -62,17 +96,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .Distinct()
                 .Count();
             SecondTitle = $"{AppViewModel.PlayListSongs.AsValueEnumerable().Count()} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
-        }
-
-        public void ShowTransmission()
-        {
-            _parentPage?.ShowTransmission();
-        }
-
-        public void HideTransmission()
-        {
-            _parentPage?.HideTransmission();
-        }        
+        }      
 
         //public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
         //{
@@ -157,201 +181,17 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.PlayListSongs.Select(x => x.Music));
                 _parentPage.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
             }
-        }
-
-        public void PlayMenuItem_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics)
-        {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            {
-                AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics.Select(x => x.Music));
-                _parentPage?.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First().Music, IsChangeList: true);
-            }
-            else
-            {
-                if (SelectedMusic is not null)
-                {
-                    AppViewModel.SequentialPlayingList = new(AppViewModel.PlayListSongs.Select(x => x.Music));
-                    _parentPage?.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
-                }
-            }
-        }
-
-        public async Task<bool> IsDeleteFromDisk()
-        {
-            if (_parentPage is null)
-            {
-                return false;
-            }
-            return await _parentPage.AreUSureDeleteFromDisk();
-        }
-
-        public async Task DeleteMenuItem_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics)
-        {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            {
-                await _musicDatabaseService.DeleteAllMusicFromPlayList(_currentPlayListId, uniqueSelectedMusics.AsValueEnumerable().Select(item => item.Music.Id).ToImmutableList());
-                for (int i = AppViewModel.PlayListSongs.Count - 1; i >= 0; i--)
-                {
-                    if (uniqueSelectedMusics.AsValueEnumerable().Contains(AppViewModel.PlayListSongs[i]))
-                    {
-                        AppViewModel.PlayListSongs.RemoveAt(i);
-                    }
-                }
-            }
-            else
-            {
-                if (SelectedMusic is not null)
-                {
-                    await _musicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, SelectedMusic.Music.Id);
-                    AppViewModel.PlayListSongs.Remove(SelectedMusic);
-                }
-            }
-            await _musicDatabaseService.GetPlayListMusic();
-        }
-
-        public async Task SetAsFavoriteMenuItem_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics)
-        {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.Count() > 1)
-            {
-                foreach (PlayListMusicItem item in uniqueSelectedMusics)
-                {
-                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == item.Music.Id)?.UpdateFavourite();
-                }
-            }
-            else
-            {
-                if (SelectedMusic is not null)
-                {
-                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Music.Id)?.UpdateFavourite();
-                }
-            }
-        }
-
-        public void OpenInExplorer_Click()
-        {
-            if (SelectedMusic is not null)
-            {
-                var filePath = SelectedMusic.Music.Path;
-                if (File.Exists(filePath))
-                {
-                    try
-                    {
-                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"文件不存在: {filePath}");
-                }
-            }
-        }
-
-        public async Task ConvertAudio_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics, MenuFlyoutItem? menuItem)
-        {
-            _parentPage?.ViewModel?.ConvertAudio_Click(uniqueSelectedMusics.Select(x=>x.Music), menuItem.Tag.ToString());
-        }
+        }        
 
         public void AlbumTextBlock_Tapped(string albumName)
         {
-            if (_parentPage is not null)
-            {
-                _parentPage.SelectBarAlbum(albumName);
-            }
+            _parentPage?.SelectBarAlbum(albumName);
         }
 
         public void AuthorTextBlock_Tapped(string artist)
         {
-            if (_parentPage is not null)
-            {
-                _parentPage.SelectBarArtist(artist);
-            }
-        }
-
-        public void MusicDetail_Click()
-        {
-            if (SelectedMusic is not null)
-            {
-                var musicDetailsWindow = new MusicDetailsWindow(SelectedMusic.Music);
-                musicDetailsWindow.Activate();
-            }
-        }
-
-        public async void ReGetLyrics_Click(IEnumerable<PlayListMusicItem> uniqueSelectedMusics)
-        {
-            AppViewModel.ReGetLyrics(uniqueSelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
-            //if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
-            //{
-            //    foreach (PlayListMusicItem item in uniqueSelectedMusics)
-            //    {
-            //        (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item.Music);
-            //        Music? music = AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Id == item.Music.Id).FirstOrDefault();
-            //        if (music is not null)
-            //        {
-            //            music.Lyrics = lyrics;
-            //            music.TranslatdeLyrics = transLrc;
-            //            await _musicDatabaseService.UpdateMusicInfo(music);
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(SelectedMusic.Music);
-            //    Music? music = AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Id == SelectedMusic.Music.Id).FirstOrDefault();
-            //    if (music is not null)
-            //    {
-            //        music.Lyrics = lyrics;
-            //        music.TranslatdeLyrics = transLrc;
-            //        await _musicDatabaseService.UpdateMusicInfo(music);
-            //    }
-            //}
-            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-        }
-
-        //public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
-        //{
-        //    int index = AppViewModel.CurrentPlayingList.IndexOf(AppViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic.Id));
-        //    // 如果找到匹配项，则在其后插入新列表
-        //    if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
-        //    {
-        //        var existingIds = new HashSet<int>(AppViewModel.CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-        //        var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
-        //            .Where(music => !existingIds.Contains(music.Id)).ToList();
-        //        for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
-        //        {
-        //            AppViewModel.CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
-        //        }
-        //    }
-        //}
-
-        //[RelayCommand]
-        //public void AddMusicToCurrentPlayList(Music music)
-        //{
-        //    int index = AppViewModel.CurrentPlayingList.IndexOf(AppViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic.Id));
-        //    // 如果找到匹配项，则在其后插入新列表
-        //    if (index != -1 && music is not null)
-        //    {
-        //        var existingIds = new HashSet<int>(AppViewModel.CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-        //        if (!existingIds.Contains(music.Id))
-        //        {
-        //            AppViewModel.CurrentPlayingList.Insert(index + 1, music);
-        //        }
-        //    }
-
-        //}
-
-        //[RelayCommand]
-        //private void PlayMusic(Music music)
-        //{
-        //    if (music is not null && _parentPage is not null)
-        //    {
-        //        AppViewModel.SequentialPlayingList = newAppViewModel.PlayListSongs);
-        //        _parentPage.PlayMusic(music: music, IsChangeList: true);
-        //    }
-        //}
+            _parentPage?.SelectBarArtist(artist);
+        }       
 
         [RelayCommand]
         private void OnPlayAll()
@@ -371,14 +211,124 @@ namespace WinUIMusicPlayer.ViewModel
             ToolUtils.ExportPlayList(AppViewModel.CurrentPlayList);
         }
 
-        //public async void EditPlayListName(Func<Task<string>> getNameCallback)
-        //{
-        //    string newName = await getNameCallback();
-        //    if (!string.IsNullOrEmpty(newName))
-        //    {
-        //        AppViewModel.CurrentPlayList.Name = newName;
-        //        await _musicDatabaseService.UpdatePlayList(AppViewModel.CurrentPlayList);
-        //    }
-        //}
+        [RelayCommand]
+        public async Task ConvertAudio(string tag)
+        {
+            _parentPage?.ViewModel?.ConvertAudio_Click(SelectedMusics.Select(x => x.Music), tag);
+        }
+
+        [RelayCommand]
+        public async Task DeleteMenuItem()
+        {
+            if (SelectedMusics is not null && SelectedMusics.AsValueEnumerable().Count() > 1)
+            {
+                await _musicDatabaseService.DeleteAllMusicFromPlayList(_currentPlayListId, SelectedMusics.AsValueEnumerable().Select(item => item.Music.Id).ToImmutableList());
+                foreach (var item in SelectedMusics)
+                {
+                    AppViewModel.PlayListSongs.Remove(item);
+                }
+            }
+            else
+            {
+                if (SelectedMusic is not null)
+                {
+                    await _musicDatabaseService.RemoveMusicFromPlayList(_currentPlayListId, SelectedMusic.Music.Id);
+                    AppViewModel.PlayListSongs.Remove(SelectedMusic);
+                }
+            }
+            await _musicDatabaseService.GetPlayListMusic();
+        }
+
+        [RelayCommand]
+        public void OpenInExplorer()
+        {
+            if (SelectedMusic is not null)
+            {
+                var filePath = SelectedMusic.Music.Path;
+                if (System.IO.File.Exists(filePath))
+                {
+                    try
+                    {
+                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"文件不存在: {filePath}");
+                }
+            }
+        }
+
+        [RelayCommand]
+        public void MusicDetail()
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                var musicDetailsWindow = new MusicDetailsWindow(SelectedMusics[0].Music);
+                musicDetailsWindow.Activate();
+            }
+        }
+        [RelayCommand]
+        public void ReGetLyrics()
+        {
+            _ = AppViewModel.ReGetLyrics(SelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
+        }
+
+        [RelayCommand]
+        private void Play()
+        {
+            if (SelectedMusics.Count == 1)
+            {
+                if (_parentPage is not null)
+                {
+                    AppViewModel.SequentialPlayingList = new(AppViewModel.PlayListSongs.Select(x => x.Music));
+                    _parentPage.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
+                }
+            }
+            if (SelectedMusics.Count > 1)
+            {
+                if (_parentPage is not null)
+                {
+                    AppViewModel.SequentialPlayingList = new(SelectedMusics.Select(x => x.Music));
+                    _parentPage.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
+                }
+            }
+        }
+        [RelayCommand]
+        private void AddToFavour()
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                foreach (var music in SelectedMusics)
+                {
+                    music.Music.UpdateFavourite();
+                }
+            }
+        }
+
+        [RelayCommand]
+        private void AddToPlayList(int playListId)
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                _ = _musicDatabaseService.AddMusicListToPlayList(SelectedMusics.Select(x => x.Music), playListId);
+            }
+        }
+
+        [RelayCommand]
+        public void AddToCurrentPlayList()
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                foreach (var item in SelectedMusics)
+                {
+                    AppViewModel.AddMusicToCurrentPlayList(item.Music);
+                }
+            }
+        }
     }
 }

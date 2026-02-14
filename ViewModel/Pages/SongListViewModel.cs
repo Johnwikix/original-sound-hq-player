@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedMusic { get; set => SetProperty(ref field, value); }
         public List<Music> SelectedMusics { get; set; } = [];
-        public ObservableCollection<MenuModel> SongListMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowsePage? _parentPage;
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -40,26 +40,31 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void InitalizeOption()
         {
-            SongListMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
-            SongListMenuOptions.Add(new() { Title = "添加/取消最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
-            SongListMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
-            SongListMenuOptions.Add(new() { Title = "转换为", Tag = "ConvertAudio", Children = [
-                new(){ Title="WAV",Tag="wav",Command=ConvertAudioCommand},
-                new(){ Title="MP3",Tag="mp3",Command=ConvertAudioCommand},
-                new(){ Title="FLAC",Tag="flac",Command=ConvertAudioCommand},
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPlayItem"), Tag = "Play", Command = PlayCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutFavoriteItem"), Tag = "AddToFavour", Command = AddToFavourCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToPlaylistItem"), Tag = "AddToPlayList", Children = [] });
+            MenuOptions.Add(new()
+            {
+                Title = ToolUtils.GetString("FlyoutConvertItem"),
+                Tag = "ConvertAudio",
+                Children = [
+                new(){ Title="Wav",Tag="wav",Command=ConvertAudioCommand},
+                new(){ Title="Mp3",Tag="mp3",Command=ConvertAudioCommand},
+                new(){ Title="Flac",Tag="flac",Command=ConvertAudioCommand},
                 new(){ Title="Ogg",Tag="ogg",Command=ConvertAudioCommand},
                 new(){ Title="Opus",Tag="opus",Command=ConvertAudioCommand},
-                ] });
-            SongListMenuOptions.Add(new() { Title = "添加到当前播放列表", Tag = "AddMusicToCurrentPlayList", Command= AddMusicToCurrentPlayListCommand });
-            SongListMenuOptions.Add(new() { Title = "重新获取歌词", Tag = "ReGetLyrics", Command= ReGetLyricsCommand});
-            SongListMenuOptions.Add(new() { Title = "打开文件位置", Tag = "OpenInExplorer", Command = OpenInExplorerCommand});
-            SongListMenuOptions.Add(new() { Title = "属性", Tag = "MusicDetail", Command= MusicDetailCommand});
-            SongListMenuOptions.Add(new() { Title = "从磁盘中删除", Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand});
+                ]
+            });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToCurrentPlayList"), Tag = "AddMusicToCurrentPlayList", Command = AddToCurrentPlayListCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("ReGetLyrics"), Tag = "ReGetLyrics", Command = ReGetLyricsCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutOpenLocationItem"), Tag = "OpenInExplorer", Command = OpenInExplorerCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPropertiesItem"), Tag = "MusicDetail", Command = MusicDetailCommand });
+            MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutDeleteItem"), Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand });
         }
 
         public void UpdateAlbumMenuOptionsPlayList()
         {
-            var option = SongListMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
+            var option = MenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
             option?.Children.Clear();
             foreach (var item in AppViewModel.AllPlayList)
             {
@@ -158,6 +163,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task DeleteMenuItem()
         {
+            if (!await IsDeleteFromDisk()) return;
             if (SelectedMusics is not null && SelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 foreach (var item in SelectedMusics) {
@@ -265,7 +271,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        public void AddMusicToCurrentPlayList()
+        public void AddToCurrentPlayList()
         {
             if (SelectedMusics.Count > 0)
             {
@@ -276,16 +282,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private async Task IsFavouriteIconButtonChange(Music music)
-        {
-            if (music is not null)
-            {
-                await AppViewModel.AddToFavourite(music);
-                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-            }
-        }
-
-        [RelayCommand]
         private void PlayMusic(Music music)
         {
             if (music is not null && _parentPage is not null)
@@ -293,6 +289,12 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new([.. AppViewModel.AllSongsView.Cast<Music>()]);
                 _parentPage.PlayMusic(music: music, IsChangeList: true);
             }
+        }
+
+        [RelayCommand]
+        public void AddMusicToCurrentPlayList(Music music)
+        {
+            AppViewModel.AddMusicToCurrentPlayList(music);
         }
     }
 }

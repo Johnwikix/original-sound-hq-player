@@ -303,16 +303,16 @@
   <data name="Light.Content" xml:space="preserve">
     <value>浅色</value>
   </data>
-  <data name="FlyoutPlayItem.Text" xml:space="preserve">
+  <data name="FlyoutPlayItem" xml:space="preserve">
     <value>播放</value>
   </data>
-  <data name="FlyoutFavoriteItem.Text" xml:space="preserve">
+  <data name="FlyoutFavoriteItem" xml:space="preserve">
     <value>添加/取消最爱</value>
   </data>
-  <data name="FlyoutAddToPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutAddToPlaylistItem" xml:space="preserve">
     <value>添加到播放列表</value>
   </data>
-  <data name="FlyoutConvertItem.Text" xml:space="preserve">
+  <data name="FlyoutConvertItem" xml:space="preserve">
     <value>转换为</value>
   </data>
   <data name="FlyoutConvertWavItem.Text" xml:space="preserve">
@@ -324,16 +324,16 @@
   <data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
     <value>Flac</value>
   </data>
-  <data name="FlyoutOpenLocationItem.Text" xml:space="preserve">
+  <data name="FlyoutOpenLocationItem" xml:space="preserve">
     <value>打开文件位置</value>
   </data>
-  <data name="FlyoutPropertiesItem.Text" xml:space="preserve">
+  <data name="FlyoutPropertiesItem" xml:space="preserve">
     <value>属性</value>
   </data>
-  <data name="FlyoutDeleteItem.Text" xml:space="preserve">
+  <data name="FlyoutDeleteItem" xml:space="preserve">
     <value>从磁盘中删除</value>
   </data>
-  <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutRemoveFromPlaylistItem" xml:space="preserve">
     <value>从播放列表中移除</value>
   </data>
   <data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
@@ -684,7 +684,7 @@
   <data name="BackgroundCover.Header" xml:space="preserve">
     <value>封面背景</value>
   </data>
-  <data name="ReGetLyrics.Text" xml:space="preserve">
+  <data name="ReGetLyrics" xml:space="preserve">
     <value>重新获取歌词</value>
   </data>
   <data name="SettingsAbout.Text" xml:space="preserve">
@@ -696,7 +696,7 @@
   <data name="ThirdPartyComponentsText" xml:space="preserve">
     <value>第三方组件</value>
   </data>
-  <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+  <data name="FlyoutAddToCurrentPlayList" xml:space="preserve">
     <value>添加到当前播放列表</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">

@@ -303,16 +303,16 @@
   <data name="Light.Content" xml:space="preserve">
     <value>Light</value>
   </data>
-  <data name="FlyoutPlayItem.Text" xml:space="preserve">
+  <data name="FlyoutPlayItem" xml:space="preserve">
     <value>Play</value>
   </data>
-  <data name="FlyoutFavoriteItem.Text" xml:space="preserve">
+  <data name="FlyoutFavoriteItem" xml:space="preserve">
     <value>Add/Remove Favorite</value>
   </data>
-  <data name="FlyoutAddToPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutAddToPlaylistItem" xml:space="preserve">
     <value>Add to Playlist</value>
   </data>
-  <data name="FlyoutConvertItem.Text" xml:space="preserve">
+  <data name="FlyoutConvertItem" xml:space="preserve">
     <value>Convert to</value>
   </data>
   <data name="FlyoutConvertWavItem.Text" xml:space="preserve">
@@ -324,16 +324,16 @@
   <data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
     <value>Flac</value>
   </data>
-  <data name="FlyoutOpenLocationItem.Text" xml:space="preserve">
+  <data name="FlyoutOpenLocationItem" xml:space="preserve">
     <value>Open File Location</value>
   </data>
-  <data name="FlyoutPropertiesItem.Text" xml:space="preserve">
+  <data name="FlyoutPropertiesItem" xml:space="preserve">
     <value>Properties</value>
   </data>
-  <data name="FlyoutDeleteItem.Text" xml:space="preserve">
+  <data name="FlyoutDeleteItem" xml:space="preserve">
     <value>Delete From Disk</value>
   </data>
-  <data name="FlyoutRemoveFromPlaylistItem.Text" xml:space="preserve">
+  <data name="FlyoutRemoveFromPlaylistItem" xml:space="preserve">
     <value>Remove from Playlist</value>
   </data>
   <data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
@@ -684,7 +684,7 @@
   <data name="BackgroundCover.Header" xml:space="preserve">
     <value>Cover Background</value>
   </data>
-  <data name="ReGetLyrics.Text" xml:space="preserve">
+  <data name="ReGetLyrics" xml:space="preserve">
     <value>Retrieve lyrics</value>
   </data>
   <data name="SettingsAbout.Text" xml:space="preserve">
@@ -696,7 +696,7 @@
   <data name="ThirdPartyComponentsText" xml:space="preserve">
     <value>Third Party Components</value>
   </data>
-  <data name="FlyoutAddToCurrentPlayList.Text" xml:space="preserve">
+  <data name="FlyoutAddToCurrentPlayList" xml:space="preserve">
     <value>Add To Current Playlist</value>
   </data>
   <data name="CoverCacheDescription" xml:space="preserve">

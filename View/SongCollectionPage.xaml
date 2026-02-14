@@ -7,6 +7,7 @@
     xmlns:dev="using:DevWinUI"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
     <Page.Resources>
@@ -16,7 +17,8 @@
             TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
-                    <MenuFlyout x:Name="menuFlyout">
+                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
+                    <!--<MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
                         <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
@@ -47,7 +49,7 @@
                         <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click" />
-                    </MenuFlyout>
+                    </MenuFlyout>-->
                 </Setter.Value>
             </Setter>
         </Style>

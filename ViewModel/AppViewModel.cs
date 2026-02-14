@@ -317,6 +317,9 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<SongArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<SongCollectionViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<SongFolderListViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
@@ -410,15 +413,15 @@ namespace WinUIMusicPlayer.ViewModel
             catch { }
         }
 
-        public async Task AddToFavourite(Music music)
-        {
-            music.IsFavorite = !music.IsFavorite;
-            await _musicDatabaseService.AddToFavourite(music);
-            if (CurrentPlayingMusic?.Id == music.Id)
-            {
-                CurrentPlayingMusic.IsFavorite = music.IsFavorite;
-            }
-        }
+        //public async Task AddToFavourite(Music music)
+        //{
+        //    music.IsFavorite = !music.IsFavorite;
+        //    await _musicDatabaseService.AddToFavourite(music);
+        //    if (CurrentPlayingMusic?.Id == music.Id)
+        //    {
+        //        CurrentPlayingMusic.IsFavorite = music.IsFavorite;
+        //    }
+        //}
 
         public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
         {

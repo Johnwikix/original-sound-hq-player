@@ -21,7 +21,7 @@
             TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
-                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.SongListMenuOptions, Mode=OneWay}" />
+                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
                     <!--<MenuFlyout x:Name="menuFlyout">
                         <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
                         <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
