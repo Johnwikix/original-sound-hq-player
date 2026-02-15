@@ -91,7 +91,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public bool IsSortComboBoxVisible { get; set => SetProperty(ref field, value); } = true;
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
+        public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public ObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
@@ -288,6 +288,7 @@ namespace WinUIMusicPlayer.ViewModel
                     SongViewType.Album => query.OrderBy(m => m.TrackNumber),
                     SongViewType.Artist or SongViewType.Folder =>
                         query.OrderBy(m => m.Album).ThenBy(m => m.TrackNumber),
+                    SongViewType.Favorite => query.OrderByDescending(m=>m.Order),
                     _ => query.OrderBy(m => m.Title)
                 };
             }
@@ -469,7 +470,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private void RefreshDataSource() {
-            RefreshFavoriteMapping();
+            //RefreshFavoriteMapping();
+            _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
             _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
@@ -483,7 +485,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshFavoriteMapping()
         {
-            var query = AllSongs.Where(m => m.IsFavorite);
+            var query = AllSongs.Where(m => m.IsFavorite == true);
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 query = query.Where(m =>
@@ -564,11 +566,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void OnSelectSortChanged()
         {
             if (SelectedSortOption == null) return;
+            _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs,SongViewType.Album,m=>m.Album == CurrentAlbumObj?.Album);
             _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
             _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
-            UpdateCollectionSort(FavoriteSongs);
             UpdatePlayListCollectionSort(PlayListSongs);
             //UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             //UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
@@ -580,7 +582,8 @@ namespace WinUIMusicPlayer.ViewModel
             All,
             Album,
             Artist,
-            Folder
+            Folder,
+            Favorite
         }
 
         private void UpdateViewSort(AdvancedCollectionView view, SongViewType viewType)
@@ -639,43 +642,43 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private void UpdateCollectionSort(ObservableCollection<Music> collection)
-        {
-            if (collection == null || !collection.Any()) return;
+        //private void UpdateCollectionSort(ObservableCollection<Music> collection)
+        //{
+        //    if (collection == null || !collection.Any()) return;
 
-            // 1. 定义排序键提取器 (直接指向 Music 属性)
-            Func<Music, object> keySelector = SelectedSortOption.Tag switch
-            {
-                "A-Z" => m => m.Title,
-                "Artist" => m => m.Author,
-                "Album" => m => m.Album,
-                "CreateTimeASC" => m => m.CreateTime,
-                "CreateTimeDESC" => m => m.CreateTime,
-                "UpdateTimeASC" => m => m.UpdateTime,
-                "UpdateTimeDESC" => m => m.UpdateTime,
-                "DefaultOrder" => m => m.Order,
-                _ => m => m.Title
-            };
+        //    // 1. 定义排序键提取器 (直接指向 Music 属性)
+        //    Func<Music, object> keySelector = SelectedSortOption.Tag switch
+        //    {
+        //        "A-Z" => m => m.Title,
+        //        "Artist" => m => m.Author,
+        //        "Album" => m => m.Album,
+        //        "CreateTimeASC" => m => m.CreateTime,
+        //        "CreateTimeDESC" => m => m.CreateTime,
+        //        "UpdateTimeASC" => m => m.UpdateTime,
+        //        "UpdateTimeDESC" => m => m.UpdateTime,
+        //        "DefaultOrder" => m => m.Order,
+        //        _ => m => m.Title
+        //    };
 
-            // 2. 统一判断升降序
-            bool isAscending = SelectedSortOption.Tag switch
-            {
-                "CreateTimeDESC" or "UpdateTimeDESC" or "DefaultOrder" => false,
-                _ => true
-            };
+        //    // 2. 统一判断升降序
+        //    bool isAscending = SelectedSortOption.Tag switch
+        //    {
+        //        "CreateTimeDESC" or "UpdateTimeDESC" or "DefaultOrder" => false,
+        //        _ => true
+        //    };
 
-            // 3. 执行排序
-            var sortedList = isAscending
-                ? collection.OrderBy(keySelector).ToList()
-                : collection.OrderByDescending(keySelector).ToList();
+        //    // 3. 执行排序
+        //    var sortedList = isAscending
+        //        ? collection.OrderBy(keySelector).ToList()
+        //        : collection.OrderByDescending(keySelector).ToList();
 
-            // 4. 更新原集合 (触发 UI 刷新)
-            collection.Clear();
-            foreach (var item in sortedList)
-            {
-                collection.Add(item);
-            }
-        }
+        //    // 4. 更新原集合 (触发 UI 刷新)
+        //    collection.Clear();
+        //    foreach (var item in sortedList)
+        //    {
+        //        collection.Add(item);
+        //    }
+        //}
 
         private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
         {

@@ -589,7 +589,7 @@ namespace WinUIMusicPlayer.Services
             //foreach (var song in AppData.allSongs) {
             //    AppViewModel.AllSongs.Add(song);
             //}
-            AppViewModel.FavoriteSongs = GetFavoriteMusicFromMem();
+            //AppViewModel.FavoriteSongs = GetFavoriteMusicFromMem();
             AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumPageSource);
             AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistPageSource);
             AppViewModel.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), AppViewModel.FolderPageSource);
