@@ -78,6 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             UpdateMusicListView();
             App.MainWindow.IsBackBtnEnable = false;
+            AppViewModel.IsSortComboBoxVisible = true;
         }
 
         public void UpdateMusicListView()

@@ -70,6 +70,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentFolderObj = null;
             AppViewModel.PageType = "folderBrowse";
+            AppViewModel.IsSortComboBoxVisible = false;
         }
 
         private void InitalizeOption()

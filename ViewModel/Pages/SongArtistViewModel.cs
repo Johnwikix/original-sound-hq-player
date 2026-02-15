@@ -80,6 +80,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void ReceiveNavigation()
         {
+            AppViewModel.IsSortComboBoxVisible = true;
             RefreshUsbDeviceMusicList(null, null);
             RefreshPage();
             UpdateMusicListView();
