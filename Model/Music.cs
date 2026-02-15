@@ -52,7 +52,7 @@ namespace WinUIMusicPlayer.Model
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().PlayListSongs.Select(x => x.Music));
                     break;
                 case "AllSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().AllSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ListSongs);
                     break;
                 case "AlbumSongsView":
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().AlbumSongs);
