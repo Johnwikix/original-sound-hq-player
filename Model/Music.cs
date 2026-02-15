@@ -55,13 +55,13 @@ namespace WinUIMusicPlayer.Model
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().AllSongsView.Cast<Music>()]);
                     break;
                 case "AlbumSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().AlbumSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().AlbumSongs);
                     break;
                 case "ArtistSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().ArtistSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ArtistSongs);
                     break;
                 case "FolderSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new([.. App.Services.GetRequiredService<AppViewModel>().FolderSongsView.Cast<Music>()]);
+                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FolderSongs);
                     break;
             }
             App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music: this, IsChangeList: true);

@@ -258,7 +258,7 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    var musicList = ViewModel.AppViewModel.AlbumSongsView.Cast<Music>();
+                    var musicList = ViewModel.AppViewModel.AlbumSongs;
                     await _musicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
                 };
                 PlayList.Items.Add(menuItem);

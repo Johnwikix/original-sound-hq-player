@@ -35,7 +35,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    ArtistSongsView.RefreshFilter();
+                    //ArtistSongsView.RefreshFilter();
+                    _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == value?.Author);
                 }
             }
         }
@@ -45,7 +46,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AlbumSongsView.RefreshFilter();
+                    //AlbumSongsView.RefreshFilter();
+                    _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == value?.Album);
                 }
             }
         }
@@ -55,7 +57,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    FolderSongsView.RefreshFilter();
+                    //FolderSongsView.RefreshFilter();
+                    _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == value?.LastLevelFolderPath);
                 }
             }
         }
@@ -99,9 +102,9 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<GenericGroup> ArtistPageSource { get; set => SetProperty(ref field, value); } = [];
         public ObservableCollection<GenericGroup> FolderPageSource { get; set => SetProperty(ref field, value); } = [];
         public AdvancedCollectionView AllSongsView { get; }
-        public AdvancedCollectionView AlbumSongsView { get; }
-        public AdvancedCollectionView ArtistSongsView { get; }
-        public AdvancedCollectionView FolderSongsView { get; }
+        public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];
         public Music CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
         public ObservableCollection<Music> SequentialPlayingList 
@@ -233,68 +236,68 @@ namespace WinUIMusicPlayer.ViewModel
             };
             AllSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
 
-            AlbumSongsView = new AdvancedCollectionView(AllSongs, true)
-            {
-                Filter = item =>
-                {
-                    if (item is not Music m) return false;
-                    if (CurrentAlbumObj != null)
-                    {
-                        if (!string.Equals(m.Album, CurrentAlbumObj.Album, StringComparison.OrdinalIgnoreCase))
-                            return false;
-                    }
-                    // 2. 搜索过滤逻辑
-                    if (!string.IsNullOrWhiteSpace(SearchText))
-                    {
-                        return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                               (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
-                    }
-                    return true;
-                }
-            };
-            AlbumSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+            //AlbumSongsView = new AdvancedCollectionView(AllSongs, true)
+            //{
+            //    Filter = item =>
+            //    {
+            //        if (item is not Music m) return false;
+            //        if (CurrentAlbumObj != null)
+            //        {
+            //            if (!string.Equals(m.Album, CurrentAlbumObj.Album, StringComparison.OrdinalIgnoreCase))
+            //                return false;
+            //        }
+            //        // 2. 搜索过滤逻辑
+            //        if (!string.IsNullOrWhiteSpace(SearchText))
+            //        {
+            //            return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            //                   (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+            //        }
+            //        return true;
+            //    }
+            //};
+            //AlbumSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
 
-            ArtistSongsView = new AdvancedCollectionView(AllSongs, true)
-            {
-                Filter = item =>
-                {
-                    if (item is not Music m) return false;
-                    if (CurrentArtistObj != null)
-                    {
-                        if (!string.Equals(m.Author, CurrentArtistObj.Author, StringComparison.OrdinalIgnoreCase))
-                            return false;
-                    }
-                    if (!string.IsNullOrWhiteSpace(SearchText))
-                    {
-                        return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
-                    }
-                    return true;
-                }
-            };
-            ArtistSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+            //ArtistSongsView = new AdvancedCollectionView(AllSongs, true)
+            //{
+            //    Filter = item =>
+            //    {
+            //        if (item is not Music m) return false;
+            //        if (CurrentArtistObj != null)
+            //        {
+            //            if (!string.Equals(m.Author, CurrentArtistObj.Author, StringComparison.OrdinalIgnoreCase))
+            //                return false;
+            //        }
+            //        if (!string.IsNullOrWhiteSpace(SearchText))
+            //        {
+            //            return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            //                           (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+            //        }
+            //        return true;
+            //    }
+            //};
+            //ArtistSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
 
-            FolderSongsView = new AdvancedCollectionView(AllSongs, true)
-            {
-                Filter = item =>
-                {
-                    if (item is not Music m) return false;
-                    if (CurrentFolderObj != null)
-                    {
-                        if (!string.Equals(m.LastLevelFolderPath, CurrentFolderObj.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-                            return false;
-                    }
-                    if (!string.IsNullOrWhiteSpace(SearchText))
-                    {
+            //FolderSongsView = new AdvancedCollectionView(AllSongs, true)
+            //{
+            //    Filter = item =>
+            //    {
+            //        if (item is not Music m) return false;
+            //        if (CurrentFolderObj != null)
+            //        {
+            //            if (!string.Equals(m.LastLevelFolderPath, CurrentFolderObj.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
+            //                return false;
+            //        }
+            //        if (!string.IsNullOrWhiteSpace(SearchText))
+            //        {
        
-                        return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                       (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
-                    }
-                    return true;
-                }
-            };
-            FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+            //            return (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            //                           (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            //                           (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+            //        }
+            //        return true;
+            //    }
+            //};
+            //FolderSongsView.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             AllSongs.CollectionChanged += AllSongs_CollectionChanged;
         }
@@ -320,6 +323,54 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<SongArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongCollectionViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongFolderListViewModel>().UpdateAlbumMenuOptionsPlayList();
+        }
+
+        public async Task UpdateSongCollectionsAsync(
+        BulkObservableCollection<Music> targetCollection,
+        SongViewType viewType,
+        Func<Music, bool> filterPredicate = null)
+        {
+            var query = AllSongs.AsEnumerable();
+            // 2. 应用外部传入的谓词 (如 s => s.Album == CurrentAlbumObj.Album)
+            if (filterPredicate != null)            {
+                query = query.Where(filterPredicate);
+            }
+            // 3. 应用搜索过滤 (SearchText)
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                query = query.Where(m =>
+                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+            // 4. 应用排序逻辑 (参考旧的 UpdateViewSort)
+            var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
+            if (tag == "DefaultOrder")
+            {
+                query = viewType switch
+                {
+                    SongViewType.Album => query.OrderBy(m => m.TrackNumber),
+                    SongViewType.Artist or SongViewType.Folder =>
+                        query.OrderBy(m => m.Album).ThenBy(m => m.TrackNumber),
+                    _ => query.OrderBy(m => m.Title)
+                };
+            }
+            else
+            {
+                query = tag switch
+                {
+                    "A-Z" => query.OrderBy(m => m.Title),
+                    "Artist" => query.OrderBy(m => m.Author),
+                    "Album" => query.OrderBy(m => m.Album),
+                    "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
+                    "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
+                    "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
+                    "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
+                    _ => query.OrderBy(m => m.Title)
+                };
+            }
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                _ = targetCollection.ReplaceAllAsync(query);
+            });
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
@@ -483,9 +534,9 @@ namespace WinUIMusicPlayer.ViewModel
         private void RefreshDataSource() {
             RefreshFavoriteMapping();
             AllSongsView.RefreshFilter();
-            AlbumSongsView.RefreshFilter();
-            ArtistSongsView.RefreshFilter();
-            FolderSongsView.RefreshFilter();
+            _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
+            _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
+            _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
             RefreshPlayListSongMapping();
             UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
@@ -577,14 +628,17 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedSortOption == null) return;
             UpdateViewSort(AllSongsView, SongViewType.All);
-            UpdateViewSort(AlbumSongsView, SongViewType.Album);
-            UpdateViewSort(ArtistSongsView, SongViewType.Artist);
-            UpdateViewSort(FolderSongsView, SongViewType.Folder);
+            _ = UpdateSongCollectionsAsync(AlbumSongs,SongViewType.Album,m=>m.Album == CurrentAlbumObj?.Album);
+            _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
+            _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
+            //UpdateViewSort(AlbumSongsView, SongViewType.Album);
+            //UpdateViewSort(ArtistSongsView, SongViewType.Artist);
+            //UpdateViewSort(FolderSongsView, SongViewType.Folder);
             UpdateCollectionSort(FavoriteSongs);
             UpdatePlayListCollectionSort(PlayListSongs);
-            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            //UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
+            //UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+            //UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
         }
 
         public enum SongViewType

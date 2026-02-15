@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic is not null && _parentPage is not null)
             {
-                AppViewModel.SequentialPlayingList = new([.. AppViewModel.AlbumSongsView.Cast<Music>()]);
+                AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
                 _parentPage?.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }        
@@ -245,7 +245,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (_parentPage is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new([.. AppViewModel.AlbumSongsView.Cast<Music>()]);
+                    AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
                     _parentPage.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -296,7 +296,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage is not null)
             {
-                AppViewModel.SequentialPlayingList = new([.. AppViewModel.AlbumSongsView.Cast<Music>()]);
+                AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
                 if (AppViewModel.SequentialPlayingList.Count > 0)
                 {
                     _parentPage.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);
