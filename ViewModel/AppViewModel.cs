@@ -92,7 +92,7 @@ namespace WinUIMusicPlayer.ViewModel
         //public bool IsSortComboBoxVisible { get; set => SetProperty(ref field, value); } = true;
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
-        public ObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
@@ -468,36 +468,36 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<MusicBrowsePage>().UpdateViewList();
         }
 
-        public void RefreshFavoriteMapping()
-        {
-            var query = AllSongs.Where(m => m.IsFavorite == true);
-            if (!string.IsNullOrWhiteSpace(SearchText))
-            {
-                query = query.Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
-            }
-            IEnumerable<Music> sortedQuery = SelectedSortOption?.Tag switch
-            {
-                "A-Z" => query.OrderBy(m => m.Title),
-                "Artist" => query.OrderBy(m => m.Author),
-                "Album" => query.OrderBy(m => m.Album),
-                "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
-                "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
-                "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
-                "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
-                "DefaultOrder" => query.OrderByDescending(m => m.Order),
-                _ => query.OrderByDescending(m => m.Order)
-            };
-            // 3. 转化为 List 执行查询
-            var results = sortedQuery.ToList();
-            FavoriteSongs.Clear();
-            foreach (var music in results)
-            {
-                FavoriteSongs.Add(music);
-            }
-        }
+        //public void RefreshFavoriteMapping()
+        //{
+        //    var query = AllSongs.Where(m => m.IsFavorite == true);
+        //    if (!string.IsNullOrWhiteSpace(SearchText))
+        //    {
+        //        query = query.Where(m =>
+        //            (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        //            (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        //            (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+        //    }
+        //    IEnumerable<Music> sortedQuery = SelectedSortOption?.Tag switch
+        //    {
+        //        "A-Z" => query.OrderBy(m => m.Title),
+        //        "Artist" => query.OrderBy(m => m.Author),
+        //        "Album" => query.OrderBy(m => m.Album),
+        //        "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
+        //        "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
+        //        "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
+        //        "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
+        //        "DefaultOrder" => query.OrderByDescending(m => m.Order),
+        //        _ => query.OrderByDescending(m => m.Order)
+        //    };
+        //    // 3. 转化为 List 执行查询
+        //    var results = sortedQuery.ToList();
+        //    FavoriteSongs.Clear();
+        //    foreach (var music in results)
+        //    {
+        //        FavoriteSongs.Add(music);
+        //    }
+        //}
 
         public void RefreshPlayListSongMapping()
         {
@@ -541,11 +541,9 @@ namespace WinUIMusicPlayer.ViewModel
             var results = sortedQuery.ToList();
 
             // 建议：在 UI 线程操作 ObservableCollection
-            PlayListSongs.Clear();
-            foreach (var item in results)
-            {
-                PlayListSongs.Add(item);
-            }
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                _ = PlayListSongs.ReplaceAllAsync(query);
+            });
         }
 
         public void OnSelectSortChanged()
@@ -571,61 +569,61 @@ namespace WinUIMusicPlayer.ViewModel
             Favorite
         }
 
-        private void UpdateViewSort(AdvancedCollectionView view, SongViewType viewType)
-        {
-            using (view.DeferRefresh())
-            {
-                view.SortDescriptions.Clear();
+        //private void UpdateViewSort(AdvancedCollectionView view, SongViewType viewType)
+        //{
+        //    using (view.DeferRefresh())
+        //    {
+        //        view.SortDescriptions.Clear();
 
-                // 获取用户选择的基础排序方案
-                var tag = SelectedSortOption.Tag?.ToString();
+        //        // 获取用户选择的基础排序方案
+        //        var tag = SelectedSortOption.Tag?.ToString();
 
-                // 逻辑拆分：如果是“默认排序”，根据视图类型走差异化逻辑
-                if (tag == "DefaultOrder")
-                {
-                    ApplyDefaultSort(view, viewType);
-                }
-                else
-                {
-                    // 其他通用排序逻辑
-                    var (propertyName, direction) = tag switch
-                    {
-                        "A-Z" => (nameof(Music.Title), SortDirection.Ascending),
-                        "Artist" => (nameof(Music.Author), SortDirection.Ascending),
-                        "Album" => (nameof(Music.Album), SortDirection.Ascending),
-                        "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
-                        "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
-                        "UpdateTimeASC" => (nameof(Music.UpdateTime), SortDirection.Ascending),
-                        "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
-                        _ => (nameof(Music.Title), SortDirection.Ascending)
-                    };
-                    view.SortDescriptions.Add(new SortDescription(propertyName, direction));
-                }
-            }
-        }
+        //        // 逻辑拆分：如果是“默认排序”，根据视图类型走差异化逻辑
+        //        if (tag == "DefaultOrder")
+        //        {
+        //            ApplyDefaultSort(view, viewType);
+        //        }
+        //        else
+        //        {
+        //            // 其他通用排序逻辑
+        //            var (propertyName, direction) = tag switch
+        //            {
+        //                "A-Z" => (nameof(Music.Title), SortDirection.Ascending),
+        //                "Artist" => (nameof(Music.Author), SortDirection.Ascending),
+        //                "Album" => (nameof(Music.Album), SortDirection.Ascending),
+        //                "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
+        //                "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
+        //                "UpdateTimeASC" => (nameof(Music.UpdateTime), SortDirection.Ascending),
+        //                "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
+        //                _ => (nameof(Music.Title), SortDirection.Ascending)
+        //            };
+        //            view.SortDescriptions.Add(new SortDescription(propertyName, direction));
+        //        }
+        //    }
+        //}
 
-        // 3. 处理差异化的默认排序（无反射）
-        private void ApplyDefaultSort(AdvancedCollectionView view, SongViewType viewType)
-        {
-            switch (viewType)
-            {
-                case SongViewType.Album:
-                    // 专辑视图：按轨道号排序
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-                    break;
-                case SongViewType.Artist:
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-                    break;
-                case SongViewType.Folder:
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-                    break;
-                default:
-                    view.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
-                    break;
-            }
-        }
+        //// 3. 处理差异化的默认排序（无反射）
+        //private void ApplyDefaultSort(AdvancedCollectionView view, SongViewType viewType)
+        //{
+        //    switch (viewType)
+        //    {
+        //        case SongViewType.Album:
+        //            // 专辑视图：按轨道号排序
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+        //            break;
+        //        case SongViewType.Artist:
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+        //            break;
+        //        case SongViewType.Folder:
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
+        //            break;
+        //        default:
+        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
+        //            break;
+        //    }
+        //}
 
         //private void UpdateCollectionSort(ObservableCollection<Music> collection)
         //{

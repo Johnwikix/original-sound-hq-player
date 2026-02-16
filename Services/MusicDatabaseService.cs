@@ -380,23 +380,23 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public IEnumerable<Music> FindMusicListByArtist(string artist)
-        {
-            return AppData.allSongs.AsValueEnumerable()
-                   .Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower())).ToImmutableList();
-        }
+        //public IEnumerable<Music> FindMusicListByArtist(string artist)
+        //{
+        //    return AppData.allSongs.AsValueEnumerable()
+        //           .Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower())).ToImmutableList();
+        //}
 
         public IEnumerable<Music> FindMusicListByAlbum(string album)
         {
-            return AppData.allSongs.AsValueEnumerable()
+            return AppViewModel.AllSongs.AsValueEnumerable()
                    .Where(m => m.Album is not null && m.Album.ToLower().Equals(album.ToLower())).OrderBy(m => m.TrackNumber).ToImmutableList();
         }
 
-        public IEnumerable<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
-        {
-            return AppData.allSongs.AsValueEnumerable()
-                   .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())).ToImmutableList();
-        }
+        //public IEnumerable<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
+        //{
+        //    return AppData.allSongs.AsValueEnumerable()
+        //           .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())).ToImmutableList();
+        //}
 
         public async Task AddMusicListToFavour(IEnumerable<Music> musics)
         {
@@ -584,8 +584,8 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task LoadMusicList() {
-            AppData.allSongs = await GetMusicListAsync();
-            await AppViewModel.AllSongs.AddRangeAsync(AppData.allSongs);
+            //AppData.allSongs = await GetMusicListAsync();
+            await AppViewModel.AllSongs.AddRangeAsync(await GetMusicListAsync());
             //foreach (var song in AppData.allSongs) {
             //    AppViewModel.AllSongs.Add(song);
             //}
@@ -627,24 +627,24 @@ namespace WinUIMusicPlayer.Services
             return musicList;
         }
 
-        public IEnumerable<Music> GetMusicListFromMem(string search)
-        {
-            return AppData.allSongs.AsValueEnumerable().Where(m =>
-                m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-                m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
-                m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
-            ).OrderBy(m => m.Title).ToImmutableList();
-        }
+        //public IEnumerable<Music> GetMusicListFromMem(string search)
+        //{
+        //    return AppViewModel.AllSongs.AsValueEnumerable().Where(m =>
+        //        m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //        m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
+        //        m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
+        //    ).OrderBy(m => m.Title).ToImmutableList();
+        //}
 
-        public IEnumerable<Music> GetMusicListFromMemWithFolderSearchOption(string search)
-        {
-            return AppData.allSongs.AsValueEnumerable().Where(m =>
-                m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-                m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
-                m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
-                m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Contains(search.ToLower())
-            ).OrderBy(m => m.Title).ToImmutableList();
-        }
+        //public IEnumerable<Music> GetMusicListFromMemWithFolderSearchOption(string search)
+        //{
+        //    return AppViewModel.AllSongs.AsValueEnumerable().Where(m =>
+        //        m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
+        //        m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
+        //        m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
+        //        m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Contains(search.ToLower())
+        //    ).OrderBy(m => m.Title).ToImmutableList();
+        //}
 
         public ObservableCollection<Music> GetFavoriteMusicFromMem(string search = null)
         {
@@ -653,7 +653,7 @@ namespace WinUIMusicPlayer.Services
 
         public IEnumerable<Music> GetArtistMusicFromMem(string artist, string search = null)
         {
-            var query = AppData.allSongs.AsValueEnumerable();
+            var query = AppViewModel.AllSongs.AsValueEnumerable();
             if (artist is not null)
             {
                 if (!string.IsNullOrEmpty(search))
@@ -675,7 +675,7 @@ namespace WinUIMusicPlayer.Services
 
         public IEnumerable<Music> GetFolderMusicFromMem(string folder, string search = null)
         {
-            var query = AppData.allSongs.AsValueEnumerable();
+            var query = AppViewModel.AllSongs.AsValueEnumerable();
             if (folder is not null)
             {
                 if (!string.IsNullOrEmpty(search))
@@ -845,11 +845,11 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await _dbConnection.DeleteAsync<Music>(musicId);
-                AppData.allSongs = await _dbConnection.Table<Music>().ToListAsync();
+                await AppViewModel.AllSongs.ReplaceAllAsync(await _dbConnection.Table<Music>().ToListAsync());
                 var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-                foreach (var music in AppData.allSongs)
+                foreach (var music in AppViewModel.AllSongs)
                 {
                     music.IsExistOnDevice = 0;
                     if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
@@ -1139,7 +1139,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var currentFiles = await folder.GetFilesAsync();
                 _files.AddRange(currentFiles);
-                _musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
+                _musicFilesInFolder = AppViewModel.AllSongs.AsValueEnumerable()
                     .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else
@@ -1286,7 +1286,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var currentFiles = await folder.GetFilesAsync();
                 files.AddRange(currentFiles);
-                musicFilesInFolder = AppData.allSongs.AsValueEnumerable()
+                musicFilesInFolder = AppViewModel.AllSongs.AsValueEnumerable()
                     .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else

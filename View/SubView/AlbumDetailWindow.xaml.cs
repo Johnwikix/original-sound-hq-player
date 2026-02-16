@@ -12,6 +12,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
 
@@ -149,14 +150,15 @@ namespace WinUIMusicPlayer.View.SubView
                     isResultAssigned = true;
                 }
             }
-            AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
+            //AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
+            await App.Services.GetRequiredService<AppViewModel>().AllSongs.ReplaceAllAsync(await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync());
             AlbumDetailChanged?.Invoke(this, result);
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             ConfirmFlyout.Hide();
-            var music = AppData.allSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
+            var music = App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().Where(m => m.Id == musicDetail.Id).FirstOrDefault();
             if (music is not null)
             {
                 try

@@ -208,8 +208,8 @@ namespace WinUIMusicPlayer.View
 
         public async void MainWindow_updateMusicList(object? sender, EventArgs e)
         {
-            AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-            await ViewModel.AppViewModel.AllSongs.ReplaceAllAsync(AppData.allSongs);
+            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+            await ViewModel.AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
         }
 
         private void SelectBarItem(string name)
@@ -248,15 +248,15 @@ namespace WinUIMusicPlayer.View
         public void SelectBarAlbum(string Album)
         {
             ViewModel.AppViewModel.PageType = "album";
-            ViewModel.AppViewModel.CurrentAlbumObj = AppData.allSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
-            if (ContentFrame is not null && ContentFrame.Content is not null)
+            ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            if (ContentFrame?.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
                     _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else if (ContentFrame.Content is SongCollectionPage) {
-                    App.MainWindow.UpdateMusicList();
+                    //App.MainWindow.UpdateMusicList();
                 }
                 else
                 {
@@ -268,7 +268,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarArtist(string artist)
         {
             ViewModel.AppViewModel.PageType = "artist";
-            ViewModel.AppViewModel.CurrentArtistObj = AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
+            ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)

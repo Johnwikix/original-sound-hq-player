@@ -21,11 +21,13 @@ namespace WinUIMusicPlayer.ViewModel
             get => _folderList;
             set => SetProperty(ref _folderList, value);
         }
+        private AppViewModel AppViewModel { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
 
-        public AddFolderViewModel(MusicDatabaseService musicDatabaseService)
+        public AddFolderViewModel(MusicDatabaseService musicDatabaseService,AppViewModel appViewModel)
         {            
             _musicDatabaseService = musicDatabaseService;
+            AppViewModel = appViewModel;
             _ = LoadFoldersAsync();
         }
 
@@ -35,10 +37,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var folderList = await _musicDatabaseService.GetFolders();
                 FolderList.Clear();
-                Debug.WriteLine(AppData.allSongs.AsValueEnumerable().Count());
+                Debug.WriteLine(AppViewModel.AllSongs.AsValueEnumerable().Count());
                 foreach (var folder in folderList)
                 {
-                    folder.SongCount = AppData.allSongs.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
+                    folder.SongCount = AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
                     FolderList.Add(folder);
                 }
             }
@@ -76,17 +78,18 @@ namespace WinUIMusicPlayer.ViewModel
             if (folder is not null)
             {
                 await Task.Run(() => _musicDatabaseService.CheckFolderBeforeAdd(folder));
-                AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+                await AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
                 await LoadFoldersAsync();
-                App.MainWindow?.UpdateMusicList();
+                //App.MainWindow?.UpdateMusicList();
             }
         }
 
         public async Task RemoveFolderButton_Click(int folderId)
         {
             await Task.Run(() => _musicDatabaseService.RemoveFolder(folderId));
+            await AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
             await LoadFoldersAsync();
-            App.MainWindow?.UpdateMusicList();
+            //App.MainWindow?.UpdateMusicList();
         }
 
         public async void Grid_Drop(IEnumerable<IStorageItem> folders)

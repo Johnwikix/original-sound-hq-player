@@ -91,7 +91,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SongCollectionViewModel>();
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
-                 services.AddSingleton<ContextMenuService>();
+                 //services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();

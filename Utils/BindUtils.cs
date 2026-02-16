@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Text;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 namespace WinUIMusicPlayer.Utils
@@ -19,7 +21,7 @@ namespace WinUIMusicPlayer.Utils
             if (string.IsNullOrEmpty(album)) {
                 return "0";
             }
-            return AppData.allSongs.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
+            return App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
         }
     }
 }

@@ -21,7 +21,7 @@ namespace WinUIMusicPlayer.Model
         [
             "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
         ];
-        public static IReadOnlyCollection<Music> allSongs { get; set; } = [];
+        //public static IReadOnlyCollection<Music> allSongs { get; set; } = [];
         public static List<UsbDeviceMusic> musicOnUsbDevice { get; set; } = [];
         public static List<PlayListMusic> allPlayListMusics { get; set; } = [];
         //public static PlayMode PlayMode { get; set; }
