@@ -590,9 +590,9 @@ namespace WinUIMusicPlayer.Services
             //    AppViewModel.AllSongs.Add(song);
             //}
             //AppViewModel.FavoriteSongs = GetFavoriteMusicFromMem();
-            AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumPageSource);
-            AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistPageSource);
-            AppViewModel.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), AppViewModel.FolderPageSource);
+            //AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumPageSource);
+            //AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistPageSource);
+            //AppViewModel.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), AppViewModel.FolderPageSource);
             await InitalPlayListAsync();
             await GetPlayListMusic();
             AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.SortOrder) 
