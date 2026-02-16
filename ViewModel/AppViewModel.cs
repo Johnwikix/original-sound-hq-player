@@ -89,16 +89,16 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public bool IsSortComboBoxVisible { get; set => SetProperty(ref field, value); } = true;
+        //public bool IsSortComboBoxVisible { get; set => SetProperty(ref field, value); } = true;
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public ObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<GenericGroup> AlbumPageSource { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<GenericGroup> ArtistPageSource { get; set => SetProperty(ref field, value); } = [];
-        public ObservableCollection<GenericGroup> FolderPageSource { get; set => SetProperty(ref field, value); } = [];
+        public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true};
+        public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
+        public CollectionViewSource FolderPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public BulkObservableCollection<Music> ListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
@@ -311,7 +311,7 @@ namespace WinUIMusicPlayer.ViewModel
             });
         }
 
-        public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
+        public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
         {
             IEnumerable<Music> filteredSource = AllSongs;
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -326,81 +326,67 @@ namespace WinUIMusicPlayer.ViewModel
                 .GroupBy(distinctSelector)
                 .Select(g => g.First())
                 .GroupBy(groupSelector)
-                .Select(g => new GenericGroup
-                {
-                    Key = g.Key,
-                    // 这里的 Items 现在是每个专辑只有一个代表对象
-                    Items = new ObservableCollection<Music>(g.OrderBy(distinctSelector))
-                })
+                .Select(g => new MusicGroup(g.Key, g.OrderBy(distinctSelector)))
                 .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
                 .ToList();
-            source.Clear();
-            foreach (var group in groups)
-            {
-                source.Add(group);
-            }
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                source.Source = groups;
+            });
         }
 
 
-        //private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, ObservableCollection<GenericGroup> source)
-        //{
-        //    try
-        //    {
-        //        var filteredSource = string.IsNullOrWhiteSpace(SearchText)
-        //                                ? AllSongs
-        //                                : AllSongs.Where(m =>
-        //                                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-        //                                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+        private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
+        {
+            try
+            {
+                var filteredSource = string.IsNullOrWhiteSpace(SearchText)
+                                        ? AllSongs
+                                        : AllSongs.Where(m =>
+                                            (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                            (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
 
-        //        // 2. 去重 (每个专辑/艺术家取一个代表)
-        //        var distinctItems = filteredSource
-        //            .GroupBy(distinctSelector)
-        //            .Select(g => g.First());
+                // 2. 去重 (每个专辑/艺术家取一个代表)
+                var distinctItems = filteredSource
+                    .GroupBy(distinctSelector)
+                    .Select(g => g.First());
 
-        //        // 3. 执行全局排序 (只对去重后的项排序)
-        //        IEnumerable<Music> sortedItems = distinctItems;
+                // 3. 执行全局排序 (只对去重后的项排序)
+                IEnumerable<Music> sortedItems = distinctItems;
 
-        //        if (SelectedSortOption.Tag != "DefaultOrder")
-        //        {
-        //            Func<Music, object> keySelector = SelectedSortOption.Tag switch
-        //            {
-        //                "A-Z" => m => m.Title,
-        //                "Artist" => m => m.Author,
-        //                "Album" => m => m.Album,
-        //                "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
-        //                "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
-        //                _ => m => distinctSelector(m)
-        //            };
+                if (SelectedSortOption.Tag != "DefaultOrder")
+                {
+                    Func<Music, object> keySelector = SelectedSortOption.Tag switch
+                    {
+                        "A-Z" => m => m.Title,
+                        "Artist" => m => m.Author,
+                        "Album" => m => m.Album,
+                        "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
+                        "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
+                        _ => m => distinctSelector(m)
+                    };
 
-        //            bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
+                    bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
 
-        //            sortedItems = isAscending
-        //                ? distinctItems.OrderBy(keySelector)
-        //                : distinctItems.OrderByDescending(keySelector);
-        //        }
+                    sortedItems = isAscending
+                        ? distinctItems.OrderBy(keySelector)
+                        : distinctItems.OrderByDescending(keySelector);
+                }
 
-        //        // 4. 对排好序的项进行首字母分组
-        //        // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
-        //        var groups = sortedItems
-        //            .GroupBy(groupSelector)
-        //            .Select(g => new GenericGroup
-        //            {
-        //                Key = g.Key,
-        //                Items = new ObservableCollection<Music>(g) // 这里的顺序已经排好了
-        //            })
-        //            // 5. 组间排序（首字母索引 A-Z 永远升序，#在后）
-        //            .OrderBy(g => g.Key == "ZZZ" ? "#"  : g.Key)
-        //            .ToList();
+                // 4. 对排好序的项进行首字母分组
+                // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
+                var groups = sortedItems
+                    .GroupBy(groupSelector)
+                    .Select(g => new MusicGroup(g.Key, g))
+                    .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
+                    .ToList();
 
-        //        // 6. 更新视图数据源
-        //        source.Clear();
-        //        foreach (var group in groups)
-        //        {
-        //            source.Add(group);
-        //        }
-        //    }
-        //    catch { }
-        //}
+                // 6. 更新视图数据源
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                    source.Source = groups;
+                });
+            }
+            catch { }
+        }
 
         //public async Task AddToFavourite(Music music)
         //{
@@ -470,7 +456,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         private void RefreshDataSource() {
-            //RefreshFavoriteMapping();
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
@@ -572,9 +557,9 @@ namespace WinUIMusicPlayer.ViewModel
             _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
             _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
             UpdatePlayListCollectionSort(PlayListSongs);
-            //UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            //UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            //UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
+            UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+            UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
         }
 
         public enum SongViewType

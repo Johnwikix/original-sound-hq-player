@@ -11,13 +11,6 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
-    <Page.Resources>
-        <CollectionViewSource
-            x:Name="ArtistCollectionSource"
-            IsSourceGrouped="True"
-            ItemsPath="Items"
-            Source="{x:Bind ViewModel.AppViewModel.ArtistPageSource}" />
-    </Page.Resources>
     <Grid Margin="0">
         <SemanticZoom>
             <!--  详细视图 (ZoomedInView)  -->
@@ -29,7 +22,7 @@
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="ArtistGridView_ItemClick"
-                    ItemsSource="{x:Bind ArtistCollectionSource.View, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.ArtistPageSource.View, Mode=OneWay}"
                     RightTapped="Artist_RightTapped"
                     SelectionMode="None"
                     VirtualizingStackPanel.VirtualizationMode="Recycling">
@@ -45,7 +38,7 @@
                     <GridView.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
-                                <DataTemplate x:DataType="model:GenericGroup">
+                                <DataTemplate x:DataType="model:MusicGroup">
                                     <TextBlock
                                         Margin="10,0,5,5"
                                         FontSize="28"
@@ -130,7 +123,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     IsItemClickEnabled="True"
-                    ItemsSource="{x:Bind ArtistCollectionSource.View.CollectionGroups, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.ArtistPageSource.View.CollectionGroups, Mode=OneWay}"
                     ScrollViewer.IsHorizontalScrollChainingEnabled="False"
                     ScrollViewer.IsVerticalScrollChainingEnabled="False"
                     ScrollViewer.ZoomMode="Disabled">
@@ -140,7 +133,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="32"
-                                Text="{x:Bind Group.(model:GenericGroup.Key), Mode=OneWay}" />
+                                Text="{x:Bind Group.(model:MusicGroup.Key), Mode=OneWay}" />
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>

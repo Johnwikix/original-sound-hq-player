@@ -68,7 +68,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentArtistObj = null;
             AppViewModel.PageType = "artistBrowse";
-            AppViewModel.IsSortComboBoxVisible = false;
+            //AppViewModel.IsSortComboBoxVisible = false;
             App.MainWindow.IsBackBtnEnable = false;
         }
 

@@ -36,7 +36,7 @@
             <Setter Property="Value" Value="0" />
             <Setter Property="TickPlacement" Value="Outside" />
             <Setter Property="TickFrequency" Value="3" />
-            <Setter Property="StepFrequency" Value="0.5" />
+            <Setter Property="StepFrequency" Value="0.1" />
             <Setter Property="Margin" Value="2,0" />
         </Style>
     </ContentDialog.Resources>

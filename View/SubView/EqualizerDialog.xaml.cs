@@ -26,7 +26,8 @@ namespace WinUIMusicPlayer.View.SubView
             this.InitializeComponent();
             InitializePresets();
             InitializingSettings();
-            _isInitializedSliderValue = true;
+            InitializeSilderAttach();
+            _isInitializedSliderValue = true;           
         }
 
         private void InitializingSettings()
@@ -148,6 +149,41 @@ namespace WinUIMusicPlayer.View.SubView
                 AppSettings.OnEqUpdated();
             }
             _isInitializedSliderValue = true;
+        }
+
+        private void InitializeSilderAttach() {
+            AttachMouseWheelToSlider(Slider32Hz);
+            AttachMouseWheelToSlider(Slider64Hz);
+            AttachMouseWheelToSlider(Slider125Hz);
+            AttachMouseWheelToSlider(Slider250Hz);
+            AttachMouseWheelToSlider(Slider500Hz);
+            AttachMouseWheelToSlider(Slider1kHz);
+            AttachMouseWheelToSlider(Slider2kHz);
+            AttachMouseWheelToSlider(Slider4kHz);
+            AttachMouseWheelToSlider(Slider8kHz);
+            AttachMouseWheelToSlider(Slider16kHz);
+        }
+
+        private void AttachMouseWheelToSlider(Slider slider)
+        {
+            slider.PointerWheelChanged += (sender, e) =>
+            {
+                if (!slider.IsEnabled) return;
+
+                var delta = e.GetCurrentPoint(slider).Properties.MouseWheelDelta;
+                var step = slider.StepFrequency; // 使用0.1作为步进值
+
+                if (delta > 0)
+                {
+                    slider.Value = Math.Min(slider.Maximum, slider.Value + step);
+                }
+                else if (delta < 0)
+                {
+                    slider.Value = Math.Max(slider.Minimum, slider.Value - step);
+                }
+
+                e.Handled = true;
+            };
         }
     }
 }

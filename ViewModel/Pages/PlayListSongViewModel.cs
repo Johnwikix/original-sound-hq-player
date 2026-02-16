@@ -80,7 +80,7 @@ namespace WinUIMusicPlayer.ViewModel
             InitizeData();
             UpdateMusicListView();
             App.MainWindow.IsBackBtnEnable = true;
-            AppViewModel.IsSortComboBoxVisible = true;
+            //AppViewModel.IsSortComboBoxVisible = true;
             //RefreshUsbDeviceMusicList(null, null);
         }
 

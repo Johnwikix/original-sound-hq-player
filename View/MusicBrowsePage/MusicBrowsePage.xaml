@@ -165,7 +165,6 @@
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     FontSize="12"
-                                    Visibility="{x:Bind ViewModel.AppViewModel.IsSortComboBoxVisible,Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
                                     ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
                                     SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
                                     <ComboBox.ItemTemplate>
