@@ -779,7 +779,7 @@ namespace WinUIMusicPlayer.ViewModel
                     (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
                     //Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
                     item.Lyrics = lyrics;
-                    item.TranslatdeLyrics = transLrc;
+                    item.TranslatedLyrics = transLrc;
                     await _musicDatabaseService.UpdateMusicInfo(item);
                 }
             }

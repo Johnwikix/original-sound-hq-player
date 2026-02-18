@@ -891,4 +891,7 @@
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>效果预览，并非真正的逐字歌词</value>
   </data>
+  <data name="LrcTranslation.Text" xml:space="preserve">
+    <value>Lrc翻译</value>
+  </data>
 </root>

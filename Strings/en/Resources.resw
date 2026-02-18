@@ -891,4 +891,7 @@
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Effect preview, not actual word for word lyrics</value>
   </data>
+  <data name="LrcTranslation.Text" xml:space="preserve">
+    <value>Lrc Translation</value>
+  </data>
 </root>

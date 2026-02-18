@@ -268,7 +268,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(MusicDetail);
             MusicDetail.Lyrics = lyrics ?? string.Empty;
-            MusicDetail.TranslatdeLyrics = transLrc ?? string.Empty;
+            MusicDetail.TranslatedLyrics = transLrc ?? string.Empty;
             if (lyrics is null && transLrc is null)
             {
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
@@ -278,15 +278,27 @@ namespace WinUIMusicPlayer.View.SubView
         private async void SaveLyrics_Click(object sender, RoutedEventArgs e)
         {
             char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(MusicDetail.Path), invalidChars);
-            string targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
-            _ = Task.Run(() =>
-            {
-                string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
-                string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Lyrics));
-                ToolUtils.OpenFileInExplorer(lrcFilePath);
-            });
+            string sanitizedFileName = Path.GetFileNameWithoutExtension(MusicDetail.Path);
+            string? targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
+            if (targetBasePath is null) { return; }
+            if (!string.IsNullOrEmpty(MusicDetail.Lyrics)) {
+                _ = Task.Run(() =>
+                {
+                    string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
+                    string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
+                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Lyrics));
+                    ToolUtils.OpenFileInExplorer(lrcFilePath);
+                });
+            }
+            if (!string.IsNullOrEmpty(MusicDetail.TranslatedLyrics)) {
+                _ = Task.Run(() =>
+                {
+                    string newFileName = $"{sanitizedFileName}_Translated.lrc";
+                    string lrcFilePath = Path.Combine(targetBasePath, newFileName);
+                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TranslatedLyrics));
+                    ToolUtils.OpenFileInExplorer(lrcFilePath);
+                });
+            }
         }
 
         private async void OpenFile_Click(object sender, RoutedEventArgs e)

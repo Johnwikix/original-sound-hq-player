@@ -891,4 +891,7 @@
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>効果のプレビュー、本当の逐語歌詞ではありません</value>
   </data>
+  <data name="LrcTranslation.Text" xml:space="preserve">
+    <value>Lrc翻訳</value>
+  </data>
 </root>

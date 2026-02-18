@@ -68,37 +68,56 @@ namespace WinUIMusicPlayer.Services
         {
             CancelPreviousLyricsTask();
             Lyrics.Clear();
-            string? lrcContent = GetLyricsContentFromLrc(AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic?.Id)?.Path);
-            var lyricsContent = await ParseLrcLyrics(lrcContent);
+            var (lrcContent,transLrcStr) = GetLyricsContentFromLrc(AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic?.Id)?.Path);
+            var lyricsContent = await ParseLrcLyrics(lrcContent, transLrcStr);
             if (lyricsContent is not null)
             {
                 Lyrics = lyricsContent;
             }
         }
 
-        private string GetLyricsContentFromLrc(string? path)
+        private (string?,string?) GetLyricsContentFromLrc(string? path)
         {
+            string? lrcContent = null;
+            string? transLrcStr = null;
             if (!string.IsNullOrWhiteSpace(path))
             {
-                string lyricFilePath = Path.ChangeExtension(path, ".lrc");
-                if (File.Exists(lyricFilePath))
+                try
                 {
-                    try
+                    string lyricFilePath = Path.ChangeExtension(path, ".lrc");
+                    if (File.Exists(lyricFilePath))
                     {
-                        return File.ReadAllText(lyricFilePath);
-                    }
-                    catch (Exception)
+                        lrcContent = File.ReadAllText(lyricFilePath);
+                    }                        
+                }
+                catch (Exception)
+                {
+                    lrcContent = null;
+                }
+
+                try
+                {
+                    string fileName = Path.GetFileNameWithoutExtension(path);
+                    string transFileName = $"{fileName}_Translated.lrc";
+                    string? directoryPath = Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
                     {
-                        return null;
+                        string lrcFilePath = Path.Combine(directoryPath, transFileName);
+                        if (File.Exists(lrcFilePath))
+                        {
+                            transLrcStr = File.ReadAllText(lrcFilePath);
+                        }
                     }
                 }
+                catch {
+                    transLrcStr = null;
+                }                
             }
-            return null;
+            return (lrcContent, transLrcStr);
         }
 
-        public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent)
+        public async Task<List<LyricLine>> ParseLrcLyrics(string? lrcContent,string? transLrcStr = null)
         {
-            string? transLrcStr = string.Empty;
             _lyricsCancellationTokenSource?.Cancel(); // 习惯性清理旧任务
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _lyricsCancellationTokenSource.Token;
@@ -120,7 +139,7 @@ namespace WinUIMusicPlayer.Services
             {
                 // 尝试从内存缓存获取
                 lrcContent = songInMemory?.Lyrics;
-                transLrcStr = songInMemory?.TranslatdeLyrics;
+                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? songInMemory?.TranslatedLyrics:transLrcStr;
                 // 如果开启了自动歌词且缓存为空，则在线搜索
                 if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.isAutoLyricsEnabled)
                 {
@@ -134,11 +153,11 @@ namespace WinUIMusicPlayer.Services
                             lrcContent = lyric;
                             // 同步更新内存对象
                             currentMusic.Lyrics = lyric;
-                            currentMusic.TranslatdeLyrics = trans;
+                            currentMusic.TranslatedLyrics = trans;
                             if (songInMemory != null)
                             {
                                 songInMemory.Lyrics = lyric;
-                                songInMemory.TranslatdeLyrics = trans;
+                                songInMemory.TranslatedLyrics = trans;
                             }
                             needUpdateDb = true;
                         }
@@ -196,7 +215,6 @@ namespace WinUIMusicPlayer.Services
         {
             lyrics.Clear();
 
-            // 1. 解析原文歌词（包含合并 100ms 内行的逻辑）
             ParseLrcToLines(lrcContent, (time, text) =>
             {
                 // 查找是否已有时间相近的行
@@ -226,11 +244,8 @@ namespace WinUIMusicPlayer.Services
                 {
                     // 匹配原文中时间最接近的行
                     var lyric = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
-                    if (lyric != null)
-                    {
-                        // 赋值翻译文本（如果有多行翻译，也可以考虑用 += "\n" + transText）
-                        lyric.TransLateText = transText;
-                    }
+                    // 赋值翻译文本（如果有多行翻译，也可以考虑用 += "\n" + transText）
+                    lyric?.TransLateText = transText;
                 });
             }
 

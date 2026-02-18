@@ -272,9 +272,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         [RelayCommand]
-        public void ReGetLyrics()
+        public async Task ReGetLyrics()
         {
-            _ = AppViewModel.ReGetLyrics(SelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
+            await AppViewModel.ReGetLyrics(SelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
         }
 
         [RelayCommand]

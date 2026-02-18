@@ -891,4 +891,7 @@
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Предварительный просмотр эффектов, а не буквальный текст</value>
   </data>
+  <data name="LrcTranslation.Text" xml:space="preserve">
+    <value>Перевод LRC</value>
+  </data>
 </root>
