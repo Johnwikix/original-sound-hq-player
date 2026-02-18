@@ -1544,7 +1544,7 @@ namespace WinUIMusicPlayer.Services
                     continue;
                 }
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                UsbDeviceMusic usbDeviceMusic = addFolderService.getUsbDeviceMusicInfo(storageFile, folder.Path, uniqueDeviceId);
+                UsbDeviceMusic usbDeviceMusic = addFolderService.GetUsbDeviceMusicInfo(storageFile, folder.Path, uniqueDeviceId);
                 usbDeviceMusicsInsertList.Add(usbDeviceMusic);
                 await _dbConnection.InsertAsync(usbDeviceMusic);
             }

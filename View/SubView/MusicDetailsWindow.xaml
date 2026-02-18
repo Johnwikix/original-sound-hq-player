@@ -8,10 +8,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:winex="using:WinUIEx"
     Title="音乐属性"
-    Width="800"
-    Height="900"
-    MinWidth="650"
-    MinHeight="850"
+    MinWidth="750"
+    MinHeight="900"
     mc:Ignorable="d">
 
     <winex:WindowEx.SystemBackdrop>

@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.Services
         {
         }
 
-        public UsbDeviceMusic getUsbDeviceMusicInfo(StorageFile file, string folderPath, string uniqueDeviceId)
+        public UsbDeviceMusic GetUsbDeviceMusicInfo(StorageFile file, string folderPath, string uniqueDeviceId)
         {
             try
             {
