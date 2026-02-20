@@ -79,7 +79,7 @@ namespace WinUIMusicPlayer.Model
             EqualizerChangedEvent?.Invoke(null, equalizer);
         }
         public static bool IsCustomAppSize { get; set; } = false;
-        public static int AppWidth { get; set; } = 1440;
+        public static int AppWidth { get; set; } = 1280;
         public static int AppHeight { get; set; } = 810;
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;

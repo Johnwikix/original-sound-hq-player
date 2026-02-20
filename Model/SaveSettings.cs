@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsBackgroundCoverEnabled { get; set; } = true; // 是否启用背景封面
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;
-        public int AppWidth { get; set; } = 1440;
+        public int AppWidth { get; set; } = 1280;
         public int AppHeight { get; set; } = 810;
         public string GlobalFont { get; set; } = "Segoe UI, sans-serif";
         public bool IsGlobalFontSizeEnabled { get; set; } = false;
