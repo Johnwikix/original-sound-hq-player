@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
@@ -27,7 +28,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public class AppViewModel : ObservableObject
+    public partial class AppViewModel : ObservableObject
     {
         public Music? CurrentArtistObj {
             get => field;
@@ -353,24 +354,22 @@ namespace WinUIMusicPlayer.ViewModel
                 // 3. 执行全局排序 (只对去重后的项排序)
                 IEnumerable<Music> sortedItems = distinctItems;
 
-                if (SelectedSortOption.Tag != "DefaultOrder")
+                Func<Music, object> keySelector = SelectedSortOption.Tag switch
                 {
-                    Func<Music, object> keySelector = SelectedSortOption.Tag switch
-                    {
-                        "A-Z" => m => m.Title,
-                        "Artist" => m => m.Author,
-                        "Album" => m => m.Album,
-                        "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
-                        "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
-                        _ => m => distinctSelector(m)
-                    };
+                    "A-Z" => m => m.Title,
+                    "Artist" => m => m.Author,
+                    "Album" => m => m.Album,
+                    "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
+                    "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
+                    "DefaultOrder" => distinctSelector,
+                    _ => distinctSelector
+                };
 
-                    bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
+                bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
 
-                    sortedItems = isAscending
-                        ? distinctItems.OrderBy(keySelector)
-                        : distinctItems.OrderByDescending(keySelector);
-                }
+                sortedItems = isAscending
+                    ? distinctItems.OrderBy(keySelector)
+                    : distinctItems.OrderByDescending(keySelector);
 
                 // 4. 对排好序的项进行首字母分组
                 // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
@@ -455,7 +454,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private void RefreshDataSource() {
+        public void RefreshDataSource() {
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);

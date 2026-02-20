@@ -14,6 +14,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
 
@@ -35,7 +36,7 @@ namespace WinUIMusicPlayer.View.SubView
                 if (field != value)
                 {
                     field = value;
-                    OnPropertyChanged(nameof(AlbumCoverBitmap));
+                    OnPropertyChanged();
                 }
             }
         }       
@@ -47,7 +48,7 @@ namespace WinUIMusicPlayer.View.SubView
                 if (field != value)
                 {
                     field = value;
-                    OnPropertyChanged(nameof(AlbumCoverBitmap));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -193,6 +194,7 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
+                App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
             }
             catch (Exception ex)
             {

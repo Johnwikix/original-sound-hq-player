@@ -64,14 +64,17 @@
                         VerticalAlignment="Top"
                         CornerRadius="10">
                         <Grid>
-                            <Image x:Name="AlbumCoverImage" Canvas.ZIndex="1" />
+                            <Image Canvas.ZIndex="1" Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" />
                             <Grid
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                 Canvas.ZIndex="0">
                                 <Viewbox Stretch="Uniform">
-                                    <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <Border
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
                                         <!--  图标层  -->
                                         <FontIcon
                                             Width="200"
@@ -87,12 +90,6 @@
                             </Grid>
                         </Grid>
                     </Border>
-                    <!--<Image
-                        x:Name="AlbumCoverImage"
-                        Grid.Row="1"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"
-                        Stretch="UniformToFill" />-->
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -114,7 +111,10 @@
                                 Grid.Column="0"
                                 HorizontalAlignment="Left"
                                 Orientation="Horizontal">
-                                <Button Margin="5" HorizontalAlignment="Center" Click="GetImageFromNet_Click">
+                                <Button
+                                    Margin="5"
+                                    HorizontalAlignment="Center"
+                                    Click="GetImageFromNet_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xebd3;" />
@@ -124,7 +124,10 @@
                                         <ToolTip x:Uid="GetImageFromNetButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button Margin="5" HorizontalAlignment="Stretch" Click="SaveImageButton_Click">
+                                <Button
+                                    Margin="5"
+                                    HorizontalAlignment="Stretch"
+                                    Click="SaveImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe78c;" />
@@ -134,7 +137,10 @@
                                         <ToolTip x:Uid="SaveImageButton" />
                                     </ToolTipService.ToolTip>
                                 </Button>
-                                <Button Margin="5" HorizontalAlignment="Stretch" Click="SelectCoverImageButton_Click">
+                                <Button
+                                    Margin="5"
+                                    HorizontalAlignment="Stretch"
+                                    Click="SelectCoverImageButton_Click">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <FontIcon FontSize="16" Glyph="&#xe70f;" />
@@ -154,13 +160,13 @@
                                 VerticalAlignment="Center"
                                 FontWeight="Bold" />
                             <TextBox
-                                x:Name="AlbumTextBlock"
                                 Grid.Row="0"
                                 Grid.Column="2"
                                 Margin="5"
                                 HorizontalAlignment="Stretch"
                                 BorderThickness="0"
-                                ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                Text="{x:Bind MusicDetail.Album, Mode=TwoWay}" />
                             <TextBlock
                                 x:Uid="YearLabel"
                                 Grid.Row="0"
@@ -170,32 +176,51 @@
                                 VerticalAlignment="Center"
                                 FontWeight="Bold" />
                             <TextBox
-                                x:Name="YearTextBlock"
                                 Grid.Row="0"
                                 Grid.Column="4"
                                 Margin="5,5,10,5"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center"
-                                BorderThickness="0" />
+                                BorderThickness="0"
+                                Text="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
                         </Grid>
                     </Grid>
                 </Grid>
             </ScrollViewer>
-            <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
+            <StackPanel
+                Grid.Row="1"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal">
                 <Button x:Uid="SaveButton" Margin="5">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
-                                <TextBlock x:Uid="SaveConfirm" Margin="0,0,0,12" Style="{ThemeResource BaseTextBlockStyle}" />
+                                <TextBlock
+                                    x:Uid="SaveConfirm"
+                                    Margin="0,0,0,12"
+                                    Style="{ThemeResource BaseTextBlockStyle}" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Uid="ConfirmButton" Margin="0,0,10,0" Click="ConfirmButton_Click" />
-                                    <Button x:Uid="CancelButton" Margin="0,0,10,0" Click="CloseFlyoutButton_Click" />
+                                    <Button
+                                        x:Uid="ConfirmButton"
+                                        Margin="0,0,10,0"
+                                        Click="ConfirmButton_Click" />
+                                    <Button
+                                        x:Uid="CancelButton"
+                                        Margin="0,0,10,0"
+                                        Click="CloseFlyoutButton_Click" />
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <Button x:Uid="CloseButtonItem" Margin="5" Click="CloseButton_Click" />
+                <Button
+                    x:Uid="SaveToDataBase"
+                    Margin="5"
+                    Click="SaveToDataBaseButton_Click" />
+                <Button
+                    x:Uid="CloseButtonItem"
+                    Margin="5"
+                    Click="CloseButton_Click" />
             </StackPanel>
         </Grid>
     </Grid>
