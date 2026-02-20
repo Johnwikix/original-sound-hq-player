@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.Model
         public static byte CustomColorRed { get; set; } = 128;
         public static byte CustomColorGreen { get; set; } = 128;
         public static byte CustomColorBlue { get; set; } = 128;
-        public static string AppTheme { get; set; } = "Dark";
+        public static string AppTheme { get; set; } = "Default";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
         public static bool isCoverCacheEnabled { get; set; } = true;
         public static bool isRunningBackend { get; set; } = true;
@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.Model
         public static int EntranceAnimationTime { get; set; } = 300;
         public static int SlideAnimationTime { get; set; } = 400;
         public static int DrillInAnimationTime { get; set; } = 400;
-        public static bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
+        public static bool IsBackgroundCoverEnabled { get; set; } = true; // 是否启用背景封面
         public static string equalizerStr { get; set; } = string.Empty;
         //public static bool IsPlayDetailBtnVisible { get; set; } = true;
 

@@ -123,23 +123,21 @@ namespace WinUIMusicPlayer.Services
             var cancellationToken = _lyricsCancellationTokenSource.Token;
 
             var currentMusic = AppViewModel.CurrentPlayingMusic;
-            if (currentMusic == null) return new List<LyricLine>();
+            if (currentMusic is null) return [];
 
-            List<LyricLine> lyrics = new List<LyricLine>();
-            bool needUpdateDb = false;
+            List<LyricLine> lyrics = [];
 
             // 1. 始终增加播放计数 (内存中)
             currentMusic.PlayCount++;
-            var songInMemory = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == currentMusic.Id);
-            songInMemory?.PlayCount = currentMusic.PlayCount;
-            needUpdateDb = true;
+            //var songInMemory = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == currentMusic.Id);
+            //songInMemory?.PlayCount = currentMusic.PlayCount;
 
             // 2. 确定歌词内容
             if (string.IsNullOrWhiteSpace(lrcContent))
             {
                 // 尝试从内存缓存获取
-                lrcContent = songInMemory?.Lyrics;
-                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? songInMemory?.TranslatedLyrics:transLrcStr;
+                lrcContent = currentMusic.Lyrics;
+                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? currentMusic.TranslatedLyrics:transLrcStr;
                 // 如果开启了自动歌词且缓存为空，则在线搜索
                 if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.isAutoLyricsEnabled)
                 {
@@ -151,15 +149,15 @@ namespace WinUIMusicPlayer.Services
                         if (!string.IsNullOrEmpty(lyric))
                         {
                             lrcContent = lyric;
-                            // 同步更新内存对象
+                            transLrcStr = trans;
                             currentMusic.Lyrics = lyric;
-                            currentMusic.TranslatedLyrics = trans;
-                            if (songInMemory != null)
-                            {
-                                songInMemory.Lyrics = lyric;
-                                songInMemory.TranslatedLyrics = trans;
-                            }
-                            needUpdateDb = true;
+                            currentMusic.TranslatedLyrics = trans;                            
+                            //if (songInMemory != null)
+                            //{
+                            //    songInMemory.Lyrics = lyric;
+                            //    songInMemory.TranslatedLyrics = trans;
+                            //}
+
                         }
                     }
                     catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
@@ -167,15 +165,12 @@ namespace WinUIMusicPlayer.Services
             }
 
             // 3. 统一执行一次数据库 IO
-            if (needUpdateDb)
-            {
-                await _musicDatabaseService.UpdateMusicInfo(currentMusic);
-            }
+            await _musicDatabaseService.UpdateMusicInfo(currentMusic);
 
             // 4. 返回解析结果
             if (!string.IsNullOrWhiteSpace(lrcContent))
             {
-                return SpliteContent(lrcContent,transLrcStr, lyrics);
+                return SpliteContent(lrcContent,transLrcStr,lyrics);
             }
 
             // 无歌词时的默认占位

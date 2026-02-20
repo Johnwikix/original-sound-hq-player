@@ -803,52 +803,41 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void RefreshUsbDeviceMusicList(ObservableCollection<Music> MusicList)
-        {
-            var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
-                            .GroupBy(u => u.Title)
-                            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-            foreach (var music in MusicList)
-            {
-                music.IsExistOnDevice = 0;
+        //public static void RefreshUsbDeviceMusicList(ObservableCollection<Music> MusicList)
+        //{
+        //    var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
+        //                    .GroupBy(u => u.Title)
+        //                    .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
+        //    foreach (var music in MusicList)
+        //    {
+        //        music.IsExistOnDevice = 0;
 
-                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-                {
-                    music.IsExistOnDevice = 1;
-                    foreach (var usbMusic in matchingItems)
-                    {
-                        if (music.Author == usbMusic.Author &&
-                            music.Album == usbMusic.Album &&
-                            music.Extension == usbMusic.Extension)
-                        {
-                            music.IsExistOnDevice = 2;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        //        if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
+        //        {
+        //            music.IsExistOnDevice = 1;
+        //            foreach (var usbMusic in matchingItems)
+        //            {
+        //                if (music.Author == usbMusic.Author &&
+        //                    music.Album == usbMusic.Album &&
+        //                    music.Extension == usbMusic.Extension)
+        //                {
+        //                    music.IsExistOnDevice = 2;
+        //                    break;
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
 
         public static void ClearAllUsbStatus()
         {
             App.Services.GetRequiredService<AppViewModel>().ClearUsbDevice();
-            //App.Services.GetRequiredService<SongCollectionViewModel>().ClearUsbDeviceMusicList(null, null);
-            //App.Services.GetRequiredService<SongListViewModel>().ClearUsbDeviceMusicList(null, null);            
-            //App.Services.GetRequiredService<PlayListSongViewModel>().ClearUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
-            App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
-            App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<AppViewModel>().RefreshUsbDeviceMusicList();
         }
 
         public static void RefreshAllUsbStatus()
         {
-            //App.Services.GetRequiredService<SongCollectionViewModel>().RefreshUsbDeviceMusicList(null, null);
-            //App.Services.GetRequiredService<SongListViewModel>().RefreshUsbDeviceMusicList(null, null);
-            //App.Services.GetRequiredService<FavouritePlayListViewModel>().RefreshUsbDeviceMusicList();
-            //App.Services.GetRequiredService<PlayListSongViewModel>().RefreshUsbDeviceMusicList(null, null);
-            App.Services.GetRequiredService<AlbumViewModel>().UpdateUsbIcon();
-            App.Services.GetRequiredService<ArtistViewModel>().UpdateUsbIcon();
-            App.Services.GetRequiredService<FolderViewModel>().UpdateUsbIcon();
+            App.Services.GetRequiredService<AppViewModel>().RefreshUsbDeviceMusicList();
         }
 
         public static async Task LoadImageAsync(Music music, BitmapImage bitmap, CancellationToken ct)

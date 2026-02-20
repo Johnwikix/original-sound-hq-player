@@ -705,7 +705,7 @@ namespace WinUIMusicPlayer.Services
                 playState = new SavePlayState
                 {
                     PlayMode = PlayMode.ListLoop,
-                    Volume = 0.5f,
+                    Volume = 50f,
                     LastPlayedMusicId = null
                 };
                 await _dbConnection.InsertAsync(playState);

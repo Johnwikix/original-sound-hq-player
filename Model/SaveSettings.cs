@@ -21,8 +21,8 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorRed { get; set; } = 128;
         public byte CustomColorGreen { get; set; } = 128;
         public byte CustomColorBlue { get; set; } = 128;
-        public string AppTheme { get; set; } = "Dark";
-        public double LyricsBlurAmount { get; set; } = 5;
+        public string AppTheme { get; set; } = "Default";
+        public double LyricsBlurAmount { get; set; } = 4;
         public bool isCoverCacheEnabled { get; set; } = true;
         public bool isRunningBackend { get; set; } = true;
         public bool isAutoLyricsEnabled { get; set; } = true;
@@ -37,7 +37,7 @@ namespace WinUIMusicPlayer.Model
         public int EntranceAnimationTime { get; set; } = 300;
         public int SlideAnimationTime { get; set; } = 400;
         public int DrillInAnimationTime { get; set; } = 400;
-        public bool IsBackgroundCoverEnabled { get; set; } = false; // 是否启用背景封面
+        public bool IsBackgroundCoverEnabled { get; set; } = true; // 是否启用背景封面
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;
         public int AppWidth { get; set; } = 1440;
