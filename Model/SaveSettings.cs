@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsGlobalFontSizeEnabled { get; set; } = false;
         public double GlobalFontSize { get; set; } = 32;
         public bool IsUpdateBackDrop { get; set; } = false;
-        public string LyricsAlignment { get; set; } = "Center";
+        public string LyricsAlignment { get; set; } = "Left";
         public int LyricsMargin { get; set; } = 20;
         public string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
         public bool IsWFWLyrics { get; set; } = true;
