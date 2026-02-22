@@ -74,10 +74,10 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            if (App.MainWindow is not null)
-            {
-                App.MainWindow.updateMusicList += MainWindow_updateMusicList;
-            }
+            //if (App.MainWindow is not null)
+            //{
+            //    App.MainWindow.updateMusicList += MainWindow_updateMusicList;
+            //}
             equalizerDialog = new EqualizerDialog();
             equalizerDialog.EqualizerGainChanged += (s, frequency) =>
             {
@@ -206,11 +206,11 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.IsAcrylicBrushOpacity = ViewModel.AppViewModel.MusicDetailCover is not null && ViewModel.AppViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
         }
 
-        public async void MainWindow_updateMusicList(object? sender, EventArgs e)
-        {
-            //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-            await ViewModel.AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
-        }
+        //public async void MainWindow_updateMusicList(object? sender, EventArgs e)
+        //{
+        //    //AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
+        //    await ViewModel.AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+        //}
 
         private void SelectBarItem(string name)
         {
@@ -276,7 +276,8 @@ namespace WinUIMusicPlayer.View
                     _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
-                    App.MainWindow.UpdateMusicList();
+                    //App.MainWindow.UpdateMusicList();
+                    App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
                 }
                 else
                 {

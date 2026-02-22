@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TagLib.Ape;
 using WinUIMusicPlayer.Extensions;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -90,7 +91,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        //public bool IsSortComboBoxVisible { get; set => SetProperty(ref field, value); } = true;
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
@@ -387,32 +387,6 @@ namespace WinUIMusicPlayer.ViewModel
             catch { }
         }
 
-        //public async Task AddToFavourite(Music music)
-        //{
-        //    music.IsFavorite = !music.IsFavorite;
-        //    await _musicDatabaseService.AddToFavourite(music);
-        //    if (CurrentPlayingMusic?.Id == music.Id)
-        //    {
-        //        CurrentPlayingMusic.IsFavorite = music.IsFavorite;
-        //    }
-        //}
-
-        //public void AddToCurrentPlayList(IEnumerable<Music> uniqueSelectedMusics)
-        //{
-        //    int index = GetCurrentIndex();
-
-        //    if (index != -1 && uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
-        //    {
-        //        var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-        //        var newMusicsToAdd = uniqueSelectedMusics.AsValueEnumerable()
-        //            .Where(music => !existingIds.Contains(music.Id)).ToList();
-        //        for (int i = newMusicsToAdd.Count - 1; i >= 0; i--)
-        //        {
-        //            CurrentPlayingList.Insert(index + 1, newMusicsToAdd[i]);
-        //        }
-        //    }
-        //}
-
         public void AddMusicToCurrentPlayList(Music music)
         {
             int index = GetCurrentIndex();
@@ -466,37 +440,6 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
             App.Services.GetRequiredService<MusicBrowsePage>().UpdateViewList();
         }
-
-        //public void RefreshFavoriteMapping()
-        //{
-        //    var query = AllSongs.Where(m => m.IsFavorite == true);
-        //    if (!string.IsNullOrWhiteSpace(SearchText))
-        //    {
-        //        query = query.Where(m =>
-        //            (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-        //            (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-        //            (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
-        //    }
-        //    IEnumerable<Music> sortedQuery = SelectedSortOption?.Tag switch
-        //    {
-        //        "A-Z" => query.OrderBy(m => m.Title),
-        //        "Artist" => query.OrderBy(m => m.Author),
-        //        "Album" => query.OrderBy(m => m.Album),
-        //        "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
-        //        "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
-        //        "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
-        //        "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
-        //        "DefaultOrder" => query.OrderByDescending(m => m.Order),
-        //        _ => query.OrderByDescending(m => m.Order)
-        //    };
-        //    // 3. 转化为 List 执行查询
-        //    var results = sortedQuery.ToList();
-        //    FavoriteSongs.Clear();
-        //    foreach (var music in results)
-        //    {
-        //        FavoriteSongs.Add(music);
-        //    }
-        //}
 
         public void RefreshPlayListSongMapping()
         {
@@ -566,102 +509,7 @@ namespace WinUIMusicPlayer.ViewModel
             Artist,
             Folder,
             Favorite
-        }
-
-        //private void UpdateViewSort(AdvancedCollectionView view, SongViewType viewType)
-        //{
-        //    using (view.DeferRefresh())
-        //    {
-        //        view.SortDescriptions.Clear();
-
-        //        // 获取用户选择的基础排序方案
-        //        var tag = SelectedSortOption.Tag?.ToString();
-
-        //        // 逻辑拆分：如果是“默认排序”，根据视图类型走差异化逻辑
-        //        if (tag == "DefaultOrder")
-        //        {
-        //            ApplyDefaultSort(view, viewType);
-        //        }
-        //        else
-        //        {
-        //            // 其他通用排序逻辑
-        //            var (propertyName, direction) = tag switch
-        //            {
-        //                "A-Z" => (nameof(Music.Title), SortDirection.Ascending),
-        //                "Artist" => (nameof(Music.Author), SortDirection.Ascending),
-        //                "Album" => (nameof(Music.Album), SortDirection.Ascending),
-        //                "CreateTimeASC" => (nameof(Music.CreateTime), SortDirection.Ascending),
-        //                "CreateTimeDESC" => (nameof(Music.CreateTime), SortDirection.Descending),
-        //                "UpdateTimeASC" => (nameof(Music.UpdateTime), SortDirection.Ascending),
-        //                "UpdateTimeDESC" => (nameof(Music.UpdateTime), SortDirection.Descending),
-        //                _ => (nameof(Music.Title), SortDirection.Ascending)
-        //            };
-        //            view.SortDescriptions.Add(new SortDescription(propertyName, direction));
-        //        }
-        //    }
-        //}
-
-        //// 3. 处理差异化的默认排序（无反射）
-        //private void ApplyDefaultSort(AdvancedCollectionView view, SongViewType viewType)
-        //{
-        //    switch (viewType)
-        //    {
-        //        case SongViewType.Album:
-        //            // 专辑视图：按轨道号排序
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-        //            break;
-        //        case SongViewType.Artist:
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-        //            break;
-        //        case SongViewType.Folder:
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Album), SortDirection.Ascending));
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.TrackNumber), SortDirection.Ascending));
-        //            break;
-        //        default:
-        //            view.SortDescriptions.Add(new SortDescription(nameof(Music.Title), SortDirection.Ascending));
-        //            break;
-        //    }
-        //}
-
-        //private void UpdateCollectionSort(ObservableCollection<Music> collection)
-        //{
-        //    if (collection == null || !collection.Any()) return;
-
-        //    // 1. 定义排序键提取器 (直接指向 Music 属性)
-        //    Func<Music, object> keySelector = SelectedSortOption.Tag switch
-        //    {
-        //        "A-Z" => m => m.Title,
-        //        "Artist" => m => m.Author,
-        //        "Album" => m => m.Album,
-        //        "CreateTimeASC" => m => m.CreateTime,
-        //        "CreateTimeDESC" => m => m.CreateTime,
-        //        "UpdateTimeASC" => m => m.UpdateTime,
-        //        "UpdateTimeDESC" => m => m.UpdateTime,
-        //        "DefaultOrder" => m => m.Order,
-        //        _ => m => m.Title
-        //    };
-
-        //    // 2. 统一判断升降序
-        //    bool isAscending = SelectedSortOption.Tag switch
-        //    {
-        //        "CreateTimeDESC" or "UpdateTimeDESC" or "DefaultOrder" => false,
-        //        _ => true
-        //    };
-
-        //    // 3. 执行排序
-        //    var sortedList = isAscending
-        //        ? collection.OrderBy(keySelector).ToList()
-        //        : collection.OrderByDescending(keySelector).ToList();
-
-        //    // 4. 更新原集合 (触发 UI 刷新)
-        //    collection.Clear();
-        //    foreach (var item in sortedList)
-        //    {
-        //        collection.Add(item);
-        //    }
-        //}
-
+        } 
         private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
         {
             if (collection == null || !collection.Any()) return;
@@ -715,6 +563,12 @@ namespace WinUIMusicPlayer.ViewModel
         public void RemoveFromFavoriteSongs(Music music)
         {
             FavoriteSongs.Remove(music);
+        }
+
+        public void RefreshAllSongs() {
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () => {
+                _ = AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+            });
         }
 
         public void RemoveFromAllSongs(Music music)
@@ -828,6 +682,40 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch {
             }
+        }
+
+        public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice)
+        {
+            if (selectedMusics.Any())
+            {
+                App.Services.GetRequiredService<MusicBrowsePage>().ShowTransmission();
+                using (var usbWriter = new UsbWriterHelper())
+                {
+                    usbWriter.hideTransmission += (sender, args) =>
+                    {
+                        App.Services.GetRequiredService<MusicBrowsePage>().HideTransmission();
+                    };
+                    await usbWriter.WriteToUsb(selectedMusics, usbDevice);
+                }
+                foreach (var music in selectedMusics)
+                {
+                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                    if (existingMusic is not null)
+                    {
+                        continue; // 如果已经存在，则跳过
+                    }
+                    UsbDeviceMusic usbDeviceMusic = new()
+                    {
+                        Title = music.Title,
+                        Author = music.Author,
+                        Album = music.Album,
+                        Extension = music.Extension,
+                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                    };
+                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                }
+            }
+            RefreshUsbDeviceMusicList();
         }
     }
 }

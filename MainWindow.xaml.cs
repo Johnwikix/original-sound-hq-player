@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer
 {
     public sealed partial class MainWindow : WinUIEx.WindowEx, INotifyPropertyChanged
     {
-        public event EventHandler updateMusicList;
+        //public event EventHandler updateMusicList;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             //SetTitleBar(AppTitleBar);
-            setWindow();
+            SetWindow();
             AppData.m_hWnd = m_hwnd;
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
@@ -100,7 +100,7 @@ namespace WinUIMusicPlayer
             InitializeTaskbarHelper();
         }
 
-        private void setWindow()
+        private void SetWindow()
         {
             this.SetIcon("Assets/icon.ico");
             Title = ToolUtils.GetString("AppMainTitle");
@@ -199,7 +199,7 @@ namespace WinUIMusicPlayer
                 var longOpsTask = Task.Run(async () =>
                 {
                     await InitialFileScan.InitialScan();
-                    await LoadMusicList();
+                    await MusicDatabaseService.LoadMusicList();
                 });
                 await Task.Delay(500);
                 App.Services.GetRequiredService<IpcService>().Initializing();
@@ -275,59 +275,52 @@ namespace WinUIMusicPlayer
             _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
         }
 
-        public void UpdateMusicList()
-        {
-            updateMusicList?.Invoke(this, EventArgs.Empty);
-        }
+        //public void UpdateMusicList()
+        //{
+        //    updateMusicList?.Invoke(this, EventArgs.Empty);
+        //}
 
-        public async Task LoadMusicList()
-        {
-            await MusicDatabaseService.LoadMusicList();
-        }
-
-        public void RefreshDevice()
-        {
-            try
-            {
-                List<BassOutputDevice> BassOutputDevices = [];
-                int n = BassWasapi.DeviceCount;
-                for (int i = 0; i < n; i++)
-                {
-                    if (BassWasapi.GetDeviceInfo(i, out WasapiDeviceInfo deviceInfo))
-                    {
-                        if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
-                        {
-                            if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
-                            {
-                                Debug.WriteLine($"{deviceInfo.Name}: {i}");
-                                BassOutputDevices.Add(new BassOutputDevice
-                                {
-                                    Name = deviceInfo.Name,
-                                    Id = i
-                                });
-                            }
-                        }
-                    }
-                }
-                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
-                if (device is null)
-                {
-                    AppSettings.DeviceName = ToolUtils.GetString("DefaultDevice");
-                    AppSettings.BassOutputDeviceId = -1;
-                }
-                else
-                {
-                    AppSettings.DeviceName = device.Name;
-                    AppSettings.BassOutputDeviceId = device.Id;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"À¢–¬“Ù∆µ…Ë±∏ ß∞‹: {ex.Message}");
-            }
-        }
-
-
+        //public void RefreshDevice()
+        //{
+        //    try
+        //    {
+        //        List<BassOutputDevice> BassOutputDevices = [];
+        //        int n = BassWasapi.DeviceCount;
+        //        for (int i = 0; i < n; i++)
+        //        {
+        //            if (BassWasapi.GetDeviceInfo(i, out WasapiDeviceInfo deviceInfo))
+        //            {
+        //                if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
+        //                {
+        //                    if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
+        //                    {
+        //                        Debug.WriteLine($"{deviceInfo.Name}: {i}");
+        //                        BassOutputDevices.Add(new BassOutputDevice
+        //                        {
+        //                            Name = deviceInfo.Name,
+        //                            Id = i
+        //                        });
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName);
+        //        if (device is null)
+        //        {
+        //            AppSettings.DeviceName = ToolUtils.GetString("DefaultDevice");
+        //            AppSettings.BassOutputDeviceId = -1;
+        //        }
+        //        else
+        //        {
+        //            AppSettings.DeviceName = device.Name;
+        //            AppSettings.BassOutputDeviceId = device.Id;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"À¢–¬“Ù∆µ…Ë±∏ ß∞‹: {ex.Message}");
+        //    }
+        //}
 
         public void InitializeTaskbarHelper()
         {
@@ -399,14 +392,6 @@ namespace WinUIMusicPlayer
         {
             App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
         }
-
-        //public void DisableEnableBackButton(bool isEnable = false)
-        //{
-        //    //DispatcherQueue.TryEnqueue(() =>
-        //    //{
-        //    //    NavigationViewControl.IsBackEnabled = isEnable;
-        //    //});
-        //}
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {

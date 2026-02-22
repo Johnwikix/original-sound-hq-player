@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -111,7 +112,8 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task RescanFolder()
         {
             await AppViewModel.RescanFolder(SelectedItem);
-            App.MainWindow?.UpdateMusicList();
+            App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
+            //App.MainWindow?.UpdateMusicList();
         }
 
         [RelayCommand]
@@ -156,36 +158,7 @@ namespace WinUIMusicPlayer.ViewModel
             var folders = AppViewModel.AllSongs
                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.LastLevelFolderPath);
-            if (folders.Any())
-            {
-                parentPage?.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        parentPage?.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(folders, usbDevice);
-                }
-                foreach (var music in folders)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+            await AppViewModel.TransmitFileToUsb(folders, usbDevice);
         }
     }
 }

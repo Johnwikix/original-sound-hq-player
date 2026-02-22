@@ -26,16 +26,13 @@ namespace WinUIMusicPlayer.ViewModel
         public string SecondTitle { get; set => SetProperty(ref field, value); }
         public string ThirdTitle { get; set => SetProperty(ref field, value); }
         private MusicBrowsePage? _parentPage { get; }
-        private MusicBrowseViewModel? _musicBrowseViewModel{ get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private SongCollectionPage _currentPage{ get; set; }        
        
-        public SongCollectionViewModel(MusicBrowsePage parent, MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public SongCollectionViewModel(MusicBrowsePage parent,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             _parentPage = parent;
-            //_parentPage.refreshSong += RefreshSong;
-            _musicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitalizeOption();
@@ -318,36 +315,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
-            if (SelectedMusics.Count > 0)
-            {
-                _parentPage?.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        _parentPage?.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(SelectedMusics, usbDevice);
-                }
-                foreach (var music in SelectedMusics)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+            await AppViewModel.TransmitFileToUsb(SelectedMusics, usbDevice);
         }
     }
 }

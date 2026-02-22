@@ -309,37 +309,9 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice) {
-            if (SelectedMusics.Count > 0)
-            {
-                parentPage.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        parentPage.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(SelectedMusics, usbDevice);
-                }
-                foreach (var music in SelectedMusics)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        {
+            await AppViewModel.TransmitFileToUsb(SelectedMusics, usbDevice);
         }
     }
 }

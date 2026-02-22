@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 namespace WinUIMusicPlayer.Services
@@ -122,10 +123,11 @@ namespace WinUIMusicPlayer.Services
 
                 if (changeCount > 0)
                 {
-                    App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        App.MainWindow.UpdateMusicList();
-                    });
+                    //App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+                    //{
+                    //    App.MainWindow.UpdateMusicList();
+                    //});
+                    App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
                 }
             }
             catch (Exception ex)

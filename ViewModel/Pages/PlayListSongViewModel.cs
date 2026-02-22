@@ -36,7 +36,6 @@ namespace WinUIMusicPlayer.ViewModel
             _parentPage = parent;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
-            //_parentPage.refreshPage += RefreshPlayList;
             InitalizeOption();
         }
         private void InitalizeOption()
@@ -353,36 +352,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
-            if (SelectedMusics.Count > 0)
-            {
-                _parentPage?.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        _parentPage?.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(SelectedMusics.Select(x=>x.Music), usbDevice);
-                }
-                foreach (var music in SelectedMusics)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Music.Title,
-                        Author = music.Music.Author,
-                        Album = music.Music.Album,
-                        Extension = music.Music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+            await AppViewModel.TransmitFileToUsb(SelectedMusics.Select(x=>x.Music), usbDevice);
         }
     }
 }

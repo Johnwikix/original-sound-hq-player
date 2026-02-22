@@ -1269,10 +1269,11 @@ namespace WinUIMusicPlayer.Services
             }
             if (isUpdate)
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    App.MainWindow.UpdateMusicList();
-                });
+                //App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                //{
+                //    App.MainWindow.UpdateMusicList();
+                //});
+                App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
             }
         }
 

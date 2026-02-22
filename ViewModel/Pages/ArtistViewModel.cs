@@ -102,19 +102,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private void PlayingArtist(object? sender, Music e)
-        {
-            List<Music> artists = (_musicDatabaseService.GetArtistMusicFromMem(e.Author)).AsValueEnumerable().OrderBy(m => m.Album).ToList();
-            if (artists is not null && artists.Count > 0)
-            {
-                if (parentPage is not null)
-                {
-                    AppViewModel.SequentialPlayingList = new(artists);
-                    parentPage.PlayMusic(music: artists[0], IsChangeList: true);
-                }
-            }
-        }
-
         [RelayCommand]
         private void Play()
         {
@@ -157,36 +144,7 @@ namespace WinUIMusicPlayer.ViewModel
             var artists = AppViewModel.AllSongs
                 .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.Album);
-            if (artists.Any())
-            {
-                parentPage?.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        parentPage?.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(artists, usbDevice);
-                }
-                foreach (var music in artists)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+            await AppViewModel.TransmitFileToUsb(artists, usbDevice);
         }
     }
 }

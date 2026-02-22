@@ -149,36 +149,7 @@ namespace WinUIMusicPlayer.ViewModel
             var albums = AppViewModel.AllSongs
                 .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber);
-            if (albums.Any())
-            {
-                parentPage?.ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        parentPage?.HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(albums, usbDevice);
-                }
-                foreach (var music in albums)
-                {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
-                    };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            AppViewModel.RefreshUsbDeviceMusicList();
+            await AppViewModel.TransmitFileToUsb(albums, usbDevice);
         }
     }
 }
