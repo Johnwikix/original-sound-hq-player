@@ -34,12 +34,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        //public void SortMusicList(string sortOrder = "DefaultOrder")
-        //{
-        //    //ViewModel.SortMusicList(sortOrder);
-        //}
-
-
         private void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var frameworkElement = e.OriginalSource as FrameworkElement;
@@ -49,11 +43,6 @@ namespace WinUIMusicPlayer.View
             }
             e.Handled = true;
         }
-
-        //public void OnAlbumDetailChanged(object sender, Music cover)
-        //{
-        //    //ViewModel.OnAlbumDetailChanged(sender, cover);
-        //}
 
         private void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)
         {

@@ -21,7 +21,6 @@ namespace WinUIMusicPlayer.View
         public ArtistPage(ArtistViewModel viewModel)
         {
             ViewModel = viewModel;
-            //ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
         }
@@ -37,7 +36,6 @@ namespace WinUIMusicPlayer.View
 
         private void Artist_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            //ViewModel.Artist_RightTapped(sender, e);
             var frameworkElement = e.OriginalSource as FrameworkElement;
             if (frameworkElement?.DataContext is Music clickedItem)
             {

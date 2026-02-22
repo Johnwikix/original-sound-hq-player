@@ -370,6 +370,7 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 AppData.usbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
+                AppViewModel.UpDateUsbDeviceMenuflyout();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     if (AppData.usbStorageDevices.Count > 0)

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -62,6 +63,27 @@ namespace WinUIMusicPlayer.ViewModel
             MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutDeleteItem"), Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand });
         }
 
+        public void UpDateUsbDeviceMenuflyout()
+        {
+            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            if (AppData.usbStorageDevices.Count == 0)
+            {
+                if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
+                return;
+            }
+            if (usbFlyout is null)
+            {
+                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
+                MenuOptions.Add(usbFlyout);
+            }
+            usbFlyout.Children.Clear();
+            foreach (var usb in AppData.usbStorageDevices)
+            {
+                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
+            }
+        }
+
         public void UpdateAlbumMenuOptionsPlayList()
         {
             var option = MenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
@@ -79,10 +101,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            //AppViewModel.IsSortComboBoxVisible = true;
             UpdateMusicListView();
             App.MainWindow.IsBackBtnEnable = false;
-            //RefreshUsbDeviceMusicList(null, null);
         }
 
         public async Task<bool> IsDeleteFromDisk()
@@ -94,22 +114,6 @@ namespace WinUIMusicPlayer.ViewModel
             return await _parentPage.AreUSureDeleteFromDisk();
         }
 
-        public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
-        {
-
-            //App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            //{
-            //    foreach (var music in MusicList)
-            //    {
-            //        music.IsExistOnDevice = 0;
-            //    }
-            //});
-        }
-
-        public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
-        {
-            //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
-        }
 
         public void UpdateMusicListView()
         {
@@ -296,6 +300,41 @@ namespace WinUIMusicPlayer.ViewModel
         public void AddMusicToCurrentPlayList(Music music)
         {
             AppViewModel.AddMusicToCurrentPlayList(music);
+        }
+
+        [RelayCommand]
+        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        {
+            if (SelectedMusics.Count > 0)
+            {
+                _parentPage?.ShowTransmission();
+                using (var usbWriter = new UsbWriterHelper())
+                {
+                    usbWriter.hideTransmission += (sender, args) =>
+                    {
+                        _parentPage?.HideTransmission();
+                    };
+                    await usbWriter.WriteToUsb(SelectedMusics, usbDevice);
+                }
+                foreach (var music in SelectedMusics)
+                {
+                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                    if (existingMusic is not null)
+                    {
+                        continue; // 如果已经存在，则跳过
+                    }
+                    UsbDeviceMusic usbDeviceMusic = new()
+                    {
+                        Title = music.Title,
+                        Author = music.Author,
+                        Album = music.Album,
+                        Extension = music.Extension,
+                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                    };
+                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                }
+            }
+            AppViewModel.RefreshUsbDeviceMusicList();
         }
     }
 }

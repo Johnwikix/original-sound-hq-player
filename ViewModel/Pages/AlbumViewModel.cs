@@ -13,8 +13,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using TagLib.Ape;
 using Windows.Media.Playlists;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -56,16 +58,31 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpdateUsbIcon()
+        public void UpDateUsbDeviceMenuflyout()
         {
-            //ToolUtils.RefreshIcon(MusicList, "album");
+            var usbFlyout = AlbumMenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            if (AppData.usbStorageDevices.Count == 0)
+            {
+                if (usbFlyout is not null) AlbumMenuOptions.Remove(usbFlyout);
+                return;
+            }
+            if (usbFlyout is null)
+            {
+                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
+                AlbumMenuOptions.Add(usbFlyout);
+            }
+            usbFlyout.Children.Clear();
+            foreach (var usb in AppData.usbStorageDevices)
+            {
+                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
+            }
         }
 
         public void ReceiveNavigation()
         {
             AppViewModel.CurrentAlbumObj = null;
             AppViewModel.PageType = "albumBrowse";
-            //AppViewModel.IsSortComboBoxVisible = false;
             App.MainWindow.IsBackBtnEnable = false;
         }
         
@@ -124,6 +141,44 @@ namespace WinUIMusicPlayer.ViewModel
               .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
               .OrderBy(m => m.TrackNumber);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
+        }
+
+        [RelayCommand]
+        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        {
+            var albums = AppViewModel.AllSongs
+                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.TrackNumber);
+            if (albums.Any())
+            {
+                parentPage?.ShowTransmission();
+                using (var usbWriter = new UsbWriterHelper())
+                {
+                    usbWriter.hideTransmission += (sender, args) =>
+                    {
+                        parentPage?.HideTransmission();
+                    };
+                    await usbWriter.WriteToUsb(albums, usbDevice);
+                }
+                foreach (var music in albums)
+                {
+                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                    if (existingMusic is not null)
+                    {
+                        continue; // 如果已经存在，则跳过
+                    }
+                    UsbDeviceMusic usbDeviceMusic = new()
+                    {
+                        Title = music.Title,
+                        Author = music.Author,
+                        Album = music.Album,
+                        Extension = music.Extension,
+                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                    };
+                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                }
+            }
+            AppViewModel.RefreshUsbDeviceMusicList();
         }
     }
 }

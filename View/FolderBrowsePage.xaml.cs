@@ -21,7 +21,6 @@ namespace WinUIMusicPlayer.View
         public FolderBrowsePage(FolderViewModel viewModel)
         {
             ViewModel = viewModel;
-            //ViewModel.SetCurrentPage(this);
             this.InitializeComponent();
             DataContext = this;
         }
@@ -38,7 +37,6 @@ namespace WinUIMusicPlayer.View
 
         private void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            //ViewModel.Folder_RightTapped(sender, e);
             var frameworkElement = e.OriginalSource as FrameworkElement;
             if (frameworkElement?.DataContext is Music clickedItem)
             {

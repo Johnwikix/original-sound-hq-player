@@ -72,18 +72,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.MusicListView_DoubleTapped(selectedMusic);
         }
 
-        private IEnumerable<Music> GetUniqueSelectedItems()
-        {
-            var selectedItems = MusicListView.SelectedItems;
-            foreach (var item in selectedItems)
-            {
-                if (item is Music music)
-                {
-                    yield return music;
-                }
-            }
-        }
-
         private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var frameworkElement = e.OriginalSource as FrameworkElement;

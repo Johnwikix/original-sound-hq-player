@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -27,50 +28,21 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        //private FolderBrowsePage? currentPage { get; set; }
-        //private ContextMenuService _contextMenuService { get; }
+
 
         public FolderViewModel(MusicBrowsePage parent, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             parentPage = parent;
-            //_contextMenuService = contextMenuService;
-            //_contextMenuService.playingFolderMusic += PlayingFolder;
-            //_contextMenuService.rescanFolderEnd += RescanFolderEnd;
-            //_contextMenuService.showTransmission += (s, eventArgs) =>
-            //{
-            //    if (parentPage is not null)
-            //    {
-            //        parentPage.ShowTransmission();
-            //    }
-            //};
-            //_contextMenuService.hideTransmission += (s, eventArgs) =>
-            //{
-            //    if (parentPage is not null)
-            //    {
-            //        parentPage.HideTransmission();
-            //    }
-            //};
             _musicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitalizeOption();
         }
 
-        public void UpdateUsbIcon()
-        {
-            //ToolUtils.RefreshIcon(MusicList, "folder");
-        }
-
-        //public void SetCurrentPage(FolderBrowsePage page)
-        //{
-        //    currentPage = page;
-        //}
-
         public void ReceiveNavigation()
         {
             AppViewModel.CurrentFolderObj = null;
             AppViewModel.PageType = "folderBrowse";
-            //AppViewModel.IsSortComboBoxVisible = false;
         }
 
         private void InitalizeOption()
@@ -88,6 +60,27 @@ namespace WinUIMusicPlayer.ViewModel
             foreach (var item in AppViewModel.AllPlayList)
             {
                 option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
+            }
+        }
+
+        public void UpDateUsbDeviceMenuflyout()
+        {
+            var usbFlyout = FolderMenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            if (AppData.usbStorageDevices.Count == 0)
+            {
+                if (usbFlyout is not null) FolderMenuOptions.Remove(usbFlyout);
+                return;
+            }
+            if (usbFlyout is null)
+            {
+                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
+                FolderMenuOptions.Add(usbFlyout);
+            }
+            usbFlyout.Children.Clear();
+            foreach (var usb in AppData.usbStorageDevices)
+            {
+                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
             }
         }
 
@@ -114,28 +107,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        //public async void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        //{
-        //    var originalSource = e.OriginalSource as FrameworkElement;
-        //    GridViewItem clickedItem = ToolUtils.FindParent<GridViewItem>(originalSource);
-
-        //    if (clickedItem is not null)
-        //    {
-        //        var folder = clickedItem.Content as Music;
-
-        //        if (folder is not null)
-        //        {
-        //            await _contextMenuService.ShowAlbumContextMenu(
-        //                folder,
-        //                originalSource,
-        //                e.GetPosition(originalSource),
-        //                "folder"
-        //            );
-        //        }
-        //    }
-
-        //    e.Handled = true;
-        //}
         [RelayCommand]
         private async Task RescanFolder()
         {
@@ -177,6 +148,44 @@ namespace WinUIMusicPlayer.ViewModel
                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.LastLevelFolderPath);
             _ = _musicDatabaseService.AddMusicListToPlayList(folders, playListId);
+        }
+
+        [RelayCommand]
+        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        {
+            var folders = AppViewModel.AllSongs
+               .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
+               .OrderBy(m => m.LastLevelFolderPath);
+            if (folders.Any())
+            {
+                parentPage?.ShowTransmission();
+                using (var usbWriter = new UsbWriterHelper())
+                {
+                    usbWriter.hideTransmission += (sender, args) =>
+                    {
+                        parentPage?.HideTransmission();
+                    };
+                    await usbWriter.WriteToUsb(folders, usbDevice);
+                }
+                foreach (var music in folders)
+                {
+                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                    if (existingMusic is not null)
+                    {
+                        continue; // 如果已经存在，则跳过
+                    }
+                    UsbDeviceMusic usbDeviceMusic = new()
+                    {
+                        Title = music.Title,
+                        Author = music.Author,
+                        Album = music.Album,
+                        Extension = music.Extension,
+                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                    };
+                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                }
+            }
+            AppViewModel.RefreshUsbDeviceMusicList();
         }
     }
 }

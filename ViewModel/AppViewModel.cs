@@ -732,6 +732,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public void UpDateUsbDeviceMenuflyout() {
+            App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<SongArtistViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<SongCollectionViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<SongFolderListViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<PlayListSongViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<AlbumViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<ArtistViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<FolderViewModel>().UpDateUsbDeviceMenuflyout();
+        }
+
+
         public void ClearUsbDevice()
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -782,18 +795,6 @@ namespace WinUIMusicPlayer.ViewModel
                     await _musicDatabaseService.UpdateMusicInfo(item);
                 }
             }
-            //else
-            //{
-            //    if (selectedMusic is null) return;
-            //    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(selectedMusic);
-            //    Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == selectedMusic.Id).FirstOrDefault();
-            //    if (music is not null)
-            //    {
-            //        music.Lyrics = lyrics;
-            //        music.TranslatdeLyrics = transLrc;
-            //        await _musicDatabaseService.UpdateMusicInfo(music);
-            //    }
-            //}
         }
 
         public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
