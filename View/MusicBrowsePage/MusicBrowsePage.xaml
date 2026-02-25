@@ -347,46 +347,61 @@
                                             x:Name="MusicInfoPanel"
                                             Grid.Column="0"
                                             Margin="5">
-                                            <RichTextBlock
-                                                x:Name="PlayingDetailTitleTextBlock"
-                                                Margin="1"
-                                                HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                                                FontSize="22"
-                                                FontWeight="Bold"
-                                                TextAlignment="Left"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap">
-                                                <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}" VerticalOffset="10" />
-                                                </ToolTipService.ToolTip>
-                                            </RichTextBlock>
-                                            <RichTextBlock
-                                                x:Name="PlayingDetailAlbumTextBlock"
-                                                Margin="0,2,0,1"
-                                                HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                                                FontSize="16"
-                                                TextAlignment="Left"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap">
-                                                <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}" VerticalOffset="10" />
-                                                </ToolTipService.ToolTip>
-                                            </RichTextBlock>
-                                            <RichTextBlock
-                                                x:Name="PlayingDetailArtistTextBlock"
-                                                Margin="0,2,0,1"
-                                                HorizontalAlignment="Left"
-                                                helper:RichTextBlockHelper.Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                                                FontSize="16"
-                                                TextAlignment="Left"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap">
-                                                <ToolTipService.ToolTip>
-                                                    <ToolTip Content="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}" VerticalOffset="10" />
-                                                </ToolTipService.ToolTip>
-                                            </RichTextBlock>
+                                            <dev:AutoScrollView
+                                                Margin="0"
+                                                Padding="0"
+                                                IsPlaying="False"
+                                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                                PointerEntered="AutoScrollHover_PointerEntered"
+                                                PointerExited="AutoScrollHover_PointerExited">
+                                                <TextBlock
+                                                    x:Name="PlayingDetailTitleTextBlock"
+                                                    Margin="0,1,0,1"
+                                                    HorizontalAlignment="Left"
+                                                    FontSize="22"
+                                                    FontWeight="Bold"
+                                                    IsTextSelectionEnabled="True"
+                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                                    TextAlignment="Left"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
+                                            </dev:AutoScrollView>
+                                            <dev:AutoScrollView
+                                                Margin="0"
+                                                Padding="0"
+                                                IsPlaying="False"
+                                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                                PointerEntered="AutoScrollHover_PointerEntered"
+                                                PointerExited="AutoScrollHover_PointerExited">
+                                                <TextBlock
+                                                    x:Name="PlayingDetailAlbumTextBlock"
+                                                    Margin="0,2,0,1"
+                                                    HorizontalAlignment="Left"
+                                                    FontSize="16"
+                                                    IsTextSelectionEnabled="True"
+                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                                    TextAlignment="Left"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
+                                            </dev:AutoScrollView>
+                                            <dev:AutoScrollView
+                                                Margin="0"
+                                                Padding="0"
+                                                IsPlaying="False"
+                                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                                PointerEntered="AutoScrollHover_PointerEntered"
+                                                PointerExited="AutoScrollHover_PointerExited">
+                                                <TextBlock
+                                                    x:Name="PlayingDetailArtistTextBlock"
+                                                    Margin="0,2,0,1"
+                                                    HorizontalAlignment="Left"
+                                                    FontSize="16"
+                                                    IsTextSelectionEnabled="True"
+                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                                    TextAlignment="Left"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
+                                            </dev:AutoScrollView>
                                             <Grid Margin="0,2,0,1" HorizontalAlignment="Left">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
@@ -397,6 +412,7 @@
                                                     Grid.Column="0"
                                                     Margin="0,0,10,0"
                                                     FontSize="12"
+                                                    IsTextSelectionEnabled="True"
                                                     Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
                                                 <Image
                                                     x:Name="PlayingDetailHRImage"
