@@ -948,6 +948,7 @@
                                         <TextBlock
                                             x:Name="MusicTitleTextBlock"
                                             FontSize="18"
+                                            IsTextSelectionEnabled="True"
                                             FontWeight="Bold"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis" />

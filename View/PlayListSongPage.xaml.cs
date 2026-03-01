@@ -172,5 +172,6 @@ namespace WinUIMusicPlayer.View
                 autoScrollView.IsPlaying = false;
             }
         }
+
     }
 }

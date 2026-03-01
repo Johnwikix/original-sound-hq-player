@@ -19,38 +19,6 @@
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
-                    <!--<MenuFlyout x:Name="menuFlyout">
-                        <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
-                        <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
-                        <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertWavItem"
-                                Click="ConvertAudio_Click"
-                                Tag="wav" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertMp3Item"
-                                Click="ConvertAudio_Click"
-                                Tag="mp3" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertFlacItem"
-                                Click="ConvertAudio_Click"
-                                Tag="flac" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertOggItem"
-                                Click="ConvertAudio_Click"
-                                Tag="ogg" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertOpusItem"
-                                Click="ConvertAudio_Click"
-                                Tag="opus" />
-                        </MenuFlyoutSubItem>
-                        <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
-                        <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click" />
-                    </MenuFlyout>-->
                 </Setter.Value>
             </Setter>
         </Style>
@@ -112,22 +80,36 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock
-                    x:Name="TitleTextBlock"
+                <dev:AutoScrollView
                     Grid.Row="0"
                     Margin="20,0,10,0"
-                    FontSize="30"
-                    FontWeight="Bold"
-                    Text="{x:Bind ViewModel.AppViewModel.CurrentArtistObj.Author, Mode=OneWay}"
-                    TextTrimming="CharacterEllipsis" />
-                <TextBlock
-                    x:Name="SecondaryTitleTextBlock"
+                    IsPlaying="False"
+                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                    PointerEntered="AutoScrollHover_PointerEntered"
+                    PointerExited="AutoScrollHover_PointerExited">
+                    <TextBlock
+                        x:Name="TitleTextBlock"
+                        FontSize="30"
+                        FontWeight="Bold"
+                        IsTextSelectionEnabled="True"
+                        Text="{x:Bind ViewModel.AppViewModel.CurrentArtistObj.Author, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                </dev:AutoScrollView>
+                <dev:AutoScrollView
                     Grid.Row="1"
                     Margin="20,0,10,0"
                     VerticalAlignment="Bottom"
-                    FontSize="20"
-                    Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
-                    TextTrimming="CharacterEllipsis" />
+                    IsPlaying="False"
+                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                    PointerEntered="AutoScrollHover_PointerEntered"
+                    PointerExited="AutoScrollHover_PointerExited">
+                    <TextBlock
+                        x:Name="SecondaryTitleTextBlock"
+                        FontSize="20"
+                        IsTextSelectionEnabled="True"
+                        Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                </dev:AutoScrollView>
                 <TextBlock
                     x:Name="ThirdTitleTextBlock"
                     Grid.Row="2"
@@ -135,6 +117,7 @@
                     VerticalAlignment="Center"
                     FontSize="14"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    IsTextSelectionEnabled="True"
                     Text="{x:Bind ViewModel.ThirdTitle, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <Grid

@@ -5,9 +5,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
+    xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
     <Page.Resources>
@@ -111,22 +111,36 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock
-                    x:Name="TitleTextBlock"
+                <dev:AutoScrollView
                     Grid.Row="0"
                     Margin="20,0,10,0"
-                    FontSize="30"
-                    FontWeight="Bold"
-                    Text="{x:Bind ViewModel.AppViewModel.CurrentAlbumObj.Album, Mode=OneWay}"
-                    TextTrimming="CharacterEllipsis" />
-                <TextBlock
-                    x:Name="SecondaryTitleTextBlock"
+                    IsPlaying="False"
+                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                    PointerEntered="AutoScrollHover_PointerEntered"
+                    PointerExited="AutoScrollHover_PointerExited">
+                    <TextBlock
+                        x:Name="TitleTextBlock"
+                        FontSize="30"
+                        FontWeight="Bold"
+                        IsTextSelectionEnabled="True"
+                        Text="{x:Bind ViewModel.AppViewModel.CurrentAlbumObj.Album, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                </dev:AutoScrollView>
+                <dev:AutoScrollView
                     Grid.Row="1"
                     Margin="20,0,10,0"
                     VerticalAlignment="Bottom"
-                    FontSize="20"
-                    Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
-                    TextTrimming="CharacterEllipsis" />
+                    IsPlaying="False"
+                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                    PointerEntered="AutoScrollHover_PointerEntered"
+                    PointerExited="AutoScrollHover_PointerExited">
+                    <TextBlock
+                        x:Name="SecondaryTitleTextBlock"
+                        FontSize="20"
+                        IsTextSelectionEnabled="True"
+                        Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                </dev:AutoScrollView>
                 <TextBlock
                     x:Name="ThirdTitleTextBlock"
                     Grid.Row="2"
@@ -134,6 +148,7 @@
                     VerticalAlignment="Center"
                     FontSize="14"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    IsTextSelectionEnabled="True"
                     Text="{x:Bind ViewModel.ThirdTitle, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis" />
                 <Grid
