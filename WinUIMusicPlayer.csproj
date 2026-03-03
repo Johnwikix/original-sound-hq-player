@@ -125,8 +125,8 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.3" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.9.0" />
-    <PackageReference Include="z440.atl.core" Version="7.9.0" />
-    <PackageReference Include="ZLinq" Version="1.5.4" />
+    <PackageReference Include="z440.atl.core" Version="7.11.0" />
+    <PackageReference Include="ZLinq" Version="1.5.5" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\SettingsPage.xaml">
