@@ -9,6 +9,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
@@ -912,7 +913,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private async void ChangeCoverCacheLocation()
+        private async Task ChangeCoverCacheLocation()
         {
             var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
             PickFolderResult folder = await folderPicker.PickSingleFolderAsync();
@@ -943,6 +944,15 @@ namespace WinUIMusicPlayer.ViewModel
         private void OpenMainGitHub()
         {
             _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/original-sound-hq-player"));
+        }
+        [RelayCommand]
+        private async Task OpenCoverCacheLocation() {
+            var folder = await StorageFolder.GetFolderFromPathAsync(MusicCoverCache);
+            var options = new FolderLauncherOptions
+            {
+                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
+            };
+            await Launcher.LaunchFolderAsync(folder, options);
         }
     }
 }

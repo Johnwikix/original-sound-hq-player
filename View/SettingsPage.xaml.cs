@@ -1,6 +1,8 @@
+using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using Windows.System;
@@ -77,6 +79,30 @@ namespace WinUIMusicPlayer.View
                 FallbackUri = new Uri("ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7")
             };
             _ = Launcher.LaunchUriAsync(new Uri(storeUri), options);
+        }
+
+        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = true;
+            }
+        }
+
+        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -209,19 +210,27 @@
                                 Value="{x:Bind ViewModel.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverDiskCache">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock
-                                    Width="300"
+                            <StackPanel Width="300" Orientation="Horizontal">
+                                <Button                                    
                                     Margin="0,0,10,0"
-                                    VerticalAlignment="Center"
-                                    Text="{x:Bind ViewModel.MusicCoverCache, Mode=OneWay}"
-                                    TextAlignment="Right"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="NoWrap">
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip Content="{x:Bind ViewModel.MusicCoverCache, Mode=OneWay}" VerticalOffset="10" />
-                                    </ToolTipService.ToolTip>
-                                </TextBlock>
+                                    Command="{x:Bind ViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
+                                    <Button.Content>
+                                        <dev:AutoScrollView
+                                            Grid.Row="0"
+                                            Margin="0,0,10,0"
+                                            IsPlaying="False"
+                                            PointerCanceled="AutoScrollHover_PointerCanceled"
+                                            PointerEntered="AutoScrollHover_PointerEntered"
+                                            PointerExited="AutoScrollHover_PointerExited">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind ViewModel.MusicCoverCache, Mode=OneWay}"
+                                                TextAlignment="Right"
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="NoWrap" />
+                                        </dev:AutoScrollView>
+                                    </Button.Content>
+                                </Button>
                                 <Button x:Uid="ChangeMusicCoverCache" Command="{x:Bind ViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
                             </StackPanel>
                         </controls:SettingsCard>

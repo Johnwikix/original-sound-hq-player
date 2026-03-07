@@ -841,21 +841,72 @@ namespace WinUIMusicPlayer.Utils
         }
 
         public static async Task LoadImageAsync(Music music, BitmapImage bitmap, CancellationToken ct)
-        {            
+        {
             await Task.Run(async () =>
             {
                 try
                 {
                     if (ct.IsCancellationRequested) return;
 
+                    // ===== 磁盘缓存读取 =====
+                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
+                    {
+                        string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+                        // 用音乐路径的hash作为缓存文件名，避免特殊字符和冲突
+                        string cacheFileName = Convert.ToHexString(
+                            System.Security.Cryptography.MD5.HashData(
+                                System.Text.Encoding.UTF8.GetBytes(music.Path))) + ".png";
+                        string cachePath = Path.Combine(cacheFolder, cacheFileName);
+
+                        if (Directory.Exists(cacheFolder) && System.IO.File.Exists(cachePath))
+                        {
+                            try
+                            {
+                                var cacheFileInfo = new FileInfo(cachePath);
+                                // 获取music的基准时间（UpdateTime优先，否则用CreateTime）
+                                DateTime musicTime = music.UpdateTime != default
+                                    ? music.UpdateTime
+                                    : music.CreateTime;
+
+                                // 缓存文件修改时间比music更新
+                                if (cacheFileInfo.LastWriteTime > musicTime)
+                                {
+                                    // 检查缓存图片宽度是否与CoverSize匹配
+                                    uint cacheWidth = 0;
+                                    using (var cacheStream = System.IO.File.OpenRead(cachePath))
+                                    {
+                                        var cacheRas = cacheStream.AsRandomAccessStream();
+                                        var cacheDecoder = await BitmapDecoder.CreateAsync(cacheRas);
+                                        cacheWidth = cacheDecoder.PixelWidth;
+                                    }
+
+                                    if (cacheWidth == (uint)AppSettings.CoverSize)
+                                    {
+                                        // 缓存有效，直接加载
+                                        var cacheBytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
+                                        if (!ct.IsCancellationRequested)
+                                        {
+                                            await LoadFromCacheBytes(cacheBytes, music.Album, bitmap, ct);
+                                            return; // 缓存命中，直接返回
+                                        }
+                                    }
+                                    // 宽度不匹配 → 继续走原始读取流程，之后会更新缓存
+                                }
+                            }
+                            catch { /* 缓存读取失败，继续原始流程 */ }
+                        }
+                    }
+                    // ===== 磁盘缓存读取结束 =====
+
                     byte[]? picture = null;
                     if (music.Extension.ToLower() == "dff")
                     {
                         var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                        picture = res?.Pictures?.AsValueEnumerable().Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                        picture = res?.Pictures?.AsValueEnumerable().Count() > 0
+                            ? res?.Pictures[0]?.ImageData : null;
                         if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                         {
-                            await DecodePicture(picture, music.Album, bitmap, ct);
+                            await DecodePicture(picture, music, bitmap, ct);
                         }
                     }
                     else
@@ -866,7 +917,7 @@ namespace WinUIMusicPlayer.Utils
                             picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
                             if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                             {
-                                await DecodePicture(picture, music.Album, bitmap, ct);
+                                await DecodePicture(picture, music, bitmap, ct);
                             }
                         }
                     }
@@ -876,16 +927,17 @@ namespace WinUIMusicPlayer.Utils
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (Exception) {
-                    try {
+                catch (Exception)
+                {
+                    try
+                    {
                         byte[]? picture = null;
                         Track track = new(music.Path);
                         picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
-                            ? track?.EmbeddedPictures[0]?.PictureData
-                            : null;
+                            ? track?.EmbeddedPictures[0]?.PictureData : null;
                         if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
                         {
-                            await DecodePicture(picture, music.Album, bitmap, ct);
+                            await DecodePicture(picture, music, bitmap, ct);
                         }
                         if (!ct.IsCancellationRequested)
                         {
@@ -895,13 +947,47 @@ namespace WinUIMusicPlayer.Utils
                     catch (OperationCanceledException) { }
                     catch
                     {
-                        try
-                        {
-                            await GetPicFromNet(null, music, bitmap, ct);
-                        }
+                        try { await GetPicFromNet(null, music, bitmap, ct); }
                         catch { }
                     }
                 }
+            }, ct);
+        }
+
+        /// <summary>
+        /// 直接从缓存字节加载到BitmapImage（无需缩放，缓存已是目标尺寸）
+        /// </summary>
+        private static async Task LoadFromCacheBytes(byte[] cacheBytes, string album, BitmapImage bitmap, CancellationToken ct)
+        {
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    var outputStream = new InMemoryRandomAccessStream();
+                    await outputStream.WriteAsync(cacheBytes.AsBuffer());
+                    outputStream.Seek(0);
+
+                    if (ct.IsCancellationRequested)
+                    {
+                        outputStream.Dispose();
+                        return;
+                    }
+
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
+                        try
+                        {
+                            await bitmap.SetSourceAsync(outputStream);
+                            if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                            {
+                                AppData.albumCoverCache.TryAdd(album, bitmap);
+                            }
+                        }
+                        finally { outputStream.Dispose(); }
+                    });
+                }
+                catch (OperationCanceledException) { }
             }, ct);
         }
 
@@ -938,7 +1024,7 @@ namespace WinUIMusicPlayer.Utils
                     if (picture is not null)
                     {
                         if (ct.IsCancellationRequested) return;
-                        await DecodePicture(picture, music.Album, bitmap, ct);
+                        await DecodePicture(picture, music, bitmap, ct);
                     }
                 }
             }
@@ -976,7 +1062,10 @@ namespace WinUIMusicPlayer.Utils
             return picture;
         }
 
-        private static async Task DecodePicture(byte[] picture, string album, BitmapImage bitmap, CancellationToken ct)
+        /// <summary>
+        /// 解码图片，缩放到CoverSize，设置到BitmapImage，并保存磁盘缓存
+        /// </summary>
+        private static async Task DecodePicture(byte[] picture, Music music, BitmapImage bitmap, CancellationToken ct)
         {
             await Task.Run(async () =>
             {
@@ -987,24 +1076,18 @@ namespace WinUIMusicPlayer.Utils
                     {
                         await stream.WriteAsync(picture.AsBuffer());
                         stream.Seek(0);
-
                         if (ct.IsCancellationRequested) return;
 
-                        // 解码
                         var decoder = await BitmapDecoder.CreateAsync(stream);
-
-                        // 直接在解码时缩放（更高效）
                         double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
                         uint newWidth = (uint)AppSettings.CoverSize;
                         uint newHeight = (uint)(newWidth / aspectRatio);
-
                         var transform = new BitmapTransform
                         {
                             ScaledWidth = newWidth,
                             ScaledHeight = newHeight,
                             InterpolationMode = BitmapInterpolationMode.Fant
                         };
-
                         softwareBitmap = await decoder.GetSoftwareBitmapAsync(
                             BitmapPixelFormat.Bgra8,
                             BitmapAlphaMode.Premultiplied,
@@ -1013,54 +1096,62 @@ namespace WinUIMusicPlayer.Utils
                             ColorManagementMode.DoNotColorManage
                         );
 
-                        if (ct.IsCancellationRequested)
-                        {
-                            softwareBitmap?.Dispose();
-                            return;
-                        }
+                        if (ct.IsCancellationRequested) { softwareBitmap?.Dispose(); return; }
 
-                        // 编码到新stream
+                        // 编码为PNG
                         var outputStream = new InMemoryRandomAccessStream();
                         var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outputStream);
                         encoder.SetSoftwareBitmap(softwareBitmap);
                         await encoder.FlushAsync();
                         outputStream.Seek(0);
 
-                        if (ct.IsCancellationRequested)
-                        {
-                            outputStream?.Dispose();
-                            return;
-                        }
+                        if (ct.IsCancellationRequested) { outputStream?.Dispose(); return; }
 
-                        // 在UI线程设置
+                        // ===== 保存/更新磁盘缓存 =====
+                        if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
+                        {
+                            try
+                            {
+                                string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+                                Directory.CreateDirectory(cacheFolder); // 不存在则创建
+
+                                string cacheFileName = Convert.ToHexString(
+                                    System.Security.Cryptography.MD5.HashData(
+                                        System.Text.Encoding.UTF8.GetBytes(music.Path))) + ".png";
+                                string cachePath = Path.Combine(cacheFolder, cacheFileName);
+
+                                // 将outputStream内容写入磁盘
+                                outputStream.Seek(0);
+                                using (var fileStream = System.IO.File.Open(cachePath, FileMode.Create, FileAccess.Write))
+                                {
+                                    var buffer = new byte[outputStream.Size];
+                                    await outputStream.AsStream().ReadExactlyAsync(buffer, 0, buffer.Length, ct);
+                                    await fileStream.WriteAsync(buffer, ct);
+                                }
+                                outputStream.Seek(0);
+                            }
+                            catch { /* 缓存写入失败不影响主流程 */ }
+                        }
+                        // ===== 磁盘缓存保存结束 =====
+
                         App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
                         {
-                            if (ct.IsCancellationRequested)
-                            {
-                                outputStream?.Dispose();
-                                return;
-                            }
-
+                            if (ct.IsCancellationRequested) { outputStream?.Dispose(); return; }
                             try
                             {
                                 await bitmap.SetSourceAsync(outputStream);
-                                if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                                if (!AppData.UnknownAlbums.Contains(music.Album)
+                                    && AppSettings.isCoverCacheEnabled)
                                 {
-                                    AppData.albumCoverCache.TryAdd(album, bitmap);
+                                    AppData.albumCoverCache.TryAdd(music.Album, bitmap);
                                 }
                             }
-                            finally
-                            {
-                                outputStream?.Dispose();
-                            }
+                            finally { outputStream?.Dispose(); }
                         });
                     }
                 }
                 catch (OperationCanceledException) { }
-                finally
-                {
-                    softwareBitmap?.Dispose();
-                }
+                finally { softwareBitmap?.Dispose(); }
             }, ct);
         }
 
