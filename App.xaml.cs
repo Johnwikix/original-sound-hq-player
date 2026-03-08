@@ -16,6 +16,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Pages;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -66,6 +67,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
                  services.AddSingleton<SettingsPage>();
+                 services.AddSingleton<PlayingDetailPage>();
                  services.AddSingleton<FavouritePlayListPage>();
                  services.AddSingleton<AlbumPage>();
                  services.AddSingleton<ArtistPage>();
@@ -91,6 +93,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SongCollectionViewModel>();
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
+                 services.AddSingleton<PlayingDetailViewModel>();
                  //services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();

@@ -35,49 +35,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject
-    {
-        public bool IsUserDraggingProgressSlider
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                }
-            }
-        } = false;
-
-        public double ProgressSlider
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    HandleProgressSliderChange(value);
-                }
-            }
-        } = 0;
-
-        private async void HandleProgressSliderChange(double value)
-        {
-            if (IsMouseOverProgressBar)
-            {
-                if (!IsUserDraggingProgressSlider)
-                {
-                    double currentPlayPosition = await _musicPlaybackService.GetCurrentPosition();
-                    if (Math.Abs(value - currentPlayPosition) > 2.0)
-                    {
-                        _ = Task.Run(() =>
-                        {
-                            isManualSelect = true;
-                            _musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                            isManualSelect = false;
-                        });
-                    }
-                }
-            }
-        }
+    {       
 
         public SelectorBarItem SelectedPage
         {
@@ -89,25 +47,7 @@ namespace WinUIMusicPlayer.ViewModel
                     OnSelectionChanged();
                 }
             }
-        }
-
-        public bool IsPlaying
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    _musicBrowsePage.BeginOrPauseLyricImgAnimation(value);
-                }
-            }
-        } = false;
-
-        public bool IsMouseOverProgressBar
-        {
-            get;
-            set => SetProperty(ref field, value);
-        } = false;
+        }       
        
 
         private ProgressDialog _progressDialog { get; set; }
@@ -123,13 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
         private DeviceWatcher deviceWatcher;
         private List<FileSystemWatcher> watchers = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
-        private System.Timers.Timer progressTimer;
-        private TimeSpan _totalTime;
-        private TimeSpan _currentTime;
-        public bool isManualSelect = false;
-        private readonly StringBuilder _timeStringBuilder = new StringBuilder(16);
-        public LyricsRefreshService LyricsRefreshService { get; set; }
-        public TimeSpan LyricsDurationTime = TimeSpan.Zero;
+        //public LyricsRefreshService LyricsRefreshService { get; set; }
         public AppViewModel AppViewModel { get;}
         private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel(SystemMediaControlsService systemMediaControlsService,AppViewModel  appViewModel,MusicDatabaseService musicDatabaseService,AudioConverterService converterService)
@@ -150,8 +84,7 @@ namespace WinUIMusicPlayer.ViewModel
                 StartWatchingFileFolder();
             }
             StartWatchingUsbStorageDevices();
-            progressTimer = new System.Timers.Timer(200);
-            progressTimer.Elapsed += ProgressTimer_Elapsed;
+
         }
 
         private void OnConverterProgressUpdated(object sender, double progress)
@@ -240,69 +173,7 @@ namespace WinUIMusicPlayer.ViewModel
             _musicPlaybackService.UpdateSettings();
         }
 
-        public void StartProgressTimer()
-        {
-            progressTimer?.Start();
-        }
-        public void StopProgressTimer()
-        {
-            progressTimer?.Stop();
-        }
-
-        private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
-        {
-            try
-            {
-                if (!IsUserDraggingProgressSlider)
-                {
-                    UpdateProgressTimerUI();
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        public async void UpdateProgressTimerUI()
-        {
-            try
-            {
-                _totalTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetTotalPosition());
-                _currentTime = TimeSpan.FromSeconds(await _musicPlaybackService.GetCurrentPosition());
-                _timeStringBuilder.Clear();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (!isManualSelect)
-                    {
-                        try
-                        {
-                            ProgressSlider = _currentTime.TotalSeconds;
-                            AppViewModel.ProgressSliderMax = _totalTime.TotalSeconds;
-                            if (_totalTime.TotalHours >= 1)
-                            {
-                                AppViewModel.PlayTimeText = _timeStringBuilder
-                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", _currentTime, _totalTime)
-                                    .ToString();
-                            }
-                            else
-                            {
-                                AppViewModel.PlayTimeText = _timeStringBuilder
-                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", _currentTime, _totalTime)
-                                    .ToString();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                    }
-                });
-                LyricsRefreshService.UpdateLyrics(_currentTime);
-                _systemMediaControlsService.UpdateTimelineProperties(_currentTime, _totalTime);
-            }
-            catch {
-            }            
-        }
+       
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
@@ -531,10 +402,10 @@ namespace WinUIMusicPlayer.ViewModel
             InitializeDatabase();
         }
 
-        public void SetLyricsService(LyricsRefreshService lyricsRefreshService)
-        {
-            LyricsRefreshService = lyricsRefreshService;
-        }
+        //public void SetLyricsService(LyricsRefreshService lyricsRefreshService)
+        //{
+        //    LyricsRefreshService = lyricsRefreshService;
+        //}
 
         private async void InitializeDatabase()
         {
@@ -556,67 +427,21 @@ namespace WinUIMusicPlayer.ViewModel
             if (AppViewModel.CurrentPlayingMusic is not null)
             {
                 UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
-                LoadLyricsToUI();
+                AppViewModel.LoadLyricsToUI();
             }
             _musicPlaybackService.isInitializing = false;
-        }
-
-        public async void LoadLyricsToUI()
-        {
-            AppViewModel.LastLyricIndex = -1;
-            AppViewModel.UILyrics.Clear();
-            // 设置播放服务中的歌词
-            await LyricsRefreshService?.SetLyrics();
-            // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = LyricsRefreshService.Lyrics;
-            foreach (var lyric in parsedLyrics)
-            {
-                AppViewModel.UILyrics.Add(lyric);
-            }
-        }
-
-        public void UpdateLyricsToUI(int index)
-        {
-            if (AppViewModel.LastLyricIndex == index)
-                return;
-            TimeSpan duration = TimeSpan.Zero;
-            if (index >= 0 && index < AppViewModel.UILyrics.Count)
-            {
-                int nextIndex = index + 1;
-                if (nextIndex < AppViewModel.UILyrics.Count)
-                {
-                    TimeSpan currentTime = AppViewModel.UILyrics[index].Time;
-                    TimeSpan nextTime = AppViewModel.UILyrics[nextIndex].Time;
-                    LyricsDurationTime = nextTime.Subtract(currentTime);
-                }
-            }
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-            {
-                try
-                {
-                    for (int i = 0; i < AppViewModel.UILyrics.Count; i++)
-                    {
-                        AppViewModel.UILyrics[i].IsCurrent = (i == index);
-                    }
-                    AppViewModel.LastLyricIndex = index;
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"更新歌词失败: {ex.Message}");
-                }
-            });
-        }
+        }       
 
         public async void UpdatePlayBar(Music music)
         {
             var albumCoverData = await ToolUtils.GetRawImage(music);
             BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-            await UpdateCover(albumCoverData);
+            await AppViewModel.UpdateCover(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 AppViewModel.MusicDetailCover = DetailCover;
-                _musicBrowsePage.ChangeAcrylicBrushBackgroundOpacity();
+                //App.Services.GetRequiredService<PlayingDetailPage>().ChangeAcrylicBrushBackgroundOpacity();
             });
             _systemMediaControlsService.UpdateSystemMediaControlsState();
             _systemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
@@ -627,48 +452,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (AppViewModel.CurrentPlayingMusic is null) return;
             var albumCoverData = await ToolUtils.GetRawImage(AppViewModel.CurrentPlayingMusic);
-            await UpdateCover(albumCoverData);
+            await AppViewModel.UpdateCover(albumCoverData);
         }
-
-        private async Task UpdateCover(byte[] cover)
-        {
-            try
-            {
-                if (cover != null)
-                {
-                    bool isDarkMode = true;
-                    if (AppSettings.AppTheme == "Light")
-                    {
-                        isDarkMode = false;
-                    }
-                    else if (AppSettings.AppTheme == "Default")
-                    {
-                        // 注意：GetIsLightTheme() 最好是同步方法
-                        isDarkMode = !GetIsLightTheme();
-                    }
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async() =>
-                    {
-                        AppViewModel.LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
-                    });
-                    
-                }
-                else
-                {
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        AppViewModel.LyricPageBackgroundSource = null;
-                    });                    
-                }
-            }
-            catch
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                {
-                    AppViewModel.LyricPageBackgroundSource = null;
-                });
-            }
-        }
-
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {
             _musicBrowsePage = musicBrowsePage;
@@ -756,10 +541,10 @@ namespace WinUIMusicPlayer.ViewModel
             });
         }
 
-        public void ShowPlayingDetail()
-        {
-            _musicBrowsePage.ShowPlayingDetail();
-        }
+        //public void ShowPlayingDetail()
+        //{
+        //    _musicBrowsePage.ShowPlayingDetail();
+        //}
 
 
         private void PlayLastTrack()
@@ -778,20 +563,14 @@ namespace WinUIMusicPlayer.ViewModel
 
             }
         }
-        //[RelayCommand]
-        //private async Task OnPlayBarFavouriteButtonChanged()
-        //{
-        //    await AppViewModel.AddToFavourite(AppViewModel.CurrentPlayingMusic);
-        //    NotifySubPageUpdateFavouriteState();
-        //    AppData.allSongs = await _musicDatabaseService.GetMusicListAsync();
-        //}
+
 
         [RelayCommand]
         private void OnStopButtonChanged()
         {
             _musicPlaybackService.MusicEnd();
             UpdatePlayPauseButtonIcon();
-            ProgressSlider = 0;
+            AppViewModel.ProgressSlider = 0;
         }
         [RelayCommand]
         private void OnFastForwardButton()
@@ -805,7 +584,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public async void AdjustPlaybackPosition(int seconds)
         {
-            ProgressSlider = await _musicPlaybackService.AdjustPlaybackPosition(seconds);
+            AppViewModel.ProgressSlider = await _musicPlaybackService.AdjustPlaybackPosition(seconds);
         }
         [RelayCommand]
         private void OnVolumeSliderIconButtonChanged()
@@ -817,20 +596,15 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnVolumeUpChanged()
         {
-            AdjustVolume(1);
+            AppViewModel.AdjustVolume(1);
         }
         [RelayCommand]
         private void OnVolumeDownChanged()
         {
-            AdjustVolume(-1);
+            AppViewModel.AdjustVolume(-1);
         }
 
-        public void AdjustVolume(int delta)
-        {
-            double newVolume = AppViewModel.Volume + delta;
-            newVolume = Math.Max(0, Math.Min(newVolume, 100));
-            AppViewModel.Volume = newVolume;
-        }
+
         [RelayCommand]
         private void OnFullScreenButtonChanged()
         {

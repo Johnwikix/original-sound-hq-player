@@ -219,7 +219,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             var translateAnimation = new DoubleAnimation()
             {
-                From = 500,
+                From = ContentFrame.ActualHeight,
                 To = 0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = _easingFunction
@@ -240,6 +240,116 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             storyboard.Children.Add(translateAnimation);
             storyboard.Children.Add(opacityAnimation);
+             storyboard.Completed += (s, e) =>
+                {
+                    ContentFrame.RenderTransform = null;
+                    ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                };
+            storyboard.Begin();
+        }
+
+        public void DirectDisplay(Type pageType, int animeTime = 300)
+        {
+            if (ContentFrame is null) return;
+
+            if (_registeredPages.TryGetValue(pageType, out var resolvedType))
+            {
+                var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
+                ContentFrame.Content = pageInstance;
+                ContentFrame.Visibility = Visibility.Visible;
+                var storyboard = new Storyboard();
+                var opacityAnimation = new DoubleAnimation()
+                {
+                    From = 0,
+                    To = 1,
+                    Duration = TimeSpan.FromMilliseconds(animeTime)
+                };
+                Storyboard.SetTarget(opacityAnimation, pageInstance);
+                Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+                storyboard.Children.Add(opacityAnimation);
+                storyboard.Completed += (s, e) =>
+                {
+                    ContentFrame.RenderTransform = null;
+                    ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                };
+                storyboard.Begin();
+            }
+        }
+
+        public void Show(Type pageType, int animeTime = 300)
+        {
+            if (ContentFrame is null) return;
+
+            if (_registeredPages.TryGetValue(pageType, out var resolvedType))
+            {
+                var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
+                pageInstance?.Opacity = 0;
+                ContentFrame.Content = pageInstance;
+                ContentFrame.Visibility = Visibility.Visible;
+                var storyboard = new Storyboard();
+                var translateTransform = new TranslateTransform() { Y = 50 };
+                ContentFrame.RenderTransform = translateTransform;
+
+                var slideAnimation = new DoubleAnimation()
+                {
+                    From = ContentFrame.ActualHeight,
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(animeTime),
+                    EasingFunction = _easingFunction
+                };
+
+                var opacityAnimation = new DoubleAnimation()
+                {
+                    From = 0,
+                    To = 1,
+                    Duration = TimeSpan.FromMilliseconds(animeTime)
+                };
+
+                Storyboard.SetTarget(slideAnimation, translateTransform);
+                Storyboard.SetTargetProperty(slideAnimation, "Y");
+                Storyboard.SetTarget(opacityAnimation, pageInstance);
+                Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+                storyboard.Children.Add(slideAnimation);
+                storyboard.Children.Add(opacityAnimation);
+
+                storyboard.Completed += (s, e) =>
+                {
+                    ContentFrame.RenderTransform = null;
+                    ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                };
+
+                storyboard.Begin();
+            }
+        }
+
+        public void Dismiss(int animeTime = 300)
+        {
+            if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed) return;
+
+            var storyboard = new Storyboard();
+            var translateTransform = new TranslateTransform();
+            ContentFrame.RenderTransform = translateTransform;
+
+            var slideAnimation = new DoubleAnimation()
+            {
+                From = 0,
+                To = ContentFrame.ActualHeight,
+                Duration = TimeSpan.FromMilliseconds(animeTime),
+                EasingFunction = _easingFunction
+            };
+
+            Storyboard.SetTarget(slideAnimation, translateTransform);
+            Storyboard.SetTargetProperty(slideAnimation, "Y");
+            storyboard.Children.Add(slideAnimation);
+
+            storyboard.Completed += (s, e) =>
+            {
+                ContentFrame.Visibility = Visibility.Collapsed;
+                ContentFrame.Content = null;
+                ContentFrame.RenderTransform = null;
+                ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+            };
+
             storyboard.Begin();
         }
 

@@ -37,13 +37,12 @@ namespace WinUIMusicPlayer.View
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
-    {
-        private bool isMouseOverVolumeSlider = false;
+    {        
         private NotificationService notificationService;
         private readonly INavigationService _navigationService;
-        private EqualizerDialog equalizerDialog;
-        private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
-        private Storyboard? _lyricImgRTAni;
+        //private EqualizerDialog EqualizerDialog;
+        
+
         private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
@@ -55,7 +54,7 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             ViewModel = viewModel;            
-            ViewModel.SetLyricsService(lyricsRefreshService);
+            //ViewModel.SetLyricsService(lyricsRefreshService);
             ViewModel.SetMusicService(musicPlaybackService);
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
@@ -74,31 +73,26 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            //if (App.MainWindow is not null)
+            //EqualizerDialog = new EqualizerDialog();
+            //EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
             //{
-            //    App.MainWindow.updateMusicList += MainWindow_updateMusicList;
-            //}
-            equalizerDialog = new EqualizerDialog();
-            equalizerDialog.EqualizerGainChanged += (s, frequency) =>
-            {
-                int feq = FrequencyIndexMap[frequency];
-                musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            };
-            equalizerDialog.clearEqualizer += (s, e) =>
-            {
-                musicPlaybackService.UpdateSettings();
-                if (AppSettings.IsEqualizerEnabled)
-                {
-                    musicPlaybackService.ToggleEqualizer();
-                    musicPlaybackService.SetEqualizer();
-                }
-                else
-                {
-                    musicPlaybackService.ClearEqualizer();
-                }
-            };
+            //    int feq = FrequencyIndexMap[frequency];
+            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+            //};
+            //EqualizerDialog.clearEqualizer += (s, e) =>
+            //{
+            //    musicPlaybackService.UpdateSettings();
+            //    if (AppSettings.IsEqualizerEnabled)
+            //    {
+            //        musicPlaybackService.ToggleEqualizer();
+            //        musicPlaybackService.SetEqualizer();
+            //    }
+            //    else
+            //    {
+            //        musicPlaybackService.ClearEqualizer();
+            //    }
+            //};
             this.notificationService = notificationService;
-            SetAcrylicBrushBackground();
             this.Loaded += OnPageLoaded;
         }
 
@@ -131,79 +125,9 @@ namespace WinUIMusicPlayer.View
             return false;
         }
 
-        public void BeginOrPauseLyricImgAnimation(bool play)
-        {
-            var transformTarget = ContentGridBrushTransform;
-
-            if (_lyricImgRTAni == null)
-            {
-                double currentAngle = transformTarget.Rotation;
-                _lyricImgRTAni = new Storyboard
-                {
-                    RepeatBehavior = RepeatBehavior.Forever
-                };
-                var rotationAnimation = new DoubleAnimation
-                {
-                    From = currentAngle,
-                    To = currentAngle + 360,
-                    Duration = new Duration(TimeSpan.FromSeconds(67)),
-                    EnableDependentAnimation = true
-                };
-                Storyboard.SetTarget(rotationAnimation, transformTarget);
-                Storyboard.SetTargetProperty(rotationAnimation, "Rotation"); 
-                _lyricImgRTAni.Children.Add(rotationAnimation);
-                _lyricImgRTAni.Begin();
-            }
-            else
-            {
-                if (play)
-                {
-                    _lyricImgRTAni.Resume();
-                }
-                else
-                {
-                    _lyricImgRTAni.Pause();
-                }
-            }
-        }
-
-        public void DisposeLyricImgAnimation()
-        {
-            if (_lyricImgRTAni != null)
-            {
-                _lyricImgRTAni.Stop();
-                _lyricImgRTAni = null;
-            }
-        }
-
-        private void SetAcrylicBrushBackground()
-        {
-
-            ChangeAcrylicBrushBackground();
-            ChangeAcrylicBrushBackgroundOpacity();
-        }
-
-        public void ChangeAcrylicBrushBackground()
-        {
-
-            if (((FrameworkElement)App.MainWindow!.Content).ActualTheme == ElementTheme.Dark)
-            {
-                acrylicBrush.TintColor = Colors.Black;
-            }
-            else
-            {
-                acrylicBrush.TintColor = Colors.White;
-            }            
-        }
-
         public void ThemeChangedUpdateCover()
         {
             ViewModel.ThemeChangedUpdateCover();
-        }
-
-        public void ChangeAcrylicBrushBackgroundOpacity()
-        {
-            ViewModel.AppViewModel.IsAcrylicBrushOpacity = ViewModel.AppViewModel.MusicDetailCover is not null && ViewModel.AppViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled ? true : false;
         }
 
         //public async void MainWindow_updateMusicList(object? sender, EventArgs e)
@@ -397,9 +321,9 @@ namespace WinUIMusicPlayer.View
                             DispatcherQueue.TryEnqueue(() =>
                             {
                                 CurrentPlayListView.SelectedItem = selectedMusic;
-                                CurrentPlayListViewPlayingDetail.SelectedItem = selectedMusic;
+                                //CurrentPlayListViewPlayingDetail.SelectedItem = selectedMusic;
                                 CurrentPlayListView.ScrollIntoView(selectedMusic);
-                                CurrentPlayListViewPlayingDetail.ScrollIntoView(selectedMusic);
+                                //CurrentPlayListViewPlayingDetail.ScrollIntoView(selectedMusic);
                             });
                         });
                     }
@@ -450,12 +374,12 @@ namespace WinUIMusicPlayer.View
             {
                 ViewModel.AppViewModel.CurrentPlayingMusic = music;                
                 ViewModel.UpdatePlayBar(ViewModel.AppViewModel.CurrentPlayingMusic);
-                ViewModel.LoadLyricsToUI();
+                ViewModel.AppViewModel.LoadLyricsToUI();
                 UpdateViewList();
                 UpdateCurrentPlayList();
                 ViewModel._musicPlaybackService.PlayMusic(music);
-                ViewModel.UpdateProgressTimerUI();
-                ViewModel.LyricsRefreshService.ResetLyrics();                
+                ViewModel.AppViewModel.UpdateProgressTimerUI();
+                App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();                
             }
             catch (Exception ex)
             {
@@ -465,22 +389,22 @@ namespace WinUIMusicPlayer.View
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            isMouseOverVolumeSlider = true;
+            ViewModel.AppViewModel.IsMouseOverVolumeSlider = true;
         }
 
         private void VolumeSlider_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            isMouseOverVolumeSlider = false;
+            ViewModel.AppViewModel.IsMouseOverVolumeSlider = false;
         }
 
         private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.IsMouseOverProgressBar = true;
+            ViewModel.AppViewModel.IsMouseOverProgressBar = true;
         }
 
         private void ProgressSlider_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.IsMouseOverProgressBar = false;
+            ViewModel.AppViewModel.IsMouseOverProgressBar = false;
         }
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
@@ -491,30 +415,19 @@ namespace WinUIMusicPlayer.View
                 thumb.DragCompleted += Thumb_DragCompleted;
             }
         }
-        private void ProgressSliderPlayingDetail_Loaded(object sender, RoutedEventArgs e)
-        {
-            var thumb = FindVisualChild<Thumb>(ProgressSliderPlayingDetail);
-            if (thumb is not null)
-            {
-                thumb.DragStarted += Thumb_DragStarted;
-                thumb.DragCompleted += Thumb_DragCompleted;
-            }
-        }
-
-
 
         private void VolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            if (isMouseOverVolumeSlider)
+            if (ViewModel.AppViewModel.IsMouseOverVolumeSlider)
             {
                 var delta = e.GetCurrentPoint(VolumeSlider).Properties.MouseWheelDelta;
                 if (delta > 0)
                 {
-                    ViewModel.AdjustVolume(1);
+                    ViewModel.AppViewModel.AdjustVolume(1);
                 }
                 else if (delta < 0)
                 {
-                    ViewModel.AdjustVolume(-1);
+                    ViewModel.AppViewModel.AdjustVolume(-1);
                 }
                 e.Handled = true;
             }
@@ -540,104 +453,107 @@ namespace WinUIMusicPlayer.View
 
         private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
         {
-            ViewModel.IsUserDraggingProgressSlider = true;
+            ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
         }
 
         private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
-            ViewModel.IsUserDraggingProgressSlider = false;
-            double newPosition = Math.Max(0, Math.Min(ViewModel.ProgressSlider, await ViewModel._musicPlaybackService.GetTotalPosition()));
+            ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
+            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, await ViewModel._musicPlaybackService.GetTotalPosition()));
             _ = Task.Run(() =>
             {
-                ViewModel.isManualSelect = true;
+                ViewModel.AppViewModel.IsManualSelect = true;
                 ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
-                ViewModel.isManualSelect = false;
+                ViewModel.AppViewModel.IsManualSelect = false;
             });
         }
 
         private void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
         {
-            ShowPlayingDetail();
+            //ShowPlayingDetail();
+            AppData.IsPlayingDetail = true;
+            App.MainWindow.NavigationViewCollapsed();
+            App.MainWindow.NavigateToPlayingDetailPage();
         }
 
-        public void ShowPlayingDetail()
-        {
-            if (!ViewModel.AppViewModel.IsInPlayingDetailMode && ViewModel.AppViewModel.CurrentPlayingMusic is not null)
-            {
-                ViewModel.AppViewModel.IsInPlayingDetailMode = true;
-                AppData.IsPlayingDetail = true;
-                App.MainWindow.NavigationViewCollapsed();
-                App.MainWindow?.AppTitleBarVisibility(false);
-                ChangeAcrylicBrushBackgroundOpacity();
-                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
-                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
-                ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("ControlBarToDetail", BottomControlBar);
-                //ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
-                TopPanel.Visibility = Visibility.Collapsed;
-                ContentFrame.Visibility = Visibility.Collapsed;
-                AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
-                ViewModel.AppViewModel.InfoBarIsOpen = false;
-                PlayingDetail.Visibility = Visibility.Visible;
-                BottomControlBar.Visibility = Visibility.Collapsed;
-                PlayingDetailControlBar.Visibility = Visibility.Visible;                
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").Configuration = new DirectConnectedAnimationConfiguration();
-                //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
-                ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
-                //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
-                ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
-            }
-        }
+        //public void ShowPlayingDetail()
+        //{
+        //    if (!ViewModel.AppViewModel.IsInPlayingDetailMode && ViewModel.AppViewModel.CurrentPlayingMusic is not null)
+        //    {
+        //        ViewModel.AppViewModel.IsInPlayingDetailMode = true;
+        //        AppData.IsPlayingDetail = true;
+        //        App.MainWindow.NavigationViewCollapsed();
+        //        App.MainWindow?.AppTitleBarVisibility(false);
+        //        ChangeAcrylicBrushBackgroundOpacity();
+        //        ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("CoverToDetail", AlbumCoverImageGrid);
+        //        ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetail", AlbumCoverAuthorTitleModel);
+        //        ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("ControlBarToDetail", BottomControlBar);
+        //        //ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("MusicInfoToDetailLyrics", VolumeDown);
+        //        TopPanel.Visibility = Visibility.Collapsed;
+        //        ContentFrame.Visibility = Visibility.Collapsed;
+        //        AlbumCoverAuthorTitleModel.Visibility = Visibility.Collapsed;
+        //        ViewModel.AppViewModel.InfoBarIsOpen = false;
+        //        PlayingDetail.Visibility = Visibility.Visible;
+        //        BottomControlBar.Visibility = Visibility.Collapsed;
+        //        PlayingDetailControlBar.Visibility = Visibility.Visible;                
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").Configuration = new DirectConnectedAnimationConfiguration();
+        //        //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").Configuration = new DirectConnectedAnimationConfiguration();
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("CoverToDetail").TryStart(PlayingDetailAlbumCoverImageGrid);
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetail").TryStart(MusicInfoPanel);
+        //        ConnectedAnimationService.GetForCurrentView().GetAnimation("ControlBarToDetail").TryStart(PlayingDetailControlBar);
+        //        //ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicInfoToDetailLyrics").TryStart(LyricViewer);
+        //        ProgressSliderPlayingDetail.Loaded += ProgressSliderPlayingDetail_Loaded;
+        //    }
+        //}
 
-        private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.AppViewModel.IsInPlayingDetailMode = false;
-            AppData.IsPlayingDetail = false;
-            App.MainWindow.NavigationViewExpanded();
-            ChangeAcrylicBrushBackgroundOpacity();
-            App.MainWindow?.AppTitleBarVisibility(true);
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
-            ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToControlBar", PlayingDetailControlBar);
-            TopPanel.Visibility = Visibility.Visible;
-            ContentFrame.Visibility = Visibility.Visible;
-            PlayingDetail.Visibility = Visibility.Collapsed;
-            AlbumCoverAuthorTitleModel.Visibility = Visibility.Visible;
-            BottomControlBar.Visibility = Visibility.Visible;
-            PlayingDetailControlBar.Visibility = Visibility.Collapsed;
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").Configuration = new DirectConnectedAnimationConfiguration();
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").Configuration = new DirectConnectedAnimationConfiguration();
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToControlBar").Configuration = new DirectConnectedAnimationConfiguration();
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").TryStart(AlbumCoverImageGrid);
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").TryStart(AlbumCoverAuthorTitleModel);
-            ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToControlBar").TryStart(BottomControlBar);
-            ProgressSliderPlayingDetail.Loaded -= ProgressSliderPlayingDetail_Loaded;
-        }
+        //private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    ViewModel.AppViewModel.IsInPlayingDetailMode = false;
+        //    AppData.IsPlayingDetail = false;
+        //    App.MainWindow.NavigationViewExpanded();
+        //    ChangeAcrylicBrushBackgroundOpacity();
+        //    App.MainWindow?.AppTitleBarVisibility(true);
+        //    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToCover", PlayingDetailAlbumCoverImageGrid);
+        //    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToMusicInfo", MusicInfoPanel);
+        //    ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("DetailToControlBar", PlayingDetailControlBar);
+        //    TopPanel.Visibility = Visibility.Visible;
+        //    ContentFrame.Visibility = Visibility.Visible;
+        //    PlayingDetail.Visibility = Visibility.Collapsed;
+        //    AlbumCoverAuthorTitleModel.Visibility = Visibility.Visible;
+        //    BottomControlBar.Visibility = Visibility.Visible;
+        //    PlayingDetailControlBar.Visibility = Visibility.Collapsed;
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").Configuration = new DirectConnectedAnimationConfiguration();
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").Configuration = new DirectConnectedAnimationConfiguration();
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToControlBar").Configuration = new DirectConnectedAnimationConfiguration();
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToCover").TryStart(AlbumCoverImageGrid);
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToMusicInfo").TryStart(AlbumCoverAuthorTitleModel);
+        //    ConnectedAnimationService.GetForCurrentView().GetAnimation("DetailToControlBar").TryStart(BottomControlBar);
+        //    ProgressSliderPlayingDetail.Loaded -= ProgressSliderPlayingDetail_Loaded;
+        //}
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
-            equalizerDialog.RequestedTheme = AppSettings.elementTheme;
-            equalizerDialog.XamlRoot = this.XamlRoot;
-            _ = equalizerDialog.ShowAsync();
+            App.MainWindow.EqualizerDialog.RequestedTheme = AppSettings.elementTheme;
+            App.MainWindow.EqualizerDialog.XamlRoot = this.XamlRoot;
+            _ = App.MainWindow.EqualizerDialog.ShowAsync();
         }        
 
-        private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
-        {
-            CurrentPlayListTeachingTipPlayingDetail.IsOpen = true;
-            UpdateCurrentPlayList();
-        }
+        //private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
+        //{
+        //    CurrentPlayListTeachingTipPlayingDetail.IsOpen = true;
+        //    UpdateCurrentPlayList();
+        //}
 
-        private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
-            if (selectedMusic is not null)
-            {
-                PlayMusic(music: selectedMusic, IsChangeList: false);
-            }
-        }
+        //private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        //{
+        //    var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
+        //    if (selectedMusic is not null)
+        //    {
+        //        PlayMusic(music: selectedMusic, IsChangeList: false);
+        //    }
+        //}
 
         private void TopControl_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -651,10 +567,10 @@ namespace WinUIMusicPlayer.View
             }           
         }
 
-        private void CurrentPlayListTeachingTipPlayingDetailCloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
-        }
+        //private void CurrentPlayListTeachingTipPlayingDetailCloseButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
+        //}
 
         private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
         {

@@ -12,11 +12,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using TagLib.Ape;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
@@ -168,6 +170,14 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
         public bool IsAcrylicBrushOpacity { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
+        public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
+        public bool IsManualSelect { get; set; } = false;
+        public bool IsMouseOverVolumeSlider { get; set; } = false;
+        private System.Timers.Timer ProgressTimer { get; set; }
+        private TimeSpan TotalTime { get; set; }
+        private TimeSpan CurrentTime { get; set; }
+        private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);        
+        private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
         // 带有复杂逻辑的属性重构
         public double Volume
@@ -215,13 +225,195 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        public bool IsUserDraggingProgressSlider
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                }
+            }
+        } = false;
+
+        public double ProgressSlider
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    HandleProgressSliderChange(value);
+                }
+            }
+        } = 0;
+
+        private async void HandleProgressSliderChange(double value)
+        {
+            if (IsMouseOverProgressBar)
+            {
+                if (!IsUserDraggingProgressSlider)
+                {
+                    double currentPlayPosition = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
+                    if (Math.Abs(value - currentPlayPosition) > 2.0)
+                    {
+                        _ = Task.Run(() =>
+                        {
+                            IsManualSelect = true;
+                            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
+                            IsManualSelect = false;
+                        });
+                    }
+                }
+            }
+        }
+
+        public bool IsPlaying
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    App.Services.GetRequiredService<PlayingDetailPage>().BeginOrPauseLyricImgAnimation(value);
+                }
+            }
+        } = false;
+
+        public bool IsMouseOverProgressBar
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = false;
+
         private MusicDatabaseService _musicDatabaseService { get; }
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService)
+        public AppViewModel(MusicDatabaseService musicDatabaseService,SystemMediaControlsService systemMediaControlsService)
         {
-            _musicDatabaseService = musicDatabaseService;    
+            _musicDatabaseService = musicDatabaseService;  
+            SystemMediaControlsService = systemMediaControlsService;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             AllSongs.CollectionChanged += AllSongs_CollectionChanged;
+            ProgressTimer = new System.Timers.Timer(200);
+            ProgressTimer.Elapsed += ProgressTimer_Elapsed;
+        }
+
+        public void StartProgressTimer()
+        {
+            ProgressTimer?.Start();
+        }
+        public void StopProgressTimer()
+        {
+            ProgressTimer?.Stop();
+        }
+
+        private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                if (!IsUserDraggingProgressSlider)
+                {
+                    UpdateProgressTimerUI();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public async void UpdateProgressTimerUI()
+        {
+            try
+            {
+                TotalTime = TimeSpan.FromSeconds(await App.Services.GetRequiredService<BassPlayerCommandService>().GetTotalPosition());
+                CurrentTime = TimeSpan.FromSeconds(await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition());
+                TimeStringBuilder.Clear();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!IsManualSelect)
+                    {
+                        try
+                        {
+                            ProgressSlider = CurrentTime.TotalSeconds;
+                            ProgressSliderMax = TotalTime.TotalSeconds;
+                            if (TotalTime.TotalHours >= 1)
+                            {
+                                PlayTimeText = TimeStringBuilder
+                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", CurrentTime, TotalTime)
+                                    .ToString();
+                            }
+                            else
+                            {
+                                PlayTimeText = TimeStringBuilder
+                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", CurrentTime, TotalTime)
+                                    .ToString();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
+                    }
+                });
+                App.Services.GetRequiredService<LyricsRefreshService>().UpdateLyrics(CurrentTime);
+                SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
+            }
+            catch
+            {
+            }
+        }
+
+        public async void LoadLyricsToUI()
+        {
+            LastLyricIndex = -1;
+            UILyrics.Clear();
+            // 设置播放服务中的歌词
+            await App.Services.GetRequiredService<LyricsRefreshService>()?.SetLyrics();
+            // 解析歌词并添加到UI集合
+            List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
+            foreach (var lyric in parsedLyrics)
+            {
+                UILyrics.Add(lyric);
+            }
+        }
+
+        public void UpdateLyricsToUI(int index)
+        {
+            if (LastLyricIndex == index)
+                return;
+            TimeSpan duration = TimeSpan.Zero;
+            if (index >= 0 && index < UILyrics.Count)
+            {
+                int nextIndex = index + 1;
+                if (nextIndex < UILyrics.Count)
+                {
+                    TimeSpan currentTime = UILyrics[index].Time;
+                    TimeSpan nextTime = UILyrics[nextIndex].Time;
+                    LyricsDurationTime = nextTime.Subtract(currentTime);
+                }
+            }
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    for (int i = 0; i < UILyrics.Count; i++)
+                    {
+                        UILyrics[i].IsCurrent = (i == index);
+                    }
+                    LastLyricIndex = index;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"更新歌词失败: {ex.Message}");
+                }
+            });
+        }
+
+        public void AdjustVolume(int delta)
+        {
+            double newVolume = Volume + delta;
+            newVolume = Math.Max(0, Math.Min(newVolume, 100));
+            Volume = newVolume;
         }
 
         private void AllSongs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -717,5 +909,45 @@ namespace WinUIMusicPlayer.ViewModel
             }
             RefreshUsbDeviceMusicList();
         }
+
+        public async Task UpdateCover(byte[] cover)
+        {
+            try
+            {
+                if (cover != null)
+                {
+                    bool isDarkMode = true;
+                    if (AppSettings.AppTheme == "Light")
+                    {
+                        isDarkMode = false;
+                    }
+                    else if (AppSettings.AppTheme == "Default")
+                    {
+                        // 注意：GetIsLightTheme() 最好是同步方法
+                        isDarkMode = !GetIsLightTheme();
+                    }
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
+                    });
+
+                }
+                else
+                {
+                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        LyricPageBackgroundSource = null;
+                    });
+                }
+            }
+            catch
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+                {
+                    LyricPageBackgroundSource = null;
+                });
+            }
+        }
+
     }
 }

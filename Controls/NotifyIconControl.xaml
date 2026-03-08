@@ -51,9 +51,9 @@
                         Width="200"
                         HorizontalAlignment="Left"
                         Click="PlayNPause_Click"
-                        Text="{x:Bind MusicBrowseViewModel.IsPlaying, Converter={StaticResource PlayStatusToStringConverter}, Mode=OneWay}">
+                        Text="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToStringConverter}, Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
-                            <FontIcon x:Name="PlayNPauseIcon" Glyph="{x:Bind MusicBrowseViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                            <FontIcon x:Name="PlayNPauseIcon" Glyph="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem

@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer.Services
             // 触发事件通知UI更新
             if (currentIndex >= 0)
             {
-                MusicBrowseViewModel.UpdateLyricsToUI(currentIndex);
+                AppViewModel.UpdateLyricsToUI(currentIndex);
             }
         }
 
@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.Services
         {
             if (Lyrics.Count == 0)
                 return;
-            MusicBrowseViewModel.UpdateLyricsToUI(0);
+            AppViewModel.UpdateLyricsToUI(0);
         }
 
         public async Task SetLyrics()

@@ -15,12 +15,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     IsTabStop="True"
-    NavigationCacheMode="Enabled"
     TabIndex="0"
     mc:Ignorable="d">
     <Grid Margin="0">
         <Grid>
-            <Border
+            <!--<Border
                 Grid.Row="0"
                 Grid.Column="0"
                 Visibility="{x:Bind ViewModel.AppViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
@@ -40,16 +39,16 @@
                 <interactivity:Interaction.Behaviors>
                     <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
                 </interactivity:Interaction.Behaviors>
-            </Border>
+            </Border>-->
             <Grid
                 Grid.Row="0"
                 Grid.Column="0"
                 Margin="0"
                 Padding="48,0,0,0">
-                <Grid.ChildrenTransitions>
+                <!--<Grid.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
-                </Grid.ChildrenTransitions>
+                </Grid.ChildrenTransitions>-->
                 <Grid Margin="{x:Bind ViewModel.AppViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -196,7 +195,7 @@
                         IsNavigationStackEnabled="False"
                         Visibility="Visible" />
                     <!--  播放详情  -->
-                    <Grid
+                    <!--<Grid
                         x:Name="PlayingDetail"
                         Grid.Row="2"
                         Margin="0,10,0,30"
@@ -226,8 +225,7 @@
                                 Margin="10,0,0,0"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Click="CancelPlayingDetailButton_Click">
+                                BorderThickness="0">
                                 <FontIcon FontSize="16" Glyph="&#xE70D;" />
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Q" />
@@ -277,7 +275,9 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <!--  专辑封面  -->
+                    -->
+                    <!--  专辑封面  -->
+                    <!--
                             <Grid Grid.Row="0" Margin="0,20,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -320,7 +320,9 @@
                                                                 HorizontalAlignment="Stretch"
                                                                 VerticalAlignment="Stretch"
                                                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                                                <!--  图标层  -->
+                    -->
+                    <!--  图标层  -->
+                    <!--
                                                                 <FontIcon
                                                                     Width="200"
                                                                     Height="200"
@@ -337,7 +339,9 @@
                                             </Border>
                                         </Grid>
                                     </Viewbox>
-                                    <!--  音乐信息  -->
+                    -->
+                    <!--  音乐信息  -->
+                    <!--
                                     <Grid Grid.Row="1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -492,7 +496,9 @@
                                             </VisualStateGroup>
                                         </VisualStateManager.VisualStateGroups>
                                     </Grid>
-                                    <!--  控制面板  -->
+                    -->
+                    <!--  控制面板  -->
+                    <!--
                                     <Grid x:Name="PlayingDetailControlBar" Grid.Row="2">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -509,7 +515,7 @@
                                             PointerEntered="ProgressSlider_PointerEntered"
                                             PointerExited="ProgressSlider_PointerExited"
                                             ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                                            Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
+                                            Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                                         <Grid
                                             Grid.Row="1"
                                             Margin="0,0,0,0"
@@ -558,7 +564,9 @@
                                                 Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                                 <TeachingTip.Content>
                                                     <Grid Width="290" Margin="0">
-                                                        <!--  ListView内容，给右上角留出空间  -->
+                    -->
+                    <!--  ListView内容，给右上角留出空间  -->
+                    <!--
                                                         <ListView
                                                             x:Name="CurrentPlayListViewPlayingDetail"
                                                             MaxHeight="400"
@@ -576,7 +584,9 @@
                                                             </ListView.ItemTemplate>
                                                         </ListView>
 
-                                                        <!--  关闭按钮在最上层  -->
+                    -->
+                    <!--  关闭按钮在最上层  -->
+                    <!--
                                                         <Button
                                                             x:Name="CurrentPlayListTeachingTipCloseButton"
                                                             Width="24"
@@ -615,7 +625,9 @@
                                                 <FontIcon FontSize="22" Glyph="&#xe892;" />
                                             </Button>
 
-                                            <!--  播放按钮  -->
+                    -->
+                    <!--  播放按钮  -->
+                    <!--
                                             <Button
                                                 x:Name="PlayPauseButtonPlayingDetail"
                                                 Grid.Column="3"
@@ -634,7 +646,7 @@
                                                     Width="50"
                                                     Height="50"
                                                     FontSize="32"
-                                                    Glyph="{x:Bind ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                                                    Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                                             </Button>
 
                                             <Button
@@ -653,7 +665,9 @@
                                                 <FontIcon FontSize="22" Glyph="&#xe893;" />
                                             </Button>
 
-                                            <!--  播放模式按钮  -->
+                    -->
+                    <!--  播放模式按钮  -->
+                    <!--
                                             <Button
                                                 x:Name="PlayModeButtonPlayingDetail"
                                                 Grid.Column="5"
@@ -713,7 +727,9 @@
                             </Grid>
                         </Grid>
                         <Grid Grid.Row="1" Grid.Column="1">
-                            <!--  添加歌词显示列表  -->
+                    -->
+                    <!--  添加歌词显示列表  -->
+                    <!--
                             <controls:OpacityMaskView
                                 x:Name="MaskView"
                                 Margin="0"
@@ -822,7 +838,7 @@
                                 </ScrollView>
                             </controls:OpacityMaskView>
                         </Grid>
-                    </Grid>
+                    </Grid>-->
                     <!--  底部控制区域  -->
                     <Grid
                         x:Name="BottomControlBar"
@@ -851,7 +867,7 @@
                                 PointerEntered="ProgressSlider_PointerEntered"
                                 PointerExited="ProgressSlider_PointerExited"
                                 ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                                Value="{x:Bind ViewModel.ProgressSlider, Mode=TwoWay}" />
+                                Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                             <TextBlock
                                 x:Name="PlayTimeTextBlock"
                                 Grid.Column="1"
@@ -948,8 +964,8 @@
                                         <TextBlock
                                             x:Name="MusicTitleTextBlock"
                                             FontSize="18"
-                                            IsTextSelectionEnabled="True"
                                             FontWeight="Bold"
+                                            IsTextSelectionEnabled="True"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis" />
                                     </dev:AutoScrollView>
@@ -1105,7 +1121,7 @@
                                         Width="50"
                                         Height="50"
                                         FontSize="32"
-                                        Glyph="{x:Bind ViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                                        Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                                 </Button>
 
                                 <Button

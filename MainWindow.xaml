@@ -56,7 +56,12 @@
                 RelativePanel.AlignLeftWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"
                 RelativePanel.AlignTopWithPanel="True" />
-
+            <Frame
+                x:Name="PlayingFrame"
+                RelativePanel.AlignBottomWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                RelativePanel.AlignTopWithPanel="True" />
             <!--  NavigationView 浮在左侧  -->
             <Grid
                 x:Name="NavigationViewControlGrid"

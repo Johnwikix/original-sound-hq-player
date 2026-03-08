@@ -67,7 +67,7 @@ namespace WinUIMusicPlayer.Controls
             {
                 window.DispatcherQueue.TryEnqueue(() =>
                 {
-                    MusicBrowseViewModel.ShowPlayingDetail();
+                    App.MainWindow.NavigateToPlayingDetailPage();
                 });
             });
         }
@@ -192,12 +192,12 @@ namespace WinUIMusicPlayer.Controls
 
         private void VolumeUp_Click(object sender, RoutedEventArgs e)
         {
-            MusicBrowseViewModel.AdjustVolume(10);
+            AppViewModel.AdjustVolume(10);
         }
 
         private void VolumeDown_Click(object sender, RoutedEventArgs e)
         {
-            MusicBrowseViewModel.AdjustVolume(-10);
+            AppViewModel.AdjustVolume(-10);
         }
 
         public void Dispose()
