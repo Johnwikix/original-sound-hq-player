@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
 
     <Grid>
@@ -14,7 +15,11 @@
             Height="44"
             Margin="48,0,0,0"
             Padding="0"
-            VerticalAlignment="Top">
+            VerticalAlignment="Top"
+            Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsInPlayingDetailMode), Mode=OneWay}">
+            <Grid.OpacityTransition>
+                <ScalarTransition />
+            </Grid.OpacityTransition>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -44,6 +49,7 @@
             <!--  NavigationView 浮在左侧  -->
             <Grid
                 x:Name="NavigationViewControlGrid"
+                Opacity="{x:Bind ViewModel.AppViewModel.NavigationViewOpacity, Mode=OneWay}"
                 PointerEntered="NavigationViewControl_PointerEntered"
                 PointerExited="NavigationViewControl_PointerExited"
                 RelativePanel.AlignBottomWithPanel="True"

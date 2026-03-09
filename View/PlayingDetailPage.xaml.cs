@@ -49,8 +49,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
-        {
-            AppData.IsPlayingDetail = false;
+        {           
             App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
         }
 

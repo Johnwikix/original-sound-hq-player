@@ -128,7 +128,7 @@ namespace WinUIMusicPlayer.View
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                        if (AppData.IsPlayingDetail)
+                        if (ViewModel.AppViewModel.IsInPlayingDetailMode)
                         {
                             NavigateToPlayingDetailPage();
                         }
@@ -148,7 +148,8 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToPlayingDetailPage()
         {
-            AppTitleBarVisibility(false);
+            ViewModel.AppViewModel.IsInPlayingDetailMode = true;
+            ViewModel.AppViewModel.NavigationViewOpacity = 0;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
                 _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
@@ -158,29 +159,13 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatebackToMusicBrowsePage()
         {
+            ViewModel.AppViewModel.IsInPlayingDetailMode = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                AppTitleBarVisibility(true);
-                NavigationViewExpanded();
+                ViewModel.AppViewModel.NavigationViewOpacity = 1.0;
                 _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
                 _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
             }
-        }
-
-        public void NavigationViewCollapsed()
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                NavigationViewControlGrid.Opacity = 0;
-            });
-        }
-
-        public void NavigationViewExpanded()
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                NavigationViewControlGrid.Opacity = 1.0f;
-            });
         }
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
@@ -190,27 +175,19 @@ namespace WinUIMusicPlayer.View
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
-            NavigationViewControl_BackRequested(null, null);
-        }
-
-        public void AppTitleBarVisibility(bool isVisible)
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                AppTitleBar.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
-            });
+            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
         }
 
         private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            NavigationViewControlGrid.Opacity = 1.0f;
+            ViewModel.AppViewModel.NavigationViewOpacity = 1.0f;
         }
 
         private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (AppData.IsPlayingDetail && PlayingFrame?.Content?.GetType() == typeof(PlayingDetailPage))
+            if (ViewModel.AppViewModel.IsInPlayingDetailMode && PlayingFrame?.Content?.GetType() == typeof(PlayingDetailPage))
             {
-                NavigationViewControlGrid.Opacity = 0;
+                ViewModel.AppViewModel.NavigationViewOpacity = 0;
             }
         }
     }

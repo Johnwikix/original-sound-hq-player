@@ -435,8 +435,6 @@ namespace WinUIMusicPlayer.View
 
         private void AlbumCoverImage_Click(object sender, RoutedEventArgs e)
         {
-            AppData.IsPlayingDetail = true;
-            App.Services.GetRequiredService<MainPage>().NavigationViewCollapsed();
             App.Services.GetRequiredService<MainPage>().NavigateToPlayingDetailPage();
         }
 

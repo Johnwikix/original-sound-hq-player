@@ -49,7 +49,7 @@
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
                 </Grid.ChildrenTransitions>-->
-                <Grid Margin="{x:Bind ViewModel.AppViewModel.IsInPlayingDetailMode, Converter={StaticResource BoolToThicknessConverter}, Mode=OneWay}">
+                <Grid Margin="0,32,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

@@ -168,9 +168,9 @@ namespace WinUIMusicPlayer.ViewModel
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
         public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
-        public bool IsAcrylicBrushOpacity { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
+        public double NavigationViewOpacity { get; set => SetProperty(ref field, value); } = 1.0;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
         public bool IsMouseOverVolumeSlider { get; set; } = false;

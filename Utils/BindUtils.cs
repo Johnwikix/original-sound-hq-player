@@ -23,5 +23,9 @@ namespace WinUIMusicPlayer.Utils
             }
             return App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
         }
+
+        public static double BoolToOpacityReConverter(bool isInPlayingDetailMode) {
+            return isInPlayingDetailMode ? 0 : 1;
+        }
     }
 }
