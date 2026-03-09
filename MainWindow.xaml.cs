@@ -325,7 +325,7 @@ namespace WinUIMusicPlayer
             if (args.IsSettingsInvoked)
             {
                 _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
-                PlayingFrame.Content = null;
+                _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
             }
             else
             {
@@ -334,7 +334,7 @@ namespace WinUIMusicPlayer
                 {
                     case "AddFolder":
                         _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                        PlayingFrame.Content = null;
+                        _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
@@ -358,24 +358,21 @@ namespace WinUIMusicPlayer
         public void NavigateToPlayingDetailPage()
         {
             AppTitleBarVisibility(false);
-            if (PlayingFrame.Content is not PlayingDetailPage)
+            if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
-                ContentFrame.Content = null;
-                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime * 2);
+                _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
+                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime);
             }
         }
 
         public void NavigatebackToMusicBrowsePage()
         {
-            if (PlayingFrame.Content is PlayingDetailPage)
+            if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 AppTitleBarVisibility(true);
                 NavigationViewExpanded();
-                if (ContentFrame.Content is not MusicBrowsePage)
-                {
-                    _navigationService.DirectDisplay(typeof(MusicBrowsePage), AppSettings.EntranceAnimationTime * 2);
-                }                
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime * 2);
+                _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
+                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
             }
         }
 

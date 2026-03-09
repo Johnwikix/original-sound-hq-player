@@ -11,7 +11,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
         void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300, bool isPlayAnime = false);
         void Show(Type pageType, int animeTime = 300);
         void Dismiss(int animeTime = 300);
-        void DirectDisplay(Type pageType, int animeTime = 300);
+        void FadeShow(int animeTime = 300);
+        void FadeDismiss(int animeTime = 300);
         void Initialize(Frame frame);
         void GoBack();
         bool CanGoBack { get; }

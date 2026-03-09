@@ -61,7 +61,8 @@
                 RelativePanel.AlignBottomWithPanel="True"
                 RelativePanel.AlignLeftWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"
-                RelativePanel.AlignTopWithPanel="True" />
+                RelativePanel.AlignTopWithPanel="True"
+                Visibility="Collapsed" />
             <!--  NavigationView 浮在左侧  -->
             <Grid
                 x:Name="NavigationViewControlGrid"
