@@ -73,25 +73,6 @@ namespace WinUIMusicPlayer.View
             _navigationService.RegisterPage<PlayListSongPage>();
             _navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            //EqualizerDialog = new EqualizerDialog();
-            //EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
-            //{
-            //    int feq = FrequencyIndexMap[frequency];
-            //    musicPlaybackService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            //};
-            //EqualizerDialog.clearEqualizer += (s, e) =>
-            //{
-            //    musicPlaybackService.UpdateSettings();
-            //    if (AppSettings.IsEqualizerEnabled)
-            //    {
-            //        musicPlaybackService.ToggleEqualizer();
-            //        musicPlaybackService.SetEqualizer();
-            //    }
-            //    else
-            //    {
-            //        musicPlaybackService.ClearEqualizer();
-            //    }
-            //};
             this.notificationService = notificationService;
             this.Loaded += OnPageLoaded;
         }

@@ -194,6 +194,21 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        public bool IsBackgroundCoverEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        //App.Services.GetRequiredService<PlayingDetailPage>()?.ChangeAcrylicBrushBackgroundOpacity();
+                    }
+                }
+            }
+        }
         public double Volume
         {
             get => field;

@@ -320,23 +320,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private bool _isIsBackgroundCoverEnabled = false;
-        public bool IsBackgroundCoverEnabled
-        {
-            get => _isIsBackgroundCoverEnabled;
-            set
-            {
-                if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsBackgroundCoverEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        //App.Services.GetRequiredService<PlayingDetailPage>()?.ChangeAcrylicBrushBackgroundOpacity();
-                    }
-                }
-            }
-        }
+        //private bool _isIsBackgroundCoverEnabled = false;
+        //public bool IsBackgroundCoverEnabled
+        //{
+        //    get => _isIsBackgroundCoverEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppSettings.IsBackgroundCoverEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //                //App.Services.GetRequiredService<PlayingDetailPage>()?.ChangeAcrylicBrushBackgroundOpacity();
+        //            }
+        //        }
+        //    }
+        //}
 
         private string _version = string.Empty;
         public string Version
@@ -643,7 +643,7 @@ namespace WinUIMusicPlayer.ViewModel
             EntranceAnimationTime = AppSettings.EntranceAnimationTime;
             SlideAnimationTime = AppSettings.SlideAnimationTime;
             DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
+            //IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
             IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             IsCustomAppSize = AppSettings.IsCustomAppSize;
             AppHeight = AppSettings.AppHeight;

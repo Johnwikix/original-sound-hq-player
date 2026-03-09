@@ -93,26 +93,7 @@ namespace WinUIMusicPlayer
             WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
-            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
-            EqualizerDialog = new EqualizerDialog();
-            EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
-            {
-                int feq = ToolUtils.FrequencyIndexMap[frequency];
-                App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-            };
-            EqualizerDialog.clearEqualizer += (s, e) =>
-            {
-                App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
-                if (AppSettings.IsEqualizerEnabled)
-                {
-                    App.Services.GetRequiredService<BassPlayerCommandService>().ToggleEqualizer();
-                    App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizer();
-                }
-                else
-                {
-                    App.Services.GetRequiredService<BassPlayerCommandService>().ClearEqualizer();
-                }
-            };
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
         }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -234,12 +215,39 @@ namespace WinUIMusicPlayer
                 AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
                 NavigateToDefaultPage();
                 UpdateAppNotifyIconControl();
+                InitiaizeEqualizerDialog();
                 LoadingGrid.Visibility = Visibility.Collapsed;
                 NavigationViewControl.Visibility = Visibility.Visible;
                 App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
             }
             catch (Exception)
             {
+            }
+        }
+
+        private void InitiaizeEqualizerDialog()
+        {
+            if (EqualizerDialog is null)
+            {
+                EqualizerDialog = new EqualizerDialog();
+                EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
+                {
+                    int feq = ToolUtils.FrequencyIndexMap[frequency];
+                    App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+                };
+                EqualizerDialog.clearEqualizer += (s, e) =>
+                {
+                    App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
+                    if (AppSettings.IsEqualizerEnabled)
+                    {
+                        App.Services.GetRequiredService<BassPlayerCommandService>().ToggleEqualizer();
+                        App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizer();
+                    }
+                    else
+                    {
+                        App.Services.GetRequiredService<BassPlayerCommandService>().ClearEqualizer();
+                    }
+                };
             }
         }
 

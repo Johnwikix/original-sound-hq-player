@@ -236,7 +236,7 @@
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />

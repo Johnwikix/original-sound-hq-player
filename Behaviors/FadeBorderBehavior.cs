@@ -26,10 +26,10 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (!AppSettings.IsBackgroundCoverEnabled)
-            {
-                return;
-            }
+            //if (!AppSettings.IsBackgroundCoverEnabled)
+            //{
+            //    return;
+            //}
 
             if (d is FadeBorderBehavior behavior)
             {
