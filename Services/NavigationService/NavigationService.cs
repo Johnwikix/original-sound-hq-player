@@ -32,8 +32,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
             };
             _enterEasingFunction = new ExponentialEase()
             {
-                EasingMode = EasingMode.EaseOut,
-                Exponent = 5
+                EasingMode = EasingMode.EaseInOut,
+                Exponent = 3
             };
         }
 

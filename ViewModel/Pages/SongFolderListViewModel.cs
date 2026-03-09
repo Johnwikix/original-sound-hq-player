@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             RefreshPage();
             UpdateMusicListView();
-            App.MainWindow.IsBackBtnEnable = true;
+            AppViewModel.IsBackBtnEnable = true;
         }
 
 

@@ -402,11 +402,6 @@ namespace WinUIMusicPlayer.ViewModel
             InitializeDatabase();
         }
 
-        //public void SetLyricsService(LyricsRefreshService lyricsRefreshService)
-        //{
-        //    LyricsRefreshService = lyricsRefreshService;
-        //}
-
         private async void InitializeDatabase()
         {
             try

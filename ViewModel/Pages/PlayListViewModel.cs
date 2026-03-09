@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             AppViewModel.CurrentPlayList = null;
-            App.MainWindow.IsBackBtnEnable = false;
+            AppViewModel.IsBackBtnEnable = false;
             //AppViewModel.IsSortComboBoxVisible = false;
             //_parentPage.DisableBackButton();
             //InitializingData();

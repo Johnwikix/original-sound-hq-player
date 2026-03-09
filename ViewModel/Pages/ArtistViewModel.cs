@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentArtistObj = null;
             AppViewModel.PageType = "artistBrowse";
-            App.MainWindow.IsBackBtnEnable = false;
+            AppViewModel.IsBackBtnEnable = false;
         }
 
         private void InitalizeOption()

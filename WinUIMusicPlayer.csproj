@@ -30,6 +30,7 @@
     <None Remove="View\ArtistPage.xaml" />
     <None Remove="View\FavouritePlayListPage.xaml" />
     <None Remove="View\FolderBrowsePage.xaml" />
+    <None Remove="View\MainPage.xaml" />
     <None Remove="View\MusicBrowsePage.xaml" />
     <None Remove="View\PlayingDetailPage.xaml" />
     <None Remove="View\PlayListPage.xaml" />
@@ -159,6 +160,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\PlayingDetailPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

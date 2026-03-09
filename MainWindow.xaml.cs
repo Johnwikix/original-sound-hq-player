@@ -30,56 +30,30 @@ using ZLinq;
 
 namespace WinUIMusicPlayer
 {
-    public sealed partial class MainWindow : WinUIEx.WindowEx, INotifyPropertyChanged
+    public sealed partial class MainWindow : WindowEx
     {
-        //public event EventHandler updateMusicList;
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
         public event EventHandler<bool> backdropInputState;
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public EqualizerDialog EqualizerDialog { get; set; }
-
+        
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
-        private readonly INavigationService _navigationService;
-        private readonly INavigationService _playingNavigation;
-
-        public bool IsBackBtnEnable
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    OnPropertyChanged();
-                }
-            }
-        } = true;
+        
         private MusicDatabaseService MusicDatabaseService { get; }
         public MainWindow()
         {
             MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            //SetTitleBar(AppTitleBar);
             SetWindow();
             AppData.m_hWnd = m_hwnd;
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
-            // 导航服务
-            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);            
-            _navigationService.RegisterPage<AddFolderPage>();
-            _navigationService.RegisterPage<MusicBrowsePage>();
-            _navigationService.RegisterPage<SettingsPage>();
-            _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
-            _playingNavigation.RegisterPage<PlayingDetailPage>();
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -94,11 +68,6 @@ namespace WinUIMusicPlayer
             SaveMainWindowHandle(m_hwnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
-        }
-
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -212,12 +181,10 @@ namespace WinUIMusicPlayer
                 await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
                 await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
-                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();
-                NavigateToDefaultPage();
+                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();                
                 UpdateAppNotifyIconControl();
-                InitiaizeEqualizerDialog();
-                LoadingGrid.Visibility = Visibility.Collapsed;
-                NavigationViewControl.Visibility = Visibility.Visible;
+                ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
+                LoadingGrid.Visibility = Visibility.Collapsed;             
                 App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
             }
             catch (Exception)
@@ -225,31 +192,7 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private void InitiaizeEqualizerDialog()
-        {
-            if (EqualizerDialog is null)
-            {
-                EqualizerDialog = new EqualizerDialog();
-                EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
-                {
-                    int feq = ToolUtils.FrequencyIndexMap[frequency];
-                    App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
-                };
-                EqualizerDialog.clearEqualizer += (s, e) =>
-                {
-                    App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
-                    if (AppSettings.IsEqualizerEnabled)
-                    {
-                        App.Services.GetRequiredService<BassPlayerCommandService>().ToggleEqualizer();
-                        App.Services.GetRequiredService<BassPlayerCommandService>().SetEqualizer();
-                    }
-                    else
-                    {
-                        App.Services.GetRequiredService<BassPlayerCommandService>().ClearEqualizer();
-                    }
-                };
-            }
-        }
+        
 
         public void UpdateTaskbarIcon()
         {
@@ -277,36 +220,7 @@ namespace WinUIMusicPlayer
             backdropInputState?.Invoke(this, isActive);
         }
 
-        private void NavigateToDefaultPage()
-        {
-
-            foreach (var item in NavigationViewControl.MenuItems)
-            {
-                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == AppSettings.DefualtEntry)
-                {
-                    NavigationViewControl.SelectedItem = navigationViewItem;
-                    break;
-                }
-            }
-            switch (AppSettings.DefualtEntry)
-            {
-                case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                    break;
-                case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                    break;
-                default:
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                    break;
-            }
-        }
-
-        public void NavigateToSettingsPage()
-        {
-            NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
-        }       
+             
 
         public void InitializeTaskbarHelper()
         {
@@ -326,109 +240,6 @@ namespace WinUIMusicPlayer
             {
                 System.Diagnostics.Debug.WriteLine($"初始化任务栏助手出错: {ex.Message}");
             }
-        }
-
-        private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
-        {
-            if (args.IsSettingsInvoked)
-            {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
-                _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
-            }
-            else
-            {
-                var tag = args.InvokedItemContainer.Tag.ToString();
-                switch (tag)
-                {
-                    case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                        _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
-                        break;
-                    case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                        if (AppData.IsPlayingDetail) {
-                            NavigateToPlayingDetailPage();
-                        }                        
-                        break;
-                }
-            }
-        }
-
-        public void NavigateToMusicBrowsePage()
-        {
-            if (ContentFrame.Content is not MusicBrowsePage)
-            {
-                NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 0);
-            }
-        }
-
-        public void NavigateToPlayingDetailPage()
-        {
-            AppTitleBarVisibility(false);
-            if (PlayingFrame.Visibility is Visibility.Collapsed)
-            {
-                _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime);
-            }
-        }
-
-        public void NavigatebackToMusicBrowsePage()
-        {
-            if (PlayingFrame.Visibility is Visibility.Visible)
-            {
-                AppTitleBarVisibility(true);
-                NavigationViewExpanded();
-                _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
-            }
-        }
-
-        public void NavigationViewCollapsed()
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                NavigationViewControlGrid.Opacity = 0;
-            });
-        }
-
-        public void NavigationViewExpanded()
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                NavigationViewControlGrid.Opacity = 1.0f;
-            });
-        }
-
-        private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
-        {
-            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
-        }
-
-        private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
-        {
-            NavigationViewControl_BackRequested(null, null);
-        }
-
-        public void AppTitleBarVisibility(bool isVisible)
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                AppTitleBar.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
-            });
-        }
-
-        private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            NavigationViewControlGrid.Opacity = 1.0f;
-        }
-
-        private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            if (AppData.IsPlayingDetail && PlayingFrame?.Content?.GetType() == typeof(PlayingDetailPage))
-            {
-                NavigationViewControlGrid.Opacity = 0;
-            }
-        }
+        }       
     }
 }

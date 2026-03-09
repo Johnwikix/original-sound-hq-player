@@ -1,38 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<winex:WindowEx
-    x:Class="WinUIMusicPlayer.MainWindow"
+<Page
+    x:Class="WinUIMusicPlayer.View.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:WinUIMusicPlayer"
+    xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:view="using:WinUIMusicPlayer.View"
-    xmlns:winex="using:WinUIEx"
-    Title="OriginalSound HQ Player"
-    MinWidth="1280"
-    MinHeight="720">
-    <winex:WindowEx.SystemBackdrop>
-        <DesktopAcrylicBackdrop />
-    </winex:WindowEx.SystemBackdrop>
+    mc:Ignorable="d">
+
     <Grid>
-        <controls:NotifyIconControl x:Name="AppNotifyIconControl" MinWidth="200" />
-        <Frame x:Name="ShellFrame" />
-        <!--  Loading 界面  -->
-        <Grid x:Name="LoadingGrid" Visibility="Visible">
-            <ProgressRing
-                Width="100"
-                Height="100"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
-            <TextBlock
-                x:Uid="LoadingText"
-                Margin="0,180,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
-        </Grid>
-        <!--<Grid
+        <Grid
             x:Name="AppTitleBar"
             Height="44"
             Margin="48,0,0,0"
@@ -49,26 +26,8 @@
                 FontSize="16"
                 Style="{StaticResource CaptionTextBlockStyle}" />
         </Grid>
-        -->
-        <!--  Loading 界面  -->
-        <!--
-        <Grid x:Name="LoadingGrid" Visibility="Visible">
-            <ProgressRing
-                Width="100"
-                Height="100"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
-            <TextBlock
-                x:Uid="LoadingText"
-                Margin="0,180,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
-        </Grid>
         <RelativePanel>
-        -->
-        <!--  Frame 填充整个区域  -->
-        <!--
+            <!--  Frame 填充整个区域  -->
             <Frame
                 x:Name="ContentFrame"
                 RelativePanel.AlignBottomWithPanel="True"
@@ -82,9 +41,7 @@
                 RelativePanel.AlignRightWithPanel="True"
                 RelativePanel.AlignTopWithPanel="True"
                 Visibility="Collapsed" />
-        -->
-        <!--  NavigationView 浮在左侧  -->
-        <!--
+            <!--  NavigationView 浮在左侧  -->
             <Grid
                 x:Name="NavigationViewControlGrid"
                 PointerEntered="NavigationViewControl_PointerEntered"
@@ -100,7 +57,7 @@
                     Width="48"
                     BackRequested="NavigationViewControl_BackRequested"
                     IsBackButtonVisible="Visible"
-                    IsBackEnabled="{x:Bind IsBackBtnEnable, Mode=OneWay}"
+                    IsBackEnabled="{x:Bind ViewModel.AppViewModel.IsBackBtnEnable, Mode=OneWay}"
                     IsPaneOpen="False"
                     IsPaneToggleButtonVisible="False"
                     ItemInvoked="NavigationView_ItemInvoked"
@@ -123,6 +80,6 @@
                     </NavigationView.MenuItems>
                 </NavigationView>
             </Grid>
-        </RelativePanel>-->
+        </RelativePanel>
     </Grid>
-</winex:WindowEx>
+</Page>

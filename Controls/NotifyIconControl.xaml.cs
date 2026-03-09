@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -53,21 +54,19 @@ namespace WinUIMusicPlayer.Controls
         [RelayCommand]
         public void ShowHideWindow()
         {
-            MainWindow window = App.MainWindow;
-            ShowWindow(window);
+            ShowWindow(App.MainWindow);
         }
 
         [RelayCommand]
         public void ShowPlayingDetail()
         {
-            MainWindow window = App.MainWindow;
-            ShowWindow(window);
-            window.NavigateToMusicBrowsePage();
+            ShowWindow(App.MainWindow);
+            App.Services.GetRequiredService<MainPage>()?.NavigateToMusicBrowsePage();
             _ = Task.Delay(100).ContinueWith(_ =>
             {
-                window.DispatcherQueue.TryEnqueue(() =>
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    App.MainWindow.NavigateToPlayingDetailPage();
+                    App.Services.GetRequiredService<MainPage>().NavigateToPlayingDetailPage();
                 });
             });
         }
@@ -160,12 +159,8 @@ namespace WinUIMusicPlayer.Controls
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow window = App.MainWindow;
-            ShowWindow(window);
-            if (window is not null)
-            {
-                window.NavigateToSettingsPage();
-            }
+            ShowWindow(App.MainWindow);
+            App.Services.GetRequiredService<MainPage>()?.NavigateToSettingsPage();
         }
 
         private void ShowWindow(MainWindow window)

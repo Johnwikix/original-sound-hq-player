@@ -83,7 +83,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentAlbumObj = null;
             AppViewModel.PageType = "albumBrowse";
-            App.MainWindow.IsBackBtnEnable = false;
+            AppViewModel.IsBackBtnEnable = false;
         }
         
 

@@ -58,12 +58,10 @@ namespace WinUIMusicPlayer
             })
              .ConfigureServices((context, services) =>
              {
-                 //services.AddSingleton<AppInitializerService>();
-                 //services.AddHostedService<AppInitializerService>(provider =>
-                 //    provider.GetRequiredService<AppInitializerService>());
                  services.AddHostedService<AppInitializerService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
+                 services.AddSingleton<MainPage>();                 
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
                  services.AddSingleton<SettingsPage>();
@@ -80,6 +78,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListSongPage>();
                  services.AddSingleton<SongListPage>();
                  services.AddSingleton<SongCollectionPage>();
+                 services.AddSingleton<MainViewModel>();
                  services.AddSingleton<AppViewModel>();
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
@@ -94,7 +93,6 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<PlayingDetailViewModel>();
-                 //services.AddSingleton<ContextMenuService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();

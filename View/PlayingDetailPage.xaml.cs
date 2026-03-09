@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.View
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {
             AppData.IsPlayingDetail = false;
-            App.MainWindow.NavigatebackToMusicBrowsePage();
+            App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
         }
 
         private void TopControl_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -155,9 +155,9 @@ namespace WinUIMusicPlayer.View
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
-            App.MainWindow.EqualizerDialog.RequestedTheme = AppSettings.elementTheme;
-            App.MainWindow.EqualizerDialog.XamlRoot = this.XamlRoot;
-            _ = App.MainWindow.EqualizerDialog.ShowAsync();
+            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.elementTheme;
+            App.Services.GetRequiredService<MainPage>().EqualizerDialog.XamlRoot = this.XamlRoot;
+            _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowAsync();
         }
 
         private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)

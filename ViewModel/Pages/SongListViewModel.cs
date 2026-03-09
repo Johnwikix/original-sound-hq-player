@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             UpdateMusicListView();
-            App.MainWindow.IsBackBtnEnable = false;
+            AppViewModel.IsBackBtnEnable = false;
         }
 
         public async Task<bool> IsDeleteFromDisk()
