@@ -143,22 +143,22 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private bool _isCoverCacheEnabled = false;
-        public bool IsCoverCacheEnabled
-        {
-            get => _isCoverCacheEnabled;
-            set
-            {
-                if (SetProperty(ref _isCoverCacheEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.isCoverCacheEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        //private bool _isCoverCacheEnabled = false;
+        //public bool IsCoverCacheEnabled
+        //{
+        //    get => _isCoverCacheEnabled;
+        //    set
+        //    {
+        //        if (SetProperty(ref _isCoverCacheEnabled, value))
+        //        {
+        //            if (_isInitized)
+        //            {
+        //                AppViewModel.IsCoverCacheEnabled = value;
+        //                _ = MusicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
 
         private string _defaultEntryComboBoxTag = "AddFolder";
         public string DefaultEntryComboBoxTag
@@ -622,7 +622,7 @@ namespace WinUIMusicPlayer.ViewModel
             IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             IsRunningBackend = AppSettings.isRunningBackend;  
             Latency = AppSettings.Latency;
-            IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            //IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             DefaultEntryComboBoxTag = AppSettings.DefualtEntry; 
             DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
             BackdropType = AppSettings.AppStyle;

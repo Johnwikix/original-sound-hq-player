@@ -730,7 +730,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.AppStyle = settings.AppStyle;
                 AppSettings.AppTheme = settings.AppTheme;
-                AppSettings.isCoverCacheEnabled = settings.isCoverCacheEnabled;
+                AppViewModel.IsCoverCacheEnabled = settings.isCoverCacheEnabled;
                 AppSettings.isRunningBackend = settings.isRunningBackend;
                 AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
                 AppSettings.dsdGain = settings.dsdGain;
@@ -792,7 +792,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
             newSettings.AppStyle = AppSettings.AppStyle;
             newSettings.AppTheme = AppSettings.AppTheme;
-            newSettings.isCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            newSettings.isCoverCacheEnabled = AppViewModel.IsCoverCacheEnabled;
             newSettings.isRunningBackend = AppSettings.isRunningBackend;
             newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             newSettings.dsdGain = AppSettings.dsdGain;

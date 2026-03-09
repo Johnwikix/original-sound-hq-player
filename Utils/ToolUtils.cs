@@ -979,7 +979,7 @@ namespace WinUIMusicPlayer.Utils
                         try
                         {
                             await bitmap.SetSourceAsync(outputStream);
-                            if (!AppData.UnknownAlbums.Contains(album) && AppSettings.isCoverCacheEnabled)
+                            if (!AppData.UnknownAlbums.Contains(album) && App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled)
                             {
                                 AppData.albumCoverCache.TryAdd(album, bitmap);
                             }
@@ -1141,7 +1141,7 @@ namespace WinUIMusicPlayer.Utils
                             {
                                 await bitmap.SetSourceAsync(outputStream);
                                 if (!AppData.UnknownAlbums.Contains(music.Album)
-                                    && AppSettings.isCoverCacheEnabled)
+                                    && App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled)
                                 {
                                     AppData.albumCoverCache.TryAdd(music.Album, bitmap);
                                 }

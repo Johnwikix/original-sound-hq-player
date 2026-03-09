@@ -21,7 +21,7 @@
             <Border
                 Grid.Row="0"
                 Grid.Column="0"
-                Visibility="{x:Bind model:AppSettings.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+                Visibility="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
                 <Border.Background>
                     <ImageBrush x:Name="ContentGridBackground" Stretch="Fill">
                         <ImageBrush.RelativeTransform>

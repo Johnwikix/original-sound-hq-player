@@ -180,6 +180,20 @@ namespace WinUIMusicPlayer.ViewModel
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
         // 带有复杂逻辑的属性重构
+        public bool IsCoverCacheEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        }
         public double Volume
         {
             get => field;

@@ -211,9 +211,7 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverDiskCache">
                             <StackPanel Width="300" Orientation="Horizontal">
-                                <Button                                    
-                                    Margin="0,0,10,0"
-                                    Command="{x:Bind ViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
+                                <Button Margin="0,0,10,0" Command="{x:Bind ViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
                                     <Button.Content>
                                         <dev:AutoScrollView
                                             Grid.Row="0"
@@ -235,7 +233,7 @@
                             </StackPanel>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
