@@ -99,7 +99,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
                 // 设置新页面
                 ContentFrame.Content = newPage;
-
+                ContentFrame.Visibility = Visibility.Visible;
+                ContentFrame.Opacity = 1;
                 // 根据过渡信息类型执行不同动画
 
                 if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
