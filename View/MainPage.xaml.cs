@@ -120,7 +120,7 @@ namespace WinUIMusicPlayer.View
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
-                        if (ViewModel.AppViewModel.IsInPlayingDetailMode)
+                        if (AppData.IsPlayingDetail)
                         {
                             NavigateToPlayingDetailPage();
                         }
@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToPlayingDetailPage()
         {
-            ViewModel.AppViewModel.IsInPlayingDetailMode = true;
+            AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
                 _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
@@ -150,7 +150,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatebackToMusicBrowsePage()
         {
-            ViewModel.AppViewModel.IsInPlayingDetailMode = false;
+            AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 _navigationService.FadeShow(AppSettings.EntranceAnimationTime);

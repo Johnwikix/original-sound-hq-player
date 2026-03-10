@@ -34,5 +34,9 @@ namespace WinUIMusicPlayer.Utils
             if (visibility is not Visibility.Visible) return 1.0;
             return isInNaviView ? 1.0 : 0.0;
         }
+
+        public static double VisibilityToOpacityReConverter(Visibility visibility) {
+            return visibility is Visibility.Visible ? 0 : 1.0;
+        }
     }
 }

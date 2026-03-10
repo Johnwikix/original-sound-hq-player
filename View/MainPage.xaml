@@ -16,7 +16,7 @@
             Margin="48,0,0,0"
             Padding="0"
             VerticalAlignment="Top"
-            Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsInPlayingDetailMode), Mode=OneWay}">
+            Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityReConverter(PlayingFrame.Visibility), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition />
             </Grid.OpacityTransition>

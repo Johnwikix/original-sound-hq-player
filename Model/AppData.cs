@@ -36,7 +36,7 @@ namespace WinUIMusicPlayer.Model
         public static string systemLanguage { get; set; } = "en";
         public static int MaxSupportedSampleRate { get; set; } = 0;
         public static int MaxSupportedBitDepth { get; set; } = 0;
-        //public static bool IsPlayingDetail { get; set; } = false;
+        public static bool IsPlayingDetail { get; set; } = false;
         public static Type CurrentPage { get; set; } = typeof(SongListPage);
     }
 }

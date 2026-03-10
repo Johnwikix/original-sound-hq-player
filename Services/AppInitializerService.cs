@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer.Services
                  MusicDatabaseService.GetPlayStateAsync(),
                  MusicDatabaseService.GetSettingsAsync()
             };
-            await Task.WhenAll(tasks);            
+            await Task.WhenAll(tasks);          
         }
 
         // 应用关闭时执行清理

@@ -167,7 +167,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
         public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
-        public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
+        //public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
         public bool IsInNaviView { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
