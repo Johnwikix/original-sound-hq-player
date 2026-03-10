@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
@@ -26,6 +27,12 @@ namespace WinUIMusicPlayer.Utils
 
         public static double BoolToOpacityReConverter(bool isInPlayingDetailMode) {
             return isInPlayingDetailMode ? 0 : 1;
+        }
+
+        public static double BoolToOpacityMultParamsConverter(Visibility visibility,bool isInNaviView)
+        {
+            if (visibility is not Visibility.Visible) return 1.0;
+            return isInNaviView ? 1.0 : 0.0;
         }
     }
 }

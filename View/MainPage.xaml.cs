@@ -1,20 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
@@ -106,6 +93,11 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToSettingsPage()
         {
+            if (PlayingFrame.Visibility is Visibility.Visible)
+            {
+                _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
+                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
+            }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
             _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
         }
@@ -149,7 +141,6 @@ namespace WinUIMusicPlayer.View
         public void NavigateToPlayingDetailPage()
         {
             ViewModel.AppViewModel.IsInPlayingDetailMode = true;
-            ViewModel.AppViewModel.NavigationViewOpacity = 0;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
                 _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
@@ -162,7 +153,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.IsInPlayingDetailMode = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                ViewModel.AppViewModel.NavigationViewOpacity = 1.0;
                 _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
                 _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
             }
@@ -180,15 +170,12 @@ namespace WinUIMusicPlayer.View
 
         private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            ViewModel.AppViewModel.NavigationViewOpacity = 1.0f;
+            ViewModel.AppViewModel.IsInNaviView = true;
         }
 
         private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (ViewModel.AppViewModel.IsInPlayingDetailMode && PlayingFrame?.Content?.GetType() == typeof(PlayingDetailPage))
-            {
-                ViewModel.AppViewModel.NavigationViewOpacity = 0;
-            }
+            ViewModel.AppViewModel.IsInNaviView = false;
         }
     }
 }
