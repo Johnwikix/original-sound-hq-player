@@ -21,7 +21,7 @@ namespace WinUIMusicPlayer.View
         public EqualizerDialog EqualizerDialog { get; set; }
         private readonly INavigationService _navigationService;
         private readonly INavigationService _playingNavigation;
-
+        private bool _isPageTransitioning = false;
         public MainPage(MainViewModel viewModel)
         {
             InitializeComponent();
@@ -140,21 +140,37 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToPlayingDetailPage()
         {
+            if (_isPageTransitioning) return; // 整体互锁
+            _isPageTransitioning = true;
+
             AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
                 _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime);
+                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime,
+                    onCompleted: () => _isPageTransitioning = false); // 动画结束后解锁
+            }
+            else
+            {
+                _isPageTransitioning = false;
             }
         }
 
         public void NavigatebackToMusicBrowsePage()
         {
+            if (_isPageTransitioning) return;
+            _isPageTransitioning = true;
+
             AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
+                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime,
+                    onCompleted: () => _isPageTransitioning = false);
+            }
+            else
+            {
+                _isPageTransitioning = false;
             }
         }
 

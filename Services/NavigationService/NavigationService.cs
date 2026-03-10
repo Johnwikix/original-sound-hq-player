@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             _easingInFunction = new ExponentialEase()
             {
                 EasingMode = EasingMode.EaseIn,
-                Exponent = 8
+                Exponent = 6
             };
         }
 
@@ -255,11 +255,9 @@ namespace WinUIMusicPlayer.Services.NavigationService
             storyboard.Begin();
         }
 
-        public void FadeShow(int animeTime = 300)
+        public void FadeShow(int animeTime = 300, Action? onCompleted = null)
         {
-            if (ContentFrame is null || _isAnimating) return;
-            _isAnimating = true;
-
+            if (ContentFrame is null) return;
             ContentFrame.Visibility = Visibility.Visible;
             var storyboard = new Storyboard();
             var opacityAnimation = new DoubleAnimation()
@@ -267,27 +265,27 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 From = 0,
                 To = 1,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = _easingInFunction
             };
             Storyboard.SetTarget(opacityAnimation, ContentFrame);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
             storyboard.Children.Add(opacityAnimation);
-            storyboard.Completed += (s, e) => _isAnimating = false;
+            storyboard.Completed += (s, e) =>
+            {
+                _isAnimating = false;
+                onCompleted?.Invoke();
+            };
             storyboard.Begin();
         }
 
-        public void FadeDismiss(int animeTime = 300)
+        public void FadeDismiss(int animeTime = 300, Action? onCompleted = null)
         {
-            if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed || _isAnimating) return;
-            _isAnimating = true;
-
+            if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed) return;
             var storyboard = new Storyboard();
             var opacityAnimation = new DoubleAnimation()
             {
                 From = 1,
                 To = 0,
                 Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = _easingOutFunction
             };
             Storyboard.SetTarget(opacityAnimation, ContentFrame);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
@@ -297,11 +295,12 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 ContentFrame.Visibility = Visibility.Collapsed;
                 ContentFrame.Opacity = 1;
                 _isAnimating = false;
+                onCompleted?.Invoke();
             };
             storyboard.Begin();
         }
 
-        public void Show(Type pageType, int animeTime = 300)
+        public void Show(Type pageType, int animeTime = 300, Action? onCompleted = null)
         {
             if (ContentFrame is null || _isAnimating) return;
             _isAnimating = true;
@@ -340,12 +339,13 @@ namespace WinUIMusicPlayer.Services.NavigationService
                     ContentFrame.RenderTransform = null;
                     ContentFrame.ClearValue(UIElement.RenderTransformProperty);
                     _isAnimating = false;
+                    onCompleted?.Invoke();
                 };
                 storyboard.Begin();
             }
         }
 
-        public void Dismiss(int animeTime = 300)
+        public void Dismiss(int animeTime = 300, Action? onCompleted = null)
         {
             if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed || _isAnimating) return;
             _isAnimating = true;
@@ -381,6 +381,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 ContentFrame.RenderTransform = null;
                 ContentFrame.ClearValue(UIElement.RenderTransformProperty);
                 _isAnimating = false;
+                onCompleted?.Invoke();
             };
             storyboard.Begin();
         }

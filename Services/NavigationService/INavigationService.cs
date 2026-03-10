@@ -9,10 +9,10 @@ namespace WinUIMusicPlayer.Services.NavigationService
         Frame ContentFrame { get; set; }
         void RegisterPage<T>() where T : Page;
         void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300, bool isPlayAnime = false);
-        void Show(Type pageType, int animeTime = 300);
-        void Dismiss(int animeTime = 300);
-        void FadeShow(int animeTime = 300);
-        void FadeDismiss(int animeTime = 300);
+        void Show(Type pageType, int animeTime = 300, Action? onCompleted = null);
+        void Dismiss(int animeTime = 300, Action? onCompleted = null);
+        void FadeShow(int animeTime = 300, Action? onCompleted = null);
+        void FadeDismiss(int animeTime = 300, Action? onCompleted = null);
         void Initialize(Frame frame);
         void GoBack();
         bool CanGoBack { get; }
