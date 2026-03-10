@@ -107,7 +107,7 @@ namespace WinUIMusicPlayer.View
             if (args.IsSettingsInvoked)
             {
                 _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
-                _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
+                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
             }
             else
             {
@@ -116,7 +116,7 @@ namespace WinUIMusicPlayer.View
                 {
                     case "AddFolder":
                         _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                        _playingNavigation.FadeDismiss(AppSettings.EntranceAnimationTime);
+                        _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
                         _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
