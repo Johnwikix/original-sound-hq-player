@@ -8,13 +8,29 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
-        public static string OutputMode { get; set; } = "DirectSound";
-        public static int Latency { get; set; } = 300;
-
         public static event EventHandler OutputSettingsChanged;
         public static event EventHandler OutputSettingsUpdated;
-        public static event EventHandler EqUpdated;        
+        public static event EventHandler EqUpdated;
         public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
+        public static void OnOutputSettingsChanged()
+        {
+            OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        public static void OnOutputSettingsUpdated()
+        {
+            OutputSettingsUpdated?.Invoke(null, EventArgs.Empty);
+        }
+        public static void OnEqUpdated()
+        {
+            EqUpdated?.Invoke(null, EventArgs.Empty);
+        }
+        public static void EqualizerChanged()
+        {
+            EqualizerChangedEvent?.Invoke(null, equalizer);
+        }
+        public static string OutputMode { get; set; } = "DirectSound";
+        public static int Latency { get; set; } = 300;
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
         public static bool IsFadeEnabled { get; set; } = true;
@@ -41,8 +57,7 @@ namespace WinUIMusicPlayer.Model
         //public static int SlideAnimationTime { get; set; } = 400;
         //public static int DrillInAnimationTime { get; set; } = 400;
         public static string equalizerStr { get; set; } = string.Empty;
-
-        public static Dictionary<string, double> equalizer = new()
+        public static Dictionary<string, double> equalizer { get; set; } = new()
         {
             {"32Hz", 0},   // 32Hz 初始增益 0dB
             {"64Hz", 0},   // 64Hz 初始增益 0dB
@@ -58,23 +73,6 @@ namespace WinUIMusicPlayer.Model
         public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
         //public static bool IsFolderWatchEnabled { get; set; } = true;
-        public static void OnOutputSettingsChanged()
-        {
-            OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
-        }
-
-        public static void OnOutputSettingsUpdated()
-        {
-            OutputSettingsUpdated?.Invoke(null, EventArgs.Empty);
-        }
-        public static void OnEqUpdated()
-        {
-            EqUpdated?.Invoke(null, EventArgs.Empty);
-        }
-        public static void EqualizerChanged()
-        {
-            EqualizerChangedEvent?.Invoke(null, equalizer);
-        }
         public static bool IsCustomAppSize { get; set; } = false;
         public static int AppWidth { get; set; } = 1280;
         public static int AppHeight { get; set; } = 810;
@@ -85,7 +83,7 @@ namespace WinUIMusicPlayer.Model
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Left;
         //public static int LyricsMargin { get; set; } = 20;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
-        public static bool IsWFWLyrics { get; set; } = true;
+        //public static bool IsWFWLyrics { get; set; } = true;
 
     }
 }

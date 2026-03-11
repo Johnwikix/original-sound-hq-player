@@ -13,8 +13,8 @@ namespace WinUIMusicPlayer.Model
         public int BassASIODeviceId { get; set; } = 0;
         public bool IsFadeEnabled { get; set; } = false;
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
-        public string DefualtEntry { get; set; }
-        public string DefualtPlayList { get; set; }
+        public string DefualtEntry { get; set; } = "AddFolder";
+        public string DefualtPlayList { get; set; } = "song";
         public string AppStyle { get; set; } = "TransparentAcrylic";
         public float CustomAcrylicOpacity { get; set; } = 0.5f;
         public byte CustomColorAlpha { get; set; } = 255;
@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsDopEnabled { get; set; } = false;
         public int dsdGain { get; set; } = 6;
         public int dsdPcmFreq { get; set; } = 88200;
-        public string equalizerStr { get; set; }
+        public string equalizerStr { get; set; } = string.Empty;
         public bool IsPlayDetailBtnVisible { get; set; } = true;
         public bool IsEqualizerEnabled { get; set; } = false;
         public int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素

@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.Services
     public class MusicDatabaseService
     {
         private SQLiteAsyncConnection _dbConnection;
-        private string DbPath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+        private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         private readonly ConcurrentBag<Music> _toDelete = [];
@@ -219,7 +219,7 @@ namespace WinUIMusicPlayer.Services
             var playListState = await _dbConnection.Table<LastPlayListState>().FirstOrDefaultAsync();
             if (playListState is null)
             {
-                return new List<Music>();
+                return [];
             }
 
             var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries).AsValueEnumerable()
@@ -255,9 +255,6 @@ namespace WinUIMusicPlayer.Services
             {
                 var list = await _dbConnection.Table<PlayList>().ToListAsync();
                 await AppViewModel.AllPlayList.AddRangeAsync(list);
-                //foreach (var playList in list) {
-                //    AppViewModel.AllPlayList.Add(playList);
-                //}
             }
             catch
             {
@@ -631,61 +628,55 @@ namespace WinUIMusicPlayer.Services
             var settings = await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings is not null)
             {
+                AppSettings.OutputMode = settings.OutputMode;               
+                AppSettings.DeviceName = settings.DeviceFriendlyName;
+                AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
+                AppSettings.equalizerStr = settings.equalizerStr;
+                AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
+                AppSettings.EqualizerPreset = settings.EqualizerPreset;
+                AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefualtEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefualtPlayList;
-                AppSettings.OutputMode = settings.OutputMode;
                 AppViewModel.Latency = settings.Latency;
-                AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsCoverCacheEnabled = settings.isCoverCacheEnabled;
                 AppViewModel.IsRunningBackend = settings.isRunningBackend;
                 AppViewModel.IsAutoLyricsEnabled = settings.isAutoLyricsEnabled;
                 AppViewModel.DsdGain = settings.dsdGain;
-                AppSettings.dsdPcmFreq = settings.dsdPcmFreq;
-                AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
-                AppSettings.equalizerStr = settings.equalizerStr;
-                AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
-                AppSettings.EqualizerPreset = settings.EqualizerPreset;
+                AppViewModel.DsdPcmFreq = settings.dsdPcmFreq.ToString();               
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
                 AppViewModel.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppViewModel.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppViewModel.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
-                AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
-                AppSettings.AppWidth = settings.AppWidth;
-                AppSettings.AppHeight = settings.AppHeight;
-                AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
-                AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity * 100;
+                AppViewModel.IsCustomAppSize = settings.IsCustomAppSize;
+                AppViewModel.AppWidth = settings.AppWidth;
+                AppViewModel.AppHeight = settings.AppHeight;
+                AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
+                AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source)); ;
+                AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
                 AppViewModel.CustomColor = Color.FromArgb(settings.CustomColorAlpha,
                                                   settings.CustomColorRed,
                                                  settings.CustomColorGreen,
                                                  settings.CustomColorBlue);
-                AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
-                AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
+                AppViewModel.IsUpdateBackDrop = settings.IsUpdateBackDrop;
+                AppViewModel.LyricsAlignment = settings.LyricsAlignment;
                 AppViewModel.LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
-                AppSettings.GlobalFontSize = settings.GlobalFontSize;
-                AppSettings.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
-                AppSettings.MusicCoverCache = settings.MusicCoverCache;
-                AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
-                AppSettings.IsDopEnabled = settings.IsDopEnabled;
+                AppViewModel.GlobalFontSize = settings.GlobalFontSize;
+                AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
+                AppViewModel.MusicCoverCache = settings.MusicCoverCache;
+                AppViewModel.IsDopEnabled = settings.IsDopEnabled;
                 AppViewModel.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
-                AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
-                AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
-                AppSettings.LyricsBlurAmount = Math.Clamp(settings.LyricsBlurAmount, 0, 1000);
+                AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
+                AppViewModel.IsWFWLyrics = settings.IsWFWLyrics;
+                AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 LoadSettingsToAppViewModel();
             }
         }
 
-        private void LoadSettingsToAppViewModel() {            
-            //AppViewModel.DsdGain = AppSettings.dsdGain;
-            //AppViewModel.IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            //AppViewModel.IsRunningBackend = AppSettings.isRunningBackend;
-            //AppViewModel.Latency = AppSettings.Latency;
-            //AppViewModel.DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
-            //AppViewModel.DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
-            //AppViewModel.BackdropType = AppSettings.AppStyle;
+        private void LoadSettingsToAppViewModel() {
             if (AppViewModel.BackdropType != "CustomAcrylicStyle")
             {
                 AppViewModel.IsColorPickerVisible = false;
@@ -694,6 +685,15 @@ namespace WinUIMusicPlayer.Services
             {
                 AppViewModel.IsColorPickerVisible = true;
             }
+            AppViewModel.Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
+            AppViewModel.InitializeWasapiDevice();
+            //AppViewModel.DsdGain = AppSettings.dsdGain;
+            //AppViewModel.IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+            //AppViewModel.IsRunningBackend = AppSettings.isRunningBackend;
+            //AppViewModel.Latency = AppSettings.Latency;
+            //AppViewModel.DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
+            //AppViewModel.DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
+            //AppViewModel.BackdropType = AppSettings.AppStyle;
             //AppViewModel.CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
             //AppViewModel.CustomColor = Color.FromArgb(AppSettings.CustomColorAlpha,
             //                                     AppSettings.CustomColorRed,
@@ -704,22 +704,20 @@ namespace WinUIMusicPlayer.Services
             //AppViewModel.SlideAnimationTime = AppSettings.SlideAnimationTime;
             //AppViewModel.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             //AppViewModel.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            AppViewModel.IsCustomAppSize = AppSettings.IsCustomAppSize;
-            AppViewModel.AppHeight = AppSettings.AppHeight;
-            AppViewModel.AppWidth = AppSettings.AppWidth;
-            AppViewModel.Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
-            AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
-            AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
-            AppViewModel.IsDopEnabled = AppSettings.IsDopEnabled;
-            AppViewModel.IsFadeEnabled = AppSettings.IsFadeEnabled;
-            AppViewModel.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-            AppViewModel.LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            AppViewModel.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-            AppViewModel.GlobalFontSize = AppSettings.GlobalFontSize;
-            AppViewModel.MusicCoverCache = AppSettings.MusicCoverCache;
-            AppViewModel.DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
-            AppViewModel.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            AppViewModel.LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
+            //AppViewModel.IsCustomAppSize = AppSettings.IsCustomAppSize;
+            //AppViewModel.AppHeight = AppSettings.AppHeight;
+            //AppViewModel.AppWidth = AppSettings.AppWidth;           
+            //AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
+            //AppViewModel.IsDopEnabled = AppSettings.IsDopEnabled;
+            //AppViewModel.IsFadeEnabled = AppSettings.IsFadeEnabled;
+            //AppViewModel.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
+            //AppViewModel.LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+            //AppViewModel.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
+            //AppViewModel.GlobalFontSize = AppSettings.GlobalFontSize;
+            //AppViewModel.MusicCoverCache = AppSettings.MusicCoverCache;
+            //AppViewModel.DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
+            //AppViewModel.IsWFWLyrics = AppSettings.IsWFWLyrics;
+            //AppViewModel.LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
         }
 
         public async Task SaveSettingAsync()
@@ -737,10 +735,14 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {            
+        private SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {
+            newSettings.equalizerStr = equalizerStr ?? AppSettings.equalizerStr;
+            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppViewModel.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
+            newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
+            newSettings.Latency = AppViewModel.Latency;
             newSettings.DefualtEntry = AppViewModel.DefaultEntryComboBoxTag;
             newSettings.DefualtPlayList = AppViewModel.DefaultPlayListComboBoxTag;
             newSettings.AppStyle = AppViewModel.BackdropType;
@@ -749,37 +751,33 @@ namespace WinUIMusicPlayer.Services
             newSettings.isRunningBackend = AppViewModel.IsRunningBackend;
             newSettings.isAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.dsdGain = AppViewModel.DsdGain;
-            newSettings.equalizerStr = equalizerStr ?? AppSettings.equalizerStr;
-            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
             newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
             newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
-            newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
-            newSettings.AppHeight = AppSettings.AppHeight;
-            newSettings.AppWidth = AppSettings.AppWidth;
-            newSettings.GlobalFont = AppSettings.GlobalFont.Source;
-            newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity / 100;
+            newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
+            newSettings.AppHeight = AppViewModel.AppHeight;
+            newSettings.AppWidth = AppViewModel.AppWidth;
+            newSettings.GlobalFont = AppViewModel.FontFamily.FontFamily.Source;
+            newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity;
             newSettings.CustomColorAlpha = AppViewModel.CustomColor.A;
             newSettings.CustomColorRed = AppViewModel.CustomColor.R;
             newSettings.CustomColorGreen = AppViewModel.CustomColor.G;
             newSettings.CustomColorBlue = AppViewModel.CustomColor.B;
-            newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-            newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+            newSettings.IsUpdateBackDrop = AppViewModel.IsUpdateBackDrop;
+            newSettings.LyricsAlignment = AppViewModel.LyricsAlignment;
             newSettings.LyricsMargin = (int)AppViewModel.LyricsMargin.Left;
-            newSettings.GlobalFontSize = AppSettings.GlobalFontSize;
-            newSettings.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-            newSettings.MusicCoverCache = AppSettings.MusicCoverCache;
-            newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
-            newSettings.IsDopEnabled = AppSettings.IsDopEnabled;
-            newSettings.dsdPcmFreq = AppSettings.dsdPcmFreq;
+            newSettings.GlobalFontSize = AppViewModel.GlobalFontSize;
+            newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
+            newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
+            newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
+            newSettings.dsdPcmFreq = int.Parse(AppViewModel.DsdPcmFreq);
             newSettings.IsPlayDetailBtnVisible = AppViewModel.IsPlayDetailButtonVisible;
-            newSettings.IsFadeEnabled = AppSettings.IsFadeEnabled;
-            newSettings.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            newSettings.LyricsBlurAmount = Math.Clamp(AppSettings.LyricsBlurAmount, 0, 1000);
+            newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
+            newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
+            newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             return newSettings;
         }
 
@@ -1203,10 +1201,6 @@ namespace WinUIMusicPlayer.Services
             }
             if (isUpdate)
             {
-                //App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                //{
-                //    App.MainWindow.UpdateMusicList();
-                //});
                 App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
             }
         }
