@@ -71,22 +71,22 @@ namespace WinUIMusicPlayer.View
 
             foreach (var item in NavigationViewControl.MenuItems)
             {
-                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == AppSettings.DefualtEntry)
+                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == ViewModel.AppViewModel.DefaultEntryComboBoxTag)
                 {
                     NavigationViewControl.SelectedItem = navigationViewItem;
                     break;
                 }
             }
-            switch (AppSettings.DefualtEntry)
+            switch (ViewModel.AppViewModel.DefaultEntryComboBoxTag)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(AddFolderPage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
                     break;
                 default:
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
                     break;
             }
         }
@@ -95,8 +95,8 @@ namespace WinUIMusicPlayer.View
         {
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
+                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
             _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
@@ -106,8 +106,8 @@ namespace WinUIMusicPlayer.View
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, AppSettings.EntranceAnimationTime);
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
+                _navigationService.Navigate(typeof(SettingsPage), this, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             else
             {
@@ -115,11 +115,11 @@ namespace WinUIMusicPlayer.View
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, AppSettings.EntranceAnimationTime);
-                        _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime);
+                        _navigationService.Navigate(typeof(AddFolderPage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                        _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, AppSettings.EntranceAnimationTime);
+                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
                         if (AppData.IsPlayingDetail)
                         {
                             NavigateToPlayingDetailPage();
@@ -146,8 +146,8 @@ namespace WinUIMusicPlayer.View
             AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
-                _navigationService.FadeDismiss(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Show(typeof(PlayingDetailPage), AppSettings.EntranceAnimationTime,
+                _navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Show(typeof(PlayingDetailPage), ViewModel.AppViewModel.EntranceAnimationTime,
                     onCompleted: () => _isPageTransitioning = false); // 动画结束后解锁
             }
             else
@@ -164,8 +164,8 @@ namespace WinUIMusicPlayer.View
             AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                _navigationService.FadeShow(AppSettings.EntranceAnimationTime);
-                _playingNavigation.Dismiss(AppSettings.EntranceAnimationTime,
+                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime,
                     onCompleted: () => _isPageTransitioning = false);
             }
             else

@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            SelectBarItem(AppSettings.DefualtPlayList);
+            SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
             this.Loaded -= OnPageLoaded;
         }
 
@@ -148,7 +148,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
                 }
                 else
                 {
@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                    _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
                     App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
@@ -182,22 +182,22 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is SongCollectionPage)
             {
                 AppData.CurrentPage = typeof(AlbumPage);
-                _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
             }
             if (ContentFrame.Content is SongArtistListPage)
             {
                 AppData.CurrentPage = typeof(ArtistPage);
-                _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
             }
             if (ContentFrame.Content is SongFolderListPage)
             {
                 AppData.CurrentPage = typeof(FolderBrowsePage);
-                _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
                 AppData.CurrentPage = typeof(PlayListPage);
-                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
             }
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)

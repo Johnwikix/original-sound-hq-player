@@ -98,7 +98,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppViewModel.PageType = "folder";
                         AppViewModel.CurrentFolderObj = folder;
-                        parentPage.NavigatePage(typeof(SongFolderListPage),new DrillInNavigationTransitionInfo(), AppSettings.DrillInAnimationTime);
+                        parentPage.NavigatePage(typeof(SongFolderListPage),new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);
                     }
                     catch (Exception ex)
                     {

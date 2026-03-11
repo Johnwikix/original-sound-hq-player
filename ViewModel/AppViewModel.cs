@@ -952,7 +952,6 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     else if (ThemeType == "Default")
                     {
-                        // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();
                     }
                     App.MainWindow.DispatcherQueue.TryEnqueue(async () =>

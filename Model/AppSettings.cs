@@ -19,8 +19,8 @@ namespace WinUIMusicPlayer.Model
         public static int BassASIODeviceId { get; set; } = 0;
         public static bool IsFadeEnabled { get; set; } = true;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
-        public static string DefualtEntry { get; set; } = "AddFolder";
-        public static string DefualtPlayList { get; set; } = "song";
+        //public static string DefualtEntry { get; set; } = "AddFolder";
+        //public static string DefualtPlayList { get; set; } = "song";
         public static bool isPlaying { get; set; } = false;
         public static bool IsDopEnabled { get; set; } = false;
         public static double LyricsBlurAmount { get; set; } = 5;
@@ -34,16 +34,13 @@ namespace WinUIMusicPlayer.Model
         public static byte CustomColorBlue { get; set; } = 128;
         public static string AppTheme { get; set; } = "Default";
         public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
-        //public static bool isCoverCacheEnabled { get; set; } = true;
         public static bool isRunningBackend { get; set; } = true;
         public static bool isAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
-        public static int EntranceAnimationTime { get; set; } = 300;
-        public static int SlideAnimationTime { get; set; } = 400;
-        public static int DrillInAnimationTime { get; set; } = 400;
-        //public static bool IsBackgroundCoverEnabled { get; set; } = true; // 是否启用背景封面
+        //public static int EntranceAnimationTime { get; set; } = 300;
+        //public static int SlideAnimationTime { get; set; } = 400;
+        //public static int DrillInAnimationTime { get; set; } = 400;
         public static string equalizerStr { get; set; } = string.Empty;
-        //public static bool IsPlayDetailBtnVisible { get; set; } = true;
 
         public static Dictionary<string, double> equalizer = new()
         {
@@ -60,7 +57,7 @@ namespace WinUIMusicPlayer.Model
         };
         public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
-        public static bool IsFolderWatchEnabled { get; set; } = true;
+        //public static bool IsFolderWatchEnabled { get; set; } = true;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
@@ -84,7 +81,6 @@ namespace WinUIMusicPlayer.Model
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
         public static double GlobalFontSize { get; set; } = 32;
-        public static List<FontInfo> FontFamilyList { get; set; }
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Left;
         //public static int LyricsMargin { get; set; } = 20;

@@ -79,7 +79,6 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         if (!AppViewModel.BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
                         {
-                            Debug.WriteLine($"Wasapi:{deviceInfo.Name}: {i}");
                             AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
@@ -105,8 +104,6 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-            var deviceName = AppSettings.DeviceName;
-            var outputMode = AppSettings.OutputMode;
             var device = AppViewModel.BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
             if (device is null)
             {
@@ -126,8 +123,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (BassAsio.GetDeviceInfo(i, out AsioDeviceInfo deviceInfo))
                 {
-                    Debug.WriteLine($"Asio:{deviceInfo.Name}: {i}");
-                    Debug.WriteLine($"AsioDriver:{deviceInfo.Driver}: {i}");
                     AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                     {
                         Name = deviceInfo.Name,

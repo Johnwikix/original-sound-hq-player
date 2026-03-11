@@ -180,8 +180,7 @@ namespace WinUIMusicPlayer
                 App.Services.GetRequiredService<IpcService>().Initializing();
                 await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
-                await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
-                AppSettings.FontFamilyList = ToolUtils.GetSystemFontsInternal();                
+                await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
                 UpdateAppNotifyIconControl();
                 ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
                 LoadingGrid.Visibility = Visibility.Collapsed;             

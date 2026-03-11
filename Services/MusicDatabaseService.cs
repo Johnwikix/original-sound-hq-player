@@ -648,11 +648,11 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
                 AppViewModel.CoverSize = settings.CoverSize;
-                AppSettings.EntranceAnimationTime = settings.EntranceAnimationTime;
-                AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
-                AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
+                AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
+                AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
+                AppViewModel.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppViewModel.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
-                AppSettings.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
+                AppViewModel.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppSettings.IsCustomAppSize = settings.IsCustomAppSize;
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
@@ -683,7 +683,6 @@ namespace WinUIMusicPlayer.Services
             //AppViewModel.IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
             //AppViewModel.IsRunningBackend = AppSettings.isRunningBackend;
             //AppViewModel.Latency = AppSettings.Latency;
-            //IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
             //AppViewModel.DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
             //AppViewModel.DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
             //AppViewModel.BackdropType = AppSettings.AppStyle;
@@ -701,10 +700,10 @@ namespace WinUIMusicPlayer.Services
             //                                     AppSettings.CustomColorGreen,
             //                                     AppSettings.CustomColorBlue);
             //AppViewModel.ThemeType = AppSettings.AppTheme;
-            AppViewModel.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-            AppViewModel.SlideAnimationTime = AppSettings.SlideAnimationTime;
-            AppViewModel.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            AppViewModel.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+            //AppViewModel.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
+            //AppViewModel.SlideAnimationTime = AppSettings.SlideAnimationTime;
+            //AppViewModel.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
+            //AppViewModel.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
             AppViewModel.IsCustomAppSize = AppSettings.IsCustomAppSize;
             AppViewModel.AppHeight = AppSettings.AppHeight;
             AppViewModel.AppWidth = AppSettings.AppWidth;
@@ -754,11 +753,11 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.CoverSize = AppViewModel.CoverSize;
-            newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-            newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
+            newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
+            newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
+            newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;
-            newSettings.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+            newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
             newSettings.IsCustomAppSize = AppSettings.IsCustomAppSize;
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;

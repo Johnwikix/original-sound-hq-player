@@ -79,7 +79,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
             AppSettings.OutputSettingsUpdated += AppSettings_OutputSettingsUpdated;
             AppSettings.EqUpdated += AppSettings_OnEqUpdated;
-            if (AppSettings.IsFolderWatchEnabled)
+            if (AppViewModel.IsFolderWatchEnabled)
             {
                 StartWatchingFileFolder();
             }
@@ -337,7 +337,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (!await scanSemaphore.WaitAsync(0) || !AppSettings.IsFolderWatchEnabled)
+            if (!await scanSemaphore.WaitAsync(0) || !AppViewModel.IsFolderWatchEnabled)
             {
                 return;
             }
@@ -688,7 +688,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - previousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _musicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppSettings.SlideAnimationTime);
+            _musicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppViewModel.SlideAnimationTime);
             previousSelectedIndex = currentSelectedIndex;
         }
 

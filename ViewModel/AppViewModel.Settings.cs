@@ -175,7 +175,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref _defaultPlayListComboBoxTag, value))
                 {
-                    AppSettings.DefualtPlayList = value;
                     if (IsInitialized)
                     {                       
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -274,7 +273,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (IsInitialized)
                     {
-                        AppSettings.EntranceAnimationTime = value;
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -290,7 +288,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (IsInitialized)
                     {
-                        AppSettings.SlideAnimationTime = value;
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -306,7 +303,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (IsInitialized)
                     {
-                        AppSettings.DrillInAnimationTime = value;
+                        //AppSettings.DrillInAnimationTime = value;
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -330,7 +327,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (IsInitialized)
                     {
-                        AppSettings.IsFolderWatchEnabled = value;
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
@@ -645,7 +641,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnDefaultEntryComboBoxTagChanged(string value)
         {
-            AppSettings.DefualtEntry = value;
             if (IsInitialized)
             {
                 _ = _musicDatabaseService.SaveSettingAsync();
