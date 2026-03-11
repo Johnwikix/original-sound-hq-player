@@ -22,7 +22,6 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             ViewModel = viewModel;
-            ViewModel.SetCurrentPage(this);
             DataContext = this;
         }
 
@@ -53,7 +52,7 @@ namespace WinUIMusicPlayer.View
                         CloseButtonText = ToolUtils.GetString("CloseButton"),
                         XamlRoot = this.XamlRoot
                     };
-                    contentDialog.RequestedTheme = AppSettings.elementTheme;
+                    contentDialog.RequestedTheme = AppSettings.ElementTheme;
                     ContentDialogResult result = await contentDialog.ShowAsync();
 
                     if (result == ContentDialogResult.Primary)
@@ -66,11 +65,6 @@ namespace WinUIMusicPlayer.View
                 });
             }
         }
-        //private void PlayListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    var playList = PlayListView.SelectedItem as PlayList;
-        //    ViewModel.PlayListView_SelectionChanged(playList);
-        //}
 
         private void ExportPlayList_Click(object sender, RoutedEventArgs e)
         {

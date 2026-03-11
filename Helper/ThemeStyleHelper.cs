@@ -171,11 +171,11 @@ namespace WinUIMusicPlayer.Helper
                             titleBar.ButtonHoverBackgroundColor = null;
                             titleBar.ButtonPressedBackgroundColor = null;
                             rootElement.RequestedTheme = ElementTheme.Default;
-                            AppSettings.elementTheme = ElementTheme.Default;
+                            AppSettings.ElementTheme = ElementTheme.Default;
                             break;
                         case "Dark":
                             rootElement.RequestedTheme = ElementTheme.Dark;
-                            AppSettings.elementTheme = ElementTheme.Dark;
+                            AppSettings.ElementTheme = ElementTheme.Dark;
                             titleBar.ButtonForegroundColor = Colors.White;
                             titleBar.ButtonHoverForegroundColor = Colors.White;
                             titleBar.ButtonPressedForegroundColor = Colors.White;
@@ -184,7 +184,7 @@ namespace WinUIMusicPlayer.Helper
                             break;
                         case "Light":
                             rootElement.RequestedTheme = ElementTheme.Light;
-                            AppSettings.elementTheme = ElementTheme.Light;
+                            AppSettings.ElementTheme = ElementTheme.Light;
                             titleBar.ButtonForegroundColor = Colors.Black;
                             titleBar.ButtonHoverForegroundColor = Colors.Black;
                             titleBar.ButtonPressedForegroundColor = Colors.Black;
@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.Helper
                             titleBar.ButtonHoverBackgroundColor = null;
                             titleBar.ButtonPressedBackgroundColor = null;
                             rootElement.RequestedTheme = ElementTheme.Default;
-                            AppSettings.elementTheme = ElementTheme.Default;
+                            AppSettings.ElementTheme = ElementTheme.Default;
                             break;
                     }
                     ThemeChanged?.Invoke(this, EventArgs.Empty);

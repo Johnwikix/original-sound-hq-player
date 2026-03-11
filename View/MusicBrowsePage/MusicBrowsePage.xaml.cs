@@ -93,7 +93,7 @@ namespace WinUIMusicPlayer.View
                 CloseButtonText = ToolUtils.GetString("CloseButton"),
                 XamlRoot = this.XamlRoot
             };
-            contentDialog.RequestedTheme = AppSettings.elementTheme;
+            contentDialog.RequestedTheme = AppSettings.ElementTheme;
             ContentDialogResult result = await contentDialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
             {
@@ -131,8 +131,8 @@ namespace WinUIMusicPlayer.View
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            AppData.usbStorageDevice = null;
-            AppData.musicOnUsbDevice.Clear();
+            AppData.UsbStorageDevice = null;
+            AppData.MusicOnUsbDevice.Clear();
             ToolUtils.ClearAllUsbStatus();
             if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
             {
@@ -234,7 +234,7 @@ namespace WinUIMusicPlayer.View
                 CloseButtonText = ToolUtils.GetString("CloseButton"),
                 XamlRoot = this.XamlRoot
             };
-            contentDialog.RequestedTheme = AppSettings.elementTheme;
+            contentDialog.RequestedTheme = AppSettings.ElementTheme;
 
             // 声明事件处理方法（方便后续解除订阅）
             RoutedEventHandler buttonClickHandler = null;
@@ -440,7 +440,7 @@ namespace WinUIMusicPlayer.View
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
-            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.elementTheme;
+            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.ElementTheme;
             App.Services.GetRequiredService<MainPage>().EqualizerDialog.XamlRoot = this.XamlRoot;
             _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowAsync();
         }

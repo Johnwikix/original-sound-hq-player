@@ -267,7 +267,7 @@ namespace WinUIMusicPlayer.Services
         }
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
-            var query = AppData.allPlayListMusics
+            var query = AppData.AllPlayListMusics
                 .Where(plm => plm.PlayListId == playListId)
                 .Join(
                     AppViewModel.AllSongs,
@@ -375,7 +375,7 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
-            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
         public async Task AddMusicToPlayList(int playListId, int musicId)
@@ -403,7 +403,7 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
-            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
         private async Task<int> GetMaxOrder()
@@ -511,8 +511,8 @@ namespace WinUIMusicPlayer.Services
         }
         public async Task GetPlayListMusic()
         {
-            AppData.allPlayListMusics.Clear();
-            AppData.allPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            AppData.AllPlayListMusics.Clear();
+            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
         }
 
         public async Task LoadMusicList() {
@@ -631,7 +631,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;               
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
-                AppSettings.equalizerStr = settings.equalizerStr;
+                AppSettings.EqualizerStr = settings.equalizerStr;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
@@ -640,11 +640,11 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.Latency = settings.Latency;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
-                AppViewModel.IsCoverCacheEnabled = settings.isCoverCacheEnabled;
-                AppViewModel.IsRunningBackend = settings.isRunningBackend;
-                AppViewModel.IsAutoLyricsEnabled = settings.isAutoLyricsEnabled;
-                AppViewModel.DsdGain = settings.dsdGain;
-                AppViewModel.DsdPcmFreq = settings.dsdPcmFreq.ToString();               
+                AppViewModel.IsCoverCacheEnabled = settings.IsCoverCacheEnabled;
+                AppViewModel.IsRunningBackend = settings.IsRunningBackend;
+                AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
+                AppViewModel.DsdGain = settings.DsdGain;
+                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq.ToString();               
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
@@ -736,7 +736,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         private SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {
-            newSettings.equalizerStr = equalizerStr ?? AppSettings.equalizerStr;
+            newSettings.equalizerStr = equalizerStr ?? AppSettings.EqualizerStr;
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
             newSettings.OutputMode = AppSettings.OutputMode;
@@ -747,10 +747,10 @@ namespace WinUIMusicPlayer.Services
             newSettings.DefualtPlayList = AppViewModel.DefaultPlayListComboBoxTag;
             newSettings.AppStyle = AppViewModel.BackdropType;
             newSettings.AppTheme = AppViewModel.ThemeType;
-            newSettings.isCoverCacheEnabled = AppViewModel.IsCoverCacheEnabled;
-            newSettings.isRunningBackend = AppViewModel.IsRunningBackend;
-            newSettings.isAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
-            newSettings.dsdGain = AppViewModel.DsdGain;
+            newSettings.IsCoverCacheEnabled = AppViewModel.IsCoverCacheEnabled;
+            newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
+            newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
+            newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
             newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
@@ -773,7 +773,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
             newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
             newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
-            newSettings.dsdPcmFreq = int.Parse(AppViewModel.DsdPcmFreq);
+            newSettings.DsdPcmFreq = int.Parse(AppViewModel.DsdPcmFreq);
             newSettings.IsPlayDetailBtnVisible = AppViewModel.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
@@ -797,7 +797,7 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAsync<Music>(musicId);
                 await AppViewModel.AllSongs.ReplaceAllAsync(await _dbConnection.Table<Music>().ToListAsync());
-                var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
+                var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
                 foreach (var music in AppViewModel.AllSongs)

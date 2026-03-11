@@ -154,7 +154,7 @@ namespace WinUIMusicPlayer.View
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
-            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.elementTheme;
+            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.ElementTheme;
             App.Services.GetRequiredService<MainPage>().EqualizerDialog.XamlRoot = this.XamlRoot;
             _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowAsync();
         }

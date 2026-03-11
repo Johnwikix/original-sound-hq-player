@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.Services
 
         public void UpdateSystemMediaControlsState()
         {
-            SystemMediaControls.PlaybackStatus = AppSettings.isPlaying ?
+            SystemMediaControls.PlaybackStatus = AppSettings.IsPlaying ?
                 MediaPlaybackStatus.Playing :
                 MediaPlaybackStatus.Paused;
         }

@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer
             InitializeComponent();
             m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             SetWindow();
-            AppData.m_hWnd = m_hwnd;
+            AppData.HWnd = m_hwnd;
             this.Activated += MainWindow_Activated;
             ExtendsContentIntoTitleBar = true;
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
@@ -154,7 +154,7 @@ namespace WinUIMusicPlayer
 
         private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
-            if (AppSettings.isRunningBackend)
+            if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;
                 this.Hide();

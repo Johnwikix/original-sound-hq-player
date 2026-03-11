@@ -115,7 +115,7 @@ namespace WinUIMusicPlayer.ViewModel
                 return;
 
             progressBarValue = 0;
-            _progressDialog.RequestedTheme = AppSettings.elementTheme;
+            _progressDialog.RequestedTheme = AppSettings.ElementTheme;
 
             var musicList = uniqueSelectedMusics.AsValueEnumerable().ToList();
             isMutiFile = musicList.Count > 1;
@@ -240,14 +240,14 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                AppData.usbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
+                AppData.UsbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
                 AppViewModel.UpDateUsbDeviceMenuflyout();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (AppData.usbStorageDevices.Count > 0)
+                    if (AppData.UsbStorageDevices.Count > 0)
                     {
                         AppViewModel.UsbDeviceVisibility = Visibility.Visible;
-                        AppViewModel.UsbStorageDevices = AppData.usbStorageDevices;
+                        AppViewModel.UsbStorageDevices = AppData.UsbStorageDevices;
                         AppViewModel.UsbSelectedIndex = 0;
                     }
                     else
@@ -255,7 +255,7 @@ namespace WinUIMusicPlayer.ViewModel
                         AppViewModel.UsbSelectedIndex = -1;
                         AppViewModel.UsbDeviceVisibility = Visibility.Collapsed;
                         AppViewModel.UsbStorageDevices = null;
-                        AppData.musicOnUsbDevice.Clear();
+                        AppData.MusicOnUsbDevice.Clear();
                         ClearAllUsbStatus();
                     }
                 });
@@ -266,7 +266,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.UsbDeviceVisibility = Visibility.Collapsed;
                 });
-                AppData.musicOnUsbDevice.Clear();
+                AppData.MusicOnUsbDevice.Clear();
                 ClearAllUsbStatus();
                 System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
             }
@@ -275,7 +275,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
         {
             Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
-            AppData.usbStorageDevice = usbStorageDevice;
+            AppData.UsbStorageDevice = usbStorageDevice;
             List<UsbDeviceMusic> usbDeviceMusics = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
             if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
             {
@@ -284,7 +284,7 @@ namespace WinUIMusicPlayer.ViewModel
                 UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                 await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
                 Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-                AppData.musicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
                 Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
             }
             else
@@ -293,7 +293,7 @@ namespace WinUIMusicPlayer.ViewModel
                 string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
                 if (Directory.Exists(folderPath))
                 {
-                    AppData.musicOnUsbDevice = await _musicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
+                    AppData.MusicOnUsbDevice = await _musicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
                 }
                 else
                 {

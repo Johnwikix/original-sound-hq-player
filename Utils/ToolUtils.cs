@@ -166,7 +166,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     if (type == "album")
                     {
-                        if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album))
+                        if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album))
                         {
                             item.IsExistOnDevice = 1;
                         }
@@ -177,7 +177,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else if (type == "artist")
                     {
-                        if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author))
+                        if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author))
                         {
                             item.IsExistOnDevice = 1;
                         }
@@ -192,7 +192,7 @@ namespace WinUIMusicPlayer.Utils
                         item.IsExistOnDevice = 0;
                         foreach (var songs in allSongList)
                         {
-                            if (AppData.musicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Title == item.Title))
+                            if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Title == item.Title))
                             {
                                 item.IsExistOnDevice = 1;
                                 break;
@@ -1012,7 +1012,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else if (!AppData.UnknownAlbums.Contains(music.Album))
                     {
-                        if (AppSettings.isAutoLyricsEnabled)
+                        if (AppSettings.IsAutoLyricsEnabled)
                         {
                             picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
                             if (picture is not null)
@@ -1035,7 +1035,7 @@ namespace WinUIMusicPlayer.Utils
         private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)
         {
             byte[] picture = null;
-            if (AppSettings.isAutoLyricsEnabled && !isManual)
+            if (AppSettings.IsAutoLyricsEnabled && !isManual)
             {
                 var cancellationToken = new CancellationTokenSource();
                 if (!Directory.Exists(AppSettings.MusicCoverCache))

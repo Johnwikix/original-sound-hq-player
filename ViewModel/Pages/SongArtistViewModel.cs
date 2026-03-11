@@ -66,7 +66,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpDateUsbDeviceMenuflyout()
         {
             var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.usbStorageDevices.Count == 0)
+            if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
                 return;
@@ -77,7 +77,7 @@ namespace WinUIMusicPlayer.ViewModel
                 MenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
-            foreach (var usb in AppData.usbStorageDevices)
+            foreach (var usb in AppData.UsbStorageDevices)
             {
                 var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });

@@ -36,9 +36,9 @@ namespace WinUIMusicPlayer.Services
         {
             if (obj.Type == MessageType.PlayState)
             {
-                AppSettings.isPlaying = bool.Parse(obj.Result);
+                AppSettings.IsPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                if (AppSettings.isPlaying)
+                if (AppSettings.IsPlaying)
                 {
                     AppViewModel.StartProgressTimer();
                 }
@@ -48,16 +48,16 @@ namespace WinUIMusicPlayer.Services
                 }
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = AppSettings.isPlaying;
+                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
                 });
             }
             if (obj.Type == MessageType.PlayEnded)
             {
-                AppSettings.isPlaying = bool.Parse(obj.Result);
+                AppSettings.IsPlaying = bool.Parse(obj.Result);
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = AppSettings.isPlaying;
+                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
                 });
                 AutoPlayNextTrack();
             }
@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.Services
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 AppViewModel.ProgressSlider = 0;
-                AppSettings.isPlaying = false;
+                AppSettings.IsPlaying = false;
                 AppViewModel.IsPlaying = false;
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
             });
@@ -194,13 +194,13 @@ namespace WinUIMusicPlayer.Services
         public void PlayButton()
         {
             IpcService.PlayButton();
-            if (AppSettings.isPlaying) {
-                AppSettings.isPlaying = false;
+            if (AppSettings.IsPlaying) {
+                AppSettings.IsPlaying = false;
                 MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
                 AppViewModel.StopProgressTimer();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = AppSettings.isPlaying;
+                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
                 });
             }
         }

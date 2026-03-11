@@ -23,12 +23,12 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Default";
         public double LyricsBlurAmount { get; set; } = 4;
-        public bool isCoverCacheEnabled { get; set; } = true;
-        public bool isRunningBackend { get; set; } = true;
-        public bool isAutoLyricsEnabled { get; set; } = true;
+        public bool IsCoverCacheEnabled { get; set; } = true;
+        public bool IsRunningBackend { get; set; } = true;
+        public bool IsAutoLyricsEnabled { get; set; } = true;
         public bool IsDopEnabled { get; set; } = false;
-        public int dsdGain { get; set; } = 6;
-        public int dsdPcmFreq { get; set; } = 88200;
+        public int DsdGain { get; set; } = 6;
+        public int DsdPcmFreq { get; set; } = 88200;
         public string equalizerStr { get; set; } = string.Empty;
         public bool IsPlayDetailBtnVisible { get; set; } = true;
         public bool IsEqualizerEnabled { get; set; } = false;

@@ -26,8 +26,8 @@ namespace WinUIMusicPlayer.Services
                 string outputPath = GenerateOutputPath(music.Path, type);
                 if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                 {
-                    BassDsd.DefaultFrequency = AppSettings.dsdPcmFreq;
-                    BassDsd.DefaultGain = AppSettings.dsdGain;
+                    BassDsd.DefaultFrequency = AppSettings.DsdPcmFreq;
+                    BassDsd.DefaultGain = AppSettings.DsdGain;
                 }
                 switch (type)
                 {

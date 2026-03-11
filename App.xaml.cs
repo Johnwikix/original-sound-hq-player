@@ -120,32 +120,32 @@ namespace WinUIMusicPlayer
             if (systemLanguages[0].StartsWith("zh"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "zh-CN";
-                AppData.systemLanguage = "zh";
+                AppData.SystemLanguage = "zh";
             }
             else if (systemLanguages[0].StartsWith("es"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
-                AppData.systemLanguage = "es";
+                AppData.SystemLanguage = "es";
             }
             else if (systemLanguages[0].StartsWith("ja"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ja";
-                AppData.systemLanguage = "ja";
+                AppData.SystemLanguage = "ja";
             }
             else if (systemLanguages[0].StartsWith("ru"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "ru";
-                AppData.systemLanguage = "ru";
+                AppData.SystemLanguage = "ru";
             }
             else if (systemLanguages[0].StartsWith("de"))
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
-                AppData.systemLanguage = "de";
+                AppData.SystemLanguage = "de";
             }
             else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
-                AppData.systemLanguage = "en";
+                AppData.SystemLanguage = "en";
             }
             //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
         }

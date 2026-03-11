@@ -162,7 +162,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void ShowWindow(MainWindow window)
         {
-            if (WindowHelper.IsWindowVisible(AppData.m_hWnd))
+            if (WindowHelper.IsWindowVisible(AppData.HWnd))
             {
                 window.Restore();
                 window.Activate();

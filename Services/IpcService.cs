@@ -242,8 +242,8 @@ namespace WinUIMusicPlayer.Services
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
                 Latency = AppSettings.Latency,
                 IsDopEnabled = AppSettings.IsDopEnabled,
-                dsdGain = AppSettings.dsdGain,
-                dsdPcmFreq = AppSettings.dsdPcmFreq,
+                dsdGain = AppSettings.DsdGain,
+                dsdPcmFreq = AppSettings.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
                 Volume = App.Services.GetRequiredService<AppViewModel>().Volume / 100,
                 IsSettingChanged = IsSettingChanged,
@@ -254,7 +254,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task UpdateEq()
         {
-            await SendCommandAsync("UpdateEq", AppSettings.equalizerStr);
+            await SendCommandAsync("UpdateEq", AppSettings.EqualizerStr);
         }
 
         public async Task SetMusicUrl(string musicUrl)

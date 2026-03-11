@@ -64,7 +64,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpDateUsbDeviceMenuflyout()
         {
             var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.usbStorageDevices.Count == 0)
+            if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
                 return;
@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.ViewModel
                 MenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
-            foreach (var usb in AppData.usbStorageDevices)
+            foreach (var usb in AppData.UsbStorageDevices)
             {
                 var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
@@ -116,30 +116,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .Distinct()
                 .Count();
             SecondTitle = $"{AppViewModel.PlayListSongs.AsValueEnumerable().Count()} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
-        }      
-
-        //public void ClearUsbDeviceMusicList(object? sender, EventArgs e)
-        //{
-
-        //    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        //    {
-        //        foreach (var music in MusicList)
-        //        {
-        //            music.IsExistOnDevice = 0;
-        //        }
-        //    });
-        //}
-
-        public void RefreshUsbDeviceMusicList(object? sender, EventArgs e)
-        {
-            //ToolUtils.RefreshUsbDeviceMusicList(MusicList);
         }
-
-        //private void RefreshPlayList(object? sender, bool e)
-        //{
-        //    //if (e) InitizeData();
-        //}
-
         private void InitizeData()
         {
             if (_parentPage is not null)
@@ -155,7 +132,6 @@ namespace WinUIMusicPlayer.ViewModel
                 _currentPlayListId = AppViewModel.CurrentPlayListId;
             }
         }
-
         public async void MusicListView_DragItemsCompleted()
         {
             if (AppViewModel.SelectedSortOption.Tag.ToString() == "DefaultOrder")
@@ -171,7 +147,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-
         public void UpdateMusicListView()
         {
             try

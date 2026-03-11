@@ -37,11 +37,11 @@ namespace WinUIMusicPlayer.Model
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         //public static string DefualtEntry { get; set; } = "AddFolder";
         //public static string DefualtPlayList { get; set; } = "song";
-        public static bool isPlaying { get; set; } = false;
+        public static bool IsPlaying { get; set; } = false;
         public static bool IsDopEnabled { get; set; } = false;
         public static double LyricsBlurAmount { get; set; } = 5;
-        public static int dsdGain { get; set; } = 6;
-        public static int dsdPcmFreq { get; set; } = 88200;
+        public static int DsdGain { get; set; } = 6;
+        public static int DsdPcmFreq { get; set; } = 88200;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
         public static byte CustomColorAlpha { get; set; } = 255;
@@ -49,14 +49,14 @@ namespace WinUIMusicPlayer.Model
         public static byte CustomColorGreen { get; set; } = 128;
         public static byte CustomColorBlue { get; set; } = 128;
         public static string AppTheme { get; set; } = "Default";
-        public static ElementTheme elementTheme { get; set; } = ElementTheme.Default;
-        public static bool isRunningBackend { get; set; } = true;
-        public static bool isAutoLyricsEnabled { get; set; } = true;
+        public static ElementTheme ElementTheme { get; set; } = ElementTheme.Default;
+        public static bool IsRunningBackend { get; set; } = true;
+        public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         //public static int EntranceAnimationTime { get; set; } = 300;
         //public static int SlideAnimationTime { get; set; } = 400;
         //public static int DrillInAnimationTime { get; set; } = 400;
-        public static string equalizerStr { get; set; } = string.Empty;
+        public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> equalizer { get; set; } = new()
         {
             {"32Hz", 0},   // 32Hz 初始增益 0dB

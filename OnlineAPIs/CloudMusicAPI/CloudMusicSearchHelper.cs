@@ -177,7 +177,7 @@ public class CloudMusicSearchHelper
             string lyrics = string.Empty;
             string translatedLyrics = string.Empty;
             lyrics = (string)lyricResult["lrc"]!["lyric"]!;
-            if (AppData.systemLanguage == "zh")
+            if (AppData.SystemLanguage == "zh")
             {
                 try
                 {
@@ -204,7 +204,7 @@ public class CloudMusicSearchHelper
                  CloudMusicApiProviders.Lyric,
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
-            if (AppData.systemLanguage == "zh")
+            if (AppData.SystemLanguage == "zh")
             {
                 try
                 {

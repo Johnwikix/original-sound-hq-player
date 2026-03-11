@@ -665,7 +665,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void RefreshPlayListSongMapping()
         {
             // 1. 基础 Join 查询，生成包装器序列
-            var query = AppData.allPlayListMusics
+            var query = AppData.AllPlayListMusics
                         .Where(plm => plm.PlayListId == CurrentPlayListId)
                         .Join(
                             AllSongs,
@@ -833,7 +833,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshUsbDeviceMusicList()
         {
-            var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
+            var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
                             .GroupBy(u => u.Title)
                             .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
             foreach (var music in AllSongs)
@@ -920,7 +920,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 foreach (var music in selectedMusics)
                 {
-                    var existingMusic = AppData.musicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
+                    var existingMusic = AppData.MusicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
                     if (existingMusic is not null)
                     {
                         continue; // 如果已经存在，则跳过
@@ -931,9 +931,9 @@ namespace WinUIMusicPlayer.ViewModel
                         Author = music.Author,
                         Album = music.Album,
                         Extension = music.Extension,
-                        UniqueDeviceId = AppData.usbStorageDevice.UniqueId
+                        UniqueDeviceId = AppData.UsbStorageDevice.UniqueId
                     };
-                    AppData.musicOnUsbDevice.Add(usbDeviceMusic);
+                    AppData.MusicOnUsbDevice.Add(usbDeviceMusic);
                 }
             }
             RefreshUsbDeviceMusicList();

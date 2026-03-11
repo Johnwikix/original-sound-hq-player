@@ -25,19 +25,10 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public AppViewModel AppViewModel { get; }
 
-        public SettingsViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public SettingsViewModel(AppViewModel appViewModel)
         {
-            AppViewModel = appViewModel;
-            //InitializeData();  
-            
-        }
-
-        //private void InitializeData()
-        //{
-        //    InitializeWasapiDevice();
-        //}
-
-        
+            AppViewModel = appViewModel;            
+        }        
 
         public Visibility CheckSystemVersion()
         {
@@ -55,8 +46,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
             return Visibility.Collapsed;
-        }
-
-        
+        }        
     }
 }

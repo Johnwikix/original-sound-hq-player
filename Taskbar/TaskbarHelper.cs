@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.Taskbar
                 _taskbarList = (ITaskbarList3)new TaskbarList();
                 _taskbarList.HrInit();
 
-                _isCurrentPlaying = AppSettings.isPlaying; // 初始化当前播放状态
+                _isCurrentPlaying = AppSettings.IsPlaying; // 初始化当前播放状态
 
                 // 创建3个任务栏按钮
                 _buttons = new ThumbButton[3];
@@ -150,7 +150,7 @@ namespace WinUIMusicPlayer.Taskbar
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 _iconHandles[0] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\last.ico"), 32);
 
-                _iconHandles[1] = AppSettings.isPlaying ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32) : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
+                _iconHandles[1] = AppSettings.IsPlaying ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32) : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
                 _iconHandles[2] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\next.ico"), 32);
 
                 _buttons[0] = new ThumbButton
@@ -258,18 +258,18 @@ namespace WinUIMusicPlayer.Taskbar
             if (buttonId == 1) // 按钮1的ID是0
             {
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
+                string newIconPath = AppSettings.IsPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath);
             }
         }
 
         public void UpdateTaskbarButtonIcon()
         {
-            if (_isCurrentPlaying != AppSettings.isPlaying)
+            if (_isCurrentPlaying != AppSettings.IsPlaying)
             {
-                _isCurrentPlaying = AppSettings.isPlaying;
+                _isCurrentPlaying = AppSettings.IsPlaying;
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string newIconPath = AppSettings.isPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
+                string newIconPath = AppSettings.IsPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath);
             }
         }

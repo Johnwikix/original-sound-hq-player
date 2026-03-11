@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.dsdGain = value;
+                    AppSettings.DsdGain = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.isAutoLyricsEnabled = value;
+                    AppSettings.IsAutoLyricsEnabled = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.isRunningBackend = value;
+                    AppSettings.IsRunningBackend = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -508,7 +508,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.dsdPcmFreq = int.Parse(value);
+                    AppSettings.DsdPcmFreq = int.Parse(value);
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -694,19 +694,19 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     case "Default":
                         ThemeType = "Default";
-                        AppSettings.elementTheme = ElementTheme.Default;
+                        AppSettings.ElementTheme = ElementTheme.Default;
                         break;
                     case "Dark":
                         ThemeType = "Dark";
-                        AppSettings.elementTheme = ElementTheme.Dark;
+                        AppSettings.ElementTheme = ElementTheme.Dark;
                         break;
                     case "Light":
                         ThemeType = "Light";
-                        AppSettings.elementTheme = ElementTheme.Light;
+                        AppSettings.ElementTheme = ElementTheme.Light;
                         break;
                     default:
                         ThemeType = "Default";
-                        AppSettings.elementTheme = ElementTheme.Default;
+                        AppSettings.ElementTheme = ElementTheme.Default;
                         break;
                 }
                 App.MainWindow?.SetAppTheme();
