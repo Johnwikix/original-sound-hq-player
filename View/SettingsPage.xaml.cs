@@ -37,7 +37,7 @@ namespace WinUIMusicPlayer.View
 
         private void LoadOutputDevices()
         {
-            ViewModel.IsRealDevceChange = false;
+            ViewModel.AppViewModel.IsRealDevceChange = false;
             ViewModel.InitializeWasapiDevice();
         }
 

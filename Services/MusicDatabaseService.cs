@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Media.Playlists;
 using Windows.Storage;
+using Windows.UI;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -248,17 +249,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        //public async Task GetPlayListAsync()
-        //{
-        //    try
-        //    {
-        //        AppViewModel.AllPlayList = new(await _dbConnection.Table<PlayList>().ToListAsync());
-        //    }
-        //    catch
-        //    {
-        //    }
-        //}
-
         public async Task InitalPlayListAsync()
         {
             try
@@ -273,18 +263,6 @@ namespace WinUIMusicPlayer.Services
             {
             }
         }
-
-        //public Music GetMusic(int musicId)
-        //{
-        //    try
-        //    {
-        //        return AppData.allSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == musicId);
-        //    }
-        //    catch (SQLiteException)
-        //    {
-        //        return null;
-        //    }
-        //}
 
         public async Task UpdateMusicInfo(Music music)
         {
@@ -317,36 +295,7 @@ namespace WinUIMusicPlayer.Services
 
             return query;
         }
-        //public IEnumerable<Music> GetMusicByPlayListIdFromMem(int playListId, string search = null)
-        //{
-        //    var query = AppData.allPlayListMusics
-        //                .Where(plm => plm.PlayListId == playListId)
-        //                .Join(
-        //                    AppViewModel.AllSongs,
-        //                    plm => plm.MusicId,
-        //                    m => m.Id,
-        //                    (plm, m) =>
-        //                    {
-        //                        // Clone 是 Music 类里的一个方法，见下文
-        //                        var clone = m.Clone();
-        //                        clone.PlayListOrder = plm.Order; // 只改副本，不影响 AllSongs
-        //                        return clone;
-        //                    }
-        //                )
-        //                .OrderByDescending(m => m.PlayListOrder);
 
-        //    if (!string.IsNullOrEmpty(search))
-        //    {
-        //        var s = search.ToLower();
-        //        return query.Where(m =>
-        //            (m.Title != null && m.Title.ToLower().Contains(s)) ||
-        //            (m.Album != null && m.Album.ToLower().Contains(s)) ||
-        //            (m.Author != null && m.Author.ToLower().Contains(s))
-        //        );
-        //    }
-
-        //    return query;
-        //}
         public async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<PlayListMusicItem> musicList)
         {
             try
@@ -380,24 +329,11 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        //public IEnumerable<Music> FindMusicListByArtist(string artist)
-        //{
-        //    return AppData.allSongs.AsValueEnumerable()
-        //           .Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower())).ToImmutableList();
-        //}
-
         public IEnumerable<Music> FindMusicListByAlbum(string album)
         {
             return AppViewModel.AllSongs.AsValueEnumerable()
                    .Where(m => m.Album is not null && m.Album.ToLower().Equals(album.ToLower())).OrderBy(m => m.TrackNumber).ToImmutableList();
         }
-
-        //public IEnumerable<Music> FindMusicListByLastLevelFolderPath(string lastLevelFolderPath)
-        //{
-        //    return AppData.allSongs.AsValueEnumerable()
-        //           .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Equals(lastLevelFolderPath.ToLower())).ToImmutableList();
-        //}
-
         public async Task AddMusicListToFavour(IEnumerable<Music> musics)
         {
             var maxOrder = await GetMaxOrder();
@@ -413,7 +349,6 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.UpdateAsync(music);
             }
         }
-
         public async Task AddMusicListToPlayList(IEnumerable<Music> musics, int playListId)
         {
             PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
@@ -584,15 +519,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task LoadMusicList() {
-            //AppData.allSongs = await GetMusicListAsync();
             await AppViewModel.AllSongs.AddRangeAsync(await GetMusicListAsync());
-            //foreach (var song in AppData.allSongs) {
-            //    AppViewModel.AllSongs.Add(song);
-            //}
-            //AppViewModel.FavoriteSongs = GetFavoriteMusicFromMem();
-            //AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumPageSource);
-            //AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistPageSource);
-            //AppViewModel.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), AppViewModel.FolderPageSource);
             await InitalPlayListAsync();
             await GetPlayListMusic();
             AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.SortOrder) 
@@ -626,25 +553,6 @@ namespace WinUIMusicPlayer.Services
 
             return musicList;
         }
-
-        //public IEnumerable<Music> GetMusicListFromMem(string search)
-        //{
-        //    return AppViewModel.AllSongs.AsValueEnumerable().Where(m =>
-        //        m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-        //        m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
-        //        m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
-        //    ).OrderBy(m => m.Title).ToImmutableList();
-        //}
-
-        //public IEnumerable<Music> GetMusicListFromMemWithFolderSearchOption(string search)
-        //{
-        //    return AppViewModel.AllSongs.AsValueEnumerable().Where(m =>
-        //        m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
-        //        m.Author is not null && m.Author.ToLower().Contains(search.ToLower()) ||
-        //        m.Album is not null && m.Album.ToLower().Contains(search.ToLower()) ||
-        //        m.LastLevelFolderPath is not null && m.LastLevelFolderPath.ToLower().Contains(search.ToLower())
-        //    ).OrderBy(m => m.Title).ToImmutableList();
-        //}
 
         public ObservableCollection<Music> GetFavoriteMusicFromMem(string search = null)
         {
@@ -723,23 +631,23 @@ namespace WinUIMusicPlayer.Services
             var settings = await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
             if (settings is not null)
             {
-                AppSettings.DefualtEntry = settings.DefualtEntry;
-                AppSettings.DefualtPlayList = settings.DefualtPlayList;
+                AppViewModel.DefaultEntryComboBoxTag = settings.DefualtEntry;
+                AppViewModel.DefaultPlayListComboBoxTag = settings.DefualtPlayList;
                 AppSettings.OutputMode = settings.OutputMode;
-                AppSettings.Latency = settings.Latency;
+                AppViewModel.Latency = settings.Latency;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.AppStyle = settings.AppStyle;
-                AppSettings.AppTheme = settings.AppTheme;
+                AppViewModel.BackdropType = settings.AppStyle;
+                AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsCoverCacheEnabled = settings.isCoverCacheEnabled;
-                AppSettings.isRunningBackend = settings.isRunningBackend;
-                AppSettings.isAutoLyricsEnabled = settings.isAutoLyricsEnabled;
-                AppSettings.dsdGain = settings.dsdGain;
+                AppViewModel.IsRunningBackend = settings.isRunningBackend;
+                AppViewModel.IsAutoLyricsEnabled = settings.isAutoLyricsEnabled;
+                AppViewModel.DsdGain = settings.dsdGain;
                 AppSettings.dsdPcmFreq = settings.dsdPcmFreq;
                 AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
                 AppSettings.equalizerStr = settings.equalizerStr;
                 AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
                 AppSettings.EqualizerPreset = settings.EqualizerPreset;
-                AppSettings.CoverSize = settings.CoverSize;
+                AppViewModel.CoverSize = settings.CoverSize;
                 AppSettings.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppSettings.SlideAnimationTime = settings.SlideAnimationTime;
                 AppSettings.DrillInAnimationTime = settings.DrillInAnimationTime;
@@ -749,11 +657,11 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.AppWidth = settings.AppWidth;
                 AppSettings.AppHeight = settings.AppHeight;
                 AppSettings.GlobalFont = new FontFamily(settings.GlobalFont);
-                AppSettings.CustomAcrylicOpacity = settings.CustomAcrylicOpacity;
-                AppSettings.CustomColorAlpha = settings.CustomColorAlpha;
-                AppSettings.CustomColorRed = settings.CustomColorRed;
-                AppSettings.CustomColorGreen = settings.CustomColorGreen;
-                AppSettings.CustomColorBlue = settings.CustomColorBlue;
+                AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity * 100;
+                AppViewModel.CustomColor = Color.FromArgb(settings.CustomColorAlpha,
+                                                  settings.CustomColorRed,
+                                                 settings.CustomColorGreen,
+                                                 settings.CustomColorBlue);
                 AppSettings.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(settings.LyricsAlignment);
                 AppViewModel.LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
@@ -766,7 +674,53 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsFadeEnabled = settings.IsFadeEnabled;
                 AppSettings.IsWFWLyrics = settings.IsWFWLyrics;
                 AppSettings.LyricsBlurAmount = Math.Clamp(settings.LyricsBlurAmount, 0, 1000);
+                LoadSettingsToAppViewModel();
             }
+        }
+
+        private void LoadSettingsToAppViewModel() {            
+            //AppViewModel.DsdGain = AppSettings.dsdGain;
+            //AppViewModel.IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
+            //AppViewModel.IsRunningBackend = AppSettings.isRunningBackend;
+            //AppViewModel.Latency = AppSettings.Latency;
+            //IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
+            //AppViewModel.DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
+            //AppViewModel.DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
+            //AppViewModel.BackdropType = AppSettings.AppStyle;
+            if (AppViewModel.BackdropType != "CustomAcrylicStyle")
+            {
+                AppViewModel.IsColorPickerVisible = false;
+            }
+            else
+            {
+                AppViewModel.IsColorPickerVisible = true;
+            }
+            //AppViewModel.CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
+            //AppViewModel.CustomColor = Color.FromArgb(AppSettings.CustomColorAlpha,
+            //                                     AppSettings.CustomColorRed,
+            //                                     AppSettings.CustomColorGreen,
+            //                                     AppSettings.CustomColorBlue);
+            //AppViewModel.ThemeType = AppSettings.AppTheme;
+            AppViewModel.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
+            AppViewModel.SlideAnimationTime = AppSettings.SlideAnimationTime;
+            AppViewModel.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
+            AppViewModel.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
+            AppViewModel.IsCustomAppSize = AppSettings.IsCustomAppSize;
+            AppViewModel.AppHeight = AppSettings.AppHeight;
+            AppViewModel.AppWidth = AppSettings.AppWidth;
+            AppViewModel.Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
+            AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
+            AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
+            AppViewModel.IsDopEnabled = AppSettings.IsDopEnabled;
+            AppViewModel.IsFadeEnabled = AppSettings.IsFadeEnabled;
+            AppViewModel.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
+            AppViewModel.LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
+            AppViewModel.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
+            AppViewModel.GlobalFontSize = AppSettings.GlobalFontSize;
+            AppViewModel.MusicCoverCache = AppSettings.MusicCoverCache;
+            AppViewModel.DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
+            AppViewModel.IsWFWLyrics = AppSettings.IsWFWLyrics;
+            AppViewModel.LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
         }
 
         public async Task SaveSettingAsync()
@@ -786,20 +740,20 @@ namespace WinUIMusicPlayer.Services
 
         private SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {            
             newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.Latency = AppSettings.Latency;
+            newSettings.Latency = AppViewModel.Latency;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-            newSettings.DefualtEntry = AppSettings.DefualtEntry;
-            newSettings.DefualtPlayList = AppSettings.DefualtPlayList;
-            newSettings.AppStyle = AppSettings.AppStyle;
-            newSettings.AppTheme = AppSettings.AppTheme;
+            newSettings.DefualtEntry = AppViewModel.DefaultEntryComboBoxTag;
+            newSettings.DefualtPlayList = AppViewModel.DefaultPlayListComboBoxTag;
+            newSettings.AppStyle = AppViewModel.BackdropType;
+            newSettings.AppTheme = AppViewModel.ThemeType;
             newSettings.isCoverCacheEnabled = AppViewModel.IsCoverCacheEnabled;
-            newSettings.isRunningBackend = AppSettings.isRunningBackend;
-            newSettings.isAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            newSettings.dsdGain = AppSettings.dsdGain;
+            newSettings.isRunningBackend = AppViewModel.IsRunningBackend;
+            newSettings.isAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
+            newSettings.dsdGain = AppViewModel.DsdGain;
             newSettings.equalizerStr = equalizerStr ?? AppSettings.equalizerStr;
             newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
-            newSettings.CoverSize = AppSettings.CoverSize;
+            newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
             newSettings.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
             newSettings.SlideAnimationTime = AppSettings.SlideAnimationTime;
@@ -809,11 +763,11 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppHeight = AppSettings.AppHeight;
             newSettings.AppWidth = AppSettings.AppWidth;
             newSettings.GlobalFont = AppSettings.GlobalFont.Source;
-            newSettings.CustomAcrylicOpacity = AppSettings.CustomAcrylicOpacity;
-            newSettings.CustomColorAlpha = AppSettings.CustomColorAlpha;
-            newSettings.CustomColorRed = AppSettings.CustomColorRed;
-            newSettings.CustomColorGreen = AppSettings.CustomColorGreen;
-            newSettings.CustomColorBlue = AppSettings.CustomColorBlue;
+            newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity / 100;
+            newSettings.CustomColorAlpha = AppViewModel.CustomColor.A;
+            newSettings.CustomColorRed = AppViewModel.CustomColor.R;
+            newSettings.CustomColorGreen = AppViewModel.CustomColor.G;
+            newSettings.CustomColorBlue = AppViewModel.CustomColor.B;
             newSettings.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
             newSettings.LyricsAlignment = ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
             newSettings.LyricsMargin = (int)AppViewModel.LyricsMargin.Left;
@@ -883,25 +837,6 @@ namespace WinUIMusicPlayer.Services
         }
         public async Task AddToFavourite(Music music)
         {
-            //Music lastFavouriteMusic = await _dbConnection.Table<Music>()
-            //                              .Where(m => m.IsFavorite)
-            //                              .OrderByDescending(m => m.Order)
-            //                              .FirstOrDefaultAsync();
-            //if (lastFavouriteMusic is not null)
-            //{
-            //    if (music.IsFavorite)
-            //    {
-            //        music.Order = lastFavouriteMusic.Order + 1;
-            //    }
-            //    else
-            //    {
-            //        music.Order = 0;
-            //    }
-            //}
-            //else
-            //{
-            //    music.Order = 1;
-            //}
             await _dbConnection.UpdateAsync(music);
         }
 

@@ -946,11 +946,11 @@ namespace WinUIMusicPlayer.ViewModel
                 if (cover != null)
                 {
                     bool isDarkMode = true;
-                    if (AppSettings.AppTheme == "Light")
+                    if (ThemeType == "Light")
                     {
                         isDarkMode = false;
                     }
-                    else if (AppSettings.AppTheme == "Default")
+                    else if (ThemeType == "Default")
                     {
                         // 注意：GetIsLightTheme() 最好是同步方法
                         isDarkMode = !GetIsLightTheme();

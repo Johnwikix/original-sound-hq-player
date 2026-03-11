@@ -22,675 +22,46 @@ using ZLinq;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SettingsViewModel : ObservableObject
-    {
-        private bool _isInitized = false;
-        public bool IsRealDevceChange = true;
-        private int _coverSize = 0;
-        public int CoverSize
-        {
-            get => _coverSize;
-            set
-            {
-                if (SetProperty(ref _coverSize, value))
-                {
-                    // 值变更时的逻辑
-                    OnCoverSizeChanged(value);
-                }
-            }
-        }
-        private int _dsdGain = 6;
-        public int DsdGain
-        {
-            get => _dsdGain;
-            set
-            {
-                if (SetProperty(ref _dsdGain, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.dsdGain = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        }
-        private bool _isAutoLyricsEnabled = true;
-        public bool IsAutoLyricsEnabled
-        {
-            get => _isAutoLyricsEnabled;
-            set
-            {
-                if (SetProperty(ref _isAutoLyricsEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.isAutoLyricsEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private bool _isRunningBackend = true;
-        public bool IsRunningBackend
-        {
-            get => _isRunningBackend;
-            set => SetProperty(ref _isRunningBackend, value);
-        }
-
-        private int _latency = 300;
-        public int Latency
-        {
-            get => _latency;
-            set
-            {
-                if (SetProperty(ref _latency, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.Latency = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private bool _isCustomAppSize = false;
-        public bool IsCustomAppSize
-        {
-            get => _isCustomAppSize;
-            set
-            {
-                if (SetProperty(ref _isCustomAppSize, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsCustomAppSize = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private int _appWidth = 1440;
-        public int AppWidth
-        {
-            get => _appWidth;
-            set
-            {
-                if (SetProperty(ref _appWidth, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.AppWidth = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private int _appHeight = 810;
-        public int AppHeight
-        {
-            get => _appHeight;
-            set
-            {
-                if (SetProperty(ref _appHeight, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.AppHeight = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        //private bool _isCoverCacheEnabled = false;
-        //public bool IsCoverCacheEnabled
-        //{
-        //    get => _isCoverCacheEnabled;
-        //    set
-        //    {
-        //        if (SetProperty(ref _isCoverCacheEnabled, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppViewModel.IsCoverCacheEnabled = value;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
-
-        private string _defaultEntryComboBoxTag = "AddFolder";
-        public string DefaultEntryComboBoxTag
-        {
-            get => _defaultEntryComboBoxTag;
-            set
-            {
-                if (SetProperty(ref _defaultEntryComboBoxTag, value))
-                {
-                    // 值变更时的逻辑
-                    OnDefaultEntryComboBoxTagChanged(value);
-                }
-            }
-        }
-
-        private string _defaultPlayListComboBoxTag = "song";
-        public string DefaultPlayListComboBoxTag
-        {
-            get => _defaultPlayListComboBoxTag;
-            set
-            {
-                if (SetProperty(ref _defaultPlayListComboBoxTag, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.DefualtPlayList = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }      
-
-        private ObservableCollection<BassOutputDevice> _bassOutputDevices = new();
-        public ObservableCollection<BassOutputDevice> BassOutputDevices
-        {
-            get => _bassOutputDevices;
-            set => SetProperty(ref _bassOutputDevices, value);
-        }
-        private BassOutputDevice _selectedDevice;
-        public BassOutputDevice SelectedDevice
-        {
-            get => _selectedDevice;
-            set
-            {
-                if (SetProperty(ref _selectedDevice, value))
-                {
-                    if (value is not null)
-                    {
-                        if (IsRealDevceChange)
-                        {
-                            if (_isInitized)
-                            {
-                                if (value.OutputMode != "ASIO")
-                                {
-                                    AppSettings.BassOutputDeviceId = value.Id;
-                                }
-                                else
-                                {
-                                    AppSettings.BassASIODeviceId = value.AsioId;
-                                }
-                                AppSettings.DeviceName = value.Name;
-                                AppSettings.OutputMode = value.OutputMode;
-                                _ = MusicDatabaseService.SaveSettingAsync();
-                                AppSettings.OnOutputSettingsChanged();
-                            }
-                        }
-                        else
-                        {
-                            IsRealDevceChange = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        private string _backdropType = "TransparentAcrylic";
-
-        public string BackdropType
-        {
-            get => _backdropType;
-            set
-            {
-                if (SetProperty(ref _backdropType, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.AppStyle = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private string _themeType = "Dark"; // 默认值
-
-        public string ThemeType
-        {
-            get => _themeType;
-            set
-            {
-                if (SetProperty(ref _themeType, value))
-                {
-                    // 保存设置                   
-                    if (_isInitized)
-                    {
-                        AppSettings.AppTheme = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private int _entranceAnimationTime;
-        public int EntranceAnimationTime
-        {
-            get => _entranceAnimationTime;
-            set
-            {
-                if (SetProperty(ref _entranceAnimationTime, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.EntranceAnimationTime = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private int _slideAnimationTime;
-        public int SlideAnimationTime
-        {
-            get => _slideAnimationTime;
-            set
-            {
-                if (SetProperty(ref _slideAnimationTime, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.SlideAnimationTime = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private int _drillInAnimationTime;
-        public int DrillInAnimationTime
-        {
-            get => _drillInAnimationTime;
-            set
-            {
-                if (SetProperty(ref _drillInAnimationTime, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.DrillInAnimationTime = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        //private bool _isIsBackgroundCoverEnabled = false;
-        //public bool IsBackgroundCoverEnabled
-        //{
-        //    get => _isIsBackgroundCoverEnabled;
-        //    set
-        //    {
-        //        if (SetProperty(ref _isIsBackgroundCoverEnabled, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppSettings.IsBackgroundCoverEnabled = value;
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //                //App.Services.GetRequiredService<PlayingDetailPage>()?.ChangeAcrylicBrushBackgroundOpacity();
-        //            }
-        //        }
-        //    }
-        //}
-
-        private string _version = string.Empty;
-        public string Version
-        {
-            get => _version;
-            set => SetProperty(ref _version, value);
-        }
-
-        private bool _isFolderWatchEnabled = true;
-        public bool IsFolderWatchEnabled
-        {
-            get => _isFolderWatchEnabled;
-            set
-            {
-                if (SetProperty(ref _isFolderWatchEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsFolderWatchEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private ObservableCollection<FontInfo> _fontFamilyList;
-        public ObservableCollection<FontInfo> FontFamilyList
-        {
-            get => _fontFamilyList;
-            set => SetProperty(ref _fontFamilyList, value);
-        }
-        private FontInfo _fontFamily;
-        public FontInfo FontFamily
-        {
-            get => _fontFamily;
-            set
-            {
-                if (SetProperty(ref _fontFamily, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.GlobalFont = value.FontFamily;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private bool _isColorPickerVisible = false;
-        public bool IsColorPickerVisible
-        {
-            get => _isColorPickerVisible;
-            set => SetProperty(ref _isColorPickerVisible, value);
-        }
-
-        private Color _customColor = Color.FromArgb(255, 128, 128, 128);
-        public Color CustomColor
-        {
-            get => _customColor;
-            set
-            {
-                if (SetProperty(ref _customColor, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.CustomColorAlpha = value.A;
-                        AppSettings.CustomColorRed = value.R;
-                        AppSettings.CustomColorGreen = value.G;
-                        AppSettings.CustomColorBlue = value.B;
-                        App.MainWindow?.SetCustomAppStyle();
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private float _customOpacity = 50f;
-        public float CustomOpacity
-        {
-            get => _customOpacity;
-            set
-            {
-                if (SetProperty(ref _customOpacity, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.CustomAcrylicOpacity = value / 100;
-                        App.MainWindow?.SetCustomAppStyle();
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private bool _isUpdateBackDrop = false;
-        public bool IsUpdateBackDrop
-        {
-            get => _isUpdateBackDrop;
-            set
-            {
-                if (SetProperty(ref _isUpdateBackDrop, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsUpdateBackDrop = value;
-                        App.MainWindow?.UpdateBackdropActiveState(value);
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private string _lyricsAlignment = "Left";
-        public string LyricsAlignment
-        {
-            get => _lyricsAlignment;
-            set
-            {
-                if (SetProperty(ref _lyricsAlignment, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(value);
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        //private int _lyricsMargin = 0;
-        //public int LyricsMargin
-        //{
-        //    get => _lyricsMargin;
-        //    set
-        //    {
-        //        if (SetProperty(ref _lyricsMargin, value))
-        //        {
-        //            if (_isInitized)
-        //            {
-        //                AppViewModel.LyricsMargin = new Thickness(value,0,value,0);
-        //                _ = MusicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
-        private bool _isGlobalFontSizeEnabled = false;
-        public bool IsGlobalFontSizeEnabled
-        {
-            get => _isGlobalFontSizeEnabled;
-            set
-            {
-                if (SetProperty(ref _isGlobalFontSizeEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsGlobalFontSizeEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private double _globalFontSize = 32f;
-        public double GlobalFontSize
-        {
-            get => _globalFontSize;
-            set
-            {
-                if (SetProperty(ref _globalFontSize, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.GlobalFontSize = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
-        private string _musicCoverCache;
-        public string MusicCoverCache
-        {
-            get => _musicCoverCache;
-            set => SetProperty(ref _musicCoverCache, value);
-        }
-
-        private bool _isDopEnabled;
-        public bool IsDopEnabled
-        {
-            get => _isDopEnabled;
-            set
-            {
-                if (SetProperty(ref _isDopEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsDopEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        }
-
-        private bool _isFadeEnabled;
-        public bool IsFadeEnabled
-        {
-            get => _isFadeEnabled;
-            set
-            {
-                if (SetProperty(ref _isFadeEnabled, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsFadeEnabled = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        }
-
-        private string _dsdPcmFreq = "88200";
-        public string DsdPcmFreq
-        {
-            get => _dsdPcmFreq;
-            set
-            {
-                if (SetProperty(ref _dsdPcmFreq, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.dsdPcmFreq = int.Parse(value);
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        }
-
-        private bool _isWFWLyrics;
-        public bool IsWFWLyrics
-        {
-            get => _isWFWLyrics;
-            set
-            {
-                if (SetProperty(ref _isWFWLyrics, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.IsWFWLyrics = value;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-        private double _lyricsBlurAmount;
-        public double LyricsBlurAmount
-        {
-            get => _lyricsBlurAmount;
-            set {
-                if (SetProperty(ref _lyricsBlurAmount, value))
-                {
-                    if (_isInitized)
-                    {
-                        AppSettings.LyricsBlurAmount = value / 10;
-                        _ = MusicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+    {       
+        
         public AppViewModel AppViewModel { get; }
-        private MusicDatabaseService MusicDatabaseService { get; }
 
         public SettingsViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             AppViewModel = appViewModel;
-            MusicDatabaseService = musicDatabaseService;
             InitializeData();            
         }
 
         private void InitializeData()
         {
-            _isInitized = false;
-            CoverSize = AppSettings.CoverSize;
-            DsdGain = AppSettings.dsdGain;
-            IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            IsRunningBackend = AppSettings.isRunningBackend;  
-            Latency = AppSettings.Latency;
-            //IsCoverCacheEnabled = AppSettings.isCoverCacheEnabled;
-            DefaultEntryComboBoxTag = AppSettings.DefualtEntry; 
-            DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
-            BackdropType = AppSettings.AppStyle;
-            if (BackdropType != "CustomAcrylicStyle")
-            {
-                IsColorPickerVisible = false;
-            }
-            else
-            {
-                IsColorPickerVisible = true;
-            }
-            CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
-            CustomColor = Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                 AppSettings.CustomColorRed,
-                                                 AppSettings.CustomColorGreen,
-                                                 AppSettings.CustomColorBlue);
-            ThemeType = AppSettings.AppTheme;
-            EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-            SlideAnimationTime = AppSettings.SlideAnimationTime;
-            DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            //IsBackgroundCoverEnabled = AppSettings.IsBackgroundCoverEnabled;
-            IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            IsCustomAppSize = AppSettings.IsCustomAppSize;
-            AppHeight = AppSettings.AppHeight;
-            AppWidth = AppSettings.AppWidth;
-            Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
-            FontFamilyList = new ObservableCollection<FontInfo>(AppSettings.FontFamilyList);
-            FontFamily = FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
-            IsDopEnabled = AppSettings.IsDopEnabled;
-            IsFadeEnabled = AppSettings.IsFadeEnabled;
-            IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-            LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            //LyricsMargin = AppSettings.LyricsMargin;
-            IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-            GlobalFontSize = AppSettings.GlobalFontSize;
-            MusicCoverCache = AppSettings.MusicCoverCache;
-            DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
-            IsWFWLyrics = AppSettings.IsWFWLyrics;
-            LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
             InitializeWasapiDevice();
-            _isInitized = true;
         }
 
         public void InitializeWasapiDevice()
         {
-            BassOutputDevices.Clear();
-            BassOutputDevices.Add(new BassOutputDevice
+            AppViewModel.BassOutputDevices.Clear();
+            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = "DefaultDevice",
                 Tag = ToolUtils.GetString("DefaultDevice") + " [DirectSound]",
                 Id = -1,
                 OutputMode = "DirectSound"
             });
-            BassOutputDevices.Add(new BassOutputDevice
+            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiSharedText")}]",
                 Id = -1,
                 OutputMode = "WasapiShared"
             });
-            BassOutputDevices.Add(new BassOutputDevice
+            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
                 Id = -1,
                 OutputMode = "WasapiExclusivePush"
             });
-            BassOutputDevices.Add(new BassOutputDevice
+            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = "DefaultDevice",
                 Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
@@ -706,24 +77,24 @@ namespace WinUIMusicPlayer.ViewModel
                     // 筛选有效的WASAPI设备：已启用且是WASAPI设备
                     if (deviceInfo.IsEnabled && deviceInfo.Type != WasapiDeviceType.Microphone)
                     {
-                        if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
+                        if (!AppViewModel.BassOutputDevices.AsValueEnumerable().Any(d => d.Name == deviceInfo.Name))
                         {
                             Debug.WriteLine($"Wasapi:{deviceInfo.Name}: {i}");
-                            BassOutputDevices.Add(new BassOutputDevice
+                            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
                                 Tag = $"{deviceInfo.Name} [{ToolUtils.GetString("WasapiSharedText")}]",
                                 Id = i,
                                 OutputMode = "WasapiShared"
                             });
-                            BassOutputDevices.Add(new BassOutputDevice
+                            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
                                 Tag = $"{deviceInfo.Name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
                                 Id = i,
                                 OutputMode = "WasapiExclusivePush"
                             });
-                            BassOutputDevices.Add(new BassOutputDevice
+                            AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                             {
                                 Name = deviceInfo.Name,
                                 Tag = $"{deviceInfo.Name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
@@ -736,15 +107,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
             var deviceName = AppSettings.DeviceName;
             var outputMode = AppSettings.OutputMode;
-            var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
+            var device = AppViewModel.BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
             if (device is null)
             {
-                SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
+                AppViewModel.SelectedDevice = AppViewModel.BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
                 AppSettings.BassOutputDeviceId = -1;
             }
             else
             {
-                SelectedDevice = device;
+                AppViewModel.SelectedDevice = device;
             }
         }
 
@@ -757,7 +128,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     Debug.WriteLine($"Asio:{deviceInfo.Name}: {i}");
                     Debug.WriteLine($"AsioDriver:{deviceInfo.Driver}: {i}");
-                    BassOutputDevices.Add(new BassOutputDevice
+                    AppViewModel.BassOutputDevices.Add(new BassOutputDevice
                     {
                         Name = deviceInfo.Name,
                         Tag = deviceInfo.Name + " [ASIO]",
@@ -786,173 +157,6 @@ namespace WinUIMusicPlayer.ViewModel
             return Visibility.Collapsed;
         }
 
-        [RelayCommand]
-        private void OnBackdropTypeChanged(string type)
-        {
-            try
-            {
-                switch (type)
-                {
-                    case "Acrylic":
-                        AppSettings.AppStyle = "Acrylic";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "TransparentAcrylic":
-                        AppSettings.AppStyle = "TransparentAcrylic";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "Mica":
-                        AppSettings.AppStyle = "Mica";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "TransparentTint":
-                        AppSettings.AppStyle = "TransparentTint";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "CustomAcrylicStyle":
-                        AppSettings.AppStyle = "CustomAcrylicStyle";
-                        IsColorPickerVisible = true;
-                        break;
-                }
-                App.MainWindow?.SetAppStyle();
-                if (_isInitized)
-                {
-                    _ = MusicDatabaseService.SaveSettingAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error setting backdrop type: {ex.Message}");
-            }
-        }
-        [RelayCommand]
-        private void OnThemeTypeChanged(string type)
-        {
-            try
-            {
-                switch (type)
-                {
-                    case "Default":
-                        AppSettings.AppTheme = "Default";
-                        AppSettings.elementTheme = ElementTheme.Default;
-                        break;
-                    case "Dark":
-                        AppSettings.AppTheme = "Dark";
-                        AppSettings.elementTheme = ElementTheme.Dark;
-                        break;
-                    case "Light":
-                        AppSettings.AppTheme = "Light";
-                        AppSettings.elementTheme = ElementTheme.Light;
-                        break;
-                    default:
-                        AppSettings.AppTheme = "Default";
-                        AppSettings.elementTheme = ElementTheme.Default;
-                        break;
-                }
-                App.MainWindow?.SetAppTheme();
-                if (_isInitized)
-                {
-                    App.Services.GetRequiredService<PlayingDetailPage>().ChangeAcrylicBrushBackground();
-                    App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
-                    _ = MusicDatabaseService.SaveSettingAsync();
-                }                
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error setting theme type: {ex.Message}");
-            }
-        }
-
-        [RelayCommand]
-        private void OnBackgroundRunningChanged(string parameter)
-        {
-            switch (parameter)
-            {
-                case "Closed":
-                    AppSettings.isRunningBackend = false;
-                    break;
-
-                case "RunningBackend":
-                    AppSettings.isRunningBackend = true;
-                    break;
-            }
-            if (_isInitized)
-            {
-                _ = MusicDatabaseService.SaveSettingAsync();
-            }
-        }
-
-        private void OnCoverSizeChanged(int value)
-        {
-            AppSettings.CoverSize = value;
-            if (_isInitized)
-            {
-                _ = MusicDatabaseService.SaveSettingAsync();
-            }
-        }
-
-        private void OnDefaultEntryComboBoxTagChanged(string value)
-        {
-            AppSettings.DefualtEntry = value;
-            if (_isInitized)
-            {
-                _ = MusicDatabaseService.SaveSettingAsync();
-            }
-        }
-
-        [RelayCommand]
-        private async void OpenLogPath()
-        {
-            var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
-            var folder = await StorageFolder.GetFolderFromPathAsync(logDirectory);
-            var options = new FolderLauncherOptions
-            {
-                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-            };
-            await Launcher.LaunchFolderAsync(folder, options);
-        }
-
-        [RelayCommand]
-        private async Task ChangeCoverCacheLocation()
-        {
-            var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
-            PickFolderResult folder = await folderPicker.PickSingleFolderAsync();
-            if (folder is not null)
-            {
-                MusicCoverCache = folder.Path;
-                AppSettings.MusicCoverCache = folder.Path;
-                if (_isInitized)
-                {
-                    _ = MusicDatabaseService.SaveSettingAsync();
-                }
-            }
-        }
-
-        [RelayCommand]
-        private void OpenWebSite()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
-        }
-
-        [RelayCommand]
-        private void OpenPlayerGitHub()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/BassPlayerSharp"));
-        }
-
-        [RelayCommand]
-        private void OpenMainGitHub()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/original-sound-hq-player"));
-        }
-        [RelayCommand]
-        private async Task OpenCoverCacheLocation() {
-            var folder = await StorageFolder.GetFolderFromPathAsync(MusicCoverCache);
-            var options = new FolderLauncherOptions
-            {
-                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-            };
-            await Launcher.LaunchFolderAsync(folder, options);
-        }
+        
     }
 }
