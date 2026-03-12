@@ -247,7 +247,7 @@ namespace WinUIMusicPlayer.Services
                 Latency = AppViewModel.Latency,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
                 dsdGain = AppViewModel.DsdGain,
-                dsdPcmFreq = AppSettings.DsdPcmFreq,
+                dsdPcmFreq = AppViewModel.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
                 Volume = App.Services.GetRequiredService<AppViewModel>().Volume / 100,
                 IsSettingChanged = IsSettingChanged,

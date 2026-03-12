@@ -30,15 +30,10 @@ namespace WinUIMusicPlayer.Model
             EqualizerChangedEvent?.Invoke(null, equalizer);
         }
         public static string OutputMode { get; set; } = "DirectSound";
-        //public static int Latency { get; set; } = 300;
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
-        //public static bool IsFadeEnabled { get; set; } = true;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");        
-        //public static bool IsDopEnabled { get; set; } = false;
         public static double LyricsBlurAmount { get; set; } = 4;
-        //public static int DsdGain { get; set; } = 6;
-        public static int DsdPcmFreq { get; set; } = 88200;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
         public static byte CustomColorAlpha { get; set; } = 255;

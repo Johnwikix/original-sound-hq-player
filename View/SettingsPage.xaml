@@ -101,13 +101,8 @@
                                 <ComboBox
                                     Width="300"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
-                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}"
-                                    SelectedValuePath="Tag">
-                                    <ComboBoxItem Content="44100Hz" Tag="44100" />
-                                    <ComboBoxItem Content="88200Hz" Tag="88200" />
-                                    <ComboBoxItem Content="176400Hz" Tag="176400" />
-                                    <ComboBoxItem Content="352800Hz" Tag="352800" />
-                                </ComboBox>
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
                             </controls:SettingsCard>
                             <controls:SettingsCard x:Uid="SettingDSDGain">
                                 <NumberBox

@@ -639,7 +639,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
-                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq.ToString();               
+                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;               
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
                 AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
@@ -737,7 +737,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
             newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
             newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
-            newSettings.DsdPcmFreq = int.Parse(AppViewModel.DsdPcmFreq);
+            newSettings.DsdPcmFreq = AppViewModel.DsdPcmFreq;
             newSettings.IsPlayDetailBtnVisible = AppViewModel.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;

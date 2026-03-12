@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.Services
                 string outputPath = GenerateOutputPath(music.Path, type);
                 if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                 {
-                    BassDsd.DefaultFrequency = AppSettings.DsdPcmFreq;
+                    BassDsd.DefaultFrequency = AppViewModel.DsdPcmFreq;
                     BassDsd.DefaultGain = AppViewModel.DsdGain;
                 }
                 switch (type)

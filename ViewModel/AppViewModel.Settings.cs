@@ -48,7 +48,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    //AppSettings.DsdGain = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -267,7 +266,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }
+        } = 300;
 
         public int SlideAnimationTime
         {
@@ -282,7 +281,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }
+        } = 400;
 
         public int DrillInAnimationTime
         {
@@ -297,7 +296,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        }
+        } = 400;
 
         public string Version
         {
@@ -497,15 +496,19 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        public ObservableCollection<int> DsdPcmFreqs
+        {
+            get => field;
+            set => SetProperty(ref field, value);
+        } = [44100, 88200, 176400, 352800];
 
-        public string DsdPcmFreq
+        public int DsdPcmFreq
         {
             get => field;
             set
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.DsdPcmFreq = int.Parse(value);
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -513,7 +516,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = "88200";
+        } = 88200;
 
         public bool IsWFWLyrics
         {
