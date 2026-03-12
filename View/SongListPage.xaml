@@ -22,38 +22,6 @@
             <Setter Property="ContextFlyout">
                 <Setter.Value>
                     <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
-                    <!--<MenuFlyout x:Name="menuFlyout">
-                        <MenuFlyoutItem x:Uid="FlyoutPlayItem" Click="PlayMenuItem_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutFavoriteItem" Click="SetAsFavoriteMenuItem_Click" />
-                        <MenuFlyoutSubItem x:Uid="FlyoutAddToPlaylistItem" Tag="playList" />
-                        <MenuFlyoutSubItem x:Uid="FlyoutConvertItem">
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertWavItem"
-                                Click="ConvertAudio_Click"
-                                Tag="wav" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertMp3Item"
-                                Click="ConvertAudio_Click"
-                                Tag="mp3" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertFlacItem"
-                                Click="ConvertAudio_Click"
-                                Tag="flac" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertOggItem"
-                                Click="ConvertAudio_Click"
-                                Tag="ogg" />
-                            <MenuFlyoutItem
-                                x:Uid="FlyoutConvertOpusItem"
-                                Click="ConvertAudio_Click"
-                                Tag="opus" />
-                        </MenuFlyoutSubItem>
-                        <MenuFlyoutItem x:Uid="FlyoutAddToCurrentPlayList" Click="FlyoutAddToCurrentPlayList_Click" />
-                        <MenuFlyoutItem x:Uid="ReGetLyrics" Click="ReGetLyrics_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutOpenLocationItem" Click="OpenInExplorer_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutPropertiesItem" Click="MusicDetail_Click" />
-                        <MenuFlyoutItem x:Uid="FlyoutDeleteItem" Click="DeleteMenuItem_Click" />
-                    </MenuFlyout>-->
                 </Setter.Value>
             </Setter>
         </Style>

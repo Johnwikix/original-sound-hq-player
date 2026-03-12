@@ -19,36 +19,15 @@
     mc:Ignorable="d">
     <Grid Margin="0">
         <Grid>
-            <!--<Border
-                Grid.Row="0"
-                Grid.Column="0"
-                Visibility="{x:Bind ViewModel.AppViewModel.IsAcrylicBrushOpacity, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
-                <Border.Background>
-                    <ImageBrush x:Name="ContentGridBackground" Stretch="Fill">
-                        <ImageBrush.RelativeTransform>
-                            <CompositeTransform
-                                x:Name="ContentGridBrushTransform"
-                                CenterX="0.5"
-                                CenterY="0.5"
-                                Rotation="0"
-                                ScaleX="1.5"
-                                ScaleY="1.5" />
-                        </ImageBrush.RelativeTransform>
-                    </ImageBrush>
-                </Border.Background>
-                <interactivity:Interaction.Behaviors>
-                    <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
-                </interactivity:Interaction.Behaviors>
-            </Border>-->
             <Grid
                 Grid.Row="0"
                 Grid.Column="0"
                 Margin="0"
                 Padding="48,0,0,0">
-                <!--<Grid.ChildrenTransitions>
+                <Grid.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
-                </Grid.ChildrenTransitions>-->
+                </Grid.ChildrenTransitions>
                 <Grid Margin="0,32,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
