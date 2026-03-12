@@ -482,7 +482,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             //_musicPlaybackService.UpdateCurrentPlayList();
-            App.MainWindow.UpdateAppNotifyIconControl();
+            //App.MainWindow.UpdateAppNotifyIconControl();
             _musicPlaybackService.UpdateSettings();
 
         }

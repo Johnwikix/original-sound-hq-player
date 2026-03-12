@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                     AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
-            App.MainWindow.UpdateAppNotifyIconControl();
+            //App.MainWindow.UpdateAppNotifyIconControl();
             App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
 
         }

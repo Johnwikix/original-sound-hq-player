@@ -71,85 +71,26 @@ namespace WinUIMusicPlayer.Controls
         private void PlayMode_Click(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as ToggleMenuFlyoutItem;
-            if (menuItem is not null && menuItem.IsChecked == true)
+            if (menuItem is not null)
             {
-                UncheckOtherItems(menuItem);
                 switch (menuItem.Name)
                 {
                     case "IconRepeatAll":
-                        UpdatePlayModeIcon(PlayMode.ListLoop);
+                        AppViewModel.CurrentPlayMode = PlayMode.ListLoop;
                         AppViewModel.PlayModeFlyoutText = GetString("IconListLoop");
                         break;
                     case "IconRepeatOne":
-                        UpdatePlayModeIcon(PlayMode.SingleLoop);
+                        AppViewModel.CurrentPlayMode = PlayMode.SingleLoop;
                         AppViewModel.PlayModeFlyoutText = GetString("IconSingleTuneCirculation");
                         break;
                     case "IconRepeatOff":
-                        UpdatePlayModeIcon(PlayMode.RepeatOff);
+                        AppViewModel.CurrentPlayMode = PlayMode.RepeatOff;
                         AppViewModel.PlayModeFlyoutText = GetString("IconSinglePlayback");
                         break;
                     case "IconShuffle":
-                        UpdatePlayModeIcon(PlayMode.RandomLoop);
+                        AppViewModel.CurrentPlayMode = PlayMode.RandomLoop;
                         AppViewModel.PlayModeFlyoutText = GetString("IconRandomLoop");
                         break;
-                }
-                //MusicBrowseViewModel._musicPlaybackService.UpdateCurrentPlayList();
-            }
-            else
-            {
-                // 如果点击已选中的项，保持选中状态
-                menuItem.IsChecked = true;
-            }
-        }
-
-        private void UpdatePlayModeIcon(PlayMode playMode)
-        {
-            //AppData.PlayMode = playMode;
-            AppViewModel.CurrentPlayMode = playMode;
-        }
-
-        private void UncheckOtherItems(ToggleMenuFlyoutItem currentItem)
-        {
-            if (PlayModeFlyout is not null)
-            {
-                // 遍历所有子项，取消其他 ToggleMenuFlyoutItem 的选中状态
-                foreach (var item in PlayModeFlyout.Items)
-                {
-                    if (item is ToggleMenuFlyoutItem toggleItem && item != currentItem)
-                    {
-                        toggleItem.IsChecked = false;
-                    }
-                }
-            }
-
-        }
-
-        public void UpdatePlayMode()
-        {
-            var name = "IconRepeatOne";
-            switch (AppViewModel.CurrentPlayMode)
-            {
-                case PlayMode.SingleLoop:
-                    name = "IconRepeatOne";
-                    break;
-                case PlayMode.ListLoop:
-                    name = "IconRepeatAll";
-                    break;
-                case PlayMode.RandomLoop:
-                    name = "IconShuffle";
-                    break;
-                case PlayMode.RepeatOff:
-                    name = "IconRepeatOff";
-                    break;
-            }
-            if (PlayModeFlyout is not null)
-            {
-                foreach (var item in PlayModeFlyout.Items)
-                {
-                    if (item is ToggleMenuFlyoutItem toggleItem)
-                    {
-                        toggleItem.IsChecked = item.Name.ToString() == name ? true : false;
-                    }
                 }
             }
         }

@@ -8,6 +8,7 @@
     xmlns:local="using:WinUIMusicPlayer.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tb="using:H.NotifyIcon"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
     <UserControl.Resources>
         <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
@@ -74,7 +75,8 @@
                         <ToggleMenuFlyoutItem
                             x:Name="IconRepeatAll"
                             x:Uid="IconListLoopValue"
-                            Click="PlayMode_Click">
+                            Click="PlayMode_Click"
+                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'ListLoop'),Mode=OneWay}">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8EE;" />
                             </ToggleMenuFlyoutItem.Icon>
@@ -82,7 +84,8 @@
                         <ToggleMenuFlyoutItem
                             x:Name="IconRepeatOne"
                             x:Uid="IconSingleTuneCirculationValue"
-                            Click="PlayMode_Click">
+                            Click="PlayMode_Click"
+                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'SingleLoop'),Mode=OneWay}">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8ED;" />
                             </ToggleMenuFlyoutItem.Icon>
@@ -90,7 +93,8 @@
                         <ToggleMenuFlyoutItem
                             x:Name="IconRepeatOff"
                             x:Uid="IconSinglePlaybackValue"
-                            Click="PlayMode_Click">
+                            Click="PlayMode_Click"
+                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RepeatOff'),Mode=OneWay}">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xF5E7;" />
                             </ToggleMenuFlyoutItem.Icon>
@@ -98,7 +102,8 @@
                         <ToggleMenuFlyoutItem
                             x:Name="IconShuffle"
                             x:Uid="IconRandomLoopValue"
-                            Click="PlayMode_Click">
+                            Click="PlayMode_Click"
+                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RandomLoop'),Mode=OneWay}">
                             <ToggleMenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8B1;" />
                             </ToggleMenuFlyoutItem.Icon>

@@ -89,11 +89,6 @@ namespace WinUIMusicPlayer
             }
         }
 
-        public void UpdateAppNotifyIconControl()
-        {
-            AppNotifyIconControl.UpdatePlayMode();
-        }
-
         private void SaveMainWindowHandle(IntPtr handle)
         {
             try
@@ -181,7 +176,6 @@ namespace WinUIMusicPlayer
                 await Task.Delay(500);
                 await Task.WhenAll(longOpsTask);
                 await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
-                UpdateAppNotifyIconControl();
                 ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
                 LoadingGrid.Visibility = Visibility.Collapsed;             
                 App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;

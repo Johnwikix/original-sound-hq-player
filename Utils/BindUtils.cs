@@ -7,11 +7,17 @@ using System.Text;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Utils
 {
     public static class BindUtils
     {
+        public static bool PlayModeCheckerConverter(PlayMode currentPlayMode, string targetPlayMode) {
+            if (currentPlayMode.ToString() is null || targetPlayMode is null)
+                return false;
+            return currentPlayMode.ToString().Equals(targetPlayMode, StringComparison.OrdinalIgnoreCase);
+        }
         public static bool RadioButtonTagToBoolConverter(string themeType,string type) {
             if (themeType is null || type is null)
                 return false;
