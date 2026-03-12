@@ -342,7 +342,7 @@ namespace WinUIMusicPlayer.View
                 ViewModel.AppViewModel.LoadLyricsToUI();
                 UpdateViewList();
                 UpdateCurrentPlayList();
-                ViewModel._musicPlaybackService.PlayMusic(music);
+                ViewModel.MusicPlaybackService.PlayMusic(music);
                 ViewModel.AppViewModel.UpdateProgressTimerUI();
                 App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();                
             }
@@ -424,11 +424,11 @@ namespace WinUIMusicPlayer.View
         private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, await ViewModel._musicPlaybackService.GetTotalPosition()));
+            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, await ViewModel.MusicPlaybackService.GetTotalPosition()));
             _ = Task.Run(() =>
             {
                 ViewModel.AppViewModel.IsManualSelect = true;
-                ViewModel._musicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+                ViewModel.MusicPlaybackService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
                 ViewModel.AppViewModel.IsManualSelect = false;
             });
         }

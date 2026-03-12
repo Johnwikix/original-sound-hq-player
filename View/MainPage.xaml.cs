@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Threading;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -140,15 +141,21 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToPlayingDetailPage()
         {
-            if (_isPageTransitioning) return; // 整体互锁
+            if (_isPageTransitioning) return;
             _isPageTransitioning = true;
 
             AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
-                _navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime);
-                _playingNavigation.Show(typeof(PlayingDetailPage), ViewModel.AppViewModel.EntranceAnimationTime,
-                    onCompleted: () => _isPageTransitioning = false); // 动画结束后解锁
+                var pendingCount = 2;
+                void OnOneCompleted()
+                {
+                    if (Interlocked.Decrement(ref pendingCount) == 0)
+                        _isPageTransitioning = false;
+                }
+
+                _navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                _playingNavigation.Show(typeof(PlayingDetailPage), ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
             }
             else
             {
@@ -164,9 +171,14 @@ namespace WinUIMusicPlayer.View
             AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
-                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime,
-                    onCompleted: () => _isPageTransitioning = false);
+                var pendingCount = 2;
+                void OnOneCompleted()
+                {
+                    if (Interlocked.Decrement(ref pendingCount) == 0)
+                        _isPageTransitioning = false;
+                }
+                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
             }
             else
             {
