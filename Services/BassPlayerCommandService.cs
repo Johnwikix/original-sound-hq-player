@@ -36,28 +36,25 @@ namespace WinUIMusicPlayer.Services
         {
             if (obj.Type == MessageType.PlayState)
             {
-                AppSettings.IsPlaying = bool.Parse(obj.Result);
-                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                if (AppSettings.IsPlaying)
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    AppViewModel.IsPlaying = bool.Parse(obj.Result);
+                });
+                if (bool.Parse(obj.Result))
                 {
                     AppViewModel.StartProgressTimer();
                 }
                 else
                 {
                     AppViewModel.StopProgressTimer();
-                }
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
-                });
+                }                
             }
             if (obj.Type == MessageType.PlayEnded)
             {
-                AppSettings.IsPlaying = bool.Parse(obj.Result);
-                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
+
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
+                    AppViewModel.IsPlaying = bool.Parse(obj.Result);
                 });
                 AutoPlayNextTrack();
             }
@@ -69,14 +66,6 @@ namespace WinUIMusicPlayer.Services
                 });
             }
         }
-
-        //public async void InitializeMusicUrl(string musicUrl)
-        //{
-        //    await IpcService.SetMusicUrl(musicUrl);
-        //    await IpcService.UpdateEq();
-        //    IpcService.UpdateSettings();
-        //}
-
         public async void EqUpdate()
         {
             await IpcService.UpdateEq();
@@ -90,25 +79,7 @@ namespace WinUIMusicPlayer.Services
         private async void InitializingData()
         {
             AppViewModel.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
-            //UpdateCurrentPlayList();
         }
-
-        //public void UpdateCurrentPlayList(bool IsChangeList = true)
-        //{
-        //    if (!IsChangeList)
-        //    {
-        //        return;
-        //    }
-        //    if (AppViewModel.CurrentPlayMode != PlayMode.RandomLoop)
-        //    {
-        //        AppViewModel.CurrentPlayingList = AppViewModel.SequentialPlayingList;
-        //    }
-        //    else
-        //    {
-        //        AppViewModel.CurrentPlayingList = AppViewModel.SequentialPlayingList.CreateShuffled();
-        //    }
-        //}
-
         public void AutoPlayNextTrack()
         {
             AppViewModel.StopProgressTimer();
@@ -140,9 +111,7 @@ namespace WinUIMusicPlayer.Services
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 AppViewModel.ProgressSlider = 0;
-                AppSettings.IsPlaying = false;
                 AppViewModel.IsPlaying = false;
-                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
             });
         }
 
@@ -194,15 +163,14 @@ namespace WinUIMusicPlayer.Services
         public void PlayButton()
         {
             IpcService.PlayButton();
-            if (AppSettings.IsPlaying) {
-                AppSettings.IsPlaying = false;
-                MusicBrowseViewModel.UpdatePlayPauseButtonIcon();
-                AppViewModel.StopProgressTimer();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (AppViewModel.IsPlaying)
                 {
-                    AppViewModel.IsPlaying = AppSettings.IsPlaying;
-                });
-            }
+                    AppViewModel.IsPlaying = false;
+                    AppViewModel.StopProgressTimer();
+                }
+            });
         }
 
         public void ChangeWaveChannelTime(System.TimeSpan timeSpan)

@@ -8,10 +8,10 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
-        public static event EventHandler OutputSettingsChanged;
-        public static event EventHandler OutputSettingsUpdated;
-        public static event EventHandler EqUpdated;
-        public static event EventHandler<Dictionary<string, double>> EqualizerChangedEvent;
+        public static event EventHandler? OutputSettingsChanged;
+        public static event EventHandler? OutputSettingsUpdated;
+        public static event EventHandler? EqUpdated;
+        public static event EventHandler<Dictionary<string, double>>? EqualizerChangedEvent;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
@@ -30,17 +30,14 @@ namespace WinUIMusicPlayer.Model
             EqualizerChangedEvent?.Invoke(null, equalizer);
         }
         public static string OutputMode { get; set; } = "DirectSound";
-        public static int Latency { get; set; } = 300;
+        //public static int Latency { get; set; } = 300;
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
-        public static bool IsFadeEnabled { get; set; } = true;
-        public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
-        //public static string DefualtEntry { get; set; } = "AddFolder";
-        //public static string DefualtPlayList { get; set; } = "song";
-        public static bool IsPlaying { get; set; } = false;
-        public static bool IsDopEnabled { get; set; } = false;
-        public static double LyricsBlurAmount { get; set; } = 5;
-        public static int DsdGain { get; set; } = 6;
+        //public static bool IsFadeEnabled { get; set; } = true;
+        public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");        
+        //public static bool IsDopEnabled { get; set; } = false;
+        public static double LyricsBlurAmount { get; set; } = 4;
+        //public static int DsdGain { get; set; } = 6;
         public static int DsdPcmFreq { get; set; } = 88200;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
@@ -53,9 +50,6 @@ namespace WinUIMusicPlayer.Model
         public static bool IsRunningBackend { get; set; } = true;
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
-        //public static int EntranceAnimationTime { get; set; } = 300;
-        //public static int SlideAnimationTime { get; set; } = 400;
-        //public static int DrillInAnimationTime { get; set; } = 400;
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> equalizer { get; set; } = new()
         {
@@ -72,7 +66,6 @@ namespace WinUIMusicPlayer.Model
         };
         public static bool IsEqualizerEnabled { get; set; } = false;
         public static string EqualizerPreset { get; set; } = "Flat";
-        //public static bool IsFolderWatchEnabled { get; set; } = true;
         public static bool IsCustomAppSize { get; set; } = false;
         public static int AppWidth { get; set; } = 1280;
         public static int AppHeight { get; set; } = 810;
@@ -81,9 +74,7 @@ namespace WinUIMusicPlayer.Model
         public static double GlobalFontSize { get; set; } = 32;
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static TextAlignment LyricsAlignment { get; set; } = TextAlignment.Left;
-        //public static int LyricsMargin { get; set; } = 20;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
-        //public static bool IsWFWLyrics { get; set; } = true;
 
     }
 }

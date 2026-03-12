@@ -40,9 +40,13 @@ namespace WinUIMusicPlayer.Services
 
         private CancellationTokenSource _notificationCts;
         private Task _notificationListenerTask;
-
+        private AppViewModel AppViewModel { get; }
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
+        public IpcService(AppViewModel appViewModel)
+        {
+            AppViewModel = appViewModel;
+        }
 
         public void Initializing()
         {
@@ -240,14 +244,14 @@ namespace WinUIMusicPlayer.Services
                 OutputMode = AppSettings.OutputMode,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
-                Latency = AppSettings.Latency,
-                IsDopEnabled = AppSettings.IsDopEnabled,
-                dsdGain = AppSettings.DsdGain,
+                Latency = AppViewModel.Latency,
+                IsDopEnabled = AppViewModel.IsDopEnabled,
+                dsdGain = AppViewModel.DsdGain,
                 dsdPcmFreq = AppSettings.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
                 Volume = App.Services.GetRequiredService<AppViewModel>().Volume / 100,
                 IsSettingChanged = IsSettingChanged,
-                IsFadeEnabled = AppSettings.IsFadeEnabled,
+                IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
             _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings, IpcJsonContext.Default.IpcSetting));
         }

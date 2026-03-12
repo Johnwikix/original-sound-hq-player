@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.AudioConverters;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -11,8 +12,10 @@ namespace WinUIMusicPlayer.Services
     {
         public EventHandler<double>? updateProgress { get; set; }
         private BassAudioConverter bassAudioConverter;
-        public AudioConverterService()
+        private AppViewModel AppViewModel { get; }
+        public AudioConverterService(AppViewModel appViewModel)
         {
+            AppViewModel = appViewModel;
             bassAudioConverter = new BassAudioConverter();
             bassAudioConverter.progressEvent += (sender, progress) =>
             {
@@ -27,7 +30,7 @@ namespace WinUIMusicPlayer.Services
                 if (music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase) || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                 {
                     BassDsd.DefaultFrequency = AppSettings.DsdPcmFreq;
-                    BassDsd.DefaultGain = AppSettings.DsdGain;
+                    BassDsd.DefaultGain = AppViewModel.DsdGain;
                 }
                 switch (type)
                 {

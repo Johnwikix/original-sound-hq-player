@@ -5,6 +5,7 @@ using Windows.Media;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -81,7 +82,7 @@ namespace WinUIMusicPlayer.Services
 
         public void UpdateSystemMediaControlsState()
         {
-            SystemMediaControls.PlaybackStatus = AppSettings.IsPlaying ?
+            SystemMediaControls.PlaybackStatus = AppData.IsPlaying ?
                 MediaPlaybackStatus.Playing :
                 MediaPlaybackStatus.Paused;
         }

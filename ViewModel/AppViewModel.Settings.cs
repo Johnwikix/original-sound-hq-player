@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.DsdGain = value;
+                    //AppSettings.DsdGain = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -97,7 +97,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.Latency = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -253,7 +252,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = "Dark";
+        } = "Default";
 
         public int EntranceAnimationTime
         {
@@ -474,7 +473,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.IsDopEnabled = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -491,7 +489,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.IsFadeEnabled = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -540,7 +537,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.LyricsBlurAmount = value / 10;
+                    AppSettings.LyricsBlurAmount = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();

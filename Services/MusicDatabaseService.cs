@@ -54,7 +54,6 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
-            InitalizeSettings();
         }
 
         private void InitalizeDbPath()
@@ -87,15 +86,6 @@ namespace WinUIMusicPlayer.Services
             catch (Exception)
             {
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-            }
-        }
-
-        private async void InitalizeSettings() {
-            SaveSettings settings = await GetSettings();            
-            if (settings is null)
-            {
-                SaveSettings newSettings = SaveCurrentSettings(new SaveSettings());
-                await InsertSettings(newSettings);
             }
         }
 
@@ -625,7 +615,12 @@ namespace WinUIMusicPlayer.Services
 
         public async Task GetSettingsAsync()
         {
-            var settings = await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            var settings = await GetSettings();
+            if (settings is null)
+            {
+                settings = new SaveSettings();
+                await InsertSettings(settings);
+            }            
             if (settings is not null)
             {
                 AppSettings.OutputMode = settings.OutputMode;               
@@ -687,37 +682,6 @@ namespace WinUIMusicPlayer.Services
             }
             AppViewModel.Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
             AppViewModel.InitializeWasapiDevice();
-            //AppViewModel.DsdGain = AppSettings.dsdGain;
-            //AppViewModel.IsAutoLyricsEnabled = AppSettings.isAutoLyricsEnabled;
-            //AppViewModel.IsRunningBackend = AppSettings.isRunningBackend;
-            //AppViewModel.Latency = AppSettings.Latency;
-            //AppViewModel.DefaultEntryComboBoxTag = AppSettings.DefualtEntry;
-            //AppViewModel.DefaultPlayListComboBoxTag = AppSettings.DefualtPlayList;
-            //AppViewModel.BackdropType = AppSettings.AppStyle;
-            //AppViewModel.CustomOpacity = AppSettings.CustomAcrylicOpacity * 100;
-            //AppViewModel.CustomColor = Color.FromArgb(AppSettings.CustomColorAlpha,
-            //                                     AppSettings.CustomColorRed,
-            //                                     AppSettings.CustomColorGreen,
-            //                                     AppSettings.CustomColorBlue);
-            //AppViewModel.ThemeType = AppSettings.AppTheme;
-            //AppViewModel.EntranceAnimationTime = AppSettings.EntranceAnimationTime;
-            //AppViewModel.SlideAnimationTime = AppSettings.SlideAnimationTime;
-            //AppViewModel.DrillInAnimationTime = AppSettings.DrillInAnimationTime;
-            //AppViewModel.IsFolderWatchEnabled = AppSettings.IsFolderWatchEnabled;
-            //AppViewModel.IsCustomAppSize = AppSettings.IsCustomAppSize;
-            //AppViewModel.AppHeight = AppSettings.AppHeight;
-            //AppViewModel.AppWidth = AppSettings.AppWidth;           
-            //AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(AppSettings.GlobalFont.Source));
-            //AppViewModel.IsDopEnabled = AppSettings.IsDopEnabled;
-            //AppViewModel.IsFadeEnabled = AppSettings.IsFadeEnabled;
-            //AppViewModel.IsUpdateBackDrop = AppSettings.IsUpdateBackDrop;
-            //AppViewModel.LyricsAlignment = ToolUtils.ConvertTextAlignmentToString(AppSettings.LyricsAlignment);
-            //AppViewModel.IsGlobalFontSizeEnabled = AppSettings.IsGlobalFontSizeEnabled;
-            //AppViewModel.GlobalFontSize = AppSettings.GlobalFontSize;
-            //AppViewModel.MusicCoverCache = AppSettings.MusicCoverCache;
-            //AppViewModel.DsdPcmFreq = AppSettings.dsdPcmFreq.ToString();
-            //AppViewModel.IsWFWLyrics = AppSettings.IsWFWLyrics;
-            //AppViewModel.LyricsBlurAmount = AppSettings.LyricsBlurAmount * 10;
         }
 
         public async Task SaveSettingAsync()
@@ -837,7 +801,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(music);
         }
 
-        public Music LoadCurrentPlayingMusic(int? lastPlayedMusicId)
+        public Music? LoadCurrentPlayingMusic(int? lastPlayedMusicId)
         {
             return AppViewModel?.AllSongs?.FirstOrDefault(m => m.Id == lastPlayedMusicId);
         }
@@ -1413,8 +1377,7 @@ namespace WinUIMusicPlayer.Services
             if (isSingleFolder)
             {
                 var currentFiles = await folder.GetFilesAsync();
-                files = new List<StorageFile>();
-                files.AddRange(currentFiles);
+                files = [.. currentFiles];
                 musicFilesInFolder = usbDeviceMusics.AsValueEnumerable().Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
             }
             else

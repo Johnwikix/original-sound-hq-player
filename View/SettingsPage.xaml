@@ -191,8 +191,17 @@
                                 Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverDiskCache">
-                            <StackPanel Width="300" Orientation="Horizontal">
-                                <Button Margin="0,0,10,0" Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Button
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
                                     <Button.Content>
                                         <dev:AutoScrollView
                                             Grid.Row="0"
@@ -210,8 +219,11 @@
                                         </dev:AutoScrollView>
                                     </Button.Content>
                                 </Button>
-                                <Button x:Uid="ChangeMusicCoverCache" Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
-                            </StackPanel>
+                                <Button
+                                    x:Uid="ChangeMusicCoverCache"
+                                    Grid.Column="1"
+                                    Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                            </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="CoverCache">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
@@ -227,10 +239,10 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
-                                Maximum="80"
+                                Maximum="8"
                                 Minimum="0"
                                 SnapsTo="Ticks"
-                                TickFrequency="5"
+                                TickFrequency="0.5"
                                 TickPlacement="Outside"
                                 Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
                         </controls:SettingsCard>

@@ -494,16 +494,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayButton_Click()
         {
-            _musicPlaybackService.PlayButton();
-            UpdatePlayPauseButtonIcon();
-            
-        }
-
-
-        public void UpdatePlayPauseButtonIcon()
-        {
-            App.MainWindow.UpdateTaskbarIcon();
-            _systemMediaControlsService.UpdateSystemMediaControlsState();
+            _musicPlaybackService.PlayButton();           
         }
 
         [RelayCommand]
@@ -564,7 +555,6 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnStopButtonChanged()
         {
             _musicPlaybackService.MusicEnd();
-            UpdatePlayPauseButtonIcon();
             AppViewModel.ProgressSlider = 0;
         }
         [RelayCommand]

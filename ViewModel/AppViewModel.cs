@@ -1,25 +1,18 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.WinUI.Collections;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using TagLib.Ape;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -81,7 +74,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = PlayMode.ListLoop;
-        private CancellationTokenSource _searchCts;
+        
         public string SearchText
         {
             get => field;
@@ -93,6 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private CancellationTokenSource SearchCts { get; set;  }
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
@@ -167,7 +161,6 @@ namespace WinUIMusicPlayer.ViewModel
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
         public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
-        //public bool IsInPlayingDetailMode { get; set => SetProperty(ref field, value); } = false;
         public bool IsInNaviView { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
@@ -275,27 +268,7 @@ namespace WinUIMusicPlayer.ViewModel
                     HandleProgressSliderChange(value);
                 }
             }
-        } = 0;
-
-        private async void HandleProgressSliderChange(double value)
-        {
-            if (IsMouseOverProgressBar)
-            {
-                if (!IsUserDraggingProgressSlider)
-                {
-                    double currentPlayPosition = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
-                    if (Math.Abs(value - currentPlayPosition) > 2.0)
-                    {
-                        _ = Task.Run(() =>
-                        {
-                            IsManualSelect = true;
-                            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                            IsManualSelect = false;
-                        });
-                    }
-                }
-            }
-        }
+        } = 0;        
 
         public bool IsPlaying
         {
@@ -304,6 +277,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
+                    AppData.IsPlaying = value;
+                    UpdatePlayPauseButtonIcon();
                     App.Services.GetRequiredService<PlayingDetailPage>().BeginOrPauseLyricImgAnimation(value);
                 }
             }
@@ -327,6 +302,30 @@ namespace WinUIMusicPlayer.ViewModel
             ProgressTimer.Elapsed += ProgressTimer_Elapsed;
         }
 
+        public void UpdatePlayPauseButtonIcon()
+        {
+            App.MainWindow.UpdateTaskbarIcon();
+            SystemMediaControlsService.UpdateSystemMediaControlsState();
+        }
+        private async void HandleProgressSliderChange(double value)
+        {
+            if (IsMouseOverProgressBar)
+            {
+                if (!IsUserDraggingProgressSlider)
+                {
+                    double currentPlayPosition = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
+                    if (Math.Abs(value - currentPlayPosition) > 2.0)
+                    {
+                        _ = Task.Run(() =>
+                        {
+                            IsManualSelect = true;
+                            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
+                            IsManualSelect = false;
+                        });
+                    }
+                }
+            }
+        }
         public void StartProgressTimer()
         {
             ProgressTimer?.Start();
@@ -397,7 +396,7 @@ namespace WinUIMusicPlayer.ViewModel
             LastLyricIndex = -1;
             UILyrics.Clear();
             // 设置播放服务中的歌词
-            await App.Services.GetRequiredService<LyricsRefreshService>()?.SetLyrics();
+            await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics();
             // 解析歌词并添加到UI集合
             List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
             foreach (var lyric in parsedLyrics)
@@ -633,9 +632,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async Task OnSearchTextChangedAsync()
         {
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
-            var token = _searchCts.Token;
+            SearchCts?.Cancel();
+            SearchCts = new CancellationTokenSource();
+            var token = SearchCts.Token;
             try
             {
                 await Task.Delay(300, token);
