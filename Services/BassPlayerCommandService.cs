@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -136,13 +137,11 @@ namespace WinUIMusicPlayer.Services
         public void SetEqualizerGain(int bandIndex, float gain)
         {
             IpcService.SetEqualizerGain(bandIndex, gain);
-
         }
 
         public void SetEqualizer()
         {
             IpcService.SetEqualizer();
-
         }
 
         public void ClearEqualizer()

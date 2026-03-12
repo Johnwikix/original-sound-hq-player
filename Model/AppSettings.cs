@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.Model
         }
         public static void EqualizerChanged()
         {
-            EqualizerChangedEvent?.Invoke(null, equalizer);
+            EqualizerChangedEvent?.Invoke(null, Equalizer);
         }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int BassOutputDeviceId { get; set; } = -1;
@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public static string EqualizerStr { get; set; } = string.Empty;
-        public static Dictionary<string, double> equalizer { get; set; } = new()
+        public static Dictionary<string, double> Equalizer { get; set; } = new()
         {
             {"32Hz", 0},   // 32Hz 初始增益 0dB
             {"64Hz", 0},   // 64Hz 初始增益 0dB

@@ -43,7 +43,6 @@ namespace WinUIMusicPlayer.Utils
 {
     public class ToolUtils
     {
-        private ResourceLoader resourceLoader = new ResourceLoader();
         public static readonly Dictionary<string, float> FrequencyMap = new Dictionary<string, float>
         {
             ["32Hz"] = 32f,
@@ -85,49 +84,6 @@ namespace WinUIMusicPlayer.Utils
             [8000f] = "8kHz",
             [16000f] = "16kHz"
         };
-
-        private static readonly StringComparer StringComparer = StringComparer.CurrentCultureIgnoreCase;
-
-        // 预定义的排序策略字典，避免字符串比较
-        //private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> SortStrategies =
-        //    new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
-        //    {
-        //        ["A-Z"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Title, StringComparer).ToImmutableList(),
-        //        ["Artist"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Author, StringComparer).ToImmutableList(),
-        //        ["Album"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
-        //                                          .OrderBy(g => g.Key, StringComparer)
-        //                                          .SelectMany(g => g.AsValueEnumerable()
-        //                                                .OrderBy(m => m.DiskNumber)
-        //                                                .ThenBy(m => m.TrackNumber)
-        //                                           ).ToImmutableList(),
-        //        ["CreateTimeASC"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.CreateTime).ToImmutableList(),
-        //        ["CreateTimeDESC"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.CreateTime).ToImmutableList(),
-        //        ["UpdateTimeASC"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.UpdateTime).ToImmutableList(),
-        //        ["UpdateTimeDESC"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.UpdateTime).ToImmutableList()
-        //    };
-
-        // 预定义的类型默认排序策略
-        //private static readonly Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>> TypeDefaultSortStrategies =
-        //    new Dictionary<string, Func<IEnumerable<Music>, IEnumerable<Music>>>(StringComparer)
-        //    {
-        //        ["song"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Title, StringComparer).ToImmutableList(),
-        //        ["folderCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.LastLevelFolderPath, StringComparer).ToImmutableList(),
-        //        ["folder"] = musicList => musicList.AsValueEnumerable().GroupBy(m => m.Album)
-        //                                           .OrderBy(g => g.Key, StringComparer)
-        //                                           .SelectMany(g => g.AsValueEnumerable()
-        //                                                .OrderBy(m => m.DiskNumber)
-        //                                                .ThenBy(m => m.TrackNumber)
-        //                                           ).ToImmutableList(),
-        //        ["artistCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Author, StringComparer).ToImmutableList(),
-        //        ["artist"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Album, StringComparer)
-        //                                            .ThenBy(m => m.DiskNumber)
-        //                                            .ThenBy(m => m.TrackNumber).ToImmutableList(),
-        //        ["albumCover"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.Album, StringComparer).ToImmutableList(),
-        //        ["album"] = musicList => musicList.AsValueEnumerable().OrderBy(m => m.DiskNumber)
-        //                                    .ThenBy(m => m.TrackNumber).ToImmutableList(),
-        //        ["favour"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.Order).ToImmutableList(),
-        //        ["playList"] = musicList => musicList.AsValueEnumerable().OrderByDescending(m => m.PlayListOrder).ToImmutableList()
-        //    };
 
         public static string GetString(string key)
         {
@@ -416,69 +372,6 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        //public static IEnumerable<Music> SortMusicList(string type, string sortOrder, IEnumerable<Music> musicList)
-        //{
-        //    if (musicList is null) return System.Linq.Enumerable.Empty<Music>();
-
-        //    // 如果没有数据，直接返回空集合，避免不必要的计算
-        //    if (!musicList.AsValueEnumerable().Any()) return musicList;
-
-        //    // 优先检查通用排序策略
-        //    if (!string.IsNullOrEmpty(sortOrder) && SortStrategies.TryGetValue(sortOrder, out var sortFunc))
-        //    {
-        //        return sortFunc(musicList);
-        //    }
-
-        //    // 检查类型默认排序，只有当sortOrder为DefaultOrder或空时才使用
-        //    if ((string.IsNullOrEmpty(sortOrder) || sortOrder == "DefaultOrder") &&
-        //        !string.IsNullOrEmpty(type) &&
-        //        TypeDefaultSortStrategies.TryGetValue(type, out var typeFunc))
-        //    {
-        //        return typeFunc(musicList);
-        //    }
-
-        //    // 如果没有匹配的排序策略，返回原列表
-        //    return musicList;
-        //}
-
-        /// <summary>
-        /// 就地排序ObservableCollection，避免创建新对象
-        /// </summary>
-        /// <param name="type">排序类型</param>
-        /// <param name="sortOrder">排序方式</param>
-        /// <param name="musicList">要排序的ObservableCollection</param>
-        //public static void SortMusicListInPlace(string type, string sortOrder, ObservableCollection<Music> musicList)
-        //{
-        //    if (musicList is null || musicList.Count <= 1) return;
-
-        //    var sortedList = SortMusicList(type, sortOrder, musicList).AsValueEnumerable().ToList();
-
-        //    // 只有当排序结果与原列表不同时才进行更新
-        //    if (!AreListsEqual(musicList, sortedList))
-        //    {
-        //        musicList.Clear();
-        //        foreach (var music in sortedList)
-        //        {
-        //            musicList.Add(music);
-        //        }
-        //    }
-        //}
-
-        /// <summary>
-        /// 比较两个列表是否相等（顺序相同）
-        /// </summary>
-        private static bool AreListsEqual(IList<Music> list1, IList<Music> list2)
-        {
-            if (list1.Count != list2.Count) return false;
-
-            for (int i = 0; i < list1.Count; i++)
-            {
-                if (!ReferenceEquals(list1[i], list2[i]))
-                    return false;
-            }
-            return true;
-        }
-
         public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)
         {
             BassManager.Initialize();
@@ -597,7 +490,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
         // 将JSON字符串转回字典的方法
-        public static Dictionary<string, double> ConvertToDictionary(string jsonString)
+        public static Dictionary<string, double> ConvertToDictionary(string? jsonString)
         {
             if (string.IsNullOrEmpty(jsonString))
             {
@@ -802,32 +695,6 @@ namespace WinUIMusicPlayer.Utils
                 Debug.WriteLine($"文件不存在: {filePath}");
             }
         }
-
-        //public static void RefreshUsbDeviceMusicList(ObservableCollection<Music> MusicList)
-        //{
-        //    var usbMusicGroups = AppData.musicOnUsbDevice.AsValueEnumerable()
-        //                    .GroupBy(u => u.Title)
-        //                    .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-        //    foreach (var music in MusicList)
-        //    {
-        //        music.IsExistOnDevice = 0;
-
-        //        if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-        //        {
-        //            music.IsExistOnDevice = 1;
-        //            foreach (var usbMusic in matchingItems)
-        //            {
-        //                if (music.Author == usbMusic.Author &&
-        //                    music.Album == usbMusic.Album &&
-        //                    music.Extension == usbMusic.Extension)
-        //                {
-        //                    music.IsExistOnDevice = 2;
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
 
         public static void ClearAllUsbStatus()
         {

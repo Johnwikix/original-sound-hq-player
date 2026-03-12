@@ -28,6 +28,7 @@ namespace WinUIMusicPlayer.Services
     {
         private SQLiteAsyncConnection _dbConnection;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+        private string SettingsPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "Settings.json");
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         private readonly ConcurrentBag<Music> _toDelete = [];
@@ -46,6 +47,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SavePlayState>();
                 await _dbConnection.CreateTableAsync<SaveSettings>();
+                await _dbConnection.CreateTableAsync<SaveEqualizer>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
@@ -63,7 +65,6 @@ namespace WinUIMusicPlayer.Services
                 string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 if (userProfilePath is not null)
                 {
-                    // 拼接应用文件夹路径，这里假设应用文件夹名为"MyAppFolder"
                     string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "DataBase");
                     string dbFilePath = Path.Combine(appFolderPath, "MusicDatabase.db");
                     string sourceDbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
@@ -491,10 +492,25 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(settings);
         }
 
+        public async Task<SaveEqualizer> GetEqualizer()
+        {
+            return await _dbConnection.Table<SaveEqualizer>().FirstOrDefaultAsync();
+        }
+
+        public async Task InsertEqualizer(SaveEqualizer equalizer)
+        {
+            await _dbConnection.InsertAsync(equalizer);
+        }
+
+        public async Task UpdateEqualizer(SaveEqualizer equalizer)
+        {
+            await _dbConnection.UpdateAsync(equalizer);
+        }
+
         public async Task UpdateEqualizerSettings(string equalizerStr, bool isEnabled)
         {
             await _dbConnection.ExecuteAsync(
-                "UPDATE SaveSettings SET equalizerStr = ?, IsEqualizerEnabled = ? WHERE Id = 1",
+                "UPDATE SaveEqualizer SET EqualizerStr = ?, IsEqualizerEnabled = ? WHERE Id = 1",
                 equalizerStr,
                 isEnabled
             );
@@ -613,6 +629,23 @@ namespace WinUIMusicPlayer.Services
             AppData.SortOrder = playState.sortOrder;
         }
 
+        public async Task GetEqualizerSettingsAsync()
+        {
+            var equalizerSettings = await GetEqualizer();
+            if (equalizerSettings is null)
+            {
+                equalizerSettings = new SaveEqualizer();
+                await InsertEqualizer(equalizerSettings);
+            }
+            if (equalizerSettings is not null)
+            {
+                AppSettings.IsEqualizerEnabled = equalizerSettings.IsEqualizerEnabled;
+                AppSettings.EqualizerStr = equalizerSettings.EqualizerStr;
+                AppSettings.Equalizer = ToolUtils.ConvertToDictionary(equalizerSettings.EqualizerStr);
+                AppSettings.EqualizerPreset = equalizerSettings.EqualizerPreset;
+            }
+        }
+
         public async Task GetSettingsAsync()
         {
             var settings = await GetSettings();
@@ -624,11 +657,7 @@ namespace WinUIMusicPlayer.Services
             if (settings is not null)
             {
                 AppSettings.OutputMode = settings.OutputMode;               
-                AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.IsEqualizerEnabled = settings.IsEqualizerEnabled;
-                AppSettings.EqualizerStr = settings.equalizerStr;
-                AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings.equalizerStr);
-                AppSettings.EqualizerPreset = settings.EqualizerPreset;
+                AppSettings.DeviceName = settings.DeviceFriendlyName;                
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefualtEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefualtPlayList;
@@ -687,7 +716,7 @@ namespace WinUIMusicPlayer.Services
         public async Task SaveSettingAsync()
         {
             SaveSettings settings = await GetSettings();
-            SaveSettings newSettings = SaveCurrentSettings(new SaveSettings(), settings?.equalizerStr);
+            SaveSettings newSettings = SaveCurrentSettings(new SaveSettings());
             if (settings is null)
             {
                 await InsertSettings(newSettings);
@@ -699,10 +728,29 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private SaveSettings SaveCurrentSettings(SaveSettings newSettings,string equalizerStr = null) {
-            newSettings.equalizerStr = equalizerStr ?? AppSettings.EqualizerStr;
-            newSettings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-            newSettings.EqualizerPreset = AppSettings.EqualizerPreset;
+        public async Task SaveEqualizerSettingAsync()
+        {
+            SaveEqualizer equalizerSettings = await GetEqualizer();
+            SaveEqualizer newEqualizer = SaveEqualizeSettings(new SaveEqualizer(), equalizerSettings.EqualizerStr);
+            if (equalizerSettings is null)
+            {
+                await InsertEqualizer(newEqualizer);
+            }
+            else
+            {
+                newEqualizer.Id = equalizerSettings.Id;
+                await UpdateEqualizer(newEqualizer);
+            }
+        }
+
+        private SaveEqualizer SaveEqualizeSettings(SaveEqualizer newEqualizer,string? equalizerStr = null) {
+            newEqualizer.EqualizerStr = equalizerStr ?? AppSettings.EqualizerStr;
+            newEqualizer.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+            newEqualizer.EqualizerPreset = AppSettings.EqualizerPreset;
+            return newEqualizer;
+        }
+
+        private SaveSettings SaveCurrentSettings(SaveSettings newSettings) {
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;

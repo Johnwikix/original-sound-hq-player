@@ -16,9 +16,9 @@ namespace WinUIMusicPlayer.View.SubView
     {
         private Dictionary<string, double[]> _presets;
         private List<Slider> _sliders;
-        public EventHandler<string> EqualizerGainChanged;
-        public EventHandler clearEqualizer;
         private bool _isInitializedSliderValue = false;
+        public EventHandler<string> EqualizerGainChanged { get; set; }
+        public EventHandler ClearEqualizer {  get; set; }        
 
         public EqualizerDialog()
         {
@@ -52,16 +52,16 @@ namespace WinUIMusicPlayer.View.SubView
         private void InitializeSliders()
         {
             // 初始化滑块列表
-            Slider32Hz.Value = AppSettings.equalizer["32Hz"];
-            Slider64Hz.Value = AppSettings.equalizer["64Hz"];
-            Slider125Hz.Value = AppSettings.equalizer["125Hz"];
-            Slider250Hz.Value = AppSettings.equalizer["250Hz"];
-            Slider500Hz.Value = AppSettings.equalizer["500Hz"];
-            Slider1kHz.Value = AppSettings.equalizer["1kHz"];
-            Slider2kHz.Value = AppSettings.equalizer["2kHz"];
-            Slider4kHz.Value = AppSettings.equalizer["4kHz"];
-            Slider8kHz.Value = AppSettings.equalizer["8kHz"];
-            Slider16kHz.Value = AppSettings.equalizer["16kHz"];
+            Slider32Hz.Value = AppSettings.Equalizer["32Hz"];
+            Slider64Hz.Value = AppSettings.Equalizer["64Hz"];
+            Slider125Hz.Value = AppSettings.Equalizer["125Hz"];
+            Slider250Hz.Value = AppSettings.Equalizer["250Hz"];
+            Slider500Hz.Value = AppSettings.Equalizer["500Hz"];
+            Slider1kHz.Value = AppSettings.Equalizer["1kHz"];
+            Slider2kHz.Value = AppSettings.Equalizer["2kHz"];
+            Slider4kHz.Value = AppSettings.Equalizer["4kHz"];
+            Slider8kHz.Value = AppSettings.Equalizer["8kHz"];
+            Slider16kHz.Value = AppSettings.Equalizer["16kHz"];
         }
 
         private void InitializePresets()
@@ -88,12 +88,13 @@ namespace WinUIMusicPlayer.View.SubView
                     if (!string.IsNullOrEmpty(frequency))
                     {
                         double value = Math.Round(slider.Value, 1);
-                        AppSettings.equalizer[frequency] = value;
+                        AppSettings.Equalizer[frequency] = value;
                         string? presetName = selectedItem.Tag.ToString();
                         if (presetName == "Custom" && _isInitializedSliderValue)
                         {
-                            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.equalizer), AppSettings.IsEqualizerEnabled);
+                            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.Equalizer), AppSettings.IsEqualizerEnabled);
                         }
+                        AppSettings.EqualizerStr = ToolUtils.ConvertToJson(AppSettings.Equalizer);
                         EqualizerGainChanged?.Invoke(this, frequency);
                     }
                 }
@@ -103,21 +104,23 @@ namespace WinUIMusicPlayer.View.SubView
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
+            if (AppSettings.IsEqualizerEnabled) { 
+                AppSettings.OnEqUpdated();
+            }
             DispatcherQueue.TryEnqueue(() =>
             {
-                clearEqualizer?.Invoke(this, EventArgs.Empty);
+                ClearEqualizer?.Invoke(this, EventArgs.Empty);
             });
-
         }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            SaveSettings settings = await App.Services.GetRequiredService<MusicDatabaseService>().GetSettings();
-            if (settings is not null)
+            SaveEqualizer equalizer = await App.Services.GetRequiredService<MusicDatabaseService>().GetEqualizer();
+            if (equalizer is not null)
             {
-                settings.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-                settings.EqualizerPreset = AppSettings.EqualizerPreset;
-                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateSettings(settings);
+                equalizer.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
+                equalizer.EqualizerPreset = AppSettings.EqualizerPreset;
+                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizer(equalizer);
             }
             this.Hide();
         }
@@ -136,16 +139,16 @@ namespace WinUIMusicPlayer.View.SubView
                     {
                         _sliders[i].Value = presetValues[i];
                         string frequency = _sliders[i].Tag?.ToString() ?? "Unknown";
-                        AppSettings.equalizer[frequency] = presetValues[i];
+                        AppSettings.Equalizer[frequency] = presetValues[i];
                     }
                 }
                 else if (presetName == "Custom")
                 {
-                    SaveSettings settings = await App.Services.GetRequiredService<MusicDatabaseService>().GetSettings();
-                    AppSettings.equalizer = ToolUtils.ConvertToDictionary(settings?.equalizerStr);
+                    SaveEqualizer equalizer = await App.Services.GetRequiredService<MusicDatabaseService>().GetEqualizer();
+                    AppSettings.Equalizer = ToolUtils.ConvertToDictionary(equalizer?.EqualizerStr);
                     InitializeSliders();
                 }
-                AppSettings.EqualizerStr = ToolUtils.ConvertToJson(AppSettings.equalizer);
+                AppSettings.EqualizerStr = ToolUtils.ConvertToJson(AppSettings.Equalizer);
                 AppSettings.OnEqUpdated();
             }
             _isInitializedSliderValue = true;

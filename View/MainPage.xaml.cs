@@ -49,9 +49,9 @@ namespace WinUIMusicPlayer.View
                 EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
                 {
                     int feq = ToolUtils.FrequencyIndexMap[frequency];
-                    ViewModel.PlayerCommandService.SetEqualizerGain(feq, (float)AppSettings.equalizer[frequency]);
+                    ViewModel.PlayerCommandService.SetEqualizerGain(feq, (float)AppSettings.Equalizer[frequency]);
                 };
-                EqualizerDialog.clearEqualizer += (s, e) =>
+                EqualizerDialog.ClearEqualizer += (s, e) =>
                 {
                     ViewModel.PlayerCommandService.UpdateSettings();
                     if (AppSettings.IsEqualizerEnabled)
@@ -66,6 +66,8 @@ namespace WinUIMusicPlayer.View
                 };
             }
         }
+
+
 
         private void NavigateToDefaultPage()
         {
