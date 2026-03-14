@@ -24,7 +24,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public partial class AppViewModel : ObservableObject
+    public partial class AppViewModel : ObservableObject, IDisposable
     {
         public Music? CurrentArtistObj {
             get => field;
@@ -634,6 +634,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task OnSearchTextChangedAsync()
         {
             SearchCts?.Cancel();
+            SearchCts?.Dispose();
             SearchCts = new CancellationTokenSource();
             var token = SearchCts.Token;
             try
@@ -948,6 +949,20 @@ namespace WinUIMusicPlayer.ViewModel
                 "Light" => false,
                 _ => !GetIsLightTheme(),
             };
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool dispose) {
+            if (dispose) {
+                ProgressTimer?.Stop();
+                SearchCts?.Dispose();
+                ProgressTimer?.Dispose();
+            }
         }
     }
 }

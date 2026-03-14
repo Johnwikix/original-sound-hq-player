@@ -177,6 +177,7 @@ namespace WinUIMusicPlayer
                 await Task.WhenAll(longOpsTask);
                 await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
                 ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
+                App.Services.GetRequiredService<PlayingDetailPage>();
                 LoadingGrid.Visibility = Visibility.Collapsed;             
                 App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
             }
