@@ -15,7 +15,7 @@ using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class LyricsRefreshService
+    public class LyricsRefreshService: IDisposable
     {
         public List<LyricLine> Lyrics
         {
@@ -23,12 +23,10 @@ namespace WinUIMusicPlayer.Services
             set => field = value;
         } = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
-        private MusicBrowseViewModel MusicBrowseViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private AppViewModel AppViewModel { get; }
         public LyricsRefreshService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
@@ -318,7 +316,16 @@ namespace WinUIMusicPlayer.Services
 
         public void Dispose()
         {
-            CancelPreviousLyricsTask();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                CancelPreviousLyricsTask();
+            }
         }
     }
 }

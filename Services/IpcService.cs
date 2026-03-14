@@ -15,7 +15,7 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class IpcService
+    public class IpcService: IDisposable
     {
         private const string MmfName = "BassPlayerSharp_SharedMemory";
         private const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
@@ -122,23 +122,6 @@ namespace WinUIMusicPlayer.Services
                 }
             }
         }
-
-        /// <summary>
-        /// 断开连接并释放资源
-        /// </summary>
-        public async Task Dispose()
-        {
-            MusicEnd();
-            _accessor?.Dispose();
-            _mmf?.Dispose();
-            // 客户端打开的命名信号量只需要关闭句柄，不需要释放
-            _requestReadySemaphore?.Dispose();
-            _responseReadySemaphore?.Dispose();
-            _sendLock?.Dispose();
-            _isConnected = false;
-            Debug.WriteLine("Shared Memory Client Disposed.");
-        }
-
 
         public async Task<ResponseMessage> SendCommandAsync(string command, string data)
         {
@@ -340,6 +323,26 @@ namespace WinUIMusicPlayer.Services
         public void FadeOut()
         {
             _ = SendCommandAsync("FadeOut", string.Empty);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                //_ = SendCommandAsync("MusicEnd", string.Empty);
+                _accessor?.Dispose();
+                _mmf?.Dispose();
+                _requestReadySemaphore?.Dispose();
+                _responseReadySemaphore?.Dispose();
+                _sendLock?.Dispose();
+                _isConnected = false;
+            }
         }
 
     }

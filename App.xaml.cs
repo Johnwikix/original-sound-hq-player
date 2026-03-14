@@ -222,8 +222,9 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                await App.Services.GetRequiredService<BassPlayerCommandService>().Dispose();
-                //await _host.StopAsync();
+                await _host.StopAsync();
+                _host.Dispose();
+                MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)

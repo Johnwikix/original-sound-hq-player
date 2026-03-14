@@ -30,7 +30,7 @@ using ZLinq;
 
 namespace WinUIMusicPlayer
 {
-    public sealed partial class MainWindow : WindowEx
+    public sealed partial class MainWindow : WindowEx,IDisposable
     {
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer
                 this.Hide();
             }
             else
-            {
+            {                
                 await App.Current_Exit();
             }
         }
@@ -233,6 +233,20 @@ namespace WinUIMusicPlayer
             {
                 System.Diagnostics.Debug.WriteLine($"初始化任务栏助手出错: {ex.Message}");
             }
-        }       
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                AppNotifyIconControl.Dispose();
+                _taskbarHelper.Dispose();
+            }
+        }
     }
 }

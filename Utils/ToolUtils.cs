@@ -888,7 +888,7 @@ namespace WinUIMusicPlayer.Utils
                             }
                         }
                     }
-                    if (picture is not null)
+                    if (picture is not null && picture.Length > 0)
                     {
                         if (ct.IsCancellationRequested) return;
                         await DecodePicture(picture, music, bitmap, ct);
@@ -944,8 +944,8 @@ namespace WinUIMusicPlayer.Utils
                         await stream.WriteAsync(picture.AsBuffer());
                         stream.Seek(0);
                         if (ct.IsCancellationRequested) return;
-
-                        var decoder = await BitmapDecoder.CreateAsync(stream);
+                        BitmapDecoder decoder;
+                        decoder = await BitmapDecoder.CreateAsync(stream);
                         double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
                         uint newWidth = (uint)AppSettings.CoverSize;
                         uint newHeight = (uint)(newWidth / aspectRatio);

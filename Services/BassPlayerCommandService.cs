@@ -224,10 +224,5 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.FadeOut();
         }
-
-        public async Task Dispose()
-        {
-            await IpcService?.Dispose();
-        }
     }
 }
