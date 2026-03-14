@@ -34,11 +34,10 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class PlayingDetailPage : Page
+    public sealed partial class PlayingDetailPage : Page,IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
-        
-        private Storyboard? _lyricImgRTAni;
+
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             this.InitializeComponent();
@@ -250,10 +249,15 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void DisposeLyricImgAnimation()
+        public void Dispose()
         {
-            _lyricImgRTAni?.Stop();
-            _lyricImgRTAni = null;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool dispose)
+        {
+            BackGround.Dispose();
         }
     }
 }

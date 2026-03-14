@@ -30,9 +30,9 @@ namespace WinUIMusicPlayer.Controls
         }
 
         [RelayCommand]
-        public void ExitApplication()
+        public async Task ExitApplication()
         {
-            App.Current_Exit();
+            await App.Current_Exit();
         }
 
         private void NextSong_Click(object sender, RoutedEventArgs e)

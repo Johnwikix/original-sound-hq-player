@@ -218,13 +218,13 @@ namespace WinUIMusicPlayer
         }
 
         /// <summary>
-        public static void Current_Exit()
+        public static async Task Current_Exit()
         {
             try
             {
                 App.Services.GetRequiredService<BassPlayerCommandService>().Dispose().Wait();
-                _host.StopAsync().Wait();
-                _logger?.LogInformation("应用程序退出完成");
+                await _host.StopAsync();
+                _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)
             {
@@ -232,7 +232,7 @@ namespace WinUIMusicPlayer
             }
             finally
             {
-                Environment.Exit(0);
+                App.Current.Exit();
             }
         }
     }

@@ -19,30 +19,10 @@
     <Grid>
         <Grid>
             <customControls:GradientBackgroundControl
+                x:Name="BackGround"
                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                 IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
-            <!--<Border
-                Grid.Row="0"
-                Grid.Column="0"
-                Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
-                <Border.Background>
-                    <ImageBrush x:Name="ContentGridBackground" Stretch="Fill">
-                        <ImageBrush.RelativeTransform>
-                            <CompositeTransform
-                                x:Name="ContentGridBrushTransform"
-                                CenterX="0.5"
-                                CenterY="0.5"
-                                Rotation="0"
-                                ScaleX="1.5"
-                                ScaleY="1.5" />
-                        </ImageBrush.RelativeTransform>
-                    </ImageBrush>
-                </Border.Background>
-                <interactivity:Interaction.Behaviors>
-                    <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
-                </interactivity:Interaction.Behaviors>
-            </Border>-->
             <Grid
                 Grid.Row="0"
                 Grid.Column="0"

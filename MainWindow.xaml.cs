@@ -147,7 +147,7 @@ namespace WinUIMusicPlayer
         }
 
 
-        private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
+        private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
             if (AppSettings.IsRunningBackend)
             {
@@ -156,7 +156,7 @@ namespace WinUIMusicPlayer
             }
             else
             {
-                App.Current_Exit();
+                await App.Current_Exit();
             }
         }
 

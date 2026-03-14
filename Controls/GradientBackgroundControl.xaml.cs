@@ -16,7 +16,7 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace WinUIMusicPlayer.Controls;
 
-public sealed partial class GradientBackgroundControl : UserControl
+public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 {
     // ── 依赖属性 ────────────────────────────────────────────────────────
 
@@ -528,11 +528,24 @@ public sealed partial class GradientBackgroundControl : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
-        _loadCts = null;
+        Dispose(true);
+    }
 
-        _effect?.Dispose();
-        _effect = null;
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool dispose)
+    {
+        if (dispose) {
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = null;
+
+            _effect?.Dispose();
+            _effect = null;
+        }
     }
 }
