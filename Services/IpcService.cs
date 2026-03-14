@@ -128,6 +128,7 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public async Task Dispose()
         {
+            MusicEnd();
             _accessor?.Dispose();
             _mmf?.Dispose();
             // 客户端打开的命名信号量只需要关闭句柄，不需要释放

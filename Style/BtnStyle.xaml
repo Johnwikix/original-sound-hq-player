@@ -244,12 +244,7 @@
                                         <DoubleAnimation
                                             Storyboard.TargetName="HoverOverlay"
                                             Storyboard.TargetProperty="Opacity"
-                                            To="1"
-                                            Duration="0:0:0.083" />
-                                        <ColorAnimation
-                                            Storyboard.TargetName="HoverOverlay"
-                                            Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
-                                            To="{ThemeResource ControlFillColorTertiaryBrush}"
+                                            To="0.6"
                                             Duration="0:0:0.083" />
                                     </Storyboard>
                                 </VisualState>
