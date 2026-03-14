@@ -18,6 +18,7 @@
     <None Remove="Assets\next.ico" />
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
+    <None Remove="Controls\GradientBackgroundControl.xaml" />
     <None Remove="Controls\LyricsLineControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
@@ -98,6 +99,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ColorThief.ImageSharp" Version="1.0.0" />
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Controls.OpacityMaskView" Version="0.1.260109-build.2471" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.2.251219" />
@@ -122,6 +124,7 @@
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.3" />
@@ -160,6 +163,15 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Update="Shaders\effect.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders\effect.fxlib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <Page Update="Controls\GradientBackgroundControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="View\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -18,7 +18,11 @@
 
     <Grid>
         <Grid>
-            <Border
+            <customControls:GradientBackgroundControl
+                ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+            <!--<Border
                 Grid.Row="0"
                 Grid.Column="0"
                 Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
@@ -38,7 +42,7 @@
                 <interactivity:Interaction.Behaviors>
                     <behaviors:FadeBorderBehavior Source="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundSource, Mode=OneWay}" Duration="00:00:1.5" />
                 </interactivity:Interaction.Behaviors>
-            </Border>
+            </Border>-->
             <Grid
                 Grid.Row="0"
                 Grid.Column="0"

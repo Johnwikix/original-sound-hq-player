@@ -245,13 +245,43 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref field, value))
                 {
                     AppSettings.AppTheme = value;
-                    if (IsInitialized)
+                    try
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
+                        switch (value)
+                        {
+                            case "Default":
+                                IsDarkMode = !ToolUtils.GetIsLightTheme();
+                                AppSettings.ElementTheme = ElementTheme.Default;
+                                break;
+                            case "Dark":
+                                IsDarkMode = true;
+                                AppSettings.ElementTheme = ElementTheme.Dark;
+                                break;
+                            case "Light":
+                                IsDarkMode = false;
+                                AppSettings.ElementTheme = ElementTheme.Light;
+                                break;
+                            default:
+                                IsDarkMode = !ToolUtils.GetIsLightTheme();
+                                AppSettings.ElementTheme = ElementTheme.Default;
+                                break;
+                        }
+                        App.MainWindow?.SetAppTheme();
+                        if (IsInitialized)
+                        {
+                            App.Services.GetRequiredService<PlayingDetailPage>().ChangeAcrylicBrushBackground();
+                            App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
+                            _ = _musicDatabaseService.SaveSettingAsync();
+                        }
+                    }
+                    catch
+                    {
                     }
                 }
             }
         } = "Default";
+
+        public bool IsDarkMode { get => field; set => SetProperty(ref field, value);} = false;
 
         public int EntranceAnimationTime
         {
@@ -688,39 +718,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnThemeTypeChanged(string type)
         {
-            try
-            {
-                switch (type)
-                {
-                    case "Default":
-                        ThemeType = "Default";
-                        AppSettings.ElementTheme = ElementTheme.Default;
-                        break;
-                    case "Dark":
-                        ThemeType = "Dark";
-                        AppSettings.ElementTheme = ElementTheme.Dark;
-                        break;
-                    case "Light":
-                        ThemeType = "Light";
-                        AppSettings.ElementTheme = ElementTheme.Light;
-                        break;
-                    default:
-                        ThemeType = "Default";
-                        AppSettings.ElementTheme = ElementTheme.Default;
-                        break;
-                }
-                App.MainWindow?.SetAppTheme();
-                if (IsInitialized)
-                {
-                    App.Services.GetRequiredService<PlayingDetailPage>().ChangeAcrylicBrushBackground();
-                    App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
-                    _ = _musicDatabaseService.SaveSettingAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error setting theme type: {ex.Message}");
-            }
+            ThemeType = type;            
         }
 
         private void OnDefaultEntryComboBoxTagChanged(string value)

@@ -422,9 +422,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UpdatePlayBar(Music music)
         {
-            var albumCoverData = await ToolUtils.GetRawImage(music);
-            BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);
-            await AppViewModel.UpdateCover(albumCoverData);
+            AppViewModel.LyricPageBackgroundData = await ToolUtils.GetRawImage(music);
+            BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
+            //await AppViewModel.UpdateCover(albumCoverData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
@@ -432,14 +432,13 @@ namespace WinUIMusicPlayer.ViewModel
             });
             SystemMediaControlsService.UpdateSystemMediaControlsState();
             SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
-            _ = SystemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, albumCoverData);           
+            _ = SystemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AppViewModel.LyricPageBackgroundData);           
         }
 
         public async void ThemeChangedUpdateCover()
         {
             if (AppViewModel.CurrentPlayingMusic is null) return;
-            var albumCoverData = await ToolUtils.GetRawImage(AppViewModel.CurrentPlayingMusic);
-            await AppViewModel.UpdateCover(albumCoverData);
+            AppViewModel.UpdateCover();
         }
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {

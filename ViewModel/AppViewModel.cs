@@ -150,7 +150,8 @@ namespace WinUIMusicPlayer.ViewModel
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public ObservableCollection<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
-        public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
+        //public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
+        public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
         public bool IsInitialized { get; set => SetProperty(ref field, value); } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }
@@ -279,7 +280,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppData.IsPlaying = value;
                     UpdatePlayPauseButtonIcon();
-                    App.Services.GetRequiredService<PlayingDetailPage>().BeginOrPauseLyricImgAnimation(value);
+                    //App.Services.GetRequiredService<PlayingDetailPage>().BeginOrPauseLyricImgAnimation(value);
                 }
             }
         } = false;
@@ -938,43 +939,15 @@ namespace WinUIMusicPlayer.ViewModel
             RefreshUsbDeviceMusicList();
         }
 
-        public async Task UpdateCover(byte[] cover)
+        public void UpdateCover()
         {
-            try
+            IsDarkMode = ThemeType switch
             {
-                if (cover != null)
-                {
-                    bool isDarkMode = true;
-                    if (ThemeType == "Light")
-                    {
-                        isDarkMode = false;
-                    }
-                    else if (ThemeType == "Default")
-                    {
-                        isDarkMode = !GetIsLightTheme();
-                    }
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        LyricPageBackgroundSource = await ImageHelper.ApplyMicaEffectWin2DAsync(cover, isDarkMode);
-                    });
-
-                }
-                else
-                {
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        LyricPageBackgroundSource = null;
-                    });
-                }
-            }
-            catch
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                {
-                    LyricPageBackgroundSource = null;
-                });
-            }
+                "Default" => !GetIsLightTheme(),
+                "Dark" => true,
+                "Light" => false,
+                _ => !GetIsLightTheme(),
+            };
         }
-
     }
 }
