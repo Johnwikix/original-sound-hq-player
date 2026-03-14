@@ -1,3 +1,4 @@
+using ColorThief.ImageSharp.Shared;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -81,6 +82,9 @@ public sealed partial class GradientBackgroundControl : UserControl
 
     private CancellationTokenSource _loadCts;
 
+    // ColorThief 无状态，复用同一实例避免重复构造
+    private static readonly ColorThief.ImageSharp.ColorThief ColorThiefInstance = new();
+
     // ── 构造函数 ────────────────────────────────────────────────────────
 
     public GradientBackgroundControl()
@@ -121,17 +125,16 @@ public sealed partial class GradientBackgroundControl : UserControl
             if (ImageBytes is { Length: > 0 } bytes)
             {
                 await LoadImageFromBytesAsync(bytes);
-                _c1 = _target1; _c2 = _target2;
-                _c3 = _target3; _c4 = _target4;
-                _transitionProgress = 1f;
             }
             else
             {
                 ApplyDefaultColors();
-                _c1 = _target1; _c2 = _target2;
-                _c3 = _target3; _c4 = _target4;
-                _transitionProgress = 1f;
             }
+
+            // 首次直接应用目标色，无需过渡动画
+            _c1 = _target1; _c2 = _target2;
+            _c3 = _target3; _c4 = _target4;
+            _transitionProgress = 1f;
 
             ApplyEffectProperties();
         };
@@ -210,43 +213,44 @@ public sealed partial class GradientBackgroundControl : UserControl
 
         try
         {
-            var colors = await Task.Run(async () =>
+            // 返回 (颜色向量, Population) 列表，最多 4 项，按权重降序
+            var weighted = await Task.Run(async () =>
             {
                 using var memStream = new MemoryStream(imageBytes, writable: false);
                 using var rasStream = memStream.AsRandomAccessStream();
-
                 var decoder = await BitmapDecoder.CreateAsync(rasStream);
 
-                List<Vector3> result;
+                List<(Vector3 Color, int Population)> result;
                 using (var image = await ConvertToImageSharpAsync(decoder))
                 {
                     cts.Token.ThrowIfCancellationRequested();
 
-                    var thief = new ColorThief.ImageSharp.ColorThief();
+                    var palette = ColorThiefInstance.GetPalette(image, 8, 3, isDark);
 
-                    // 多取候选色，增加容错
-                    var palette = thief.GetPalette(image, 8, 10, isDark);
+                    int totalPop = palette.Sum(t => t.Population);
 
-                    // 优先使用符合明暗要求的颜色，按 Population 降序
-                    var preferred = palette
-                        .Where(t => t.IsDark == isDark)
+                    var allByWeight = palette
                         .OrderByDescending(t => t.Population)
-                        .Select(t => new Vector3(
-                            t.Color.R / 255f,
-                            t.Color.G / 255f,
-                            t.Color.B / 255f))
                         .ToList();
 
-                    // 不足时用原图其余颜色补充，不强制过滤，保留色调
-                    var fallback = palette
-                        .Where(t => t.IsDark != isDark)
-                        .OrderByDescending(t => t.Population)
-                        .Select(t => new Vector3(
-                            t.Color.R / 255f,
-                            t.Color.G / 255f,
-                            t.Color.B / 255f));
+                    // 符合明暗要求的颜色占总像素的比例
+                    int preferredPop = allByWeight
+                        .Where(t => t.IsDark == isDark)
+                        .Sum(t => t.Population);
+                    float preferredRatio = totalPop > 0 ? (float)preferredPop / totalPop : 0f;
 
-                    result = preferred.Concat(fallback).Take(4).ToList();
+                    // 主色调符合时优先排符合的；否则按全图权重（EnforceLuminance 后续校正亮度）
+                    IEnumerable<QuantizedColor> candidates = preferredRatio >= 0.5f
+                        ? allByWeight.Where(t => t.IsDark == isDark)
+                              .Concat(allByWeight.Where(t => t.IsDark != isDark))
+                        : allByWeight;
+
+                    result = candidates
+                        .Take(4)
+                        .Select(t => (
+                            Color: new Vector3(t.Color.R / 255f, t.Color.G / 255f, t.Color.B / 255f),
+                            t.Population))
+                        .ToList();
                 }
 
                 return result;
@@ -255,20 +259,21 @@ public sealed partial class GradientBackgroundControl : UserControl
 
             cts.Token.ThrowIfCancellationRequested();
 
-            // 真正没有任何颜色时的兜底，用中性深/浅灰，而非极端黑白
-            if (colors.Count == 0)
-                colors.Add(isDark ? new Vector3(0.05f) : new Vector3(0.95f));
+            // 兜底：真正没有任何颜色时
+            if (weighted.Count == 0)
+                weighted.Add((isDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
 
-            PadColorsToFour(colors, isDark);
+            // 强制亮度，保留色相/饱和度
+            for (int i = 0; i < weighted.Count; i++)
+                weighted[i] = (EnforceLuminance(weighted[i].Color, isDark), weighted[i].Population);
 
-            // 强制将亮度映射到目标区间，保留原图色相与饱和度
-            for (int i = 0; i < colors.Count; i++)
-                colors[i] = EnforceLuminance(colors[i], isDark);
+            // 按 Population 权重将颜色分配到 4 个 slot
+            var slots = DistributeByPopulation(weighted);
 
-            _target1 = colors[0];
-            _target2 = colors[1];
-            _target3 = colors[2];
-            _target4 = colors[3];
+            _target1 = slots[0];
+            _target2 = slots[1];
+            _target3 = slots[2];
+            _target4 = slots[3];
             _transitionProgress = 0f;
         }
         catch (OperationCanceledException)
@@ -286,54 +291,127 @@ public sealed partial class GradientBackgroundControl : UserControl
     }
 
     /// <summary>
-    /// 将颜色列表补全至 4 个。
-    /// 基于已有颜色微扰，保留色调，不向明/暗方向强推。
+    /// 按 Population 比例将颜色分配到恰好 4 个 slot，最后随机打乱。
+    /// 例如：黑80% 红15% 白5% → [黑, 黑, 黑, 红] 打乱
+    /// 规则：剩余 slot 按比例余数从大到小补给；保证不全相同。
     /// </summary>
-    private static void PadColorsToFour(List<Vector3> colors, bool isDark)
+    private static Vector3[] DistributeByPopulation(List<(Vector3 Color, int Population)> weighted)
     {
-        var rng = new Random(colors[0].GetHashCode());
-        Vector3 min = new Vector3(0.05f);
-        Vector3 max = new Vector3(0.95f);
+        const int Total = 4;
+        int count = weighted.Count;
+        int totalPop = weighted.Sum(w => w.Population);
 
-        while (colors.Count < 4)
+        // 按比例分配 slot（向下取整 + 余数竞争）
+        int[] slots = new int[count];
+        int assigned = 0;
+        for (int i = 0; i < count; i++)
         {
-            // 从已有颜色随机取一个作为基础，加小幅随机扰动，保持整体色调一致
-            var baseColor = colors[rng.Next(colors.Count)];
-            const float jitter = 0.06f;
-            var next = new Vector3(
-                baseColor.X + (float)(rng.NextDouble() - 0.5) * jitter * 2,
-                baseColor.Y + (float)(rng.NextDouble() - 0.5) * jitter * 2,
-                baseColor.Z + (float)(rng.NextDouble() - 0.5) * jitter * 2);
-            colors.Add(Vector3.Clamp(next, min, max));
+            slots[i] = (int)Math.Floor((float)weighted[i].Population / totalPop * Total);
+            assigned += slots[i];
         }
+        // 剩余 slot 逐个分给余数最大的颜色，零 LINQ 分配
+        int remaining = Total - assigned;
+        for (int r = 0; r < remaining; r++)
+        {
+            int best = 0;
+            float bestRem = -1f;
+            for (int i = 0; i < count; i++)
+            {
+                float rem = (float)weighted[i].Population / totalPop * Total - slots[i];
+                if (rem > bestRem) { bestRem = rem; best = i; }
+            }
+            slots[best]++;
+        }
+
+        // 保证不全相同：主色独占全部 4 个时让出 1 个给次色
+        if (count >= 2 && slots[0] == Total)
+        {
+            slots[0] = Total - 1;
+            slots[1] = 1;
+        }
+        else if (count == 1)
+        {
+            var nudge = Vector3.Clamp(
+                weighted[0].Color + new Vector3(0.05f, -0.03f, 0.04f),
+                new Vector3(0.01f), new Vector3(0.99f));
+            weighted.Add((nudge, 0));
+            slots = new[] { Total - 1, 1 };
+            count = 2;
+        }
+
+        // 展开到栈上固定数组，Fisher-Yates 随机打乱，零额外分配
+        var result = new Vector3[Total];
+        int idx = 0;
+        for (int i = 0; i < count && idx < Total; i++)
+            for (int j = 0; j < slots[i] && idx < Total; j++)
+                result[idx++] = weighted[i].Color;
+
+        var rng = new Random();
+        for (int i = Total - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (result[i], result[j]) = (result[j], result[i]);
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// 保留色相和饱和度，强制将感知亮度压入目标区间。
-    /// isDark=true  → [0.03, 0.32]  足够深，白色文字清晰可读
-    /// isDark=false → [0.68, 0.97]  足够亮，深色文字清晰可读
+    /// 在 HSL 空间调整 L 值，严格保留色相与饱和度。
+    /// isDark=true  → L 上限 0.45，过亮时压暗
+    /// isDark=false → L 下限 0.55，过暗时提亮
     /// </summary>
     private static Vector3 EnforceLuminance(Vector3 rgb, bool isDark)
     {
-        // ITU-R BT.709 感知亮度
-        float lum = rgb.X * 0.2126f + rgb.Y * 0.7152f + rgb.Z * 0.0722f;
+        RgbToHsl(rgb, out float h, out float s, out float l);
 
-        float targetMin = isDark ? 0.03f : 0.68f;
-        float targetMax = isDark ? 0.32f : 0.97f;
+        float targetL = isDark ? Math.Min(l, 0.45f) : Math.Max(l, 0.55f);
 
-        // 已在目标区间内，不做调整
-        if (lum >= targetMin && lum <= targetMax)
+        if (Math.Abs(targetL - l) < 1e-5f)
             return rgb;
 
-        float targetLum = Math.Clamp(lum, targetMin, targetMax);
+        return HslToRgb(h, s, targetL);
+    }
 
-        // 纯黑兜底：直接返回目标亮度的中性灰
-        if (lum < 1e-5f)
-            return new Vector3(targetLum);
+    private static void RgbToHsl(Vector3 rgb, out float h, out float s, out float l)
+    {
+        float r = rgb.X, g = rgb.Y, b = rgb.Z;
+        float max = Math.Max(r, Math.Max(g, b));
+        float min = Math.Min(r, Math.Min(g, b));
+        float delta = max - min;
 
-        // 等比缩放 RGB：保持色相/饱和度，仅调整亮度
-        float scale = targetLum / lum;
-        return Vector3.Clamp(rgb * scale, new Vector3(0.01f), new Vector3(0.99f));
+        l = (max + min) * 0.5f;
+
+        if (delta < 1e-5f) { h = 0f; s = 0f; return; }
+
+        s = l > 0.5f ? delta / (2f - max - min) : delta / (max + min);
+
+        if (max == r) h = ((g - b) / delta + (g < b ? 6f : 0f)) / 6f;
+        else if (max == g) h = ((b - r) / delta + 2f) / 6f;
+        else h = ((r - g) / delta + 4f) / 6f;
+    }
+
+    private static Vector3 HslToRgb(float h, float s, float l)
+    {
+        if (s < 1e-5f) return new Vector3(l);
+
+        float q = l < 0.5f ? l * (1f + s) : l + s - l * s;
+        float p = 2f * l - q;
+
+        return new Vector3(
+            HueToRgb(p, q, h + 1f / 3f),
+            HueToRgb(p, q, h),
+            HueToRgb(p, q, h - 1f / 3f));
+    }
+
+    private static float HueToRgb(float p, float q, float t)
+    {
+        if (t < 0f) t += 1f;
+        if (t > 1f) t -= 1f;
+        if (t < 1f / 6f) return p + (q - p) * 6f * t;
+        if (t < 1f / 2f) return q;
+        if (t < 2f / 3f) return p + (q - p) * (2f / 3f - t) * 6f;
+        return p;
     }
 
     private static async Task<Image<Rgba32>> ConvertToImageSharpAsync(BitmapDecoder decoder)
