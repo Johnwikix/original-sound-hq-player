@@ -21,6 +21,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         public PlayingDetailViewModel(AppViewModel appViewModel)
         {
             AppViewModel = appViewModel;
+            AppViewModel.UpdateCover();
         }
 
         [RelayCommand]
@@ -77,12 +78,10 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                     AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconSinglePlayback");
                     break;
                 case PlayMode.RepeatOff:
-                    //AppData.PlayMode = PlayMode.SingleLoop;
                     AppViewModel.CurrentPlayMode = PlayMode.SingleLoop;
                     AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
-            //App.MainWindow.UpdateAppNotifyIconControl();
             App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
 
         }

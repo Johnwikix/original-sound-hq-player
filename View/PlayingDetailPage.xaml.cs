@@ -43,8 +43,7 @@ namespace WinUIMusicPlayer.View
         {
             this.InitializeComponent();
             ViewModel = viewModel;
-            DataContext = this;           
-            SetBackground();
+            DataContext = this;
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
@@ -249,11 +248,6 @@ namespace WinUIMusicPlayer.View
                 }
                 e.Handled = true;
             }
-        }
-
-        private void SetBackground()
-        {
-            ViewModel.AppViewModel.UpdateCover();
         }
 
         public void DisposeLyricImgAnimation()
