@@ -263,9 +263,8 @@ public sealed partial class GradientBackgroundControl : UserControl
             if (weighted.Count == 0)
                 weighted.Add((isDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
 
-            // 强制亮度，保留色相/饱和度
-            for (int i = 0; i < weighted.Count; i++)
-                weighted[i] = (EnforceLuminance(weighted[i].Color, isDark), weighted[i].Population);
+            // 整体等比缩放调色板亮度到目标区间，保留颜色间相对亮度关系
+            ScalePaletteLuminance(weighted, isDark);
 
             // 亮度压缩后可能导致原本不同的颜色看起来一样，做最小差异保证
             EnsureColorDiversity(weighted, isDark);
@@ -365,8 +364,8 @@ public sealed partial class GradientBackgroundControl : UserControl
     /// </summary>
     private static void EnsureColorDiversity(List<(Vector3 Color, int Population)> weighted, bool isDark)
     {
-        const float MinDistance = 0.18f; // HSL 空间欧氏距离阈值，低于此值认为视觉上过于相近
-        const float LShift = 0.12f;      // 亮度微分离幅度
+        const float MinDistance = 0.12f; // HSL 空间欧氏距离阈值，低于此值认为视觉上过于相近
+        const float LShift = 0.08f;      // 亮度微分离幅度
 
         float lMin = isDark ? 0.03f : 0.55f;
         float lMax = isDark ? 0.45f : 0.97f;
@@ -400,20 +399,54 @@ public sealed partial class GradientBackgroundControl : UserControl
     }
 
     /// <summary>
-    /// 在 HSL 空间调整 L 值，严格保留色相与饱和度。
-    /// isDark=true  → L 上限 0.45，过亮时压暗
-    /// isDark=false → L 下限 0.55，过暗时提亮
+    /// 对整个调色板做整体亮度等比缩放，保留颜色间相对亮度关系。
+    ///
+    /// 算法：
+    ///   1. 找出调色板中最亮（maxL）和最暗（minL）的颜色
+    ///   2. 若整体已在目标区间内，不做处理
+    ///   3. 否则将 [minL, maxL] 线性映射到目标区间 [targetMin, targetMax]
+    ///      每个颜色的新亮度 = targetMin + (l - minL) / (maxL - minL) * (targetMax - targetMin)
+    ///   4. 若所有颜色亮度相同（扁平调色板），整体平移到目标区间中点
+    ///
+    /// isDark=true  → 目标区间 [0.05, 0.45]
+    /// isDark=false → 目标区间 [0.55, 0.95]
     /// </summary>
-    private static Vector3 EnforceLuminance(Vector3 rgb, bool isDark)
+    private static void ScalePaletteLuminance(List<(Vector3 Color, int Population)> weighted, bool isDark)
     {
-        RgbToHsl(rgb, out float h, out float s, out float l);
+        float targetMin = isDark ? 0.05f : 0.55f;
+        float targetMax = isDark ? 0.45f : 0.95f;
 
-        float targetL = isDark ? Math.Min(l, 0.45f) : Math.Max(l, 0.55f);
+        // 收集各颜色的 HSL
+        int count = weighted.Count;
+        Span<float> hs = stackalloc float[count];
+        Span<float> ss = stackalloc float[count];
+        Span<float> ls = stackalloc float[count];
 
-        if (Math.Abs(targetL - l) < 1e-5f)
-            return rgb;
+        float minL = float.MaxValue, maxL = float.MinValue;
+        for (int i = 0; i < count; i++)
+        {
+            RgbToHsl(weighted[i].Color, out hs[i], out ss[i], out ls[i]);
+            if (ls[i] < minL) minL = ls[i];
+            if (ls[i] > maxL) maxL = ls[i];
+        }
 
-        return HslToRgb(h, s, targetL);
+        // 整体已在目标区间内，不做处理
+        if (minL >= targetMin && maxL <= targetMax) return;
+
+        float srcRange = maxL - minL;
+        float dstRange = targetMax - targetMin;
+
+        for (int i = 0; i < count; i++)
+        {
+            float newL = srcRange < 1e-5f
+                // 扁平调色板：整体平移到目标区间中点
+                ? (targetMin + targetMax) * 0.5f
+                // 等比线性映射
+                : targetMin + (ls[i] - minL) / srcRange * dstRange;
+
+            newL = Math.Clamp(newL, targetMin, targetMax);
+            weighted[i] = (HslToRgb(hs[i], ss[i], newL), weighted[i].Population);
+        }
     }
 
     private static void RgbToHsl(Vector3 rgb, out float h, out float s, out float l)
