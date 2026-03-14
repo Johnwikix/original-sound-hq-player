@@ -225,7 +225,7 @@ public sealed partial class GradientBackgroundControl : UserControl
                 {
                     cts.Token.ThrowIfCancellationRequested();
 
-                    var palette = ColorThiefInstance.GetPalette(image, 8, 3, isDark);
+                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, isDark);
 
                     int totalPop = palette.Sum(t => t.Population);
 
@@ -266,6 +266,9 @@ public sealed partial class GradientBackgroundControl : UserControl
             // 强制亮度，保留色相/饱和度
             for (int i = 0; i < weighted.Count; i++)
                 weighted[i] = (EnforceLuminance(weighted[i].Color, isDark), weighted[i].Population);
+
+            // 亮度压缩后可能导致原本不同的颜色看起来一样，做最小差异保证
+            EnsureColorDiversity(weighted, isDark);
 
             // 按 Population 权重将颜色分配到 4 个 slot
             var slots = DistributeByPopulation(weighted);
@@ -354,6 +357,46 @@ public sealed partial class GradientBackgroundControl : UserControl
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 检查颜色列表中两两之间的感知距离，若小于阈值则对较次要的颜色做亮度微分离，
+    /// 保证每对颜色在视觉上可区分，避免 EnforceLuminance 压缩后出现"只有一种颜色"的感觉。
+    /// </summary>
+    private static void EnsureColorDiversity(List<(Vector3 Color, int Population)> weighted, bool isDark)
+    {
+        const float MinDistance = 0.18f; // HSL 空间欧氏距离阈值，低于此值认为视觉上过于相近
+        const float LShift = 0.12f;      // 亮度微分离幅度
+
+        float lMin = isDark ? 0.03f : 0.55f;
+        float lMax = isDark ? 0.45f : 0.97f;
+
+        for (int i = 0; i < weighted.Count; i++)
+        {
+            for (int j = i + 1; j < weighted.Count; j++)
+            {
+                RgbToHsl(weighted[i].Color, out float hi, out float si, out float li);
+                RgbToHsl(weighted[j].Color, out float hj, out float sj, out float lj);
+
+                // 色相距离取环形最短路径
+                float dh = Math.Abs(hi - hj);
+                if (dh > 0.5f) dh = 1f - dh;
+                float ds = si - sj;
+                float dl = li - lj;
+                float dist = MathF.Sqrt(dh * dh + ds * ds + dl * dl);
+
+                if (dist >= MinDistance) continue;
+
+                // j 是次要颜色（Population 较小），对它做亮度偏移使其与 i 拉开距离
+                // 偏移方向：若 j 亮度 >= i，则把 j 再推亮；否则把 j 推暗
+                float newLj = lj >= li
+                    ? Math.Min(lMax, lj + LShift)
+                    : Math.Max(lMin, lj - LShift);
+
+                if (Math.Abs(newLj - lj) > 1e-4f)
+                    weighted[j] = (HslToRgb(hj, sj, newLj), weighted[j].Population);
+            }
+        }
     }
 
     /// <summary>
