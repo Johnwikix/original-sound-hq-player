@@ -257,7 +257,9 @@ namespace WinUIMusicPlayer.View
 
         private void Dispose(bool dispose)
         {
-            BackGround.Dispose();
+            if (dispose) {
+                BackGround.Dispose();
+            }
         }
     }
 }
