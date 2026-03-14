@@ -413,10 +413,14 @@ public sealed partial class GradientBackgroundControl : UserControl
     /// </summary>
     private static void ScalePaletteLuminance(List<(Vector3 Color, int Population)> weighted, bool isDark)
     {
-        float targetMin = isDark ? 0.05f : 0.55f;
-        float targetMax = isDark ? 0.45f : 0.95f;
+        // dark  模式：最亮色不超过 0.45
+        // light 模式：最暗色不低于 0.55
+        // 若已满足则完全不动，贴近原图；否则做最小幅度的线性映射：
+        //   - 先将超出的一端锚定到边界
+        //   - 另一端按原始亮度范围等比收缩，保留颜色间相对亮度差距
+        //   - 不强制拉满整个目标区间，只做刚好够的调整
+        float hardLimit = isDark ? 0.45f : 0.55f;
 
-        // 收集各颜色的 HSL
         int count = weighted.Count;
         Span<float> hs = stackalloc float[count];
         Span<float> ss = stackalloc float[count];
@@ -430,22 +434,39 @@ public sealed partial class GradientBackgroundControl : UserControl
             if (ls[i] > maxL) maxL = ls[i];
         }
 
-        // 整体已在目标区间内，不做处理
-        if (minL >= targetMin && maxL <= targetMax) return;
+        // 整体已满足，不动
+        if (isDark && maxL <= hardLimit) return;
+        if (!isDark && minL >= hardLimit) return;
 
         float srcRange = maxL - minL;
-        float dstRange = targetMax - targetMin;
 
         for (int i = 0; i < count; i++)
         {
-            float newL = srcRange < 1e-5f
-                // 扁平调色板：整体平移到目标区间中点
-                ? (targetMin + targetMax) * 0.5f
-                // 等比线性映射
-                : targetMin + (ls[i] - minL) / srcRange * dstRange;
+            float newL;
+            if (srcRange < 1e-5f)
+            {
+                // 扁平调色板：直接平移到边界
+                newL = hardLimit;
+            }
+            else if (isDark)
+            {
+                // 锚定 maxL → hardLimit，其余等比收缩
+                // newL = hardLimit - (maxL - ls[i]) / srcRange * srcRange
+                //       但 srcRange 两端都要缩进 [0.01, hardLimit]
+                // 新区间高端 = hardLimit，低端 = hardLimit - srcRange（若 < 0.01 则截）
+                float newMin = Math.Max(0.01f, hardLimit - srcRange);
+                float newRange = hardLimit - newMin;
+                newL = newMin + (ls[i] - minL) / srcRange * newRange;
+            }
+            else
+            {
+                // 锚定 minL → hardLimit，其余等比收缩
+                float newMax = Math.Min(0.99f, hardLimit + srcRange);
+                float newRange = newMax - hardLimit;
+                newL = hardLimit + (ls[i] - minL) / srcRange * newRange;
+            }
 
-            newL = Math.Clamp(newL, targetMin, targetMax);
-            weighted[i] = (HslToRgb(hs[i], ss[i], newL), weighted[i].Population);
+            weighted[i] = (HslToRgb(hs[i], ss[i], Math.Clamp(newL, 0.01f, 0.99f)), weighted[i].Population);
         }
     }
 
