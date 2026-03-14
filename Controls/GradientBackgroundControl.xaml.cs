@@ -181,10 +181,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private void ApplyDefaultColors()
     {
         bool isDark = IsDark;
-        _target1 = isDark ? new Vector3(0.08f, 0.08f, 0.10f) : new Vector3(0.92f, 0.92f, 0.95f);
-        _target2 = isDark ? new Vector3(0.10f, 0.10f, 0.14f) : new Vector3(0.88f, 0.90f, 0.93f);
-        _target3 = isDark ? new Vector3(0.07f, 0.09f, 0.12f) : new Vector3(0.90f, 0.91f, 0.94f);
-        _target4 = isDark ? new Vector3(0.06f, 0.07f, 0.10f) : new Vector3(0.85f, 0.88f, 0.92f);
+        _target1 = isDark ? new Vector3(0.08f, 0.08f, 0.08f) : new Vector3(0.95f, 0.95f, 0.95f);
+        _target2 = isDark ? new Vector3(0.25f, 0.28f, 0.27f) : new Vector3(0.70f, 0.68f, 0.71f);
+        _target3 = isDark ? new Vector3(0.07f, 0.07f, 0.07f) : new Vector3(0.80f, 0.80f, 0.80f);
+        _target4 = isDark ? new Vector3(0.05f, 0.05f, 0.05f) : new Vector3(0.85f, 0.85f, 0.85f);
         _transitionProgress = 0f;
     }
 
