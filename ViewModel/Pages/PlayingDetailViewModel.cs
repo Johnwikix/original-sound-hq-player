@@ -21,7 +21,6 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         public PlayingDetailViewModel(AppViewModel appViewModel)
         {
             AppViewModel = appViewModel;
-            AppViewModel.UpdateCover();
         }
 
         [RelayCommand]

@@ -35,8 +35,12 @@ public sealed partial class GradientBackgroundControl : UserControl
     private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (GradientBackgroundControl)d;
-        if (e.NewValue is byte[] bytes && bytes.Length > 0 && ctrl._effect != null)
+        if (ctrl._effect == null) return;
+
+        if (e.NewValue is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadImageFromBytesAsync(bytes);
+        else
+            ctrl.ApplyDefaultColors();
     }
 
     public static readonly DependencyProperty IsDarkProperty =
@@ -55,8 +59,12 @@ public sealed partial class GradientBackgroundControl : UserControl
     private static void OnColorParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (GradientBackgroundControl)d;
-        if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0 && ctrl._effect != null)
+        if (ctrl._effect == null) return;
+
+        if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadImageFromBytesAsync(bytes);
+        else
+            ctrl.ApplyDefaultColors();
     }
 
     // ── 私有字段 ────────────────────────────────────────────────────────
@@ -117,6 +125,13 @@ public sealed partial class GradientBackgroundControl : UserControl
                 _c3 = _target3; _c4 = _target4;
                 _transitionProgress = 1f;
             }
+            else
+            {
+                ApplyDefaultColors();
+                _c1 = _target1; _c2 = _target2;
+                _c3 = _target3; _c4 = _target4;
+                _transitionProgress = 1f;
+            }
 
             ApplyEffectProperties();
         };
@@ -158,6 +173,16 @@ public sealed partial class GradientBackgroundControl : UserControl
         _width = (float)canvas.ActualWidth;
         _height = (float)canvas.ActualHeight;
         _effect?.Properties["iResolution"] = new Vector2(_width, _height);
+    }
+
+    private void ApplyDefaultColors()
+    {
+        bool isDark = IsDark;
+        _target1 = isDark ? new Vector3(0.08f, 0.08f, 0.10f) : new Vector3(0.92f, 0.92f, 0.95f);
+        _target2 = isDark ? new Vector3(0.10f, 0.10f, 0.14f) : new Vector3(0.88f, 0.90f, 0.93f);
+        _target3 = isDark ? new Vector3(0.07f, 0.09f, 0.12f) : new Vector3(0.90f, 0.91f, 0.94f);
+        _target4 = isDark ? new Vector3(0.06f, 0.07f, 0.10f) : new Vector3(0.85f, 0.88f, 0.92f);
+        _transitionProgress = 0f;
     }
 
     private void ApplyEffectProperties()

@@ -269,7 +269,6 @@ namespace WinUIMusicPlayer.ViewModel
                         App.MainWindow?.SetAppTheme();
                         if (IsInitialized)
                         {
-                            App.Services.GetRequiredService<PlayingDetailPage>().ChangeAcrylicBrushBackground();
                             App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
                             _ = _musicDatabaseService.SaveSettingAsync();
                         }

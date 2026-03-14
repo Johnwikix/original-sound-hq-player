@@ -39,13 +39,12 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         
         private Storyboard? _lyricImgRTAni;
-        private readonly AcrylicBrush acrylicBrush = new() { TintOpacity = 0.5 };
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;           
-            SetAcrylicBrushBackground();
+            SetBackground();
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
@@ -252,65 +251,10 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void SetAcrylicBrushBackground()
+        private void SetBackground()
         {
-            ChangeAcrylicBrushBackground();
-            //ChangeAcrylicBrushBackgroundOpacity();
+            ViewModel.AppViewModel.UpdateCover();
         }
-
-        public void ChangeAcrylicBrushBackground()
-        {
-
-            if (((FrameworkElement)App.MainWindow!.Content).ActualTheme == ElementTheme.Dark)
-            {
-                acrylicBrush.TintColor = Colors.Black;
-            }
-            else
-            {
-                acrylicBrush.TintColor = Colors.White;
-            }
-        }
-
-        //public void ChangeAcrylicBrushBackgroundOpacity()
-        //{
-        //    ViewModel.AppViewModel.IsAcrylicBrushOpacity = ViewModel.AppViewModel.MusicDetailCover is not null && ViewModel.AppViewModel.IsInPlayingDetailMode && AppSettings.IsBackgroundCoverEnabled;
-        //}
-
-        //public void BeginOrPauseLyricImgAnimation(bool play)
-        //{
-        //    var transformTarget = ContentGridBrushTransform;
-
-        //    if (_lyricImgRTAni == null)
-        //    {
-        //        double currentAngle = transformTarget.Rotation;
-        //        _lyricImgRTAni = new Storyboard
-        //        {
-        //            RepeatBehavior = RepeatBehavior.Forever
-        //        };
-        //        var rotationAnimation = new DoubleAnimation
-        //        {
-        //            From = currentAngle,
-        //            To = currentAngle + 360,
-        //            Duration = new Duration(TimeSpan.FromSeconds(67)),
-        //            EnableDependentAnimation = true
-        //        };
-        //        Storyboard.SetTarget(rotationAnimation, transformTarget);
-        //        Storyboard.SetTargetProperty(rotationAnimation, "Rotation");
-        //        _lyricImgRTAni.Children.Add(rotationAnimation);
-        //        _lyricImgRTAni.Begin();
-        //    }
-        //    else
-        //    {
-        //        if (play)
-        //        {
-        //            _lyricImgRTAni.Resume();
-        //        }
-        //        else
-        //        {
-        //            _lyricImgRTAni.Pause();
-        //        }
-        //    }
-        //}
 
         public void DisposeLyricImgAnimation()
         {
