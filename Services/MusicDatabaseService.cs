@@ -887,20 +887,13 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAllAsync<LastPlayListState>();
                 var musicIds = string.Join(",", currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-
                 var playListState = new LastPlayListState
                 {
                     PlayListMusicIds = musicIds
                 };
                 _ = _dbConnection.InsertAsync(playListState);
                 var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
-                if (playState is null)
-                {
-                    playState = new SavePlayState
-                    {
-                        Id = 1
-                    };
-                }
+                playState ??= new SavePlayState{Id = 1};
                 playState.PlayMode = currentPlayMode;
                 playState.LastPlayedMusicId = currentPlayingMusicId;
                 playState.Volume = volume;
