@@ -15,11 +15,11 @@ namespace WinUIMusicPlayer.Model
         // 新增：正在加载的专辑，避免重复加载
         public static readonly ConcurrentDictionary<string, SemaphoreSlim> _albumLoadLocks = new();
         public static readonly HashSet<string> UnknownAlbums = [
-                "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом"
-         ];
+            "未知专辑", "Unknown Album", "Álbum desconocido", "不明なアルバム", "Неизвестный альбом","Unbekanntes Album"
+        ];
         public static readonly HashSet<string> UnknownArtists =
         [
-            "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист"
+            "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист","Unbekannter Künstler"
         ];
         //public static IReadOnlyCollection<Music> allSongs { get; set; } = [];
         public static List<UsbDeviceMusic> MusicOnUsbDevice { get; set; } = [];
