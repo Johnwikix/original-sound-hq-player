@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception)
             {
-                return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist);
+                return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
             }
         }
 
