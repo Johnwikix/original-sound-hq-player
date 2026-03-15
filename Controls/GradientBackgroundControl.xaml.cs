@@ -226,7 +226,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                 {
                     cts.Token.ThrowIfCancellationRequested();
 
-                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, isDark);
+                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
 
                     int totalPop = palette.Sum(t => t.Population);
 
@@ -304,29 +304,45 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         int count = weighted.Count;
         int totalPop = weighted.Sum(w => w.Population);
 
-        // 按比例分配 slot（向下取整 + 余数竞争）
+        // 颜色 >= 3 种时，每种最多占 2 个 slot，保证至少 3 种颜色参与
+        // 颜色 < 3 种时保持原有逻辑（单色最多 Total-1）
+        int perColorMax = count >= 3 ? 2 : Total - 1;
+
+        // 按比例分配 slot（向下取整 + 余数竞争），同时受 perColorMax 上限约束
         int[] slots = new int[count];
         int assigned = 0;
         for (int i = 0; i < count; i++)
         {
-            slots[i] = (int)Math.Floor((float)weighted[i].Population / totalPop * Total);
+            slots[i] = Math.Min(perColorMax,
+                (int)Math.Floor((float)weighted[i].Population / totalPop * Total));
             assigned += slots[i];
         }
-        // 剩余 slot 逐个分给余数最大的颜色，零 LINQ 分配
+
+        // 剩余 slot 逐个分给余数最大且未超上限的颜色
         int remaining = Total - assigned;
         for (int r = 0; r < remaining; r++)
         {
-            int best = 0;
+            int best = -1;
             float bestRem = -1f;
             for (int i = 0; i < count; i++)
             {
+                if (slots[i] >= perColorMax) continue;
                 float rem = (float)weighted[i].Population / totalPop * Total - slots[i];
                 if (rem > bestRem) { bestRem = rem; best = i; }
+            }
+            // 所有颜色均已达上限（理论上不会发生）则放宽约束兜底
+            if (best == -1)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    float rem = (float)weighted[i].Population / totalPop * Total - slots[i];
+                    if (rem > bestRem) { bestRem = rem; best = i; }
+                }
             }
             slots[best]++;
         }
 
-        // 保证不全相同：主色独占全部 4 个时让出 1 个给次色
+        // 颜色 < 3 种时的兜底逻辑保持不变
         if (count >= 2 && slots[0] == Total)
         {
             slots[0] = Total - 1;
