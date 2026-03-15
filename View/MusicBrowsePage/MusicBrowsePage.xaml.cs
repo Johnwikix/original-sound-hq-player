@@ -39,22 +39,17 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {        
         private NotificationService notificationService;
-        private readonly INavigationService _navigationService;        
-
-        private MusicDatabaseService _musicDatabaseService { get; }
+        private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
-        public MusicBrowsePage(BassPlayerCommandService musicPlaybackService,
+        public MusicBrowsePage(
             NotificationService notificationService,
-            MusicBrowseViewModel viewModel,
-            MusicDatabaseService musicDatabaseService
+            MusicBrowseViewModel viewModel
             )
         {
             this.InitializeComponent();
-            ViewModel = viewModel;            
-            ViewModel.SetMusicService(musicPlaybackService);
+            ViewModel = viewModel;
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            _musicDatabaseService = musicDatabaseService;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
             _navigationService.ContentFrame = ContentFrame;
@@ -237,8 +232,7 @@ namespace WinUIMusicPlayer.View
             contentDialog.RequestedTheme = AppSettings.ElementTheme;
 
             // 声明事件处理方法（方便后续解除订阅）
-            RoutedEventHandler buttonClickHandler = null;
-            buttonClickHandler = async (s, e) =>
+            async void buttonClickHandler(object s, RoutedEventArgs e)
             {
                 PlayList newPlaylist = await OpenM3u8File();
                 if (newPlaylist is not null)
@@ -247,7 +241,8 @@ namespace WinUIMusicPlayer.View
                 }
                 contentDialog.Hide();
                 customButton.Click -= buttonClickHandler;
-            };
+            }
+
             customButton.Click += buttonClickHandler;
 
             ContentDialogResult result = await contentDialog.ShowAsync();
@@ -259,7 +254,7 @@ namespace WinUIMusicPlayer.View
                 if (!string.IsNullOrEmpty(playlistName))
                 {
                     PlayList newPlaylist = new() { Name = playlistName };
-                    await _musicDatabaseService.InsertPlayList(newPlaylist);
+                    await ViewModel.InsertPlayList(newPlaylist);
                     ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
                 }
             }

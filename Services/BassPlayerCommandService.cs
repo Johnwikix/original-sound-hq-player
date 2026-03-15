@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -17,8 +18,6 @@ namespace WinUIMusicPlayer.Services
         public int? lastPlayedMusicId;
         public bool isPausing = false;
         public bool isSettingsChangeStop = false;
-        public bool isInitializing = true;
-        public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -26,7 +25,6 @@ namespace WinUIMusicPlayer.Services
         public BassPlayerCommandService(AppViewModel appViewModel,MusicDatabaseService musicDatabaseService)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
-            MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitializingData();
@@ -87,22 +85,26 @@ namespace WinUIMusicPlayer.Services
             switch (AppViewModel.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingMusic);
+                    MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
+                case PlayMode.RandomLoop:
                     int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
-                    break;
-                case PlayMode.RandomLoop:
-                    Random random = new Random();
-                    int randomIndex = random.Next(AppViewModel.CurrentPlayingList.Count);
-                    MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[randomIndex]);
+                    MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();
                     break;
             }
+        }
+
+        private void MusicBrowsePlayMusic(Music music)
+        {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music);
+            });
         }
 
         public void MusicEnd()
@@ -122,7 +124,7 @@ namespace WinUIMusicPlayer.Services
             {
                 int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
                 int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                MusicBrowseViewModel.PlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
+                MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
             }
             catch
             {

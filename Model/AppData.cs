@@ -25,17 +25,17 @@ namespace WinUIMusicPlayer.Model
         public static List<UsbDeviceMusic> MusicOnUsbDevice { get; set; } = [];
         public static List<PlayListMusic> AllPlayListMusics { get; set; } = [];
         //public static PlayMode PlayMode { get; set; }
-        public static int? LastPlayedMusicId { get; set; }
+        //public static int? LastPlayedMusicId { get; set; }
         //public static float Volume { get; set; } = 0.5f;
-        public static string SearchText { get; set; } = string.Empty;
+        //public static string SearchText { get; set; } = string.Empty;
         public static ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set; } = [];
         public static UsbStorageDevice UsbStorageDevice { get; set; } = new();
-        public static string SortOrder { get; set; } = "DefaultOrder";
+        //public static string SortOrder { get; set; } = "DefaultOrder";
         public static IntPtr HWnd { get; set; } = IntPtr.Zero;
         public static double AppDpiScale { get; set; } = 1.0;
         public static string SystemLanguage { get; set; } = "en";
-        public static int MaxSupportedSampleRate { get; set; } = 0;
-        public static int MaxSupportedBitDepth { get; set; } = 0;
+        //public static int MaxSupportedSampleRate { get; set; } = 0;
+        //public static int MaxSupportedBitDepth { get; set; } = 0;
         public static bool IsPlayingDetail { get; set; } = false;
         public static Type CurrentPage { get; set; } = typeof(SongListPage);
         public static bool IsPlaying { get; set; } = false;

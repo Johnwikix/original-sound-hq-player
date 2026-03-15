@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer
     /// </summary>
     public partial class App : Application
     {
-        public static MainWindow MainWindow { get; private set; }
+        public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
         private static readonly IHost _host = Host.CreateDefaultBuilder()
@@ -61,6 +61,7 @@ namespace WinUIMusicPlayer
                  services.AddHostedService<AppInitializerService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
+                 services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();                 
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
@@ -207,9 +208,7 @@ namespace WinUIMusicPlayer
                     UseShellExecute = false,
                 });
                 await _host.StartAsync();
-                // 创建并激活主窗口
-                MainWindow = new MainWindow();
-                MainWindow.Activate();
+
             }
             catch (Exception ex)
             {
@@ -224,7 +223,7 @@ namespace WinUIMusicPlayer
             {
                 await _host.StopAsync();
                 _host.Dispose();
-                MainWindow.Dispose();
+                //MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)

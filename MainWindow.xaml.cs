@@ -39,21 +39,16 @@ namespace WinUIMusicPlayer
         
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
-        private IntPtr m_hwnd;
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
-        
-        private MusicDatabaseService MusicDatabaseService { get; }
         public MainWindow()
         {
-            MusicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
             InitializeComponent();
-            m_hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            AppData.HWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             SetWindow();
-            AppData.HWnd = m_hwnd;
-            this.Activated += MainWindow_Activated;
-            ExtendsContentIntoTitleBar = true;
+            ExtendsContentIntoTitleBar = true;            
+            this.Activated += MainWindow_Activated;            
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -63,9 +58,9 @@ namespace WinUIMusicPlayer
             this.AppWindow.Closing += AppWindow_Closing;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
-            defaultWndProc = WindowHelper.GetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC);
-            WindowHelper.SetWindowLongPtr(m_hwnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
-            SaveMainWindowHandle(m_hwnd);
+            defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
+            WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
+            SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
         }
@@ -160,33 +155,27 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private async void InitializeApp()
+        public async void InitializeApp()
         {
             try
             {
                 themeStyleHelper.SetAppStyle();
-                themeStyleHelper.SetAppTheme();
-                var longOpsTask = Task.Run(async () =>
-                {
-                    await InitialFileScan.InitialScan();
-                    await MusicDatabaseService.LoadMusicList();
-                });
-                await Task.Delay(500);
-                App.Services.GetRequiredService<IpcService>().Initializing();
-                await Task.Delay(500);
-                await Task.WhenAll(longOpsTask);
-                await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
-                ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
-                App.Services.GetRequiredService<PlayingDetailPage>();
-                LoadingGrid.Visibility = Visibility.Collapsed;             
-                App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
+                themeStyleHelper.SetAppTheme();               
+                //ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
+                //App.Services.GetRequiredService<PlayingDetailPage>();
+                //LoadingGrid.Visibility = Visibility.Collapsed;             
+                //App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
             }
             catch (Exception)
             {
             }
         }
 
-        
+        public void ShowMainPage()
+        {
+            ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
+            LoadingGrid.Visibility = Visibility.Collapsed;
+        }
 
         public void UpdateTaskbarIcon()
         {
@@ -222,7 +211,7 @@ namespace WinUIMusicPlayer
             {
                 if (_taskbarHelper is null)
                 {
-                    _taskbarHelper = new TaskbarHelper(m_hwnd);
+                    _taskbarHelper = new TaskbarHelper(AppData.HWnd);
                     _taskbarHelper.InitializeThumbButtons();
                 }
                 else

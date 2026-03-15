@@ -577,9 +577,7 @@ namespace WinUIMusicPlayer.Services
         public async Task LoadMusicList() {
             await AppViewModel.AllSongs.AddRangeAsync(await GetMusicListAsync());
             await InitalPlayListAsync();
-            await GetPlayListMusic();
-            AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == AppData.SortOrder) 
-                ?? AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault() ?? new SortOption("DefaultOrder", "SortOrderDefault");
+            await GetPlayListMusic();            
         }
 
 
@@ -674,12 +672,15 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playState);
             }
-            AppViewModel.CurrentPlayMode = playState.PlayMode;
-            AppViewModel.PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
-            AppData.LastPlayedMusicId = playState.LastPlayedMusicId;
-            AppViewModel.Volume = playState.Volume;
-            AppViewModel.TempVolume = playState.Volume;
-            AppData.SortOrder = playState.sortOrder;
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                AppViewModel.CurrentPlayMode = playState.PlayMode;
+                AppViewModel.PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
+                AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
+                AppViewModel.Volume = playState.Volume;
+                AppViewModel.TempVolume = playState.Volume;
+                AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == playState.sortOrder)
+                    ?? AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault() ?? new SortOption("DefaultOrder", "SortOrderDefault");
+            } );            
         }
 
         public async Task GetEqualizerSettingsAsync()
@@ -878,7 +879,7 @@ namespace WinUIMusicPlayer.Services
 
         public Music? LoadCurrentPlayingMusic(int? lastPlayedMusicId)
         {
-            return AppViewModel?.AllSongs?.FirstOrDefault(m => m.Id == lastPlayedMusicId);
+            return AppViewModel.AllSongs.FirstOrDefault(m => m.Id == lastPlayedMusicId);
         }
 
         public async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)

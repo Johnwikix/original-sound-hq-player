@@ -952,7 +952,7 @@ namespace WinUIMusicPlayer.ViewModel
                 "Light" => false,
                 _ => !GetIsLightTheme(),
             };
-        }
+        }        
 
         public void Dispose()
         {
