@@ -21,8 +21,7 @@ namespace WinUIMusicPlayer.Services
             var tasks = new Task[] {
                  MusicDatabaseService.GetPlayStateAsync(),
                  MusicDatabaseService.GetEqualizerSettingsAsync(),
-                 MusicDatabaseService.GetSettingsAsync()
-                 
+                 MusicDatabaseService.GetSettingsAsync()                 
             };
             await Task.WhenAll(tasks);          
         }

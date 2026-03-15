@@ -228,7 +228,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    _ = _musicDatabaseService.SaveSettingAsync();
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }                    
                 }
             }
         }

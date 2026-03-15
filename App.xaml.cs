@@ -233,7 +233,7 @@ namespace WinUIMusicPlayer
             }
             finally
             {
-                App.Current.Exit();
+                Environment.Exit(0);
             }
         }
     }

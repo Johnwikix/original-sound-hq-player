@@ -11,11 +11,13 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Media.Playlists;
 using Windows.Storage;
 using Windows.UI;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -28,7 +30,7 @@ namespace WinUIMusicPlayer.Services
     {
         private SQLiteAsyncConnection _dbConnection;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-        private string SettingsPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "Settings.json");
+        private string SettingsPath => GetSettingsFilePath();
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         private readonly ConcurrentBag<Music> _toDelete = [];
@@ -46,7 +48,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<Music>();
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SavePlayState>();
-                await _dbConnection.CreateTableAsync<SaveSettings>();
+                //await _dbConnection.CreateTableAsync<SaveSettings>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
@@ -87,6 +89,24 @@ namespace WinUIMusicPlayer.Services
             catch (Exception)
             {
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+            }
+        }
+
+        private string GetSettingsFilePath()
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(appFolderPath))
+                {
+                    Directory.CreateDirectory(appFolderPath);
+                }
+                return Path.Combine(appFolderPath, "Settings.json");
+            }
+            catch
+            {
+                return Path.Combine(ApplicationData.Current.LocalFolder.Path, "Settings.json");
             }
         }
 
@@ -476,20 +496,53 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.UpdateAllAsync(musicList);
         }
-
         public async Task<SaveSettings> GetSettings()
         {
-            return await _dbConnection.Table<SaveSettings>().FirstOrDefaultAsync();
+            try
+            {
+                string path = SettingsPath;
+                if (!File.Exists(path))
+                {
+                    var defaultSettings = new SaveSettings();
+                    await WriteSettingsToJson(defaultSettings);
+                    return defaultSettings;
+                }
+                string json = await File.ReadAllTextAsync(path);
+                return JsonSerializer.Deserialize(json, SettingsJsonContext.Default.SaveSettings)
+                       ?? new SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"读取设置文件时出错: {ex.Message}");
+                return new SaveSettings();
+            }
         }
 
+        // InsertSettings
         public async Task InsertSettings(SaveSettings settings)
         {
-            await _dbConnection.InsertAsync(settings);
+            await WriteSettingsToJson(settings);
         }
 
+        // UpdateSettings
         public async Task UpdateSettings(SaveSettings settings)
         {
-            await _dbConnection.UpdateAsync(settings);
+            await WriteSettingsToJson(settings);
+        }
+
+        // 核心写入方法
+        private async Task WriteSettingsToJson(SaveSettings settings)
+        {
+            try
+            {
+                string path = SettingsPath;
+                string json = JsonSerializer.Serialize(settings, SettingsJsonContext.Default.SaveSettings);
+                await File.WriteAllTextAsync(path, json);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"写入设置文件时出错: {ex.Message}");
+            }
         }
 
         public async Task<SaveEqualizer> GetEqualizer()
@@ -715,17 +768,8 @@ namespace WinUIMusicPlayer.Services
 
         public async Task SaveSettingAsync()
         {
-            SaveSettings settings = await GetSettings();
             SaveSettings newSettings = SaveCurrentSettings(new SaveSettings());
-            if (settings is null)
-            {
-                await InsertSettings(newSettings);
-            }
-            else
-            {
-                newSettings.Id = settings.Id;
-                await UpdateSettings(newSettings);
-            }
+            await WriteSettingsToJson(newSettings);
         }
 
         public async Task SaveEqualizerSettingAsync()
@@ -793,16 +837,6 @@ namespace WinUIMusicPlayer.Services
             return newSettings;
         }
 
-        public async Task SavePlayStateAsync(SavePlayState playState)
-        {
-            await _dbConnection.InsertOrReplaceAsync(playState);
-        }
-
-        public async Task SaveSettingsAsync(SaveSettings settings)
-        {
-            await _dbConnection.InsertOrReplaceAsync(settings);
-        }
-
         public async Task RemoveMusic(int musicId)
         {
             try
@@ -836,14 +870,7 @@ namespace WinUIMusicPlayer.Services
                 Debug.WriteLine($"删除音乐时出错: {e.Message}");
             }
         }
-        public async Task CancelMusicsFavourite(IEnumerable<Music> musics)
-        {
-            foreach (var music in musics)
-            {
-                music.IsFavorite = false;
-            }
-            await _dbConnection.UpdateAllAsync(musics);
-        }
+
         public async Task AddToFavourite(Music music)
         {
             await _dbConnection.UpdateAsync(music);

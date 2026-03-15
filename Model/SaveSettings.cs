@@ -5,8 +5,6 @@ namespace WinUIMusicPlayer.Model
 {
     public class SaveSettings
     {
-        [PrimaryKey]
-        public int Id { get; set; } = 1;
         public string OutputMode { get; set; } = "DirectSound";
         public int Latency { get; set; } = 300;
         public int BassOutputDeviceId { get; set; } = -1;
@@ -45,7 +43,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsUpdateBackDrop { get; set; } = false;
         public string LyricsAlignment { get; set; } = "Left";
         public int LyricsMargin { get; set; } = 20;
-        public string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
+        public string MusicCoverCache { get; set; } = string.Empty;
         public bool IsWFWLyrics { get; set; } = true;
     }
 }
