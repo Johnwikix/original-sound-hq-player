@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer
                  services.AddHostedService<AppInitializerService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
-                 //services.AddSingleton<MainWindow>();
+                 services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();                 
                  services.AddSingleton<AddFolderPage>();
                  services.AddSingleton<MusicBrowsePage>();
@@ -223,7 +223,7 @@ namespace WinUIMusicPlayer
             {
                 await _host.StopAsync();
                 _host.Dispose();
-                MainWindow.Dispose();
+                //MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)
