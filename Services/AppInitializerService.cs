@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.Services
                  MusicDatabaseService.GetSettingsAsync()                 
             };
             await Task.WhenAll(tasks);
-            App.MainWindow = App.Services.GetRequiredService<MainWindow>();
+            App.MainWindow = new MainWindow();
             App.MainWindow.Activate();            
             var longOpsTask = Task.Run(async () =>
             {
