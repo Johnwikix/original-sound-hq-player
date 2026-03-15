@@ -45,6 +45,10 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
         }
 
+        public void PreLoadImgData() {
+            _ = BackGround.LoadImageAsync(ViewModel.AppViewModel.LyricPageBackgroundData);
+        }
+
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {           
             App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();

@@ -80,7 +80,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _transitionProgress = 1f;
     private const float TransitionSpeed = 0.677f;
 
-    private CancellationTokenSource _loadCts;
+    private CancellationTokenSource? _loadCts;
 
     // ColorThief 无状态，复用同一实例避免重复构造
     private static readonly ColorThief.ImageSharp.ColorThief ColorThiefInstance = new();
@@ -116,7 +116,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                                            FileShare.Read, bufferSize: 4096, useAsync: true))
             {
                 shaderBytes = new byte[fs.Length];
-                await fs.ReadAsync(shaderBytes, 0, shaderBytes.Length);
+                await fs.ReadExactlyAsync(shaderBytes);
             }
 
             _effect = new PixelShaderEffect(shaderBytes);
@@ -205,6 +205,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     {
         _loadCts?.Cancel();
         _loadCts?.Dispose();
+        _loadCts = null;
         var cts = new CancellationTokenSource();
         _loadCts = cts;
 

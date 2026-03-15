@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<MusicBrowseViewModel>().LoadPlayStateToMusicBrowsePage();
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
             App.MainWindow.ShowMainPage();
+            App.Services.GetRequiredService<PlayingDetailPage>().PreLoadImgData();
             App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
         }
 

@@ -86,7 +86,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private CancellationTokenSource SearchCts { get; set;  }
+        private CancellationTokenSource? SearchCts { get; set;  }
         public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
@@ -638,6 +638,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             SearchCts?.Cancel();
             SearchCts?.Dispose();
+            SearchCts = null;
             SearchCts = new CancellationTokenSource();
             var token = SearchCts.Token;
             try

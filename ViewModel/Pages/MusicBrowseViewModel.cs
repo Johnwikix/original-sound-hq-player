@@ -404,7 +404,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (AppViewModel.CurrentPlayingMusic is not null)
             {
                 UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
-                AppViewModel.LoadLyricsToUI();
+                AppViewModel.LoadLyricsToUI();                
             }
         }       
 
