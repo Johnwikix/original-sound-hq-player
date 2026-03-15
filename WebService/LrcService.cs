@@ -11,29 +11,10 @@ namespace WinUIMusicPlayer.WebService
 
     public class LrcService
     {
-        private static HttpClient _httpClient = new HttpClient();
-
         public static async Task<byte[]> GetCoverImageAsync(string title, string album, string artist, CancellationToken cancellationToken = default)
         {
             try
             {
-                //if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
-                //{
-                //    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
-                //}
-                //if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
-                //{
-                //    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
-                //}
-                //var requestUrl = $"{AppSettings.LrcAPISource}/cover?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                //var response = await _httpClient.GetAsync(requestUrl);
-                //response.EnsureSuccessStatusCode();
-                //byte[] result = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-                //if (result is null)
-                //{
-                //    return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
-                //}
-                //return result;
                 return await CloudMusicSearchHelper.GetSongAlbum(title, album, artist, cancellationToken);
             }
             catch (OperationCanceledException)
@@ -51,24 +32,6 @@ namespace WinUIMusicPlayer.WebService
             try
             {
                 return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
-                //if (!string.IsNullOrWhiteSpace(AppSettings.LrcAPIAuth))
-                //{
-                //    _httpClient.DefaultRequestHeaders.Add("Authorization", AppSettings.LrcAPIAuth);
-                //}
-                //if (string.IsNullOrWhiteSpace(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "http://music.163.com")
-                //{
-                //    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
-                //}
-                //var requestUrl = $"{AppSettings.LrcAPISource}/lyrics?title={Uri.EscapeDataString(title)}&album={Uri.EscapeDataString(album)}&artist={Uri.EscapeDataString(artist)}";
-                //var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
-                //response.EnsureSuccessStatusCode();
-                //var result = await response.Content.ReadAsStringAsync(cancellationToken);
-                //if (string.IsNullOrWhiteSpace(result))
-                //{
-                //    return await CloudMusicSearchHelper.GetSongLyrics(title, album, artist, cancellationToken);
-                //}
-                //result += await CloudMusicSearchHelper.GetTranslateSongLyrics(title, album, artist, cancellationToken);
-                //return result;
             }
             catch (OperationCanceledException)
             {
@@ -80,26 +43,6 @@ namespace WinUIMusicPlayer.WebService
                 return (string.Empty, string.Empty);
             }
         }
-
-        //public static async Task<string> GetLyricsFromHelper(string title, string album, string artist,TimeSpan duration) {
-        //    var track = new TrackMultiArtistMetadata()
-        //    {
-        //        Album = album,
-        //        AlbumArtists = [artist],
-        //        Artists = [artist],
-        //        Title = title,
-        //        DurationMs = (int)duration.TotalMilliseconds
-        //    };
-        //    var search = await SearchHelper.Search(track, Searchers.Netease);
-        //    string? result = string.Empty;
-        //    if (search is NeteaseSearchResult neteaseResult)
-        //    {
-        //        var response = await ProviderHelper.NeteaseApi.GetLyric(neteaseResult.Id);
-        //        result = response?.Lrc?.Lyric;
-        //        result += response?.Tlyric?.Lyric;
-        //    }
-        //    return result;
-        //}
 
     }
 }

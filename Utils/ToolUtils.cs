@@ -881,8 +881,8 @@ namespace WinUIMusicPlayer.Utils
                     {
                         if (AppSettings.IsAutoLyricsEnabled)
                         {
-                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author);
-                            if (picture is not null)
+                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, ct);
+                            if (picture is not null && picture.Length > 0)
                             {
                                 System.IO.File.WriteAllBytes(filePath, picture);
                             }
