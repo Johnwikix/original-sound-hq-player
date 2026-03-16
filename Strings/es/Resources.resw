@@ -894,4 +894,10 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Traducción LRC</value>
   </data>
+  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+    <value>Usar tema de portada de álbum</value>
+  </data>
+  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
+    <value>Habilitar la sobrescritura del tema del sistema por la portada del álbum</value>
+  </data>
 </root>

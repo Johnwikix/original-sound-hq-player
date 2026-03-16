@@ -265,5 +265,20 @@ namespace WinUIMusicPlayer.View
                 BackGround.Dispose();
             }
         }
+
+        private void BackGround_ThemeResolved(object sender, bool isDark)
+        {
+            if (isDark)
+            {
+                AppSettings.AppTheme = "Dark";
+                AppSettings.ElementTheme = ElementTheme.Dark;
+            }
+            else
+            {
+                AppSettings.AppTheme = "Light";
+                AppSettings.ElementTheme = ElementTheme.Light;
+            }
+            App.MainWindow?.SetAppTheme();
+        }
     }
 }

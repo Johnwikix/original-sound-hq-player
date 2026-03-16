@@ -392,6 +392,12 @@
                 <!--  主题设置  -->
                 <controls:SettingsExpander x:Uid="ThemeStyle" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="UseImageDominantTheme">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <!--<controls:SettingsCard x:Uid="IsOverrideAppTheme">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsOverrideAppTheme, Mode=TwoWay}" />
+                        </controls:SettingsCard>-->
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
                                 <RadioButton

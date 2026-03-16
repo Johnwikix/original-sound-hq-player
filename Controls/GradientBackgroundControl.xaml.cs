@@ -297,7 +297,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             _transitionProgress = 0f;
 
             // 回到 UI 线程触发事件，外部订阅者可安全操作 UI
-            ThemeResolved?.Invoke(this, resolvedIsDark);
+            if (UseImageDominantTheme) {
+                ThemeResolved?.Invoke(this, resolvedIsDark);
+            }            
         }
         catch (OperationCanceledException)
         {
@@ -478,10 +480,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         float shift = targetAvg - avgL;
         float allTimeMin = 0f;
         float allTimeMax = 1f;
-        if (useImageDominantTheme) {
-            allTimeMin = 0.2f;
-            allTimeMax = 0.8f;
-        }
+        //if (useImageDominantTheme) {
+        //    allTimeMin = 0.2f;
+        //    allTimeMax = 0.8f;
+        //}
         // 平移后各颜色亮度上下限
         float clampMin = isDark ? allTimeMin : 0.3f;
         float clampMax = isDark ? 0.7f : allTimeMax;

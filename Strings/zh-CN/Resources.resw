@@ -894,4 +894,10 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Lrc翻译</value>
   </data>
+  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+    <value>使用专辑封面主题</value>
+  </data>
+  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
+    <value>启用专辑封面系统主题覆盖</value>
+  </data>
 </root>

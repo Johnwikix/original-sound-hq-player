@@ -894,4 +894,10 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Lrc翻訳</value>
   </data>
+  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+    <value>アルバムジャケットテーマを使用する</value>
+  </data>
+  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
+    <value>アルバムアートワークによるシステムテーマの上書きを有効にする</value>
+  </data>
 </root>

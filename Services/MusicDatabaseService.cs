@@ -750,6 +750,8 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
                 AppViewModel.IsWFWLyrics = settings.IsWFWLyrics;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
+                AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
+                //AppViewModel.IsOverrideAppTheme = settings.IsOverrideAppTheme;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -835,6 +837,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
+            newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
+            //newSettings.IsOverrideAppTheme = AppViewModel.IsOverrideAppTheme;
             return newSettings;
         }
 
