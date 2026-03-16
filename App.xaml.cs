@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer
             try
             {
                 await _host.StopAsync();
-                _host.Dispose();
+                //_host.Dispose();
                 //MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                
             }
