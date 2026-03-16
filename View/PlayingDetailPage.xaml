@@ -22,6 +22,7 @@
                 x:Name="BackGround"
                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                 IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
+                UseImageDominantTheme="True"
                 Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
             <Grid
                 Grid.Row="0"

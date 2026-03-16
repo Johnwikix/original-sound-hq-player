@@ -18,6 +18,26 @@ namespace WinUIMusicPlayer.Controls;
 
 public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 {
+    public static readonly DependencyProperty UseImageDominantThemeProperty =
+    DependencyProperty.Register(
+        nameof(UseImageDominantTheme),
+        typeof(bool),
+        typeof(GradientBackgroundControl),
+        new PropertyMetadata(false, OnColorParamChanged));
+
+    public bool UseImageDominantTheme
+    {
+        get => (bool)GetValue(UseImageDominantThemeProperty);
+        set => SetValue(UseImageDominantThemeProperty, value);
+    }
+
+    // ── 事件 ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 每次颜色提取完成后触发，传回本次实际使用的 IsDark 值。
+    /// UseImageDominantTheme=true 时传回图片主色调判断结果，否则传回入参 IsDark。
+    /// </summary>
+    public event EventHandler<bool>? ThemeResolved;
     // ── 依赖属性 ────────────────────────────────────────────────────────
 
     public static readonly DependencyProperty ImageBytesProperty =
@@ -209,41 +229,43 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         var cts = new CancellationTokenSource();
         _loadCts = cts;
 
-        // 在 UI 线程提前读取 DependencyProperty，避免后台线程访问引发 COMException
         bool isDark = IsDark;
+        bool useImageDominantTheme = UseImageDominantTheme;   // 提前读取，避免后台线程访问 DP
 
         try
         {
-            // 返回 (颜色向量, Population) 列表，最多 4 项，按权重降序
-            var weighted = await Task.Run(async () =>
+            var (weighted, resolvedIsDark) = await Task.Run(async () =>   // ← 同时返回实际用的 isDark
             {
                 using var memStream = new MemoryStream(imageBytes, writable: false);
                 using var rasStream = memStream.AsRandomAccessStream();
                 var decoder = await BitmapDecoder.CreateAsync(rasStream);
 
                 List<(Vector3 Color, int Population)> result;
+                bool effectiveIsDark;
                 using (var image = await ConvertToImageSharpAsync(decoder))
                 {
                     cts.Token.ThrowIfCancellationRequested();
 
-                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
+                    // 根据开关决定是否用图片主色调覆盖 IsDark
+                    effectiveIsDark = useImageDominantTheme
+                        ? (ColorThiefInstance.GetColor(image)?.IsDark ?? isDark)
+                        : isDark;
 
+                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
                     int totalPop = palette.Sum(t => t.Population);
 
                     var allByWeight = palette
                         .OrderByDescending(t => t.Population)
                         .ToList();
 
-                    // 符合明暗要求的颜色占总像素的比例
                     int preferredPop = allByWeight
-                        .Where(t => t.IsDark == isDark)
+                        .Where(t => t.IsDark == effectiveIsDark)
                         .Sum(t => t.Population);
                     float preferredRatio = totalPop > 0 ? (float)preferredPop / totalPop : 0f;
 
-                    // 主色调符合时优先排符合的；否则按全图权重（EnforceLuminance 后续校正亮度）
                     IEnumerable<QuantizedColor> candidates = preferredRatio >= 0.5f
-                        ? allByWeight.Where(t => t.IsDark == isDark)
-                              .Concat(allByWeight.Where(t => t.IsDark != isDark))
+                        ? allByWeight.Where(t => t.IsDark == effectiveIsDark)
+                              .Concat(allByWeight.Where(t => t.IsDark != effectiveIsDark))
                         : allByWeight;
 
                     result = candidates
@@ -254,23 +276,18 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                         .ToList();
                 }
 
-                return result;
+                return (result, effectiveIsDark);
 
             }, cts.Token);
 
             cts.Token.ThrowIfCancellationRequested();
 
-            // 兜底：真正没有任何颜色时
             if (weighted.Count == 0)
-                weighted.Add((isDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
+                weighted.Add((resolvedIsDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
 
-            // 整体等比缩放调色板亮度到目标区间，保留颜色间相对亮度关系
-            ScalePaletteLuminance(weighted, isDark);
+            ScalePaletteLuminance(weighted, resolvedIsDark);
+            //EnsureColorDiversity(weighted, resolvedIsDark);
 
-            // 亮度压缩后可能导致原本不同的颜色看起来一样，做最小差异保证
-            EnsureColorDiversity(weighted, isDark);
-
-            // 按 Population 权重将颜色分配到 4 个 slot
             var slots = DistributeByPopulation(weighted);
 
             _target1 = slots[0];
@@ -278,6 +295,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             _target3 = slots[2];
             _target4 = slots[3];
             _transitionProgress = 0f;
+
+            // 回到 UI 线程触发事件，外部订阅者可安全操作 UI
+            ThemeResolved?.Invoke(this, resolvedIsDark);
         }
         catch (OperationCanceledException)
         {
@@ -385,7 +405,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         const float LShift = 0.08f;      // 亮度微分离幅度
 
         float lMin = isDark ? 0.03f : 0.55f;
-        float lMax = isDark ? 0.45f : 0.97f;
+        float lMax = isDark ? 0.45f : 0.95f;
 
         for (int i = 0; i < weighted.Count; i++)
         {
@@ -431,11 +451,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private static void ScalePaletteLuminance(List<(Vector3 Color, int Population)> weighted, bool isDark)
     {
         // 以 Population 加权平均亮度为锚点：
-        //   dark  模式：加权平均亮度 > 0.4 时，整体平移使平均值恰好落在 0.4，单色上限 0.80
-        //   light 模式：加权平均亮度 < 0.6 时，整体平移使平均值恰好落在 0.6，单色下限 0.20
         // 颜色间亮度差距完全不变（纯平移，无缩放）
         // 已满足则完全不动，最大程度贴近原图
-        float targetAvg = isDark ? 0.4f : 0.6f;
+        float targetAvg = isDark ? 0.45f : 0.55f;
 
         int count = weighted.Count;
         Span<float> hs = stackalloc float[count];
@@ -460,11 +478,15 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         float shift = targetAvg - avgL;
 
         // 平移后各颜色亮度上下限
-        float clampMin = isDark ? 0f : 0.35f;
-        float clampMax = isDark ? 0.65f : 1f;
+        float clampMin = isDark ? 0f : 0.3f;
+        float clampMax = isDark ? 0.7f : 1f;
 
         for (int i = 0; i < count; i++)
         {
+            // 已处于目标侧边缘的颜色不做处理，保留原始亮度
+            if (isDark && ls[i] < 0.3f) continue;
+            if (!isDark && ls[i] > 0.7f) continue;
+
             float newL = Math.Clamp(ls[i] + shift, clampMin, clampMax);
             weighted[i] = (HslToRgb(hs[i], ss[i], newL), weighted[i].Population);
         }
