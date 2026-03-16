@@ -90,7 +90,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
     // ── 私有字段 ────────────────────────────────────────────────────────
 
-    private PixelShaderEffect _effect;
+    private PixelShaderEffect? _effect;
     private float _width;
     private float _height;
     private float _time;
@@ -593,6 +593,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
             _effect?.Dispose();
             _effect = null;
+            ThemeResolved = null;
         }
     }
 }
