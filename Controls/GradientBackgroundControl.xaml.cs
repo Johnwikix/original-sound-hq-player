@@ -285,7 +285,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             if (weighted.Count == 0)
                 weighted.Add((resolvedIsDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
 
-            ScalePaletteLuminance(weighted, resolvedIsDark);
+            ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
             //EnsureColorDiversity(weighted, resolvedIsDark);
 
             var slots = DistributeByPopulation(weighted);
@@ -448,7 +448,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     /// isDark=true  → 目标区间 [0.05, 0.45]
     /// isDark=false → 目标区间 [0.55, 0.95]
     /// </summary>
-    private static void ScalePaletteLuminance(List<(Vector3 Color, int Population)> weighted, bool isDark)
+    private static void ScalePaletteLuminance(List<(Vector3 Color, int Population)> weighted, bool isDark, bool useImageDominantTheme)
     {
         // 以 Population 加权平均亮度为锚点：
         // 颜色间亮度差距完全不变（纯平移，无缩放）
@@ -476,17 +476,23 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         if (!isDark && avgL >= targetAvg) return;
 
         float shift = targetAvg - avgL;
-
+        float allTimeMin = 0f;
+        float allTimeMax = 1f;
+        if (useImageDominantTheme) {
+            allTimeMin = 0.2f;
+            allTimeMax = 0.8f;
+        }
         // 平移后各颜色亮度上下限
-        float clampMin = isDark ? 0f : 0.3f;
-        float clampMax = isDark ? 0.7f : 1f;
+        float clampMin = isDark ? allTimeMin : 0.3f;
+        float clampMax = isDark ? 0.7f : allTimeMax;
 
         for (int i = 0; i < count; i++)
         {
             // 已处于目标侧边缘的颜色不做处理，保留原始亮度
-            if (isDark && ls[i] < 0.3f) continue;
-            if (!isDark && ls[i] > 0.7f) continue;
-
+            if (!useImageDominantTheme) {
+                if (isDark && ls[i] < 0.3f) continue;
+                if (!isDark && ls[i] > 0.7f) continue;
+            }
             float newL = Math.Clamp(ls[i] + shift, clampMin, clampMax);
             weighted[i] = (HslToRgb(hs[i], ss[i], newL), weighted[i].Population);
         }
