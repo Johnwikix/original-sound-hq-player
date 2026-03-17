@@ -195,8 +195,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        _width = canvas.ConvertDipsToPixels((float)canvas.Size.Width, CanvasDpiRounding.Round);
-        _height = canvas.ConvertDipsToPixels((float)canvas.Size.Height, CanvasDpiRounding.Round);
+        _width = canvas.ConvertDipsToPixels((float)e.NewSize.Width, CanvasDpiRounding.Round);
+        _height = canvas.ConvertDipsToPixels((float)e.NewSize.Height, CanvasDpiRounding.Round);
         _effect?.Properties["iResolution"] = new Vector2(_width, _height);
     }
 
@@ -213,6 +213,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private void ApplyEffectProperties()
     {
         if (_effect == null) return;
+        _width = canvas.ConvertDipsToPixels((float)canvas.Size.Width, CanvasDpiRounding.Round);
+        _height = canvas.ConvertDipsToPixels((float)canvas.Size.Height, CanvasDpiRounding.Round);
         _effect.Properties["iResolution"] = new Vector2(_width, _height);
         _effect.Properties["iTime"] = _time;
         _effect.Properties["color1"] = _c1;
