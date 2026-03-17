@@ -16,7 +16,9 @@ using Windows.Graphics.Imaging;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace WinUIMusicPlayer.Controls;
-
+/// <summary>
+/// 渐变流体背景，Powered by Isolation https://github.com/Storyteller-Studios/Isolation
+/// </summary>
 public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 {
     public static readonly DependencyProperty UseImageDominantThemeProperty =
