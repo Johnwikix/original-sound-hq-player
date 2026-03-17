@@ -1,4 +1,5 @@
 using ColorThief.ImageSharp.Shared;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -140,6 +141,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             }
 
             _effect = new PixelShaderEffect(shaderBytes);
+            _effect.Properties["EnableLightWave"] = true;
             shaderBytes = null;
 
             if (ImageBytes is { Length: > 0 } bytes)
@@ -193,8 +195,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        _width = (float)canvas.ActualWidth;
-        _height = (float)canvas.ActualHeight;
+        _width = canvas.ConvertDipsToPixels((float)canvas.Size.Width, CanvasDpiRounding.Round);
+        _height = canvas.ConvertDipsToPixels((float)canvas.Size.Height, CanvasDpiRounding.Round);
         _effect?.Properties["iResolution"] = new Vector2(_width, _height);
     }
 
