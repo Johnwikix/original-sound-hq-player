@@ -297,9 +297,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
             if (weighted.Count == 0)
                 weighted.Add((resolvedIsDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
-
-            ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
-            //EnsureColorDiversity(weighted, resolvedIsDark);
+            if (!useImageDominantTheme)
+            {
+                ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
+            }
 
             var slots = DistributeByPopulation(weighted);
 
@@ -312,9 +313,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
             _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
             // 回到 UI 线程触发事件，外部订阅者可安全操作 UI
-            if (UseImageDominantTheme) {
+            if (UseImageDominantTheme)
+            {
                 ThemeResolved?.Invoke(this, resolvedIsDark);
-            }            
+            }
         }
         catch (OperationCanceledException)
         {
@@ -412,46 +414,6 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     }
 
     /// <summary>
-    /// 检查颜色列表中两两之间的感知距离，若小于阈值则对较次要的颜色做亮度微分离，
-    /// 保证每对颜色在视觉上可区分，避免 EnforceLuminance 压缩后出现"只有一种颜色"的感觉。
-    /// </summary>
-    private static void EnsureColorDiversity(List<(Vector3 Color, int Population)> weighted, bool isDark)
-    {
-        const float MinDistance = 0.12f; // HSL 空间欧氏距离阈值，低于此值认为视觉上过于相近
-        const float LShift = 0.08f;      // 亮度微分离幅度
-
-        float lMin = isDark ? 0.03f : 0.55f;
-        float lMax = isDark ? 0.45f : 0.95f;
-
-        for (int i = 0; i < weighted.Count; i++)
-        {
-            for (int j = i + 1; j < weighted.Count; j++)
-            {
-                RgbToHsl(weighted[i].Color, out float hi, out float si, out float li);
-                RgbToHsl(weighted[j].Color, out float hj, out float sj, out float lj);
-
-                // 色相距离取环形最短路径
-                float dh = Math.Abs(hi - hj);
-                if (dh > 0.5f) dh = 1f - dh;
-                float ds = si - sj;
-                float dl = li - lj;
-                float dist = MathF.Sqrt(dh * dh + ds * ds + dl * dl);
-
-                if (dist >= MinDistance) continue;
-
-                // j 是次要颜色（Population 较小），对它做亮度偏移使其与 i 拉开距离
-                // 偏移方向：若 j 亮度 >= i，则把 j 再推亮；否则把 j 推暗
-                float newLj = lj >= li
-                    ? Math.Min(lMax, lj + LShift)
-                    : Math.Max(lMin, lj - LShift);
-
-                if (Math.Abs(newLj - lj) > 1e-4f)
-                    weighted[j] = (HslToRgb(hj, sj, newLj), weighted[j].Population);
-            }
-        }
-    }
-
-    /// <summary>
     /// 对整个调色板做整体亮度等比缩放，保留颜色间相对亮度关系。
     ///
     /// 算法：
@@ -494,10 +456,6 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         float shift = targetAvg - avgL;
         float allTimeMin = 0f;
         float allTimeMax = 1f;
-        //if (useImageDominantTheme) {
-        //    allTimeMin = 0.2f;
-        //    allTimeMax = 0.8f;
-        //}
         // 平移后各颜色亮度上下限
         float clampMin = isDark ? allTimeMin : 0.3f;
         float clampMax = isDark ? 0.7f : allTimeMax;
@@ -505,10 +463,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         for (int i = 0; i < count; i++)
         {
             // 已处于目标侧边缘的颜色不做处理，保留原始亮度
-            if (!useImageDominantTheme) {
-                if (isDark && ls[i] < 0.3f) continue;
-                if (!isDark && ls[i] > 0.7f) continue;
-            }
+            if (isDark && ls[i] < 0.3f) continue;
+            if (!isDark && ls[i] > 0.7f) continue;
             float newL = Math.Clamp(ls[i] + shift, clampMin, clampMax);
             weighted[i] = (HslToRgb(hs[i], ss[i], newL), weighted[i].Population);
         }
@@ -600,7 +556,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
     private void Dispose(bool dispose)
     {
-        if (dispose) {
+        if (dispose)
+        {
             _loadCts?.Cancel();
             _loadCts?.Dispose();
             _loadCts = null;
