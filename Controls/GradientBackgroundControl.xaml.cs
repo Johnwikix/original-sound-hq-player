@@ -261,7 +261,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
                     // 根据开关决定是否用图片主色调覆盖 IsDark
                     effectiveIsDark = useImageDominantTheme
-                        ? (ColorThiefInstance.GetColor(image)?.IsDark ?? isDark)
+                        ? (ColorThiefInstance.GetColor(image,10,false)?.IsDark ?? isDark)
                         : isDark;
 
                     var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
@@ -297,10 +297,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
             if (weighted.Count == 0)
                 weighted.Add((resolvedIsDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
-            if (!useImageDominantTheme)
-            {
-                ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
-            }
+            ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
 
             var slots = DistributeByPopulation(weighted);
 
