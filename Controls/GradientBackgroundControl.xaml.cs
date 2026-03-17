@@ -97,6 +97,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _width;
     private float _height;
     private float _time;
+    private float _rnd1 = 0f;
+    private float _rnd2 = 0f;
+    private float _rnd3 = 0f;
+    private Random _random = new();
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -223,6 +227,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _effect.Properties["color2"] = _c2;
         _effect.Properties["color3"] = _c3;
         _effect.Properties["color4"] = _c4;
+        _effect.Properties["RandomValue1"] = _rnd1;
+        _effect.Properties["RandomValue2"] = _rnd2;
+        _effect.Properties["RandomValue3"] = _rnd3;
     }
 
     // ── 私有：图片加载与颜色提取 ────────────────────────────────────────
@@ -301,7 +308,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             _target3 = slots[2];
             _target4 = slots[3];
             _transitionProgress = 0f;
-
+            _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
+            _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
+            _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
             // 回到 UI 线程触发事件，外部订阅者可安全操作 UI
             if (UseImageDominantTheme) {
                 ThemeResolved?.Invoke(this, resolvedIsDark);
