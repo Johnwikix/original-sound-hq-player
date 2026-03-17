@@ -705,7 +705,10 @@ namespace WinUIMusicPlayer.Services
             var settings = await GetSettings();
             if (settings is null)
             {
-                settings = new SaveSettings();
+                settings = new SaveSettings
+                {
+                    MusicCoverCache = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache")
+                };
                 await InsertSettings(settings);
             }            
             if (settings is not null)
@@ -744,14 +747,13 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
                 AppViewModel.GlobalFontSize = settings.GlobalFontSize;
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
-                AppViewModel.MusicCoverCache = settings.MusicCoverCache;
+                AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
                 AppViewModel.IsDopEnabled = settings.IsDopEnabled;
                 AppViewModel.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
                 AppViewModel.IsWFWLyrics = settings.IsWFWLyrics;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
-                //AppViewModel.IsOverrideAppTheme = settings.IsOverrideAppTheme;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -838,7 +840,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
-            //newSettings.IsOverrideAppTheme = AppViewModel.IsOverrideAppTheme;
             return newSettings;
         }
 
