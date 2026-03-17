@@ -100,7 +100,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _rnd1 = 0f;
     private float _rnd2 = 0f;
     private float _rnd3 = 0f;
-    private Random _random = new();
+    private static readonly Random _random = new();
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -402,10 +402,9 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             for (int j = 0; j < slots[i] && idx < Total; j++)
                 result[idx++] = weighted[i].Color;
 
-        var rng = new Random();
         for (int i = Total - 1; i > 0; i--)
         {
-            int j = rng.Next(i + 1);
+            int j = _random.Next(i + 1);
             (result[i], result[j]) = (result[j], result[i]);
         }
 
