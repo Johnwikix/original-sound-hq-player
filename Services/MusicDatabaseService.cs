@@ -754,6 +754,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsWFWLyrics = settings.IsWFWLyrics;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
+                AppViewModel.EnableLightWave = settings.EnableLightWave;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -840,6 +841,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
+            newSettings.EnableLightWave = AppViewModel.EnableLightWave;
             return newSettings;
         }
 

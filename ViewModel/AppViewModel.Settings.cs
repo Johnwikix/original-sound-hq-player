@@ -25,6 +25,20 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class AppViewModel
     {
         public bool IsRealDevceChange { get; set; } = true;
+        public bool EnableLightWave
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = true;
         public int CoverSize
         {
             get => field;

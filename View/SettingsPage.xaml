@@ -205,6 +205,9 @@
                         <controls:SettingsCard x:Uid="BackgroundCover">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="EnableLightWave">
+                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
@@ -395,9 +398,6 @@
                         <controls:SettingsCard x:Uid="UseImageDominantTheme">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <!--<controls:SettingsCard x:Uid="IsOverrideAppTheme">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsOverrideAppTheme, Mode=TwoWay}" />
-                        </controls:SettingsCard>-->
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>
                                 <RadioButton

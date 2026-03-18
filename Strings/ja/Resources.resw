@@ -897,7 +897,7 @@
   <data name="UseImageDominantTheme.Header" xml:space="preserve">
     <value>アルバムジャケットテーマを使用する</value>
   </data>
-  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
-    <value>アルバムアートワークによるシステムテーマの上書きを有効にする</value>
+  <data name="EnableLightWave.Header" xml:space="preserve">
+    <value>背景光波を有効にする</value>
   </data>
 </root>

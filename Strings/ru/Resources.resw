@@ -897,7 +897,7 @@
   <data name="UseImageDominantTheme.Header" xml:space="preserve">
     <value>Использовать тему обложки альбома</value>
   </data>
-  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
-    <value>Включить переопределение системной темы обложкой альбома</value>
+  <data name="EnableLightWave.Header" xml:space="preserve">
+    <value>Включить фоновую световую волну</value>
   </data>
 </root>

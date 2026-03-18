@@ -21,6 +21,19 @@ namespace WinUIMusicPlayer.Controls;
 /// </summary>
 public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 {
+    public static readonly DependencyProperty EnableLightWaveProperty =
+    DependencyProperty.Register(
+        nameof(EnableLightWave),
+        typeof(bool),
+        typeof(GradientBackgroundControl),
+        new PropertyMetadata(false, OnColorParamChanged));
+
+    public bool EnableLightWave
+    {
+        get => (bool)GetValue(EnableLightWaveProperty);
+        set => SetValue(EnableLightWaveProperty, value);
+    }
+
     public static readonly DependencyProperty UseImageDominantThemeProperty =
     DependencyProperty.Register(
         nameof(UseImageDominantTheme),
@@ -84,7 +97,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     {
         var ctrl = (GradientBackgroundControl)d;
         if (ctrl._effect == null) return;
-
+        ctrl._effect.Properties["EnableLightWave"] = ctrl.EnableLightWave;
         if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadImageFromBytesAsync(bytes);
         else
@@ -147,7 +160,6 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             }
 
             _effect = new PixelShaderEffect(shaderBytes);
-            _effect.Properties["EnableLightWave"] = true;
             shaderBytes = null;
 
             if (ImageBytes is { Length: > 0 } bytes)
@@ -227,6 +239,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _effect.Properties["color2"] = _c2;
         _effect.Properties["color3"] = _c3;
         _effect.Properties["color4"] = _c4;
+        _effect.Properties["EnableLightWave"] = EnableLightWave;
         _effect.Properties["RandomValue1"] = _rnd1;
         _effect.Properties["RandomValue2"] = _rnd2;
         _effect.Properties["RandomValue3"] = _rnd3;

@@ -897,8 +897,7 @@
   <data name="UseImageDominantTheme.Header" xml:space="preserve">
     <value>Albumcover-Thema verwenden</value>
   </data>
-  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
-    <value>Systemthemenüberschreibung durch Albumcover aktivieren
-</value>
+  <data name="EnableLightWave.Header" xml:space="preserve">
+    <value>Hintergrund-Lichtwelle aktivieren</value>
   </data>
 </root>

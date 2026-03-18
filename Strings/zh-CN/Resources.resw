@@ -897,7 +897,7 @@
   <data name="UseImageDominantTheme.Header" xml:space="preserve">
     <value>使用专辑封面主题</value>
   </data>
-  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
-    <value>启用专辑封面系统主题覆盖</value>
+  <data name="EnableLightWave.Header" xml:space="preserve">
+    <value>启用背景光波效果</value>
   </data>
 </root>

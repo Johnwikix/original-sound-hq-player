@@ -897,7 +897,7 @@
   <data name="UseImageDominantTheme.Header" xml:space="preserve">
     <value>Usar tema de portada de álbum</value>
   </data>
-  <data name="IsOverrideAppTheme.Header" xml:space="preserve">
-    <value>Habilitar la sobrescritura del tema del sistema por la portada del álbum</value>
+  <data name="EnableLightWave.Header" xml:space="preserve">
+    <value>Activar onda de luz de fondo</value>
   </data>
 </root>
