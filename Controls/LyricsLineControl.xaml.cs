@@ -323,6 +323,16 @@ namespace WinUIMusicPlayer.Controls
 
             if (!IsWFWLyrics) return;
 
+            // ⭐ 校验 duration 范围，WinUI Composition 要求 >= 1ms 且 <= 24天
+            var minDuration = TimeSpan.FromMilliseconds(1);
+            var maxDuration = TimeSpan.FromDays(24);
+            if (duration < minDuration || duration > maxDuration)
+            {
+                duration = TimeSpan.FromMilliseconds(Math.Clamp(duration.TotalMilliseconds, 1, maxDuration.TotalMilliseconds));
+                // 如果原始值是 0 或负数，直接跳过动画
+                if (duration.TotalMilliseconds < 1) return;
+            }
+
             var targetWidth = (float)textBlock.ActualWidth;
             if (targetWidth <= 0) return;
 
