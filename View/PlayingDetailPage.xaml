@@ -30,7 +30,7 @@
                 Grid.Row="0"
                 Grid.Column="0"
                 Margin="0"
-                Padding="48,0,0,0">
+                Padding="0">
                 <Grid.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
@@ -39,7 +39,7 @@
                 <Grid
                     x:Name="PlayingDetail"
                     Grid.Row="2"
-                    Margin="0,10,0,30">
+                    Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
@@ -53,6 +53,7 @@
                         x:Name="TopControl"
                         Grid.Row="0"
                         Grid.Column="0"
+                        Margin="48,5,5,0"
                         Opacity="{x:Bind ViewModel.AppViewModel.TopControlsOpacity, Mode=OneWay}"
                         Orientation="Horizontal"
                         PointerEntered="TopControl_PointerEntered"
@@ -117,7 +118,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!--  专辑封面  -->
-                        <Grid Grid.Row="0" Margin="0,20,0,0">
+                        <Grid Grid.Row="0" Margin="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="6*" />
@@ -143,11 +144,11 @@
                                             VerticalAlignment="Center"
                                             CornerRadius="10">
                                             <Grid>
-                                                <Image Canvas.ZIndex="1">
+                                                <!--<Image Canvas.ZIndex="1">
                                                     <interactivity:Interaction.Behaviors>
                                                         <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
                                                     </interactivity:Interaction.Behaviors>
-                                                </Image>
+                                                </Image>-->
                                                 <Grid
                                                     HorizontalAlignment="Stretch"
                                                     VerticalAlignment="Stretch"
