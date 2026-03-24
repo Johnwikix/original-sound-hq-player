@@ -434,14 +434,14 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         var shadow = new ShadowEffect
         {
             Source = maskedImage,
-            BlurAmount = 20f,
+            BlurAmount = 10f,
             ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
         };
 
         var shadowWithOffset = new Transform2DEffect
         {
             Source = shadow,
-            TransformMatrix = Matrix3x2.CreateTranslation(4f, 6f)
+            TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
         };
 
         var composite = new CompositeEffect();
