@@ -113,10 +113,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     // ── 私有字段：图片显示 ───────────────────────────────────────────────
 
     // 图片边距（上下绝对像素，左右相对正方形边长比例）
-    private double _imgMarginTop = 100;
-    private double _imgMarginLeft = 0.14;
-    private double _imgMarginRight = 0.14;
-    private double _imgMarginBottom = 300;
+    private double _imgMarginTop = 0.05;
+    private double _imgMarginLeft = 0.2;
+    private double _imgMarginRight = 0.2;
+    private double _imgMarginBottom = 0.4;
     private double _radius = 16.0;
 
     // 当前显示的位图（稳定显示或正在淡出）
@@ -335,23 +335,28 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         float canvasW = (float)canvas.Size.Width;
         float canvasH = (float)canvas.Size.Height;
 
+        // 左半区域
         float regionW = canvasW * 0.5f;
         float regionH = canvasH;
 
-        // 模拟 Viewbox Stretch="Uniform" 内 300×300 Grid：取左半区域最大正方形
+        // 最大正方形（居中）
         float squareSize = Math.Min(regionW, regionH);
         float squareX = (regionW - squareSize) * 0.5f;
         float squareY = (regionH - squareSize) * 0.5f;
 
-        // 上下绝对像素边距，左右相对正方形边长比例
-        float padTop = (float)_imgMarginTop;
-        float padBottom = (float)_imgMarginBottom;
+        // margin（全部基于 squareSize ✔）
+        float padTop = (float)(_imgMarginTop * squareSize);
+        float padBottom = (float)(_imgMarginBottom * squareSize);
         float padLeft = (float)(_imgMarginLeft * squareSize);
         float padRight = (float)(_imgMarginRight * squareSize);
 
-        float availW = squareSize - padLeft - padRight;
-        float availH = squareSize - padTop - padBottom;
-        if (availW <= 0 || availH <= 0) return;
+        // contentRect（关键：真正的布局区域）
+        float contentX = squareX + padLeft;
+        float contentY = squareY + padTop;
+        float contentW = squareSize - padLeft - padRight;
+        float contentH = squareSize - padTop - padBottom;
+
+        if (contentW <= 0 || contentH <= 0) return;
 
         CanvasBitmap? refBitmap = _nextBitmap ?? _currentBitmap;
         if (refBitmap == null) return;
@@ -361,21 +366,24 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         if (imgW <= 0 || imgH <= 0) return;
 
         float imgAspect = imgW / imgH;
+
         float drawW, drawH;
 
-        if (imgAspect >= availW / availH)
+        // aspect-fit（保持你当前行为）
+        if (imgAspect >= contentW / contentH)
         {
-            drawW = availW;
+            drawW = contentW;
             drawH = drawW / imgAspect;
         }
         else
         {
-            drawH = availH;
+            drawH = contentH;
             drawW = drawH * imgAspect;
         }
 
-        float drawX = squareX + padLeft + (availW - drawW) * 0.5f;
-        float drawY = squareY + padTop + (availH - drawH) * 0.5f;
+        // ⭐ 在 contentRect 内居中（关键修正点）
+        float drawX = contentX + (contentW - drawW) * 0.5f;
+        float drawY = contentY + (contentH - drawH) * 0.5f;
 
         var destRect = new Windows.Foundation.Rect(drawX, drawY, drawW, drawH);
         float radius = (float)_radius;
