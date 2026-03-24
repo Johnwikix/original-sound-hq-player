@@ -530,12 +530,8 @@
                                     x:Uid="LogPath"
                                     Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
                                 <HyperlinkButton
-                                    x:Name="PlayerGitHub"
-                                    x:Uid="PlayerGitHub"
-                                    Command="{x:Bind ViewModel.AppViewModel.OpenPlayerGitHubCommand, Mode=OneWay}" />
-                                <HyperlinkButton
                                     x:Name="MainGitHub"
-                                    x:Uid="MainGitHub"
+                                    Content="GitHub"
                                     Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}" />
                             </StackPanel>
                         </controls:SettingsCard>

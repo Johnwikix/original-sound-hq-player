@@ -772,12 +772,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void OpenPlayerGitHub()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/BassPlayerSharp"));
-        }
-
-        [RelayCommand]
         private void OpenMainGitHub()
         {
             _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/original-sound-hq-player"));
