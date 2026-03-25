@@ -411,11 +411,11 @@ namespace WinUIMusicPlayer.ViewModel
         public async void UpdatePlayBar(Music music)
         {
             AppViewModel.LyricPageBackgroundData = await ToolUtils.GetRawImage(music);
-            BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
+            //BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                AppViewModel.MusicDetailCover = DetailCover;
+                //AppViewModel.MusicDetailCover = DetailCover;
             });
             SystemMediaControlsService.UpdateSystemMediaControlsState();
             SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);

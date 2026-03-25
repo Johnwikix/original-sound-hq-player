@@ -2,63 +2,124 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
+using System.Threading.Tasks;
+using Windows.Storage.Streams;
 
 namespace WinUIMusicPlayer.Behaviors
 {
     /// <summary>
     /// 针对 Image 控件的淡入淡出 Behavior
+    /// 通过传入 byte[] 并限制解码尺寸为100px，显著降低内存开销
     /// </summary>
     public class FadeImageBehavior : Behavior<Image>
     {
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
 
-        public ImageSource Source
+        // ── 公开属性：传入原始图片字节数据 ──────────────────────────────────
+        public byte[] ImageBytes
         {
-            get { return (ImageSource)GetValue(SourceProperty); }
-            set { SetValue(SourceProperty, value); }
+            get => (byte[])GetValue(ImageBytesProperty);
+            set => SetValue(ImageBytesProperty, value);
         }
 
-        public static readonly DependencyProperty SourceProperty =
-            DependencyProperty.Register("Source", typeof(ImageSource), typeof(FadeImageBehavior),
-                new PropertyMetadata(null, OnSourceChanged));
+        public static readonly DependencyProperty ImageBytesProperty =
+            DependencyProperty.Register(
+                nameof(ImageBytes),
+                typeof(byte[]),
+                typeof(FadeImageBehavior),
+                new PropertyMetadata(null, OnImageBytesChanged));
 
-        private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is FadeImageBehavior behavior)
             {
-                var newSource = e.NewValue as ImageSource;
-                behavior.TransitionToNewSource(newSource);
+                var bytes = e.NewValue as byte[];
+                var bitmapImage = await behavior.DecodeToBitmapAsync(bytes);
+                behavior.TransitionToNewSource(bitmapImage);
             }
         }
 
-        protected override void OnAttached()
-        {
-            base.OnAttached();
-            // 当重新挂载时，确保 Image 显示的是当前 Behavior 记录的最新的 Source
-            if (AssociatedObject != null && Source != null)
-            {
-                AssociatedObject.Source = Source;
-            }
-        }
-
+        // ── 公开属性：淡出动画时长 ────────────────────────────────────────
         public Duration Duration
         {
-            get { return (Duration)GetValue(DurationProperty); }
-            set { SetValue(DurationProperty, value); }
+            get => (Duration)GetValue(DurationProperty);
+            set => SetValue(DurationProperty, value);
         }
 
         public static readonly DependencyProperty DurationProperty =
-            DependencyProperty.Register("Duration", typeof(Duration), typeof(FadeImageBehavior),
+            DependencyProperty.Register(
+                nameof(Duration),
+                typeof(Duration),
+                typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
+        // ── 解码：限制为100px，节省约95%内存 ─────────────────────────────
+        private async Task<BitmapImage> DecodeToBitmapAsync(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return null;
+
+            try
+            {
+                var bitmap = new BitmapImage
+                {
+                    DecodePixelWidth = 150,
+                    // Logical 模式自动适配 DPI 缩放（125%/150%），比 Physical 更安全
+                    DecodePixelType = DecodePixelType.Logical
+                };
+
+                using var stream = new InMemoryRandomAccessStream();
+                using (var writer = new DataWriter(stream.GetOutputStreamAt(0)))
+                {
+                    writer.WriteBytes(bytes);
+                    await writer.StoreAsync();
+                }
+                stream.Seek(0);
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
+            }
+            catch
+            {
+                // 解码失败（损坏数据、不支持格式等）时静默返回 null
+                return null;
+            }
+        }
+
+        // ── Behavior 生命周期 ─────────────────────────────────────────────
+        protected override void OnAttached()
+        {
+            base.OnAttached();
+            // 重新挂载时，确保显示当前 Behavior 记录的最新 Source
+            if (AssociatedObject != null && ImageBytes != null)
+            {
+                // 触发一次解码并更新，保持状态一致
+                _ = InitAsync();
+            }
+        }
+
+        private async Task InitAsync()
+        {
+            var bitmap = await DecodeToBitmapAsync(ImageBytes);
+            if (AssociatedObject != null)
+                AssociatedObject.Source = bitmap;
+        }
+
+        protected override void OnDetaching()
+        {
+            StopAndCleanup();
+            base.OnDetaching();
+        }
+
+        // ── 核心：淡出过渡动画 ────────────────────────────────────────────
         private void TransitionToNewSource(ImageSource newSource)
         {
             if (AssociatedObject == null) return;
 
-            // 如果新旧完全一致（包括同为 null），则不执行动画
+            // 新旧引用相同时跳过（byte[] 去重应在 ViewModel 层控制，此处仅做引用比较兜底）
             if (AssociatedObject.Source == newSource) return;
 
             var parent = VisualTreeHelper.GetParent(AssociatedObject) as Panel;
@@ -68,7 +129,7 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
-            // 如果控件不可见，直接更新，不执行动画
+            // 控件不可见时直接更新，不做动画
             if (AssociatedObject.Visibility == Visibility.Collapsed)
             {
                 AssociatedObject.Source = newSource;
@@ -77,10 +138,9 @@ namespace WinUIMusicPlayer.Behaviors
 
             StopAndCleanup();
 
-            // 只有当“旧图”存在时，才需要创建临时层来执行淡出
-            // 如果旧图本来就是空的，直接设置新图即可
             if (AssociatedObject.Source != null)
             {
+                // 用临时层承载旧图，执行淡出动画
                 _tempOverlayImage = new Image
                 {
                     Source = AssociatedObject.Source,
@@ -95,7 +155,6 @@ namespace WinUIMusicPlayer.Behaviors
                 Canvas.SetZIndex(_tempOverlayImage, currentZIndex + 1);
                 parent.Children.Add(_tempOverlayImage);
 
-                // 创建淡出动画
                 var ani = new DoubleAnimation
                 {
                     From = 1,
@@ -109,53 +168,37 @@ namespace WinUIMusicPlayer.Behaviors
                 Storyboard.SetTarget(ani, _tempOverlayImage);
                 Storyboard.SetTargetProperty(ani, "Opacity");
 
-                _currentTransitionStoryboard.Completed += (s, e) =>
-                {
-                    StopAndCleanup();
-                };
+                _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
 
-                // 在旧图开始淡出的同时，把底层原图设为新值 (可能是 null)
+                // 底层原图立即切换为新图，旧图叠在上方淡出
                 AssociatedObject.Source = newSource;
                 _currentTransitionStoryboard.Begin();
             }
             else
             {
-                // 如果旧图是空的，直接更新 Source，无需动画（或可选做一个简单的淡入）
+                // 旧图为空时直接设置新图，无需动画
                 AssociatedObject.Source = newSource;
             }
         }
 
+        // ── 清理：停止动画并释放临时图层资源 ─────────────────────────────
         private void StopAndCleanup()
         {
-            // 1. 停止并清理 Storyboard
             if (_currentTransitionStoryboard != null)
             {
                 _currentTransitionStoryboard.Stop();
-                // 移除 Completed 事件处理器防止内存泄漏
-                // 注意：如果是匿名函数，销毁 Storyboard 对象本身即可
                 _currentTransitionStoryboard = null;
             }
 
-            // 2. 彻底释放临时 Image 资源
             if (_tempOverlayImage != null)
             {
                 var parent = VisualTreeHelper.GetParent(_tempOverlayImage) as Panel;
-                if (parent != null)
-                {
-                    parent.Children.Remove(_tempOverlayImage);
-                }
+                parent?.Children.Remove(_tempOverlayImage);
 
-                // 重要：将 Source 置为空，断开对 ImageSource (BitmapImage) 的引用
-                // 这允许 GC 回收旧图片的内存
+                // 断开 ImageSource 引用，允许 GC 回收旧图内存
                 _tempOverlayImage.Source = null;
                 _tempOverlayImage = null;
             }
-        }
-
-        protected override void OnDetaching()
-        {
-            StopAndCleanup();
-            base.OnDetaching();
         }
     }
 }

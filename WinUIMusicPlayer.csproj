@@ -14,6 +14,8 @@
 	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\default_cover_black.png" />
+    <None Remove="Assets\default_cover_white.png" />
     <None Remove="Assets\last.ico" />
     <None Remove="Assets\next.ico" />
     <None Remove="Assets\play.ico" />

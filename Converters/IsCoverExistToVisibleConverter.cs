@@ -9,9 +9,9 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is BitmapImage cover)
+            if (value is byte[] cover)
             {
-                if (cover is not null)
+                if (cover is not null && cover.Length > 0)
                 {
                     return Visibility.Collapsed;
                 }

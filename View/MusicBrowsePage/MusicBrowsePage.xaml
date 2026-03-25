@@ -252,7 +252,7 @@
                                                     VerticalAlignment="Center"
                                                     Stretch="UniformToFill">
                                                     <interactivity:Interaction.Behaviors>
-                                                        <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
+                                                        <behaviors:FadeImageBehavior ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}" Duration="00:00:1" />
                                                     </interactivity:Interaction.Behaviors>
                                                 </Image>
                                             </Grid>
@@ -260,8 +260,7 @@
                                                 Width="80"
                                                 Height="80"
                                                 Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                                Canvas.ZIndex="0"
-                                                Visibility="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                Canvas.ZIndex="0">
                                                 <FontIcon
                                                     Canvas.ZIndex="0"
                                                     FontSize="40"

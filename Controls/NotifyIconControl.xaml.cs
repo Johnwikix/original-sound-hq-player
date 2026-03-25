@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Controls
                 window.Restore();
                 window.Activate();
                 window.SetForegroundWindow();
-                AppViewModel.IsAppHided = false;
+                //AppViewModel.IsAppHided = false;
             }
             else
             {
@@ -120,7 +120,7 @@ namespace WinUIMusicPlayer.Controls
                 {
                     window.Show();
                     window.InitializeTaskbarHelper();
-                    AppViewModel.IsAppHided = false;
+                    //AppViewModel.IsAppHided = false;
                 }
             }
         }

@@ -136,31 +136,30 @@
                                 </Grid.RowDefinitions>
                                 <Viewbox Stretch="Uniform">
                                     <Grid Width="300" Height="300">
-                                        <Border
+                                        <!--<Border
                                             x:Name="PlayingDetailAlbumCoverImageGrid"
                                             Grid.Row="0"
                                             Margin="0"
                                             HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            CornerRadius="10">
+                                            VerticalAlignment="Center">
                                             <Grid>
-                                                <!--<Image Canvas.ZIndex="1">
+                                                --><!--<Image Canvas.ZIndex="1">
                                                     <interactivity:Interaction.Behaviors>
                                                         <behaviors:FadeImageBehavior Source="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Mode=OneWay}" Duration="00:00:1" />
                                                     </interactivity:Interaction.Behaviors>
-                                                </Image>-->
+                                                </Image>--><!--
                                                 <Grid
                                                     HorizontalAlignment="Stretch"
                                                     VerticalAlignment="Stretch"
                                                     Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                                     Canvas.ZIndex="0"
-                                                    Visibility="{x:Bind ViewModel.AppViewModel.MusicDetailCover, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
+                                                    Visibility="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Converter={StaticResource IsCoverExistToVisibleConverter}, Mode=OneWay}">
                                                     <Viewbox Stretch="Uniform">
                                                         <Border
                                                             HorizontalAlignment="Stretch"
                                                             VerticalAlignment="Stretch"
                                                             Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                                            <!--  图标层  -->
+                                                            --><!--  图标层  --><!--
                                                             <FontIcon
                                                                 Width="200"
                                                                 Height="200"
@@ -174,7 +173,7 @@
                                                     </Viewbox>
                                                 </Grid>
                                             </Grid>
-                                        </Border>
+                                        </Border>-->
                                     </Grid>
                                 </Viewbox>
                                 <StackPanel Grid.Row="1">

@@ -331,6 +331,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _target3 = isDark ? new Vector3(0.07f, 0.07f, 0.07f) : new Vector3(0.80f, 0.80f, 0.80f);
         _target4 = isDark ? new Vector3(0.05f, 0.05f, 0.05f) : new Vector3(0.85f, 0.85f, 0.85f);
         _transitionProgress = 0f;
+        _ = ApplyDefaultCoverAsync();
     }
 
     private void ApplyEffectProperties()
@@ -571,6 +572,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
     private async Task LoadImageFromBytesAsync(byte[] imageBytes)
     {
+        if (imageBytes == null || imageBytes.Length == 0) return; 
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
@@ -621,8 +623,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                         .ToList();
                 }
 
-                // 解码显示用像素（最大 1024）
-                const uint MaxDisplaySize = 1024;
+                // 解码显示用像素（最大 1536）
+                const uint MaxDisplaySize = 1536;
                 uint srcW = decoder.PixelWidth;
                 uint srcH = decoder.PixelHeight;
                 float scale = Math.Min(1f, Math.Min((float)MaxDisplaySize / srcW,
@@ -695,6 +697,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                 ThemeResolved?.Invoke(this, resolvedIsDark);
         }
         catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            ApplyDefaultColors();
+        }
         finally
         {
             if (ReferenceEquals(_loadCts, cts))
@@ -876,6 +882,27 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    private async Task ApplyDefaultCoverAsync()
+    {
+        if (_effect == null) return;
+        try
+        {
+            string urlPath = "ms-appx:///Assets/default_cover_black.png";
+            if (!IsDark) {
+                urlPath = "ms-appx:///Assets/default_cover_white.png";
+            }
+            var uri = new Uri(urlPath);
+            var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(uri);
+            using var stream = await file.OpenReadAsync();
+            var bitmap = await CanvasBitmap.LoadAsync(canvas, stream);
+
+            _pendingBitmap?.Dispose();
+            _pendingBitmap = bitmap;
+            _hasPendingBitmap = true;
+        }
+        catch { /* 默认图也加载失败就算了，至少背景色还在 */ }
     }
 
     private void Dispose(bool dispose)

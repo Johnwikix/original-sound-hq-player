@@ -143,7 +143,7 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
         ];
         public string MusicInfo { get; set => SetProperty(ref field, value); }
-        public BitmapImage MusicDetailCover { get; set => SetProperty(ref field, value); }
+        //public BitmapImage MusicDetailCover { get; set => SetProperty(ref field, value); }
         public bool IsMuted { get; set => SetProperty(ref field, value); } = false;
         public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
