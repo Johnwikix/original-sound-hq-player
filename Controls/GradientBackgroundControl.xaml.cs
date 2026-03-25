@@ -38,6 +38,26 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         ctrl._isBackgroundEnable = (bool)e.NewValue;
     }
 
+    public static readonly DependencyProperty IsHidedProperty =
+    DependencyProperty.Register(nameof(IsHided), typeof(bool),
+        typeof(GradientBackgroundControl), new PropertyMetadata(false, OnIsHidedChanged));
+
+    public bool IsHided
+    {
+        get => (bool)GetValue(IsHidedProperty);
+        set => SetValue(IsHidedProperty, value);
+    }
+
+    private static void OnIsHidedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (GradientBackgroundControl)d;
+        if (!(bool)e.NewValue && !ctrl._isBackgroundEnable && ctrl._opacityFixPending == false)
+        {
+            ctrl.canvas.Opacity = 0;
+            ctrl._opacityFixPending = true;
+        }
+    }
+
     public static readonly DependencyProperty EnableLightWaveProperty =
         DependencyProperty.Register(nameof(EnableLightWave), typeof(bool),
             typeof(GradientBackgroundControl), new PropertyMetadata(false, OnColorParamChanged));
@@ -118,6 +138,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private static readonly Random _random = new();
     private bool _isBackgroundEnable = false;
     private bool _opacityFixPending = false;
+    private int _opacityDelayCount = 0;
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -260,12 +281,15 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             }                
             DrawImageLayer(e.DrawingSession);
             if (_opacityFixPending)
-            {
-                _opacityFixPending = false;
-                // 回到 UI 线程还原（Draw 回调在渲染线程，不能直接操作 Opacity）
-                DispatcherQueue.TryEnqueue(
+            { 
+                _opacityDelayCount++;
+                if (_opacityDelayCount > 5) {
+                    _opacityFixPending = false;
+                    _opacityDelayCount = 0;
+                    DispatcherQueue.TryEnqueue(
                     Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
                     () => canvas.Opacity = 1);
+                }                
             }
         };
     }

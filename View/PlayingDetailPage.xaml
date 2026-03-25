@@ -24,6 +24,7 @@
                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                 IsBackgroundEnable="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}"
                 IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
+                IsHided="{x:Bind ViewModel.AppViewModel.IsAppHided, Mode=OneWay}"
                 ThemeResolved="BackGround_ThemeResolved"
                 UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
             <Grid

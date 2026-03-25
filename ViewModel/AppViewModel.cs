@@ -164,7 +164,8 @@ namespace WinUIMusicPlayer.ViewModel
         public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool IsInNaviView { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
-        public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;        
+        public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;  
+        public bool IsAppHided { get; set => SetProperty(ref field, value); } = false;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
         public bool IsMouseOverVolumeSlider { get; set; } = false;
@@ -188,20 +189,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = false;
-        //public bool IsOverrideAppTheme
-        //{
-        //    get => field;
-        //    set
-        //    {
-        //        if (SetProperty(ref field, value))
-        //        {
-        //            if (IsInitialized)
-        //            {
-        //                _ = _musicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //} = false;
+
         public bool IsCoverCacheEnabled
         {
             get => field;
