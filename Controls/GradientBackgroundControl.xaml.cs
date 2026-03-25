@@ -117,6 +117,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _rnd3 = 0f;
     private static readonly Random _random = new();
     private bool _isBackgroundEnable = false;
+    private bool _opacityFixPending = false;
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -225,9 +226,6 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         {
             if (_effect == null) return;
 
-            // 透明模式下清除为透明，否则由 shader 覆盖全画布无需清除
-            canvas.ClearColor = Microsoft.UI.Colors.Transparent;
-
             _time = (float)e.Timing.TotalTime.TotalSeconds;
             _effect.Properties["iTime"] = _time;
 
@@ -256,10 +254,19 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         {
             if (_effect == null) return;
 
-            if (_isBackgroundEnable)
+            if (_isBackgroundEnable) 
+            {
                 e.DrawingSession.DrawImage(_effect);
-
+            }                
             DrawImageLayer(e.DrawingSession);
+            if (_opacityFixPending)
+            {
+                _opacityFixPending = false;
+                // 回到 UI 线程还原（Draw 回调在渲染线程，不能直接操作 Opacity）
+                DispatcherQueue.TryEnqueue(
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    () => canvas.Opacity = 1);
+            }
         };
     }
 
@@ -270,6 +277,11 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _width = canvas.ConvertDipsToPixels((float)e.NewSize.Width, CanvasDpiRounding.Round);
         _height = canvas.ConvertDipsToPixels((float)e.NewSize.Height, CanvasDpiRounding.Round);
         _effect?.Properties["iResolution"] = new Vector2(_width, _height);
+        if (!_isBackgroundEnable && _opacityFixPending == false)
+        {
+            canvas.Opacity = 0;
+            _opacityFixPending = true;
+        }
     }
 
     // ── 默认颜色 ─────────────────────────────────────────────────────────
