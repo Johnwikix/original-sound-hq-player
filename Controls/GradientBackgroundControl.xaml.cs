@@ -22,20 +22,20 @@ namespace WinUIMusicPlayer.Controls;
 public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 {
     // ── 依赖属性 ────────────────────────────────────────────────────────
-    public static readonly DependencyProperty IsBackgroundTransparentProperty =
-    DependencyProperty.Register(nameof(IsBackgroundTransparent), typeof(bool),
-        typeof(GradientBackgroundControl), new PropertyMetadata(false, OnIsBackgroundTransparentChanged));
+    public static readonly DependencyProperty IsBackgroundEnableProperty =
+    DependencyProperty.Register(nameof(IsBackgroundEnable), typeof(bool),
+        typeof(GradientBackgroundControl), new PropertyMetadata(false, OnIsBackgroundEnableChanged));
 
-    public bool IsBackgroundTransparent
+    public bool IsBackgroundEnable
     {
-        get => (bool)GetValue(IsBackgroundTransparentProperty);
-        set => SetValue(IsBackgroundTransparentProperty, value);
+        get => (bool)GetValue(IsBackgroundEnableProperty);
+        set => SetValue(IsBackgroundEnableProperty, value);
     }
 
-    private static void OnIsBackgroundTransparentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnIsBackgroundEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (GradientBackgroundControl)d;
-        ctrl._isBackgroundTransparent = (bool)e.NewValue;
+        ctrl._isBackgroundEnable = (bool)e.NewValue;
     }
 
     public static readonly DependencyProperty EnableLightWaveProperty =
@@ -116,7 +116,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _rnd2 = 0f;
     private float _rnd3 = 0f;
     private static readonly Random _random = new();
-    private bool _isBackgroundTransparent = false;
+    private bool _isBackgroundEnable = false;
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -226,9 +226,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             if (_effect == null) return;
 
             // 透明模式下清除为透明，否则由 shader 覆盖全画布无需清除
-            canvas.ClearColor = _isBackgroundTransparent
-                ? Microsoft.UI.Colors.Transparent
-                : Microsoft.UI.Colors.Transparent; // Win2D 默认已是透明，shader 自行填色
+            canvas.ClearColor = Microsoft.UI.Colors.Transparent;
 
             _time = (float)e.Timing.TotalTime.TotalSeconds;
             _effect.Properties["iTime"] = _time;
@@ -258,7 +256,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         {
             if (_effect == null) return;
 
-            if (!_isBackgroundTransparent)
+            if (_isBackgroundEnable)
                 e.DrawingSession.DrawImage(_effect);
 
             DrawImageLayer(e.DrawingSession);
