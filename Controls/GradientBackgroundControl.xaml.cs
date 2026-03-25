@@ -334,6 +334,28 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _ = ApplyDefaultCoverAsync();
     }
 
+    private async Task ApplyDefaultCoverAsync()
+    {
+        if (_effect == null) return;
+        try
+        {
+            string urlPath = "ms-appx:///Assets/default_cover_black.png";
+            if (!IsDark)
+            {
+                urlPath = "ms-appx:///Assets/default_cover_white.png";
+            }
+            var uri = new Uri(urlPath);
+            var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(uri);
+            using var stream = await file.OpenReadAsync();
+            var bitmap = await CanvasBitmap.LoadAsync(canvas, stream);
+
+            _pendingBitmap?.Dispose();
+            _pendingBitmap = bitmap;
+            _hasPendingBitmap = true;
+        }
+        catch { /* 默认图也加载失败就算了，至少背景色还在 */ }
+    }
+
     private void ApplyEffectProperties()
     {
         if (_effect == null) return;
@@ -623,8 +645,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                         .ToList();
                 }
 
-                // 解码显示用像素（最大 1536）
-                const uint MaxDisplaySize = 1536;
+                // 解码显示用像素（最大 1280）
+                const uint MaxDisplaySize = 1280;
                 uint srcW = decoder.PixelWidth;
                 uint srcH = decoder.PixelHeight;
                 float scale = Math.Min(1f, Math.Min((float)MaxDisplaySize / srcW,
@@ -882,28 +904,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
-    }
-
-    private async Task ApplyDefaultCoverAsync()
-    {
-        if (_effect == null) return;
-        try
-        {
-            string urlPath = "ms-appx:///Assets/default_cover_black.png";
-            if (!IsDark) {
-                urlPath = "ms-appx:///Assets/default_cover_white.png";
-            }
-            var uri = new Uri(urlPath);
-            var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(uri);
-            using var stream = await file.OpenReadAsync();
-            var bitmap = await CanvasBitmap.LoadAsync(canvas, stream);
-
-            _pendingBitmap?.Dispose();
-            _pendingBitmap = bitmap;
-            _hasPendingBitmap = true;
-        }
-        catch { /* 默认图也加载失败就算了，至少背景色还在 */ }
-    }
+    }    
 
     private void Dispose(bool dispose)
     {
