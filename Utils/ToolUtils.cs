@@ -325,11 +325,11 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                byte[] picture = null;
+                byte[] picture = [];
                 if (music.Extension.ToLower() == "dff")
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                    picture = res?.Pictures.AsValueEnumerable().Count() > 0 ? res?.Pictures[0]?.ImageData : null;
+                    picture = res?.Pictures[0]?.ImageData ?? [];
                 }
                 else
                 {
@@ -355,9 +355,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 try {
                     Track track = new(music.Path);
-                    byte[] picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
-                        ? track?.EmbeddedPictures[0]?.PictureData
-                        : null;
+                    byte[] picture = track?.EmbeddedPictures[0]?.PictureData ?? [];
                     if (picture is not null && picture.Length > 0)
                     {
                         return picture;
