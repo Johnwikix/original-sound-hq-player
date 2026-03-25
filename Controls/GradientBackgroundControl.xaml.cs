@@ -497,7 +497,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         }
     }
 
-    private void DrawRoundedImageWithShadow(
+    private static void DrawRoundedImageWithShadow(
         CanvasDrawingSession ds,
         CanvasBitmap bitmap,
         Windows.Foundation.Rect destRect,
