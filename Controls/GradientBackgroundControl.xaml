@@ -9,5 +9,5 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <canvas:CanvasAnimatedControl x:Name="canvas" />
+    <canvas:CanvasAnimatedControl x:Name="canvas" ClearColor="Transparent" />
 </UserControl>

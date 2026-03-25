@@ -22,10 +22,10 @@
                 x:Name="BackGround"
                 EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                IsBackgroundTransparent="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}"
                 IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                 ThemeResolved="BackGround_ThemeResolved"
-                UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
-                Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+                UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
             <Grid
                 Grid.Row="0"
                 Grid.Column="0"
