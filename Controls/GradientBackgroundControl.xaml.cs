@@ -178,6 +178,10 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private int _pendingBmpW;
     private int _pendingBmpH;
 
+    // 延迟释放（双缓冲，防止 Draw 使用中被释放）
+    private CanvasBitmap? _disposeBitmap1;
+    private CanvasBitmap? _disposeBitmap2;
+
     // ── 构造函数 ────────────────────────────────────────────────────────
 
     public GradientBackgroundControl()
@@ -194,6 +198,13 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     {
         if (imageBytes == null || imageBytes.Length == 0) return;
         await LoadImageFromBytesAsync(imageBytes);
+    }
+
+    private void FlushDisposeQueue()
+    {
+        _disposeBitmap1?.Dispose();
+        _disposeBitmap1 = _disposeBitmap2;
+        _disposeBitmap2 = null;
     }
 
     // ── Canvas 事件注册 ──────────────────────────────────────────────────
@@ -245,6 +256,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
         canvas.Update += (s, e) =>
         {
+            FlushDisposeQueue(); // ✅ 每帧安全释放
+
             if (_effect == null) return;
 
             _time = (float)e.Timing.TotalTime.TotalSeconds;
@@ -345,17 +358,28 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         {
             _hasPendingBitmap = false;
 
-            // 快速切换：将正在淡入的 next 升级为 current，保留当前透明度
+            // 快速切换：将正在淡入的 next 升级为 current
             if (_isCrossFading && _nextBitmap != null)
             {
-                _currentBitmap?.Dispose();
+                if (_currentBitmap != null)
+                {
+                    _disposeBitmap2 = _disposeBitmap1;
+                    _disposeBitmap1 = _currentBitmap;
+                }
+
                 _currentBitmap = _nextBitmap;
                 _imgAlpha = _imgNextAlpha;
+
                 _nextBitmap = null;
                 _imgNextAlpha = 0f;
             }
 
-            _nextBitmap?.Dispose();
+            if (_nextBitmap != null)
+            {
+                _disposeBitmap2 = _disposeBitmap1;
+                _disposeBitmap1 = _nextBitmap;
+            }
+
             _nextBitmap = _pendingBitmap;
             _pendingBitmap = null;
             _imgNextAlpha = 0f;
@@ -372,12 +396,18 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         if (_nextBitmap != null)
             _imgNextAlpha = Math.Min(1f, _imgNextAlpha + delta * ImageFadeSpeed);
 
-        // 淡入完成：next 升级为 current
+        // 淡入完成
         if (_imgNextAlpha >= 1f)
         {
-            _currentBitmap?.Dispose();
+            if (_currentBitmap != null)
+            {
+                _disposeBitmap2 = _disposeBitmap1;
+                _disposeBitmap1 = _currentBitmap;
+            }
+
             _currentBitmap = _nextBitmap;
             _imgAlpha = 1f;
+
             _nextBitmap = null;
             _imgNextAlpha = 0f;
             _isCrossFading = false;
@@ -393,22 +423,18 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         float canvasW = (float)canvas.Size.Width;
         float canvasH = (float)canvas.Size.Height;
 
-        // 左半区域
         float regionW = canvasW * 0.5f;
         float regionH = canvasH;
 
-        // 最大正方形（居中）
         float squareSize = Math.Min(regionW, regionH);
         float squareX = (regionW - squareSize) * 0.5f;
         float squareY = (regionH - squareSize) * 0.5f;
 
-        // margin（全部基于 squareSize ✔）
         float padTop = (float)(_imgMarginTop * squareSize);
         float padBottom = (float)(_imgMarginBottom * squareSize);
         float padLeft = (float)(_imgMarginLeft * squareSize);
         float padRight = (float)(_imgMarginRight * squareSize);
 
-        // contentRect（关键：真正的布局区域）
         float contentX = squareX + padLeft;
         float contentY = squareY + padTop;
         float contentW = squareSize - padLeft - padRight;
@@ -416,18 +442,31 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
 
         if (contentW <= 0 || contentH <= 0) return;
 
-        CanvasBitmap? refBitmap = _nextBitmap ?? _currentBitmap;
+        // ✅ 冻结引用（避免 Draw 过程中被替换/释放）
+        var current = _currentBitmap;
+        var next = _nextBitmap;
+
+        CanvasBitmap? refBitmap = next ?? current;
         if (refBitmap == null) return;
 
-        float imgW = (float)refBitmap.SizeInPixels.Width;
-        float imgH = (float)refBitmap.SizeInPixels.Height;
+        float imgW, imgH;
+
+        try
+        {
+            imgW = (float)refBitmap.SizeInPixels.Width;
+            imgH = (float)refBitmap.SizeInPixels.Height;
+        }
+        catch
+        {
+            return;
+        }
+
         if (imgW <= 0 || imgH <= 0) return;
 
         float imgAspect = imgW / imgH;
 
         float drawW, drawH;
 
-        // aspect-fit（保持你当前行为）
         if (imgAspect >= contentW / contentH)
         {
             drawW = contentW;
@@ -439,18 +478,23 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
             drawW = drawH * imgAspect;
         }
 
-        // ⭐ 在 contentRect 内居中（关键修正点）
         float drawX = contentX + (contentW - drawW) * 0.5f;
         float drawY = contentY + (contentH - drawH) * 0.5f;
 
         var destRect = new Windows.Foundation.Rect(drawX, drawY, drawW, drawH);
         float radius = (float)_radius;
 
-        if (_currentBitmap != null && _imgAlpha > 0f)
-            DrawRoundedImageWithShadow(ds, _currentBitmap, destRect, radius, _imgAlpha);
+        if (current != null && _imgAlpha > 0f)
+        {
+            try { DrawRoundedImageWithShadow(ds, current, destRect, radius, _imgAlpha); }
+            catch { }
+        }
 
-        if (_nextBitmap != null && _imgNextAlpha > 0f)
-            DrawRoundedImageWithShadow(ds, _nextBitmap, destRect, radius, _imgNextAlpha);
+        if (next != null && _imgNextAlpha > 0f)
+        {
+            try { DrawRoundedImageWithShadow(ds, next, destRect, radius, _imgNextAlpha); }
+            catch { }
+        }
     }
 
     private void DrawRoundedImageWithShadow(
