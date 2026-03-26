@@ -326,7 +326,7 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 byte[] picture = [];
-                if (music.Extension.ToLower() == "dff")
+                if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
                     picture = res?.Pictures[0]?.ImageData ?? [];
@@ -335,14 +335,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     using (TagLib.File audioFile = TagLib.File.Create(music.Path))
                     {
-                        IPicture[] pictures = audioFile.Tag.Pictures;
-                        if (pictures.Length > 0)
-                        {
-                            // 取第一张图片作为封面
-                            IPicture coverPicture = pictures[0];
-                            // 获取封面图片的字节数组
-                            picture = coverPicture.Data.Data;
-                        }
+                        picture = audioFile?.Tag?.Pictures[0]?.Data?.Data ?? [];
                     }
                 }
                 if (picture is null || picture.Length == 0)

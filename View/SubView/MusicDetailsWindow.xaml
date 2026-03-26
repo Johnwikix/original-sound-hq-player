@@ -388,6 +388,7 @@
                             Grid.Column="1"
                             Margin="5"
                             HorizontalAlignment="Left"
+                            IsTextSelectionEnabled="True"
                             Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
@@ -405,6 +406,7 @@
                             Grid.Column="1"
                             Margin="5"
                             HorizontalAlignment="Left"
+                            IsTextSelectionEnabled="True"
                             Text="{x:Bind MusicDetail.Path, Mode=OneWay}"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
@@ -422,6 +424,7 @@
                             Grid.Column="1"
                             Margin="5"
                             HorizontalAlignment="Left"
+                            IsTextSelectionEnabled="True"
                             Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
@@ -438,6 +441,7 @@
                             Grid.Column="1"
                             Margin="5"
                             HorizontalAlignment="Left"
+                            IsTextSelectionEnabled="True"
                             Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}"
                             TextTrimming="WordEllipsis"
                             TextWrapping="WrapWholeWords" />
