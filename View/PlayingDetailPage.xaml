@@ -476,7 +476,7 @@
                         </Grid>
                     </StackPanel>
                 </Grid>
-                <Grid Grid.Row="1" Grid.Column="1">
+                <Grid Margin="0,40,0,40" Grid.Row="1" Grid.Column="1">
                     <!--  添加歌词显示列表  -->
                     <controls:OpacityMaskView
                         x:Name="MaskView"
