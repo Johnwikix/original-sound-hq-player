@@ -56,7 +56,6 @@ namespace WinUIMusicPlayer
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             this.AppWindow.Closing += AppWindow_Closing;
-            AppWindow.Changed += AppWindow_Changed;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
@@ -66,23 +65,17 @@ namespace WinUIMusicPlayer
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
         }
 
-        private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
-        {
-            if (args.DidPresenterChange)
-            {
-                if (sender.Presenter.Kind == AppWindowPresenterKind.Overlapped &&
-                    sender.Presenter is OverlappedPresenter overlappedPresenter &&
-                    overlappedPresenter.State == OverlappedPresenterState.Minimized)
-                {
-                    App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
-                }
-            }
-        }
-
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            InitializeTaskbarHelper();
-            App.Services.GetRequiredService<AppViewModel>().IsAppHided = false;
+            if (args.WindowActivationState == WindowActivationState.Deactivated)
+            {
+                App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
+            }
+            else
+            {
+                InitializeTaskbarHelper();
+                App.Services.GetRequiredService<AppViewModel>().IsAppHided = false;
+            }           
         }
 
         private void SetWindow()
@@ -162,7 +155,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;
-                App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
+                //App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
                 this.Hide();
             }
             else
