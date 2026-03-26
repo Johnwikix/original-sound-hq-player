@@ -154,7 +154,7 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private double _imgMarginTop = 0.05;
     private double _imgMarginLeft = 0.2;
     private double _imgMarginRight = 0.2;
-    private double _imgMarginBottom = 0.4;
+    private double _imgMarginBottom = 0.333;
     private double _radius = 16.0;
 
     // 当前显示的位图（稳定显示或正在淡出）
