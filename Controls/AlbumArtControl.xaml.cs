@@ -31,7 +31,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (AlbumArtControl)d;
-        if (!_isResourcesCreated) return;
+        if (!ctrl._isResourcesCreated) return;
         if (e.NewValue is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadBitmapAsync(bytes);
         else
@@ -54,12 +54,74 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
     }
 
-    // 布局参数（可按需公开为依赖属性）
-    public double MarginTopRatio { get; set; } = 20;
-    public double MarginBottomRatio { get; set; } = 20;
-    public double MarginLeftRatio { get; set; } = 20;
-    public double MarginRightRatio { get; set; } = 20;
-    public double CornerRadius { get; set; } = 16.0;
+    // ── 依赖属性（布局 + 阴影） ────────────────────────────────────────────
+
+    public static readonly DependencyProperty MarginTopRatioProperty =
+        DependencyProperty.Register(nameof(MarginTopRatio), typeof(double),
+            typeof(AlbumArtControl), new PropertyMetadata(20.0, OnLayoutChanged));
+
+    public double MarginTopRatio
+    {
+        get => (double)GetValue(MarginTopRatioProperty);
+        set => SetValue(MarginTopRatioProperty, value);
+    }
+
+    public static readonly DependencyProperty MarginBottomRatioProperty =
+        DependencyProperty.Register(nameof(MarginBottomRatio), typeof(double),
+            typeof(AlbumArtControl), new PropertyMetadata(20.0, OnLayoutChanged));
+
+    public double MarginBottomRatio
+    {
+        get => (double)GetValue(MarginBottomRatioProperty);
+        set => SetValue(MarginBottomRatioProperty, value);
+    }
+
+    public static readonly DependencyProperty MarginLeftRatioProperty =
+        DependencyProperty.Register(nameof(MarginLeftRatio), typeof(double),
+            typeof(AlbumArtControl), new PropertyMetadata(20.0, OnLayoutChanged));
+
+    public double MarginLeftRatio
+    {
+        get => (double)GetValue(MarginLeftRatioProperty);
+        set => SetValue(MarginLeftRatioProperty, value);
+    }
+
+    public static readonly DependencyProperty MarginRightRatioProperty =
+        DependencyProperty.Register(nameof(MarginRightRatio), typeof(double),
+            typeof(AlbumArtControl), new PropertyMetadata(20.0, OnLayoutChanged));
+
+    public double MarginRightRatio
+    {
+        get => (double)GetValue(MarginRightRatioProperty);
+        set => SetValue(MarginRightRatioProperty, value);
+    }
+
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.Register(nameof(CornerRadius), typeof(double),
+            typeof(AlbumArtControl), new PropertyMetadata(16.0, OnLayoutChanged));
+
+    public double CornerRadius
+    {
+        get => (double)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public static readonly DependencyProperty IsShadowEnabledProperty =
+        DependencyProperty.Register(nameof(IsShadowEnabled), typeof(bool),
+            typeof(AlbumArtControl), new PropertyMetadata(true, OnLayoutChanged));
+
+    public bool IsShadowEnabled
+    {
+        get => (bool)GetValue(IsShadowEnabledProperty);
+        set => SetValue(IsShadowEnabledProperty, value);
+    }
+
+    private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (AlbumArtControl)d;
+        if (!ctrl._isResourcesCreated) return;
+        ctrl.canvas.Invalidate();
+    }
 
     // ── 私有字段 ──────────────────────────────────────────────────────────
 
@@ -87,7 +149,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     // 淡入淡出驱动
     private DispatcherTimer? _fadeTimer;
     private DateTime _lastTick;
-    private static bool _isResourcesCreated = false;
+    private bool _isResourcesCreated = false;
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
     public AlbumArtControl()
@@ -398,23 +460,24 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         if (current != null && _imgAlpha > 0f)
         {
-            try { DrawRoundedImageWithShadow(ds, current, destRect, radius, _imgAlpha); }
+            try { DrawRoundedImageWithShadow(ds, current, destRect, radius, _imgAlpha, IsShadowEnabled); }
             catch { }
         }
 
         if (next != null && _imgNextAlpha > 0f)
         {
-            try { DrawRoundedImageWithShadow(ds, next, destRect, radius, _imgNextAlpha); }
+            try { DrawRoundedImageWithShadow(ds, next, destRect, radius, _imgNextAlpha, IsShadowEnabled); }
             catch { }
         }
     }
 
     private static void DrawRoundedImageWithShadow(
-        CanvasDrawingSession ds,
-        CanvasBitmap bitmap,
-        Windows.Foundation.Rect destRect,
-        float radius,
-        float opacity)
+    CanvasDrawingSession ds,
+    CanvasBitmap bitmap,
+    Windows.Foundation.Rect destRect,
+    float radius,
+    float opacity,
+    bool shadowEnabled)          // ← 新增参数
     {
         float w = (float)destRect.Width;
         float h = (float)destRect.Height;
@@ -438,29 +501,43 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         }
 
         var maskedImage = new AlphaMaskEffect { Source = scaleEffect, AlphaMask = roundedMask };
-        var shadow = new ShadowEffect
-        {
-            Source = maskedImage,
-            BlurAmount = 10f,
-            ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
-        };
-        var shadowOffset = new Transform2DEffect
-        {
-            Source = shadow,
-            TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
-        };
-        var composite = new CompositeEffect();
-        composite.Sources.Add(shadowOffset);
-        composite.Sources.Add(maskedImage);
 
-        var withOpacity = new OpacityEffect { Source = composite, Opacity = opacity };
+        ICanvasImage root;                               // 最终送入 CompositeEffect 的图层
 
+        ShadowEffect? shadow = null;
+        Transform2DEffect? shadowOffset = null;
+
+        if (shadowEnabled)
+        {
+            shadow = new ShadowEffect
+            {
+                Source = maskedImage,
+                BlurAmount = 10f,
+                ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
+            };
+            shadowOffset = new Transform2DEffect
+            {
+                Source = shadow,
+                TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
+            };
+
+            var composite = new CompositeEffect();
+            composite.Sources.Add(shadowOffset);
+            composite.Sources.Add(maskedImage);
+            root = composite;
+        }
+        else
+        {
+            root = maskedImage;
+        }
+
+        var withOpacity = new OpacityEffect { Source = root, Opacity = opacity };
         ds.DrawImage(withOpacity, (float)destRect.X, (float)destRect.Y);
 
         withOpacity.Dispose();
-        composite.Dispose();
-        shadowOffset.Dispose();
-        shadow.Dispose();
+        if (root is CompositeEffect c) c.Dispose();
+        shadowOffset?.Dispose();
+        shadow?.Dispose();
         maskedImage.Dispose();
         roundedMask.Dispose();
         scaleEffect.Dispose();
