@@ -25,10 +25,6 @@
             ThemeResolved="BackGround_ThemeResolved"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
-        <customControls:AlbumArtControl
-            x:Name="AlbumArtControl"
-            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
-            IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
             Grid.Row="2"
@@ -104,17 +100,25 @@
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="4*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="6*" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
+                <Grid Grid.Row="1" Grid.Column="1">
+                    <customControls:AlbumArtControl
+                        x:Name="AlbumArtControl"
+                        ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}" />
+                </Grid>
                 <StackPanel
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Grid.Column="1"
-                    Margin="0">
+                    Margin="20,0">
                     <!--  音乐信息  -->
                     <Grid>
                         <Grid.ColumnDefinitions>

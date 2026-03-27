@@ -55,10 +55,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     }
 
     // 布局参数（可按需公开为依赖属性）
-    public double MarginTopRatio { get; set; } = 0.05;
-    public double MarginBottomRatio { get; set; } = 0.333;
-    public double MarginLeftRatio { get; set; } = 0.2;
-    public double MarginRightRatio { get; set; } = 0.2;
+    public double MarginTopRatio { get; set; } = 20;
+    public double MarginBottomRatio { get; set; } = 20;
+    public double MarginLeftRatio { get; set; } = 20;
+    public double MarginRightRatio { get; set; } = 20;
     public double CornerRadius { get; set; } = 16.0;
 
     // ── 私有字段 ──────────────────────────────────────────────────────────
@@ -355,16 +355,16 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         float canvasH = (float)canvas.Size.Height;
         if (canvasW <= 0 || canvasH <= 0) return;
 
-        float regionW = canvasW * 0.5f;
+        float regionW = canvasW;
         float regionH = canvasH;
         float squareSize = Math.Min(regionW, regionH);
         float squareX = (regionW - squareSize) * 0.5f;
         float squareY = (regionH - squareSize) * 0.5f;
 
-        float padTop = (float)(MarginTopRatio * squareSize);
-        float padBottom = (float)(MarginBottomRatio * squareSize);
-        float padLeft = (float)(MarginLeftRatio * squareSize);
-        float padRight = (float)(MarginRightRatio * squareSize);
+        float padTop = (float)(MarginTopRatio);
+        float padBottom = (float)(MarginBottomRatio);
+        float padLeft = (float)(MarginLeftRatio);
+        float padRight = (float)(MarginRightRatio);
 
         float contentX = squareX + padLeft;
         float contentY = squareY + padTop;
