@@ -17,14 +17,17 @@
     mc:Ignorable="d">
 
     <Grid>
-        <Grid>
+        <Grid
+            Margin="0,0,0,1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Canvas.ZIndex="1">
             <customControls:GradientBackgroundControl
                 x:Name="BackGround"
                 EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                 IsBackgroundEnable="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}"
                 IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
-                IsHided="{x:Bind ViewModel.AppViewModel.IsAppHided, Mode=OneWay}"
                 ThemeResolved="BackGround_ThemeResolved"
                 UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
             <Grid
@@ -476,7 +479,10 @@
                         </Grid>
                     </StackPanel>
                 </Grid>
-                <Grid Margin="0,40,0,40" Grid.Row="1" Grid.Column="1">
+                <Grid
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,40,0,40">
                     <!--  添加歌词显示列表  -->
                     <controls:OpacityMaskView
                         x:Name="MaskView"

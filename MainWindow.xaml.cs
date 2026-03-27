@@ -67,15 +67,10 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (args.WindowActivationState == WindowActivationState.Deactivated)
-            {
-                App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
-            }
-            else
+            if (args.WindowActivationState != WindowActivationState.Deactivated)
             {
                 InitializeTaskbarHelper();
-                App.Services.GetRequiredService<AppViewModel>().IsAppHided = false;
-            }           
+            }          
         }
 
         private void SetWindow()

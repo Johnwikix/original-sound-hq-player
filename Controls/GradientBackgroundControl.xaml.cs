@@ -38,25 +38,25 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         ctrl._isBackgroundEnable = (bool)e.NewValue;
     }
 
-    public static readonly DependencyProperty IsHidedProperty =
-    DependencyProperty.Register(nameof(IsHided), typeof(bool),
-        typeof(GradientBackgroundControl), new PropertyMetadata(false, OnIsHidedChanged));
+    //public static readonly DependencyProperty IsHidedProperty =
+    //DependencyProperty.Register(nameof(IsHided), typeof(bool),
+    //    typeof(GradientBackgroundControl), new PropertyMetadata(false, OnIsHidedChanged));
 
-    public bool IsHided
-    {
-        get => (bool)GetValue(IsHidedProperty);
-        set => SetValue(IsHidedProperty, value);
-    }
+    //public bool IsHided
+    //{
+    //    get => (bool)GetValue(IsHidedProperty);
+    //    set => SetValue(IsHidedProperty, value);
+    //}
 
-    private static void OnIsHidedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var ctrl = (GradientBackgroundControl)d;
-        if (!(bool)e.NewValue && !ctrl._isBackgroundEnable && ctrl._opacityFixPending == false)
-        {
-            ctrl.canvas.Opacity = 0;
-            ctrl._opacityFixPending = true;
-        }
-    }
+    //private static void OnIsHidedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    //{
+    //    var ctrl = (GradientBackgroundControl)d;
+    //    if (!(bool)e.NewValue && !ctrl._isBackgroundEnable && ctrl._opacityFixPending == false)
+    //    {
+    //        ctrl.canvas.Opacity = 0;
+    //        ctrl._opacityFixPending = true;
+    //    }
+    //}
 
     public static readonly DependencyProperty EnableLightWaveProperty =
         DependencyProperty.Register(nameof(EnableLightWave), typeof(bool),
@@ -137,8 +137,8 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
     private float _rnd3 = 0f;
     private static readonly Random _random = new();
     private bool _isBackgroundEnable = false;
-    private bool _opacityFixPending = false;
-    private int _opacityDelayCount = 0;
+    //private bool _opacityFixPending = false;
+    //private int _opacityDelayCount = 0;
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -293,17 +293,17 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
                 e.DrawingSession.DrawImage(_effect);
             }                
             DrawImageLayer(e.DrawingSession);
-            if (_opacityFixPending)
-            { 
-                _opacityDelayCount++;
-                if (_opacityDelayCount > 5) {
-                    _opacityFixPending = false;
-                    _opacityDelayCount = 0;
-                    DispatcherQueue.TryEnqueue(
-                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                    () => canvas.Opacity = 1);
-                }                
-            }
+            //if (_opacityFixPending)
+            //{ 
+            //    _opacityDelayCount++;
+            //    if (_opacityDelayCount > 5) {
+            //        _opacityFixPending = false;
+            //        _opacityDelayCount = 0;
+            //        DispatcherQueue.TryEnqueue(
+            //        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+            //        () => canvas.Opacity = 1);
+            //    }                
+            //}
         };
     }
 
@@ -314,11 +314,11 @@ public sealed partial class GradientBackgroundControl : UserControl, IDisposable
         _width = canvas.ConvertDipsToPixels((float)e.NewSize.Width, CanvasDpiRounding.Round);
         _height = canvas.ConvertDipsToPixels((float)e.NewSize.Height, CanvasDpiRounding.Round);
         _effect?.Properties["iResolution"] = new Vector2(_width, _height);
-        if (!_isBackgroundEnable && _opacityFixPending == false)
-        {
-            canvas.Opacity = 0;
-            _opacityFixPending = true;
-        }
+        //if (!_isBackgroundEnable && _opacityFixPending == false)
+        //{
+        //    canvas.Opacity = 0;
+        //    _opacityFixPending = true;
+        //}
     }
 
     // ── 默认颜色 ─────────────────────────────────────────────────────────
