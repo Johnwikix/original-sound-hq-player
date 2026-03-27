@@ -490,7 +490,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             Source = bitmap,
             Scale = new Vector2(w / (float)bitmap.SizeInPixels.Width,
                                  h / (float)bitmap.SizeInPixels.Height),
-            InterpolationMode = CanvasImageInterpolation.HighQualityCubic
+            InterpolationMode = CanvasImageInterpolation.Cubic
         };
 
         var roundedMask = new CanvasCommandList(device);

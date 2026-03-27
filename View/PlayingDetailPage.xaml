@@ -118,7 +118,7 @@
                 <StackPanel
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="20,0">
+                    Margin="20,0,20,20">
                     <!--  音乐信息  -->
                     <Grid>
                         <Grid.ColumnDefinitions>
