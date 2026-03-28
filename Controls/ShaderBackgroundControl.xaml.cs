@@ -121,7 +121,7 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
     private float _transitionProgress = 1f;
-    private const float TransitionSpeed = 0.677f;
+    private const float TransitionSpeed = 0.5f;
 
     private CancellationTokenSource? _loadCts;
     private static readonly ColorThief.ImageSharp.ColorThief ColorThiefInstance = new();

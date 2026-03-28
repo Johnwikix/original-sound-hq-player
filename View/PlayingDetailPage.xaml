@@ -113,7 +113,7 @@
                     <customControls:AlbumArtControl
                         x:Name="AlbumArtControl"
                         ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
-                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}" />
+                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"/>
                 </Grid>
                 <StackPanel
                     Grid.Row="2"

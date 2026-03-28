@@ -124,7 +124,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private float _incomingAlpha = 0f;
 
     private bool _isFading = false;
-    private const float FadeSpeed = 2.5f;   // 每秒 alpha 变化量，约 0.4s 完成
+    private const float FadeSpeed = 1.25f;   // 每秒 alpha 变化量，约 0.4s 完成
 
     // 快速切换时的"最新待显示"位图，只保留最新的一张
     private CanvasBitmap? _queuedBitmap;
@@ -174,7 +174,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         if (_fadeTimer == null)
         {
-            _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16.67) };
             _fadeTimer.Tick += OnFadeTick;
         }
         if (!_fadeTimer.IsEnabled)
