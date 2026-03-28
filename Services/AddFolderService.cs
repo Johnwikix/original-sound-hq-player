@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                using (TagLib.File audioFile = TagLib.File.Create(file.Path))
+                using (TagLib.File audioFile = TagLib.File.Create(file.Path,ReadStyle.PictureLazy))
                 {
                     Tag tag = audioFile.Tag;
                     string title = "未知标题";

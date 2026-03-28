@@ -325,7 +325,7 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                byte[] picture = [];
+                byte[]? picture = [];
                 if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
@@ -333,9 +333,10 @@ namespace WinUIMusicPlayer.Utils
                 }
                 else
                 {
-                    using (TagLib.File audioFile = TagLib.File.Create(music.Path))
+                    using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
                     {
-                        picture = audioFile?.Tag?.Pictures[0]?.Data?.Data ?? [];
+                        var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
+                        picture = pic?.Data?.Data;
                     }
                 }
                 if (picture is null || picture.Length == 0)
@@ -769,7 +770,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        using (var file = TagLib.File.Create(music.Path))
+                        using (var file = TagLib.File.Create(music.Path,ReadStyle.None))
                         {
                             if (ct.IsCancellationRequested) return;
                             picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
@@ -1050,7 +1051,7 @@ namespace WinUIMusicPlayer.Utils
             string lastLevelFolderPath = directoryInfo.Name;
             try
             {
-                using (TagLib.File audioFile = TagLib.File.Create(file.Path))
+                using (TagLib.File audioFile = TagLib.File.Create(file.Path,ReadStyle.PictureLazy))
                 {
                     Tag tag = audioFile.Tag;
                     string title = "未知标题";
