@@ -30,10 +30,38 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
-        if (e.NewValue is byte[] bytes && bytes.Length > 0)
-            _ = ctrl.LoadBitmapAsync(bytes);
+
+        var newBytes = e.NewValue as byte[];
+
+        // 1. 重复校验：拦截完全相同的字节流
+        if (IsSameImageFast(ctrl._lastProcessedBytes, newBytes)) return;
+
+        ctrl._lastProcessedBytes = newBytes;
+
+        if (newBytes is { Length: > 0 })
+            _ = ctrl.LoadBitmapAsync(newBytes);
         else
             _ = ctrl.LoadDefaultCoverAsync();
+    }
+
+    private static bool IsSameImageFast(byte[]? oldBytes, byte[]? newBytes)
+    {
+        if (ReferenceEquals(oldBytes, newBytes)) return true;
+        if (oldBytes == null || newBytes == null || oldBytes.Length != newBytes.Length) return false;
+
+        // 小图全量比对
+        if (oldBytes.Length < 1024)
+        {
+            return System.Linq.Enumerable.SequenceEqual(oldBytes, newBytes);
+        }
+
+        // 大图抽样比对
+        int len = oldBytes.Length;
+        return oldBytes[0] == newBytes[0] &&
+               oldBytes[len - 1] == newBytes[len - 1] &&
+               oldBytes[len / 2] == newBytes[len / 2] &&
+               oldBytes[len / 4] == newBytes[len / 4] &&
+               oldBytes[len * 3 / 4] == newBytes[len * 3 / 4];
     }
 
     public static readonly DependencyProperty IsDarkProperty =
@@ -49,7 +77,15 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (AlbumArtControl)d;
-        _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
+        if (!ctrl._isResourcesCreated) return;
+
+        // 逻辑修正：无论 ImageBytes 是否有值，都重新触发加载
+        // 如果 LoadBitmapAsync 内部解码失败，它会自动调用 LoadDefaultCoverAsync
+        // 从而保证 Dark/Light 状态下的默认封面始终正确
+        if (ctrl.ImageBytes is { Length: > 0 })
+            _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
+        else
+            _ = ctrl.LoadDefaultCoverAsync();
     }
 
     public static readonly DependencyProperty MarginTopRatioProperty =
@@ -138,7 +174,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     // 淡入淡出驱动
     private DispatcherTimer? _fadeTimer;
     private DateTime _lastTick;
-
+    private const float HardMaxSize = 1536f;
+    // 记录上一次成功处理的字节数组特征
+    private byte[]? _lastProcessedBytes;
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
     public AlbumArtControl()
@@ -287,15 +325,27 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     // 每次只释放一个，给 GPU 留足够的缓冲帧
     private void FlushDisposeQueue()
     {
-        if (_disposeQueue.TryDequeue(out var bmp))
-            bmp.Dispose();
+        // 批量安全清理
+        while (_disposeQueue.TryDequeue(out var bmp))
+        {
+            // 只有当 bmp 不在当前显示层时才真正 Dispose
+            if (bmp != null && bmp != _currentBitmap && bmp != _incomingBitmap && bmp != _queuedBitmap)
+            {
+                bmp.Dispose();
+            }
+        }
     }
 
-    // ── 位图加载 ──────────────────────────────────────────────────────────
+    // ── 核心加载逻辑 ──────────────────────────────────────────────────────
 
     public async Task LoadBitmapAsync(byte[]? imageBytes)
     {
-        if (imageBytes == null || imageBytes.Length == 0) return;
+        // 如果数据为空，显示默认封面
+        if (imageBytes == null || imageBytes.Length == 0)
+        {
+            await LoadDefaultCoverAsync();
+            return;
+        }
 
         _loadCts?.Cancel();
         var cts = new CancellationTokenSource();
@@ -303,18 +353,18 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         try
         {
-            // 后台线程只做解码，不碰任何 CanvasDevice / CanvasBitmap
+            // 异步后台解码
             var (pixels, bmpW, bmpH) = await Task.Run(async () =>
             {
                 using var mem = new MemoryStream(imageBytes, writable: false);
                 using var ras = mem.AsRandomAccessStream();
                 var decoder = await BitmapDecoder.CreateAsync(ras);
 
-                const uint MaxDisplaySize = 1280;
                 uint srcW = decoder.PixelWidth;
                 uint srcH = decoder.PixelHeight;
-                float sc = Math.Min(1f, Math.Min((float)MaxDisplaySize / srcW,
-                                                  (float)MaxDisplaySize / srcH));
+
+                // 硬性 1536px 上限，锁定解码尺寸
+                float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                 uint dstW = Math.Max(1, (uint)(srcW * sc));
                 uint dstH = Math.Max(1, (uint)(srcH * sc));
 
@@ -323,12 +373,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
                 var pixelData = await decoder.GetPixelDataAsync(
                     BitmapPixelFormat.Rgba8,
                     BitmapAlphaMode.Premultiplied,
-                    new BitmapTransform
-                    {
-                        ScaledWidth = dstW,
-                        ScaledHeight = dstH,
-                        InterpolationMode = BitmapInterpolationMode.Fant
-                    },
+                    new BitmapTransform { ScaledWidth = dstW, ScaledHeight = dstH, InterpolationMode = BitmapInterpolationMode.Fant },
                     ExifOrientationMode.RespectExifOrientation,
                     ColorManagementMode.DoNotColorManage);
 
@@ -336,27 +381,28 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             }, cts.Token);
 
             cts.Token.ThrowIfCancellationRequested();
-
-            // CanvasBitmap 必须在 UI 线程 / CanvasDevice 线程创建
-            // 此处已回到 UI 线程（await 之后）
             if (canvas.Device == null) return;
 
+            // 创建 GPU 纹理
             var bmp = CanvasBitmap.CreateFromBytes(
                 canvas, pixels, (int)bmpW, (int)bmpH,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
 
+            // 显式释放 CPU 像素数据引用
+            pixels = null;
+
             EnqueueBitmap(bmp);
         }
-        catch (OperationCanceledException) { /* 正常取消 */ }
-        catch (Exception ex)
+        catch (OperationCanceledException) { }
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"LoadBitmap Error: {ex.Message}");
+            // 解码异常（如 3000px 坏图）时，清除记录并显示默认封面
+            _lastProcessedBytes = null;
             await LoadDefaultCoverAsync();
         }
         finally
         {
-            if (ReferenceEquals(_loadCts, cts))
-                _loadCts = null;
+            if (ReferenceEquals(_loadCts, cts)) _loadCts = null;
             cts.Dispose();
         }
     }
@@ -365,19 +411,21 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         try
         {
-            string path = IsDark
-                ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets\\default_cover_black.png")
-                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets\\default_cover_white.png");
+            if (canvas.Device == null) return;
+
+            // 既然不常用，我们直接从 Assets 实时加载
+            string fileName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
 
             var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
             using var stream = await file.OpenReadAsync();
 
-            if (canvas.Device == null) return;
-
+            // 此处加载的 Bitmap 会进入 EnqueueBitmap 逻辑
+            // 过渡完成后会被正常 Dispose，不占用长期显存
             var bmp = await CanvasBitmap.LoadAsync(canvas, stream);
             EnqueueBitmap(bmp);
         }
-        catch { }
+        catch { /* 忽略 IO 异常 */ }
     }
 
     // ── 绘制 ──────────────────────────────────────────────────────────────
