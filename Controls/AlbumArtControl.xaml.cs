@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Controls;
 
@@ -32,36 +33,12 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         if (!ctrl._isResourcesCreated) return;
 
         var newBytes = e.NewValue as byte[];
-
-        // 1. 重复校验：拦截完全相同的字节流
-        if (IsSameImageFast(ctrl._lastProcessedBytes, newBytes)) return;
-
-        ctrl._lastProcessedBytes = newBytes;
+        if (IsDuplicateAndUpdate(newBytes)) return;
 
         if (newBytes is { Length: > 0 })
             _ = ctrl.LoadBitmapAsync(newBytes);
         else
             _ = ctrl.LoadDefaultCoverAsync();
-    }
-
-    private static bool IsSameImageFast(byte[]? oldBytes, byte[]? newBytes)
-    {
-        if (ReferenceEquals(oldBytes, newBytes)) return true;
-        if (oldBytes == null || newBytes == null || oldBytes.Length != newBytes.Length) return false;
-
-        // 小图全量比对
-        if (oldBytes.Length < 1024)
-        {
-            return System.Linq.Enumerable.SequenceEqual(oldBytes, newBytes);
-        }
-
-        // 大图抽样比对
-        int len = oldBytes.Length;
-        return oldBytes[0] == newBytes[0] &&
-               oldBytes[len - 1] == newBytes[len - 1] &&
-               oldBytes[len / 2] == newBytes[len / 2] &&
-               oldBytes[len / 4] == newBytes[len / 4] &&
-               oldBytes[len * 3 / 4] == newBytes[len * 3 / 4];
     }
 
     public static readonly DependencyProperty IsDarkProperty =
@@ -79,9 +56,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
 
-        // 逻辑修正：无论 ImageBytes 是否有值，都重新触发加载
-        // 如果 LoadBitmapAsync 内部解码失败，它会自动调用 LoadDefaultCoverAsync
-        // 从而保证 Dark/Light 状态下的默认封面始终正确
+        // IsDark 变化时强制失效，让下次 ImageBytes 不命中去重
+        Invalidate();
+
         if (ctrl.ImageBytes is { Length: > 0 })
             _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
         else
@@ -175,8 +152,33 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private DispatcherTimer? _fadeTimer;
     private DateTime _lastTick;
     private const float HardMaxSize = 1536f;
-    // 记录上一次成功处理的字节数组特征
-    private byte[]? _lastProcessedBytes;
+    private static long _lastLength = -1;
+    private static int _lastHash;
+
+    public static bool IsDuplicateAndUpdate(byte[]? newBytes)
+    {
+        if (newBytes is not { Length: > 0 })
+        {
+            bool wasEmpty = _lastLength == 0;
+            _lastLength = 0;
+            _lastHash = 0;
+            return wasEmpty;
+        }
+
+        int hash = ToolUtils.ComputeFastHash(newBytes);
+        if (newBytes.Length == _lastLength && hash == _lastHash)
+            return true;
+
+        _lastLength = newBytes.Length;
+        _lastHash = hash;
+        return false;
+    }
+
+    public static void Invalidate()
+    {
+        _lastLength = -1;
+        _lastHash = 0;
+    }
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
     public AlbumArtControl()
@@ -397,7 +399,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         catch (Exception)
         {
             // 解码异常（如 3000px 坏图）时，清除记录并显示默认封面
-            _lastProcessedBytes = null;
+            Invalidate();
             await LoadDefaultCoverAsync();
         }
         finally

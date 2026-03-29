@@ -10,6 +10,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Behaviors
 {
@@ -18,7 +19,34 @@ namespace WinUIMusicPlayer.Behaviors
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
         private CancellationTokenSource _cts; // 用于取消正在进行的解码任务
-        private byte[] _lastProcessedBytes;
+        private static long _lastLength = -1;
+        private static int _lastHash;
+
+        public static bool IsDuplicateAndUpdate(byte[]? newBytes)
+        {
+            if (newBytes is not { Length: > 0 })
+            {
+                bool wasEmpty = _lastLength == 0;
+                _lastLength = 0;
+                _lastHash = 0;
+                return wasEmpty;
+            }
+
+            int hash = ToolUtils.ComputeFastHash(newBytes);
+            if (newBytes.Length == _lastLength && hash == _lastHash)
+                return true;
+
+            _lastLength = newBytes.Length;
+            _lastHash = hash;
+            return false;
+        }
+
+        public static void Invalidate()
+        {
+            _lastLength = -1;
+            _lastHash = 0;
+        }
+
         public byte[] ImageBytes
         {
             get => (byte[])GetValue(ImageBytesProperty);
@@ -34,16 +62,7 @@ namespace WinUIMusicPlayer.Behaviors
             if (d is FadeImageBehavior behavior)
             {
                 var newBytes = e.NewValue as byte[];
-
-                // --- 针对大图优化的快速比对逻辑 ---
-                if (IsSameImageFast(behavior._lastProcessedBytes, newBytes))
-                {
-                    return;
-                }
-
-                // 记录引用，用于下一次比对
-                behavior._lastProcessedBytes = newBytes;
-                // --------------------------------
+                if (IsDuplicateAndUpdate(newBytes)) return;
 
                 behavior._cts?.Cancel();
                 behavior._cts = new CancellationTokenSource();
@@ -61,39 +80,6 @@ namespace WinUIMusicPlayer.Behaviors
                 }
                 catch (OperationCanceledException) { }
             }
-        }
-
-        /// <summary>
-        /// 针对大字节数组优化的比对算法
-        /// </summary>
-        /// <summary>
-        /// 针对全尺寸（10px - 3000px）优化的快速比对算法
-        /// </summary>
-        private static bool IsSameImageFast(byte[] oldBytes, byte[] newBytes)
-        {
-            // 1. 引用比对 (最快)
-            if (ReferenceEquals(oldBytes, newBytes)) return true;
-
-            // 2. 基础元数据比对
-            if (oldBytes == null || newBytes == null) return false;
-            if (oldBytes.Length != newBytes.Length) return false;
-
-            // 3. 根据数据大小决定比对策略
-            // 如果图片非常小（比如小于 1KB，大约是 10-20px 的原始数据量）
-            // 直接全量比对最安全且极快。
-            if (oldBytes.Length < 1024)
-            {
-                return System.Linq.Enumerable.SequenceEqual(oldBytes, newBytes);
-            }
-
-            // 4. 大图抽样检查 (Sampling Check)
-            // 确保索引计算安全，且覆盖关键特征位
-            int len = oldBytes.Length;
-            return oldBytes[0] == newBytes[0] &&                   // 起始
-                   oldBytes[len - 1] == newBytes[len - 1] &&       // 结尾
-                   oldBytes[len / 2] == newBytes[len / 2] &&       // 中间
-                   oldBytes[len / 4] == newBytes[len / 4] &&       // 1/4
-                   oldBytes[len * 3 / 4] == newBytes[len * 3 / 4]; // 3/4
         }
 
         public Duration Duration
@@ -209,11 +195,8 @@ namespace WinUIMusicPlayer.Behaviors
 
         private void StopAndCleanup()
         {
-            if (_currentTransitionStoryboard != null)
-            {
-                _currentTransitionStoryboard.Stop();
-                _currentTransitionStoryboard = null;
-            }
+            _currentTransitionStoryboard?.Stop();
+            _currentTransitionStoryboard = null;
 
             if (_tempOverlayImage != null)
             {

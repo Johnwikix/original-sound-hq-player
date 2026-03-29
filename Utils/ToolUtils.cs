@@ -1375,5 +1375,18 @@ namespace WinUIMusicPlayer.Utils
                 _ => "ListLoop",
             };
         }
+
+        public static int ComputeFastHash(byte[] b)
+        {
+            int len = b.Length;
+            var hc = new HashCode();
+            hc.Add(b[0]);
+            hc.Add(b[len / 4]);
+            hc.Add(b[len / 2]);
+            hc.Add(b[len * 3 / 4]);
+            hc.Add(b[len - 1]);
+            hc.Add(len);
+            return hc.ToHashCode();
+        }
     }
 }

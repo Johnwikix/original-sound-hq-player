@@ -427,24 +427,28 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (LastLyricIndex == index)
                 return;
-            TimeSpan duration = TimeSpan.Zero;
+
             if (index >= 0 && index < UILyrics.Count)
             {
                 int nextIndex = index + 1;
                 if (nextIndex < UILyrics.Count)
                 {
-                    TimeSpan currentTime = UILyrics[index].Time;
-                    TimeSpan nextTime = UILyrics[nextIndex].Time;
-                    LyricsDurationTime = nextTime.Subtract(currentTime);
+                    LyricsDurationTime = UILyrics[nextIndex].Time - UILyrics[index].Time;
                 }
             }
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 try
                 {
-                    for (int i = 0; i < UILyrics.Count; i++)
+                    // O(1)：只改变前后两个索引，不遍历全部
+                    if (LastLyricIndex >= 0 && LastLyricIndex < UILyrics.Count)
                     {
-                        UILyrics[i].IsCurrent = (i == index);
+                        UILyrics[LastLyricIndex].IsCurrent = false;
+                    }
+                    if (index >= 0 && index < UILyrics.Count)
+                    {
+                        UILyrics[index].IsCurrent = true;
                     }
                     LastLyricIndex = index;
                 }
@@ -724,7 +728,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             // 建议：在 UI 线程操作 ObservableCollection
             App.MainWindow.DispatcherQueue.TryEnqueue(() => {
-                _ = PlayListSongs.ReplaceAllAsync(query);
+                _ = PlayListSongs.ReplaceAllAsync(results);
             });
         }
 
