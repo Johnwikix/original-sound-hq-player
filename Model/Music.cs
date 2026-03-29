@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using System;
 using System.Linq;
@@ -38,6 +39,7 @@ namespace WinUIMusicPlayer.Model
         public int PlayCount { get; set => SetProperty(ref field, value); } = 0;
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
+        public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 

@@ -1053,7 +1053,7 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async Task<Music> updateMusic(Music music)
+        private async Task<Music> UpdateMusic(Music music)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             Music newMusic = await ToolUtils.GetMusicInfo(storageFile);
@@ -1193,7 +1193,7 @@ namespace WinUIMusicPlayer.Services
                 await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
-                    return await updateMusic(music);
+                    return await UpdateMusic(music);
                 }
                 finally
                 {
@@ -1401,7 +1401,7 @@ namespace WinUIMusicPlayer.Services
                 await _rescanfolderSemaphore.WaitAsync();
                 try
                 {
-                    return await updateMusic(music);
+                    return await UpdateMusic(music);
                 }
                 finally
                 {
