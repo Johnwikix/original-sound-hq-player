@@ -138,7 +138,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarAlbum(string Album)
         {
             ViewModel.AppViewModel.PageType = "album";
-            ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.SongsSource.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
             if (ContentFrame?.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarArtist(string artist)
         {
             ViewModel.AppViewModel.PageType = "artist";
-            ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
+            ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)
@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.View
                     _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
-                    App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
+                    App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
                 }
                 else
                 {

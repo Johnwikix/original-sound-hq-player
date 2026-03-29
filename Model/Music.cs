@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Model
                 case "PlayListSongs":
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().PlayListSongs.Select(x => x.Music));
                     break;
-                case "AllSongsView":
+                case "SongsSourceView":
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ListSongs);
                     break;
                 case "AlbumSongsView":
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Model
             IsFavorite = !IsFavorite;
             if (IsFavorite)
             {
-                Order = App.Services.GetRequiredService<AppViewModel>().AllSongs
+                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource
                                          .Where(m => m.IsFavorite)
                                          .OrderByDescending(m => m.Order)
                                          .FirstOrDefault()?.Order + 1 ?? 1;
@@ -97,7 +97,7 @@ namespace WinUIMusicPlayer.Model
             if (!IsFavorite)
             {
                 IsFavorite = true;
-                Order = App.Services.GetRequiredService<AppViewModel>().AllSongs
+                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource
                                          .Where(m => m.IsFavorite)
                                          .OrderByDescending(m => m.Order)
                                          .FirstOrDefault()?.Order + 1 ?? 1;
@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.Model
         public async void Remove() 
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);
-            App.Services.GetRequiredService<AppViewModel>().RemoveFromAllSongs(this);
+            App.Services.GetRequiredService<AppViewModel>().RemoveFromSongsSource(this);
             App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
             App.Services.GetRequiredService<AppViewModel>().RemoveFromPlayListSongs(this);
         }

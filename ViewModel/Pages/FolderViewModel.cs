@@ -112,14 +112,14 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task RescanFolder()
         {
             await AppViewModel.RescanFolder(SelectedItem);
-            App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
+            App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
             //App.MainWindow?.UpdateMusicList();
         }
 
         [RelayCommand]
         private void Play()
         {
-            var folders = AppViewModel.AllSongs.AsValueEnumerable()
+            var folders = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.LastLevelFolderPath).ToList();
             if (folders is not null && folders.Count > 0)
@@ -134,7 +134,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void AddToFavour()
         {
-            var folders = AppViewModel.AllSongs.AsValueEnumerable()
+            var folders = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.LastLevelFolderPath);
             foreach (var folder in folders)
@@ -146,7 +146,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void AddToPlayList(int playListId)
         {
-            var folders = AppViewModel.AllSongs
+            var folders = AppViewModel.SongsSource
                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.LastLevelFolderPath);
             _ = _musicDatabaseService.AddMusicListToPlayList(folders, playListId);
@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
-            var folders = AppViewModel.AllSongs
+            var folders = AppViewModel.SongsSource
                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.LastLevelFolderPath);
             await AppViewModel.TransmitFileToUsb(folders, usbDevice);

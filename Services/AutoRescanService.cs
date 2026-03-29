@@ -127,7 +127,7 @@ namespace WinUIMusicPlayer.Services
                     //{
                     //    App.MainWindow.UpdateMusicList();
                     //});
-                    App.Services.GetRequiredService<AppViewModel>().RefreshAllSongs();
+                    App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
                 }
             }
             catch (Exception ex)

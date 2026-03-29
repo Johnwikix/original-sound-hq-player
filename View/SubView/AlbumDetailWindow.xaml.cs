@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             this.InitializeComponent();
             MusicDetail = music;
-            AlbumMusics = App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().Where(m => m.Album == MusicDetail.Album).ToList();
+            AlbumMusics = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == MusicDetail.Album).ToList();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AlbumDetailTitleBar);
             SetWindow();

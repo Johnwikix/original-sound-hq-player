@@ -60,7 +60,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind PlayCommand, Mode=OneWay}"
-                            CommandParameter="AllSongsView"
+                            CommandParameter="SongsSourceView"
                             CornerRadius="5"
                             Style="{StaticResource PlayHoverButtonStyle}">
                             <Grid Width="40" Height="40">

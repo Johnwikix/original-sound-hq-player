@@ -110,16 +110,16 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_parentPage is not null && AppViewModel.CurrentFolderObj is not null)
             {
-                var albums = AppViewModel.AllSongs.AsValueEnumerable()
+                var albums = AppViewModel.SongsSource.AsValueEnumerable()
                     .Where(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)
                     .Select(music => music.Album)
                     .Distinct()
                     .Count();
-                var authors = AppViewModel.AllSongs.AsValueEnumerable().Where(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)
+                var authors = AppViewModel.SongsSource.AsValueEnumerable().Where(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)
                     .Select(music => music.Author)
                     .Distinct()
                     .Count();
-                SecondTitle = $"{AppViewModel.AllSongs.AsValueEnumerable().Count(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
+                SecondTitle = $"{AppViewModel.SongsSource.AsValueEnumerable().Count(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
                 ThirdTitle = ToolUtils.GetString("Folder");                
             }
         }
@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (AppViewModel.CurrentPlayingList is not null)
                 {
-                    var selectedMusic = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(music =>
+                    var selectedMusic = AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(music =>
                         music.Id == AppViewModel.CurrentPlayingMusic.Id);
 
                     if (selectedMusic is not null)
@@ -190,7 +190,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     if (ToolUtils.DeleteFileFromDisk(item.Path))
                     {
-                        AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                        AppViewModel.SongsSource.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                     }
                 }
             }
@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                 {
-                    AppViewModel.AllSongs.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                    AppViewModel.SongsSource.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
                 }
             }
         }

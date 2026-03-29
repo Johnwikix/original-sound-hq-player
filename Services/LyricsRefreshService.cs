@@ -66,7 +66,7 @@ namespace WinUIMusicPlayer.Services
         {
             CancelPreviousLyricsTask();
             Lyrics.Clear();
-            var (lrcContent,transLrcStr) = GetLyricsContentFromLrc(AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic?.Id)?.Path);
+            var (lrcContent,transLrcStr) = GetLyricsContentFromLrc(AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic?.Id)?.Path);
             var lyricsContent = await ParseLrcLyrics(lrcContent, transLrcStr);
             if (lyricsContent is not null)
             {
@@ -127,7 +127,7 @@ namespace WinUIMusicPlayer.Services
 
             // 1. 始终增加播放计数 (内存中)
             currentMusic.PlayCount++;
-            //var songInMemory = AppViewModel.AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Id == currentMusic.Id);
+            //var songInMemory = AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Id == currentMusic.Id);
             //songInMemory?.PlayCount = currentMusic.PlayCount;
 
             // 2. 确定歌词内容

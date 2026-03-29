@@ -37,10 +37,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var folderList = await _musicDatabaseService.GetFolders();
                 FolderList.Clear();
-                Debug.WriteLine(AppViewModel.AllSongs.AsValueEnumerable().Count());
+                Debug.WriteLine(AppViewModel.SongsSource.AsValueEnumerable().Count());
                 foreach (var folder in folderList)
                 {
-                    folder.SongCount = AppViewModel.AllSongs.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
+                    folder.SongCount = AppViewModel.SongsSource.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
                     FolderList.Add(folder);
                 }
             }
@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (folder is not null)
             {
                 await Task.Run(() => _musicDatabaseService.CheckFolderBeforeAdd(folder));
-                await AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+                await AppViewModel.SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
                 await LoadFoldersAsync();
                 //App.MainWindow?.UpdateMusicList();
             }
@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task RemoveFolderButton_Click(int folderId)
         {
             await Task.Run(() => _musicDatabaseService.RemoveFolder(folderId));
-            await AppViewModel.AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+            await AppViewModel.SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
             await LoadFoldersAsync();
             //App.MainWindow?.UpdateMusicList();
         }

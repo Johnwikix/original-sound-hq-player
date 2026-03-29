@@ -87,7 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private CancellationTokenSource? SearchCts { get; set;  }
-        public BulkObservableCollection<Music> AllSongs { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> SongsSource { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
@@ -315,7 +315,7 @@ namespace WinUIMusicPlayer.ViewModel
             _musicDatabaseService = musicDatabaseService;  
             SystemMediaControlsService = systemMediaControlsService;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
-            AllSongs.CollectionChanged += AllSongs_CollectionChanged;
+            SongsSource.CollectionChanged += SongsSource_CollectionChanged;
             ProgressTimer = new System.Timers.Timer(200);
             ProgressTimer.Elapsed += ProgressTimer_Elapsed;
         }
@@ -462,7 +462,7 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = newVolume;
         }
 
-        private void AllSongs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void SongsSource_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (IsInitialized) {
                 RefreshDataSource();
@@ -490,7 +490,7 @@ namespace WinUIMusicPlayer.ViewModel
         SongViewType viewType,
         Func<Music, bool>? filterPredicate = null)
         {
-            var query = AllSongs.AsEnumerable();
+            var query = SongsSource.AsEnumerable();
             // 2. 应用外部传入的谓词 (如 s => s.Album == CurrentAlbumObj.Album)
             if (filterPredicate != null)            {
                 query = query.Where(filterPredicate);
@@ -552,10 +552,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
         {
-            IEnumerable<Music> filteredSource = AllSongs;
+            IEnumerable<Music> filteredSource = SongsSource;
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                filteredSource = AllSongs.Where(m =>
+                filteredSource = SongsSource.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
@@ -579,8 +579,8 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 var filteredSource = string.IsNullOrWhiteSpace(SearchText)
-                                        ? AllSongs
-                                        : AllSongs.Where(m =>
+                                        ? SongsSource
+                                        : SongsSource.Where(m =>
                                             (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                                             (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
 
@@ -687,7 +687,7 @@ namespace WinUIMusicPlayer.ViewModel
             var query = AppData.AllPlayListMusics
                         .Where(plm => plm.PlayListId == CurrentPlayListId)
                         .Join(
-                            AllSongs,
+                            SongsSource,
                             plm => plm.MusicId,
                             m => m.Id,
                             (plm, m) => new PlayListMusicItem
@@ -805,15 +805,15 @@ namespace WinUIMusicPlayer.ViewModel
             FavoriteSongs.Remove(music);
         }
 
-        public void RefreshAllSongs() {
+        public void RefreshSongsSource() {
             App.MainWindow.DispatcherQueue.TryEnqueue(async () => {
-                _ = AllSongs.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+                _ = SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
             });
         }
 
-        public void RemoveFromAllSongs(Music music)
+        public void RemoveFromSongsSource(Music music)
         {
-            AllSongs.Remove(music);
+            SongsSource.Remove(music);
         }
 
         public void RemoveFromPlayListSongs(Music music)
@@ -843,7 +843,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                foreach (var music in AllSongs)
+                foreach (var music in SongsSource)
                 {
                     music.IsExistOnDevice = 0;
                 }
@@ -855,7 +855,7 @@ namespace WinUIMusicPlayer.ViewModel
             var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
                             .GroupBy(u => u.Title)
                             .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-            foreach (var music in AllSongs)
+            foreach (var music in SongsSource)
             {
                 music.IsExistOnDevice = 0;
 
@@ -883,7 +883,7 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-                    //Music? music = AllSongs.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
+                    //Music? music = SongsSource.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
                     item.Lyrics = lyrics;
                     item.TranslatedLyrics = transLrc;
                     await _musicDatabaseService.UpdateMusicInfo(item);

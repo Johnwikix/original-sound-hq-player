@@ -144,7 +144,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else if (type == "folder")
                     {
-                        var allSongList = App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath);
+                        var allSongList = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.LastLevelFolderPath == item.LastLevelFolderPath);
                         item.IsExistOnDevice = 0;
                         foreach (var songs in allSongList)
                         {
@@ -1273,7 +1273,7 @@ namespace WinUIMusicPlayer.Utils
                 if (!line.StartsWith("#"))
                 {
                     Debug.WriteLine(Path.GetFileName(line));
-                    Music? music = App.Services.GetRequiredService<AppViewModel>().AllSongs.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
+                    Music? music = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
                     if (music is not null)
                     {
                         await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicToPlayList(playListId, music.Id);

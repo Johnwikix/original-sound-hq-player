@@ -106,7 +106,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         [RelayCommand]
         private void Play() {
-            var albums = AppViewModel.AllSongs.AsValueEnumerable()
+            var albums = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album,StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber).ToList();
             if (albums is not null &&albums.Count > 0)
@@ -121,7 +121,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void AddToFavour()
         {
-            var albums = AppViewModel.AllSongs.AsValueEnumerable()
+            var albums = AppViewModel.SongsSource.AsValueEnumerable()
                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                .OrderByDescending(m => m.TrackNumber);
             foreach (var album in albums) {
@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void AddToPlayList(int playListId)
         {
-            var albums = AppViewModel.AllSongs
+            var albums = AppViewModel.SongsSource
               .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
               .OrderBy(m => m.TrackNumber);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
@@ -146,7 +146,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
-            var albums = AppViewModel.AllSongs
+            var albums = AppViewModel.SongsSource
                 .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber);
             await AppViewModel.TransmitFileToUsb(albums, usbDevice);
