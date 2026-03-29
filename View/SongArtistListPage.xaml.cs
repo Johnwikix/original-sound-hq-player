@@ -14,6 +14,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -142,7 +143,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (args.Item is Music music)
                 {
-                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                    AlbumCoverBehavior.OnMusicUnloaded(music.Id);
                 }
             }
         }

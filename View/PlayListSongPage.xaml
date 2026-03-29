@@ -3,10 +3,12 @@
     x:Class="WinUIMusicPlayer.View.PlayListSongPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -54,8 +56,11 @@
                             VerticalAlignment="Center"
                             CacheMode="BitmapCache"
                             Canvas.ZIndex="1"
-                            Source="{x:Bind ViewModel.CurrentMusicObject, Converter={StaticResource AlbumArtConverter}, Mode=OneWay}"
-                            Stretch="UniformToFill" />
+                            Stretch="UniformToFill">
+                            <interactivity:Interaction.Behaviors>
+                                <behaviors:AlbumCoverBehavior Music="{x:Bind ViewModel.CurrentMusicObject, Mode=OneWay}" />
+                            </interactivity:Interaction.Behaviors>
+                        </Image>
                     </Grid>
                     <Grid
                         Width="150"
@@ -214,13 +219,10 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         Canvas.ZIndex="1"
-                                        Source="{x:Bind Music, Converter={StaticResource AlbumArtConverter}}"
                                         Stretch="UniformToFill">
-                                        <Image.Transitions>
-                                            <TransitionCollection>
-                                                <ContentThemeTransition />
-                                            </TransitionCollection>
-                                        </Image.Transitions>
+                                        <interactivity:Interaction.Behaviors>
+                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                        </interactivity:Interaction.Behaviors>
                                     </Image>
                                     <Grid
                                         Width="40"

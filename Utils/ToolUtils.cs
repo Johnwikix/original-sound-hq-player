@@ -699,170 +699,130 @@ namespace WinUIMusicPlayer.Utils
             App.Services.GetRequiredService<AppViewModel>().RefreshUsbDeviceMusicList();
         }
 
-        public static async Task LoadImageAsync(Music music, BitmapImage bitmap, CancellationToken ct)
-        {
-            await Task.Run(async () =>
-            {
-                try
-                {
-                    if (ct.IsCancellationRequested) return;
+        //public static async Task LoadImageAsync(Music music, BitmapImage bitmap, CancellationToken ct)
+        //{
+        //    await Task.Run(async () =>
+        //    {
+        //        try
+        //        {
+        //            if (ct.IsCancellationRequested) return;
 
-                    // ===== 磁盘缓存读取 =====
-                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
-                                && !string.IsNullOrEmpty(music.ImageHash))
-                    {
-                        string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
-                        string cachePath = Path.Combine(cacheFolder, music.ImageHash + ".png");
+        //            // ===== 磁盘缓存读取 =====
+        //            if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
+        //                        && !string.IsNullOrEmpty(music.ImageHash))
+        //            {
+        //                string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+        //                string cachePath = Path.Combine(cacheFolder, music.ImageHash + ".png");
 
-                        if (System.IO.File.Exists(cachePath))
-                        {
-                            try
-                            {
-                                var cacheBytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
-                                if (!ct.IsCancellationRequested)
-                                {
-                                    await LoadFromCacheBytes(cacheBytes, music.ImageHash, bitmap, ct);
-                                    return;
-                                }
-                            }
-                            catch { /* 缓存损坏，继续原始流程 */ }
-                        }
-                    }
-                    // ===== 磁盘缓存读取结束 =====
+        //                if (System.IO.File.Exists(cachePath))
+        //                {
+        //                    try
+        //                    {
+        //                        var cacheBytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
+        //                        if (!ct.IsCancellationRequested)
+        //                        {
+        //                            await LoadFromCacheBytes(cacheBytes, music.ImageHash, bitmap, ct);
+        //                            return;
+        //                        }
+        //                    }
+        //                    catch {
+        //                    }
+        //                }
+        //            }
+        //            // ===== 磁盘缓存读取结束 =====
 
-                    byte[]? picture = null;
-                    if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                        picture = res?.Pictures?.AsValueEnumerable().Count() > 0
-                            ? res?.Pictures[0]?.ImageData : null;
-                        if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
-                        {
-                            await DecodePicture(picture, music, bitmap, ct);
-                        }
-                    }
-                    else
-                    {
-                        using (var file = TagLib.File.Create(music.Path,ReadStyle.None))
-                        {
-                            if (ct.IsCancellationRequested) return;
-                            picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
-                            if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
-                            {
-                                await DecodePicture(picture, music, bitmap, ct);
-                            }
-                        }
-                    }
-                    if (!ct.IsCancellationRequested)
-                    {
-                        await GetPicFromNet(picture, music, bitmap, ct);
-                    }
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception)
-                {
-                    try
-                    {
-                        byte[]? picture = null;
-                        Track track = new(music.Path);
-                        picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
-                            ? track?.EmbeddedPictures[0]?.PictureData : null;
-                        if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
-                        {
-                            await DecodePicture(picture, music, bitmap, ct);
-                        }
-                        if (!ct.IsCancellationRequested)
-                        {
-                            await GetPicFromNet(picture, music, bitmap, ct);
-                        }
-                    }
-                    catch (OperationCanceledException) { }
-                    catch
-                    {
-                        try { await GetPicFromNet(null, music, bitmap, ct); }
-                        catch { }
-                    }
-                }
-            }, ct);
-        }
+        //            byte[]? picture = null;
+        //            if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
+        //            {
+        //                var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
+        //                picture = res?.Pictures?.AsValueEnumerable().Count() > 0
+        //                    ? res?.Pictures[0]?.ImageData : null;
+        //                if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
+        //                {
+        //                    await DecodePicture(picture, music, bitmap, ct);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                using (var file = TagLib.File.Create(music.Path,ReadStyle.None))
+        //                {
+        //                    if (ct.IsCancellationRequested) return;
+        //                    picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
+        //                    if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
+        //                    {
+        //                        await DecodePicture(picture, music, bitmap, ct);
+        //                    }
+        //                }
+        //            }
+        //            if (!ct.IsCancellationRequested)
+        //            {
+        //                await GetPicFromNet(picture, music, bitmap, ct);
+        //            }
+        //        }
+        //        catch (OperationCanceledException) { }
+        //        catch (Exception)
+        //        {
+        //            try
+        //            {
+        //                byte[]? picture = null;
+        //                Track track = new(music.Path);
+        //                picture = track?.EmbeddedPictures.AsValueEnumerable().Count() > 0
+        //                    ? track?.EmbeddedPictures[0]?.PictureData : null;
+        //                if (picture is not null && picture.Length > 0 && !ct.IsCancellationRequested)
+        //                {
+        //                    await DecodePicture(picture, music, bitmap, ct);
+        //                }
+        //                if (!ct.IsCancellationRequested)
+        //                {
+        //                    await GetPicFromNet(picture, music, bitmap, ct);
+        //                }
+        //            }
+        //            catch (OperationCanceledException) { }
+        //            catch
+        //            {
+        //                try { await GetPicFromNet(null, music, bitmap, ct); }
+        //                catch { }
+        //            }
+        //        }
+        //    }, ct);
+        //}
 
-        /// <summary>
-        /// 直接从缓存字节加载到BitmapImage（无需缩放，缓存已是目标尺寸）
-        /// </summary>
-        private static async Task LoadFromCacheBytes(byte[] cacheBytes, string imageHash, BitmapImage bitmap, CancellationToken ct)
-        {
-            await Task.Run(async () =>
-            {
-                try
-                {
-                    var outputStream = new InMemoryRandomAccessStream();
-                    await outputStream.WriteAsync(cacheBytes.AsBuffer());
-                    outputStream.Seek(0);
+        ///// <summary>
+        ///// 直接从缓存字节加载到BitmapImage（无需缩放，缓存已是目标尺寸）
+        ///// </summary>
+        //private static async Task LoadFromCacheBytes(byte[] cacheBytes, string imageHash, BitmapImage bitmap, CancellationToken ct)
+        //{
+        //    await Task.Run(async () =>
+        //    {
+        //        try
+        //        {
+        //            var outputStream = new InMemoryRandomAccessStream();
+        //            await outputStream.WriteAsync(cacheBytes.AsBuffer());
+        //            outputStream.Seek(0);
 
-                    if (ct.IsCancellationRequested)
-                    {
-                        outputStream.Dispose();
-                        return;
-                    }
+        //            if (ct.IsCancellationRequested)
+        //            {
+        //                outputStream.Dispose();
+        //                return;
+        //            }
 
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
-                        try
-                        {
-                            await bitmap.SetSourceAsync(outputStream);
-                            if (!AppData.UnknownAlbums.Contains(imageHash) && App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled)
-                            {
-                                AppData.albumCoverCache.TryAdd(imageHash, bitmap);
-                            }
-                        }
-                        finally { outputStream.Dispose(); }
-                    });
-                }
-                catch (OperationCanceledException) { }
-            }, ct);
-        }
-
-        private static async Task GetPicFromNet(byte[]? picture, Music music, BitmapImage bitmap, CancellationToken ct)
-        {
-            try
-            {
-                if (picture is null || picture.Length == 0)
-                {
-                    if (!Directory.Exists(AppSettings.MusicCoverCache))
-                    {
-                        Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                    }
-                    if (ct.IsCancellationRequested) return;
-                    string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                    if (System.IO.File.Exists(filePath))
-                    {
-                        picture = System.IO.File.ReadAllBytes(filePath);
-                    }
-                    else if (!AppData.UnknownAlbums.Contains(music.Album))
-                    {
-                        if (AppSettings.IsAutoLyricsEnabled)
-                        {
-                            picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, ct);
-                            if (picture is not null && picture.Length > 0)
-                            {
-                                System.IO.File.WriteAllBytes(filePath, picture);
-                            }
-                        }
-                    }
-                    if (picture is not null && picture.Length > 0)
-                    {
-                        if (ct.IsCancellationRequested) return;
-                        await DecodePicture(picture, music, bitmap, ct);
-                    }
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch { }
-        }
+        //            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+        //            {
+        //                if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
+        //                try
+        //                {
+        //                    await bitmap.SetSourceAsync(outputStream);
+        //                    if (!AppData.UnknownAlbums.Contains(imageHash) && App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled)
+        //                    {
+        //                        AppData.albumCoverCache.TryAdd(imageHash, bitmap);
+        //                    }
+        //                }
+        //                finally { outputStream.Dispose(); }
+        //            });
+        //        }
+        //        catch (OperationCanceledException) { }
+        //    }, ct);
+        //}        
 
         private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)
         {
@@ -897,99 +857,99 @@ namespace WinUIMusicPlayer.Utils
         /// <summary>
         /// 解码图片，缩放到CoverSize，设置到BitmapImage，并保存磁盘缓存
         /// </summary>
-        private static async Task DecodePicture(
-            byte[] picture, Music music, BitmapImage bitmap, CancellationToken ct)
-        {
-            await Task.Run(async () =>
-            {
-                SoftwareBitmap? softwareBitmap = null;
-                try
-                {
-                    // 计算原始图片 hash，作为磁盘缓存文件名和 music.ImageHash
-                    string imageHash = Convert.ToHexString(
-                        System.Security.Cryptography.MD5.HashData(picture));
+        //private static async Task DecodePicture(
+        //    byte[] picture, Music music, BitmapImage bitmap, CancellationToken ct)
+        //{
+        //    await Task.Run(async () =>
+        //    {
+        //        SoftwareBitmap? softwareBitmap = null;
+        //        try
+        //        {
+        //            // 计算原始图片 hash，作为磁盘缓存文件名和 music.ImageHash
+        //            string imageHash = Convert.ToHexString(
+        //                System.Security.Cryptography.MD5.HashData(picture));
 
-                    using var stream = new InMemoryRandomAccessStream();
-                    await stream.WriteAsync(picture.AsBuffer());
-                    stream.Seek(0);
-                    if (ct.IsCancellationRequested) return;
+        //            using var stream = new InMemoryRandomAccessStream();
+        //            await stream.WriteAsync(picture.AsBuffer());
+        //            stream.Seek(0);
+        //            if (ct.IsCancellationRequested) return;
 
-                    var decoder = await BitmapDecoder.CreateAsync(stream);
-                    double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
-                    uint newWidth = (uint)AppSettings.CoverSize;
-                    uint newHeight = (uint)(newWidth / aspectRatio);
+        //            var decoder = await BitmapDecoder.CreateAsync(stream);
+        //            double aspectRatio = (double)decoder.PixelWidth / decoder.PixelHeight;
+        //            uint newWidth = (uint)AppSettings.CoverSize;
+        //            uint newHeight = (uint)(newWidth / aspectRatio);
 
-                    softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                        BitmapPixelFormat.Bgra8,
-                        BitmapAlphaMode.Premultiplied,
-                        new BitmapTransform
-                        {
-                            ScaledWidth = newWidth,
-                            ScaledHeight = newHeight,
-                            InterpolationMode = BitmapInterpolationMode.Fant
-                        },
-                        ExifOrientationMode.RespectExifOrientation,
-                        ColorManagementMode.DoNotColorManage);
+        //            softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+        //                BitmapPixelFormat.Bgra8,
+        //                BitmapAlphaMode.Premultiplied,
+        //                new BitmapTransform
+        //                {
+        //                    ScaledWidth = newWidth,
+        //                    ScaledHeight = newHeight,
+        //                    InterpolationMode = BitmapInterpolationMode.Fant
+        //                },
+        //                ExifOrientationMode.RespectExifOrientation,
+        //                ColorManagementMode.DoNotColorManage);
 
-                    if (ct.IsCancellationRequested) return;
+        //            if (ct.IsCancellationRequested) return;
 
-                    var outputStream = new InMemoryRandomAccessStream();
-                    var encoder = await BitmapEncoder.CreateAsync(
-                        BitmapEncoder.PngEncoderId, outputStream);
-                    encoder.SetSoftwareBitmap(softwareBitmap);
-                    await encoder.FlushAsync();
-                    outputStream.Seek(0);
+        //            var outputStream = new InMemoryRandomAccessStream();
+        //            var encoder = await BitmapEncoder.CreateAsync(
+        //                BitmapEncoder.PngEncoderId, outputStream);
+        //            encoder.SetSoftwareBitmap(softwareBitmap);
+        //            await encoder.FlushAsync();
+        //            outputStream.Seek(0);
 
-                    if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
+        //            if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
 
-                    // ===== 保存磁盘缓存 =====
-                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
-                    {
-                        try
-                        {
-                            string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
-                            Directory.CreateDirectory(cacheFolder);
-                            string cachePath = Path.Combine(cacheFolder, imageHash + ".png");
+        //            // ===== 保存磁盘缓存 =====
+        //            if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
+        //            {
+        //                try
+        //                {
+        //                    string cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+        //                    Directory.CreateDirectory(cacheFolder);
+        //                    string cachePath = Path.Combine(cacheFolder, imageHash + ".png");
 
-                            if (!System.IO.File.Exists(cachePath)) // 同 hash 已存在则跳过写入
-                            {
-                                outputStream.Seek(0);
-                                var buffer = new byte[outputStream.Size];
-                                await outputStream.AsStream().ReadExactlyAsync(buffer, 0, buffer.Length, ct);
-                                await System.IO.File.WriteAllBytesAsync(cachePath, buffer, ct);
-                            }
-                            outputStream.Seek(0);
-                        }
-                        catch { /* 缓存写入失败不影响主流程 */ }
-                    }
-                    // ===== 磁盘缓存保存结束 =====
+        //                    if (!System.IO.File.Exists(cachePath)) // 同 hash 已存在则跳过写入
+        //                    {
+        //                        outputStream.Seek(0);
+        //                        var buffer = new byte[outputStream.Size];
+        //                        await outputStream.AsStream().ReadExactlyAsync(buffer, 0, buffer.Length, ct);
+        //                        await System.IO.File.WriteAllBytesAsync(cachePath, buffer, ct);
+        //                    }
+        //                    outputStream.Seek(0);
+        //                }
+        //                catch { /* 缓存写入失败不影响主流程 */ }
+        //            }
+        //            // ===== 磁盘缓存保存结束 =====
 
-                    App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
-                        try
-                        {
-                            await bitmap.SetSourceAsync(outputStream);
+        //            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+        //            {
+        //                if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
+        //                try
+        //                {
+        //                    await bitmap.SetSourceAsync(outputStream);
 
-                            music.ImageHash = imageHash;
+        //                    music.ImageHash = imageHash;
 
-                            if (App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled
-                                && !AppData.UnknownAlbums.Contains(music.Album))
-                            {
-                                AppData.albumCoverCache.TryAdd(imageHash, bitmap);
-                            }
+        //                    if (App.Services.GetRequiredService<AppViewModel>().IsCoverCacheEnabled
+        //                        && !AppData.UnknownAlbums.Contains(music.Album))
+        //                    {
+        //                        AppData.albumCoverCache.TryAdd(imageHash, bitmap);
+        //                    }
 
-                            await App.Services
-                                .GetRequiredService<MusicDatabaseService>()
-                                .UpdateMusicInfo(music);
-                        }
-                        finally { outputStream.Dispose(); }
-                    });
-                }
-                catch (OperationCanceledException) { }
-                finally { softwareBitmap?.Dispose(); }
-            }, ct);
-        }
+        //                    await App.Services
+        //                        .GetRequiredService<MusicDatabaseService>()
+        //                        .UpdateMusicInfo(music);
+        //                }
+        //                finally { outputStream.Dispose(); }
+        //            });
+        //        }
+        //        catch (OperationCanceledException) { }
+        //        finally { softwareBitmap?.Dispose(); }
+        //    }, ct);
+        //}
 
         public static async Task<(string,string)> GetLyricsFromNet(Music musicDetail)
         {

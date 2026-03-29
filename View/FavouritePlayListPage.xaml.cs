@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -122,7 +123,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (args.Item is Music music)
                 {
-                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                    AlbumCoverBehavior.OnMusicUnloaded(music.Id);
                 }
             }
         }

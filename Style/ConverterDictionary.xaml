@@ -31,7 +31,7 @@
     <converters:HideNavigationViewIconConverter x:Key="HideNavigationViewIconConverter" />
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-    <converters:AlbumArtConverter x:Key="AlbumArtConverter" />
+    <!--<converters:AlbumArtConverter x:Key="AlbumArtConverter" />-->
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:TextAlignmentToHorizontalAlignmentConverter x:Key="TextAlignmentToHorizontalAlignmentConverter" />
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />

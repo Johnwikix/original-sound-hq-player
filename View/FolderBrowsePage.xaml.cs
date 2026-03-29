@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Converters;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -51,7 +52,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (args.Item is Music music)
                 {
-                    AlbumArtConverter.OnMusicUnloaded(music.Id);
+                    AlbumCoverBehavior.OnMusicUnloaded(music.Id);
                 }
             }
         }
