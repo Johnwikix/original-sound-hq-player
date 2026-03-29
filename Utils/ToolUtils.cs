@@ -32,6 +32,7 @@ using Windows.Storage.Streams;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
@@ -333,11 +334,15 @@ namespace WinUIMusicPlayer.Utils
                 }
                 else
                 {
-                    using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
+                    picture = AudioCoverReader.ReadCover(music.Path);
+                    if(picture is null || picture.Length == 0)
                     {
-                        var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
-                        picture = pic?.Data?.Data;
-                    }
+                        using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
+                        {
+                            var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
+                            picture = pic?.Data?.Data;
+                        }
+                    }                    
                 }
                 if (picture is null || picture.Length == 0)
                 {
