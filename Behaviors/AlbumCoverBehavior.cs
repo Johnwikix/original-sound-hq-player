@@ -20,6 +20,7 @@ using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
@@ -241,9 +242,13 @@ public class AlbumCoverBehavior : Behavior<Image>
                 }
                 else
                 {
-                    using var file = TagLib.File.Create(music.Path, ReadStyle.None);
+                    picture = AudioCoverReader.ReadCover(music.Path);
                     if (ct.IsCancellationRequested) return;
-                    picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
+                    if (picture is null || picture.Length == 0) {
+                        using var file = TagLib.File.Create(music.Path, ReadStyle.None);
+                        if (ct.IsCancellationRequested) return;
+                        picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
+                    }
                 }
 
                 if (picture is { Length: > 0 } && !ct.IsCancellationRequested)
