@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Windows.UI.ViewManagement;
+using Windows.UI.WindowManagement;
 using WinUIEx;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
@@ -49,13 +50,14 @@ namespace WinUIMusicPlayer
             SetWindow();
             ExtendsContentIntoTitleBar = true;            
             this.Activated += MainWindow_Activated;            
-            themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
+            themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.CustomStyleChanged += (s, e) => customStyleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             this.AppWindow.Closing += AppWindow_Closing;
+            AppWindow.Changed += AppWindow_Changed;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
@@ -65,11 +67,25 @@ namespace WinUIMusicPlayer
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
         }
 
+        private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        {
+            if (args.DidPresenterChange)
+            {
+                if(sender.Presenter is OverlappedPresenter overlapped)
+                {
+                    if (overlapped.State == OverlappedPresenterState.Minimized) {
+                        App.Services.GetRequiredService<AppViewModel>().IsMainWindowVisible = false;
+                    }                    
+                }
+            }
+        }
+
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
             if (args.WindowActivationState != WindowActivationState.Deactivated)
             {
                 InitializeTaskbarHelper();
+                App.Services.GetRequiredService<AppViewModel>().IsMainWindowVisible = true;
             }          
         }
 
@@ -150,7 +166,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;
-                //App.Services.GetRequiredService<AppViewModel>().IsAppHided = true;
+                App.Services.GetRequiredService<AppViewModel>().IsMainWindowVisible = false;
                 this.Hide();
             }
             else

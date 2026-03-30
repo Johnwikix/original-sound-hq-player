@@ -165,6 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInNaviView { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;  
+        public bool IsMainWindowVisible { get; set => SetProperty(ref field, value); } = true;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
         public bool IsMouseOverVolumeSlider { get; set; } = false;
