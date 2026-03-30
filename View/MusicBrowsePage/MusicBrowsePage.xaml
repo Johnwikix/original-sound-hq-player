@@ -252,7 +252,10 @@
                                                     VerticalAlignment="Center"
                                                     Stretch="UniformToFill">
                                                     <interactivity:Interaction.Behaviors>
-                                                        <behaviors:FadeImageBehavior ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}" Duration="00:00:1" />
+                                                        <behaviors:FadeImageBehavior
+                                                            DecodePixelWidth="150"
+                                                            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                                                            Duration="00:00:1" />
                                                     </interactivity:Interaction.Behaviors>
                                                 </Image>
                                             </Grid>

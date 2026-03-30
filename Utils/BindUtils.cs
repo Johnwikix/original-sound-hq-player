@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
@@ -43,6 +44,10 @@ namespace WinUIMusicPlayer.Utils
 
         public static double VisibilityToOpacityReConverter(Visibility visibility) {
             return visibility is Visibility.Visible ? 0 : 1.0;
+        }
+
+        public static Visibility ImageSourceToVisibilityConverter(ImageSource source) {
+            return source is null ? Visibility.Visible: Visibility.Collapsed;
         }
     }
 }

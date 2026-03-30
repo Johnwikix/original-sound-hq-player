@@ -14,6 +14,7 @@
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
 
     <Grid>
@@ -112,44 +113,43 @@
                 <Grid Grid.Row="1" Grid.Column="1">
                     <Viewbox Margin="20,20,20,0" Stretch="Uniform">
                         <Grid Width="300" Height="300">
-                            <Border
+                            <Grid
                                 x:Name="PlayingDetailAlbumCoverImageGrid"
                                 Grid.Row="0"
                                 Margin="0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 CornerRadius="10">
-                                <Grid>
-                                    <Image Canvas.ZIndex="1">
-                                        <interactivity:Interaction.Behaviors>
-                                            <behaviors:FadeImageBehavior ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}" Duration="00:00:1" />
-                                        </interactivity:Interaction.Behaviors>
-                                    </Image>
-                                    <Grid
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                        Canvas.ZIndex="0">
-                                        <Viewbox Stretch="Uniform">
-                                            <Border
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                                <!--  图标层  -->
-                                                <FontIcon
-                                                    Width="200"
-                                                    Height="200"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Canvas.ZIndex="1"
-                                                    FontSize="100"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Glyph="&#xE93C;" />
-                                            </Border>
-                                        </Viewbox>
-                                    </Grid>
+                                <Image x:Name="AlbumCover" Canvas.ZIndex="1">
+                                    <interactivity:Interaction.Behaviors>
+                                        <behaviors:FadeImageBehavior ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}" Duration="00:00:1" />
+                                    </interactivity:Interaction.Behaviors>
+                                </Image>
+                                <Grid
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                    Canvas.ZIndex="0"
+                                    Visibility="{x:Bind tool:BindUtils.ImageSourceToVisibilityConverter(AlbumCover.Source), Mode=OneWay}">
+                                    <Viewbox Stretch="Uniform">
+                                        <Border
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <!--  图标层  -->
+                                            <FontIcon
+                                                Width="200"
+                                                Height="200"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Canvas.ZIndex="1"
+                                                FontSize="100"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Glyph="&#xE93C;" />
+                                        </Border>
+                                    </Viewbox>
                                 </Grid>
-                            </Border>
+                            </Grid>
                         </Grid>
                     </Viewbox>
                     <!--<customControls:AlbumArtControl

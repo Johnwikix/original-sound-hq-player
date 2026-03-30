@@ -18,11 +18,13 @@ namespace WinUIMusicPlayer.Behaviors
     {
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
-        private CancellationTokenSource _cts; // 用于取消正在进行的解码任务
-        private static long _lastLength = -1;
-        private static int _lastHash;
+        private CancellationTokenSource _cts;
 
-        public static bool IsDuplicateAndUpdate(byte[]? newBytes)
+        // ── 去重状态改为实例字段，各控件独立判断 ──────────────────────
+        private long _lastLength = -1;
+        private int _lastHash;
+
+        private bool IsDuplicateAndUpdate(byte[]? newBytes)
         {
             if (newBytes is not { Length: > 0 })
             {
@@ -41,12 +43,13 @@ namespace WinUIMusicPlayer.Behaviors
             return false;
         }
 
-        public static void Invalidate()
+        public void Invalidate()
         {
             _lastLength = -1;
             _lastHash = 0;
         }
 
+        // ── ImageBytes 依赖属性 ────────────────────────────────────────
         public byte[] ImageBytes
         {
             get => (byte[])GetValue(ImageBytesProperty);
@@ -62,7 +65,7 @@ namespace WinUIMusicPlayer.Behaviors
             if (d is FadeImageBehavior behavior)
             {
                 var newBytes = e.NewValue as byte[];
-                //if (IsDuplicateAndUpdate(newBytes)) return;
+                if (behavior.IsDuplicateAndUpdate(newBytes)) return;  // 实例方法，不再跨控件共享
 
                 behavior._cts?.Cancel();
                 behavior._cts = new CancellationTokenSource();
@@ -70,8 +73,6 @@ namespace WinUIMusicPlayer.Behaviors
 
                 try
                 {
-                    // DecodeToBitmapAsync 内部已有 DecodePixelWidth 限制
-                    // 这确保了即便原图 3000px，进入 GPU 的纹理也只有 150px 左右
                     var bitmapImage = await behavior.DecodeToBitmapAsync(newBytes, token);
                     if (!token.IsCancellationRequested && bitmapImage != null)
                     {
@@ -82,6 +83,7 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
+        // ── Duration 依赖属性 ──────────────────────────────────────────
         public Duration Duration
         {
             get => (Duration)GetValue(DurationProperty);
@@ -92,14 +94,24 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(Duration), typeof(Duration), typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
-        // ── 优化后的解码：减少中间拷贝 ─────────────────────────────
+        // ── DecodePixelWidth 依赖属性：0 = 按原图解码 ──────────────────
+        public int DecodePixelWidth
+        {
+            get => (int)GetValue(DecodePixelWidthProperty);
+            set => SetValue(DecodePixelWidthProperty, value);
+        }
+
+        public static readonly DependencyProperty DecodePixelWidthProperty =
+            DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
+                new PropertyMetadata(0));   // 0 = 原图大小
+
+        // ── 解码 ───────────────────────────────────────────────────────
         private async Task<BitmapImage> DecodeToBitmapAsync(byte[] bytes, CancellationToken token)
         {
             if (bytes == null || bytes.Length == 0) return null;
 
             try
             {
-                // 1. 直接通过 MemoryStream 转换，避免 DataWriter 的二次拷贝
                 using var stream = new InMemoryRandomAccessStream();
                 await stream.WriteAsync(bytes.AsBuffer());
                 stream.Seek(0);
@@ -108,9 +120,13 @@ namespace WinUIMusicPlayer.Behaviors
 
                 var bitmap = new BitmapImage
                 {
-                    DecodePixelWidth = 150, // 维持原有的低内存解码策略
                     DecodePixelType = DecodePixelType.Logical
                 };
+
+                // DecodePixelWidth > 0 时才限制宽度，否则让 WIC 按原图解码
+                int decodeWidth = DecodePixelWidth;
+                if (decodeWidth > 0)
+                    bitmap.DecodePixelWidth = decodeWidth;
 
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;
@@ -118,6 +134,7 @@ namespace WinUIMusicPlayer.Behaviors
             catch { return null; }
         }
 
+        // ── 生命周期 ───────────────────────────────────────────────────
         protected override void OnAttached()
         {
             base.OnAttached();
@@ -138,6 +155,7 @@ namespace WinUIMusicPlayer.Behaviors
             base.OnDetaching();
         }
 
+        // ── 淡入淡出过渡 ───────────────────────────────────────────────
         private void TransitionToNewSource(ImageSource newSource)
         {
             if (AssociatedObject == null || AssociatedObject.Source == newSource) return;
@@ -149,7 +167,6 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
-            // 在创建新动画层前，清理之前的动画（如果上一个淡出还没结束）
             StopAndCleanup();
 
             if (AssociatedObject.Source != null)
@@ -183,7 +200,6 @@ namespace WinUIMusicPlayer.Behaviors
 
                 _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
 
-                // 关键点：底层切换新图，断开旧图引用
                 AssociatedObject.Source = newSource;
                 _currentTransitionStoryboard.Begin();
             }
@@ -202,8 +218,6 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 var parent = VisualTreeHelper.GetParent(_tempOverlayImage) as Panel;
                 parent?.Children.Remove(_tempOverlayImage);
-
-                // 强制解除 Source 绑定，利于垃圾回收
                 _tempOverlayImage.Source = null;
                 _tempOverlayImage = null;
             }
