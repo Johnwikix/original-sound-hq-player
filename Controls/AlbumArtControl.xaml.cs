@@ -56,7 +56,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
 
-        // IsDark 变化时强制失效，让下次 ImageBytes 不命中去重
         Invalidate();
 
         if (ctrl.ImageBytes is { Length: > 0 })
@@ -123,37 +122,49 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
+        // 布局/圆角/阴影参数变化时令 mask 缓存失效，下次 Draw 时重建
+        ctrl._maskInvalidated = true;
         ctrl.canvas.Invalidate();
     }
 
     // ── 私有字段 ──────────────────────────────────────────────────────────
 
-    // 当前显示的位图及其 alpha（始终 0→1 稳定）
     private CanvasBitmap? _currentBitmap;
     private float _currentAlpha = 0f;
 
-    // 正在淡入的目标位图
     private CanvasBitmap? _incomingBitmap;
     private float _incomingAlpha = 0f;
 
     private bool _isFading = false;
-    private const float FadeSpeed = 1.25f;   // 每秒 alpha 变化量，约 0.4s 完成
+    private const float FadeSpeed = 1.25f;
 
-    // 快速切换时的"最新待显示"位图，只保留最新的一张
     private CanvasBitmap? _queuedBitmap;
 
-    // 延迟释放队列：等过渡完成后再 Dispose，避免 GPU 仍在使用时释放
     private readonly Queue<CanvasBitmap> _disposeQueue = new();
 
     private CancellationTokenSource? _loadCts;
     private bool _isResourcesCreated = false;
 
-    // 淡入淡出驱动
     private DispatcherTimer? _fadeTimer;
     private DateTime _lastTick;
     private const float HardMaxSize = 1536f;
     private static long _lastLength = -1;
     private static int _lastHash;
+
+    // ── 修复：持久化的圆角遮罩 CanvasCommandList ──────────────────────────
+    //
+    // 原问题：DrawRoundedImageWithShadow 每帧都 new CanvasCommandList，
+    //         Win2D 内部对其持有 COM 引用，C# 的 using/Dispose 并不立即
+    //         释放 GPU 侧资源，60fps 下每秒产生 60 个 GPU surface 累积不释放。
+    //
+    // 修复：_maskCL 提升为成员变量，仅在 destRect 尺寸或圆角参数变化时重建，
+    //       其余帧在 EnsureMaskCommandList 中 O(1) 比较后直接复用，零 GPU 分配。
+
+    private CanvasCommandList? _maskCL;
+    private (float w, float h, float radius) _maskSize;
+    private bool _maskInvalidated = false;
+
+    // ── 去重 ──────────────────────────────────────────────────────────────
 
     public static bool IsDuplicateAndUpdate(byte[]? newBytes)
     {
@@ -179,6 +190,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         _lastLength = -1;
         _lastHash = 0;
     }
+
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
     public AlbumArtControl()
@@ -203,7 +215,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         canvas.Draw += (s, e) =>
         {
-            e.DrawingSession.Clear(Microsoft.UI.Colors.Transparent);
             DrawImageLayer(e.DrawingSession);
         };
     }
@@ -231,37 +242,27 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         _lastTick = now;
 
         UpdateFadeState(delta);
-
-        // 先 Invalidate 触发绘制，绘制完成后 GPU 才真正用完旧帧
-        // 释放在下一 Tick 开头，给 GPU 留一帧缓冲
         canvas.Invalidate();
 
         if (!_isFading && _queuedBitmap == null)
         {
             _fadeTimer!.Stop();
-            // Timer 停止后再做一次延迟释放清理
             FlushDisposeQueue();
         }
     }
 
     // ── 核心状态机 ────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 推入新位图，开始淡入过渡。
-    /// 必须在 UI 线程调用。
-    /// </summary>
     private void EnqueueBitmap(CanvasBitmap newBitmap)
     {
         if (_isFading)
         {
-            // 正在过渡中：把旧的 queued 放入延迟释放队列，新的顶上
             if (_queuedBitmap != null)
                 _disposeQueue.Enqueue(_queuedBitmap);
             _queuedBitmap = newBitmap;
         }
         else
         {
-            // 当前静止：直接开始新过渡
             StartTransition(newBitmap);
         }
 
@@ -270,8 +271,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
     private void StartTransition(CanvasBitmap newBitmap)
     {
-        // 如果之前有正在淡入但还未完成的 incoming，将其提升为 current
-        // （保证 current 永远是上一个"稳定"画面，不跳帧）
         if (_incomingBitmap != null)
         {
             if (_currentBitmap != null)
@@ -289,20 +288,16 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
     private void UpdateFadeState(float delta)
     {
-        // 每 Tick 开头释放队列中已安全过期的位图（上上帧已不再绘制）
         FlushDisposeQueue();
 
         if (!_isFading) return;
 
-        // 当前画面淡出
         if (_currentBitmap != null)
             _currentAlpha = Math.Max(0f, _currentAlpha - delta * FadeSpeed);
 
-        // 新画面淡入
         if (_incomingBitmap != null)
             _incomingAlpha = Math.Min(1f, _incomingAlpha + delta * FadeSpeed);
 
-        // 过渡完成
         if (_incomingAlpha >= 1f)
         {
             if (_currentBitmap != null)
@@ -314,7 +309,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             _incomingAlpha = 0f;
             _isFading = false;
 
-            // 如果队列中还有等待的新图，立刻开始下一段过渡
             if (_queuedBitmap != null)
             {
                 var next = _queuedBitmap;
@@ -324,17 +318,12 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         }
     }
 
-    // 每次只释放一个，给 GPU 留足够的缓冲帧
     private void FlushDisposeQueue()
     {
-        // 批量安全清理
         while (_disposeQueue.TryDequeue(out var bmp))
         {
-            // 只有当 bmp 不在当前显示层时才真正 Dispose
             if (bmp != null && bmp != _currentBitmap && bmp != _incomingBitmap && bmp != _queuedBitmap)
-            {
                 bmp.Dispose();
-            }
         }
     }
 
@@ -342,7 +331,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
     public async Task LoadBitmapAsync(byte[]? imageBytes)
     {
-        // 如果数据为空，显示默认封面
         if (imageBytes == null || imageBytes.Length == 0)
         {
             await LoadDefaultCoverAsync();
@@ -355,7 +343,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         try
         {
-            // 异步后台解码
             var (pixels, bmpW, bmpH) = await Task.Run(async () =>
             {
                 using var mem = new MemoryStream(imageBytes, writable: false);
@@ -365,7 +352,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
                 uint srcW = decoder.PixelWidth;
                 uint srcH = decoder.PixelHeight;
 
-                // 硬性 1536px 上限，锁定解码尺寸
                 float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                 uint dstW = Math.Max(1, (uint)(srcW * sc));
                 uint dstH = Math.Max(1, (uint)(srcH * sc));
@@ -385,12 +371,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             cts.Token.ThrowIfCancellationRequested();
             if (canvas.Device == null) return;
 
-            // 创建 GPU 纹理
             var bmp = CanvasBitmap.CreateFromBytes(
                 canvas, pixels, (int)bmpW, (int)bmpH,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
 
-            // 显式释放 CPU 像素数据引用
             pixels = null;
 
             EnqueueBitmap(bmp);
@@ -398,7 +382,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception)
         {
-            // 解码异常（如 3000px 坏图）时，清除记录并显示默认封面
             Invalidate();
             await LoadDefaultCoverAsync();
         }
@@ -415,15 +398,12 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         {
             if (canvas.Device == null) return;
 
-            // 既然不常用，我们直接从 Assets 实时加载
             string fileName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
 
             var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
             using var stream = await file.OpenReadAsync();
 
-            // 此处加载的 Bitmap 会进入 EnqueueBitmap 逻辑
-            // 过渡完成后会被正常 Dispose，不占用长期显存
             var bmp = await CanvasBitmap.LoadAsync(canvas, stream);
             EnqueueBitmap(bmp);
         }
@@ -453,20 +433,50 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         float contentH = squareSize - padTop - padBottom;
         if (contentW <= 0 || contentH <= 0) return;
 
-        // 用 incoming（如有）决定目标尺寸比例，保证画面不跳变
         CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
         if (refBmp == null) return;
 
         var destRect = CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
         float radius = (float)CornerRadius;
+        float w = (float)destRect.Width;
+        float h = (float)destRect.Height;
 
-        // 先画正在淡出的旧图
+        // 确保 _maskCL 与当前目标尺寸和圆角匹配（不匹配时才重建）
+        EnsureMaskCommandList(ds.Device, w, h, radius);
+
         if (_currentBitmap != null && _currentAlpha > 0f)
             TryDrawRounded(ds, _currentBitmap, destRect, radius, _currentAlpha);
 
-        // 再画正在淡入的新图（叠在上面）
         if (_incomingBitmap != null && _incomingAlpha > 0f)
             TryDrawRounded(ds, _incomingBitmap, destRect, radius, _incomingAlpha);
+    }
+
+    /// <summary>
+    /// 确保 _maskCL 与当前目标尺寸和圆角匹配。
+    /// 命中缓存时为纯 O(1) 比较，不产生任何 GPU 分配。
+    /// 仅在尺寸/圆角变化或被外部属性变更失效时才真正重建。
+    /// </summary>
+    private void EnsureMaskCommandList(CanvasDevice device, float w, float h, float radius)
+    {
+        if (!_maskInvalidated
+            && _maskCL != null
+            && MathF.Abs(_maskSize.w - w) < 0.5f
+            && MathF.Abs(_maskSize.h - h) < 0.5f
+            && MathF.Abs(_maskSize.radius - radius) < 0.5f)
+        {
+            return; // 命中缓存，直接复用
+        }
+
+        // 先 Dispose 旧的再分配新的，避免短暂双份占用
+        _maskCL?.Dispose();
+        _maskCL = new CanvasCommandList(device);
+        using (var maskDs = _maskCL.CreateDrawingSession())
+        {
+            maskDs.FillRoundedRectangle(0, 0, w, h, radius, radius, Microsoft.UI.Colors.White);
+        }
+
+        _maskSize = (w, h, radius);
+        _maskInvalidated = false;
     }
 
     private static Windows.Foundation.Rect CalcDestRect(
@@ -484,7 +494,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         return new(cx + (cw - drawW) * 0.5f, cy + (ch - drawH) * 0.5f, drawW, drawH);
     }
 
-    private static void TryDrawRounded(
+    private void TryDrawRounded(
         CanvasDrawingSession ds, CanvasBitmap bmp,
         Windows.Foundation.Rect dest, float radius, float opacity)
     {
@@ -492,7 +502,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         catch { /* device lost 等，忽略本帧 */ }
     }
 
-    private static void DrawRoundedImageWithShadow(
+    private void DrawRoundedImageWithShadow(
         CanvasDrawingSession ds,
         CanvasBitmap bitmap,
         Windows.Foundation.Rect destRect,
@@ -508,19 +518,12 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         {
             Source = bitmap,
             Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                h / bitmap.SizeInPixels.Height),
+                                 h / bitmap.SizeInPixels.Height),
             InterpolationMode = CanvasImageInterpolation.HighQualityCubic
         };
 
-        // 圆角遮罩
-        using var maskCL = new CanvasCommandList(ds.Device);
-        using (var maskDs = maskCL.CreateDrawingSession())
-        {
-            maskDs.Clear(Microsoft.UI.Colors.Transparent);
-            maskDs.FillRoundedRectangle(0, 0, w, h, radius, radius, Microsoft.UI.Colors.White);
-        }
-
-        using var masked = new AlphaMaskEffect { Source = scale, AlphaMask = maskCL };
+        // 圆角遮罩：直接引用成员变量 _maskCL，不再每帧 new
+        using var masked = new AlphaMaskEffect { Source = scale, AlphaMask = _maskCL };
 
         // 阴影
         using var shadow = new ShadowEffect
@@ -564,6 +567,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
+
+        _maskCL?.Dispose(); _maskCL = null;
 
         _currentBitmap?.Dispose(); _currentBitmap = null;
         _incomingBitmap?.Dispose(); _incomingBitmap = null;
