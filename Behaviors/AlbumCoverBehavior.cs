@@ -233,7 +233,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                 // ── 从标签读取原始图片 ────────────────────────────────────
                 byte[]? picture = null;
 
-                if (music.Extension.ToLower() == "dff")
+                if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
                     picture = res?.Pictures?.AsValueEnumerable().Count() > 0
