@@ -62,7 +62,7 @@ namespace WinUIMusicPlayer.Behaviors
             if (d is FadeImageBehavior behavior)
             {
                 var newBytes = e.NewValue as byte[];
-                if (IsDuplicateAndUpdate(newBytes)) return;
+                //if (IsDuplicateAndUpdate(newBytes)) return;
 
                 behavior._cts?.Cancel();
                 behavior._cts = new CancellationTokenSource();
