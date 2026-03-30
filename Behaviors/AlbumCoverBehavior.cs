@@ -186,25 +186,44 @@ public class AlbumCoverBehavior : Behavior<Image>
                     {
                         try
                         {
-                            var cacheInfo = new FileInfo(cachePath);
-                            DateTime musicTime = music.UpdateTime != default
-                                ? music.UpdateTime
-                                : music.CreateTime;
+                            var bytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
 
-                            // 缓存比 music 更新，直接使用
-                            if (cacheInfo.LastWriteTime > musicTime)
+                            // 优先检查缓存图片尺寸是否与当前 CoverSize 一致
+                            bool sizeMatch = false;
+                            try
                             {
-                                var bytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
-                                if (!ct.IsCancellationRequested)
-                                {
-                                    await LoadFromBytesAndNotify(bytes, music, bitmap, tcs, ct);
-                                    return;
-                                }
+                                using var ms = new System.IO.MemoryStream(bytes);
+                                using var img = System.Drawing.Image.FromStream(ms);
+                                sizeMatch = img.Width == AppSettings.CoverSize;
                             }
-                            // 缓存过期：删除旧文件，继续走原始流程重新解码并覆写缓存
+                            catch { /* 图片损坏，视为不匹配 */ }
+
+                            if (!sizeMatch)
+                            {
+                                // 尺寸不匹配，直接删除，走原始流程重新解码并覆写缓存
+                                try { System.IO.File.Delete(cachePath); } catch { }
+                            }
                             else
                             {
-                                try { System.IO.File.Delete(cachePath); } catch { }
+                                var cacheInfo = new FileInfo(cachePath);
+                                DateTime musicTime = music.UpdateTime != default
+                                    ? music.UpdateTime
+                                    : music.CreateTime;
+
+                                // 缓存比 music 更新，直接使用
+                                if (cacheInfo.LastWriteTime > musicTime)
+                                {
+                                    if (!ct.IsCancellationRequested)
+                                    {
+                                        await LoadFromBytesAndNotify(bytes, music, bitmap, tcs, ct);
+                                        return;
+                                    }
+                                }
+                                // 缓存过期：删除旧文件，继续走原始流程重新解码并覆写缓存
+                                else
+                                {
+                                    try { System.IO.File.Delete(cachePath); } catch { }
+                                }
                             }
                         }
                         catch { /* 缓存损坏，继续原始流程 */ }
