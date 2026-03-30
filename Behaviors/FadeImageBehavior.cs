@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
-using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,6 @@ namespace WinUIMusicPlayer.Behaviors
         private Image _tempOverlayImage;
         private CancellationTokenSource _cts;
 
-        // ── 去重状态改为实例字段，各控件独立判断 ──────────────────────
         private long _lastLength = -1;
         private int _lastHash;
 
@@ -49,6 +47,44 @@ namespace WinUIMusicPlayer.Behaviors
             _lastHash = 0;
         }
 
+        // ── Enable 依赖属性 ────────────────────────────────────────────
+        public bool Enable
+        {
+            get => (bool)GetValue(EnableProperty);
+            set => SetValue(EnableProperty, value);
+        }
+
+        public static readonly DependencyProperty EnableProperty =
+            DependencyProperty.Register(nameof(Enable), typeof(bool), typeof(FadeImageBehavior),
+                new PropertyMetadata(true, OnEnableChanged));
+
+        private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not FadeImageBehavior behavior) return;
+
+            if (!(bool)e.NewValue)
+            {
+                // 禁用：取消所有挂起操作，清理覆盖层，Source 置 null
+                behavior._cts?.Cancel();
+                behavior.StopAndCleanup();
+                if (behavior.AssociatedObject != null)
+                    behavior.AssociatedObject.Source = null;
+            }
+            else
+            {
+                // 重新启用：重置去重状态并重新触发当前 ImageBytes
+                behavior.Invalidate();
+                var bytes = behavior.ImageBytes;
+                if (behavior.AssociatedObject != null && bytes != null)
+                {
+                    behavior._cts?.Cancel();
+                    behavior._cts = new CancellationTokenSource();
+                    var token = behavior._cts.Token;
+                    _ = behavior.LoadAndTransitionAsync(bytes, token);
+                }
+            }
+        }
+
         // ── ImageBytes 依赖属性 ────────────────────────────────────────
         public byte[] ImageBytes
         {
@@ -62,25 +98,41 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is FadeImageBehavior behavior)
+            if (d is not FadeImageBehavior behavior) return;
+
+            // Enable=false 时直接跳过所有计算，Source 置 null
+            if (!behavior.Enable)
             {
-                var newBytes = e.NewValue as byte[];
-                if (behavior.IsDuplicateAndUpdate(newBytes)) return;  // 实例方法，不再跨控件共享
-
-                behavior._cts?.Cancel();
-                behavior._cts = new CancellationTokenSource();
-                var token = behavior._cts.Token;
-
-                try
-                {
-                    var bitmapImage = await behavior.DecodeToBitmapAsync(newBytes, token);
-                    if (!token.IsCancellationRequested && bitmapImage != null)
-                    {
-                        behavior.TransitionToNewSource(bitmapImage);
-                    }
-                }
-                catch (OperationCanceledException) { }
+                behavior.StopAndCleanup();
+                if (behavior.AssociatedObject != null)
+                    behavior.AssociatedObject.Source = null;
+                return;
             }
+
+            var newBytes = e.NewValue as byte[];
+            if (behavior.IsDuplicateAndUpdate(newBytes)) return;
+
+            behavior._cts?.Cancel();
+            behavior._cts = new CancellationTokenSource();
+            var token = behavior._cts.Token;
+
+            try
+            {
+                await behavior.LoadAndTransitionAsync(newBytes, token);
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        // ── 公共加载+过渡逻辑（供两处调用） ──────────────────────────
+        private async Task LoadAndTransitionAsync(byte[]? bytes, CancellationToken token)
+        {
+            try
+            {
+                var bitmapImage = await DecodeToBitmapAsync(bytes, token);
+                if (!token.IsCancellationRequested && bitmapImage != null)
+                    TransitionToNewSource(bitmapImage);
+            }
+            catch (OperationCanceledException) { }
         }
 
         // ── Duration 依赖属性 ──────────────────────────────────────────
@@ -103,10 +155,10 @@ namespace WinUIMusicPlayer.Behaviors
 
         public static readonly DependencyProperty DecodePixelWidthProperty =
             DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
-                new PropertyMetadata(0));   // 0 = 原图大小
+                new PropertyMetadata(0));
 
         // ── 解码 ───────────────────────────────────────────────────────
-        private async Task<BitmapImage> DecodeToBitmapAsync(byte[] bytes, CancellationToken token)
+        private async Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token)
         {
             if (bytes == null || bytes.Length == 0) return null;
 
@@ -123,7 +175,6 @@ namespace WinUIMusicPlayer.Behaviors
                     DecodePixelType = DecodePixelType.Logical
                 };
 
-                // DecodePixelWidth > 0 时才限制宽度，否则让 WIC 按原图解码
                 int decodeWidth = DecodePixelWidth;
                 if (decodeWidth > 0)
                     bitmap.DecodePixelWidth = decodeWidth;
@@ -138,14 +189,16 @@ namespace WinUIMusicPlayer.Behaviors
         protected override void OnAttached()
         {
             base.OnAttached();
-            if (AssociatedObject != null && ImageBytes != null) _ = InitAsync();
+            if (AssociatedObject != null && ImageBytes != null && Enable)
+                _ = InitAsync();
         }
 
         private async Task InitAsync()
         {
             _cts = new CancellationTokenSource();
             var bitmap = await DecodeToBitmapAsync(ImageBytes, _cts.Token);
-            if (AssociatedObject != null && bitmap != null) AssociatedObject.Source = bitmap;
+            if (AssociatedObject != null && bitmap != null)
+                AssociatedObject.Source = bitmap;
         }
 
         protected override void OnDetaching()

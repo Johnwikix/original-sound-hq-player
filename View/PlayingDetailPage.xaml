@@ -111,7 +111,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="1" Grid.Column="1">
-                    <Viewbox Margin="20,20,20,0" Stretch="Uniform">
+                    <Viewbox Margin="20" Stretch="Uniform">
                         <Grid Width="300" Height="300">
                             <Grid
                                 x:Name="PlayingDetailAlbumCoverImageGrid"
@@ -119,10 +119,14 @@
                                 Margin="0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                CornerRadius="10">
+                                CornerRadius="10"
+                                Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsPlayingDetailCoverImageControlVisible), Mode=OneWay}">
                                 <Image x:Name="AlbumCover" Canvas.ZIndex="1">
                                     <interactivity:Interaction.Behaviors>
-                                        <behaviors:FadeImageBehavior ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}" Duration="00:00:1" />
+                                        <behaviors:FadeImageBehavior
+                                            Enable="{x:Bind ViewModel.AppViewModel.IsPlayingDetailCoverImageControlVisible, Mode=OneWay}"
+                                            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                                            Duration="00:00:1" />
                                     </interactivity:Interaction.Behaviors>
                                 </Image>
                                 <Grid
@@ -130,7 +134,7 @@
                                     VerticalAlignment="Stretch"
                                     Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
                                     Canvas.ZIndex="0"
-                                    Visibility="{x:Bind tool:BindUtils.ImageSourceToVisibilityConverter(AlbumCover.Source), Mode=OneWay}">
+                                    Visibility="{x:Bind tool:BindUtils.ImageSourceToVisibilityConverter(AlbumCover.Source, ViewModel.AppViewModel.IsPlayingDetailCoverImageControlVisible), Mode=OneWay}">
                                     <Viewbox Stretch="Uniform">
                                         <Border
                                             HorizontalAlignment="Stretch"
@@ -155,7 +159,7 @@
                     <!--<customControls:AlbumArtControl
                         x:Name="AlbumArtControl"
                         ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
-                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"/>-->
+                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}" />-->
                 </Grid>
                 <StackPanel
                     Grid.Row="2"
