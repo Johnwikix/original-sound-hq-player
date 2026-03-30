@@ -262,7 +262,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                 if (!ct.IsCancellationRequested)
                     await FetchFromNet(null, music, bitmap, tcs, ct);
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException) {}
             catch (Exception)
             {
                 // 降级：用 ATL 读取
@@ -280,7 +280,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                     if (!ct.IsCancellationRequested)
                         await FetchFromNet(null, music, bitmap, tcs, ct);
                 }
-                catch (OperationCanceledException) { throw; }
+                catch (OperationCanceledException) {}
                 catch
                 {
                     try { await FetchFromNet(null, music, bitmap, tcs, ct); } catch { }
@@ -391,7 +391,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                     }
                 });
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException) {}
             finally { softwareBitmap?.Dispose(); }
         }, ct);
     }
@@ -427,7 +427,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                     finally { outputStream.Dispose(); }
                 });
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException) {}
         }, ct);
     }
 
@@ -478,7 +478,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                 return;
             }
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException) {}
         catch { }
 
         if (!tcs.Task.IsCompleted)
