@@ -31,11 +31,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
-        // IsActive=false 时不做任何加载，等激活时再由 OnIsActiveChanged 触发
         if (!ctrl.IsActive) return;
 
         var newBytes = e.NewValue as byte[];
-        if (IsDuplicateAndUpdate(newBytes)) return;
+        if (ctrl.IsDuplicateAndUpdate(newBytes)) return;    // ← 改为实例方法
 
         if (newBytes is { Length: > 0 })
             _ = ctrl.LoadBitmapAsync(newBytes);
@@ -59,7 +58,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         if (!ctrl._isResourcesCreated) return;
         if (!ctrl.IsActive) return;
 
-        Invalidate();
+        ctrl.InvalidateDedup();                             // ← 改为实例方法
 
         if (ctrl.ImageBytes is { Length: > 0 })
             _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
@@ -114,11 +113,20 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
     public static readonly DependencyProperty IsShadowEnabledProperty =
         DependencyProperty.Register(nameof(IsShadowEnabled), typeof(bool),
-            typeof(AlbumArtControl), new PropertyMetadata(true, OnLayoutChanged));
+            typeof(AlbumArtControl), new PropertyMetadata(true, OnShadowEnabledChanged));  // ← 独立回调
     public bool IsShadowEnabled
     {
         get => (bool)GetValue(IsShadowEnabledProperty);
         set => SetValue(IsShadowEnabledProperty, value);
+    }
+
+    // IsShadowEnabled 变化时重建缓存 Effect 链
+    private static void OnShadowEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (AlbumArtControl)d;
+        if (!ctrl._isResourcesCreated) return;
+        ctrl._effectChainInvalidated = true;
+        ctrl.canvas.Invalidate();
     }
 
     private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -128,16 +136,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         if (!ctrl.IsActive) return;
 
         ctrl._maskInvalidated = true;
+        ctrl._effectChainInvalidated = true;               // ← 布局变化也要重建
         ctrl.canvas.Invalidate();
     }
-
-    // ── IsActive 依赖属性 ─────────────────────────────────────────────────
-    //
-    // 默认 false：控件创建后不执行任何加载与绘制，直到外部显式置为 true。
-    // 置为 true：按当前 ImageBytes 触发一次完整加载流程。
-    // 置为 false：立即停止 FadeTimer，令下一帧 Draw 直接 return；
-    //             保留 _currentBitmap 以便重新激活时可快速恢复（无需重新解码）。
-    //             若需彻底释放 GPU 资源，调用方可同时设 Visibility=Collapsed。
 
     public static readonly DependencyProperty IsActiveProperty =
         DependencyProperty.Register(nameof(IsActive), typeof(bool),
@@ -156,7 +157,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         if ((bool)e.NewValue)
         {
-            // 激活：重新触发加载（去重逻辑会过滤掉未变化的图片）
             if (ctrl.ImageBytes is { Length: > 0 } bytes)
                 _ = ctrl.LoadBitmapAsync(bytes);
             else
@@ -164,7 +164,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         }
         else
         {
-            // 停用：停止 Timer，取消正在进行的加载，触发一次 Draw（Draw 内直接 return）
             ctrl._loadCts?.Cancel();
             ctrl._fadeTimer?.Stop();
             ctrl.canvas.Invalidate();
@@ -192,18 +191,40 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private DispatcherTimer? _fadeTimer;
     private DateTime _lastTick;
     private const float HardMaxSize = 1536f;
-    private static long _lastLength = -1;
-    private static int _lastHash;
 
-    // ── 持久化的圆角遮罩 CanvasCommandList ───────────────────────────────
+    // ── 去重：改为实例字段，消除多实例互相干扰 ─────────────────────────
+    private long _lastLength = -1;
+    private int _lastHash;
 
+    // ── 缓存的圆角遮罩 ────────────────────────────────────────────────────
     private CanvasCommandList? _maskCL;
     private (float w, float h, float radius) _maskSize;
     private bool _maskInvalidated = false;
 
-    // ── 去重 ──────────────────────────────────────────────────────────────
+    // ── 缓存的 Effect 链（核心修复：不再每帧 new）────────────────────────
+    //
+    // 每个可见 bitmap 槽各持有一条 Effect 链：
+    //   ScaleEffect → AlphaMaskEffect → (ShadowEffect + Transform2DEffect) → CompositeEffect → OpacityEffect
+    // 只有当 bitmap、尺寸或 IsShadowEnabled 变化时才重建。
+    // 帧内仅更新 OpacityEffect.Opacity 与 ScaleEffect.Scale，无 GPU 对象分配。
 
-    public static bool IsDuplicateAndUpdate(byte[]? newBytes)
+    private CachedEffectChain? _currentChain;
+    private CachedEffectChain? _incomingChain;
+
+    private bool _effectChainInvalidated = false;
+
+    // ── 构造函数 ──────────────────────────────────────────────────────────
+
+    public AlbumArtControl()
+    {
+        InitializeComponent();
+        RegisterCanvasEvents();
+        Unloaded += (_, _) => Dispose(true);
+    }
+
+    // ── 去重（实例方法）───────────────────────────────────────────────────
+
+    public bool IsDuplicateAndUpdate(byte[]? newBytes)
     {
         if (newBytes is not { Length: > 0 })
         {
@@ -222,19 +243,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         return false;
     }
 
-    public static void Invalidate()
+    public void InvalidateDedup()
     {
         _lastLength = -1;
         _lastHash = 0;
-    }
-
-    // ── 构造函数 ──────────────────────────────────────────────────────────
-
-    public AlbumArtControl()
-    {
-        InitializeComponent();
-        RegisterCanvasEvents();
-        Unloaded += (_, _) => Dispose(true);
     }
 
     // ── Canvas 事件 ───────────────────────────────────────────────────────
@@ -245,7 +257,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         {
             _isResourcesCreated = true;
 
-            // IsActive=false 时跳过初始加载，等激活时由 OnIsActiveChanged 触发
             if (!IsActive) return;
 
             if (ImageBytes is { Length: > 0 } bytes)
@@ -314,8 +325,14 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         if (_incomingBitmap != null)
         {
+            // 把 incoming 升格为 current，同时迁移其 Effect 链
             if (_currentBitmap != null)
                 _disposeQueue.Enqueue(_currentBitmap);
+
+            _currentChain?.Dispose();
+            _currentChain = _incomingChain;
+            _incomingChain = null;
+
             _currentBitmap = _incomingBitmap;
             _currentAlpha = _incomingAlpha;
             _incomingBitmap = null;
@@ -324,6 +341,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         _incomingBitmap = newBitmap;
         _incomingAlpha = 0f;
+        _incomingChain = null;                              // 下一帧绘制时按需建链
         _isFading = true;
     }
 
@@ -343,6 +361,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         {
             if (_currentBitmap != null)
                 _disposeQueue.Enqueue(_currentBitmap);
+
+            _currentChain?.Dispose();
+            _currentChain = _incomingChain;
+            _incomingChain = null;
 
             _currentBitmap = _incomingBitmap;
             _currentAlpha = 1f;
@@ -423,7 +445,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception)
         {
-            Invalidate();
+            InvalidateDedup();
             await LoadDefaultCoverAsync();
         }
         finally
@@ -448,14 +470,13 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             var bmp = await CanvasBitmap.LoadAsync(canvas, stream);
             EnqueueBitmap(bmp);
         }
-        catch { /* 忽略 IO 异常 */ }
+        catch { }
     }
 
     // ── 绘制 ──────────────────────────────────────────────────────────────
 
     private void DrawImageLayer(CanvasDrawingSession ds)
     {
-        // IsActive=false：跳过所有 GPU 计算，直接返回（canvas 呈现透明空白帧）
         if (!IsActive) return;
 
         float canvasW = (float)canvas.Size.Width;
@@ -487,11 +508,50 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         EnsureMaskCommandList(ds.Device, w, h, radius);
 
+        // 重建 Effect 链（仅在必要时）
+        if (_effectChainInvalidated)
+        {
+            _currentChain?.InvalidateLayout();
+            _incomingChain?.InvalidateLayout();
+            _effectChainInvalidated = false;
+        }
+
         if (_currentBitmap != null && _currentAlpha > 0f)
-            TryDrawRounded(ds, _currentBitmap, destRect, radius, _currentAlpha);
+        {
+            EnsureChain(ds.Device, ref _currentChain, _currentBitmap, w, h);
+            TryDrawChain(ds, _currentChain!, destRect, _currentAlpha);
+        }
 
         if (_incomingBitmap != null && _incomingAlpha > 0f)
-            TryDrawRounded(ds, _incomingBitmap, destRect, radius, _incomingAlpha);
+        {
+            EnsureChain(ds.Device, ref _incomingChain, _incomingBitmap, w, h);
+            TryDrawChain(ds, _incomingChain!, destRect, _incomingAlpha);
+        }
+    }
+
+    // ── Effect 链缓存管理 ─────────────────────────────────────────────────
+
+    private void EnsureChain(CanvasDevice device, ref CachedEffectChain? chain,
+                             CanvasBitmap bitmap, float w, float h)
+    {
+        if (chain == null || chain.NeedsRebuild(bitmap, w, h))
+        {
+            chain?.Dispose();
+            chain = new CachedEffectChain(bitmap, _maskCL!, w, h, IsShadowEnabled);
+        }
+    }
+
+    private static void TryDrawChain(CanvasDrawingSession ds,
+                                     CachedEffectChain chain,
+                                     Windows.Foundation.Rect dest,
+                                     float opacity)
+    {
+        try
+        {
+            chain.Opacity = opacity;
+            ds.DrawImage(chain.Root, (float)dest.X, (float)dest.Y);
+        }
+        catch { /* device lost，忽略本帧 */ }
     }
 
     private void EnsureMaskCommandList(CanvasDevice device, float w, float h, float radius)
@@ -514,6 +574,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         _maskSize = (w, h, radius);
         _maskInvalidated = false;
+
+        // 遮罩重建后 Effect 链也必须重建（AlphaMask 引用了旧的 _maskCL）
+        _currentChain?.Dispose(); _currentChain = null;
+        _incomingChain?.Dispose(); _incomingChain = null;
     }
 
     private static Windows.Foundation.Rect CalcDestRect(
@@ -529,56 +593,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         else { drawH = ch; drawW = drawH * aspect; }
 
         return new(cx + (cw - drawW) * 0.5f, cy + (ch - drawH) * 0.5f, drawW, drawH);
-    }
-
-    private void TryDrawRounded(
-        CanvasDrawingSession ds, CanvasBitmap bmp,
-        Windows.Foundation.Rect dest, float radius, float opacity)
-    {
-        try { DrawRoundedImageWithShadow(ds, bmp, dest, radius, opacity); }
-        catch { /* device lost 等，忽略本帧 */ }
-    }
-
-    private void DrawRoundedImageWithShadow(
-        CanvasDrawingSession ds,
-        CanvasBitmap bitmap,
-        Windows.Foundation.Rect destRect,
-        float radius,
-        float opacity)
-    {
-        float w = (float)destRect.Width;
-        float h = (float)destRect.Height;
-        if (w <= 0 || h <= 0) return;
-
-        using var scale = new ScaleEffect
-        {
-            Source = bitmap,
-            Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                 h / bitmap.SizeInPixels.Height),
-            InterpolationMode = CanvasImageInterpolation.HighQualityCubic
-        };
-
-        using var masked = new AlphaMaskEffect { Source = scale, AlphaMask = _maskCL };
-
-        using var shadow = new ShadowEffect
-        {
-            Source = masked,
-            BlurAmount = 10f,
-            ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
-        };
-        using var shadowOffset = new Transform2DEffect
-        {
-            Source = shadow,
-            TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
-        };
-
-        using var composite = new CompositeEffect();
-        composite.Sources.Add(shadowOffset);
-        composite.Sources.Add(masked);
-
-        using var withOpacity = new OpacityEffect { Source = composite, Opacity = opacity };
-
-        ds.DrawImage(withOpacity, (float)destRect.X, (float)destRect.Y);
     }
 
     // ── 释放 ──────────────────────────────────────────────────────────────
@@ -602,11 +616,104 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         _maskCL?.Dispose(); _maskCL = null;
 
+        _currentChain?.Dispose(); _currentChain = null;
+        _incomingChain?.Dispose(); _incomingChain = null;
+
         _currentBitmap?.Dispose(); _currentBitmap = null;
         _incomingBitmap?.Dispose(); _incomingBitmap = null;
         _queuedBitmap?.Dispose(); _queuedBitmap = null;
 
         while (_disposeQueue.TryDequeue(out var b))
             b.Dispose();
+    }
+}
+
+// ── 缓存的 Effect 链（每个 bitmap 槽一个实例）────────────────────────────
+//
+// 持有整条 ScaleEffect → AlphaMaskEffect → [Shadow →] CompositeEffect → OpacityEffect
+// 帧内只更新 Opacity 和 Scale，不分配任何新对象。
+
+internal sealed class CachedEffectChain : IDisposable
+{
+    private readonly ScaleEffect _scale;
+    private readonly AlphaMaskEffect _masked;
+    private readonly ShadowEffect? _shadow;
+    private readonly Transform2DEffect? _shadowOffset;
+    private readonly CompositeEffect _composite;
+    private readonly OpacityEffect _withOpacity;
+
+    private readonly CanvasBitmap _bitmap;
+    private readonly float _w;
+    private readonly float _h;
+    private bool _layoutValid = true;
+
+    public ICanvasImage Root => _withOpacity;
+
+    public float Opacity
+    {
+        get => _withOpacity.Opacity;
+        set => _withOpacity.Opacity = value;
+    }
+
+    public CachedEffectChain(CanvasBitmap bitmap,
+                              CanvasCommandList maskCL,
+                              float w, float h,
+                              bool shadowEnabled)
+    {
+        _bitmap = bitmap;
+        _w = w;
+        _h = h;
+
+        _scale = new ScaleEffect
+        {
+            Source = bitmap,
+            Scale = new Vector2(w / bitmap.SizeInPixels.Width,
+                                 h / bitmap.SizeInPixels.Height),
+            InterpolationMode = CanvasImageInterpolation.HighQualityCubic
+        };
+
+        _masked = new AlphaMaskEffect { Source = _scale, AlphaMask = maskCL };
+
+        _composite = new CompositeEffect();
+
+        if (shadowEnabled)
+        {
+            _shadow = new ShadowEffect
+            {
+                Source = _masked,
+                BlurAmount = 10f,
+                ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
+            };
+            _shadowOffset = new Transform2DEffect
+            {
+                Source = _shadow,
+                TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
+            };
+            _composite.Sources.Add(_shadowOffset);
+        }
+
+        _composite.Sources.Add(_masked);
+
+        _withOpacity = new OpacityEffect { Source = _composite, Opacity = 1f };
+    }
+
+    /// <summary>尺寸或 bitmap 变化时需要重建。</summary>
+    public bool NeedsRebuild(CanvasBitmap bitmap, float w, float h)
+        => !_layoutValid
+           || !ReferenceEquals(bitmap, _bitmap)
+           || MathF.Abs(w - _w) > 0.5f
+           || MathF.Abs(h - _h) > 0.5f;
+
+    /// <summary>布局属性变化（IsShadowEnabled / CornerRadius 等）时标记重建。</summary>
+    public void InvalidateLayout() => _layoutValid = false;
+
+    public void Dispose()
+    {
+        _withOpacity.Dispose();
+        _composite.Dispose();
+        _shadowOffset?.Dispose();
+        _shadow?.Dispose();
+        _masked.Dispose();
+        _scale.Dispose();
     }
 }
