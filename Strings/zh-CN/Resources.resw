@@ -900,4 +900,10 @@
   <data name="EnableLightWave.Header" xml:space="preserve">
     <value>启用背景光波效果</value>
   </data>
+  <data name="RebootToApply" xml:space="preserve">
+    <value>重启应用生效</value>
+  </data>
+  <data name="Win2dCover.Header" xml:space="preserve">
+    <value>Win2d封面（实验性）</value>
+  </data>
 </root>

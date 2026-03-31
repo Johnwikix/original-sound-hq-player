@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (args.Item is Music music)
                 {
-                    AlbumCoverBehavior.OnMusicUnloaded(music.Id);
+                    //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
                 }
             }
         }

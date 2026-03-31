@@ -208,6 +208,9 @@
                         <controls:SettingsCard x:Uid="EnableLightWave">
                             <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="Win2dCover" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
@@ -531,8 +534,8 @@
                                     Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
                                 <HyperlinkButton
                                     x:Name="MainGitHub"
-                                    Content="GitHub"
-                                    Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}" />
+                                    Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
+                                    Content="GitHub" />
                             </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>

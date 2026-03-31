@@ -46,8 +46,8 @@ namespace WinUIMusicPlayer.Utils
             return visibility is Visibility.Visible ? 0 : 1.0;
         }
 
-        public static Visibility ImageSourceToVisibilityConverter(ImageSource source,bool isPlayingDetailCoverImageControlVisible) {
-            if (!isPlayingDetailCoverImageControlVisible) { 
+        public static Visibility ImageSourceToVisibilityConverter(ImageSource source,bool isWin2dCoverImageControlEnable) {
+            if (isWin2dCoverImageControlEnable) { 
                 return Visibility.Collapsed;
             }
             return source is null ? Visibility.Visible: Visibility.Collapsed;
@@ -55,6 +55,15 @@ namespace WinUIMusicPlayer.Utils
         
         public static Visibility BoolToVisibilityConverter(bool isVisible) {
             return isVisible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public static Visibility BoolToVisibilityReConverter(bool isVisible)
+        {
+            return isVisible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public static bool BoolToBoolReConverter(bool value) {
+            return !value;
         }
     }
 }

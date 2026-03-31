@@ -8,7 +8,6 @@ using System;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Utils;
 
@@ -16,14 +15,13 @@ namespace WinUIMusicPlayer.Behaviors
 {
     public class FadeImageBehavior : Behavior<Image>
     {
-        private Storyboard? _currentTransitionStoryboard;
-        private Image? _tempOverlayImage;
-        private CancellationTokenSource? _cts;
+        private Storyboard _currentTransitionStoryboard;
+        private Image _tempOverlayImage;
+        private CancellationTokenSource _cts;
 
         private long _lastLength = -1;
         private int _lastHash;
 
-        // ── 去重检测 ───────────────────────────────────────────────────
         private bool IsDuplicateAndUpdate(byte[]? newBytes)
         {
             if (newBytes is not { Length: > 0 })
@@ -66,6 +64,7 @@ namespace WinUIMusicPlayer.Behaviors
 
             if (!(bool)e.NewValue)
             {
+                // 禁用：取消所有挂起操作，清理覆盖层，Source 置 null
                 behavior._cts?.Cancel();
                 behavior.StopAndCleanup();
                 if (behavior.AssociatedObject != null)
@@ -73,13 +72,15 @@ namespace WinUIMusicPlayer.Behaviors
             }
             else
             {
+                // 重新启用：重置去重状态并重新触发当前 ImageBytes
                 behavior.Invalidate();
                 var bytes = behavior.ImageBytes;
                 if (behavior.AssociatedObject != null && bytes != null)
                 {
                     behavior._cts?.Cancel();
                     behavior._cts = new CancellationTokenSource();
-                    _ = behavior.LoadAndTransitionAsync(bytes, behavior._cts.Token);
+                    var token = behavior._cts.Token;
+                    _ = behavior.LoadAndTransitionAsync(bytes, token);
                 }
             }
         }
@@ -99,6 +100,7 @@ namespace WinUIMusicPlayer.Behaviors
         {
             if (d is not FadeImageBehavior behavior) return;
 
+            // Enable=false 时直接跳过所有计算，Source 置 null
             if (!behavior.Enable)
             {
                 behavior.StopAndCleanup();
@@ -117,6 +119,18 @@ namespace WinUIMusicPlayer.Behaviors
             try
             {
                 await behavior.LoadAndTransitionAsync(newBytes, token);
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        // ── 公共加载+过渡逻辑（供两处调用） ──────────────────────────
+        private async Task LoadAndTransitionAsync(byte[]? bytes, CancellationToken token)
+        {
+            try
+            {
+                var bitmapImage = await DecodeToBitmapAsync(bytes, token);
+                if (!token.IsCancellationRequested && bitmapImage != null)
+                    TransitionToNewSource(bitmapImage);
             }
             catch (OperationCanceledException) { }
         }
@@ -143,100 +157,32 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
                 new PropertyMetadata(0));
 
-        // ── 核心解码：SoftwareBitmap + Fant 高质量缩放 ────────────────
-        /// <summary>
-        /// 将原始字节解码为 SoftwareBitmapSource。
-        /// 若 DecodePixelWidth > 0，使用 BitmapTransform.InterpolationMode = Fant 缩放。
-        /// 调用方负责在不再使用时释放返回的 SoftwareBitmapSource（当前在 TransitionToNewSource 中处理）。
-        /// </summary>
-        private async Task<SoftwareBitmapSource?> DecodeToBitmapSourceAsync(
-            byte[]? bytes, CancellationToken token)
+        // ── 解码 ───────────────────────────────────────────────────────
+        private async Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token)
         {
-            if (bytes is not { Length: > 0 }) return null;
-
-            // ① 写入内存流（用 using 确保及时释放）
-            using var stream = new InMemoryRandomAccessStream();
-            await stream.WriteAsync(bytes.AsBuffer());
-            stream.Seek(0);
-
-            if (token.IsCancellationRequested) return null;
+            if (bytes == null || bytes.Length == 0) return null;
 
             try
             {
-                // ② 创建解码器（从流读取，流可在此后释放）
-                var decoder = await BitmapDecoder.CreateAsync(stream);
+                using var stream = new InMemoryRandomAccessStream();
+                await stream.WriteAsync(bytes.AsBuffer());
+                stream.Seek(0);
 
                 if (token.IsCancellationRequested) return null;
 
-                SoftwareBitmap softwareBitmap;
-
-                int targetWidth = DecodePixelWidth;
-                if (targetWidth > 0 && decoder.PixelWidth > (uint)targetWidth)
+                var bitmap = new BitmapImage
                 {
-                    // ③-A 高质量 Fant 缩放：等比算出目标高度
-                    double scale = (double)targetWidth / decoder.PixelWidth;
-                    uint targetHeight = (uint)Math.Round(decoder.PixelHeight * scale);
+                    DecodePixelType = DecodePixelType.Logical
+                };
 
-                    var transform = new BitmapTransform
-                    {
-                        ScaledWidth = (uint)targetWidth,
-                        ScaledHeight = targetHeight,
-                        // Fant 是 WIC 内置最高质量的缩放插值算法
-                        InterpolationMode = BitmapInterpolationMode.Fant
-                    };
+                int decodeWidth = DecodePixelWidth;
+                if (decodeWidth > 0)
+                    bitmap.DecodePixelWidth = decodeWidth;
 
-                    // GetSoftwareBitmapAsync 在后台线程解码 + 缩放，不阻塞 UI
-                    softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                        BitmapPixelFormat.Bgra8,
-                        BitmapAlphaMode.Premultiplied,
-                        transform,
-                        ExifOrientationMode.RespectExifOrientation,
-                        ColorManagementMode.ColorManageToSRgb);
-                }
-                else
-                {
-                    // ③-B 不缩放，直接以 Bgra8 + Premultiplied 解码
-                    softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                        BitmapPixelFormat.Bgra8,
-                        BitmapAlphaMode.Premultiplied,
-                        new BitmapTransform(),
-                        ExifOrientationMode.RespectExifOrientation,
-                        ColorManagementMode.ColorManageToSRgb);
-                }
-
-                if (token.IsCancellationRequested)
-                {
-                    softwareBitmap.Dispose();
-                    return null;
-                }
-
-                // ④ 转为 SoftwareBitmapSource（必须在 UI 线程调用 SetBitmapAsync）
-                //    SoftwareBitmapSource 内部会持有一份 GPU 纹理副本，
-                //    原 SoftwareBitmap（CPU 内存）可以立即释放。
-                var source = new SoftwareBitmapSource();
-                await source.SetBitmapAsync(softwareBitmap);
-                softwareBitmap.Dispose(); // ← CPU 内存立即释放，GPU 纹理由 source 管理
-
-                return token.IsCancellationRequested ? null : source;
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
             }
-            catch
-            {
-                return null;
-            }
-        }
-
-        // ── 公共加载+过渡逻辑 ──────────────────────────────────────────
-        private async Task LoadAndTransitionAsync(byte[]? bytes, CancellationToken token)
-        {
-            try
-            {
-                var source = await DecodeToBitmapSourceAsync(bytes, token);
-                if (!token.IsCancellationRequested && source != null)
-                    TransitionToNewSource(source);
-                else
-                    source?.Dispose(); // 取消时释放已解码资源
-            }
-            catch (OperationCanceledException) { }
+            catch { return null; }
         }
 
         // ── 生命周期 ───────────────────────────────────────────────────
@@ -250,11 +196,9 @@ namespace WinUIMusicPlayer.Behaviors
         private async Task InitAsync()
         {
             _cts = new CancellationTokenSource();
-            var source = await DecodeToBitmapSourceAsync(ImageBytes, _cts.Token);
-            if (AssociatedObject != null && source != null)
-                AssociatedObject.Source = source;
-            else
-                source?.Dispose();
+            var bitmap = await DecodeToBitmapAsync(ImageBytes, _cts.Token);
+            if (AssociatedObject != null && bitmap != null)
+                AssociatedObject.Source = bitmap;
         }
 
         protected override void OnDetaching()
@@ -267,12 +211,12 @@ namespace WinUIMusicPlayer.Behaviors
         // ── 淡入淡出过渡 ───────────────────────────────────────────────
         private void TransitionToNewSource(ImageSource newSource)
         {
-            if (AssociatedObject == null) return;
+            if (AssociatedObject == null || AssociatedObject.Source == newSource) return;
 
             var parent = VisualTreeHelper.GetParent(AssociatedObject) as Panel;
             if (parent == null || AssociatedObject.Visibility == Visibility.Collapsed)
             {
-                ReplaceAndDispose(newSource);
+                AssociatedObject.Source = newSource;
                 return;
             }
 
@@ -282,7 +226,7 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 _tempOverlayImage = new Image
                 {
-                    Source = AssociatedObject.Source, // 旧 source 交给覆盖层持有
+                    Source = AssociatedObject.Source,
                     Stretch = AssociatedObject.Stretch,
                     HorizontalAlignment = AssociatedObject.HorizontalAlignment,
                     VerticalAlignment = AssociatedObject.VerticalAlignment,
@@ -290,7 +234,8 @@ namespace WinUIMusicPlayer.Behaviors
                     IsHitTestVisible = false
                 };
 
-                Canvas.SetZIndex(_tempOverlayImage, Canvas.GetZIndex(AssociatedObject) + 1);
+                int currentZIndex = Canvas.GetZIndex(AssociatedObject);
+                Canvas.SetZIndex(_tempOverlayImage, currentZIndex + 1);
                 parent.Children.Add(_tempOverlayImage);
 
                 var ani = new DoubleAnimation
@@ -306,7 +251,6 @@ namespace WinUIMusicPlayer.Behaviors
                 Storyboard.SetTarget(ani, _tempOverlayImage);
                 Storyboard.SetTargetProperty(ani, "Opacity");
 
-                // 动画完成后清理覆盖层，并释放其持有的旧 SoftwareBitmapSource
                 _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
 
                 AssociatedObject.Source = newSource;
@@ -318,14 +262,6 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
-        /// <summary>替换 AssociatedObject.Source，同时 Dispose 旧的 SoftwareBitmapSource。</summary>
-        private void ReplaceAndDispose(ImageSource newSource)
-        {
-            var old = AssociatedObject!.Source as SoftwareBitmapSource;
-            AssociatedObject.Source = newSource;
-            old?.Dispose();
-        }
-
         private void StopAndCleanup()
         {
             _currentTransitionStoryboard?.Stop();
@@ -335,9 +271,6 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 var parent = VisualTreeHelper.GetParent(_tempOverlayImage) as Panel;
                 parent?.Children.Remove(_tempOverlayImage);
-
-                // 释放覆盖层持有的旧 SoftwareBitmapSource（GPU 纹理）
-                (_tempOverlayImage.Source as SoftwareBitmapSource)?.Dispose();
                 _tempOverlayImage.Source = null;
                 _tempOverlayImage = null;
             }

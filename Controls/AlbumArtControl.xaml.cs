@@ -31,6 +31,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
+        // IsActive=false 时不做任何加载，等激活时再由 OnIsActiveChanged 触发
+        if (!ctrl.IsActive) return;
 
         var newBytes = e.NewValue as byte[];
         if (IsDuplicateAndUpdate(newBytes)) return;
@@ -55,6 +57,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
+        if (!ctrl.IsActive) return;
 
         Invalidate();
 
@@ -122,9 +125,50 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         var ctrl = (AlbumArtControl)d;
         if (!ctrl._isResourcesCreated) return;
-        // 布局/圆角/阴影参数变化时令 mask 缓存失效，下次 Draw 时重建
+        if (!ctrl.IsActive) return;
+
         ctrl._maskInvalidated = true;
         ctrl.canvas.Invalidate();
+    }
+
+    // ── IsActive 依赖属性 ─────────────────────────────────────────────────
+    //
+    // 默认 false：控件创建后不执行任何加载与绘制，直到外部显式置为 true。
+    // 置为 true：按当前 ImageBytes 触发一次完整加载流程。
+    // 置为 false：立即停止 FadeTimer，令下一帧 Draw 直接 return；
+    //             保留 _currentBitmap 以便重新激活时可快速恢复（无需重新解码）。
+    //             若需彻底释放 GPU 资源，调用方可同时设 Visibility=Collapsed。
+
+    public static readonly DependencyProperty IsActiveProperty =
+        DependencyProperty.Register(nameof(IsActive), typeof(bool),
+            typeof(AlbumArtControl), new PropertyMetadata(false, OnIsActiveChanged));
+
+    public bool IsActive
+    {
+        get => (bool)GetValue(IsActiveProperty);
+        set => SetValue(IsActiveProperty, value);
+    }
+
+    private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (AlbumArtControl)d;
+        if (!ctrl._isResourcesCreated) return;
+
+        if ((bool)e.NewValue)
+        {
+            // 激活：重新触发加载（去重逻辑会过滤掉未变化的图片）
+            if (ctrl.ImageBytes is { Length: > 0 } bytes)
+                _ = ctrl.LoadBitmapAsync(bytes);
+            else
+                _ = ctrl.LoadDefaultCoverAsync();
+        }
+        else
+        {
+            // 停用：停止 Timer，取消正在进行的加载，触发一次 Draw（Draw 内直接 return）
+            ctrl._loadCts?.Cancel();
+            ctrl._fadeTimer?.Stop();
+            ctrl.canvas.Invalidate();
+        }
     }
 
     // ── 私有字段 ──────────────────────────────────────────────────────────
@@ -151,14 +195,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private static long _lastLength = -1;
     private static int _lastHash;
 
-    // ── 修复：持久化的圆角遮罩 CanvasCommandList ──────────────────────────
-    //
-    // 原问题：DrawRoundedImageWithShadow 每帧都 new CanvasCommandList，
-    //         Win2D 内部对其持有 COM 引用，C# 的 using/Dispose 并不立即
-    //         释放 GPU 侧资源，60fps 下每秒产生 60 个 GPU surface 累积不释放。
-    //
-    // 修复：_maskCL 提升为成员变量，仅在 destRect 尺寸或圆角参数变化时重建，
-    //       其余帧在 EnsureMaskCommandList 中 O(1) 比较后直接复用，零 GPU 分配。
+    // ── 持久化的圆角遮罩 CanvasCommandList ───────────────────────────────
 
     private CanvasCommandList? _maskCL;
     private (float w, float h, float radius) _maskSize;
@@ -207,6 +244,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         canvas.CreateResources += async (s, e) =>
         {
             _isResourcesCreated = true;
+
+            // IsActive=false 时跳过初始加载，等激活时由 OnIsActiveChanged 触发
+            if (!IsActive) return;
+
             if (ImageBytes is { Length: > 0 } bytes)
                 await LoadBitmapAsync(bytes);
             else
@@ -414,6 +455,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
     private void DrawImageLayer(CanvasDrawingSession ds)
     {
+        // IsActive=false：跳过所有 GPU 计算，直接返回（canvas 呈现透明空白帧）
+        if (!IsActive) return;
+
         float canvasW = (float)canvas.Size.Width;
         float canvasH = (float)canvas.Size.Height;
         if (canvasW <= 0 || canvasH <= 0) return;
@@ -441,7 +485,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         float w = (float)destRect.Width;
         float h = (float)destRect.Height;
 
-        // 确保 _maskCL 与当前目标尺寸和圆角匹配（不匹配时才重建）
         EnsureMaskCommandList(ds.Device, w, h, radius);
 
         if (_currentBitmap != null && _currentAlpha > 0f)
@@ -451,11 +494,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             TryDrawRounded(ds, _incomingBitmap, destRect, radius, _incomingAlpha);
     }
 
-    /// <summary>
-    /// 确保 _maskCL 与当前目标尺寸和圆角匹配。
-    /// 命中缓存时为纯 O(1) 比较，不产生任何 GPU 分配。
-    /// 仅在尺寸/圆角变化或被外部属性变更失效时才真正重建。
-    /// </summary>
     private void EnsureMaskCommandList(CanvasDevice device, float w, float h, float radius)
     {
         if (!_maskInvalidated
@@ -464,10 +502,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             && MathF.Abs(_maskSize.h - h) < 0.5f
             && MathF.Abs(_maskSize.radius - radius) < 0.5f)
         {
-            return; // 命中缓存，直接复用
+            return;
         }
 
-        // 先 Dispose 旧的再分配新的，避免短暂双份占用
         _maskCL?.Dispose();
         _maskCL = new CanvasCommandList(device);
         using (var maskDs = _maskCL.CreateDrawingSession())
@@ -513,7 +550,6 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         float h = (float)destRect.Height;
         if (w <= 0 || h <= 0) return;
 
-        // ScaleEffect：将位图缩放到目标尺寸
         using var scale = new ScaleEffect
         {
             Source = bitmap,
@@ -522,10 +558,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             InterpolationMode = CanvasImageInterpolation.HighQualityCubic
         };
 
-        // 圆角遮罩：直接引用成员变量 _maskCL，不再每帧 new
         using var masked = new AlphaMaskEffect { Source = scale, AlphaMask = _maskCL };
 
-        // 阴影
         using var shadow = new ShadowEffect
         {
             Source = masked,
@@ -538,12 +572,10 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
         };
 
-        // 合成：阴影在下，图像在上
         using var composite = new CompositeEffect();
         composite.Sources.Add(shadowOffset);
         composite.Sources.Add(masked);
 
-        // 统一 opacity
         using var withOpacity = new OpacityEffect { Source = composite, Opacity = opacity };
 
         ds.DrawImage(withOpacity, (float)destRect.X, (float)destRect.Y);

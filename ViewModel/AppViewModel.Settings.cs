@@ -55,6 +55,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 0;
 
+        public bool IsWin2dCoverImageControlEnable {
+            get => field;
+            set 
+            {
+                if (SetProperty(ref field, value)) {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = false;
+
         public int DsdGain
         {
             get => field;

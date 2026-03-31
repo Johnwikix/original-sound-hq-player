@@ -900,4 +900,10 @@
   <data name="EnableLightWave.Header" xml:space="preserve">
     <value>背景光波を有効にする</value>
   </data>
+  <data name="RebootToApply" xml:space="preserve">
+    <value>変更を適用するにはアプリを再起動してください。</value>
+  </data>
+  <data name="Win2dCover.Header" xml:space="preserve">
+    <value>Win2D 表紙（実験的）</value>
+  </data>
 </root>

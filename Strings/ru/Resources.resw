@@ -900,4 +900,10 @@
   <data name="EnableLightWave.Header" xml:space="preserve">
     <value>Включить фоновую световую волну</value>
   </data>
+  <data name="RebootToApply" xml:space="preserve">
+    <value>Перезапустите приложение, чтобы изменения вступили в силу.</value>
+  </data>
+  <data name="Win2dCover.Header" xml:space="preserve">
+    <value>Обложка Win2D (Экспериментальная)</value>
+  </data>
 </root>

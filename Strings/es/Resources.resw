@@ -900,4 +900,10 @@
   <data name="EnableLightWave.Header" xml:space="preserve">
     <value>Activar onda de luz de fondo</value>
   </data>
+  <data name="RebootToApply" xml:space="preserve">
+    <value>Reinicia la aplicación para que los cambios surtan efecto.</value>
+  </data>
+  <data name="Win2dCover.Header" xml:space="preserve">
+    <value>Portada Win2D (Experimental)</value>
+  </data>
 </root>
