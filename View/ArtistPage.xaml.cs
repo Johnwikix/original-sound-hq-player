@@ -45,16 +45,16 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
         }
 
-        private void ArtistsGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-            {
-                if (args.Item is Music music)
-                {
-                    //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-                }
-            }
-        }
+        //private void ArtistsGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        //{
+        //    if (args.InRecycleQueue)
+        //    {
+        //        if (args.Item is Music music)
+        //        {
+        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
+        //        }
+        //    }
+        //}
     }
 
 }

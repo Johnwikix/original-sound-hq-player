@@ -32,7 +32,6 @@
         AllowDrop="True"
         CanDragItems="True"
         CanReorderItems="True"
-        ContainerContentChanging="MusicListView_ContainerContentChanging"
         DoubleTapped="MusicListView_DoubleTapped"
         ItemContainerStyle="{StaticResource ListViewItemStyle}"
         ItemsSource="{x:Bind ViewModel.AppViewModel.FavoriteSongs, Mode=TwoWay}"

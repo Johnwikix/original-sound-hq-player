@@ -20,7 +20,6 @@ using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
@@ -34,8 +33,7 @@ public class AlbumCoverBehavior : Behavior<Image>
     private static readonly ConcurrentDictionary<string, ImageSource> _coverCache = new();
 
     // key = imageHash 优先，无 hash 时 = "id:{musicId}"
-    private static readonly ConcurrentDictionary<string, TaskCompletionSource<ImageSource?>> _loadingTcs = new();
-    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _loadingCts = new();
+    private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _loadingTasks = new();
 
     // ── 依赖属性 ──────────────────────────────────────────────────────────
 
@@ -75,17 +73,6 @@ public class AlbumCoverBehavior : Behavior<Image>
         base.OnDetaching();
     }
 
-    public static void OnMusicUnloaded(int musicId)
-    {
-        var key = $"id:{musicId}";
-        if (_loadingCts.TryRemove(key, out var cts))
-        {
-            try { cts.Cancel(); } catch { }
-            cts.Dispose();
-        }
-        _loadingTcs.TryRemove(key, out _);
-    }
-
     // ── 核心加载 ──────────────────────────────────────────────────────────
 
     private void Load(Music? music)
@@ -110,72 +97,55 @@ public class AlbumCoverBehavior : Behavior<Image>
         var token = _cts.Token;
 
         // 复用或新建加载任务
-        var tcs = _loadingTcs.GetOrAdd(cacheKey, key =>
+        var task = _loadingTasks.GetOrAdd(cacheKey, _ =>
         {
-            var newTcs = new TaskCompletionSource<ImageSource?>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-            var cts = new CancellationTokenSource();
-            _loadingCts[cacheKey] = cts;
-            _ = LoadCoreAsync(music, cacheKey, newTcs, cts.Token);
-            return newTcs;
+            var bitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
+            return LoadCoreAsync(music, cacheKey, bitmap);
         });
 
-        _ = WaitAndApplyAsync(tcs, token);
+        _ = WaitAndApplyAsync(task, token);
     }
 
-    private async Task WaitAndApplyAsync(
-        TaskCompletionSource<ImageSource?> tcs, CancellationToken token)
+    private async Task WaitAndApplyAsync(Task<ImageSource?> task, CancellationToken token)
     {
         try
         {
-            var source = await tcs.Task.WaitAsync(token);
+            var source = await task.WaitAsync(token);
             if (token.IsCancellationRequested || AssociatedObject == null || source == null) return;
             AssociatedObject.Source = source;
             FadeIn();
         }
         catch (OperationCanceledException) { }
+        catch { }
     }
 
     // ── 加载核心（静态，供多实例共用） ────────────────────────────────────
 
-    private static async Task LoadCoreAsync(
-        Music music, string cacheKey,
-        TaskCompletionSource<ImageSource?> tcs,
-        CancellationToken ct)
+    private static async Task<ImageSource?> LoadCoreAsync(
+        Music music, string cacheKey, BitmapImage bitmap)
     {
         try
         {
-            var bitmap = new BitmapImage { DecodePixelWidth = AppSettings.CoverSize };
-            await LoadImageAsync(music, bitmap, tcs, ct);
-        }
-        catch (OperationCanceledException)
-        {
-            tcs.TrySetCanceled();
+            return await LoadImageAsync(music, bitmap);
         }
         catch
         {
-            tcs.TrySetResult(null);
+            return null;
         }
         finally
         {
-            _loadingTcs.TryRemove(cacheKey, out _);
-            _loadingCts.TryRemove(cacheKey, out _);
+            _loadingTasks.TryRemove(cacheKey, out _);
         }
     }
 
-    // ── 图片加载（原 ToolUtils.LoadImageAsync） ───────────────────────────
+    // ── 图片加载 ──────────────────────────────────────────────────────────
 
-    private static async Task LoadImageAsync(
-        Music music, BitmapImage bitmap,
-        TaskCompletionSource<ImageSource?> tcs,
-        CancellationToken ct)
+    private static async Task<ImageSource?> LoadImageAsync(Music music, BitmapImage bitmap)
     {
-        await Task.Run(async () =>
+        return await Task.Run(async () =>
         {
             try
             {
-                if (ct.IsCancellationRequested) return;
-
                 // ── 磁盘缓存读取 ──────────────────────────────────────────
                 if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
                     && !string.IsNullOrEmpty(music.ImageHash))
@@ -187,9 +157,8 @@ public class AlbumCoverBehavior : Behavior<Image>
                     {
                         try
                         {
-                            var bytes = await System.IO.File.ReadAllBytesAsync(cachePath, ct);
+                            var bytes = await System.IO.File.ReadAllBytesAsync(cachePath);
 
-                            // 优先检查缓存图片尺寸是否与当前 CoverSize 一致
                             bool sizeMatch = false;
                             try
                             {
@@ -201,7 +170,6 @@ public class AlbumCoverBehavior : Behavior<Image>
 
                             if (!sizeMatch)
                             {
-                                // 尺寸不匹配，直接删除，走原始流程重新解码并覆写缓存
                                 try { System.IO.File.Delete(cachePath); } catch { }
                             }
                             else
@@ -211,16 +179,10 @@ public class AlbumCoverBehavior : Behavior<Image>
                                     ? music.UpdateTime
                                     : music.CreateTime;
 
-                                // 缓存比 music 更新，直接使用
                                 if (cacheInfo.LastWriteTime > musicTime)
                                 {
-                                    if (!ct.IsCancellationRequested)
-                                    {
-                                        await LoadFromBytesAndNotify(bytes, music, bitmap, tcs, ct);
-                                        return;
-                                    }
+                                    return await LoadFromBytesAsync(bytes, music, bitmap);
                                 }
-                                // 缓存过期：删除旧文件，继续走原始流程重新解码并覆写缓存
                                 else
                                 {
                                     try { System.IO.File.Delete(cachePath); } catch { }
@@ -243,26 +205,22 @@ public class AlbumCoverBehavior : Behavior<Image>
                 else
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
-                    if (ct.IsCancellationRequested) return;
-                    if (picture is null || picture.Length == 0) {
+                    if (picture is null || picture.Length == 0)
+                    {
                         using var file = TagLib.File.Create(music.Path, ReadStyle.None);
-                        if (ct.IsCancellationRequested) return;
                         picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
                     }
                 }
 
-                if (picture is { Length: > 0 } && !ct.IsCancellationRequested)
+                if (picture is { Length: > 0 })
                 {
-                    await DecodePicture(picture, music, bitmap, tcs, ct);
-                    if (!tcs.Task.IsCompleted && !ct.IsCancellationRequested)
-                        await FetchFromNet(picture, music, bitmap, tcs, ct);
-                    return;
+                    var result = await DecodePictureAsync(picture, music, bitmap);
+                    if (result != null) return result;
+                    return await FetchFromNetAsync(picture, music, bitmap);
                 }
 
-                if (!ct.IsCancellationRequested)
-                    await FetchFromNet(null, music, bitmap, tcs, ct);
+                return await FetchFromNetAsync(null, music, bitmap);
             }
-            catch (OperationCanceledException) {}
             catch (Exception)
             {
                 // 降级：用 ATL 读取
@@ -270,45 +228,39 @@ public class AlbumCoverBehavior : Behavior<Image>
                 {
                     var track = new Track(music.Path);
                     var picture = track?.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
-                    if (picture is { Length: > 0 } && !ct.IsCancellationRequested)
+                    if (picture is { Length: > 0 })
                     {
-                        await DecodePicture(picture, music, bitmap, tcs, ct);
-                        if (!tcs.Task.IsCompleted && !ct.IsCancellationRequested)
-                            await FetchFromNet(picture, music, bitmap, tcs, ct);
-                        return;
+                        var result = await DecodePictureAsync(picture, music, bitmap);
+                        if (result != null) return result;
+                        return await FetchFromNetAsync(picture, music, bitmap);
                     }
-                    if (!ct.IsCancellationRequested)
-                        await FetchFromNet(null, music, bitmap, tcs, ct);
+                    return await FetchFromNetAsync(null, music, bitmap);
                 }
-                catch (OperationCanceledException) {}
                 catch
                 {
-                    try { await FetchFromNet(null, music, bitmap, tcs, ct); } catch { }
+                    try { return await FetchFromNetAsync(null, music, bitmap); } catch { }
+                    return null;
                 }
             }
-        }, ct);
+        });
     }
 
-    // ── 解码并写缓存（原 DecodePicture） ──────────────────────────────────
+    // ── 解码并写缓存 ──────────────────────────────────────────────────────
 
-    private static async Task DecodePicture(
-        byte[] picture, Music music, BitmapImage bitmap,
-        TaskCompletionSource<ImageSource?> tcs,
-        CancellationToken ct)
+    private static async Task<ImageSource?> DecodePictureAsync(
+        byte[] picture, Music music, BitmapImage bitmap)
     {
-        await Task.Run(async () =>
+        return await Task.Run(async () =>
         {
             SoftwareBitmap? softwareBitmap = null;
             try
             {
-                // 计算原始图片 hash
                 var imageHash = Convert.ToHexString(
                     System.Security.Cryptography.MD5.HashData(picture));
 
                 using var stream = new InMemoryRandomAccessStream();
                 await stream.WriteAsync(picture.AsBuffer());
                 stream.Seek(0);
-                if (ct.IsCancellationRequested) return;
 
                 var decoder = await BitmapDecoder.CreateAsync(stream);
                 double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
@@ -326,8 +278,6 @@ public class AlbumCoverBehavior : Behavior<Image>
                     },
                     ExifOrientationMode.RespectExifOrientation,
                     ColorManagementMode.DoNotColorManage);
-
-                if (ct.IsCancellationRequested) return;
 
                 var outputStream = new InMemoryRandomAccessStream();
                 var encoder = await BitmapEncoder.CreateAsync(
@@ -347,29 +297,25 @@ public class AlbumCoverBehavior : Behavior<Image>
                         {
                             outputStream.Seek(0);
                             var buf = new byte[outputStream.Size];
-                            await outputStream.AsStream()
-                                .ReadExactlyAsync(buf, 0, buf.Length, ct);
-                            await System.IO.File.WriteAllBytesAsync(cachePath, buf, ct);
+                            await outputStream.AsStream().ReadExactlyAsync(buf, 0, buf.Length);
+                            await System.IO.File.WriteAllBytesAsync(cachePath, buf);
                         }
                     }
                     catch { }
                 }
 
                 outputStream.Seek(0);
-                if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
 
-                // ── 回到 UI 线程：SetSource 完成后才写缓存并通知 ──────────
+                // ── 回到 UI 线程：SetSource 完成后写内存缓存并返回 ────────
+                ImageSource? result = null;
                 await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
                 {
-                    if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
                     try
                     {
                         await bitmap.SetSourceAsync(outputStream);
 
-                        // 写内存缓存
                         _coverCache.TryAdd(imageHash, bitmap);
 
-                        // 更新 music.ImageHash 并持久化
                         if (music.ImageHash != imageHash)
                         {
                             music.ImageHash = imageHash;
@@ -378,79 +324,64 @@ public class AlbumCoverBehavior : Behavior<Image>
                                 .UpdateMusicInfo(music);
                         }
 
-                        // SetSource 完成后才通知所有等待者
-                        tcs.TrySetResult(bitmap);
-                    }
-                    catch (Exception ex)
-                    {
-                        tcs.TrySetException(ex);
+                        result = bitmap;
                     }
                     finally
                     {
                         outputStream.Dispose();
                     }
                 });
+
+                return result;
             }
-            catch (OperationCanceledException) {}
+            catch { return null; }
             finally { softwareBitmap?.Dispose(); }
-        }, ct);
+        });
     }
 
     // ── 从字节流加载（磁盘缓存命中路径） ─────────────────────────────────
 
-    private static async Task LoadFromBytesAndNotify(
-        byte[] bytes, Music music, BitmapImage bitmap,
-        TaskCompletionSource<ImageSource?> tcs,
-        CancellationToken ct)
+    private static async Task<ImageSource?> LoadFromBytesAsync(
+        byte[] bytes, Music music, BitmapImage bitmap)
     {
-        await Task.Run(async () =>
+        return await Task.Run(async () =>
         {
             try
             {
                 var outputStream = new InMemoryRandomAccessStream();
                 await outputStream.WriteAsync(bytes.AsBuffer());
                 outputStream.Seek(0);
-                if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
 
+                ImageSource? result = null;
                 await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
                 {
-                    if (ct.IsCancellationRequested) { outputStream.Dispose(); return; }
                     try
                     {
                         await bitmap.SetSourceAsync(outputStream);
                         _coverCache.TryAdd(music.ImageHash, bitmap);
-
-                        // SetSource 完成后通知
-                        tcs.TrySetResult(bitmap);
+                        result = bitmap;
                     }
-                    catch (Exception ex) { tcs.TrySetException(ex); }
                     finally { outputStream.Dispose(); }
                 });
+
+                return result;
             }
-            catch (OperationCanceledException) {}
-        }, ct);
+            catch { return null; }
+        });
     }
 
-    // ── 网络获取（原 GetPicFromNet，签名不变） ────────────────────────────
+    // ── 网络获取 ──────────────────────────────────────────────────────────
 
-    private static async Task FetchFromNet(
-        byte[]? picture, Music music, BitmapImage bitmap,
-        TaskCompletionSource<ImageSource?> tcs,
-        CancellationToken ct)
+    private static async Task<ImageSource?> FetchFromNetAsync(
+        byte[]? picture, Music music, BitmapImage bitmap)
     {
         try
         {
             if (picture is { Length: > 0 })
-            {
-                if (!tcs.Task.IsCompleted)
-                    tcs.TrySetResult(null);
-                return;
-            }
+                return null;
 
             if (!Directory.Exists(AppSettings.MusicCoverCache))
                 Directory.CreateDirectory(AppSettings.MusicCoverCache);
-
-            if (ct.IsCancellationRequested) return;
 
             string fileName = $"{music.Title}_{music.Album}_{music.Author}";
             string invalidChars = new string(Path.GetInvalidFileNameChars())
@@ -466,23 +397,18 @@ public class AlbumCoverBehavior : Behavior<Image>
                      && AppSettings.IsAutoLyricsEnabled)
             {
                 picture = await LrcService.GetCoverImageAsync(
-                    music.Title, music.Album, music.Author, ct);
+                    music.Title, music.Album, music.Author);
 
                 if (picture is { Length: > 0 })
                     System.IO.File.WriteAllBytes(filePath, picture);
             }
 
-            if (picture is { Length: > 0 } && !ct.IsCancellationRequested)
-            {
-                await DecodePicture(picture, music, bitmap, tcs, ct);
-                return;
-            }
+            if (picture is { Length: > 0 })
+                return await DecodePictureAsync(picture, music, bitmap);
         }
-        catch (OperationCanceledException) {}
         catch { }
 
-        if (!tcs.Task.IsCompleted)
-            tcs.TrySetResult(null);
+        return null;
     }
 
     // ── 淡入动画 ──────────────────────────────────────────────────────────

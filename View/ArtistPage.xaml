@@ -20,7 +20,6 @@
                 <GridView
                     x:Name="ArtistsGridView"
                     Margin="10,0,0,0"
-                    ContainerContentChanging="ArtistsGridView_ContainerContentChanging"
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="ArtistGridView_ItemClick"

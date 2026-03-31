@@ -50,16 +50,16 @@ namespace WinUIMusicPlayer.View
             ViewModel.AlbumGridView_ItemClick(sender, e);
         }
 
-        private void AlbumGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-            {
-                if (args.Item is Music music)
-                {
-                    //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-                }
-            }
-        }
+        //private void AlbumGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        //{
+        //    if (args.InRecycleQueue)
+        //    {
+        //        if (args.Item is Music music)
+        //        {
+        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
+        //        }
+        //    }
+        //}
     }
 }
 

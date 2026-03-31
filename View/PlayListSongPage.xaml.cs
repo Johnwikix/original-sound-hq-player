@@ -139,16 +139,16 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-            {
-                if (args.Item is Music music)
-                {
-                    //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-                }
-            }
-        }
+        //private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        //{
+        //    if (args.InRecycleQueue)
+        //    {
+        //        if (args.Item is Music music)
+        //        {
+        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
+        //        }
+        //    }
+        //}
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

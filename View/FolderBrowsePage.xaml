@@ -20,7 +20,6 @@
                 <GridView
                     x:Name="FolderGridView"
                     Margin="10,0,0,0"
-                    ContainerContentChanging="FolderGridView_ContainerContentChanging"
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="FolderGridView_ItemClick"

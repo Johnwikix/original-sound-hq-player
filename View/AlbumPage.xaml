@@ -21,7 +21,6 @@
                 <GridView
                     x:Name="AlbumGridView"
                     Margin="10,0,0,0"
-                    ContainerContentChanging="AlbumGridView_ContainerContentChanging"
                     IsItemClickEnabled="True"
                     IsRightTapEnabled="True"
                     ItemClick="AlbumGridView_ItemClick"
