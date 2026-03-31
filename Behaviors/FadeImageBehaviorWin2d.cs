@@ -1,4 +1,6 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -14,11 +16,15 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Behaviors
 {
-    public class FadeImageBehavior : Behavior<Image>
+    public class FadeImageBehaviorWin2d : Behavior<Image>
     {
         private Storyboard? _currentTransitionStoryboard;
         private Image? _tempOverlayImage;
         private CancellationTokenSource? _cts;
+
+        // Win2D 设备：整个 Behavior 实例共享，避免反复创建开销
+        // CanvasDevice 是线程安全的，可跨调用复用
+        private CanvasDevice? _canvasDevice;
 
         private long _lastLength = -1;
         private int _lastHash;
@@ -49,6 +55,18 @@ namespace WinUIMusicPlayer.Behaviors
             _lastHash = 0;
         }
 
+        // ── 获取或创建 CanvasDevice（含设备丢失恢复）────────────────────
+        private CanvasDevice GetOrCreateDevice()
+        {
+            if (_canvasDevice == null || _canvasDevice.IsDeviceLost(0))
+            {
+                _canvasDevice?.Dispose();
+                // forceSoftwareRenderer = false：优先使用 GPU 硬件加速
+                _canvasDevice = new CanvasDevice(forceSoftwareRenderer: false);
+            }
+            return _canvasDevice;
+        }
+
         // ── Enable 依赖属性 ────────────────────────────────────────────
         public bool Enable
         {
@@ -62,7 +80,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not FadeImageBehavior behavior) return;
+            if (d is not FadeImageBehaviorWin2d behavior) return;
 
             if (!(bool)e.NewValue)
             {
@@ -97,7 +115,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not FadeImageBehavior behavior) return;
+            if (d is not FadeImageBehaviorWin2d behavior) return;
 
             if (!behavior.Enable)
             {
@@ -132,7 +150,7 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(Duration), typeof(Duration), typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
-        // ── DecodePixelWidth 依赖属性：0 = 按原图解码 ──────────────────
+        // ── DecodePixelWidth：0 = 不缩放 ──────────────────────────────
         public int DecodePixelWidth
         {
             get => (int)GetValue(DecodePixelWidthProperty);
@@ -143,86 +161,147 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
                 new PropertyMetadata(0));
 
-        // ── 核心解码：SoftwareBitmap + Fant 高质量缩放 ────────────────
+        // ── 核心解码：Win2D CanvasBitmap + Cubic 缩放 ─────────────────
         /// <summary>
-        /// 将原始字节解码为 SoftwareBitmapSource。
-        /// 若 DecodePixelWidth > 0，使用 BitmapTransform.InterpolationMode = Fant 缩放。
-        /// 调用方负责在不再使用时释放返回的 SoftwareBitmapSource（当前在 TransitionToNewSource 中处理）。
+        /// 解码流程：
+        ///   1. 后台线程：IRandomAccessStream → CanvasBitmap（GPU 纹理，硬件解码）
+        ///   2. 若需缩放：ScaleEffect（InterpolationMode = HighQualityCubic）离屏渲染
+        ///      → 输出写入目标尺寸的 CanvasRenderTarget（保持在 GPU 内存）
+        ///   3. UI 线程：CanvasBitmap/CanvasRenderTarget → SoftwareBitmap（仅在需要
+        ///      与 XAML Image.Source 兼容时才回读 CPU），再包装为 SoftwareBitmapSource
+        ///
+        /// 内存说明：
+        ///   - InMemoryRandomAccessStream 用 using 确保立即释放（原始字节已在 bytes[] 里）
+        ///   - 缩放后的 CanvasRenderTarget 用完即 Dispose，不长期持有
+        ///   - SoftwareBitmapSource 持有 GPU 副本，CPU 端 SoftwareBitmap 解绑后立即释放
         /// </summary>
-        private async Task<SoftwareBitmapSource?> DecodeToBitmapSourceAsync(
+        private async Task<SoftwareBitmapSource?> DecodeWithWin2DAsync(
             byte[]? bytes, CancellationToken token)
         {
             if (bytes is not { Length: > 0 }) return null;
 
-            // ① 写入内存流（用 using 确保及时释放）
-            using var stream = new InMemoryRandomAccessStream();
-            await stream.WriteAsync(bytes.AsBuffer());
-            stream.Seek(0);
-
-            if (token.IsCancellationRequested) return null;
-
             try
             {
-                // ② 创建解码器（从流读取，流可在此后释放）
-                var decoder = await BitmapDecoder.CreateAsync(stream);
+                var device = GetOrCreateDevice();
 
-                if (token.IsCancellationRequested) return null;
-
-                SoftwareBitmap softwareBitmap;
-
-                int targetWidth = DecodePixelWidth;
-                if (targetWidth > 0 && decoder.PixelWidth > (uint)targetWidth)
+                // ① 从字节数组创建内存流，解码为 CanvasBitmap（GPU 纹理）
+                CanvasBitmap sourceBitmap;
+                using (var stream = new InMemoryRandomAccessStream())
                 {
-                    // ③-A 高质量 Fant 缩放：等比算出目标高度
-                    double scale = (double)targetWidth / decoder.PixelWidth;
-                    uint targetHeight = (uint)Math.Round(decoder.PixelHeight * scale);
+                    await stream.WriteAsync(bytes.AsBuffer());
+                    stream.Seek(0);
 
-                    var transform = new BitmapTransform
-                    {
-                        ScaledWidth = (uint)targetWidth,
-                        ScaledHeight = targetHeight,
-                        // Fant 是 WIC 内置最高质量的缩放插值算法
-                        InterpolationMode = BitmapInterpolationMode.Fant
-                    };
+                    if (token.IsCancellationRequested) return null;
 
-                    // GetSoftwareBitmapAsync 在后台线程解码 + 缩放，不阻塞 UI
-                    softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                        BitmapPixelFormat.Bgra8,
-                        BitmapAlphaMode.Premultiplied,
-                        transform,
-                        ExifOrientationMode.RespectExifOrientation,
-                        ColorManagementMode.ColorManageToSRgb);
+                    // CanvasBitmap.LoadAsync 在内部完成硬件解码，走 WIC → D2D 路径
+                    // DpiX/DpiY 传 96 以使逻辑像素 = 物理像素，避免 DPI 缩放干扰后续计算
+                    sourceBitmap = await CanvasBitmap.LoadAsync(device, stream, 96f);
                 }
-                else
-                {
-                    // ③-B 不缩放，直接以 Bgra8 + Premultiplied 解码
-                    softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                        BitmapPixelFormat.Bgra8,
-                        BitmapAlphaMode.Premultiplied,
-                        new BitmapTransform(),
-                        ExifOrientationMode.RespectExifOrientation,
-                        ColorManagementMode.ColorManageToSRgb);
-                }
+                // using 结束，InMemoryRandomAccessStream 已释放 ↑
 
                 if (token.IsCancellationRequested)
                 {
-                    softwareBitmap.Dispose();
+                    sourceBitmap.Dispose();
                     return null;
                 }
 
-                // ④ 转为 SoftwareBitmapSource（必须在 UI 线程调用 SetBitmapAsync）
-                //    SoftwareBitmapSource 内部会持有一份 GPU 纹理副本，
-                //    原 SoftwareBitmap（CPU 内存）可以立即释放。
-                var source = new SoftwareBitmapSource();
-                await source.SetBitmapAsync(softwareBitmap);
-                softwareBitmap.Dispose(); // ← CPU 内存立即释放，GPU 纹理由 source 管理
+                // ② 判断是否需要缩放
+                int targetWidth = DecodePixelWidth;
+                bool needsScale = targetWidth > 0 &&
+                                  sourceBitmap.SizeInPixels.Width > (uint)targetWidth;
 
-                return token.IsCancellationRequested ? null : source;
+                SoftwareBitmapSource resultSource;
+
+                if (needsScale)
+                {
+                    // ③-A Cubic 缩放：等比算目标高度
+                    double scale = (double)targetWidth / sourceBitmap.SizeInPixels.Width;
+                    int targetHeight = (int)Math.Round(sourceBitmap.SizeInPixels.Height * scale);
+
+                    // ScaleEffect 走 D2D HighQualityCubic：
+                    //   等价于 D2D1_SCALE_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC，
+                    //   内部做 box filter 预处理，大幅缩小时无锯齿且比 Fant 更快（GPU 并行）
+                    using var scaleEffect = new ScaleEffect
+                    {
+                        Source = sourceBitmap,
+                        Scale = new System.Numerics.Vector2((float)scale),
+                        InterpolationMode = CanvasImageInterpolation.HighQualityCubic,
+                        BorderMode = EffectBorderMode.Hard   // 边缘不渗色
+                    };
+
+                    // CanvasRenderTarget 在 GPU 上分配目标尺寸帧缓冲
+                    using var renderTarget = new CanvasRenderTarget(device, targetWidth, targetHeight, 96f);
+                    using (var ds = renderTarget.CreateDrawingSession())
+                    {
+                        ds.Clear(Microsoft.UI.Colors.Transparent);
+                        ds.DrawImage(scaleEffect);
+                    }
+                    // scaleEffect 和 ds 已 Dispose ↑，只保留 renderTarget 的内容
+
+                    if (token.IsCancellationRequested)
+                    {
+                        sourceBitmap.Dispose();
+                        return null;
+                    }
+
+                    // ④-A GPU → CPU（SoftwareBitmap）→ SoftwareBitmapSource
+                    //   GetPixelBytes 将 GPU 纹理回读到 CPU，仅此处有一次回读开销
+                    using var sb = await SoftwareBitmap.CreateCopyFromSurfaceAsync(renderTarget);
+                    // renderTarget Dispose 在 using 结束时释放 GPU 帧缓冲 ↑
+
+                    resultSource = await WrapSoftwareBitmapAsync(sb, token);
+                }
+                else
+                {
+                    // ③-B 无需缩放，直接回读
+                    using var sb = await SoftwareBitmap.CreateCopyFromSurfaceAsync(sourceBitmap);
+                    resultSource = await WrapSoftwareBitmapAsync(sb, token);
+                }
+
+                sourceBitmap.Dispose(); // GPU 纹理使命完成，释放
+                return resultSource;
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                // 设备丢失时重置，下次调用自动恢复
+                if (_canvasDevice?.IsDeviceLost(ex.HResult) == true)
+                {
+                    _canvasDevice.Dispose();
+                    _canvasDevice = null;
+                }
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 将 SoftwareBitmap（Bgra8 Premultiplied）包装为 SoftwareBitmapSource。
+        /// SoftwareBitmapSource.SetBitmapAsync 必须在 UI 线程上调用。
+        /// </summary>
+        private static async Task<SoftwareBitmapSource> WrapSoftwareBitmapAsync(
+            SoftwareBitmap softwareBitmap, CancellationToken token)
+        {
+            // 确保格式兼容 SoftwareBitmapSource（要求 Bgra8 + Premultiplied）
+            SoftwareBitmap compatible;
+            if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 ||
+                softwareBitmap.BitmapAlphaMode != BitmapAlphaMode.Premultiplied)
+            {
+                compatible = SoftwareBitmap.Convert(
+                    softwareBitmap,
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied);
+            }
+            else
+            {
+                compatible = softwareBitmap;
+            }
+
+            var source = new SoftwareBitmapSource();
+            await source.SetBitmapAsync(compatible); // UI 线程，上传 GPU 纹理
+            // SetBitmapAsync 完成后 source 持有独立 GPU 副本，compatible 可释放
+            if (!ReferenceEquals(compatible, softwareBitmap))
+                compatible.Dispose();
+
+            return source;
         }
 
         // ── 公共加载+过渡逻辑 ──────────────────────────────────────────
@@ -230,11 +309,11 @@ namespace WinUIMusicPlayer.Behaviors
         {
             try
             {
-                var source = await DecodeToBitmapSourceAsync(bytes, token);
+                var source = await DecodeWithWin2DAsync(bytes, token);
                 if (!token.IsCancellationRequested && source != null)
                     TransitionToNewSource(source);
                 else
-                    source?.Dispose(); // 取消时释放已解码资源
+                    source?.Dispose();
             }
             catch (OperationCanceledException) { }
         }
@@ -250,7 +329,7 @@ namespace WinUIMusicPlayer.Behaviors
         private async Task InitAsync()
         {
             _cts = new CancellationTokenSource();
-            var source = await DecodeToBitmapSourceAsync(ImageBytes, _cts.Token);
+            var source = await DecodeWithWin2DAsync(ImageBytes, _cts.Token);
             if (AssociatedObject != null && source != null)
                 AssociatedObject.Source = source;
             else
@@ -261,6 +340,8 @@ namespace WinUIMusicPlayer.Behaviors
         {
             _cts?.Cancel();
             StopAndCleanup();
+            _canvasDevice?.Dispose();
+            _canvasDevice = null;
             base.OnDetaching();
         }
 
@@ -282,7 +363,7 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 _tempOverlayImage = new Image
                 {
-                    Source = AssociatedObject.Source, // 旧 source 交给覆盖层持有
+                    Source = AssociatedObject.Source,
                     Stretch = AssociatedObject.Stretch,
                     HorizontalAlignment = AssociatedObject.HorizontalAlignment,
                     VerticalAlignment = AssociatedObject.VerticalAlignment,
@@ -306,7 +387,7 @@ namespace WinUIMusicPlayer.Behaviors
                 Storyboard.SetTarget(ani, _tempOverlayImage);
                 Storyboard.SetTargetProperty(ani, "Opacity");
 
-                // 动画完成后清理覆盖层，并释放其持有的旧 SoftwareBitmapSource
+                // 动画结束：移除覆盖层并释放其持有的旧 SoftwareBitmapSource（GPU 纹理）
                 _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
 
                 AssociatedObject.Source = newSource;
@@ -318,7 +399,7 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
-        /// <summary>替换 AssociatedObject.Source，同时 Dispose 旧的 SoftwareBitmapSource。</summary>
+        /// <summary>切换 Source 的同时 Dispose 旧的 SoftwareBitmapSource。</summary>
         private void ReplaceAndDispose(ImageSource newSource)
         {
             var old = AssociatedObject!.Source as SoftwareBitmapSource;
@@ -336,7 +417,7 @@ namespace WinUIMusicPlayer.Behaviors
                 var parent = VisualTreeHelper.GetParent(_tempOverlayImage) as Panel;
                 parent?.Children.Remove(_tempOverlayImage);
 
-                // 释放覆盖层持有的旧 SoftwareBitmapSource（GPU 纹理）
+                // 释放覆盖层持有的旧 SoftwareBitmapSource（避免 GPU 纹理泄漏）
                 (_tempOverlayImage.Source as SoftwareBitmapSource)?.Dispose();
                 _tempOverlayImage.Source = null;
                 _tempOverlayImage = null;
