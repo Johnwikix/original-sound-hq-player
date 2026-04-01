@@ -195,9 +195,7 @@ namespace WinUIMusicPlayer.View.SubView
                     isResultAssigned = true;
                 }
             }
-            //AppData.allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
-            App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
-            //AlbumDetailChanged?.Invoke(this, result);
+            //App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

@@ -194,7 +194,7 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
-                App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
+                //App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
             }
             catch (Exception ex)
             {
