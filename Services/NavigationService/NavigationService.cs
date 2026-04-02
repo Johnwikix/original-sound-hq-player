@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Windows.Foundation;
 
@@ -16,7 +15,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
         private readonly ConcurrentDictionary<Type, Type> _registeredPages = new();
         private readonly IServiceProvider _serviceProvider;
         private readonly EasingFunctionBase _easingOutFunction;
-        private readonly EasingFunctionBase _easingInFunction;
         private bool _isAnimating = false;
         public Frame ContentFrame { get; set; }
 
@@ -30,14 +28,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 EasingMode = EasingMode.EaseOut,
                 Exponent = 8
             };
-            _easingInFunction = new ExponentialEase()
-            {
-                EasingMode = EasingMode.EaseIn,
-                Exponent = 6
-            };
         }
 
-        // 添加初始化方法
         public void Initialize(Frame frame)
         {
             ContentFrame = frame;
@@ -50,28 +42,24 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
         public void Navigate(Type pageType, object parameter = null, NavigationTransitionInfo transitionInfo = null, int animeTime = 300, bool isPlayAnime = false)
         {
-            // 检查是否为相同页面类型，避免重复导航动画
             if (ContentFrame?.Content?.GetType() == pageType)
             {
-                // 如果是相同页面但有导航参数，仍然需要传递参数
                 if (ContentFrame.Content is INavigatable navigatablePage && parameter is not null)
                 {
                     navigatablePage.ReceiveNavigationParameter(parameter);
                 }
                 if (!isPlayAnime)
                 {
-                    return; // 直接返回，不执行动画
+                    return;
                 }
-
             }
+
             if (_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
 
-                // 使用默认的滑动动画，如果没有指定
                 transitionInfo ??= new EntranceNavigationTransitionInfo();
 
-                // 创建动画故事板
                 AnimatePageTransition(pageInstance, transitionInfo, animeTime);
 
                 if (pageInstance is INavigatable navigatablePage)
@@ -89,19 +77,17 @@ namespace WinUIMusicPlayer.Services.NavigationService
         {
             try
             {
-                var currentContent = ContentFrame.Content as FrameworkElement;
-                // 清理当前页面的变换
-                if (currentContent is not null)
+                // 清理旧页面残留的变换，避免旧页面 Transform 对象被持续引用
+                if (ContentFrame.Content is FrameworkElement currentContent)
                 {
                     currentContent.RenderTransform = null;
                     currentContent.ClearValue(UIElement.RenderTransformProperty);
+                    currentContent.Opacity = 1;
                 }
 
-                // 设置新页面
                 ContentFrame.Content = newPage;
                 ContentFrame.Visibility = Visibility.Visible;
                 ContentFrame.Opacity = 1;
-                // 根据过渡信息类型执行不同动画
 
                 if (transitionInfo is SlideNavigationTransitionInfo slideInfo)
                 {
@@ -118,13 +104,12 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Debug.WriteLine($"[NavigationService] AnimatePageTransition error: {ex.Message}");
             }
         }
 
         private void ExecuteSlideAnimation(Page page, SlideNavigationTransitionEffect effect, int animeTime)
         {
-            var storyboard = new Storyboard();
             var translateTransform = new TranslateTransform();
             page.RenderTransform = translateTransform;
 
@@ -134,7 +119,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 EasingFunction = _easingOutFunction
             };
 
-            // 根据效果设置起始位置
             switch (effect)
             {
                 case SlideNavigationTransitionEffect.FromRight:
@@ -158,15 +142,30 @@ namespace WinUIMusicPlayer.Services.NavigationService
                     Storyboard.SetTarget(animation, translateTransform);
                     Storyboard.SetTargetProperty(animation, "Y");
                     break;
+                default:
+                    // 未知效果时直接清理，不执行动画
+                    page.RenderTransform = null;
+                    page.ClearValue(UIElement.RenderTransformProperty);
+                    return;
             }
 
+            var storyboard = new Storyboard();
             storyboard.Children.Add(animation);
+
+            // 用具名 handler 确保能解绑，防止 storyboard 通过委托持有 page 引用
+            EventHandler<object> onCompleted = null;
+            onCompleted = (s, e) =>
+            {
+                storyboard.Completed -= onCompleted;
+                page.RenderTransform = null;
+                page.ClearValue(UIElement.RenderTransformProperty);
+            };
+            storyboard.Completed += onCompleted;
             storyboard.Begin();
         }
 
         private void ExecuteDrillInAnimation(Page page, int animeTime)
         {
-            var storyboard = new Storyboard();
             var compositeTransform = new CompositeTransform()
             {
                 ScaleX = 1.1,
@@ -176,7 +175,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
             page.RenderTransform = compositeTransform;
             page.Opacity = 0;
 
-            // X轴缩放动画
             var scaleXAnimation = new DoubleAnimation()
             {
                 From = 1.1,
@@ -184,8 +182,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = _easingOutFunction
             };
-
-            // Y轴缩放动画（手动创建新实例）
             var scaleYAnimation = new DoubleAnimation()
             {
                 From = 1.1,
@@ -193,8 +189,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = _easingOutFunction
             };
-
-            // 透明度动画
             var opacityAnimation = new DoubleAnimation()
             {
                 From = 0,
@@ -204,22 +198,32 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             Storyboard.SetTarget(scaleXAnimation, compositeTransform);
             Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
-
             Storyboard.SetTarget(scaleYAnimation, compositeTransform);
             Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
-
             Storyboard.SetTarget(opacityAnimation, page);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
 
+            var storyboard = new Storyboard();
             storyboard.Children.Add(scaleXAnimation);
             storyboard.Children.Add(scaleYAnimation);
             storyboard.Children.Add(opacityAnimation);
+
+            EventHandler<object> onCompleted = null;
+            onCompleted = (s, e) =>
+            {
+                storyboard.Completed -= onCompleted;
+                // 还原 page 状态，释放 CompositeTransform 引用
+                page.RenderTransform = null;
+                page.ClearValue(UIElement.RenderTransformProperty);
+                page.RenderTransformOrigin = new Point(0, 0);
+                page.Opacity = 1;
+            };
+            storyboard.Completed += onCompleted;
             storyboard.Begin();
         }
 
         private void ExecuteEntranceAnimation(Page page, int animeTime)
         {
-            var storyboard = new Storyboard();
             var translateTransform = new TranslateTransform();
             page.RenderTransform = translateTransform;
             page.Opacity = 0;
@@ -231,7 +235,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Duration = TimeSpan.FromMilliseconds(animeTime),
                 EasingFunction = _easingOutFunction
             };
-
             var opacityAnimation = new DoubleAnimation()
             {
                 From = 0,
@@ -241,17 +244,23 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             Storyboard.SetTarget(translateAnimation, translateTransform);
             Storyboard.SetTargetProperty(translateAnimation, "Y");
-
             Storyboard.SetTarget(opacityAnimation, page);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
 
+            var storyboard = new Storyboard();
             storyboard.Children.Add(translateAnimation);
             storyboard.Children.Add(opacityAnimation);
-            storyboard.Completed += (s, e) =>
+
+            EventHandler<object> onCompleted = null;
+            onCompleted = (s, e) =>
             {
-                 ContentFrame.RenderTransform = null;
-                 ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                storyboard.Completed -= onCompleted;
+                // 修正原来错误清理 ContentFrame 的问题，改为清理 page
+                page.RenderTransform = null;
+                page.ClearValue(UIElement.RenderTransformProperty);
+                page.Opacity = 1;
             };
+            storyboard.Completed += onCompleted;
             storyboard.Begin();
         }
 
@@ -259,6 +268,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
         {
             if (ContentFrame is null) return;
             ContentFrame.Visibility = Visibility.Visible;
+
             var storyboard = new Storyboard();
             var opacityAnimation = new DoubleAnimation()
             {
@@ -269,17 +279,22 @@ namespace WinUIMusicPlayer.Services.NavigationService
             Storyboard.SetTarget(opacityAnimation, ContentFrame);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
             storyboard.Children.Add(opacityAnimation);
-            storyboard.Completed += (s, e) =>
+
+            EventHandler<object> onAnimCompleted = null;
+            onAnimCompleted = (s, e) =>
             {
+                storyboard.Completed -= onAnimCompleted;
                 _isAnimating = false;
                 onCompleted?.Invoke();
             };
+            storyboard.Completed += onAnimCompleted;
             storyboard.Begin();
         }
 
         public void FadeDismiss(int animeTime = 300, Action? onCompleted = null)
         {
             if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed) return;
+
             var storyboard = new Storyboard();
             var opacityAnimation = new DoubleAnimation()
             {
@@ -290,13 +305,17 @@ namespace WinUIMusicPlayer.Services.NavigationService
             Storyboard.SetTarget(opacityAnimation, ContentFrame);
             Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
             storyboard.Children.Add(opacityAnimation);
-            storyboard.Completed += (s, e) =>
+
+            EventHandler<object> onAnimCompleted = null;
+            onAnimCompleted = (s, e) =>
             {
+                storyboard.Completed -= onAnimCompleted;
                 ContentFrame.Visibility = Visibility.Collapsed;
                 ContentFrame.Opacity = 1;
                 _isAnimating = false;
                 onCompleted?.Invoke();
             };
+            storyboard.Completed += onAnimCompleted;
             storyboard.Begin();
         }
 
@@ -305,12 +324,18 @@ namespace WinUIMusicPlayer.Services.NavigationService
             if (ContentFrame is null || _isAnimating) return;
             _isAnimating = true;
 
-            if (_registeredPages.TryGetValue(pageType, out var resolvedType))
+            if (!_registeredPages.TryGetValue(pageType, out var resolvedType))
+            {
+                _isAnimating = false;
+                return;
+            }
+
+            try
             {
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
                 ContentFrame.Content = pageInstance;
                 ContentFrame.Visibility = Visibility.Visible;
-                var storyboard = new Storyboard();
+
                 var translateTransform = new TranslateTransform();
                 ContentFrame.RenderTransform = translateTransform;
 
@@ -332,16 +357,27 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Storyboard.SetTargetProperty(slideAnimation, "Y");
                 Storyboard.SetTarget(opacityAnimation, ContentFrame);
                 Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+
+                var storyboard = new Storyboard();
                 storyboard.Children.Add(slideAnimation);
                 storyboard.Children.Add(opacityAnimation);
-                storyboard.Completed += (s, e) =>
+
+                EventHandler<object> onAnimCompleted = null;
+                onAnimCompleted = (s, e) =>
                 {
+                    storyboard.Completed -= onAnimCompleted;
                     ContentFrame.RenderTransform = null;
                     ContentFrame.ClearValue(UIElement.RenderTransformProperty);
                     _isAnimating = false;
                     onCompleted?.Invoke();
                 };
+                storyboard.Completed += onAnimCompleted;
                 storyboard.Begin();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[NavigationService] Show error: {ex.Message}");
+                _isAnimating = false;
             }
         }
 
@@ -350,40 +386,53 @@ namespace WinUIMusicPlayer.Services.NavigationService
             if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed || _isAnimating) return;
             _isAnimating = true;
 
-            var storyboard = new Storyboard();
-            var translateTransform = new TranslateTransform();
-            ContentFrame.RenderTransform = translateTransform;
+            try
+            {
+                var translateTransform = new TranslateTransform();
+                ContentFrame.RenderTransform = translateTransform;
 
-            var slideAnimation = new DoubleAnimation()
-            {
-                From = 0,
-                To = ContentFrame.ActualHeight,
-                Duration = TimeSpan.FromMilliseconds(animeTime),
-                EasingFunction = _easingOutFunction
-            };
-            var opacityAnimation = new DoubleAnimation()
-            {
-                From = 1,
-                To = 0,
-                Duration = TimeSpan.FromMilliseconds(animeTime),
-            };
+                var slideAnimation = new DoubleAnimation()
+                {
+                    From = 0,
+                    To = ContentFrame.ActualHeight,
+                    Duration = TimeSpan.FromMilliseconds(animeTime),
+                    EasingFunction = _easingOutFunction
+                };
+                var opacityAnimation = new DoubleAnimation()
+                {
+                    From = 1,
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(animeTime),
+                };
 
-            Storyboard.SetTarget(slideAnimation, translateTransform);
-            Storyboard.SetTargetProperty(slideAnimation, "Y");
-            Storyboard.SetTarget(opacityAnimation, ContentFrame);
-            Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
-            storyboard.Children.Add(slideAnimation);
-            storyboard.Children.Add(opacityAnimation);
-            storyboard.Completed += (s, e) =>
+                Storyboard.SetTarget(slideAnimation, translateTransform);
+                Storyboard.SetTargetProperty(slideAnimation, "Y");
+                Storyboard.SetTarget(opacityAnimation, ContentFrame);
+                Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
+
+                var storyboard = new Storyboard();
+                storyboard.Children.Add(slideAnimation);
+                storyboard.Children.Add(opacityAnimation);
+
+                EventHandler<object> onAnimCompleted = null;
+                onAnimCompleted = (s, e) =>
+                {
+                    storyboard.Completed -= onAnimCompleted;
+                    ContentFrame.Visibility = Visibility.Collapsed;
+                    ContentFrame.Opacity = 1;
+                    ContentFrame.RenderTransform = null;
+                    ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                    _isAnimating = false;
+                    onCompleted?.Invoke();
+                };
+                storyboard.Completed += onAnimCompleted;
+                storyboard.Begin();
+            }
+            catch (Exception ex)
             {
-                ContentFrame.Visibility = Visibility.Collapsed;
-                ContentFrame.Opacity = 1;
-                ContentFrame.RenderTransform = null;
-                ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                Debug.WriteLine($"[NavigationService] Dismiss error: {ex.Message}");
                 _isAnimating = false;
-                onCompleted?.Invoke();
-            };
-            storyboard.Begin();
+            }
         }
 
         public void GoBack()
