@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -27,17 +28,24 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayListSongPage : Page, INavigatable
     {
         public PlayListSongViewModel ViewModel { get; }
-        public PlayListSongPage(PlayListSongViewModel viewModel)
+        public PlayListSongPage()
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<PlayListSongViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         public void ReceiveNavigationParameter(object parameter)
         {
+            ViewModel.ReceiveNavigation();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
 
@@ -138,17 +146,6 @@ namespace WinUIMusicPlayer.View
                 return string.Empty;
             });
         }
-
-        //private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

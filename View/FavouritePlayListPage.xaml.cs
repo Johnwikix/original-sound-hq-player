@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -30,13 +31,14 @@ namespace WinUIMusicPlayer.View
     {
         public FavouritePlayListViewModel ViewModel { get; }
 
-        public FavouritePlayListPage(FavouritePlayListViewModel viewModel)
+        public FavouritePlayListPage()
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
@@ -57,6 +59,12 @@ namespace WinUIMusicPlayer.View
 
         public void ReceiveNavigationParameter(object parameter)
         {
+            ViewModel.ReceiveNavigation();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
 
@@ -116,17 +124,6 @@ namespace WinUIMusicPlayer.View
                 ViewModel.AuthorTextBlock_Tapped(textBlock);
             }
         }
-
-        //private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

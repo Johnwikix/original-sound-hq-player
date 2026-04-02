@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -29,17 +30,24 @@ namespace WinUIMusicPlayer.View
     {
         public SongCollectionViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public SongCollectionPage(SongCollectionViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public SongCollectionPage()
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<SongCollectionViewModel>(); ;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
-            _musicDatabaseService = musicDatabaseService;
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>(); ;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         public void ReceiveNavigationParameter(object parameter)
         {
+            ViewModel.ReceiveNavigation();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
 
@@ -129,18 +137,6 @@ namespace WinUIMusicPlayer.View
                 PlayList.Items.Add(menuItem);
             }
         }
-
-        //private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
-
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is AutoScrollView autoScrollView)

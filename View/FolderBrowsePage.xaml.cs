@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -19,15 +20,22 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FolderBrowsePage : Page, INavigatable
     {
         public FolderViewModel ViewModel { get; }
-        public FolderBrowsePage(FolderViewModel viewModel)
+        public FolderBrowsePage()
         {
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<FolderViewModel>(); ;
             this.InitializeComponent();
             DataContext = this;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         public void ReceiveNavigationParameter(object parameter)
         {
+            ViewModel.ReceiveNavigation();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
 
@@ -45,16 +53,5 @@ namespace WinUIMusicPlayer.View
             }
             e.Handled = true;
         }
-
-        //private void FolderGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
     }
 }

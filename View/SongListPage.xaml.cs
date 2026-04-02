@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -30,16 +31,23 @@ namespace WinUIMusicPlayer.View
     {
         public SongListViewModel ViewModel { get; }
 
-        public SongListPage(SongListViewModel viewModel)
+        public SongListPage()
         {
             InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<SongListViewModel>(); ;
             ViewModel.SetCurrentPage(this);
             DataContext = this;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         public void ReceiveNavigationParameter(object parameter)
         {
+            ViewModel.ReceiveNavigation();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
         }
 
@@ -111,17 +119,6 @@ namespace WinUIMusicPlayer.View
                 ViewModel.AlbumTextBlock_Tapped(albumName);
             }
         }
-
-        //private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

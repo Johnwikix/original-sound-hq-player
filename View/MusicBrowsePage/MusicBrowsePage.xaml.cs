@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {        
         private NotificationService notificationService;
-        private readonly INavigationService _navigationService;
+        //private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage(
             NotificationService notificationService,
@@ -50,19 +50,19 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            _navigationService.ContentFrame = ContentFrame;
-            _navigationService.RegisterPage<FavouritePlayListPage>();
-            _navigationService.RegisterPage<SongCollectionPage>();
-            _navigationService.RegisterPage<SongArtistListPage>();
-            _navigationService.RegisterPage<SongFolderListPage>();
-            _navigationService.RegisterPage<AlbumPage>();
-            _navigationService.RegisterPage<ArtistPage>();
-            _navigationService.RegisterPage<FolderBrowsePage>();
-            _navigationService.RegisterPage<PlayListPage>();
-            _navigationService.RegisterPage<PlayListSongPage>();
-            _navigationService.RegisterPage<SongListPage>();
+            //var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
+            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            //_navigationService.ContentFrame = ContentFrame;
+            //_navigationService.RegisterPage<FavouritePlayListPage>();
+            //_navigationService.RegisterPage<SongCollectionPage>();
+            //_navigationService.RegisterPage<SongArtistListPage>();
+            //_navigationService.RegisterPage<SongFolderListPage>();
+            //_navigationService.RegisterPage<AlbumPage>();
+            //_navigationService.RegisterPage<ArtistPage>();
+            //_navigationService.RegisterPage<FolderBrowsePage>();
+            //_navigationService.RegisterPage<PlayListPage>();
+            //_navigationService.RegisterPage<PlayListSongPage>();
+            //_navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
             this.notificationService = notificationService;
             this.Loaded += OnPageLoaded;
@@ -76,7 +76,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
         {
-            _navigationService.Navigate(currentPage, this, navigationTransitionInfo, animeTime, true);
+            ContentFrame.Navigate(currentPage, null, navigationTransitionInfo);
         }
 
         public async Task<bool> AreUSureDeleteFromDisk()
@@ -143,7 +143,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    _navigationService.Navigate(typeof(SongCollectionPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                    ContentFrame.Navigate(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -160,7 +160,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    _navigationService.Navigate(typeof(SongArtistListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                    ContentFrame.Navigate(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
                     App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
@@ -177,22 +177,22 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is SongCollectionPage)
             {
                 AppData.CurrentPage = typeof(AlbumPage);
-                _navigationService.Navigate(typeof(AlbumPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(AlbumPage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongArtistListPage)
             {
                 AppData.CurrentPage = typeof(ArtistPage);
-                _navigationService.Navigate(typeof(ArtistPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(ArtistPage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongFolderListPage)
             {
                 AppData.CurrentPage = typeof(FolderBrowsePage);
-                _navigationService.Navigate(typeof(FolderBrowsePage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(FolderBrowsePage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
                 AppData.CurrentPage = typeof(PlayListPage);
-                _navigationService.Navigate(typeof(PlayListPage), this, new DrillInNavigationTransitionInfo(), ViewModel.AppViewModel.DrillInAnimationTime);
+                ContentFrame.Navigate(typeof(PlayListPage), null, new DrillInNavigationTransitionInfo());
             }
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
