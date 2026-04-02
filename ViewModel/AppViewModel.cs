@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -189,20 +190,36 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        public bool IsCoverCacheEnabled
+        public int MaxCoverCacheCount
         {
             get => field;
             set
             {
                 if (SetProperty(ref field, value))
                 {
+                    AlbumCoverBehavior.MaxCacheSize = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
             }
-        }
+        } = 1000;
+
+        //public bool IsCoverCacheEnabled
+        //{
+        //    get => field;
+        //    set
+        //    {
+        //        if (SetProperty(ref field, value))
+        //        {
+        //            if (IsInitialized)
+        //            {
+        //                _ = _musicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //}
         public bool IsBackgroundCoverEnabled
         {
             get => field;

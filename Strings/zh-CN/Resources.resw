@@ -255,8 +255,8 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>封面服务LrcAPI源鉴权码</value>
   </data>
-  <data name="CoverCache.Header" xml:space="preserve">
-    <value>封面运行时缓存</value>
+  <data name="MaxCoverCacheCount.Header" xml:space="preserve">
+    <value>封面运行时缓存数量</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大封面预载数量</value>

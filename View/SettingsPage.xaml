@@ -199,8 +199,14 @@
                                     Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
                             </Grid>
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="CoverCache">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />
+                        <controls:SettingsCard x:Uid="MaxCoverCacheCount">
+                            <NumberBox
+                                Width="300"
+                                LargeChange="10"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
+                            <!--<ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />-->
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="BackgroundCover">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />

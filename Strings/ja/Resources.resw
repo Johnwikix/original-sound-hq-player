@@ -255,8 +255,8 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>ジャケットサービスLrcAPIソース認証コード</value>
   </data>
-  <data name="CoverCache.Header" xml:space="preserve">
-    <value>表紙ランタイムキャッシュ</value>
+  <data name="MaxCoverCacheCount.Header" xml:space="preserve">
+    <value>表紙ランタイムキャッシュ数</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大ジャケットプリロード数</value>
