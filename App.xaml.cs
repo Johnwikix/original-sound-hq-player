@@ -70,11 +70,9 @@ namespace WinUIMusicPlayer
                  //services.AddSingleton<FavouritePlayListPage>();
                  //services.AddSingleton<AlbumPage>();
                  //services.AddSingleton<ArtistPage>();
-                 //services.AddSingleton<SongArtistListPage>();
-                 //services.AddSingleton<SongArtistViewModel>();
+                 //services.AddSingleton<SongArtistListPage>();                 
                  //services.AddSingleton<FolderBrowsePage>();
-                 //services.AddSingleton<SongFolderListPage>();
-                 //services.AddSingleton<SongFolderListViewModel>();
+                 //services.AddSingleton<SongFolderListPage>();                 
                  //services.AddSingleton<PlayListPage>();
                  //services.AddSingleton<PlayListSongPage>();
                  //services.AddSingleton<SongListPage>();
@@ -86,14 +84,16 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
+                 services.AddSingleton<SongFolderListViewModel>();
+                 services.AddSingleton<SongArtistViewModel>();
                  services.AddSingleton<ArtistViewModel>();
                  services.AddSingleton<FolderViewModel>();
                  services.AddSingleton<PlayListViewModel>();
                  services.AddSingleton<SongListViewModel>();
                  services.AddSingleton<SongCollectionViewModel>();
-                 services.AddSingleton<PlayListSongViewModel>();
-                 services.AddSingleton<SystemMediaControlsService>();
+                 services.AddSingleton<PlayListSongViewModel>();                 
                  services.AddSingleton<PlayingDetailViewModel>();
+                 services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();
@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+            //GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
             this.InitializeComponent();            
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
