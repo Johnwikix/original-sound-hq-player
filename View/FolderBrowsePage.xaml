@@ -25,8 +25,7 @@
                     ItemClick="FolderGridView_ItemClick"
                     ItemsSource="{x:Bind ViewModel.AppViewModel.FolderPageSource.View, Mode=OneWay}"
                     RightTapped="Folder_RightTapped"
-                    SelectionMode="None"
-                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    SelectionMode="None">
                     <GridView.ItemContainerStyle>
                         <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
                             <Setter Property="ContextFlyout">

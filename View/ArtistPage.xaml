@@ -25,8 +25,7 @@
                     ItemClick="ArtistGridView_ItemClick"
                     ItemsSource="{x:Bind ViewModel.AppViewModel.ArtistPageSource.View, Mode=OneWay}"
                     RightTapped="Artist_RightTapped"
-                    SelectionMode="None"
-                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    SelectionMode="None">
                     <GridView.ItemContainerStyle>
                         <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
                             <Setter Property="ContextFlyout">

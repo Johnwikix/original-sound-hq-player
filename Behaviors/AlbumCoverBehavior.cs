@@ -53,18 +53,6 @@ public class AlbumCoverBehavior : Behavior<Image>
             b.Load(e.NewValue as Music);
     }
 
-    //public static readonly DependencyProperty MaxCacheSizeProperty =
-    //DependencyProperty.Register(
-    //    nameof(MaxCacheSize),
-    //    typeof(int),
-    //    typeof(AlbumCoverBehavior),
-    //    new PropertyMetadata(1000));   // 默认 1000 张，0 = 无限制
-
-    //public int MaxCacheSize
-    //{
-    //    get => (int)GetValue(MaxCacheSizeProperty);
-    //    set => SetValue(MaxCacheSizeProperty, value);
-    //}
     public static int MaxCacheSize { get; set; } = 1000;   // 默认 1000 张，0 = 无限制
     // ── 实例字段 ──────────────────────────────────────────────────────────
 

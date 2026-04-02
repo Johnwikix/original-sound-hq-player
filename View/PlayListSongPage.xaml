@@ -54,7 +54,6 @@
                         <Image
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            CacheMode="BitmapCache"
                             Canvas.ZIndex="1"
                             Stretch="UniformToFill">
                             <interactivity:Interaction.Behaviors>
@@ -185,8 +184,7 @@
                 ItemsSource="{x:Bind ViewModel.AppViewModel.PlayListSongs, Mode=TwoWay}"
                 RightTapped="MusicListView_RightTapped"
                 SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-                SelectionMode="Extended"
-                VirtualizingStackPanel.VirtualizationMode="Recycling">
+                SelectionMode="Extended">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:PlayListMusicItem">
                         <Grid>
