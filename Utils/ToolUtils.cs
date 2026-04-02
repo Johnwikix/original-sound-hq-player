@@ -1306,6 +1306,25 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
+        public static void CleanupStaleCacheFiles()
+        {
+            try
+            {
+                var cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+                if (!Directory.Exists(cacheFolder)) return;
+
+                var pattern = $"*_{AppSettings.CoverSize}.png";
+                var validFiles = Directory.EnumerateFiles(cacheFolder, pattern).AsValueEnumerable().ToHashSet();
+
+                foreach (var file in Directory.EnumerateFiles(cacheFolder, "*.png"))
+                {
+                    if (!validFiles.Contains(file))
+                        try { System.IO.File.Delete(file); } catch { }
+                }
+            }
+            catch { }
+        }
+
         public static string PlayModeToString(PlayMode playMode)
         {
             return playMode switch

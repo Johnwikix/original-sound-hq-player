@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 
@@ -37,11 +38,12 @@ namespace WinUIMusicPlayer.Services
             App.Services.GetRequiredService<IpcService>().Initializing();
             await Task.Delay(500, cancellationToken);
             await Task.WhenAll(longOpsTask);
+            ToolUtils.CleanupStaleCacheFiles();
             await App.Services.GetRequiredService<MusicBrowseViewModel>().LoadPlayStateToMusicBrowsePage();
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
             App.MainWindow.ShowMainPage();
             App.Services.GetRequiredService<PlayingDetailPage>().PreLoadImgData();
-            App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
+            App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;            
         }
 
         // 应用关闭时执行清理
