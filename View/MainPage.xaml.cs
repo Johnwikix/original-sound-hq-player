@@ -101,6 +101,7 @@ namespace WinUIMusicPlayer.View
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
+                MainFrame.Visibility = Visibility.Visible;
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
@@ -110,24 +111,29 @@ namespace WinUIMusicPlayer.View
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.IsSettingsInvoked)
-            {
+            {                
                 MainFrame.Navigate(typeof(SettingsPage),null, new EntranceNavigationTransitionInfo());
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                MainFrame.Visibility = Visibility.Visible;
             }
             else
             {
                 var tag = args.InvokedItemContainer.Tag.ToString();
                 switch (tag)
                 {
-                    case "AddFolder":
+                    case "AddFolder":                       
                         MainFrame.Navigate(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                         _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                        MainFrame.Visibility = Visibility.Visible;
                         break;
                     case "MusicBrowse":
                         MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                         if (AppData.IsPlayingDetail)
-                        {
+                        {                            
                             NavigateToPlayingDetailPage();
+                        }
+                        else {
+                            MainFrame.Visibility = Visibility.Visible;
                         }
                         break;
                 }

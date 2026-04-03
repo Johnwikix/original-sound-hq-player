@@ -24,10 +24,10 @@
                 Grid.Column="0"
                 Margin="0"
                 Padding="48,0,0,0">
-                <Grid.ChildrenTransitions>
+                <!--<Grid.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
                     <RepositionThemeTransition IsStaggeringEnabled="False" />
-                </Grid.ChildrenTransitions>
+                </Grid.ChildrenTransitions>-->
                 <Grid Margin="0,32,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

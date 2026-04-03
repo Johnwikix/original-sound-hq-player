@@ -31,11 +31,11 @@
             AllowDrop="True"
             DragOver="Grid_DragOver"
             Drop="Grid_Drop">
-            <Grid.Transitions>
+            <!--<Grid.Transitions>
                 <TransitionCollection>
                     <EntranceThemeTransition FromVerticalOffset="100" />
                 </TransitionCollection>
-            </Grid.Transitions>
+            </Grid.Transitions>-->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

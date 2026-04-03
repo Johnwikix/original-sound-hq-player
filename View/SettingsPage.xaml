@@ -27,11 +27,11 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid.Transitions>
+        <!--<Grid.Transitions>
             <TransitionCollection>
                 <EntranceThemeTransition FromVerticalOffset="100" />
             </TransitionCollection>
-        </Grid.Transitions>
+        </Grid.Transitions>-->
 
         <Grid Grid.Row="0" Margin="32,0,32,0">
             <TextBlock

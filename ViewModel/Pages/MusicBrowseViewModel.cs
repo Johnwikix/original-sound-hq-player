@@ -498,11 +498,11 @@ namespace WinUIMusicPlayer.ViewModel
                         ?.Index ?? -1;
             if (index > 0)
             {
-                MusicBrowsePage.PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
+                PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
             }
             else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
             {
-                MusicBrowsePage.PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
+                PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
 
             }
         }
@@ -640,7 +640,21 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false) {
-            MusicBrowsePage.PlayMusic(music, currentPos, isSettingChanged, IsChangeList);
+            try
+            {
+                AppViewModel.CurrentPlayingMusic = music;
+                UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                AppViewModel.LoadLyricsToUI();
+                MusicBrowsePage.UpdateViewList();
+                MusicBrowsePage.UpdateCurrentPlayList();
+                MusicPlaybackService.PlayMusic(music);
+                AppViewModel.UpdateProgressTimerUI();
+                App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();
+            }
+            catch (Exception ex)
+            {
+                App.Services.GetRequiredService<NotificationService>().SendNotification(ToolUtils.GetString("Error"), ex.Message);
+            }
         }
 
         public void SelectBarArtist(string artist)

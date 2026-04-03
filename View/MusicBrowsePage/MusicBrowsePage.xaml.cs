@@ -38,7 +38,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {        
-        private NotificationService notificationService;
         //private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage()
@@ -61,7 +60,6 @@ namespace WinUIMusicPlayer.View
             //_navigationService.RegisterPage<PlayListSongPage>();
             //_navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            this.notificationService = App.Services.GetRequiredService<NotificationService>();
             this.Loaded += OnPageLoaded;
             this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
         }
@@ -250,7 +248,7 @@ namespace WinUIMusicPlayer.View
             UpdateCurrentPlayList();
         }
 
-        private void UpdateCurrentPlayList()
+        public void UpdateCurrentPlayList()
         {
             if (ViewModel.AppViewModel.CurrentPlayingList is not null)
             {
@@ -279,7 +277,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
             if (selectedMusic is not null)
             {
-                PlayMusic(music: selectedMusic, IsChangeList: false);
+                ViewModel.PlayMusic(music: selectedMusic, IsChangeList: false);
             }
         }
 
@@ -311,24 +309,24 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
-        {
-            try
-            {
-                ViewModel.AppViewModel.CurrentPlayingMusic = music;                
-                ViewModel.UpdatePlayBar(ViewModel.AppViewModel.CurrentPlayingMusic);
-                ViewModel.AppViewModel.LoadLyricsToUI();
-                UpdateViewList();
-                UpdateCurrentPlayList();
-                ViewModel.MusicPlaybackService.PlayMusic(music);
-                ViewModel.AppViewModel.UpdateProgressTimerUI();
-                App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();                
-            }
-            catch (Exception ex)
-            {
-                notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-            }
-        }       
+        //public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
+        //{
+        //    try
+        //    {
+        //        ViewModel.AppViewModel.CurrentPlayingMusic = music;                
+        //        ViewModel.UpdatePlayBar(ViewModel.AppViewModel.CurrentPlayingMusic);
+        //        ViewModel.AppViewModel.LoadLyricsToUI();
+        //        UpdateViewList();
+        //        UpdateCurrentPlayList();
+        //        ViewModel.MusicPlaybackService.PlayMusic(music);
+        //        ViewModel.AppViewModel.UpdateProgressTimerUI();
+        //        App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();                
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+        //    }
+        //}       
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
