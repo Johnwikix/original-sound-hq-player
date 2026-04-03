@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPage()
         {
-            if (MusicBrowseViewModel is not null && AppViewModel.CurrentArtistObj is not null)
+            if (AppViewModel.CurrentArtistObj is not null)
             {
                 var authorAlbums = AppViewModel.SongsSource.AsValueEnumerable()
                     .Where(music => music.Author == AppViewModel.CurrentArtistObj.Author)

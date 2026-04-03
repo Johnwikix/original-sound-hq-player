@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -30,10 +31,11 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private SongCollectionPage _currentPage{ get; set; }        
        
-        public SongCollectionViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public SongCollectionViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            MusicBrowseViewModel = musicBrowseViewModel;
             InitalizeOption();
         }
         private void InitalizeOption()
@@ -102,7 +104,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPage()
         {
-            if (MusicBrowseViewModel is not null && AppViewModel.CurrentAlbumObj is not null)
+            if (AppViewModel.CurrentAlbumObj is not null)
             {
                 SecondTitle = string.Join(" · ", AppViewModel.SongsSource.AsValueEnumerable()
                     .Where(music => music.Album == AppViewModel.CurrentAlbumObj.Album)

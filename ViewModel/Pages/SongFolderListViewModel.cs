@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPage()
         {
-            if (MusicBrowseViewModel is not null && AppViewModel.CurrentFolderObj is not null)
+            if (AppViewModel.CurrentFolderObj is not null)
             {
                 var albums = AppViewModel.SongsSource.AsValueEnumerable()
                     .Where(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)
