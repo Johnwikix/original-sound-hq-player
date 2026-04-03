@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>(); ;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Required;
         }
 
         public void ReceiveNavigationParameter(object parameter)

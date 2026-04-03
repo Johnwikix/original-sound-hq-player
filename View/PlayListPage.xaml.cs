@@ -24,7 +24,7 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = App.Services.GetRequiredService<PlayListViewModel>();
             DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Required;
         }
 
         public void ReceiveNavigationParameter(object parameter)
