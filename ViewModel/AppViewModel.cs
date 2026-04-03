@@ -530,7 +530,8 @@ namespace WinUIMusicPlayer.ViewModel
                     SongViewType.Folder => query.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
                     ),
                     _ => query.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -579,7 +580,8 @@ namespace WinUIMusicPlayer.ViewModel
                 filteredSource = SongsSource.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.LastLevelFolderPath?.Contains(SearchText,StringComparison.OrdinalIgnoreCase) ?? false));
             }
             // 2. 对去重后的专辑进行首字母分组
             var groups = filteredSource

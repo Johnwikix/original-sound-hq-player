@@ -49,8 +49,7 @@
                     </MenuFlyoutItem>
                     <MenuFlyoutItem
                         x:Name="PlayNPause"
-                        Width="200"
-                        HorizontalAlignment="Left"
+                        HorizontalAlignment="Stretch"
                         Click="PlayNPause_Click"
                         Text="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToStringConverter}, Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
