@@ -25,16 +25,13 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
         public ObservableCollection<MenuModel> FolderMenuOptions { get; set => SetProperty(ref field, value); } = [];
-        private MusicBrowsePage? parentPage { get; }
-        private MusicBrowseViewModel? _musicBrowseViewModel { get; }
+        private MusicBrowseViewModel? MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
 
-
-        public FolderViewModel(MusicBrowsePage parent, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public FolderViewModel(MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = parent;
-            _musicBrowseViewModel = musicBrowseViewModel;
+            MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitalizeOption();
@@ -92,13 +89,13 @@ namespace WinUIMusicPlayer.ViewModel
             if (item is not null)
             {
                 Music folder = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null && folder is not null)
+                if (MusicBrowseViewModel is not null && folder is not null)
                 {
                     try
                     {
                         AppViewModel.PageType = "folder";
                         AppViewModel.CurrentFolderObj = folder;
-                        parentPage.NavigatePage(typeof(SongFolderListPage),new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);
+                        MusicBrowseViewModel.NavigatePage(typeof(SongFolderListPage),new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);
                     }
                     catch (Exception ex)
                     {
@@ -124,10 +121,10 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.LastLevelFolderPath).ToList();
             if (folders is not null && folders.Count > 0)
             {
-                if (parentPage is not null)
+                if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(folders);
-                    parentPage.PlayMusic(music: folders[0], IsChangeList: true);
+                    MusicBrowseViewModel.PlayMusic(music: folders[0], IsChangeList: true);
                 }
             }
         }

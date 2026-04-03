@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -22,13 +23,14 @@ namespace WinUIMusicPlayer.View
         private NotificationService notificationService;
         public AddFolderViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public AddFolderPage(NotificationService notificationService, AddFolderViewModel viewModel, MusicDatabaseService musicDatabaseService)
+        public AddFolderPage()
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
             DataContext = this;
-            this.notificationService = notificationService;
-            _musicDatabaseService = musicDatabaseService;
+            this.notificationService = App.Services.GetRequiredService<NotificationService>();
+            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
+            this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)

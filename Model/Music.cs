@@ -66,7 +66,7 @@ namespace WinUIMusicPlayer.Model
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FolderSongs);
                     break;
             }
-            App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music: this, IsChangeList: true);
+            App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);
         }
 
         [RelayCommand]

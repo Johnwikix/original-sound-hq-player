@@ -699,7 +699,7 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
             UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
-            App.Services.GetRequiredService<MusicBrowsePage>().UpdateViewList();
+            App.Services.GetRequiredService<MusicBrowseViewModel>().UpdateViewList();
         }
 
         public void RefreshPlayListSongMapping()
@@ -949,12 +949,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (selectedMusics.Any())
             {
-                App.Services.GetRequiredService<MusicBrowsePage>().ShowTransmission();
+                App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
                 using (var usbWriter = new UsbWriterHelper())
                 {
                     usbWriter.hideTransmission += (sender, args) =>
                     {
-                        App.Services.GetRequiredService<MusicBrowsePage>().HideTransmission();
+                        App.Services.GetRequiredService<MusicBrowseViewModel>().HideTransmission();
                     };
                     await usbWriter.WriteToUsb(selectedMusics, usbDevice);
                 }

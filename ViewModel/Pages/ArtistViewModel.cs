@@ -25,16 +25,14 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
         public ObservableCollection<MenuModel> ArtistMenuOptions { get; set => SetProperty(ref field, value); } = [];
-        private MusicBrowsePage? parentPage { get; }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         //private ArtistPage? currentPage { get; set; }
         //private ContextMenuService _contextMenuService { get; }
 
-        public ArtistViewModel(MusicBrowsePage parent, MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public ArtistViewModel(MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = parent;
             _musicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
@@ -93,11 +91,11 @@ namespace WinUIMusicPlayer.ViewModel
             if (item is not null)
             {
                 Music artist = item.Content as Music;
-                if (parentPage is not null && _musicBrowseViewModel is not null && artist is not null)
+                if (_musicBrowseViewModel is not null && artist is not null)
                 {  
                     AppViewModel.PageType = "artist";
                     AppViewModel.CurrentArtistObj = artist;
-                    parentPage.NavigatePage(typeof(SongArtistListPage), new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);             
+                    _musicBrowseViewModel.NavigatePage(typeof(SongArtistListPage), new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);             
                 }
             }
         }
@@ -110,10 +108,10 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.Album).ToList();
             if (artists is not null && artists.Count > 0)
             {
-                if (parentPage is not null)
+                if (_musicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(artists);
-                    parentPage.PlayMusic(music: artists[0], IsChangeList: true);
+                    _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }
         }

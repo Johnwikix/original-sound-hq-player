@@ -63,9 +63,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();                 
-                 services.AddSingleton<AddFolderPage>();
-                 services.AddSingleton<MusicBrowsePage>();
-                 services.AddSingleton<SettingsPage>();
+                 //services.AddSingleton<AddFolderPage>();
+                 //services.AddSingleton<MusicBrowsePage>();
+                 //services.AddSingleton<SettingsPage>();
                  services.AddSingleton<PlayingDetailPage>();
                  //services.AddSingleton<FavouritePlayListPage>();
                  //services.AddSingleton<AlbumPage>();

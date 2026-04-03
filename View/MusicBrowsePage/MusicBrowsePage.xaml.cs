@@ -41,13 +41,10 @@ namespace WinUIMusicPlayer.View
         private NotificationService notificationService;
         //private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
-        public MusicBrowsePage(
-            NotificationService notificationService,
-            MusicBrowseViewModel viewModel
-            )
+        public MusicBrowsePage()
         {
             this.InitializeComponent();
-            ViewModel = viewModel;
+            ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             //var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -64,8 +61,9 @@ namespace WinUIMusicPlayer.View
             //_navigationService.RegisterPage<PlayListSongPage>();
             //_navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
-            this.notificationService = notificationService;
+            this.notificationService = App.Services.GetRequiredService<NotificationService>();
             this.Loaded += OnPageLoaded;
+            this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -97,11 +95,6 @@ namespace WinUIMusicPlayer.View
             return false;
         }
 
-        public void ThemeChangedUpdateCover()
-        {
-            ViewModel.ThemeChangedUpdateCover();
-        }
-
         private void SelectBarItem(string name)
         {
             foreach (var item in selectPage.Items)
@@ -112,16 +105,6 @@ namespace WinUIMusicPlayer.View
                     break;
                 }
             }
-        }
-
-        public void ShowTransmission()
-        {
-            ViewModel.AppViewModel.ProcessRingVisibility = Visibility.Visible;
-        }
-
-        public void HideTransmission()
-        {
-            ViewModel.AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
         }
 
         private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)

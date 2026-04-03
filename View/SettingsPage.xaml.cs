@@ -28,10 +28,17 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
+            this.NavigationCacheMode = NavigationCacheMode.Required;
         }
 
         public async void ReceiveNavigationParameter(object parameter)
         {
+            LoadOutputDevices();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             LoadOutputDevices();
         }
 
@@ -63,12 +70,6 @@ namespace WinUIMusicPlayer.View
                 _thirdPartyDialog.RequestedTheme = AppSettings.ElementTheme;
             }
             _thirdPartyDialog?.ShowAsync();
-        }
-
-        private async void LrcAPISource_Click(object sender, RoutedEventArgs e)
-        {
-            Uri uri = new Uri("https://docs.lrc.cx/docs/QuickStart/");
-            await Launcher.LaunchUriAsync(uri);
         }
 
         private void SpectrumVisualization_Click(object sender, RoutedEventArgs e)

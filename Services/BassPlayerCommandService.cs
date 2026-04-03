@@ -103,7 +103,7 @@ namespace WinUIMusicPlayer.Services
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                App.Services.GetRequiredService<MusicBrowsePage>().PlayMusic(music);
+                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music);
             });
         }
 

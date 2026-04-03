@@ -26,13 +26,13 @@ namespace WinUIMusicPlayer.ViewModel
         public Music SelectedMusic { get; set => SetProperty(ref field, value); }
         public List<Music> SelectedMusics { get; set; } = [];
         public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
-        private MusicBrowsePage parentPage { get; }
+        public MusicBrowseViewModel BrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
-        public FavouritePlayListViewModel(MusicBrowsePage musicBrowsePage,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            parentPage = musicBrowsePage;
+            BrowseViewModel = browseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             InitalizeOption();
@@ -139,19 +139,19 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task<bool> IsDeleteFromDisk()
         {
-            if (parentPage is null)
+            if (BrowseViewModel is null)
             {
                 return false;
             }
-            return await parentPage.AreUSureDeleteFromDisk();
+            return await BrowseViewModel.AreUSureDeleteFromDisk();
         }
 
         public void MusicListView_DoubleTapped(Music selectedMusic)
         {
-            if (selectedMusic is not null && parentPage is not null)
+            if (selectedMusic is not null && BrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                parentPage.PlayMusic(music: selectedMusic, IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: selectedMusic, IsChangeList: true);
             }
         }
 
@@ -160,19 +160,19 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
-                parentPage.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                parentPage.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }       
 
         [RelayCommand]
         public async Task ConvertAudio(string tag)
         {
-            parentPage?.ViewModel?.ConvertAudio_Click(SelectedMusics, tag);
+            BrowseViewModel?.ConvertAudio_Click(SelectedMusics, tag);
         }
 
         [RelayCommand]
@@ -242,18 +242,18 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusics.Count == 1)
             {
-                if (parentPage is not null)
+                if (BrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                    parentPage.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
             if (SelectedMusics.Count > 1)
             {
-                if (parentPage is not null)
+                if (BrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics);
-                    parentPage.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
         }
@@ -293,13 +293,13 @@ namespace WinUIMusicPlayer.ViewModel
         public void AlbumTextBlock_Tapped(TextBlock textBlock)
         {
             string albumName = textBlock.Text;
-            parentPage?.SelectBarAlbum(albumName);
+            BrowseViewModel?.SelectBarAlbum(albumName);
         }
 
         public void AuthorTextBlock_Tapped(TextBlock textBlock)
         {
             string artist = textBlock.Text;
-            parentPage?.SelectBarArtist(artist);
+            BrowseViewModel?.SelectBarArtist(artist);
         }
 
         [RelayCommand]

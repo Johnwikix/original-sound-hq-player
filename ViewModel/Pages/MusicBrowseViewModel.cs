@@ -639,6 +639,50 @@ namespace WinUIMusicPlayer.ViewModel
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false) {
+            MusicBrowsePage.PlayMusic(music, currentPos, isSettingChanged, IsChangeList);
+        }
+
+        public void SelectBarArtist(string artist)
+        {
+            MusicBrowsePage.SelectBarArtist(artist);
+        }
+
+        public void SelectBarAlbum(string Album)
+        {
+            MusicBrowsePage.SelectBarAlbum(Album);
+        }
+
+        public async Task<bool> AreUSureDeleteFromDisk()
+        {
+            return await MusicBrowsePage.AreUSureDeleteFromDisk();
+        }
+
+        public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
+        {
+            MusicBrowsePage.NavigatePage(currentPage,navigationTransitionInfo, animeTime);
+        }
+
+        public void BackButton()
+        {
+            MusicBrowsePage.BackButton();
+        }
+
+        public void UpdateViewList()
+        {
+            MusicBrowsePage.UpdateViewList();
+        }
+
+        public void HideTransmission()
+        {
+            AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
+        }
+
+        public void ShowTransmission()
+        {
+            AppViewModel.ProcessRingVisibility = Visibility.Visible;
+        }
+
         private int GetSelectorBarItemIndex(SelectorBarItem item)
         {
             if (item is null) return -1;

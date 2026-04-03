@@ -296,7 +296,7 @@ namespace WinUIMusicPlayer.ViewModel
                         App.MainWindow?.SetAppTheme();
                         if (IsInitialized)
                         {
-                            App.Services.GetRequiredService<MusicBrowsePage>().ThemeChangedUpdateCover();
+                            App.Services.GetRequiredService<MusicBrowseViewModel>().ThemeChangedUpdateCover();
                             _ = _musicDatabaseService.SaveSettingAsync();
                         }
                     }

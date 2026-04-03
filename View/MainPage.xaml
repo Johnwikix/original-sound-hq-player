@@ -34,7 +34,7 @@
         <RelativePanel>
             <!--  Frame 填充整个区域  -->
             <Frame
-                x:Name="ContentFrame"
+                x:Name="MainFrame"
                 RelativePanel.AlignBottomWithPanel="True"
                 RelativePanel.AlignLeftWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"

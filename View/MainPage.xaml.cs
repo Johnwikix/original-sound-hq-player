@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using System.Threading;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
+using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -20,7 +22,7 @@ namespace WinUIMusicPlayer.View
     {
         public MainViewModel ViewModel { get; }
         public EqualizerDialog EqualizerDialog { get; set; }
-        private readonly INavigationService _navigationService;
+        //private readonly INavigationService _navigationService;
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
         public MainPage(MainViewModel viewModel)
@@ -30,10 +32,10 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             // 导航服务
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            _navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            _navigationService.RegisterPage<AddFolderPage>();
-            _navigationService.RegisterPage<MusicBrowsePage>();
-            _navigationService.RegisterPage<SettingsPage>();
+            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
+            //_navigationService.RegisterPage<AddFolderPage>();
+            //_navigationService.RegisterPage<MusicBrowsePage>();
+            //_navigationService.RegisterPage<SettingsPage>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
             InitiaizeEqualizerDialog();
@@ -83,13 +85,13 @@ namespace WinUIMusicPlayer.View
             switch (ViewModel.AppViewModel.DefaultEntryComboBoxTag)
             {
                 case "AddFolder":
-                    _navigationService.Navigate(typeof(AddFolderPage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                    MainFrame.Navigate(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                     break;
                 case "MusicBrowse":
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                    MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
                 default:
-                    _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                    MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
             }
         }
@@ -98,18 +100,18 @@ namespace WinUIMusicPlayer.View
         {
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
+                //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            _navigationService.Navigate(typeof(SettingsPage), this, null, 100);
+            MainFrame.Navigate(typeof(SettingsPage), this, new EntranceNavigationTransitionInfo());
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.IsSettingsInvoked)
             {
-                _navigationService.Navigate(typeof(SettingsPage), this, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                MainFrame.Navigate(typeof(SettingsPage),null, new EntranceNavigationTransitionInfo());
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             else
@@ -118,11 +120,11 @@ namespace WinUIMusicPlayer.View
                 switch (tag)
                 {
                     case "AddFolder":
-                        _navigationService.Navigate(typeof(AddFolderPage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                        MainFrame.Navigate(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                         _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
                         break;
                     case "MusicBrowse":
-                        _navigationService.Navigate(typeof(MusicBrowsePage), null, null, ViewModel.AppViewModel.EntranceAnimationTime);
+                        MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                         if (AppData.IsPlayingDetail)
                         {
                             NavigateToPlayingDetailPage();
@@ -134,10 +136,10 @@ namespace WinUIMusicPlayer.View
 
         public void NavigateToMusicBrowsePage()
         {
-            if (ContentFrame.Content is not MusicBrowsePage)
+            if (MainFrame.Content is not MusicBrowsePage)
             {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                _navigationService.Navigate(typeof(MusicBrowsePage), null, null, 0);
+                MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
             }
         }
 
@@ -149,14 +151,14 @@ namespace WinUIMusicPlayer.View
             AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
-                var pendingCount = 2;
+                var pendingCount = 1;
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
                 }
-
-                _navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                MainFrame.Visibility = Visibility.Collapsed;
+                //_navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
                 _playingNavigation.Show(typeof(PlayingDetailPage), ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
             }
             else
@@ -173,13 +175,14 @@ namespace WinUIMusicPlayer.View
             AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                var pendingCount = 2;
+                var pendingCount = 1;
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
                 }
-                _navigationService.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                MainFrame.Visibility = Visibility.Visible;
+                //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
             }
             else
@@ -190,12 +193,12 @@ namespace WinUIMusicPlayer.View
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
-            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+            App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
-            App.Services.GetRequiredService<MusicBrowsePage>().BackButton();
+            App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
         private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
