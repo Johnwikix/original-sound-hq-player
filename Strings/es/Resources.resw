@@ -906,4 +906,7 @@
   <data name="Win2dCover.Header" xml:space="preserve">
     <value>Portada Win2D (Experimental)</value>
   </data>
+  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+    <value>Bloque de texto animado Win2D en la página de reproducción</value>
+  </data>
 </root>

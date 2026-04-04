@@ -906,4 +906,7 @@
   <data name="Win2dCover.Header" xml:space="preserve">
     <value>Win2D Cover (Experimental)</value>
   </data>
+  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+    <value>Win2D Animated Text Block on Playback Page</value>
+  </data>
 </root>

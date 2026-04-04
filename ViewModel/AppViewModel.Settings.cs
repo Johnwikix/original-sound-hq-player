@@ -69,6 +69,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
+        public bool IsWin2dAnimatedText {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = false;
+
         public int DsdGain
         {
             get => field;

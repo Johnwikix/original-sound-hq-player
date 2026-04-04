@@ -217,6 +217,9 @@
                         <controls:SettingsCard x:Uid="Win2dCover" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="Win2dAnimatedTitle" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
+                        </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>

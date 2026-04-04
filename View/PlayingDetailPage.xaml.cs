@@ -44,14 +44,22 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
-            AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextPivotEffect();
-            AnimatedPlayingDetailAlbumTextBlock.TextEffect = new TextPivotEffect();
-            AnimatedPlayingDetailArtistTextBlock.TextEffect = new TextPivotEffect();
+            Loaded += PlayingDetailPage_Loaded;
         }
 
-        public void PreLoadImgData() {
-            _ = BackGround.LoadImageAsync(ViewModel.AppViewModel.LyricPageBackgroundData);
+        private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.AppViewModel.IsWin2dAnimatedText)
+            {
+                AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextPivotEffect();
+                AnimatedPlayingDetailAlbumTextBlock.TextEffect = new TextPivotEffect();
+                AnimatedPlayingDetailArtistTextBlock.TextEffect = new TextPivotEffect();
+            }
         }
+
+        //public void PreLoadImgData() {
+        //    _ = BackGround.LoadImageAsync(ViewModel.AppViewModel.LyricPageBackgroundData);
+        //}
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {           

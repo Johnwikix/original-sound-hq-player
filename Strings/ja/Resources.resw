@@ -906,4 +906,7 @@
   <data name="Win2dCover.Header" xml:space="preserve">
     <value>Win2D 表紙（実験的）</value>
   </data>
+  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+    <value>再生ページの Win2D アニメーションテキストブロック</value>
+  </data>
 </root>

@@ -48,5 +48,6 @@ namespace WinUIMusicPlayer.Model
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
         public bool IsWin2dCoverImageControlEnable { get; set; } = false;
+        public bool IsWin2dAnimatedText { get; set; } = false;
     }
 }
