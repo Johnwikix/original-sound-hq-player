@@ -907,6 +907,6 @@
     <value>Обложка Win2D (Экспериментальная)</value>
   </data>
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
-    <value>Анимированный текстовый блок Win2D на странице воспроизведения</value>
+    <value>Анимированный текстовый блок Win2D (Экспериментальный)</value>
   </data>
 </root>

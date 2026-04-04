@@ -56,11 +56,6 @@ namespace WinUIMusicPlayer.View
                 AnimatedPlayingDetailArtistTextBlock.TextEffect = new TextPivotEffect();
             }
         }
-
-        //public void PreLoadImgData() {
-        //    _ = BackGround.LoadImageAsync(ViewModel.AppViewModel.LyricPageBackgroundData);
-        //}
-
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {           
             App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
