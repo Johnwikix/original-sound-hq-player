@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
+using System;
 using System.Threading;
+using TagLib.Id3v2;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -43,6 +45,12 @@ namespace WinUIMusicPlayer.View
             NavigationViewControl.Visibility = Visibility.Visible;
         }
 
+        private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo =null)
+        {
+            MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
+            MainFrame.BackStack.Clear();
+        }
+
         private void InitiaizeEqualizerDialog()
         {
             if (EqualizerDialog is null)
@@ -69,8 +77,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-
-
         private void NavigateToDefaultPage()
         {
 
@@ -85,13 +91,13 @@ namespace WinUIMusicPlayer.View
             switch (ViewModel.AppViewModel.DefaultEntryComboBoxTag)
             {
                 case "AddFolder":
-                    MainFrame.Navigate(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
+                    NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                     break;
                 case "MusicBrowse":
-                    MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                    NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
                 default:
-                    MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                    NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
             }
         }
@@ -105,14 +111,14 @@ namespace WinUIMusicPlayer.View
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
             }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            MainFrame.Navigate(typeof(SettingsPage), this, new EntranceNavigationTransitionInfo());
+            NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.IsSettingsInvoked)
-            {                
-                MainFrame.Navigate(typeof(SettingsPage),null, new EntranceNavigationTransitionInfo());
+            {
+                NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
                 _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
                 MainFrame.Visibility = Visibility.Visible;
             }
@@ -121,13 +127,13 @@ namespace WinUIMusicPlayer.View
                 var tag = args.InvokedItemContainer.Tag.ToString();
                 switch (tag)
                 {
-                    case "AddFolder":                       
-                        MainFrame.Navigate(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
+                    case "AddFolder":
+                        NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                         _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
                         MainFrame.Visibility = Visibility.Visible;
                         break;
                     case "MusicBrowse":
-                        MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                        NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                         if (AppData.IsPlayingDetail)
                         {                            
                             NavigateToPlayingDetailPage();
@@ -145,7 +151,7 @@ namespace WinUIMusicPlayer.View
             if (MainFrame.Content is not MusicBrowsePage)
             {
                 NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                MainFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
             }
         }
 

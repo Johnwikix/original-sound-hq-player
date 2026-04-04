@@ -98,7 +98,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.PageType = "album";
                     AppViewModel.CurrentAlbumObj = album;
-                    MusicBrowseViewModel.NavigatePage(typeof(SongCollectionPage), new DrillInNavigationTransitionInfo(), AppViewModel.DrillInAnimationTime);
+                    MusicBrowseViewModel.NavigatePage(typeof(SongCollectionPage),null, new DrillInNavigationTransitionInfo());
 
                 }
             }

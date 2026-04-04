@@ -16,7 +16,6 @@
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
     <Grid>
-        <controls:NotifyIconControl x:Name="AppNotifyIconControl" MinWidth="200" />
         <Frame x:Name="ShellFrame" />
         <!--  Loading 界面  -->
         <Grid x:Name="LoadingGrid" Visibility="Visible">
@@ -32,5 +31,6 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center" />
         </Grid>
+        <controls:NotifyIconControl x:Name="AppNotifyIconControl" />
     </Grid>
 </winex:WindowEx>

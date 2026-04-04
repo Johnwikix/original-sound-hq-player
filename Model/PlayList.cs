@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.Model
             App.Services.GetRequiredService<AppViewModel>().CurrentPlayList = this;
             App.Services.GetRequiredService<AppViewModel>().CurrentPlayListId = this.Id;
             AppData.CurrentPage = typeof(PlayListSongPage);
-            App.Services.GetRequiredService<MusicBrowseViewModel>().NavigatePage(AppData.CurrentPage, new DrillInNavigationTransitionInfo(), App.Services.GetRequiredService<AppViewModel>().DrillInAnimationTime);
+            App.Services.GetRequiredService<MusicBrowseViewModel>().NavigatePage(AppData.CurrentPage,null, new DrillInNavigationTransitionInfo());
         }
     }
 }

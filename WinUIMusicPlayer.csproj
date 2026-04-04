@@ -167,6 +167,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Style\ComboBoxNMenuFlyoutStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\AlbumArtControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

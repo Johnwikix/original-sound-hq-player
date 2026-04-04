@@ -70,9 +70,9 @@ namespace WinUIMusicPlayer.View
             this.Loaded -= OnPageLoaded;
         }
 
-        public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
+        public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
-            ContentFrame.Navigate(currentPage, null, navigationTransitionInfo);
+            ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo);
         }
 
         public async Task<bool> AreUSureDeleteFromDisk()
@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is AlbumPage)
                 {
-                    ContentFrame.Navigate(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
+                    NavigatePage(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else
                 {
@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ContentFrame.Content is ArtistPage)
                 {
-                    ContentFrame.Navigate(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
+                    NavigatePage(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
                 }
                 else if (ContentFrame.Content is SongArtistListPage) {
                     App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
@@ -158,22 +158,22 @@ namespace WinUIMusicPlayer.View
             if (ContentFrame.Content is SongCollectionPage)
             {
                 AppData.CurrentPage = typeof(AlbumPage);
-                ContentFrame.Navigate(typeof(AlbumPage), null, new DrillInNavigationTransitionInfo());
+                NavigatePage(typeof(AlbumPage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongArtistListPage)
             {
                 AppData.CurrentPage = typeof(ArtistPage);
-                ContentFrame.Navigate(typeof(ArtistPage), null, new DrillInNavigationTransitionInfo());
+                NavigatePage(typeof(ArtistPage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is SongFolderListPage)
             {
                 AppData.CurrentPage = typeof(FolderBrowsePage);
-                ContentFrame.Navigate(typeof(FolderBrowsePage), null, new DrillInNavigationTransitionInfo());
+                NavigatePage(typeof(FolderBrowsePage), null, new DrillInNavigationTransitionInfo());
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
                 AppData.CurrentPage = typeof(PlayListPage);
-                ContentFrame.Navigate(typeof(PlayListPage), null, new DrillInNavigationTransitionInfo());
+                NavigatePage(typeof(PlayListPage), null, new DrillInNavigationTransitionInfo());
             }
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)

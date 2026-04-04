@@ -635,7 +635,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            MusicBrowsePage.NavigatePage(AppData.CurrentPage, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect }, AppViewModel.SlideAnimationTime);
+            MusicBrowsePage.NavigatePage(AppData.CurrentPage,null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
@@ -672,9 +672,9 @@ namespace WinUIMusicPlayer.ViewModel
             return await MusicBrowsePage.AreUSureDeleteFromDisk();
         }
 
-        public void NavigatePage(System.Type currentPage, NavigationTransitionInfo navigationTransitionInfo, int animeTime)
+        public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
-            MusicBrowsePage.NavigatePage(currentPage,navigationTransitionInfo, animeTime);
+            MusicBrowsePage.NavigatePage(pageType, parameter, navigationTransitionInfo);
         }
 
         public void BackButton()

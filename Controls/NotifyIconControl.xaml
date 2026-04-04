@@ -15,133 +15,137 @@
         <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
         <converters:MusicToTitleConverter x:Key="MusicToTitleConverter" />
         <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
-        <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />
+        <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />        
     </UserControl.Resources>
-    <Grid>
-        <tb:TaskbarIcon
-            x:Name="NotifyIcon"
-            x:FieldModifier="public"
-            ContextMenuMode="SecondWindow"
-            DataContext="{x:Bind}"
-            IconSource="ms-appx:///Assets/icon.ico"
-            LeftClickCommand="{x:Bind ShowHideWindowCommand}"
-            NoLeftClickDelay="True"
-            ToolTipText="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
-            <tb:TaskbarIcon.ContextFlyout>
-                <MenuFlyout>
-                    <MenuFlyoutItem
-                        x:Name="CurrentMusic"
-                        Width="200"
-                        Command="{x:Bind ShowPlayingDetailCommand}"
-                        Text="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE8D6;" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                    <MenuFlyoutSeparator />
-                    <MenuFlyoutItem
-                        x:Name="LastSong"
-                        x:Uid="IconLastSong"
-                        Click="LastSong_Click">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE892;" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                    <MenuFlyoutItem
-                        x:Name="PlayNPause"
-                        HorizontalAlignment="Stretch"
-                        Click="PlayNPause_Click"
-                        Text="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToStringConverter}, Mode=OneWay}">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon x:Name="PlayNPauseIcon" Glyph="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                    <MenuFlyoutItem
-                        x:Name="NextSong"
-                        x:Uid="IconNextSong"
-                        Click="NextSong_Click">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE893;" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                    <MenuFlyoutSubItem
-                        x:Name="PlayModeFlyout"
+    <tb:TaskbarIcon
+        x:Name="NotifyIcon"
+        x:FieldModifier="public"
+        ContextMenuMode="SecondWindow"
+        IconSource="ms-appx:///Assets/icon.ico"
+        LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+        ToolTipText="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
+        <tb:TaskbarIcon.ContextFlyout>
+            <MenuFlyout
+                AreOpenCloseAnimationsEnabled="True"
+                LightDismissOverlayMode="On"
+                ShowMode="TransientWithDismissOnPointerMoveAway">
+                <MenuFlyout.MenuFlyoutPresenterStyle>
+                    <Style BasedOn="{StaticResource DefaultMenuFlyoutPresenterStyle}" TargetType="MenuFlyoutPresenter">
+                        <Setter Property="MinWidth" Value="600" />
+                    </Style>
+                </MenuFlyout.MenuFlyoutPresenterStyle>
+                <MenuFlyoutItem
+                    x:Name="CurrentMusic"
+                    Width="200"
+                    Command="{x:Bind ShowPlayingDetailCommand}"
+                    Text="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE8D6;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem
+                    x:Name="LastSong"
+                    x:Uid="IconLastSong"
+                    Click="LastSong_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE892;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem
+                    x:Name="PlayNPause"
+                    HorizontalAlignment="Stretch"
+                    Click="PlayNPause_Click"
+                    Text="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToStringConverter}, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon x:Name="PlayNPauseIcon" Glyph="{x:Bind MusicBrowseViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem
+                    x:Name="NextSong"
+                    x:Uid="IconNextSong"
+                    Click="NextSong_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE893;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSubItem
+                    x:Name="PlayModeFlyout"
+                    x:Uid="IconListLoopValue"
+                    Text="{x:Bind AppViewModel.PlayModeFlyoutText, Mode=TwoWay}">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="{x:Bind AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                    </MenuFlyoutSubItem.Icon>
+                    <ToggleMenuFlyoutItem
+                        x:Name="IconRepeatAll"
                         x:Uid="IconListLoopValue"
-                        Text="{x:Bind AppViewModel.PlayModeFlyoutText, Mode=TwoWay}">
-                        <MenuFlyoutSubItem.Icon>
-                            <FontIcon x:Name="PlayModeFlyoutIcon" Glyph="{x:Bind AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
-                        </MenuFlyoutSubItem.Icon>
-                        <ToggleMenuFlyoutItem
-                            x:Name="IconRepeatAll"
-                            x:Uid="IconListLoopValue"
-                            Click="PlayMode_Click"
-                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'ListLoop'),Mode=OneWay}">
-                            <ToggleMenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE8EE;" />
-                            </ToggleMenuFlyoutItem.Icon>
-                        </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem
-                            x:Name="IconRepeatOne"
-                            x:Uid="IconSingleTuneCirculationValue"
-                            Click="PlayMode_Click"
-                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'SingleLoop'),Mode=OneWay}">
-                            <ToggleMenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE8ED;" />
-                            </ToggleMenuFlyoutItem.Icon>
-                        </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem
-                            x:Name="IconRepeatOff"
-                            x:Uid="IconSinglePlaybackValue"
-                            Click="PlayMode_Click"
-                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RepeatOff'),Mode=OneWay}">
-                            <ToggleMenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xF5E7;" />
-                            </ToggleMenuFlyoutItem.Icon>
-                        </ToggleMenuFlyoutItem>
-                        <ToggleMenuFlyoutItem
-                            x:Name="IconShuffle"
-                            x:Uid="IconRandomLoopValue"
-                            Click="PlayMode_Click"
-                            IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RandomLoop'),Mode=OneWay}">
-                            <ToggleMenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE8B1;" />
-                            </ToggleMenuFlyoutItem.Icon>
-                        </ToggleMenuFlyoutItem>
-                    </MenuFlyoutSubItem>
-                    <MenuFlyoutSeparator />
-                    <MenuFlyoutSubItem x:Name="Volume" x:Uid="IconVolume">
-                        <MenuFlyoutSubItem.Icon>
-                            <FontIcon Glyph="{x:Bind AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
-                        </MenuFlyoutSubItem.Icon>
-                        <MenuFlyoutItem
-                            x:Name="VolumeUp"
-                            Click="VolumeUp_Click"
-                            Text="+10" />
-                        <MenuFlyoutItem
-                            x:Name="VolumeDown"
-                            Click="VolumeDown_Click"
-                            Text="-10" />
-                    </MenuFlyoutSubItem>
-                    <MenuFlyoutSeparator />
+                        Click="PlayMode_Click"
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'ListLoop'),Mode=OneWay}">
+                        <ToggleMenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8EE;" />
+                        </ToggleMenuFlyoutItem.Icon>
+                    </ToggleMenuFlyoutItem>
+                    <ToggleMenuFlyoutItem
+                        x:Name="IconRepeatOne"
+                        x:Uid="IconSingleTuneCirculationValue"
+                        Click="PlayMode_Click"
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'SingleLoop'),Mode=OneWay}">
+                        <ToggleMenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8ED;" />
+                        </ToggleMenuFlyoutItem.Icon>
+                    </ToggleMenuFlyoutItem>
+                    <ToggleMenuFlyoutItem
+                        x:Name="IconRepeatOff"
+                        x:Uid="IconSinglePlaybackValue"
+                        Click="PlayMode_Click"
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RepeatOff'),Mode=OneWay}">
+                        <ToggleMenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xF5E7;" />
+                        </ToggleMenuFlyoutItem.Icon>
+                    </ToggleMenuFlyoutItem>
+                    <ToggleMenuFlyoutItem
+                        x:Name="IconShuffle"
+                        x:Uid="IconRandomLoopValue"
+                        Click="PlayMode_Click"
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RandomLoop'),Mode=OneWay}">
+                        <ToggleMenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8B1;" />
+                        </ToggleMenuFlyoutItem.Icon>
+                    </ToggleMenuFlyoutItem>
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutSubItem x:Name="Volume" x:Uid="IconVolume">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="{x:Bind AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem
-                        x:Name="Settings"
-                        x:Uid="IconSettings"
-                        Click="Settings_Click">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE713;" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                    <MenuFlyoutSeparator />
+                        x:Name="VolumeUp"
+                        Click="VolumeUp_Click"
+                        Text="+10" />
                     <MenuFlyoutItem
-                        x:Name="Exit"
-                        x:Uid="IconExit"
-                        Command="{x:Bind ExitApplicationCommand}">
-                        <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="&#xE89F;" />
-                        </MenuFlyoutItem.Icon>
-                    </MenuFlyoutItem>
-                </MenuFlyout>
-            </tb:TaskbarIcon.ContextFlyout>
-        </tb:TaskbarIcon>
-    </Grid>
+                        x:Name="VolumeDown"
+                        Click="VolumeDown_Click"
+                        Text="-10" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem
+                    x:Name="Settings"
+                    x:Uid="IconSettings"
+                    Click="Settings_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem
+                    x:Name="Exit"
+                    x:Uid="IconExit"
+                    Command="{x:Bind ExitApplicationCommand}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE89F;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+            </MenuFlyout>
+        </tb:TaskbarIcon.ContextFlyout>
+    </tb:TaskbarIcon>
 </UserControl>

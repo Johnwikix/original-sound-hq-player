@@ -12,7 +12,8 @@
                 <ResourceDictionary Source="/Style/BtnStyle.xaml" />
                 <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
                 <ResourceDictionary Source="/Style/SilderDictionary.xaml" />
-                <ResourceDictionary Source="ms-appx:///DevWinUI.Controls/Themes/Generic.xaml" />
+                <ResourceDictionary Source="/Style/ComboBoxNMenuFlyoutStyle.xaml" />
+                <ResourceDictionary Source="ms-appx:///DevWinUI.Controls/Themes/Generic.xaml" />                
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <!--<AcrylicBrush
