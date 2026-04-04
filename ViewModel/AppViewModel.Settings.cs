@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -46,7 +47,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.CoverSize = value;
+                    AlbumCoverBehavior.CoverSize = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();

@@ -29,6 +29,7 @@ using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
@@ -1313,7 +1314,7 @@ namespace WinUIMusicPlayer.Utils
                 var cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
                 if (!Directory.Exists(cacheFolder)) return;
 
-                var pattern = $"*_{AppSettings.CoverSize}.png";
+                var pattern = $"*_{AlbumCoverBehavior.CoverSize}.png";
                 var validFiles = Directory.EnumerateFiles(cacheFolder, pattern).AsValueEnumerable().ToHashSet();
 
                 foreach (var file in Directory.EnumerateFiles(cacheFolder, "*.png"))

@@ -44,7 +44,6 @@ namespace WinUIMusicPlayer.Model
         public static ElementTheme ElementTheme { get; set; } = ElementTheme.Default;
         public static bool IsRunningBackend { get; set; } = true;
         public static bool IsAutoLyricsEnabled { get; set; } = true;
-        public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> Equalizer { get; set; } = new()
         {
