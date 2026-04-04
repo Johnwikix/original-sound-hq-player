@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI;
+using WinUIMusicPlayer.Controls;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -43,6 +44,9 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
+            AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextPivotEffect();
+            AnimatedPlayingDetailAlbumTextBlock.TextEffect = new TextPivotEffect();
+            AnimatedPlayingDetailArtistTextBlock.TextEffect = new TextPivotEffect();
         }
 
         public void PreLoadImgData() {
@@ -262,6 +266,7 @@ namespace WinUIMusicPlayer.View
         private void Dispose(bool dispose)
         {
             if (dispose) {
+                AlbumArtControl.Dispose();
                 BackGround.Dispose();
             }
         }

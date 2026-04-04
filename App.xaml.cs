@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using H.NotifyIcon;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -221,9 +222,11 @@ namespace WinUIMusicPlayer
         {
             try
             {
+                MainWindow.Hide();
+                Services.GetRequiredService<PlayingDetailPage>().Dispose();
                 await _host.StopAsync();
                 //_host.Dispose();
-                //MainWindow.Dispose();
+                MainWindow.Dispose();                
                 _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)
@@ -232,7 +235,8 @@ namespace WinUIMusicPlayer
             }
             finally
             {
-                Environment.Exit(0);
+                Current.Exit();
+                //Environment.Exit(0);
             }
         }
     }

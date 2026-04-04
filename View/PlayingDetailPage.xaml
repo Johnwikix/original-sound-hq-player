@@ -108,6 +108,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="6*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="1" Grid.Column="1">
@@ -163,8 +164,79 @@
                         IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                         Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}" />
                 </Grid>
-                <StackPanel
+                <Grid
                     Grid.Row="2"
+                    Grid.Column="1"
+                    Margin="25,0,20,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <dev:AnimatedTextBlock
+                        x:Name="AnimatedPlayingDetailTitleTextBlock"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Margin="0,0,0,1"
+                        FontSize="24"
+                        FontWeight="Bold"
+                        Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                    <Button
+                        x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="L" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                    </Button>
+                    <dev:AnimatedTextBlock
+                        x:Name="AnimatedPlayingDetailAlbumTextBlock"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="0,2,0,1"
+                        FontSize="18"
+                        Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                    <TextBlock
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,2,0,1"
+                        FontSize="18"
+                        Opacity="0"
+                        Text="1" />
+                    <dev:AnimatedTextBlock
+                        x:Name="AnimatedPlayingDetailArtistTextBlock"
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Margin="0,2,0,1"
+                        FontSize="18"
+                        Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                    <TextBlock
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Margin="0,2,0,1"
+                        FontSize="18"
+                        Opacity="0"
+                        Text="2" />
+                </Grid>
+                <StackPanel
+                    Grid.Row="3"
                     Grid.Column="1"
                     Margin="20,0,20,20">
                     <!--  音乐信息  -->
@@ -176,8 +248,8 @@
                         <StackPanel
                             x:Name="MusicInfoPanel"
                             Grid.Column="0"
-                            Margin="5">
-                            <dev:AutoScrollView
+                            Margin="5,0">
+                            <!--<dev:AutoScrollView
                                 Margin="0"
                                 Padding="0"
                                 IsPlaying="False"
@@ -195,8 +267,8 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
-                            <dev:AutoScrollView
+                            </dev:AutoScrollView>-->
+                            <!--<dev:AutoScrollView
                                 Margin="0"
                                 Padding="0"
                                 IsPlaying="False"
@@ -213,8 +285,8 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
-                            <dev:AutoScrollView
+                            </dev:AutoScrollView>-->
+                            <!--<dev:AutoScrollView
                                 Margin="0"
                                 Padding="0"
                                 IsPlaying="False"
@@ -231,7 +303,7 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
+                            </dev:AutoScrollView>-->
                             <Grid Margin="0,2,0,1" HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -257,7 +329,7 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Button
+                            <!--<Button
                                 x:Name="PlayBarFavouriteButtonPlayingDetail"
                                 Grid.Row="0"
                                 Margin="0,7,0,0"
@@ -271,7 +343,7 @@
                                     <KeyboardAccelerator Key="L" />
                                 </Button.KeyboardAccelerators>
                                 <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
-                            </Button>
+                            </Button>-->
                             <TextBlock
                                 x:Name="PlayTimeTextBlockPlayingDetail"
                                 Grid.Row="2"
@@ -288,9 +360,9 @@
                                         <AdaptiveTrigger MinWindowWidth="0" />
                                     </VisualState.StateTriggers>
                                     <VisualState.Setters>
-                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="24" />
-                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="18" />
-                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="18" />
+                                        <Setter Target="AnimatedPlayingDetailTitleTextBlock.FontSize" Value="24" />
+                                        <Setter Target="AnimatedPlayingDetailAlbumTextBlock.FontSize" Value="18" />
+                                        <Setter Target="AnimatedPlayingDetailArtistTextBlock.FontSize" Value="18" />
                                         <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
                                         <Setter Target="PlayingDetailHRImage.Height" Value="14" />
                                     </VisualState.Setters>
@@ -300,9 +372,9 @@
                                         <AdaptiveTrigger MinWindowWidth="1600" />
                                     </VisualState.StateTriggers>
                                     <VisualState.Setters>
-                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="32" />
-                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="20" />
-                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="20" />
+                                        <Setter Target="AnimatedPlayingDetailTitleTextBlock.FontSize" Value="32" />
+                                        <Setter Target="AnimatedPlayingDetailAlbumTextBlock.FontSize" Value="20" />
+                                        <Setter Target="AnimatedPlayingDetailArtistTextBlock.FontSize" Value="20" />
                                         <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="14" />
                                         <Setter Target="PlayingDetailHRImage.Height" Value="14" />
                                     </VisualState.Setters>
@@ -312,9 +384,9 @@
                                         <AdaptiveTrigger MinWindowWidth="2000" />
                                     </VisualState.StateTriggers>
                                     <VisualState.Setters>
-                                        <Setter Target="PlayingDetailTitleTextBlock.FontSize" Value="36" />
-                                        <Setter Target="PlayingDetailAlbumTextBlock.FontSize" Value="22" />
-                                        <Setter Target="PlayingDetailArtistTextBlock.FontSize" Value="22" />
+                                        <Setter Target="AnimatedPlayingDetailTitleTextBlock.FontSize" Value="36" />
+                                        <Setter Target="AnimatedPlayingDetailAlbumTextBlock.FontSize" Value="22" />
+                                        <Setter Target="AnimatedPlayingDetailArtistTextBlock.FontSize" Value="22" />
                                         <Setter Target="PlayingDetailMusicInfoTextBlock.FontSize" Value="16" />
                                         <Setter Target="PlayingDetailHRImage.Height" Value="16" />
                                     </VisualState.Setters>
