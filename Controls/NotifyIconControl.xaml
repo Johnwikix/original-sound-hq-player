@@ -15,7 +15,7 @@
         <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
         <converters:MusicToTitleConverter x:Key="MusicToTitleConverter" />
         <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
-        <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />        
+        <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />
     </UserControl.Resources>
     <tb:TaskbarIcon
         x:Name="NotifyIcon"
@@ -23,6 +23,7 @@
         ContextMenuMode="SecondWindow"
         IconSource="ms-appx:///Assets/icon.ico"
         LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+        NoLeftClickDelay="True"
         ToolTipText="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
         <tb:TaskbarIcon.ContextFlyout>
             <MenuFlyout
