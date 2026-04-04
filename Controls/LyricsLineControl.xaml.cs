@@ -133,7 +133,7 @@ namespace WinUIMusicPlayer.Controls
             }
 
             // 检查窗口是否可用
-            if (App.MainWindow?.AppWindow?.Size.Width == null)
+            if (App.MainWindow?.AppWindow?.Size.Width is null || App.MainWindow.AppWindow.Size.Width == 0)
             {
                 return;
             }

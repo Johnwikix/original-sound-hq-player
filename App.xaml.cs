@@ -115,7 +115,6 @@ namespace WinUIMusicPlayer
             _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             _logger.LogInformation("应用程序初始化开始");
             var systemLanguages = GlobalizationPreferences.Languages;
@@ -154,18 +153,14 @@ namespace WinUIMusicPlayer
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            _logger.LogError(e.Exception, "应用程序未处理异常: {Message}", e.Exception.Message);
-            e.Handled = true;
-        }
-        private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
-        {
             var exception = e.Exception;
             var errorMessage = new StringBuilder();
             errorMessage.AppendLine($"首次机会异常发生：");
             errorMessage.AppendLine($"异常类型：{exception.GetType().FullName}");
             errorMessage.AppendLine($"异常消息：{exception.Message}");
             errorMessage.AppendLine($"堆栈跟踪：{exception.StackTrace}");
-            _logger.LogError(exception, $"首次机会异常: {errorMessage}");
+            _logger.LogError(e.Exception, "应用程序未处理异常: {Message}", errorMessage);
+            e.Handled = true;
         }
 
         private void CurrentDomain_UnhandledException(object sender, System.UnhandledExceptionEventArgs e)
@@ -222,9 +217,10 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                MainWindow.Hide();
-                Services.GetRequiredService<PlayingDetailPage>().Dispose();
+                MainWindow.Hide();                
                 await _host.StopAsync();
+                Services.GetRequiredService<PlayingDetailPage>().Dispose();
+                Services.GetRequiredService<AppViewModel>().Dispose();
                 //_host.Dispose();
                 MainWindow.Dispose();                
                 _logger?.LogInformation("应用程序退出完成");                

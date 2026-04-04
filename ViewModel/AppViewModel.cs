@@ -1001,6 +1001,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void Dispose(bool dispose) {
             if (dispose) {
                 ProgressTimer?.Stop();
+                SearchCts?.Cancel();
                 SearchCts?.Dispose();
                 ProgressTimer?.Dispose();
             }
