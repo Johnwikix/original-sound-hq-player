@@ -198,6 +198,7 @@
                     <Button
                         x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
                         Grid.Column="1"
+                        Margin="0,7,0,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Background="Transparent"
