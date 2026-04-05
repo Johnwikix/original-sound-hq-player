@@ -15,18 +15,18 @@ public partial class TextDefaultEffect : ITextEffect
 
     public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(10);
 
-    public void Update(string oldText,
-        string newText,
-        List<TextDiffResult> diffResults,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        AnimatedTextBlockRedrawState state,
-        ICanvasAnimatedControl canvas,
-        CanvasAnimatedUpdateEventArgs args)
-    {
-        // CanvasControl 模式下 Update 不再被调用，逻辑已移入 AnimatedTextBlock.OnRendering
-        // 保留此方法以满足接口约定
-    }
+    //public void Update(string oldText,
+    //    string newText,
+    //    List<TextDiffResult> diffResults,
+    //    CanvasTextLayout oldTextLayout,
+    //    CanvasTextLayout newTextLayout,
+    //    AnimatedTextBlockRedrawState state,
+    //    ICanvasAnimatedControl canvas,
+    //    CanvasAnimatedUpdateEventArgs args)
+    //{
+    //    // CanvasControl 模式下 Update 不再被调用，逻辑已移入 AnimatedTextBlock.OnRendering
+    //    // 保留此方法以满足接口约定
+    //}
 
     public void DrawText(string oldText,
         string newText,
@@ -37,8 +37,7 @@ public partial class TextDefaultEffect : ITextEffect
         Color textColor,
         CanvasLinearGradientBrush gradientBrush,
         AnimatedTextBlockRedrawState state,
-        CanvasDrawingSession drawingSession,
-        CanvasAnimatedDrawEventArgs args)   // CanvasControl 模式下传入 null，不要使用
+        CanvasDrawingSession drawingSession)   // CanvasControl 模式下传入 null，不要使用
     {
         if (diffResults == null || newTextLayout == null)
             return;

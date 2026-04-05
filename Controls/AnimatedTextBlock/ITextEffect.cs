@@ -31,14 +31,14 @@ public interface ITextEffect
     /// <param name="state">Current drawing state of the control.</param>
     /// <param name="canvas">The animated Win2D canvas control intended for rendering text.</param>
     /// <param name="args">Data for update calculations.</param>
-    void Update(string oldText,
-        string newText,
-        List<TextDiffResult> diffResults,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        AnimatedTextBlockRedrawState state,
-        ICanvasAnimatedControl canvas,
-        CanvasAnimatedUpdateEventArgs args);
+    //void Update(string oldText,
+    //    string newText,
+    //    List<TextDiffResult> diffResults,
+    //    CanvasTextLayout oldTextLayout,
+    //    CanvasTextLayout newTextLayout,
+    //    AnimatedTextBlockRedrawState state,
+    //    ICanvasAnimatedControl canvas,
+    //    CanvasAnimatedUpdateEventArgs args);
 
     /// <summary>
     /// Implement this method to draw the texts.
@@ -63,6 +63,5 @@ public interface ITextEffect
         Color textColor,
         CanvasLinearGradientBrush gradientBrush,
         AnimatedTextBlockRedrawState state,
-        CanvasDrawingSession drawingSession,
-        CanvasAnimatedDrawEventArgs args);
+        CanvasDrawingSession drawingSession);
 }

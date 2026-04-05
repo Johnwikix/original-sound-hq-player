@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View
         {
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
-                AnimatedPlayingDetailTitleTextBlock.TextEffect = new Controls.TextPivotEffect();
+                AnimatedPlayingDetailTitleTextBlock.TextEffect = new Controls.TextDefaultEffect();
             }
         }
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)

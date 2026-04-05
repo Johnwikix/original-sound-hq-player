@@ -341,8 +341,7 @@ public sealed partial class AnimatedTextBlock : Control
                     _oldTextLayout, _newTextLayout,
                     _textFormat, _textColor, _textBrush,
                     _currentState,
-                    args.DrawingSession,
-                    null);
+                    args.DrawingSession);
             }
             catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
         }
