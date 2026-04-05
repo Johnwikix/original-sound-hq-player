@@ -66,5 +66,10 @@ namespace WinUIMusicPlayer.Utils
         public static bool BoolToBoolReConverter(bool value) {
             return !value;
         }
+
+        public static string MusicToInfo(Music music) {
+            if (music is null) return string.Empty;
+            return $"{music.Title}{Environment.NewLine}{music.Album}{Environment.NewLine}{music.Author}";
+        }
     }
 }

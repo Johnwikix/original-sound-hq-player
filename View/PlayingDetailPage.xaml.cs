@@ -52,8 +52,6 @@ namespace WinUIMusicPlayer.View
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
                 AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextPivotEffect();
-                AnimatedPlayingDetailAlbumTextBlock.TextEffect = new TextPivotEffect();
-                AnimatedPlayingDetailArtistTextBlock.TextEffect = new TextPivotEffect();
             }
         }
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
