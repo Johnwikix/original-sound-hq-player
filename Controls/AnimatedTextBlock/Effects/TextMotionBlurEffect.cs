@@ -43,7 +43,7 @@ public partial class TextMotionBlurEffect : ITextEffect
         if (diffResults == null)
             return;
 
-        var ds = args.DrawingSession;
+        var ds = drawingSession;
 
         if (state == AnimatedTextBlockRedrawState.Idle)
         {
@@ -113,8 +113,13 @@ public partial class TextMotionBlurEffect : ITextEffect
         Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        ds.Transform = Matrix3x2.Identity;
-        ds.DrawTextLayout(newTextLayout, 0, 0, textColor);
+        if (newTextLayout == null) return;
+        try
+        {
+            ds.Transform = Matrix3x2.Identity;
+            ds.DrawTextLayout(newTextLayout, 0, 0, textColor);
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
     private void DrawInsert(CanvasDrawingSession ds,
