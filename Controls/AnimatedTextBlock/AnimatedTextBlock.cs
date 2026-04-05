@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Brushes;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -10,24 +11,31 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Numerics;
 using Windows.UI;
 using Windows.UI.Text;
 
 namespace WinUIMusicPlayer.Controls;
 
 [TemplatePart(Name = "ContentBorder", Type = typeof(Border))]
-[TemplatePart(Name = "AnimatedCanvas", Type = typeof(CanvasAnimatedControl))]
+[TemplatePart(Name = "AnimatedCanvas", Type = typeof(CanvasControl))]
 public sealed partial class AnimatedTextBlock : Control
 {
-    private CanvasAnimatedControl _animatedCanvas = null;
+    // ── 替换为 CanvasControl ──────────────────────────────────────────────
+    private CanvasControl _canvas = null;
 
+    // ── 文字状态 ─────────────────────────────────────────────────────────
     private string _oldText = string.Empty;
     private string _newText = string.Empty;
 
+    // ── 动画驱动 ─────────────────────────────────────────────────────────
     private AnimatedTextBlockRedrawState _currentState = AnimatedTextBlockRedrawState.Idle;
+    private bool _isRenderingHooked = false;
+    private DateTimeOffset _lastRenderTime;
+    private TimeSpan _totalAnimationTime;       // 替代 CanvasTimingInformation.TotalTime
     private TimeSpan _animationBeginTime;
 
+    // ── Diff / Layout ─────────────────────────────────────────────────────
     private List<TextDiffResult> _diffResults = null;
 
     private CanvasTextFormat _textFormat = new CanvasTextFormat();
@@ -36,42 +44,40 @@ public sealed partial class AnimatedTextBlock : Control
 
     private CanvasTextLayout _oldTextLayout;
     private CanvasTextLayout _newTextLayout;
-
-    // FIX: 缓存 Idle 状态下的静态文字 layout，避免每帧重建
     private CanvasTextLayout _staticTextLayout;
     private bool _staticLayoutDirty = true;
 
+    // ── 文字效果 ──────────────────────────────────────────────────────────
     private ITextEffect _textEffect;
 
+    // ── 字体属性缓存 ──────────────────────────────────────────────────────
     private float _fontSize = 14;
     private string _fontFamily = FontFamily.XamlAutoFontFamily.Source;
     private FontStretch _fontStretch = FontStretch.Normal;
     private FontStyle _fontStyle = FontStyle.Normal;
     private FontWeight _fontWeight = FontWeights.Normal;
+    private bool _textFormatDirty = true;
 
+    // ── 文字布局属性缓存 ──────────────────────────────────────────────────
     private TextAlignment _textAlignment = TextAlignment.Left;
     private AnimatedTextBlockTextDirection _textDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
     private TextTrimming _textTrimming = TextTrimming.None;
     private TextWrapping _textWrapping = TextWrapping.NoWrap;
-    private readonly Lock _layoutLock = new();
-    private bool _textFormatDirty = true;
 
-    #region Properties
+    #region DependencyProperties
 
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text), typeof(string), typeof(AnimatedTextBlock), new PropertyMetadata(default(string)));
 
     public string Text
     {
-        get { return (string)GetValue(TextProperty); }
+        get => (string)GetValue(TextProperty);
         set
         {
             _oldText = _newText ?? string.Empty;
             _newText = value ?? string.Empty;
-
-            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
-
             SetValue(TextProperty, value);
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
         }
     }
 
@@ -80,7 +86,7 @@ public sealed partial class AnimatedTextBlock : Control
 
     public ITextEffect TextEffect
     {
-        get { return (ITextEffect)GetValue(TextEffectProperty); }
+        get => (ITextEffect)GetValue(TextEffectProperty);
         set
         {
             _textEffect = value;
@@ -93,10 +99,11 @@ public sealed partial class AnimatedTextBlock : Control
 
     public TextAlignment TextAlignment
     {
-        get { return (TextAlignment)GetValue(TextAlignmentProperty); }
+        get => (TextAlignment)GetValue(TextAlignmentProperty);
         set
         {
             _textAlignment = value;
+            _textFormatDirty = true;
             SetValue(TextAlignmentProperty, value);
         }
     }
@@ -106,10 +113,11 @@ public sealed partial class AnimatedTextBlock : Control
 
     public AnimatedTextBlockTextDirection TextDirection
     {
-        get { return (AnimatedTextBlockTextDirection)GetValue(TextDirectionProperty); }
+        get => (AnimatedTextBlockTextDirection)GetValue(TextDirectionProperty);
         set
         {
             _textDirection = value;
+            _textFormatDirty = true;
             SetValue(TextDirectionProperty, value);
         }
     }
@@ -119,10 +127,11 @@ public sealed partial class AnimatedTextBlock : Control
 
     public TextTrimming TextTrimming
     {
-        get { return (TextTrimming)GetValue(TextTrimmingProperty); }
+        get => (TextTrimming)GetValue(TextTrimmingProperty);
         set
         {
             _textTrimming = value;
+            _textFormatDirty = true;
             SetValue(TextTrimmingProperty, value);
         }
     }
@@ -132,10 +141,11 @@ public sealed partial class AnimatedTextBlock : Control
 
     public TextWrapping TextWrapping
     {
-        get { return (TextWrapping)GetValue(TextWrappingProperty); }
+        get => (TextWrapping)GetValue(TextWrappingProperty);
         set
         {
             _textWrapping = value;
+            _textFormatDirty = true;
             SetValue(TextWrappingProperty, value);
         }
     }
@@ -152,12 +162,12 @@ public sealed partial class AnimatedTextBlock : Control
 
         this.Loaded += OnLoaded;
         this.Unloaded += OnUnloaded;
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.ForegroundProperty, ForegroundChangedCallback);
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontFamilyProperty, FontFamilyChangedCallback);
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontSizeProperty, FontSizeChangedCallback);
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontStretchProperty, FontStretchChangedCallback);
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontStyleProperty, FontStyleChangedCallback);
-        this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontWeightProperty, FontWeightChangedCallback);
+        this.RegisterPropertyChangedCallback(ForegroundProperty, ForegroundChangedCallback);
+        this.RegisterPropertyChangedCallback(FontFamilyProperty, FontFamilyChangedCallback);
+        this.RegisterPropertyChangedCallback(FontSizeProperty, FontSizeChangedCallback);
+        this.RegisterPropertyChangedCallback(FontStretchProperty, FontStretchChangedCallback);
+        this.RegisterPropertyChangedCallback(FontStyleProperty, FontStyleChangedCallback);
+        this.RegisterPropertyChangedCallback(FontWeightProperty, FontWeightChangedCallback);
 
         _textFormat.TrimmingSign = CanvasTrimmingSign.Ellipsis;
     }
@@ -166,19 +176,16 @@ public sealed partial class AnimatedTextBlock : Control
     {
         base.OnApplyTemplate();
 
-        _animatedCanvas = GetTemplateChild("AnimatedCanvas") as CanvasAnimatedControl;
+        _canvas = GetTemplateChild("AnimatedCanvas") as CanvasControl;
         this.SizeChanged += OnSizeChanged;
 
-        ApplyTextFormat();
+        ApplyTextFormatIfNeeded();
         ApplyTextForeground();
 
-        if (_animatedCanvas != null)
+        if (_canvas != null)
         {
-            // FIX: 初始设为 Paused，避免启动时空转
-            _animatedCanvas.Paused = true;
-            _animatedCanvas.CreateResources += AnimatedCanvas_CreateResources;
-            _animatedCanvas.Update += AnimatedCanvas_Update;
-            _animatedCanvas.Draw += AnimatedCanvas_Draw;
+            _canvas.CreateResources += Canvas_CreateResources;
+            _canvas.Draw += Canvas_Draw;
         }
     }
 
@@ -188,17 +195,19 @@ public sealed partial class AnimatedTextBlock : Control
         SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
-    // FIX: 页面卸载时清理资源，防止长时间运行后的泄漏
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_animatedCanvas != null)
+        // 停止渲染循环
+        StopRenderingLoop();
+
+        // 解绑画布事件
+        if (_canvas != null)
         {
-            _animatedCanvas.Paused = true;
-            _animatedCanvas.CreateResources -= AnimatedCanvas_CreateResources;
-            _animatedCanvas.Update -= AnimatedCanvas_Update;
-            _animatedCanvas.Draw -= AnimatedCanvas_Draw;
+            _canvas.CreateResources -= Canvas_CreateResources;
+            _canvas.Draw -= Canvas_Draw;
         }
 
+        // 释放所有 GPU 资源
         DisposeLayouts();
         _textBrush?.Dispose();
         _textBrush = null;
@@ -211,11 +220,17 @@ public sealed partial class AnimatedTextBlock : Control
         if (e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
             return;
 
+        // 尺寸变化：重建 newTextLayout 后直接进 Idle，不跑动画
+        // 在 UI 线程操作，此时没有并发问题
         _staticLayoutDirty = true;
 
-        // FIX: 不在 UI 线程 dispose layout，避免与 Canvas 线程竞争
-        // GenerateNewTextLayout / GenerateOldTextLayout 内部会 lock + dispose 旧的
-        SetRedrawState(AnimatedTextBlockRedrawState.LayoutChanged);
+        if (_canvas != null && _canvas.Size.Width > 0 && _canvas.Size.Height > 0)
+        {
+            ApplyTextFormatIfNeeded();
+            RebuildNewTextLayout(_canvas);
+        }
+
+        SetRedrawState(AnimatedTextBlockRedrawState.Idle);
     }
 
     #region Property Changed Callbacks
@@ -224,13 +239,13 @@ public sealed partial class AnimatedTextBlock : Control
     {
         ApplyTextForeground();
         _staticLayoutDirty = true;
-        // FIX: 前景色变了需要重绘一帧
-        RequestSingleRedraw();
+        _canvas?.Invalidate();
     }
 
     private void FontFamilyChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontFamily = FontFamily.Source;
+        _textFormatDirty = true;
         _staticLayoutDirty = true;
     }
 
@@ -244,18 +259,21 @@ public sealed partial class AnimatedTextBlock : Control
     private void FontStretchChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontStretch = FontStretch;
+        _textFormatDirty = true;
         _staticLayoutDirty = true;
     }
 
     private void FontStyleChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontStyle = FontStyle;
+        _textFormatDirty = true;
         _staticLayoutDirty = true;
     }
 
     private void FontWeightChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontWeight = FontWeight;
+        _textFormatDirty = true;
         _staticLayoutDirty = true;
     }
 
@@ -263,8 +281,7 @@ public sealed partial class AnimatedTextBlock : Control
 
     #region Canvas Events
 
-    private void AnimatedCanvas_CreateResources(CanvasAnimatedControl sender,
-        CanvasCreateResourcesEventArgs args)
+    private void Canvas_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
     {
         if (Foreground is LinearGradientBrush linearGradientBrush)
         {
@@ -272,9 +289,8 @@ public sealed partial class AnimatedTextBlock : Control
 
             for (int i = 0; i < linearGradientBrush.GradientStops.Count; i++)
             {
-                var gradientStop = linearGradientBrush.GradientStops[i];
-                stops[i].Color = gradientStop.Color;
-                stops[i].Position = (float)gradientStop.Offset;
+                stops[i].Color = linearGradientBrush.GradientStops[i].Color;
+                stops[i].Position = (float)linearGradientBrush.GradientStops[i].Offset;
             }
 
             _textBrush?.Dispose();
@@ -282,119 +298,99 @@ public sealed partial class AnimatedTextBlock : Control
         }
     }
 
-    private void AnimatedCanvas_Update(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+    private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (_textEffect == null)
-        {
-            // FIX: 无动画效果时直接进 Idle，下面会 Pause
-            SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-            return;
-        }
-
-        if (_currentState == AnimatedTextBlockRedrawState.LayoutChanged)
-        {
-            ApplyTextFormat();
-
-            if (sender.Size.Width <= 0 || sender.Size.Height <= 0)
-            {
-                SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-                return;
-            }
-
-            // 只重建 newTextLayout，不做 diff，不跑动画
-            GenerateNewTextLayout(sender);
-
-            // 静态 layout 也标脏，Draw 里会用新尺寸重建
-            _staticLayoutDirty = true;
-
-            SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-            // Idle 会触发 Paused = true，Draw 还会再跑一帧把新 layout 画出来
-            return;
-        }
-
-        if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
-        {
-            ApplyTextFormatIfNeeded();   // 只在格式真的变了才重建
-            GenerateOldTextLayout(sender);
-            GenerateNewTextLayout(sender);
-            GenerateDiffResults();
-            _animationBeginTime = args.Timing.TotalTime;
-            SetRedrawState(AnimatedTextBlockRedrawState.Animating);
-        }
-
-        if (_currentState == AnimatedTextBlockRedrawState.Animating)
-        {
-            UpdateAllClusterProgress(args.Timing);
-        }
-
-        _textEffect.Update(_oldText,
-            _newText,
-            _diffResults,
-            _oldTextLayout,
-            _newTextLayout,
-            _currentState,
-            sender,
-            args);
-    }
-
-    private void AnimatedCanvas_Draw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
-    {
+        // 全部在 UI 线程，无需 lock
         args.DrawingSession.Clear(Colors.Transparent);
 
-        // 在 lock 内取快照，lock 外使用，避免长时间持锁阻塞 UI 线程
-        CanvasTextLayout oldSnap, newSnap;
-        lock (_layoutLock)
+        if (sender.Size.Width <= 0 || sender.Size.Height <= 0)
+            return;
+
+        // ── 无动画效果 or Idle：画静态帧 ────────────────────────────────
+        if (_textEffect == null || _currentState == AnimatedTextBlockRedrawState.Idle)
         {
-            oldSnap = _oldTextLayout;
-            newSnap = _newTextLayout;
-        }
-
-        if (_textEffect == null)
-        {
-            // 无动画效果：直接画静态 layout
-            lock (_layoutLock)
-            {
-                if (_staticLayoutDirty || _staticTextLayout == null)
-                {
-                    if (sender.Size.Width <= 0 || sender.Size.Height <= 0) return;
-                    _staticTextLayout?.Dispose();
-                    _staticTextLayout = new CanvasTextLayout(sender,
-                        _newText, _textFormat,
-                        (float)sender.Size.Width,
-                        (float)sender.Size.Height);
-                    _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
-                    _staticLayoutDirty = false;
-                }
-                newSnap = _staticTextLayout;
-            }
-
-            if (newSnap == null) return;
-
-            try { args.DrawingSession.DrawTextLayout(newSnap, 0, 0, _textColor); }
-            catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+            DrawStatic(sender, args.DrawingSession);
             return;
         }
 
-        // 有动画效果：newSnap 必须有效
-        if (newSnap == null) return;
-
-        try
+        // ── TextChanged 初始化：在 Draw 里完成 layout 构建 ───────────────
+        // （避免在 UI 线程以外操作 CanvasDevice）
+        if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
         {
-            _textEffect.DrawText(
-                _oldText, _newText,
-                _diffResults,
-                oldSnap, newSnap,      // ← 传快照，不传字段本身
-                _textFormat, _textColor, _textBrush,
-                _currentState,
-                args.DrawingSession, args);
+            ApplyTextFormatIfNeeded();
+            RebuildOldTextLayout(sender);
+            RebuildNewTextLayout(sender);
+            GenerateDiffResults();
+
+            _animationBeginTime = _totalAnimationTime;
+
+            // 切换为 Animating，渲染循环已在 SetRedrawState 时启动
+            _currentState = AnimatedTextBlockRedrawState.Animating;
         }
-        catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+
+        // ── Animating：交给 TextEffect 绘制 ─────────────────────────────
+        if (_currentState == AnimatedTextBlockRedrawState.Animating)
+        {
+            if (_newTextLayout == null) return;
+
+            try
+            {
+                _textEffect.DrawText(
+                    _oldText, _newText,
+                    _diffResults,
+                    _oldTextLayout, _newTextLayout,
+                    _textFormat, _textColor, _textBrush,
+                    _currentState,
+                    args.DrawingSession,
+                    null);
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+        }
     }
 
     #endregion
 
-    private void ApplyTextFormat()
+    #region Rendering Loop (CompositionTarget)
+
+    private void StartRenderingLoop()
     {
+        if (_isRenderingHooked) return;
+        _lastRenderTime = DateTimeOffset.Now;
+        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += OnRendering;
+        _isRenderingHooked = true;
+    }
+
+    private void StopRenderingLoop()
+    {
+        if (!_isRenderingHooked) return;
+        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= OnRendering;
+        _isRenderingHooked = false;
+    }
+
+    private void OnRendering(object sender, object e)
+    {
+        var now = DateTimeOffset.Now;
+        var elapsed = now - _lastRenderTime;
+        _lastRenderTime = now;
+
+        // 累加总时间（模拟 CanvasTimingInformation.TotalTime）
+        _totalAnimationTime += elapsed;
+
+        if (_currentState == AnimatedTextBlockRedrawState.Animating)
+        {
+            UpdateAllClusterProgress(elapsed);
+        }
+
+        _canvas?.Invalidate();
+    }
+
+    #endregion
+
+    #region Text Format & Foreground
+
+    private void ApplyTextFormatIfNeeded()
+    {
+        if (!_textFormatDirty) return;
         if (_textFormat == null) return;
 
         _textFormat.FontSize = _fontSize;
@@ -408,6 +404,8 @@ public sealed partial class AnimatedTextBlock : Control
         _textFormat.Direction = Win2dHelpers.MapTextDirection(_textDirection);
         _textFormat.TrimmingGranularity = Win2dHelpers.MapTrimmingGranularity(_textTrimming);
         _textFormat.WordWrapping = Win2dHelpers.MapWordWrapping(_textWrapping);
+
+        _textFormatDirty = false;
     }
 
     private void ApplyTextForeground()
@@ -419,11 +417,10 @@ public sealed partial class AnimatedTextBlock : Control
         }
         else if (Foreground is LinearGradientBrush linearGradientBrush)
         {
-            if (_animatedCanvas != null)
+            if (_canvas != null)
             {
                 var stops = new CanvasGradientStop[linearGradientBrush.GradientStops.Count];
 
-                // FIX: 原代码只创建了 stop 对象但没有赋值到数组
                 for (int i = 0; i < linearGradientBrush.GradientStops.Count; i++)
                 {
                     stops[i] = new CanvasGradientStop()
@@ -434,53 +431,99 @@ public sealed partial class AnimatedTextBlock : Control
                 }
 
                 _textBrush?.Dispose();
-                _textBrush = new CanvasLinearGradientBrush(_animatedCanvas, stops);
+                _textBrush = new CanvasLinearGradientBrush(_canvas, stops);
             }
         }
         else
         {
-            if (Application.Current.Resources["TextFillColorPrimaryBrush"] is SolidColorBrush defaultForegroundBrush)
+            if (Application.Current.Resources["TextFillColorPrimaryBrush"] is SolidColorBrush defaultBrush)
             {
-                _textColor = defaultForegroundBrush.Color;
+                _textColor = defaultBrush.Color;
                 _textBrush = null;
             }
         }
     }
 
-    private void GenerateOldTextLayout(ICanvasAnimatedControl resourceCreator)
+    #endregion
+
+    #region Layout Helpers
+
+    /// <summary>
+    /// 画静态帧（Idle 状态或无动画效果时）。
+    /// 复用缓存的 _staticTextLayout，只在 dirty 时重建。
+    /// </summary>
+    private void DrawStatic(CanvasControl sender, CanvasDrawingSession ds)
+    {
+        if (_staticLayoutDirty || _staticTextLayout == null)
+        {
+            _staticTextLayout?.Dispose();
+            _staticTextLayout = new CanvasTextLayout(sender,
+                _newText, _textFormat,
+                (float)sender.Size.Width,
+                (float)sender.Size.Height);
+            _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
+            _staticLayoutDirty = false;
+        }
+
+        if (_staticTextLayout == null) return;
+
+        try { ds.DrawTextLayout(_staticTextLayout, 0, 0, _textColor); }
+        catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+    }
+
+    private void RebuildOldTextLayout(CanvasControl resourceCreator)
     {
         _oldTextLayout?.Dispose();
         _oldTextLayout = new CanvasTextLayout(resourceCreator, _oldText, _textFormat,
-            (float)(resourceCreator.Size.Width),
-            (float)(resourceCreator.Size.Height));
+            (float)resourceCreator.Size.Width,
+            (float)resourceCreator.Size.Height);
         _oldTextLayout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
         _oldTextLayout.VerticalAlignment = CanvasVerticalAlignment.Center;
     }
 
-    private void GenerateNewTextLayout(ICanvasAnimatedControl resourceCreator)
+    private void RebuildNewTextLayout(CanvasControl resourceCreator)
     {
         _newTextLayout?.Dispose();
         _newTextLayout = new CanvasTextLayout(resourceCreator, _newText, _textFormat,
-            (float)(resourceCreator.Size.Width),
-            (float)(resourceCreator.Size.Height));
+            (float)resourceCreator.Size.Width,
+            (float)resourceCreator.Size.Height);
         _newTextLayout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
         _newTextLayout.VerticalAlignment = CanvasVerticalAlignment.Center;
+
+        // newTextLayout 更新后静态缓存也需要刷新
+        _staticLayoutDirty = true;
     }
 
     private void GenerateDiffResults()
     {
-        var oldGraphemeClusters = TextRenderingHelper.GenerateGraphemeClusters(_oldText, _oldTextLayout);
-        var newGraphemeClusters = TextRenderingHelper.GenerateGraphemeClusters(_newText, _newTextLayout);
-
-        _diffResults = GraphemeClusterDiff.Diff(oldGraphemeClusters, newGraphemeClusters);
+        var oldClusters = TextRenderingHelper.GenerateGraphemeClusters(_oldText, _oldTextLayout);
+        var newClusters = TextRenderingHelper.GenerateGraphemeClusters(_newText, _newTextLayout);
+        _diffResults = GraphemeClusterDiff.Diff(oldClusters, newClusters);
     }
 
-    private void UpdateAllClusterProgress(CanvasTimingInformation timing)
+    private void DisposeLayouts()
     {
-        var animationDuration = _textEffect?.AnimationDuration ?? TimeSpan.FromMilliseconds(600);
-        var delayPerCluster = _textEffect?.DelayPerCluster ?? TimeSpan.FromMilliseconds(0);
+        _oldTextLayout?.Dispose();
+        _oldTextLayout = null;
+        _newTextLayout?.Dispose();
+        _newTextLayout = null;
+        _staticTextLayout?.Dispose();
+        _staticTextLayout = null;
+    }
 
-        float step = (float)(1 / (animationDuration.TotalMilliseconds / timing.ElapsedTime.TotalMilliseconds));
+    #endregion
+
+    #region Animation Progress
+
+    private void UpdateAllClusterProgress(TimeSpan elapsed)
+    {
+        if (_diffResults == null) return;
+
+        var animationDuration = _textEffect?.AnimationDuration ?? TimeSpan.FromMilliseconds(600);
+        var delayPerCluster = _textEffect?.DelayPerCluster ?? TimeSpan.Zero;
+
+        // step = elapsed / animationDuration，表示本帧推进多少进度
+        float step = (float)(elapsed.TotalMilliseconds / animationDuration.TotalMilliseconds);
 
         var delay = delayPerCluster <= animationDuration ? delayPerCluster : animationDuration;
 
@@ -494,38 +537,33 @@ public sealed partial class AnimatedTextBlock : Control
         for (int i = 0; i < _diffResults.Count; i++)
         {
             var diffResult = _diffResults[i];
-            var oldCluster = diffResult.OldGlyphCluster;
-            var newCluster = diffResult.NewGlyphCluster;
 
-            int delayOffset = 0;
+            int delayOffset;
 
-            // FIX: 原代码 Move 和 Remove 的 delayOffset 变量对调了
             switch (diffResult.Type)
             {
-                default:
                 case AnimatedTextBlockDiffOperationType.Move:
-                    delayOffset = moveDelayOffset;
-                    moveDelayOffset += 1;
+                    delayOffset = moveDelayOffset++;
                     break;
                 case AnimatedTextBlockDiffOperationType.Insert:
-                    delayOffset = insertDelayOffset;
-                    insertDelayOffset += 1;
+                    delayOffset = insertDelayOffset++;
                     break;
                 case AnimatedTextBlockDiffOperationType.Remove:
-                    delayOffset = removeDelayOffset;
-                    removeDelayOffset += 1;
+                    delayOffset = removeDelayOffset++;
                     break;
                 case AnimatedTextBlockDiffOperationType.Update:
-                    delayOffset = updateDelayOffset;
-                    updateDelayOffset += 1;
+                    delayOffset = updateDelayOffset++;
+                    break;
+                default:
+                    delayOffset = moveDelayOffset++;
                     break;
             }
 
-            if (!UpdateClusterProgress(oldCluster, delayOffset, step, delay, timing))
-                ongoingAnimations += 1;
+            if (!UpdateClusterProgress(diffResult.OldGlyphCluster, delayOffset, step, delay))
+                ongoingAnimations++;
 
-            if (!UpdateClusterProgress(newCluster, delayOffset, step, delay, timing))
-                ongoingAnimations += 1;
+            if (!UpdateClusterProgress(diffResult.NewGlyphCluster, delayOffset, step, delay))
+                ongoingAnimations++;
         }
 
         if (ongoingAnimations < 1)
@@ -534,18 +572,18 @@ public sealed partial class AnimatedTextBlock : Control
         }
     }
 
-    private bool UpdateClusterProgress(GraphemeCluster cluster,
-        int offset,
-        float step,
-        TimeSpan delay,
-        CanvasTimingInformation timing)
+    /// <summary>
+    /// 更新单个 cluster 的进度。
+    /// </summary>
+    /// <returns>true 表示该 cluster 动画已完成</returns>
+    private bool UpdateClusterProgress(GraphemeCluster cluster, int offset, float step, TimeSpan delay)
     {
-        if (cluster == null)
-            return true;
+        if (cluster == null) return true;
 
-        var duration = _textEffect?.AnimationDuration ?? TimeSpan.FromMilliseconds(0);
+        var duration = _textEffect?.AnimationDuration ?? TimeSpan.Zero;
 
-        bool isFinished = timing.TotalTime.TotalMilliseconds >=
+        // 从动画开始算起，该 cluster 的结束时间点
+        bool isFinished = _totalAnimationTime.TotalMilliseconds >=
                           (_animationBeginTime.TotalMilliseconds +
                            delay.TotalMilliseconds * offset +
                            duration.TotalMilliseconds);
@@ -557,63 +595,72 @@ public sealed partial class AnimatedTextBlock : Control
             return true;
         }
 
-        float progress = cluster.Progress + step;
+        // 还在延迟等待阶段，进度保持 0
+        bool inDelay = _totalAnimationTime.TotalMilliseconds - _animationBeginTime.TotalMilliseconds
+                       < delay.TotalMilliseconds * offset;
 
-        if (timing.TotalTime.TotalMilliseconds - _animationBeginTime.TotalMilliseconds <
-            delay.TotalMilliseconds * offset)
+        if (inDelay)
         {
-            progress = 0;
+            cluster.Progress = 0;
+            return false;
         }
 
-        progress = Math.Clamp(progress, 0, 1.0f);
-        cluster.Progress = progress;
-
+        cluster.Progress = Math.Clamp(cluster.Progress + step, 0f, 1.0f);
         return false;
     }
 
     private void ResetAllClusterProgress()
     {
+        if (_diffResults == null) return;
+
         foreach (var diffResult in _diffResults)
         {
-            diffResult.OldGlyphCluster.Progress = 0;
-            diffResult.NewGlyphCluster.Progress = 0;
+            if (diffResult.OldGlyphCluster != null)
+            {
+                diffResult.OldGlyphCluster.Progress = 0;
+                diffResult.OldGlyphCluster.IsAnimationFinished = false;
+            }
+            if (diffResult.NewGlyphCluster != null)
+            {
+                diffResult.NewGlyphCluster.Progress = 0;
+                diffResult.NewGlyphCluster.IsAnimationFinished = false;
+            }
         }
     }
 
-    // FIX: 用于 Idle 状态只需重绘一帧的场景（如前景色变化）
-    private void RequestSingleRedraw()
-    {
-        if (_animatedCanvas == null) return;
-        _animatedCanvas.Paused = false;
-        // 下一帧 Update 会检测到 Idle 然后再次 Pause
-    }
-
-    private void ApplyTextFormatIfNeeded()
-    {
-        if (!_textFormatDirty) return;
-        ApplyTextFormat();
-        _textFormatDirty = false;
-    }
-
-    private void DisposeLayouts()
-    {
-        _oldTextLayout?.Dispose();
-        _oldTextLayout = null;
-        _newTextLayout?.Dispose();
-        _newTextLayout = null;
-        _staticTextLayout?.Dispose();
-        _staticTextLayout = null;
-    }
+    #endregion
 
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
         _currentState = state;
 
-        // FIX: 核心修复 —— Idle 时暂停画布，彻底停止 Update/Draw 循环
-        if (_animatedCanvas != null)
+        switch (state)
         {
-            bool shouldPause = (state == AnimatedTextBlockRedrawState.Idle);
-            _animatedCanvas.Paused = shouldPause;
+            case AnimatedTextBlockRedrawState.Animating:
+                // 启动渲染循环驱动动画
+                StartRenderingLoop();
+                break;
+
+            case AnimatedTextBlockRedrawState.TextChanged:
+                // TextChanged 时先启动循环，Draw 里完成初始化后切换为 Animating
+                // 如果没有 textEffect 则 Draw 里会直接画静态帧
+                if (_textEffect != null)
+                    StartRenderingLoop();
+                _canvas?.Invalidate();
+                break;
+
+            case AnimatedTextBlockRedrawState.LayoutChanged:
+                // LayoutChanged 由 OnSizeChanged 直接处理，这里不应该到达
+                // 保险起见停止循环并刷新一帧
+                StopRenderingLoop();
+                _canvas?.Invalidate();
+                break;
+
+            case AnimatedTextBlockRedrawState.Idle:
+                // 停止渲染循环，刷新最后一帧显示最终状态
+                StopRenderingLoop();
+                _canvas?.Invalidate();
+                break;
         }
 
         if (fireEvent)

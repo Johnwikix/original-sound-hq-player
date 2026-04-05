@@ -22,7 +22,7 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}">
-                        <canvas:CanvasAnimatedControl
+                        <canvas:CanvasControl
                             x:Name="AnimatedCanvas"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch" />
