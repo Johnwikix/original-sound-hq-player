@@ -90,7 +90,10 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
     private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
-        if (ctrl._effect == null) return;
+        if (ctrl._effect == null) { 
+            ctrl.ApplyDefaultColors(); 
+            return; 
+        }
 
         if (e.NewValue is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadColorsFromBytesAsync(bytes);
