@@ -90,15 +90,23 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
     private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
-        if (ctrl._effect == null) { 
-            ctrl.ApplyDefaultColors(); 
-            return; 
-        }
+        if (ctrl._effect == null) { ctrl.ApplyDefaultColors(); return; }
 
         if (e.NewValue is byte[] bytes && bytes.Length > 0)
+        {
+            // ✅ 只有 ImageBytes 变更时才做重复检测
+            if (ctrl.IsDuplicateAndUpdate(bytes))
+            {
+                ctrl.ShuffleCurrentColors();
+                return;
+            }
             _ = ctrl.LoadColorsFromBytesAsync(bytes);
+        }
         else
+        {
+            ctrl.IsDuplicateAndUpdate(null); // 重置 hash 状态
             ctrl.ApplyDefaultColors();
+        }
     }
 
     private static void OnColorParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -259,12 +267,6 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
     private async Task LoadColorsFromBytesAsync(byte[] imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0) return;
-        // ── 重复图片：跳过颜色计算，仅随机打乱已有颜色槽位 ──
-        if (IsDuplicateAndUpdate(imageBytes))
-        {
-            ShuffleCurrentColors();
-            return;
-        }
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
