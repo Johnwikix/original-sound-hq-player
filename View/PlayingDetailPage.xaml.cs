@@ -26,6 +26,7 @@ using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 using ZLinq;
+using TextDefaultEffect = WinUIMusicPlayer.Controls.TextDefaultEffect;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -51,7 +52,7 @@ namespace WinUIMusicPlayer.View
         {
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
-                AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextPivotEffect();
+                AnimatedPlayingDetailTitleTextBlock.TextEffect = new TextDefaultEffect();
             }
         }
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)

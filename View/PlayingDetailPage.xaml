@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:customControls="using:WinUIMusicPlayer.Controls"
@@ -16,7 +17,7 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
-
+   
     <Grid>
         <customControls:ShaderBackgroundControl
             x:Name="BackGround"
@@ -177,7 +178,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <dev:AnimatedTextBlock
+                    <customControls:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTitleTextBlock"
                         Grid.Column="0"
                         Margin="0,0,0,1"
