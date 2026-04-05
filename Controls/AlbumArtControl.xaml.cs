@@ -179,7 +179,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     private float _incomingAlpha = 0f;
 
     private bool _isFading = false;
-    private const float FadeSpeed = 1.25f;
+    private const float FadeSpeed = 1.5f;
 
     private CanvasBitmap? _queuedBitmap;
 
@@ -277,7 +277,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     {
         if (_fadeTimer == null)
         {
-            _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16.67) };
+            _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33.33) };
             _fadeTimer.Tick += OnFadeTick;
         }
         if (!_fadeTimer.IsEnabled)
