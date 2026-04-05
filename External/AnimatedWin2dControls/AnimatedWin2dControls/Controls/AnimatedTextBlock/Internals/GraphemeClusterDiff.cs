@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
 internal partial class GraphemeClusterDiff
 {

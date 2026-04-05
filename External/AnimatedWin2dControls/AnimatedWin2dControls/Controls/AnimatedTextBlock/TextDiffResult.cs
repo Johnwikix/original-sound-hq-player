@@ -1,4 +1,6 @@
-﻿namespace WinUIMusicPlayer.Controls;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
 public partial class TextDiffResult
 {

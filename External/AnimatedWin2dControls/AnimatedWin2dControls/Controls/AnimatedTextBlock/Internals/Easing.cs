@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
 internal static partial class Easing
 {

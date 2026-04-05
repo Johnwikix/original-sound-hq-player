@@ -1,4 +1,6 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI;
@@ -15,7 +17,7 @@ using System.Numerics;
 using Windows.UI;
 using Windows.UI.Text;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
 [TemplatePart(Name = "ContentBorder", Type = typeof(Border))]
 [TemplatePart(Name = "AnimatedCanvas", Type = typeof(CanvasControl))]

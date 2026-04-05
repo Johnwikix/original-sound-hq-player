@@ -1,7 +1,8 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
 internal static partial class Win2dHelpers
 {

@@ -25,7 +25,6 @@
     <None Remove="Controls\LyricsLineControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Controls\ShaderBackgroundControl.xaml" />
-    <None Remove="Style\AnimatedTextBlock.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
     <None Remove="Style\CustomFontStyle.xaml" />
@@ -174,9 +173,6 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <Page Update="Style\AnimatedTextBlock.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Update="Style\ComboBoxNMenuFlyoutStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -363,5 +359,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PRIResource Remove="External\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj" />
   </ItemGroup>
 </Project>

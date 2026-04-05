@@ -1,5 +1,9 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
@@ -7,9 +11,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using Windows.UI;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 
-public partial class TextZoomEffect : ITextEffect
+public partial class TextMotionBlurEffect : ITextEffect
 {
     public TimeSpan AnimationDuration { get; set; } = TimeSpan.FromMilliseconds(800);
 
@@ -55,10 +59,8 @@ public partial class TextZoomEffect : ITextEffect
             return;
         }
 
-        for (int i = 0; i < diffResults.Count; i++)
+        foreach (var diffResult in diffResults)
         {
-            var diffResult = diffResults[i];
-
             switch (diffResult.Type)
             {
                 case AnimatedTextBlockDiffOperationType.Insert:
@@ -136,17 +138,15 @@ public partial class TextZoomEffect : ITextEffect
             return;
         }
 
-        float opacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.ElasticOut);
-        float zoomProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.ElasticOut);
-        using (ds.CreateLayer(opacityProgress))
-        {
-            ds.Transform = Matrix3x2.CreateScale(zoomProgress,
-            new Vector2((float)(newCluster.LayoutBounds.X +
-                                newCluster.LayoutBounds.Width * 0.5),
-                                (float)(newCluster.LayoutBounds.Y +
-                                newCluster.LayoutBounds.Height * 0.5)));
+        CanvasCommandList cl = new CanvasCommandList(ds);
+        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
 
-            ds.DrawText(
+        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        {
+            clds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)(newCluster.LayoutBounds.Height * newProgress));
+
+            clds.DrawText(
                 newCluster.IsTrimmed
                     ? newTextLayout.GenerateTrimmingSign()
                     : newCluster.Characters,
@@ -155,7 +155,20 @@ public partial class TextZoomEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            ds.Transform = Matrix3x2.Identity;
+            clds.Transform = Matrix3x2.Identity;
+        }
+
+        using (ds.CreateLayer(1.0f - newProgress))
+        {
+            using (var blurEffect = new DirectionalBlurEffect())
+            {
+                blurEffect.Source = cl;
+                blurEffect.Angle = DegreesToRadians(90);
+                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
+                blurEffect.Optimization = EffectOptimization.Speed;
+
+                ds.DrawImage(blurEffect);
+            }
         }
     }
 
@@ -173,7 +186,7 @@ public partial class TextZoomEffect : ITextEffect
             return;
         }
 
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
+        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
 
         var oX = oldCluster.DrawBounds.X;
         var oY = oldCluster.DrawBounds.Y;
@@ -207,20 +220,17 @@ public partial class TextZoomEffect : ITextEffect
             return;
         }
 
-        float oldOpacityProgress = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.ElasticIn);
-        float oldZoomProgress = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.ElasticIn);
-        float newOpacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.ElasticOut);
-        float newZoomProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.ElasticOut);
+        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
 
-        using (ds.CreateLayer(oldOpacityProgress))
+        CanvasCommandList oCl = new CanvasCommandList(ds);
+
+        using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
         {
-            ds.Transform = Matrix3x2.CreateScale(oldZoomProgress,
-                new Vector2((float)(oldCluster.LayoutBounds.X +
-                                    oldCluster.LayoutBounds.Width * 0.5),
-                    (float)(oldCluster.LayoutBounds.Y +
-                            oldCluster.LayoutBounds.Height * 0.5)));
+            clds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
 
-            ds.DrawText(
+            clds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
                     : oldCluster.Characters,
@@ -229,18 +239,30 @@ public partial class TextZoomEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            ds.Transform = Matrix3x2.Identity;
+            clds.Transform = Matrix3x2.Identity;
         }
 
-        using (ds.CreateLayer(newOpacityProgress))
+        using (ds.CreateLayer(1.0f - oldProgress))
         {
-            ds.Transform = Matrix3x2.CreateScale(newZoomProgress,
-                new Vector2((float)(newCluster.LayoutBounds.X +
-                                    newCluster.LayoutBounds.Width * 0.5),
-                    (float)(newCluster.LayoutBounds.Y +
-                            newCluster.LayoutBounds.Height * 0.5)));
+            using (var blurEffect = new DirectionalBlurEffect())
+            {
+                blurEffect.Source = oCl;
+                blurEffect.Angle = DegreesToRadians(90);
+                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
+                blurEffect.Optimization = EffectOptimization.Speed;
 
-            ds.DrawText(
+                ds.DrawImage(blurEffect);
+            }
+        }
+
+        CanvasCommandList nCl = new CanvasCommandList(ds);
+
+        using (CanvasDrawingSession clds = nCl.CreateDrawingSession())
+        {
+            clds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)(newCluster.LayoutBounds.Height * newProgress));
+
+            clds.DrawText(
                 newCluster.IsTrimmed
                     ? newTextLayout.GenerateTrimmingSign()
                     : newCluster.Characters,
@@ -249,7 +271,20 @@ public partial class TextZoomEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            ds.Transform = Matrix3x2.Identity;
+            clds.Transform = Matrix3x2.Identity;
+        }
+
+        using (ds.CreateLayer(1.0f - newProgress))
+        {
+            using (var blurEffect = new DirectionalBlurEffect())
+            {
+                blurEffect.Source = nCl;
+                blurEffect.Angle = DegreesToRadians(90);
+                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
+                blurEffect.Optimization = EffectOptimization.Speed;
+
+                ds.DrawImage(blurEffect);
+            }
         }
     }
 
@@ -267,16 +302,15 @@ public partial class TextZoomEffect : ITextEffect
             return;
         }
 
-        float opacityProgress = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.ElasticIn);
-        float zoomProgress = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.ElasticIn);
-        using (ds.CreateLayer(opacityProgress))
+        CanvasCommandList cl = new CanvasCommandList(ds);
+        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+
+        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
         {
-            ds.Transform = Matrix3x2.CreateScale(zoomProgress,
-                new Vector2((float)(oldCluster.LayoutBounds.X +
-                                    oldCluster.LayoutBounds.Width * 0.5),
-                    (float)(oldCluster.LayoutBounds.Y +
-                            oldCluster.LayoutBounds.Height * 0.5)));
-            ds.DrawText(
+            clds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
+
+            clds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
                     : oldCluster.Characters,
@@ -285,7 +319,26 @@ public partial class TextZoomEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            ds.Transform = Matrix3x2.Identity;
+            clds.Transform = Matrix3x2.Identity;
         }
+
+        using (ds.CreateLayer(1.0f - oldProgress))
+        {
+            using (var blurEffect = new DirectionalBlurEffect())
+            {
+                blurEffect.Source = cl;
+                blurEffect.Angle = DegreesToRadians(90);
+                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
+                blurEffect.Optimization = EffectOptimization.Speed;
+
+                ds.DrawImage(blurEffect);
+            }
+        }
+    }
+
+    private static float DegreesToRadians(float degrees)
+    {
+        float radians = ((MathF.PI / 180) * degrees);
+        return (radians);
     }
 }

@@ -1,9 +1,10 @@
-﻿using Microsoft.Graphics.Canvas.Text;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using Microsoft.Graphics.Canvas.Text;
 using System.Collections.Generic;
 using System.Linq;
 using Windows.Foundation;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
 internal static partial class TextRenderingHelper
 {

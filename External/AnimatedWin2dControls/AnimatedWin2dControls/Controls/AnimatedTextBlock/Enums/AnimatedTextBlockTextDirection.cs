@@ -1,4 +1,4 @@
-﻿namespace WinUIMusicPlayer.Controls;
+﻿namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 
 public enum AnimatedTextBlockTextDirection
 {

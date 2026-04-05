@@ -1,6 +1,8 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
-using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
@@ -8,13 +10,13 @@ using System.Collections.Generic;
 using System.Numerics;
 using Windows.UI;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 
-public partial class TextBlurEffect : ITextEffect
+public partial class TextElasticEffect : ITextEffect
 {
     public TimeSpan AnimationDuration { get; set; } = TimeSpan.FromMilliseconds(800);
 
-    public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(20);
+    public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(10);
 
     //public void Update(string oldText,
     //    string newText,
@@ -56,8 +58,10 @@ public partial class TextBlurEffect : ITextEffect
             return;
         }
 
-        foreach (var diffResult in diffResults)
+        for (int i = 0; i < diffResults.Count; i++)
         {
+            var diffResult = diffResults[i];
+
             switch (diffResult.Type)
             {
                 case AnimatedTextBlockDiffOperationType.Insert:
@@ -135,12 +139,14 @@ public partial class TextBlurEffect : ITextEffect
             return;
         }
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        float opacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float bounceProgress = Easing.UpdateProgress((1.0f - newCluster.Progress), Easing.EasingFunction.ElasticIn);
+        using (ds.CreateLayer(opacityProgress))
         {
-            clds.DrawText(
+            ds.Transform = Matrix3x2.CreateTranslation(0,
+                    (float)newCluster.LayoutBounds.Height * 0.5f * bounceProgress);
+
+            ds.DrawText(
                 newCluster.IsTrimmed
                     ? newTextLayout.GenerateTrimmingSign()
                     : newCluster.Characters,
@@ -149,19 +155,7 @@ public partial class TextBlurEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - newProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
+            ds.Transform = Matrix3x2.Identity;
         }
     }
 
@@ -179,7 +173,7 @@ public partial class TextBlurEffect : ITextEffect
             return;
         }
 
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
 
         var oX = oldCluster.DrawBounds.X;
         var oY = oldCluster.DrawBounds.Y;
@@ -213,14 +207,18 @@ public partial class TextBlurEffect : ITextEffect
             return;
         }
 
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float oldOpacityProgress = Easing.UpdateProgress((1.0f - oldCluster.Progress), Easing.EasingFunction.CubicIn);
+        float oldBounceProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
 
-        CanvasCommandList oCl = new CanvasCommandList(ds);
+        float newOpacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float newBounceProgress = Easing.UpdateProgress((1.0f - newCluster.Progress), Easing.EasingFunction.ElasticIn);
 
-        using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
+        using (ds.CreateLayer(oldOpacityProgress))
         {
-            clds.DrawText(
+            ds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)oldCluster.LayoutBounds.Height * 0.5f * oldBounceProgress);
+
+            ds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
                     : oldCluster.Characters,
@@ -229,29 +227,15 @@ public partial class TextBlurEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            clds.Transform = Matrix3x2.Identity;
+            ds.Transform = Matrix3x2.Identity;
         }
 
-        using (ds.CreateLayer(1.0f - oldProgress))
+        using (ds.CreateLayer(newOpacityProgress))
         {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = oCl;
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
+            ds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)newCluster.LayoutBounds.Height * newBounceProgress);
 
-                ds.DrawImage(blurEffect);
-            }
-        }
-
-        CanvasCommandList nCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = nCl.CreateDrawingSession())
-        {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
-            clds.DrawText(
+            ds.DrawText(
                 newCluster.IsTrimmed
                     ? newTextLayout.GenerateTrimmingSign()
                     : newCluster.Characters,
@@ -260,19 +244,7 @@ public partial class TextBlurEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - newProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = nCl;
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
+            ds.Transform = Matrix3x2.Identity;
         }
     }
 
@@ -290,12 +262,15 @@ public partial class TextBlurEffect : ITextEffect
             return;
         }
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float opacityProgress = Easing.UpdateProgress((1.0f - oldCluster.Progress), Easing.EasingFunction.CubicIn);
+        float bounceProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
 
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        using (ds.CreateLayer(opacityProgress))
         {
-            clds.DrawText(
+            ds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)oldCluster.LayoutBounds.Height * 0.5f * bounceProgress);
+
+            ds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
                     : oldCluster.Characters,
@@ -304,25 +279,7 @@ public partial class TextBlurEffect : ITextEffect
                 textColor,
                 textFormat);
 
-            clds.Transform = Matrix3x2.Identity;
+            ds.Transform = Matrix3x2.Identity;
         }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
-    }
-
-    private static float DegreesToRadians(float degrees)
-    {
-        float radians = ((MathF.PI / 180) * degrees);
-        return (radians);
     }
 }

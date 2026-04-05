@@ -1,4 +1,7 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
@@ -8,13 +11,13 @@ using System.Collections.Generic;
 using System.Numerics;
 using Windows.UI;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 
-public partial class TextMotionBlurEffect : ITextEffect
+public partial class TextBlurEffect : ITextEffect
 {
     public TimeSpan AnimationDuration { get; set; } = TimeSpan.FromMilliseconds(800);
 
-    public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(10);
+    public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(20);
 
     //public void Update(string oldText,
     //    string newText,
@@ -140,9 +143,6 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (CanvasDrawingSession clds = cl.CreateDrawingSession())
         {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
             clds.DrawText(
                 newCluster.IsTrimmed
                     ? newTextLayout.GenerateTrimmingSign()
@@ -157,10 +157,9 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (ds.CreateLayer(1.0f - newProgress))
         {
-            using (var blurEffect = new DirectionalBlurEffect())
+            using (var blurEffect = new GaussianBlurEffect())
             {
                 blurEffect.Source = cl;
-                blurEffect.Angle = DegreesToRadians(90);
                 blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
                 blurEffect.Optimization = EffectOptimization.Speed;
 
@@ -224,9 +223,6 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
         {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
-
             clds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
@@ -241,10 +237,9 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (ds.CreateLayer(1.0f - oldProgress))
         {
-            using (var blurEffect = new DirectionalBlurEffect())
+            using (var blurEffect = new GaussianBlurEffect())
             {
                 blurEffect.Source = oCl;
-                blurEffect.Angle = DegreesToRadians(90);
                 blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
                 blurEffect.Optimization = EffectOptimization.Speed;
 
@@ -273,10 +268,9 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (ds.CreateLayer(1.0f - newProgress))
         {
-            using (var blurEffect = new DirectionalBlurEffect())
+            using (var blurEffect = new GaussianBlurEffect())
             {
                 blurEffect.Source = nCl;
-                blurEffect.Angle = DegreesToRadians(90);
                 blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
                 blurEffect.Optimization = EffectOptimization.Speed;
 
@@ -304,9 +298,6 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (CanvasDrawingSession clds = cl.CreateDrawingSession())
         {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
-
             clds.DrawText(
                 oldCluster.IsTrimmed
                     ? oldTextLayout.GenerateTrimmingSign()
@@ -321,10 +312,9 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         using (ds.CreateLayer(1.0f - oldProgress))
         {
-            using (var blurEffect = new DirectionalBlurEffect())
+            using (var blurEffect = new GaussianBlurEffect())
             {
                 blurEffect.Source = cl;
-                blurEffect.Angle = DegreesToRadians(90);
                 blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
                 blurEffect.Optimization = EffectOptimization.Speed;
 

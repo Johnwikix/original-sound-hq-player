@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.Foundation;
 
-namespace WinUIMusicPlayer.Controls;
+namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
 public partial class GraphemeCluster : IEquatable<GraphemeCluster>
 {

@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyricify.Lyrics.Helper", "E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsMediaController", "External\WindowsMediaController\WindowsMediaController.csproj", "{230C8CE8-116E-6CE0-26B3-469D82B017ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimatedWin2dControls", "External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj", "{90305F5C-547C-4E3B-AB9A-8DB561094D1E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -35,6 +37,10 @@ Global
 		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Debug|x64.Build.0 = Debug|Any CPU
 		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Release|x64.ActiveCfg = Release|Any CPU
 		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Release|x64.Build.0 = Release|Any CPU
+		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Debug|x64.Build.0 = Debug|Any CPU
+		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Release|x64.ActiveCfg = Release|Any CPU
+		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
