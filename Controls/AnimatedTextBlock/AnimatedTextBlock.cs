@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Windows.UI;
 using Windows.UI.Text;
 
@@ -52,6 +53,8 @@ public sealed partial class AnimatedTextBlock : Control
     private AnimatedTextBlockTextDirection _textDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
     private TextTrimming _textTrimming = TextTrimming.None;
     private TextWrapping _textWrapping = TextWrapping.NoWrap;
+    private readonly Lock _layoutLock = new();
+    private bool _textFormatDirty = true;
 
     #region Properties
 
@@ -205,7 +208,13 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        if (e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
+            return;
+
         _staticLayoutDirty = true;
+
+        // FIX: 不在 UI 线程 dispose layout，避免与 Canvas 线程竞争
+        // GenerateNewTextLayout / GenerateOldTextLayout 内部会 lock + dispose 旧的
         SetRedrawState(AnimatedTextBlockRedrawState.LayoutChanged);
     }
 
@@ -228,6 +237,7 @@ public sealed partial class AnimatedTextBlock : Control
     private void FontSizeChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontSize = (float)FontSize;
+        _textFormatDirty = true;
         _staticLayoutDirty = true;
     }
 
@@ -285,30 +295,29 @@ public sealed partial class AnimatedTextBlock : Control
         {
             ApplyTextFormat();
 
-            if (_newTextLayout == null)
+            if (sender.Size.Width <= 0 || sender.Size.Height <= 0)
             {
                 SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+                return;
             }
-            else
-            {
-                _oldText = _newText;
-                _oldTextLayout = _newTextLayout;
 
-                GenerateNewTextLayout(sender);
-                GenerateDiffResults();
+            // 只重建 newTextLayout，不做 diff，不跑动画
+            GenerateNewTextLayout(sender);
 
-                _animationBeginTime = args.Timing.TotalTime;
-                SetRedrawState(AnimatedTextBlockRedrawState.Animating);
-            }
+            // 静态 layout 也标脏，Draw 里会用新尺寸重建
+            _staticLayoutDirty = true;
+
+            SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+            // Idle 会触发 Paused = true，Draw 还会再跑一帧把新 layout 画出来
+            return;
         }
 
         if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
         {
-            ApplyTextFormat();
+            ApplyTextFormatIfNeeded();   // 只在格式真的变了才重建
             GenerateOldTextLayout(sender);
             GenerateNewTextLayout(sender);
             GenerateDiffResults();
-
             _animationBeginTime = args.Timing.TotalTime;
             SetRedrawState(AnimatedTextBlockRedrawState.Animating);
         }
@@ -332,36 +341,54 @@ public sealed partial class AnimatedTextBlock : Control
     {
         args.DrawingSession.Clear(Colors.Transparent);
 
+        // 在 lock 内取快照，lock 外使用，避免长时间持锁阻塞 UI 线程
+        CanvasTextLayout oldSnap, newSnap;
+        lock (_layoutLock)
+        {
+            oldSnap = _oldTextLayout;
+            newSnap = _newTextLayout;
+        }
+
         if (_textEffect == null)
         {
-            // FIX: 复用缓存的 layout，不再每帧 new
-            if (_staticLayoutDirty || _staticTextLayout == null)
+            // 无动画效果：直接画静态 layout
+            lock (_layoutLock)
             {
-                _staticTextLayout?.Dispose();
-                _staticTextLayout = new CanvasTextLayout(sender,
-                    _newText,
-                    _textFormat,
-                    (float)sender.Size.Width,
-                    (float)sender.Size.Height);
-                _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
-                _staticLayoutDirty = false;
+                if (_staticLayoutDirty || _staticTextLayout == null)
+                {
+                    if (sender.Size.Width <= 0 || sender.Size.Height <= 0) return;
+                    _staticTextLayout?.Dispose();
+                    _staticTextLayout = new CanvasTextLayout(sender,
+                        _newText, _textFormat,
+                        (float)sender.Size.Width,
+                        (float)sender.Size.Height);
+                    _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
+                    _staticLayoutDirty = false;
+                }
+                newSnap = _staticTextLayout;
             }
 
-            args.DrawingSession.DrawTextLayout(_staticTextLayout, 0, 0, _textColor);
+            if (newSnap == null) return;
+
+            try { args.DrawingSession.DrawTextLayout(newSnap, 0, 0, _textColor); }
+            catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+            return;
         }
-        else
+
+        // 有动画效果：newSnap 必须有效
+        if (newSnap == null) return;
+
+        try
         {
-            _textEffect?.DrawText(_oldText,
-                _newText,
+            _textEffect.DrawText(
+                _oldText, _newText,
                 _diffResults,
-                _oldTextLayout,
-                _newTextLayout,
-                _textFormat, _textColor,
-                _textBrush,
+                oldSnap, newSnap,      // ← 传快照，不传字段本身
+                _textFormat, _textColor, _textBrush,
                 _currentState,
-                args.DrawingSession,
-                args);
+                args.DrawingSession, args);
         }
+        catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
     #endregion
@@ -559,6 +586,13 @@ public sealed partial class AnimatedTextBlock : Control
         if (_animatedCanvas == null) return;
         _animatedCanvas.Paused = false;
         // 下一帧 Update 会检测到 Idle 然后再次 Pause
+    }
+
+    private void ApplyTextFormatIfNeeded()
+    {
+        if (!_textFormatDirty) return;
+        ApplyTextFormat();
+        _textFormatDirty = false;
     }
 
     private void DisposeLayouts()
