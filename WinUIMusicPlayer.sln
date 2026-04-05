@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinUIMusicPlayer", "WinUIMu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BassPlayerSharp", "..\BassPlayerSharp\BassPlayerSharp.csproj", "{39D1553F-7E0A-488D-9D54-9D834287058D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyricify.Lyrics.Helper", "External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj", "{CC71DBEA-BEFC-003E-AF33-6A96E89DC918}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsMediaController", "External\WindowsMediaController\WindowsMediaController.csproj", "{230C8CE8-116E-6CE0-26B3-469D82B017ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,6 +27,14 @@ Global
 		{39D1553F-7E0A-488D-9D54-9D834287058D}.Debug|x64.Build.0 = Debug|x64
 		{39D1553F-7E0A-488D-9D54-9D834287058D}.Release|x64.ActiveCfg = Release|Any CPU
 		{39D1553F-7E0A-488D-9D54-9D834287058D}.Release|x64.Build.0 = Release|Any CPU
+		{CC71DBEA-BEFC-003E-AF33-6A96E89DC918}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CC71DBEA-BEFC-003E-AF33-6A96E89DC918}.Debug|x64.Build.0 = Debug|Any CPU
+		{CC71DBEA-BEFC-003E-AF33-6A96E89DC918}.Release|x64.ActiveCfg = Release|Any CPU
+		{CC71DBEA-BEFC-003E-AF33-6A96E89DC918}.Release|x64.Build.0 = Release|Any CPU
+		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Debug|x64.Build.0 = Debug|Any CPU
+		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Release|x64.ActiveCfg = Release|Any CPU
+		{230C8CE8-116E-6CE0-26B3-469D82B017ED}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

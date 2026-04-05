@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using WinUIMusicPlayer.Utils;
 using Image = SixLabors.ImageSharp.Image;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -125,6 +126,9 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
 
     private CancellationTokenSource? _loadCts;
     private static readonly ColorThief.ImageSharp.ColorThief ColorThiefInstance = new();
+
+    private long _lastLength = -1;
+    private int _lastHash;
 
     public async Task LoadImageAsync(byte[] imageBytes)
     {
@@ -252,7 +256,12 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
     private async Task LoadColorsFromBytesAsync(byte[] imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0) return;
-
+        // ── 重复图片：跳过颜色计算，仅随机打乱已有颜色槽位 ──
+        if (IsDuplicateAndUpdate(imageBytes))
+        {
+            ShuffleCurrentColors();
+            return;
+        }
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
@@ -500,6 +509,52 @@ public sealed partial class ShaderBackgroundControl : UserControl, IDisposable
         var image = Image.LoadPixelData<Rgba32>(pixels, (int)targetWidth, (int)targetHeight);
         pixels = null;
         return image;
+    }
+
+    public bool IsDuplicateAndUpdate(byte[]? newBytes)
+    {
+        if (newBytes is not { Length: > 0 })
+        {
+            bool wasEmpty = _lastLength == 0;
+            _lastLength = 0;
+            _lastHash = 0;
+            return wasEmpty;
+        }
+
+        int hash = ToolUtils.ComputeFastHash(newBytes);
+        if (newBytes.Length == _lastLength && hash == _lastHash)
+            return true;
+
+        _lastLength = newBytes.Length;
+        _lastHash = hash;
+        return false;
+    }
+
+    /// <summary>
+    /// 图片未变化时，仅打乱当前四个目标颜色的槽位顺序，触发过渡动画。
+    /// </summary>
+    private void ShuffleCurrentColors()
+    {
+        var slots = new[] { _target1, _target2, _target3, _target4 };
+
+        // Fisher-Yates 洗牌
+        for (int i = slots.Length - 1; i > 0; i--)
+        {
+            int j = _random.Next(i + 1);
+            (slots[i], slots[j]) = (slots[j], slots[i]);
+        }
+
+        _target1 = slots[0];
+        _target2 = slots[1];
+        _target3 = slots[2];
+        _target4 = slots[3];
+
+        // 刷新随机相位，让 shader 动画有新的起始偏移
+        _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
+        _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
+        _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
+
+        _transitionProgress = 0f;   // 触发颜色过渡动画
     }
 
     // ── 释放 ──────────────────────────────────────────────────────────────

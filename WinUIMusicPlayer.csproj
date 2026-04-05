@@ -103,6 +103,12 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="External\**" />
+    <EmbeddedResource Remove="External\**" />
+    <None Remove="External\**" />
+    <Page Remove="External\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="ColorThief.ImageSharp" Version="1.0.0" />
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Controls.OpacityMaskView" Version="0.1.260109-build.2471" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -351,4 +357,7 @@
     <Optimize>True</Optimize>
     <DebugType>full</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <PRIResource Remove="External\**" />
+  </ItemGroup>
 </Project>
