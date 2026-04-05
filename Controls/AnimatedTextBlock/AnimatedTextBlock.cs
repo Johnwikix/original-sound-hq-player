@@ -36,6 +36,10 @@ public sealed partial class AnimatedTextBlock : Control
     private CanvasTextLayout _oldTextLayout;
     private CanvasTextLayout _newTextLayout;
 
+    // FIX: 缓存 Idle 状态下的静态文字 layout，避免每帧重建
+    private CanvasTextLayout _staticTextLayout;
+    private bool _staticLayoutDirty = true;
+
     private ITextEffect _textEffect;
 
     private float _fontSize = 14;
@@ -144,6 +148,7 @@ public sealed partial class AnimatedTextBlock : Control
         this.DefaultStyleKey = typeof(AnimatedTextBlock);
 
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         this.RegisterPropertyChangedCallback(AnimatedTextBlock.ForegroundProperty, ForegroundChangedCallback);
         this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontFamilyProperty, FontFamilyChangedCallback);
         this.RegisterPropertyChangedCallback(AnimatedTextBlock.FontSizeProperty, FontSizeChangedCallback);
@@ -153,6 +158,7 @@ public sealed partial class AnimatedTextBlock : Control
 
         _textFormat.TrimmingSign = CanvasTrimmingSign.Ellipsis;
     }
+
     protected override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
@@ -165,6 +171,8 @@ public sealed partial class AnimatedTextBlock : Control
 
         if (_animatedCanvas != null)
         {
+            // FIX: 初始设为 Paused，避免启动时空转
+            _animatedCanvas.Paused = true;
             _animatedCanvas.CreateResources += AnimatedCanvas_CreateResources;
             _animatedCanvas.Update += AnimatedCanvas_Update;
             _animatedCanvas.Draw += AnimatedCanvas_Draw;
@@ -174,12 +182,30 @@ public sealed partial class AnimatedTextBlock : Control
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _newText = Text ?? string.Empty;
-
         SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+    }
+
+    // FIX: 页面卸载时清理资源，防止长时间运行后的泄漏
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_animatedCanvas != null)
+        {
+            _animatedCanvas.Paused = true;
+            _animatedCanvas.CreateResources -= AnimatedCanvas_CreateResources;
+            _animatedCanvas.Update -= AnimatedCanvas_Update;
+            _animatedCanvas.Draw -= AnimatedCanvas_Draw;
+        }
+
+        DisposeLayouts();
+        _textBrush?.Dispose();
+        _textBrush = null;
+        _textFormat?.Dispose();
+        _textFormat = null;
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        _staticLayoutDirty = true;
         SetRedrawState(AnimatedTextBlockRedrawState.LayoutChanged);
     }
 
@@ -188,28 +214,41 @@ public sealed partial class AnimatedTextBlock : Control
     private void ForegroundChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         ApplyTextForeground();
+        _staticLayoutDirty = true;
+        // FIX: 前景色变了需要重绘一帧
+        RequestSingleRedraw();
     }
+
     private void FontFamilyChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontFamily = FontFamily.Source;
+        _staticLayoutDirty = true;
     }
+
     private void FontSizeChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontSize = (float)FontSize;
+        _staticLayoutDirty = true;
     }
+
     private void FontStretchChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontStretch = FontStretch;
+        _staticLayoutDirty = true;
     }
 
     private void FontStyleChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontStyle = FontStyle;
+        _staticLayoutDirty = true;
     }
+
     private void FontWeightChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         _fontWeight = FontWeight;
+        _staticLayoutDirty = true;
     }
+
     #endregion
 
     #region Canvas Events
@@ -228,7 +267,8 @@ public sealed partial class AnimatedTextBlock : Control
                 stops[i].Position = (float)gradientStop.Offset;
             }
 
-            _textBrush = new CanvasLinearGradientBrush(_animatedCanvas, stops);
+            _textBrush?.Dispose();
+            _textBrush = new CanvasLinearGradientBrush(sender, stops);
         }
     }
 
@@ -236,6 +276,7 @@ public sealed partial class AnimatedTextBlock : Control
     {
         if (_textEffect == null)
         {
+            // FIX: 无动画效果时直接进 Idle，下面会 Pause
             SetRedrawState(AnimatedTextBlockRedrawState.Idle);
             return;
         }
@@ -254,11 +295,9 @@ public sealed partial class AnimatedTextBlock : Control
                 _oldTextLayout = _newTextLayout;
 
                 GenerateNewTextLayout(sender);
-
                 GenerateDiffResults();
 
                 _animationBeginTime = args.Timing.TotalTime;
-
                 SetRedrawState(AnimatedTextBlockRedrawState.Animating);
             }
         }
@@ -266,15 +305,11 @@ public sealed partial class AnimatedTextBlock : Control
         if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
         {
             ApplyTextFormat();
-
             GenerateOldTextLayout(sender);
-
             GenerateNewTextLayout(sender);
-
             GenerateDiffResults();
 
             _animationBeginTime = args.Timing.TotalTime;
-
             SetRedrawState(AnimatedTextBlockRedrawState.Animating);
         }
 
@@ -299,14 +334,20 @@ public sealed partial class AnimatedTextBlock : Control
 
         if (_textEffect == null)
         {
-            CanvasTextLayout ctl = new CanvasTextLayout(sender,
-                _newText,
-                _textFormat,
-                (float)sender.Size.Width,
-                (float)sender.Size.Height);
-            ctl.Options = CanvasDrawTextOptions.EnableColorFont;
+            // FIX: 复用缓存的 layout，不再每帧 new
+            if (_staticLayoutDirty || _staticTextLayout == null)
+            {
+                _staticTextLayout?.Dispose();
+                _staticTextLayout = new CanvasTextLayout(sender,
+                    _newText,
+                    _textFormat,
+                    (float)sender.Size.Width,
+                    (float)sender.Size.Height);
+                _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
+                _staticLayoutDirty = false;
+            }
 
-            args.DrawingSession.DrawTextLayout(ctl, 0, 0, _textColor);
+            args.DrawingSession.DrawTextLayout(_staticTextLayout, 0, 0, _textColor);
         }
         else
         {
@@ -327,6 +368,8 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void ApplyTextFormat()
     {
+        if (_textFormat == null) return;
+
         _textFormat.FontSize = _fontSize;
         _textFormat.FontFamily = _fontFamily;
         _textFormat.FontStretch = _fontStretch;
@@ -353,15 +396,17 @@ public sealed partial class AnimatedTextBlock : Control
             {
                 var stops = new CanvasGradientStop[linearGradientBrush.GradientStops.Count];
 
-                foreach (var gradientStop in linearGradientBrush.GradientStops)
+                // FIX: 原代码只创建了 stop 对象但没有赋值到数组
+                for (int i = 0; i < linearGradientBrush.GradientStops.Count; i++)
                 {
-                    var stop = new CanvasGradientStop()
+                    stops[i] = new CanvasGradientStop()
                     {
-                        Color = gradientStop.Color,
-                        Position = (float)gradientStop.Offset
+                        Color = linearGradientBrush.GradientStops[i].Color,
+                        Position = (float)linearGradientBrush.GradientStops[i].Offset
                     };
                 }
 
+                _textBrush?.Dispose();
                 _textBrush = new CanvasLinearGradientBrush(_animatedCanvas, stops);
             }
         }
@@ -377,6 +422,7 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void GenerateOldTextLayout(ICanvasAnimatedControl resourceCreator)
     {
+        _oldTextLayout?.Dispose();
         _oldTextLayout = new CanvasTextLayout(resourceCreator, _oldText, _textFormat,
             (float)(resourceCreator.Size.Width),
             (float)(resourceCreator.Size.Height));
@@ -386,6 +432,7 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void GenerateNewTextLayout(ICanvasAnimatedControl resourceCreator)
     {
+        _newTextLayout?.Dispose();
         _newTextLayout = new CanvasTextLayout(resourceCreator, _newText, _textFormat,
             (float)(resourceCreator.Size.Width),
             (float)(resourceCreator.Size.Height));
@@ -425,20 +472,21 @@ public sealed partial class AnimatedTextBlock : Control
 
             int delayOffset = 0;
 
+            // FIX: 原代码 Move 和 Remove 的 delayOffset 变量对调了
             switch (diffResult.Type)
             {
                 default:
                 case AnimatedTextBlockDiffOperationType.Move:
-                    delayOffset = removeDelayOffset;
-                    removeDelayOffset += 1;
+                    delayOffset = moveDelayOffset;
+                    moveDelayOffset += 1;
                     break;
                 case AnimatedTextBlockDiffOperationType.Insert:
                     delayOffset = insertDelayOffset;
                     insertDelayOffset += 1;
                     break;
                 case AnimatedTextBlockDiffOperationType.Remove:
-                    delayOffset = moveDelayOffset;
-                    moveDelayOffset += 1;
+                    delayOffset = removeDelayOffset;
+                    removeDelayOffset += 1;
                     break;
                 case AnimatedTextBlockDiffOperationType.Update:
                     delayOffset = updateDelayOffset;
@@ -447,14 +495,10 @@ public sealed partial class AnimatedTextBlock : Control
             }
 
             if (!UpdateClusterProgress(oldCluster, delayOffset, step, delay, timing))
-            {
                 ongoingAnimations += 1;
-            }
 
             if (!UpdateClusterProgress(newCluster, delayOffset, step, delay, timing))
-            {
                 ongoingAnimations += 1;
-            }
         }
 
         if (ongoingAnimations < 1)
@@ -463,15 +507,6 @@ public sealed partial class AnimatedTextBlock : Control
         }
     }
 
-    /// <summary>
-    /// Update progress of every cluster.
-    /// </summary>
-    /// <param name="cluster">Target cluster.</param>
-    /// <param name="offset">Index of target cluster</param>
-    /// <param name="step">Incremental step of the progress</param>
-    /// <param name="delay">Duration of delay</param>
-    /// <param name="timing">Timing info</param>
-    /// <returns>If the animation of the cluster is finished</returns>
     private bool UpdateClusterProgress(GraphemeCluster cluster,
         int offset,
         float step,
@@ -497,14 +532,13 @@ public sealed partial class AnimatedTextBlock : Control
 
         float progress = cluster.Progress + step;
 
-        if ((timing.TotalTime.TotalMilliseconds - _animationBeginTime.TotalMilliseconds <
-             delay.TotalMilliseconds * offset))
+        if (timing.TotalTime.TotalMilliseconds - _animationBeginTime.TotalMilliseconds <
+            delay.TotalMilliseconds * offset)
         {
             progress = 0;
         }
 
         progress = Math.Clamp(progress, 0, 1.0f);
-
         cluster.Progress = progress;
 
         return false;
@@ -514,21 +548,44 @@ public sealed partial class AnimatedTextBlock : Control
     {
         foreach (var diffResult in _diffResults)
         {
-            var oldCluster = diffResult.OldGlyphCluster;
-            var newCluster = diffResult.NewGlyphCluster;
-
-            oldCluster.Progress = 0;
-            newCluster.Progress = 0;
+            diffResult.OldGlyphCluster.Progress = 0;
+            diffResult.NewGlyphCluster.Progress = 0;
         }
+    }
+
+    // FIX: 用于 Idle 状态只需重绘一帧的场景（如前景色变化）
+    private void RequestSingleRedraw()
+    {
+        if (_animatedCanvas == null) return;
+        _animatedCanvas.Paused = false;
+        // 下一帧 Update 会检测到 Idle 然后再次 Pause
+    }
+
+    private void DisposeLayouts()
+    {
+        _oldTextLayout?.Dispose();
+        _oldTextLayout = null;
+        _newTextLayout?.Dispose();
+        _newTextLayout = null;
+        _staticTextLayout?.Dispose();
+        _staticTextLayout = null;
     }
 
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
         _currentState = state;
 
+        // FIX: 核心修复 —— Idle 时暂停画布，彻底停止 Update/Draw 循环
+        if (_animatedCanvas != null)
+        {
+            bool shouldPause = (state == AnimatedTextBlockRedrawState.Idle);
+            _animatedCanvas.Paused = shouldPause;
+        }
+
         if (fireEvent)
         {
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => RedrawStateChanged?.Invoke(this, _currentState));
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal,
+                () => RedrawStateChanged?.Invoke(this, _currentState));
         }
     }
 }
