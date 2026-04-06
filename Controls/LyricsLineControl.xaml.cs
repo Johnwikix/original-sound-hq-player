@@ -164,6 +164,8 @@ namespace WinUIMusicPlayer.Controls
         {
             if (scaledWidth <= 1440)
                 return isLyricsType ? 28.0 : 22.0;
+            if (scaledWidth <= 1680)
+                return isLyricsType ? 30.0 : 24.0;
             if (scaledWidth <= 1920)
                 return isLyricsType ? 32.0 : 26.0;
             if (scaledWidth <= 2160)

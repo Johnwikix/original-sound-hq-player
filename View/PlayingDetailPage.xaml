@@ -103,7 +103,7 @@
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="3.5*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -173,8 +173,7 @@
                     x:Name="AnimatedTextBlock"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="25,0,20,0"
-                    x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}">
+                    Margin="25,0,20,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -183,20 +182,74 @@
                         x:Name="AnimatedPlayingDetailTitleTextBlock"
                         Grid.Column="0"
                         Margin="0,0,0,1"
+                        x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}"
                         FontSize="24"
-                        FontWeight="Bold"
+                        FontWeight="SemiBold"
                         Text="{x:Bind tool:BindUtils.MusicToInfo(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
-                    <TextBlock
-                        Grid.Column="1"
+                    <StackPanel
+                        Grid.Column="0"
                         Margin="0,1,0,1"
-                        FontSize="24"
-                        FontWeight="Bold"
-                        Opacity="0">
-                        1<LineBreak />
-                        1<LineBreak />
-                        1</TextBlock>
+                        Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}">
+                        <dev:AutoScrollView
+                            Margin="0"
+                            Padding="0"
+                            IsPlaying="False"
+                            PointerCanceled="AutoScrollHover_PointerCanceled"
+                            PointerEntered="AutoScrollHover_PointerEntered"
+                            PointerExited="AutoScrollHover_PointerExited">
+                            <TextBlock
+                                x:Name="PlayingDetailTitleTextBlock"
+                                Margin="0"
+                                HorizontalAlignment="Left"
+                                FontSize="{x:Bind ViewModel.TitleFontSize, Mode=OneWay}"
+                                FontWeight="SemiBold"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                TextAlignment="Left"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap" />
+                        </dev:AutoScrollView>
+                        <dev:AutoScrollView
+                            Margin="0"
+                            Padding="0"
+                            IsPlaying="False"
+                            PointerCanceled="AutoScrollHover_PointerCanceled"
+                            PointerEntered="AutoScrollHover_PointerEntered"
+                            PointerExited="AutoScrollHover_PointerExited">
+                            <TextBlock
+                                x:Name="PlayingDetailAlbumTextBlock"
+                                Margin="0"
+                                HorizontalAlignment="Left"
+                                FontSize="{x:Bind ViewModel.TitleFontSize, Mode=OneWay}"
+                                FontWeight="SemiBold"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                TextAlignment="Left"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap" />
+                        </dev:AutoScrollView>
+                        <dev:AutoScrollView
+                            Margin="0"
+                            Padding="0"
+                            IsPlaying="False"
+                            PointerCanceled="AutoScrollHover_PointerCanceled"
+                            PointerEntered="AutoScrollHover_PointerEntered"
+                            PointerExited="AutoScrollHover_PointerExited">
+                            <TextBlock
+                                x:Name="PlayingDetailArtistTextBlock"
+                                Margin="0"
+                                HorizontalAlignment="Left"
+                                FontSize="{x:Bind ViewModel.TitleFontSize, Mode=OneWay}"
+                                FontWeight="SemiBold"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                TextAlignment="Left"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap" />
+                        </dev:AutoScrollView>
+                    </StackPanel>
                     <Button
                         x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
                         Grid.Column="1"
@@ -217,93 +270,6 @@
                     Grid.Row="3"
                     Grid.Column="1"
                     Margin="20,0,20,20">
-                    <!--  音乐信息  -->
-                    <Grid x:Name="NormalTextBlock" x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="5">
-                            <dev:AutoScrollView
-                                Margin="0"
-                                Padding="0"
-                                IsPlaying="False"
-                                PointerCanceled="AutoScrollHover_PointerCanceled"
-                                PointerEntered="AutoScrollHover_PointerEntered"
-                                PointerExited="AutoScrollHover_PointerExited">
-                                <TextBlock
-                                    x:Name="PlayingDetailTitleTextBlock"
-                                    Margin="0,0,0,1"
-                                    HorizontalAlignment="Left"
-                                    FontSize="24"
-                                    FontWeight="Bold"
-                                    IsTextSelectionEnabled="True"
-                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                                    TextAlignment="Left"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
-                            <dev:AutoScrollView
-                                Margin="0"
-                                Padding="0"
-                                IsPlaying="False"
-                                PointerCanceled="AutoScrollHover_PointerCanceled"
-                                PointerEntered="AutoScrollHover_PointerEntered"
-                                PointerExited="AutoScrollHover_PointerExited">
-                                <TextBlock
-                                    x:Name="PlayingDetailAlbumTextBlock"
-                                    Margin="0,2,0,1"
-                                    HorizontalAlignment="Left"
-                                    FontSize="24"
-                                    FontWeight="Bold"
-                                    IsTextSelectionEnabled="True"
-                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                                    TextAlignment="Left"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
-                            <dev:AutoScrollView
-                                Margin="0"
-                                Padding="0"
-                                IsPlaying="False"
-                                PointerCanceled="AutoScrollHover_PointerCanceled"
-                                PointerEntered="AutoScrollHover_PointerEntered"
-                                PointerExited="AutoScrollHover_PointerExited">
-                                <TextBlock
-                                    x:Name="PlayingDetailArtistTextBlock"
-                                    Margin="0,2,0,1"
-                                    HorizontalAlignment="Left"
-                                    FontSize="24"
-                                    FontWeight="Bold"
-                                    IsTextSelectionEnabled="True"
-                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                                    TextAlignment="Left"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="NoWrap" />
-                            </dev:AutoScrollView>
-                        </StackPanel>
-                        <Grid Grid.Column="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Button
-                                x:Name="PlayBarFavouriteButtonPlayingDetail"
-                                Grid.Row="0"
-                                Margin="0,7,0,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Top"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
-                                <Button.KeyboardAccelerators>
-                                    <KeyboardAccelerator Key="L" />
-                                </Button.KeyboardAccelerators>
-                                <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
-                            </Button>
-                        </Grid>
-                    </Grid>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -322,28 +288,22 @@
                                 x:Name="PlayingDetailMusicInfoTextBlock"
                                 Grid.Column="0"
                                 Margin="0,0,10,0"
-                                FontSize="12"
+                                FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                                 Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
                             <Image
                                 x:Name="PlayingDetailHRImage"
                                 Grid.Column="1"
-                                Height="12"
+                                Height="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                                 Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
                         </Grid>
-                        <Grid Grid.Column="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock
-                                x:Name="PlayTimeTextBlockPlayingDetail"
-                                Grid.Row="1"
-                                Grid.Column="1"
-                                Margin="10,0,0,5"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom"
-                                Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=TwoWay}" />
-                        </Grid>
+                        <TextBlock
+                            x:Name="PlayTimeTextBlockPlayingDetail"
+                            Grid.Column="1"
+                            Margin="10,0,0,5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
+                            Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=TwoWay}" />
                     </Grid>
                     <!--  控制面板  -->
                     <Grid x:Name="PlayingDetailControlBar">

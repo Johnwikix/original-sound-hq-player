@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer
         {
             var exception = e.Exception;
             var errorMessage = new StringBuilder();
-            errorMessage.AppendLine($"首次机会异常发生：");
+            errorMessage.AppendLine($"未处理异常发生：");
             errorMessage.AppendLine($"异常类型：{exception.GetType().FullName}");
             errorMessage.AppendLine($"异常消息：{exception.Message}");
             errorMessage.AppendLine($"堆栈跟踪：{exception.StackTrace}");

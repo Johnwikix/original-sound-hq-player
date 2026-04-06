@@ -249,6 +249,9 @@ public sealed partial class AnimatedTextBlock : Control
         _fontFamily = FontFamily.Source;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        ApplyTextFormatIfNeeded();
+        RebuildLayoutsIfReady();
+        _canvas?.Invalidate();
     }
 
     private void FontSizeChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -256,6 +259,9 @@ public sealed partial class AnimatedTextBlock : Control
         _fontSize = (float)FontSize;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        ApplyTextFormatIfNeeded();
+        RebuildLayoutsIfReady();
+        _canvas?.Invalidate();
     }
 
     private void FontStretchChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -263,6 +269,9 @@ public sealed partial class AnimatedTextBlock : Control
         _fontStretch = FontStretch;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        ApplyTextFormatIfNeeded();
+        RebuildLayoutsIfReady();
+        _canvas?.Invalidate();
     }
 
     private void FontStyleChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -270,6 +279,9 @@ public sealed partial class AnimatedTextBlock : Control
         _fontStyle = FontStyle;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        ApplyTextFormatIfNeeded();
+        RebuildLayoutsIfReady();
+        _canvas?.Invalidate();
     }
 
     private void FontWeightChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -277,6 +289,9 @@ public sealed partial class AnimatedTextBlock : Control
         _fontWeight = FontWeight;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        ApplyTextFormatIfNeeded();
+        RebuildLayoutsIfReady();
+        _canvas?.Invalidate();
     }
 
     #endregion
@@ -629,6 +644,13 @@ public sealed partial class AnimatedTextBlock : Control
         }
     }
 
+    private void RebuildLayoutsIfReady()
+    {
+        if (_canvas == null || _canvas.Size.Width <= 0 || _canvas.Size.Height <= 0)
+            return;
+
+        RebuildNewTextLayout(_canvas);
+    }
     #endregion
 
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)

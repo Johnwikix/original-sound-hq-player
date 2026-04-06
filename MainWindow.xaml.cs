@@ -25,6 +25,7 @@ using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
+using static ATL.LyricsInfo;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -63,7 +64,8 @@ namespace WinUIMusicPlayer
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
-            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+            WindowSizeHelper.GetScaleFactor(AppData.HWnd);
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)

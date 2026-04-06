@@ -18,6 +18,8 @@ namespace WinUIMusicPlayer.ViewModel.Pages
     public partial class PlayingDetailViewModel:ObservableObject
     {
         public AppViewModel AppViewModel { get; }
+        public double TitleFontSize { get; set => SetProperty(ref field, value); } = 24;
+        public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;
         public PlayingDetailViewModel(AppViewModel appViewModel)
         {
             AppViewModel = appViewModel;
