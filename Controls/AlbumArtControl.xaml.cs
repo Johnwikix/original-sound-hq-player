@@ -206,14 +206,16 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
     // ── 烘焙 RenderTarget（替换 CachedEffectChain）────────────────────────
     // 每个 bitmap 槽烘焙一张 RenderTarget，淡入淡出期间只做 DrawImage。
     // 只有 bitmap / 尺寸 / shadow / mask 变化时才重新烘焙，帧内零 GPU 对象分配。
-    private CanvasRenderTarget? _currentRT;
-    private CanvasRenderTarget? _incomingRT;
-
+    //private CanvasRenderTarget? _currentRT;
+    //private CanvasRenderTarget? _incomingRT;
+    private BakedRT? _currentBaked;
+    private BakedRT? _incomingBaked;
+    // 上一次烘焙时用的尺寸，用来检测是否需要重建
+    private (float w, float h) _lastBakeSize;
     // 当 layout/shadow 变化时置 true，下一帧重新烘焙
     private bool _rtInvalidated = false;
 
-    // 上一次烘焙时用的尺寸，用来检测是否需要重建
-    private (float w, float h) _lastBakeSize;
+
 
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
@@ -319,10 +321,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             if (_currentBitmap != null)
                 _disposeQueue.Enqueue(_currentBitmap);
 
-            // 迁移 RT：incoming 升格为 current
-            _currentRT?.Dispose();
-            _currentRT = _incomingRT;
-            _incomingRT = null;
+            _currentBaked?.Dispose();
+            _currentBaked = _incomingBaked;
+            _incomingBaked = null;
 
             _currentBitmap = _incomingBitmap;
             _currentAlpha = _incomingAlpha;
@@ -332,7 +333,7 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         _incomingBitmap = newBitmap;
         _incomingAlpha = 0f;
-        _incomingRT = null;     // 下一次绘制前按需烘焙
+        _incomingBaked = null;
         _isFading = true;
     }
 
@@ -353,9 +354,9 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             if (_currentBitmap != null)
                 _disposeQueue.Enqueue(_currentBitmap);
 
-            _currentRT?.Dispose();
-            _currentRT = _incomingRT;
-            _incomingRT = null;
+            _currentBaked?.Dispose();
+            _currentBaked = _incomingBaked;
+            _incomingBaked = null;
 
             _currentBitmap = _incomingBitmap;
             _currentAlpha = 1f;
@@ -514,44 +515,50 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         // RT 失效时丢弃旧的，下面会按需重新烘焙
         if (_rtInvalidated)
         {
-            _currentRT?.Dispose(); _currentRT = null;
-            _incomingRT?.Dispose(); _incomingRT = null;
+            _currentBaked?.Dispose(); _currentBaked = null;
+            _incomingBaked?.Dispose(); _incomingBaked = null;
             _rtInvalidated = false;
             _lastBakeSize = (w, h);
         }
 
-        // 按需烘焙（仅在 RT 为空时执行，帧内只运行一次 Effect 链）
-        if (_currentBitmap != null && _currentRT == null)
-            _currentRT = BakeRenderTarget(ds.Device, _currentBitmap, w, h);
+        // 按需烘焙
+        if (_currentBitmap != null && _currentBaked == null)
+            _currentBaked = BakeRenderTarget(ds.Device, _currentBitmap, w, h);
 
-        if (_incomingBitmap != null && _incomingRT == null)
-            _incomingRT = BakeRenderTarget(ds.Device, _incomingBitmap, w, h);
+        if (_incomingBitmap != null && _incomingBaked == null)
+            _incomingBaked = BakeRenderTarget(ds.Device, _incomingBitmap, w, h);
 
-        // ── 绘制：每帧只做最多两次 DrawImage，极轻量 ──────────────────
-        if (_currentRT != null && _currentAlpha > 0f)
+        // 绘制：坐标减 pad，让阴影显示在图像外围
+        if (_currentBaked != null && _currentAlpha > 0f)
         {
-            ds.DrawImage(_currentRT,
-                         new Vector2((float)destRect.X, (float)destRect.Y),
-                         _currentRT.Bounds,
+            ds.DrawImage(_currentBaked.RT,
+                         new Vector2((float)destRect.X - _currentBaked.Pad,
+                                     (float)destRect.Y - _currentBaked.Pad),
+                         _currentBaked.RT.Bounds,
                          _currentAlpha);
         }
 
-        if (_incomingRT != null && _incomingAlpha > 0f)
+        if (_incomingBaked != null && _incomingAlpha > 0f)
         {
-            ds.DrawImage(_incomingRT,
-                         new Vector2((float)destRect.X, (float)destRect.Y),
-                         _incomingRT.Bounds,
+            ds.DrawImage(_incomingBaked.RT,
+                         new Vector2((float)destRect.X - _incomingBaked.Pad,
+                                     (float)destRect.Y - _incomingBaked.Pad),
+                         _incomingBaked.RT.Bounds,
                          _incomingAlpha);
         }
     }
 
     // ── RenderTarget 烘焙（每张图只执行一次 Effect 链）──────────────────
 
-    private CanvasRenderTarget BakeRenderTarget(CanvasDevice device,
-                                            CanvasBitmap bitmap,
-                                            float w, float h)
+    private BakedRT BakeRenderTarget(CanvasDevice device,
+                                 CanvasBitmap bitmap,
+                                 float w, float h)
     {
-        var rt = new CanvasRenderTarget(device, w, h, 96f);
+        float pad = IsShadowEnabled ? 10f * 3f + 4f : 0f;
+        float rtW = w + pad * 2f;
+        float rtH = h + pad * 2f;
+
+        var rt = new CanvasRenderTarget(device, rtW, rtH, 96f);
         try
         {
             using var rtDs = rt.CreateDrawingSession();
@@ -561,14 +568,14 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
             {
                 Source = bitmap,
                 Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                     h / bitmap.SizeInPixels.Height),
+                                                h / bitmap.SizeInPixels.Height),
                 InterpolationMode = CanvasImageInterpolation.HighQualityCubic
             };
 
             using var masked = new AlphaMaskEffect
             {
                 Source = scale,
-                AlphaMask = _maskRT!    // ← CanvasRenderTarget，坐标系稳定
+                AlphaMask = _maskRT!
             };
 
             if (IsShadowEnabled)
@@ -587,16 +594,17 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
                 using var composite = new CompositeEffect();
                 composite.Sources.Add(shadowOffset);
                 composite.Sources.Add(masked);
-                rtDs.DrawImage(composite);
+
+                rtDs.DrawImage(composite, pad, pad);
             }
             else
             {
-                rtDs.DrawImage(masked);
+                rtDs.DrawImage(masked, pad, pad);
             }
         }
         catch { }
 
-        return rt;
+        return new BakedRT(rt, pad);
     }
 
     // ── 遮罩缓存 ──────────────────────────────────────────────────────────
@@ -624,8 +632,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         _maskSize = (w, h, radius);
         _maskInvalidated = false;
 
-        _currentRT?.Dispose(); _currentRT = null;
-        _incomingRT?.Dispose(); _incomingRT = null;
+        _currentBaked?.Dispose(); _currentBaked = null;
+        _incomingBaked?.Dispose(); _incomingBaked = null;
     }
 
     private static Windows.Foundation.Rect CalcDestRect(
@@ -663,8 +671,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
 
         _maskRT?.Dispose(); _maskRT = null;
 
-        _currentRT?.Dispose(); _currentRT = null;
-        _incomingRT?.Dispose(); _incomingRT = null;
+        _currentBaked?.Dispose(); _currentBaked = null;
+        _incomingBaked?.Dispose(); _incomingBaked = null;
 
         _currentBitmap?.Dispose(); _currentBitmap = null;
         _incomingBitmap?.Dispose(); _incomingBitmap = null;
@@ -673,4 +681,18 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         while (_disposeQueue.TryDequeue(out var b))
             b.Dispose();
     }
+}
+
+internal sealed class BakedRT : IDisposable
+{
+    public readonly CanvasRenderTarget RT;
+    public readonly float Pad;
+
+    public BakedRT(CanvasRenderTarget rt, float pad)
+    {
+        RT = rt;
+        Pad = pad;
+    }
+
+    public void Dispose() => RT.Dispose();
 }

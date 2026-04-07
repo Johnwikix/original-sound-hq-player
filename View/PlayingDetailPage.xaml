@@ -168,7 +168,7 @@
                         ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                         IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
                         IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
-                        IsShadowEnabled="False" />
+                        IsShadowEnabled="True" />
                 </Grid>
                 <Grid
                     x:Name="AnimatedTextBlock"
