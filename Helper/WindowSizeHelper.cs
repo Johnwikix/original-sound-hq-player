@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.Helper
         }
 
         public static double GetScaleFactor(IntPtr hwnd) {
-            AppData.AppDpiScale = GetDpiForWindow(hwnd) / 96;
+            AppData.AppDpiScale = GetDpiForWindow(hwnd) / 96.0;
             return AppData.AppDpiScale;
         }
 

@@ -163,17 +163,17 @@ namespace WinUIMusicPlayer.Controls
         private double CalculateFontSize(double scaledWidth, bool isLyricsType)
         {
             if (scaledWidth <= 1440)
-                return isLyricsType ? 28.0 : 22.0;
+                return isLyricsType ? 32.0 : 24.0;
             if (scaledWidth <= 1680)
-                return isLyricsType ? 30.0 : 24.0;
+                return isLyricsType ? 34.0 : 26.0;
             if (scaledWidth <= 1920)
-                return isLyricsType ? 32.0 : 26.0;
+                return isLyricsType ? 36.0 : 28.0;
             if (scaledWidth <= 2160)
-                return isLyricsType ? 36.0 : 30.0;
+                return isLyricsType ? 38.0 : 30.0;
             if (scaledWidth <= 2560)
-                return isLyricsType ? 40.0 : 34.0;
+                return isLyricsType ? 42.0 : 34.0;
 
-            return isLyricsType ? 44.0 : 38.0;
+            return isLyricsType ? 46.0 : 38.0;
         }
 
         #region 其他依赖属性
