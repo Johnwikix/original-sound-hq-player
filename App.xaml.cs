@@ -219,10 +219,10 @@ namespace WinUIMusicPlayer
             {
                 //MainWindow.Hide();                
                 await _host.StopAsync();
-                //Services.GetRequiredService<PlayingDetailPage>().Dispose();
-                //Services.GetRequiredService<AppViewModel>().Dispose();
+                Services.GetRequiredService<PlayingDetailPage>().Dispose();
+                Services.GetRequiredService<AppViewModel>().Dispose();
                 //_host.Dispose();
-                //MainWindow.Dispose();                
+                MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                
             }
             catch (Exception ex)
