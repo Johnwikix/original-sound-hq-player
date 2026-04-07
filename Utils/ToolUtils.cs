@@ -1158,43 +1158,45 @@ namespace WinUIMusicPlayer.Utils
             return bitRate;
         }
 
-        public async static Task<PlayList> OpenM3u8File()
+        public async static Task<List<PlayList>> OpenM3u8File()
         {
+            var playLists = new List<PlayList>();
             var picker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);
             // 添加m3u8文件筛选器
             picker.FileTypeFilter.Add(".m3u8");
             // 显示文件选择器并获取结果
-            var filePickerResult = await picker.PickSingleFileAsync();
-            var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
-            if (file is not null)
-            {
-                try
+            var filesPickerResult = await picker.PickMultipleFilesAsync();
+            foreach (var filePickerResult in filesPickerResult) {
+                var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
+                if (file is not null)
                 {
-                    PlayList playList = await App.Services.GetRequiredService<MusicDatabaseService>().GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
-                    int playListId = 0;
-                    if (playList is not null)
+                    try
                     {
-                        playListId = playList.Id;
-                    }
-                    else
-                    {
-                        playList = new() { Name = Path.GetFileNameWithoutExtension(file.Name) };
-                        playListId = await App.Services.GetRequiredService<MusicDatabaseService>().InsertPlayList(playList);
-                    }
+                        PlayList playList = await App.Services.GetRequiredService<MusicDatabaseService>().GetPlayListByName(Path.GetFileNameWithoutExtension(file.Name));
+                        int playListId = 0;
+                        if (playList is not null)
+                        {
+                            playListId = playList.Id;
+                        }
+                        else
+                        {
+                            playList = new() { Name = Path.GetFileNameWithoutExtension(file.Name) };
+                            playListId = await App.Services.GetRequiredService<MusicDatabaseService>().InsertPlayList(playList);
+                        }
 
-                    string fileContent = await FileIO.ReadTextAsync(file);
-                    if (!string.IsNullOrEmpty(fileContent))
-                    {
-                        ParseM3u8Content(fileContent, playListId);
+                        string fileContent = await FileIO.ReadTextAsync(file);
+                        if (!string.IsNullOrEmpty(fileContent))
+                        {
+                            ParseM3u8Content(fileContent, playListId);
+                        }
+                        playLists.Add(playList);
                     }
-                    return playList;
+                    catch
+                    {
+                    }
                 }
-                catch (Exception)
-                {
-                    return null;
-                }
-            }
-            return null;
+            }            
+            return playLists;
         }
 
         public async static void ParseM3u8Content(string fileContent, int playListId)

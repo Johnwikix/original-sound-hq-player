@@ -45,16 +45,22 @@ namespace WinUIMusicPlayer.View
                 AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
+            ChangeControlsFontSize();
         }
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
+            ChangeControlsFontSize();
+        }
+
+        private void ChangeControlsFontSize() {
             var width = AppData.AppDpiScale * App.MainWindow.AppWindow.Size.Width;
-            if (width <= 1440) {
+            if (width <= 1440)
+            {
                 ViewModel.TitleFontSize = 24;
                 ViewModel.InfoFontSize = 12;
                 AnimatedPlayingDetailTitleTextBlock.FontSize = 24;
-            }                
+            }
             else if (width <= 1680)
             {
                 ViewModel.TitleFontSize = 26;

@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -215,10 +216,10 @@ namespace WinUIMusicPlayer.View
             // 声明事件处理方法（方便后续解除订阅）
             async void buttonClickHandler(object s, RoutedEventArgs e)
             {
-                PlayList newPlaylist = await OpenM3u8File();
-                if (newPlaylist is not null)
+                List<PlayList> newPlaylists = await OpenM3u8File();
+                if (newPlaylists is not null && newPlaylists.Count > 0 )
                 {
-                    ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
+                    await ViewModel.AppViewModel.AllPlayList.AddRangeAsync(newPlaylists);
                 }
                 contentDialog.Hide();
                 customButton.Click -= buttonClickHandler;
