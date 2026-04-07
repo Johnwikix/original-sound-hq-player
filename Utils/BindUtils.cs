@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static string MusicToInfo(Music music) {
             if (music is null) return string.Empty;
-            return $"{music.Title}{Environment.NewLine}{music.Album}{Environment.NewLine}{music.Author}";
+            return $"{music.Album}{Environment.NewLine}{music.Author}";
         }
     }
 }

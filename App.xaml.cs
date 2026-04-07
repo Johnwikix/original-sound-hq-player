@@ -231,8 +231,8 @@ namespace WinUIMusicPlayer
             }
             finally
             {
-                Current.Exit();
-                //Environment.Exit(0);
+                //Current.Exit();
+                Environment.Exit(0);
             }
         }
     }
