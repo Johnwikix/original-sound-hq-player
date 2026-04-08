@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Controls;
@@ -16,7 +17,25 @@ namespace WinUIMusicPlayer.Controls;
 public sealed partial class AlbumArtControl : UserControl, IDisposable
 {
     // ── 依赖属性 ──────────────────────────────────────────────────────────
+    public static readonly DependencyProperty DpiScaleProperty =
+    DependencyProperty.Register(nameof(DpiScale), typeof(double),
+        typeof(AlbumArtControl), new PropertyMetadata(1.0, OnDpiScaleChanged));
 
+    public double DpiScale
+    {
+        get => (double)GetValue(DpiScaleProperty);
+        set => SetValue(DpiScaleProperty, value);
+    }
+
+    private static void OnDpiScaleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (AlbumArtControl)d;
+        if (!ctrl._isResourcesCreated) return;
+
+        ctrl._maskInvalidated = true;
+        ctrl._rtInvalidated = true;
+        ctrl.canvas.Invalidate();
+    }
     public static readonly DependencyProperty ImageBytesProperty =
         DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
             typeof(AlbumArtControl), new PropertyMetadata(null, OnImageBytesChanged));
@@ -557,8 +576,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         float pad = IsShadowEnabled ? 10f * 3f + 4f : 0f;
         float rtW = w + pad * 2f;
         float rtH = h + pad * 2f;
-
-        var rt = new CanvasRenderTarget(device, rtW, rtH, 96f);
+        float dpi = 96f * (float)DpiScale;
+        var rt = new CanvasRenderTarget(device, rtW, rtH, dpi);
         try
         {
             using var rtDs = rt.CreateDrawingSession();
@@ -621,7 +640,8 @@ public sealed partial class AlbumArtControl : UserControl, IDisposable
         }
 
         _maskRT?.Dispose();
-        _maskRT = new CanvasRenderTarget(device, w, h, 96f);
+        float dpi = 96f * (float)DpiScale;
+        _maskRT = new CanvasRenderTarget(device, w, h, dpi);
         using (var maskDs = _maskRT.CreateDrawingSession())
         {
             maskDs.Clear(Microsoft.UI.Colors.Transparent);

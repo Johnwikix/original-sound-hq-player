@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
@@ -43,6 +45,7 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
             App.MainWindow.ShowMainPage();
             //App.Services.GetRequiredService<PlayingDetailPage>().PreLoadImgData();
+            AppViewModel.DpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
             App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;            
         }
 
