@@ -324,50 +324,50 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDarkMode { get => field; set => SetProperty(ref field, value);} = false;
 
-        public int EntranceAnimationTime
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 300;
+        //public int EntranceAnimationTime
+        //{
+        //    get => field;
+        //    set
+        //    {
+        //        if (SetProperty(ref field, value))
+        //        {
+        //            if (IsInitialized)
+        //            {
+        //                _ = _musicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //} = 300;
 
-        public int SlideAnimationTime
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 400;
+        //public int SlideAnimationTime
+        //{
+        //    get => field;
+        //    set
+        //    {
+        //        if (SetProperty(ref field, value))
+        //        {
+        //            if (IsInitialized)
+        //            {
+        //                _ = _musicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //} = 400;
 
-        public int DrillInAnimationTime
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 400;
+        //public int DrillInAnimationTime
+        //{
+        //    get => field;
+        //    set
+        //    {
+        //        if (SetProperty(ref field, value))
+        //        {
+        //            if (IsInitialized)
+        //            {
+        //                _ = _musicDatabaseService.SaveSettingAsync();
+        //            }
+        //        }
+        //    }
+        //} = 400;
 
         public string Version
         {

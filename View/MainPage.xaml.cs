@@ -24,7 +24,6 @@ namespace WinUIMusicPlayer.View
     {
         public MainViewModel ViewModel { get; }
         public EqualizerDialog EqualizerDialog { get; set; }
-        //private readonly INavigationService _navigationService;
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
         public MainPage(MainViewModel viewModel)
@@ -34,10 +33,6 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             // 导航服务
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            //_navigationService.RegisterPage<AddFolderPage>();
-            //_navigationService.RegisterPage<MusicBrowsePage>();
-            //_navigationService.RegisterPage<SettingsPage>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
             InitiaizeEqualizerDialog();
@@ -106,9 +101,8 @@ namespace WinUIMusicPlayer.View
         {
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime);
                 MainFrame.Visibility = Visibility.Visible;
-                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Dismiss(300);
             }
             NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
             NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
@@ -119,7 +113,7 @@ namespace WinUIMusicPlayer.View
             if (args.IsSettingsInvoked)
             {
                 NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
-                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                _playingNavigation.Dismiss(300);
                 MainFrame.Visibility = Visibility.Visible;
             }
             else
@@ -129,7 +123,7 @@ namespace WinUIMusicPlayer.View
                 {
                     case "AddFolder":
                         NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
-                        _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime);
+                        _playingNavigation.Dismiss(300);
                         MainFrame.Visibility = Visibility.Visible;
                         break;
                     case "MusicBrowse":
@@ -169,9 +163,8 @@ namespace WinUIMusicPlayer.View
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
                 }
-                MainFrame.Visibility = Visibility.Collapsed;
-                //_navigationService.FadeDismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
-                _playingNavigation.Show(typeof(PlayingDetailPage), ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                MainFrame.Visibility = Visibility.Collapsed;              
+                _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
             }
             else
             {
@@ -195,7 +188,7 @@ namespace WinUIMusicPlayer.View
                 }
                 MainFrame.Visibility = Visibility.Visible;
                 //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
-                _playingNavigation.Dismiss(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
             }
             else
             {

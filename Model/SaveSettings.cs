@@ -29,9 +29,9 @@ namespace WinUIMusicPlayer.Model
         public int DsdPcmFreq { get; set; } = 88200;        
         public bool IsPlayDetailBtnVisible { get; set; } = true;       
         public int CoverSize { get; set; } = 150;      
-        public int EntranceAnimationTime { get; set; } = 300;
-        public int SlideAnimationTime { get; set; } = 400;
-        public int DrillInAnimationTime { get; set; } = 400;
+        //public int EntranceAnimationTime { get; set; } = 300;
+        //public int SlideAnimationTime { get; set; } = 400;
+        //public int DrillInAnimationTime { get; set; } = 400;
         public bool IsBackgroundCoverEnabled { get; set; } = true;
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;

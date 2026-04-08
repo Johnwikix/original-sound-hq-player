@@ -39,7 +39,6 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
     {        
-        //private readonly INavigationService _navigationService;
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage()
         {
@@ -47,19 +46,6 @@ namespace WinUIMusicPlayer.View
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            //var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
-            //_navigationService = navigationServiceFactory.CreateNavigationService(ContentFrame);
-            //_navigationService.ContentFrame = ContentFrame;
-            //_navigationService.RegisterPage<FavouritePlayListPage>();
-            //_navigationService.RegisterPage<SongCollectionPage>();
-            //_navigationService.RegisterPage<SongArtistListPage>();
-            //_navigationService.RegisterPage<SongFolderListPage>();
-            //_navigationService.RegisterPage<AlbumPage>();
-            //_navigationService.RegisterPage<ArtistPage>();
-            //_navigationService.RegisterPage<FolderBrowsePage>();
-            //_navigationService.RegisterPage<PlayListPage>();
-            //_navigationService.RegisterPage<PlayListSongPage>();
-            //_navigationService.RegisterPage<SongListPage>();
             this.Focus(FocusState.Programmatic);
             this.Loaded += OnPageLoaded;
             this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;

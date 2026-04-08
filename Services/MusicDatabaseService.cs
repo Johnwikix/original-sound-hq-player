@@ -727,9 +727,9 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DsdGain = settings.DsdGain;
                 AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;               
                 AppViewModel.CoverSize = settings.CoverSize;
-                AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
-                AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
-                AppViewModel.DrillInAnimationTime = settings.DrillInAnimationTime;
+                //AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
+                //AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
+                //AppViewModel.DrillInAnimationTime = settings.DrillInAnimationTime;
                 AppViewModel.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
                 AppViewModel.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppViewModel.IsCustomAppSize = settings.IsCustomAppSize;
@@ -816,9 +816,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
-            newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
-            newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
-            newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
+            //newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
+            //newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
+            //newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;
             newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
             newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
