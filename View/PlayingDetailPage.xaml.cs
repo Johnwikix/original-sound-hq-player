@@ -43,7 +43,6 @@ namespace WinUIMusicPlayer.View
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
                 AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
-                AnimatedPlayingDetailInfoTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             ChangeControlsFontSize();
@@ -61,42 +60,36 @@ namespace WinUIMusicPlayer.View
                 ViewModel.TitleFontSize = 24;
                 ViewModel.InfoFontSize = 12;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 24;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 24;
             }
             else if (width <= 1680)
             {
                 ViewModel.TitleFontSize = 26;
                 ViewModel.InfoFontSize = 13;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 26;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 26;
             }
             else if (width <= 1920)
             {
                 ViewModel.TitleFontSize = 28;
                 ViewModel.InfoFontSize = 14;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 28;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 28;
             }
             else if (width <= 2160)
             {
                 ViewModel.TitleFontSize = 30;
                 ViewModel.InfoFontSize = 15;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 30;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 30;
             }
             else if (width <= 2560)
             {
                 ViewModel.TitleFontSize = 32;
                 ViewModel.InfoFontSize = 16;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 32;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 32;
             }
             else
             {
                 ViewModel.TitleFontSize = 36;
                 ViewModel.InfoFontSize = 18;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 36;
-                AnimatedPlayingDetailInfoTextBlock?.FontSize = 36;
             }
         }
 
