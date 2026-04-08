@@ -346,7 +346,7 @@
                             <Button
                                 x:Name="EqualizerButtonPlayingDetail"
                                 Grid.Column="0"
-                                Margin="10,0,0,0"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -358,7 +358,7 @@
                             <Button
                                 x:Name="CurrentPlayListButtonPlayingDetail"
                                 Grid.Column="1"
-                                Margin="10,0,0,0"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -446,9 +446,9 @@
                                     <KeyboardAccelerator Key="Space" />
                                 </Button.KeyboardAccelerators>
                                 <FontIcon
-                                    Width="50"
-                                    Height="50"
-                                    FontSize="32"
+                                    Width="45"
+                                    Height="45"
+                                    FontSize="30"
                                     Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                             </Button>
 
@@ -471,7 +471,7 @@
                             <Button
                                 x:Name="PlayModeButtonPlayingDetail"
                                 Grid.Column="5"
-                                Margin="10"
+                                Margin="5"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"

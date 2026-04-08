@@ -454,9 +454,9 @@
                                         <KeyboardAccelerator Key="Space" />
                                     </Button.KeyboardAccelerators>
                                     <FontIcon
-                                        Width="50"
-                                        Height="50"
-                                        FontSize="32"
+                                        Width="45"
+                                        Height="45"
+                                        FontSize="30"
                                         Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                                 </Button>
 
