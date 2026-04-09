@@ -623,14 +623,14 @@ namespace WinUIMusicPlayer.ViewModel
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =
         [        
-            new EffectComboBoxItem { DisplayName = "默认效果", Value = AnimatedTextEffect.TextDefaultEffect },
-            new EffectComboBoxItem { DisplayName = "淡入淡出(低开销)", Value = AnimatedTextEffect.TextFadeEffect },
-            new EffectComboBoxItem { DisplayName = "擦除效果(低开销)", Value = AnimatedTextEffect.TextWipeEffect },
-            new EffectComboBoxItem { DisplayName = "模糊效果", Value = AnimatedTextEffect.TextBlurEffect },
-            new EffectComboBoxItem { DisplayName = "弹性效果", Value = AnimatedTextEffect.TextElasticEffect },        
-            new EffectComboBoxItem { DisplayName = "运动模糊", Value = AnimatedTextEffect.TextMotionBlurEffect },
-            new EffectComboBoxItem { DisplayName = "轴心旋转", Value = AnimatedTextEffect.TextPivotEffect },        
-            new EffectComboBoxItem { DisplayName = "缩放效果", Value = AnimatedTextEffect.TextZoomEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextDefaultEffect"), Value = AnimatedTextEffect.TextDefaultEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextFadeEffect"), Value = AnimatedTextEffect.TextFadeEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextWipeEffect"), Value = AnimatedTextEffect.TextWipeEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextBlurEffect"), Value = AnimatedTextEffect.TextBlurEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextElasticEffect"), Value = AnimatedTextEffect.TextElasticEffect },        
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextMotionBlurEffect"), Value = AnimatedTextEffect.TextMotionBlurEffect },
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextPivotEffect"), Value = AnimatedTextEffect.TextPivotEffect },        
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextZoomEffect"), Value = AnimatedTextEffect.TextZoomEffect },
         ];
 
     public void InitializeWasapiDevice()

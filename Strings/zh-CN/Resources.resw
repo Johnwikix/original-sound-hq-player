@@ -909,4 +909,28 @@
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
     <value>Win2d动画文本块（实验性）</value>
   </data>
+	<data name="TextDefaultEffect" xml:space="preserve">
+  <value>默认效果</value>
+</data>
+	<data name="TextFadeEffect" xml:space="preserve">
+  <value>淡入淡出（低GPU开销）</value>
+</data>
+	<data name="TextWipeEffect" xml:space="preserve">
+  <value>擦除效果（低GPU开销）</value>
+</data>
+	<data name="TextBlurEffect" xml:space="preserve">
+  <value>模糊效果</value>
+</data>
+	<data name="TextElasticEffect" xml:space="preserve">
+  <value>弹性效果</value>
+</data>
+	<data name="TextMotionBlurEffect" xml:space="preserve">
+  <value>运动模糊</value>
+</data>
+	<data name="TextPivotEffect" xml:space="preserve">
+  <value>轴心旋转</value>
+</data>
+	<data name="TextZoomEffect" xml:space="preserve">
+  <value>缩放效果</value>
+</data>
 </root>

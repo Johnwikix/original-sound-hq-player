@@ -909,4 +909,28 @@
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
     <value>Анимированный текстовый блок Win2D (Экспериментальный)</value>
   </data>
+	<data name="TextDefaultEffect" xml:space="preserve">
+  <value>По умолчанию</value>
+</data>
+	<data name="TextFadeEffect" xml:space="preserve">
+  <value>Затухание (Низкая нагрузка на GPU)</value>
+</data>
+	<data name="TextWipeEffect" xml:space="preserve">
+  <value>Протирание (Низкая нагрузка на GPU)</value>
+</data>
+	<data name="TextBlurEffect" xml:space="preserve">
+  <value>Размытие</value>
+</data>
+	<data name="TextElasticEffect" xml:space="preserve">
+  <value>Упругость</value>
+</data>
+	<data name="TextMotionBlurEffect" xml:space="preserve">
+  <value>Размытие в движении</value>
+</data>
+	<data name="TextPivotEffect" xml:space="preserve">
+  <value>Поворот</value>
+</data>
+	<data name="TextZoomEffect" xml:space="preserve">
+  <value>Масштабирование</value>
+</data>
 </root>

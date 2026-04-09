@@ -909,4 +909,28 @@
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
     <value>Win2D animierter Textblock (Experimentell)</value>
   </data>
+	<data name="TextDefaultEffect" xml:space="preserve">
+  <value>Standard</value>
+</data>
+	<data name="TextFadeEffect" xml:space="preserve">
+  <value>Verblassen (Geringer GPU-Aufwand)</value>
+</data>
+	<data name="TextWipeEffect" xml:space="preserve">
+  <value>Wischen (Geringer GPU-Aufwand)</value>
+</data>
+	<data name="TextBlurEffect" xml:space="preserve">
+  <value>Unschärfe</value>
+</data>
+	<data name="TextElasticEffect" xml:space="preserve">
+  <value>Elastisch</value>
+</data>
+	<data name="TextMotionBlurEffect" xml:space="preserve">
+  <value>Bewegungsunschärfe</value>
+</data>
+	<data name="TextPivotEffect" xml:space="preserve">
+  <value>Drehpunkt</value>
+</data>
+	<data name="TextZoomEffect" xml:space="preserve">
+  <value>Zoomen</value>
+</data>
 </root>
