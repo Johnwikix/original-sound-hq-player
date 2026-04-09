@@ -1,4 +1,5 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -337,11 +338,17 @@ public sealed partial class AnimatedTextBlock : Control
             ApplyTextFormatIfNeeded();
             RebuildOldTextLayout(sender);
             RebuildNewTextLayout(sender);
-            GenerateDiffResults();
 
-            _animationBeginTime = _totalAnimationTime;
+            if (_textEffect is TextFadeEffect fadeEffect)
+            {
+                fadeEffect.Reset();
+            }
+            else
+            {
+                GenerateDiffResults();
+                _animationBeginTime = _totalAnimationTime;
+            }
 
-            // 切换为 Animating，渲染循环已在 SetRedrawState 时启动
             _currentState = AnimatedTextBlockRedrawState.Animating;
         }
 
@@ -353,12 +360,12 @@ public sealed partial class AnimatedTextBlock : Control
             try
             {
                 _textEffect.DrawText(
-                    _oldText, _newText,
-                    _diffResults,
-                    _oldTextLayout, _newTextLayout,
-                    _textFormat, _textColor, _textBrush,
-                    _currentState,
-                    args.DrawingSession);
+                     _oldText, _newText,
+                     _textEffect is TextFadeEffect ? null : _diffResults,
+                     _oldTextLayout, _newTextLayout,
+                     _textFormat, _textColor, _textBrush,
+                     _currentState,
+                     args.DrawingSession);
             }
             catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
         }
@@ -394,7 +401,16 @@ public sealed partial class AnimatedTextBlock : Control
 
         if (_currentState == AnimatedTextBlockRedrawState.Animating)
         {
-            UpdateAllClusterProgress(elapsed);
+            if (_textEffect is TextFadeEffect fadeEffect)
+            {
+                fadeEffect.Advance(elapsed);
+                if (fadeEffect.IsFinished)
+                    SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+            }
+            else
+            {
+                UpdateAllClusterProgress(elapsed);
+            }
         }
 
         _canvas?.Invalidate();
