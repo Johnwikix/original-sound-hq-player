@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View
         {
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
-                AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextFadeEffect();
+                AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             ChangeControlsFontSize();

@@ -342,6 +342,8 @@ public sealed partial class AnimatedTextBlock : Control
             if (_textEffect is TextFadeEffect fadeEffect)
             {
                 fadeEffect.Reset();
+            } else if (_textEffect is TextWipeEffect textWipeEffect) {
+                textWipeEffect.Reset();
             }
             else
             {
@@ -359,9 +361,10 @@ public sealed partial class AnimatedTextBlock : Control
 
             try
             {
+                bool isScanEffect = _textEffect is TextFadeEffect || _textEffect is TextWipeEffect;
                 _textEffect.DrawText(
                      _oldText, _newText,
-                     _textEffect is TextFadeEffect ? null : _diffResults,
+                     isScanEffect ? null : _diffResults,
                      _oldTextLayout, _newTextLayout,
                      _textFormat, _textColor, _textBrush,
                      _currentState,
@@ -406,6 +409,11 @@ public sealed partial class AnimatedTextBlock : Control
                 fadeEffect.Advance(elapsed);
                 if (fadeEffect.IsFinished)
                     SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+            }
+            else if (_textEffect is TextWipeEffect textWipeEffect) // 补上这个判断
+            {
+                textWipeEffect.Advance(elapsed);
+                if (textWipeEffect.IsFinished) SetRedrawState(AnimatedTextBlockRedrawState.Idle);
             }
             else
             {

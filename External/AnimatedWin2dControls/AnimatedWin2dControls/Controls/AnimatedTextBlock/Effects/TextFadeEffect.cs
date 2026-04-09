@@ -1,5 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
-using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
