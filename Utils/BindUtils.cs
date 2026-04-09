@@ -32,6 +32,16 @@ namespace WinUIMusicPlayer.Utils
             return App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
         }
 
+        public static double BoolToOpacity08Converter(bool isOpacity)
+        {
+            return isOpacity ? 0.8 : 0;
+        }
+
+        public static double BoolToOpacityRe08Converter(bool isOpacity)
+        {
+            return isOpacity ? 0 : 0.8;
+        }
+
         public static double BoolToOpacityReConverter(bool isInPlayingDetailMode) {
             return isInPlayingDetailMode ? 0 : 1;
         }
