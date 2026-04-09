@@ -37,7 +37,8 @@
                 </MenuFlyout.MenuFlyoutPresenterStyle>
                 <MenuFlyoutItem
                     x:Name="CurrentMusic"
-                    Width="200"
+                    MinWidth="200"
+                    MaxWidth="400"
                     Command="{x:Bind ShowPlayingDetailCommand}"
                     Text="{x:Bind AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicToTitleConverter}, Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
