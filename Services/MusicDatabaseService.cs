@@ -757,6 +757,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
                 AppViewModel.IsWin2dCoverImageControlEnable = settings.IsWin2dCoverImageControlEnable;
                 AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
+                AppViewModel.Win2dTextEffectType = settings.Win2dTextEffectType;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -816,7 +817,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
-            //newSettings.DrillInAnimationTime = AppViewModel.DrillInAnimationTime;
+            newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType;
             //newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
             //newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;

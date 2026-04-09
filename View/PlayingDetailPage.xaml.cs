@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -42,7 +43,54 @@ namespace WinUIMusicPlayer.View
         {
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
-                AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
+                // ====================== 核心 switch 完整代码 ======================
+                switch (ViewModel.AppViewModel.Win2dTextEffectType)
+                {
+                    case AnimatedTextEffect.TextBlurEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextDefaultEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextElasticEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextFadeEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextFadeEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextFadeEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextMotionBlurEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextPivotEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextWipeEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
+                        break;
+
+                    case AnimatedTextEffect.TextZoomEffect:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect();
+                        break;
+
+                    default:
+                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
+                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
+                        break;
+                }
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             ChangeControlsFontSize();
@@ -58,38 +106,50 @@ namespace WinUIMusicPlayer.View
             if (width <= 1440)
             {
                 ViewModel.TitleFontSize = 24;
+                ViewModel.ArtistAlbumFontSize = 22;
                 ViewModel.InfoFontSize = 12;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 24;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 22;
             }
             else if (width <= 1680)
             {
                 ViewModel.TitleFontSize = 26;
+                ViewModel.ArtistAlbumFontSize = 24;
                 ViewModel.InfoFontSize = 13;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 26;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 24;
             }
             else if (width <= 1920)
             {
                 ViewModel.TitleFontSize = 28;
+                ViewModel.ArtistAlbumFontSize = 26;
                 ViewModel.InfoFontSize = 14;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 28;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 26;
             }
             else if (width <= 2160)
             {
                 ViewModel.TitleFontSize = 30;
+                ViewModel.ArtistAlbumFontSize = 28;
                 ViewModel.InfoFontSize = 15;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 30;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 28;
             }
             else if (width <= 2560)
             {
                 ViewModel.TitleFontSize = 32;
+                ViewModel.ArtistAlbumFontSize = 30;
                 ViewModel.InfoFontSize = 16;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 32;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 30;
             }
             else
             {
                 ViewModel.TitleFontSize = 36;
+                ViewModel.ArtistAlbumFontSize = 34;
                 ViewModel.InfoFontSize = 18;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = 36;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 34;
             }
         }
 

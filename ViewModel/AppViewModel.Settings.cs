@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using CommunityToolkit.Mvvm.Input;
 using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
@@ -324,20 +325,20 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDarkMode { get => field; set => SetProperty(ref field, value);} = false;
 
-        //public int EntranceAnimationTime
-        //{
-        //    get => field;
-        //    set
-        //    {
-        //        if (SetProperty(ref field, value))
-        //        {
-        //            if (IsInitialized)
-        //            {
-        //                _ = _musicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //} = 300;
+        public byte Win2dTextEffectType
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = AnimatedTextEffect.TextDefaultEffect;
 
         //public int SlideAnimationTime
         //{
@@ -620,7 +621,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void InitializeWasapiDevice()
+        public ObservableCollection<EffectComboBoxItem> TextEffectItems =
+        [        
+            new EffectComboBoxItem { DisplayName = "默认效果", Value = AnimatedTextEffect.TextDefaultEffect },
+            new EffectComboBoxItem { DisplayName = "淡入淡出(低开销)", Value = AnimatedTextEffect.TextFadeEffect },
+            new EffectComboBoxItem { DisplayName = "擦除效果(低开销)", Value = AnimatedTextEffect.TextWipeEffect },
+            new EffectComboBoxItem { DisplayName = "模糊效果", Value = AnimatedTextEffect.TextBlurEffect },
+            new EffectComboBoxItem { DisplayName = "弹性效果", Value = AnimatedTextEffect.TextElasticEffect },        
+            new EffectComboBoxItem { DisplayName = "运动模糊", Value = AnimatedTextEffect.TextMotionBlurEffect },
+            new EffectComboBoxItem { DisplayName = "轴心旋转", Value = AnimatedTextEffect.TextPivotEffect },        
+            new EffectComboBoxItem { DisplayName = "缩放效果", Value = AnimatedTextEffect.TextZoomEffect },
+        ];
+
+    public void InitializeWasapiDevice()
         {
             BassOutputDevices.Clear();
             BassOutputDevices.Add(new BassOutputDevice

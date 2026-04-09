@@ -218,7 +218,24 @@
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="Win2dAnimatedTitle" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleSwitch
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    DisplayMemberPath="DisplayName"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}"
+                                    SelectedValuePath="Value" />
+                            </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
@@ -549,7 +566,6 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
-
             </StackPanel>
         </ScrollView>
     </Grid>

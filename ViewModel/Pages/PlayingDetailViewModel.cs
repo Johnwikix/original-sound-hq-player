@@ -19,6 +19,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
     {
         public AppViewModel AppViewModel { get; }
         public double TitleFontSize { get; set => SetProperty(ref field, value); } = 24;
+        public double ArtistAlbumFontSize { get => field; set => SetProperty(ref field, value); } = 22;
         public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;
         public PlayingDetailViewModel(AppViewModel appViewModel)
         {
