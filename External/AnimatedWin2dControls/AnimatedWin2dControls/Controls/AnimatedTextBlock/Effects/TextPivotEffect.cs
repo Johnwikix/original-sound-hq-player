@@ -113,75 +113,89 @@ public partial class TextPivotEffect : ITextEffect
     }
 
     private void DrawInsert(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
+    GraphemeCluster oldCluster, GraphemeCluster newCluster,
+    CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+    CanvasTextFormat textFormat, Color textColor,
+    CanvasLinearGradientBrush gradientBrush)
     {
-        if (newCluster == null)
-        {
-            return;
-        }
+        if (newCluster == null || newTextLayout == null) return;
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float t = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (t >= 1f) return;
 
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
         {
             clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
+                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
+                textColor, textFormat);
         }
 
-        using (ds.CreateLayer(1.0f - newProgress))
+        using var fx = new Transform3DEffect
         {
-            using (var transformEffect = new Transform3DEffect())
-            {
-                transformEffect.Source = cl;
-                transformEffect.TransformMatrix = Matrix4x4.CreateRotationY(newProgress,
-                    new Vector3((float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
-                        (float)(newCluster.LayoutBounds.Y + newCluster.LayoutBounds.Height * 0.5),
-                        0));
+            Source = cl,
+            TransformMatrix = Matrix4x4.CreateRotationY(t,
+                new Vector3(
+                    (float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
+                    (float)(newCluster.LayoutBounds.Y + newCluster.LayoutBounds.Height * 0.5),
+                    0))
+        };
+        using (ds.CreateLayer(1.0f - t))
+            ds.DrawImage(fx);
+    }
 
-                ds.DrawImage(transformEffect);
-            }
+    private void DrawRemove(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || oldTextLayout == null) return;
+
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (p >= 1f) return;
+
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
+        {
+            clds.DrawText(
+                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                (float)oldCluster.DrawBounds.X,
+                (float)oldCluster.DrawBounds.Y,
+                textColor, textFormat);
         }
+
+        using var fx = new Transform3DEffect
+        {
+            Source = cl,
+            TransformMatrix = Matrix4x4.CreateRotationY(p,
+                new Vector3(
+                    (float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
+                    (float)(oldCluster.LayoutBounds.Y + oldCluster.LayoutBounds.Height * 0.5),
+                    0))
+        };
+        using (ds.CreateLayer(1.0f - p))
+            ds.DrawImage(fx);
     }
 
     private void DrawMove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
 
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-        float pivotProgress = 0;
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float pivotProgress = 0f;
 
         var oX = oldCluster.DrawBounds.X;
         var oY = oldCluster.DrawBounds.Y;
-        var nX = newCluster.DrawBounds.X;
-        var nY = newCluster.DrawBounds.Y;
-
-        var dX = nX - oX;
-        var dY = nY - oY;
+        var dX = newCluster.DrawBounds.X - oX;
+        var dY = newCluster.DrawBounds.Y - oY;
 
         if (dX != 0)
         {
@@ -189,160 +203,105 @@ public partial class TextPivotEffect : ITextEffect
             pivotProgress = (float)Math.Clamp(pivotProgress, 0, 0.5);
         }
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        // pivotProgress == 0 时跳过离屏路径，直接绘制
+        if (pivotProgress == 0f)
+        {
+            ds.DrawText(
+                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                (float)(oX + dX * p),
+                (float)(oY + dY * p),
+                textColor, textFormat);
+            return;
+        }
+
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
         {
             clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)(oX + dX * oldProgress),
-                (float)(oY + dY * oldProgress),
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
+                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                (float)(oX + dX * p),
+                (float)(oY + dY * p),
+                textColor, textFormat);
         }
 
-        using (ds.CreateLayer(1.0f))
+        // 原来 CreateLayer(1.0f) 是空操作，直接 DrawImage 即可
+        using var fx = new Transform3DEffect
         {
-            using (var transformEffect = new Transform3DEffect())
-            {
-                transformEffect.Source = cl;
-                transformEffect.TransformMatrix = Matrix4x4.CreateRotationY(pivotProgress,
-                    new Vector3((float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
-                        (float)(newCluster.LayoutBounds.Y + newCluster.LayoutBounds.Height * 0.5),
-                        0));
-
-                ds.DrawImage(transformEffect);
-            }
-        }
+            Source = cl,
+            TransformMatrix = Matrix4x4.CreateRotationY(pivotProgress,
+                new Vector3(
+                    (float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
+                    (float)(newCluster.LayoutBounds.Y + newCluster.LayoutBounds.Height * 0.5),
+                    0))
+        };
+        ds.DrawImage(fx);
     }
 
     private void DrawUpdate(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        if (oldCluster == null || newCluster == null)
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        float oldP = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float newT = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+
+        // 旧字符：旋转淡出
+        if (oldP < 1f)
         {
-            return;
-        }
-
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        CanvasCommandList oCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
-        {
-            clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var transformEffect = new Transform3DEffect())
+            using var oCl = new CanvasCommandList(ds);
+            using (var clds = oCl.CreateDrawingSession())
             {
-                transformEffect.Source = oCl;
-                transformEffect.TransformMatrix = Matrix4x4.CreateRotationY(oldProgress,
-                    new Vector3((float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
-                        (float)(oldCluster.LayoutBounds.Y + oldCluster.LayoutBounds.Height * 0.5),
-                        0));
-
-                ds.DrawImage(transformEffect);
+                clds.DrawText(
+                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                    (float)oldCluster.DrawBounds.X,
+                    (float)oldCluster.DrawBounds.Y,
+                    textColor, textFormat);
             }
-        }
 
-        CanvasCommandList nCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = nCl.CreateDrawingSession())
-        {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
-            clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)newCluster.DrawBounds.X,
-                (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - newProgress))
-        {
-            using (var transformEffect = new Transform3DEffect())
+            using var oldFx = new Transform3DEffect
             {
-                transformEffect.Source = nCl;
-                transformEffect.TransformMatrix = Matrix4x4.CreateRotationY(newProgress,
-                    new Vector3((float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
+                Source = oCl,
+                TransformMatrix = Matrix4x4.CreateRotationY(oldP,
+                    new Vector3(
+                        (float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
+                        (float)(oldCluster.LayoutBounds.Y + oldCluster.LayoutBounds.Height * 0.5),
+                        0))
+            };
+            using (ds.CreateLayer(1.0f - oldP))
+                ds.DrawImage(oldFx);
+        }
+
+        // 新字符：旋转淡入（从下方滑入）
+        if (newT < 1f)
+        {
+            using var nCl = new CanvasCommandList(ds);
+            using (var clds = nCl.CreateDrawingSession())
+            {
+                clds.Transform = Matrix3x2.CreateTranslation(0,
+                    (float)(newCluster.LayoutBounds.Height * newT));
+
+                clds.DrawText(
+                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                    (float)newCluster.DrawBounds.X,
+                    (float)newCluster.DrawBounds.Y,
+                    textColor, textFormat);
+            }
+
+            using var newFx = new Transform3DEffect
+            {
+                Source = nCl,
+                TransformMatrix = Matrix4x4.CreateRotationY(newT,
+                    new Vector3(
+                        (float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
                         (float)(newCluster.LayoutBounds.Y + newCluster.LayoutBounds.Height * 0.5),
-                        0));
-
-                ds.DrawImage(transformEffect);
-            }
-        }
-    }
-
-    private void DrawRemove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null)
-        {
-            return;
-        }
-
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
-        {
-            clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var transformEffect = new Transform3DEffect())
-            {
-                transformEffect.Source = cl;
-                transformEffect.TransformMatrix = Matrix4x4.CreateRotationY(oldProgress,
-                    new Vector3((float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
-                        (float)(oldCluster.LayoutBounds.Y + oldCluster.LayoutBounds.Height * 0.5),
-                        0));
-
-                ds.DrawImage(transformEffect);
-            }
+                        0))
+            };
+            using (ds.CreateLayer(1.0f - newT))
+                ds.DrawImage(newFx);
         }
     }
 }

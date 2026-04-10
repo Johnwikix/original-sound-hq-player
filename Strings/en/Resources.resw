@@ -909,28 +909,28 @@
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
     <value>Win2D Animated Text Block (Experimental)</value>
   </data>
-	<data name="TextDefaultEffect" xml:space="preserve">
-  <value>Default</value>
-</data>
-	<data name="TextFadeEffect" xml:space="preserve">
-  <value>Fade (Low GPU overhead)</value>
-</data>
-	<data name="TextWipeEffect" xml:space="preserve">
-  <value>Wipe (Low GPU overhead)</value>
-</data>
-	<data name="TextBlurEffect" xml:space="preserve">
-  <value>Blur</value>
-</data>
-	<data name="TextElasticEffect" xml:space="preserve">
-  <value>Elastic</value>
-</data>
-	<data name="TextMotionBlurEffect" xml:space="preserve">
-  <value>Motion Blur</value>
-</data>
-	<data name="TextPivotEffect" xml:space="preserve">
-  <value>Pivot</value>
-</data>
-	<data name="TextZoomEffect" xml:space="preserve">
-  <value>Zoom</value>
-</data>
+  <data name="TextDefaultEffect" xml:space="preserve">
+    <value>Default(Low GPU overhead)</value>
+  </data>
+  <data name="TextFadeEffect" xml:space="preserve">
+    <value>Fade (Low GPU overhead)</value>
+  </data>
+  <data name="TextWipeEffect" xml:space="preserve">
+    <value>Wipe (Low GPU overhead)</value>
+  </data>
+  <data name="TextBlurEffect" xml:space="preserve">
+    <value>Blur(High GPU overhead)</value>
+  </data>
+  <data name="TextElasticEffect" xml:space="preserve">
+    <value>Elastic(Low GPU overhead)</value>
+  </data>
+  <data name="TextMotionBlurEffect" xml:space="preserve">
+    <value>Motion Blur(High GPU overhead)</value>
+  </data>
+  <data name="TextPivotEffect" xml:space="preserve">
+    <value>Pivot(High GPU overhead)</value>
+  </data>
+  <data name="TextZoomEffect" xml:space="preserve">
+    <value>Zoom(Low GPU overhead)</value>
+  </data>
 </root>

@@ -909,28 +909,28 @@
   <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
     <value>Win2D アニメーションテキストブロック（実験的）</value>
   </data>
-	<data name="TextDefaultEffect" xml:space="preserve">
-  <value>デフォルト</value>
-</data>
-	<data name="TextFadeEffect" xml:space="preserve">
-  <value>フェード（GPU低負荷）</value>
-</data>
-	<data name="TextWipeEffect" xml:space="preserve">
-  <value>ワイプ（GPU低負荷）</value>
-</data>
-	<data name="TextBlurEffect" xml:space="preserve">
-  <value>ぼかし</value>
-</data>
-	<data name="TextElasticEffect" xml:space="preserve">
-  <value>エラスティック</value>
-</data>
-	<data name="TextMotionBlurEffect" xml:space="preserve">
-  <value>モーションブラー</value>
-</data>
-	<data name="TextPivotEffect" xml:space="preserve">
-  <value>ピボット</value>
-</data>
-	<data name="TextZoomEffect" xml:space="preserve">
-  <value>ズーム</value>
-</data>
+  <data name="TextDefaultEffect" xml:space="preserve">
+    <value>デフォルト(GPU 負荷が低い)</value>
+  </data>
+  <data name="TextFadeEffect" xml:space="preserve">
+    <value>フェード（GPU低負荷）</value>
+  </data>
+  <data name="TextWipeEffect" xml:space="preserve">
+    <value>ワイプ（GPU低負荷）</value>
+  </data>
+  <data name="TextBlurEffect" xml:space="preserve">
+    <value>ぼかし(GPU 負荷が高い)</value>
+  </data>
+  <data name="TextElasticEffect" xml:space="preserve">
+    <value>エラスティック(GPU 負荷が低い)</value>
+  </data>
+  <data name="TextMotionBlurEffect" xml:space="preserve">
+    <value>モーションブラー(GPU 負荷が高い)</value>
+  </data>
+  <data name="TextPivotEffect" xml:space="preserve">
+    <value>ピボット(GPU 負荷が高い)</value>
+  </data>
+  <data name="TextZoomEffect" xml:space="preserve">
+    <value>ズーム(GPU 負荷が低い)</value>
+  </data>
 </root>

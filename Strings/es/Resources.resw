@@ -910,27 +910,27 @@
     <value>Bloque de texto animado Win2D (Experimental)</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
-  <value>Predeterminado</value>
-</data>
-<data name="TextFadeEffect" xml:space="preserve">
-  <value>Fundido (Bajo consumo de GPU)</value>
-</data>
-<data name="TextWipeEffect" xml:space="preserve">
-  <value>Barrido (Bajo consumo de GPU)</value>
-</data>
-<data name="TextBlurEffect" xml:space="preserve">
-  <value>Desenfoque</value>
-</data>
-<data name="TextElasticEffect" xml:space="preserve">
-  <value>Elástico</value>
-</data>
-<data name="TextMotionBlurEffect" xml:space="preserve">
-  <value>Desenfoque de movimiento</value>
-</data>
-<data name="TextPivotEffect" xml:space="preserve">
-  <value>Pivote</value>
-</data>
-<data name="TextZoomEffect" xml:space="preserve">
-  <value>Zoom</value>
-</data>
+    <value>Predeterminado(Bajo consumo de GPU)</value>
+  </data>
+  <data name="TextFadeEffect" xml:space="preserve">
+    <value>Fundido (Bajo consumo de GPU)</value>
+  </data>
+  <data name="TextWipeEffect" xml:space="preserve">
+    <value>Barrido (Bajo consumo de GPU)</value>
+  </data>
+  <data name="TextBlurEffect" xml:space="preserve">
+    <value>Desenfoque(Alto consumo de GPU)</value>
+  </data>
+  <data name="TextElasticEffect" xml:space="preserve">
+    <value>Elástico(Bajo consumo de GPU)</value>
+  </data>
+  <data name="TextMotionBlurEffect" xml:space="preserve">
+    <value>Desenfoque de movimiento(Alto consumo de GPU)</value>
+  </data>
+  <data name="TextPivotEffect" xml:space="preserve">
+    <value>Pivote(Alto consumo de GPU)</value>
+  </data>
+  <data name="TextZoomEffect" xml:space="preserve">
+    <value>Zoom(Bajo consumo de GPU)</value>
+  </data>
 </root>

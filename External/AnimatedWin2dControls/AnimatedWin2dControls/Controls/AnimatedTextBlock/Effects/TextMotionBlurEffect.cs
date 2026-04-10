@@ -113,214 +113,157 @@ public partial class TextMotionBlurEffect : ITextEffect
     }
 
     private void DrawInsert(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
+    GraphemeCluster oldCluster, GraphemeCluster newCluster,
+    CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+    CanvasTextFormat textFormat, Color textColor,
+    CanvasLinearGradientBrush gradientBrush)
     {
-        if (newCluster == null)
-        {
-            return;
-        }
+        if (newCluster == null || newTextLayout == null) return;
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float t = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (t >= 1f) return;
 
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
         {
             clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
+                (float)(newCluster.LayoutBounds.Height * t));
             clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
+                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
+                textColor, textFormat);
         }
 
-        using (ds.CreateLayer(1.0f - newProgress))
+        using var fx = new DirectionalBlurEffect
         {
-            using (var blurEffect = new DirectionalBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.Angle = DegreesToRadians(90);
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
+            Source = cl,
+            Angle = DegreesToRadians(90),
+            BlurAmount = (float)(t * newCluster.DrawBounds.Height * 0.5f),
+            Optimization = EffectOptimization.Speed
+        };
 
-                ds.DrawImage(blurEffect);
-            }
-        }
-    }
-
-    private void DrawMove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
-
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        var oX = oldCluster.DrawBounds.X;
-        var oY = oldCluster.DrawBounds.Y;
-        var nX = newCluster.DrawBounds.X;
-        var nY = newCluster.DrawBounds.Y;
-
-        var dX = nX - oX;
-        var dY = nY - oY;
-
-        ds.DrawText(
-            oldCluster.IsTrimmed
-                ? oldTextLayout.GenerateTrimmingSign()
-                : oldCluster.Characters,
-            (float)(oX + dX * oldProgress),
-            (float)(oY + dY * oldProgress),
-            textColor,
-            textFormat);
-    }
-
-    private void DrawUpdate(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
-
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        CanvasCommandList oCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
-        {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
-
-            clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var blurEffect = new DirectionalBlurEffect())
-            {
-                blurEffect.Source = oCl;
-                blurEffect.Angle = DegreesToRadians(90);
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
-
-        CanvasCommandList nCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = nCl.CreateDrawingSession())
-        {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
-            clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)newCluster.DrawBounds.X,
-                (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - newProgress))
-        {
-            using (var blurEffect = new DirectionalBlurEffect())
-            {
-                blurEffect.Source = nCl;
-                blurEffect.Angle = DegreesToRadians(90);
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
+        using (ds.CreateLayer(1.0f - t))
+            ds.DrawImage(fx);
     }
 
     private void DrawRemove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        if (oldCluster == null)
-        {
-            return;
-        }
+        if (oldCluster == null || oldTextLayout == null) return;
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (p >= 1f) return;
 
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
         {
             clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldProgress));
-
+                (float)(-oldCluster.LayoutBounds.Height * 0.5 * p));
             clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
+                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
+                textColor, textFormat);
         }
 
-        using (ds.CreateLayer(1.0f - oldProgress))
+        using var fx = new DirectionalBlurEffect
         {
-            using (var blurEffect = new DirectionalBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.Angle = DegreesToRadians(90);
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
+            Source = cl,
+            Angle = DegreesToRadians(90),
+            BlurAmount = (float)(p * oldCluster.DrawBounds.Height * 0.5f),
+            Optimization = EffectOptimization.Speed
+        };
 
-                ds.DrawImage(blurEffect);
+        using (ds.CreateLayer(1.0f - p))
+            ds.DrawImage(fx);
+    }
+
+    private void DrawMove(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+
+        ds.DrawText(
+            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            (float)(oldCluster.DrawBounds.X + (newCluster.DrawBounds.X - oldCluster.DrawBounds.X) * p),
+            (float)(oldCluster.DrawBounds.Y + (newCluster.DrawBounds.Y - oldCluster.DrawBounds.Y) * p),
+            textColor, textFormat);
+    }
+
+    private void DrawUpdate(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        float oldP = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float newT = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+
+        // 旧字符：向上位移 + 运动模糊淡出
+        if (oldP < 1f)
+        {
+            using var oCl = new CanvasCommandList(ds);
+            using (var clds = oCl.CreateDrawingSession())
+            {
+                clds.Transform = Matrix3x2.CreateTranslation(0,
+                    (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldP));
+                clds.DrawText(
+                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                    (float)oldCluster.DrawBounds.X,
+                    (float)oldCluster.DrawBounds.Y,
+                    textColor, textFormat);
             }
+
+            using var oldFx = new DirectionalBlurEffect
+            {
+                Source = oCl,
+                Angle = DegreesToRadians(90),
+                BlurAmount = (float)(oldP * oldCluster.DrawBounds.Height * 0.5f),
+                Optimization = EffectOptimization.Speed
+            };
+
+            using (ds.CreateLayer(1.0f - oldP))
+                ds.DrawImage(oldFx);
+        }
+
+        // 新字符：从下方位移进入 + 运动模糊淡入
+        if (newT < 1f)
+        {
+            using var nCl = new CanvasCommandList(ds);
+            using (var clds = nCl.CreateDrawingSession())
+            {
+                clds.Transform = Matrix3x2.CreateTranslation(0,
+                    (float)(newCluster.LayoutBounds.Height * newT));
+                clds.DrawText(
+                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                    (float)newCluster.DrawBounds.X,
+                    (float)newCluster.DrawBounds.Y,
+                    textColor, textFormat);
+            }
+
+            using var newFx = new DirectionalBlurEffect
+            {
+                Source = nCl,
+                Angle = DegreesToRadians(90),
+                BlurAmount = (float)(newT * newCluster.DrawBounds.Height * 0.5f),
+                Optimization = EffectOptimization.Speed
+            };
+
+            using (ds.CreateLayer(1.0f - newT))
+                ds.DrawImage(newFx);
         }
     }
 

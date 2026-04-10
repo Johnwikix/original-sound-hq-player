@@ -112,47 +112,137 @@ public partial class TextBlurEffect : ITextEffect
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
+    // TextBlurEffect
+
     private void DrawInsert(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        if (newCluster == null)
-        {
-            return;
-        }
+        if (newCluster == null || newTextLayout == null) return;
 
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        float blurT = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (blurT >= 1f) return; // 完全透明，跳过
 
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
+        float opacity = 1.0f - blurT;
+
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
         {
             clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
+                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
+                textColor, textFormat);
         }
 
-        using (ds.CreateLayer(1.0f - newProgress))
+        using var blurEffect = new GaussianBlurEffect
         {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
+            Source = cl,
+            BlurAmount = (float)(blurT * newCluster.DrawBounds.Height * 0.5f),
+            Optimization = EffectOptimization.Speed
+        };
 
-                ds.DrawImage(blurEffect);
+        using (ds.CreateLayer(opacity))
+            ds.DrawImage(blurEffect);
+    }
+
+    private void DrawRemove(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || oldTextLayout == null) return;
+
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (p >= 1f) return; // 完全透明，跳过
+
+        float opacity = 1.0f - p;
+
+        using var cl = new CanvasCommandList(ds);
+        using (var clds = cl.CreateDrawingSession())
+        {
+            clds.DrawText(
+                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                (float)oldCluster.DrawBounds.X,
+                (float)oldCluster.DrawBounds.Y,
+                textColor, textFormat);
+        }
+
+        using var blurEffect = new GaussianBlurEffect
+        {
+            Source = cl,
+            BlurAmount = (float)(p * oldCluster.DrawBounds.Height * 0.5f),
+            Optimization = EffectOptimization.Speed
+        };
+
+        using (ds.CreateLayer(opacity))
+            ds.DrawImage(blurEffect);
+    }
+
+    private void DrawUpdate(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        float oldP = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
+        float blurT = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+
+        // 旧字符：模糊淡出
+        if (oldP < 1f)
+        {
+            using var oCl = new CanvasCommandList(ds);
+            using (var clds = oCl.CreateDrawingSession())
+            {
+                clds.DrawText(
+                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                    (float)oldCluster.DrawBounds.X,
+                    (float)oldCluster.DrawBounds.Y,
+                    textColor, textFormat);
             }
+
+            using var oldBlur = new GaussianBlurEffect
+            {
+                Source = oCl,
+                BlurAmount = (float)(oldP * oldCluster.DrawBounds.Height * 0.5f),
+                Optimization = EffectOptimization.Speed
+            };
+
+            using (ds.CreateLayer(1.0f - oldP))
+                ds.DrawImage(oldBlur);
+        }
+
+        // 新字符：模糊淡入
+        if (blurT < 1f)
+        {
+            using var nCl = new CanvasCommandList(ds);
+            using (var clds = nCl.CreateDrawingSession())
+            {
+                clds.Transform = Matrix3x2.CreateTranslation(0,
+                    (float)(newCluster.LayoutBounds.Height * blurT));
+
+                clds.DrawText(
+                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                    (float)newCluster.DrawBounds.X,
+                    (float)newCluster.DrawBounds.Y,
+                    textColor, textFormat);
+            }
+
+            using var newBlur = new GaussianBlurEffect
+            {
+                Source = nCl,
+                BlurAmount = (float)(blurT * newCluster.DrawBounds.Height * 0.5f),
+                Optimization = EffectOptimization.Speed
+            };
+
+            using (ds.CreateLayer(1.0f - blurT))
+                ds.DrawImage(newBlur);
         }
     }
 
@@ -188,128 +278,7 @@ public partial class TextBlurEffect : ITextEffect
             (float)(oY + dY * oldProgress),
             textColor,
             textFormat);
-    }
-
-    private void DrawUpdate(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
-
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-        float newProgress = 1.0f - Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        CanvasCommandList oCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = oCl.CreateDrawingSession())
-        {
-            clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = oCl;
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
-
-        CanvasCommandList nCl = new CanvasCommandList(ds);
-
-        using (CanvasDrawingSession clds = nCl.CreateDrawingSession())
-        {
-            clds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)(newCluster.LayoutBounds.Height * newProgress));
-
-            clds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)newCluster.DrawBounds.X,
-                (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - newProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = nCl;
-                blurEffect.BlurAmount = (float)(newProgress * newCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
-    }
-
-    private void DrawRemove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null)
-        {
-            return;
-        }
-
-        CanvasCommandList cl = new CanvasCommandList(ds);
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
-
-        using (CanvasDrawingSession clds = cl.CreateDrawingSession())
-        {
-            clds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            clds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(1.0f - oldProgress))
-        {
-            using (var blurEffect = new GaussianBlurEffect())
-            {
-                blurEffect.Source = cl;
-                blurEffect.BlurAmount = (float)(oldProgress * oldCluster.DrawBounds.Height * 0.5f);
-                blurEffect.Optimization = EffectOptimization.Speed;
-
-                ds.DrawImage(blurEffect);
-            }
-        }
-    }
+    }    
 
     private static float DegreesToRadians(float degrees)
     {
