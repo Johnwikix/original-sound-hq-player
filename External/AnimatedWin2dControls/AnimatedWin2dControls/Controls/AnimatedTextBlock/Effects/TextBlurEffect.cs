@@ -19,18 +19,6 @@ public partial class TextBlurEffect : ITextEffect
 
     public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(20);
 
-    //public void Update(string oldText,
-    //    string newText,
-    //    List<TextDiffResult> diffResults,
-    //    CanvasTextLayout oldTextLayout,
-    //    CanvasTextLayout newTextLayout,
-    //    AnimatedTextBlockRedrawState state,
-    //    ICanvasAnimatedControl canvas,
-    //    CanvasAnimatedUpdateEventArgs args)
-    //{
-
-    //}
-
     public void DrawText(string oldText,
         string newText,
         List<TextDiffResult> diffResults,

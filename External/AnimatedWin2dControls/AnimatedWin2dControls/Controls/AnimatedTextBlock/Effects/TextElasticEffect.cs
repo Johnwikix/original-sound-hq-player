@@ -18,18 +18,6 @@ public partial class TextElasticEffect : ITextEffect
 
     public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(10);
 
-    //public void Update(string oldText,
-    //    string newText,
-    //    List<TextDiffResult> diffResults,
-    //    CanvasTextLayout oldTextLayout,
-    //    CanvasTextLayout newTextLayout,
-    //    AnimatedTextBlockRedrawState state,
-    //    ICanvasAnimatedControl canvas,
-    //    CanvasAnimatedUpdateEventArgs args)
-    //{
-
-    //}
-
     public void DrawText(string oldText,
         string newText,
         List<TextDiffResult> diffResults,
@@ -126,158 +114,126 @@ public partial class TextElasticEffect : ITextEffect
     }
 
     private void DrawInsert(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
+    GraphemeCluster oldCluster, GraphemeCluster newCluster,
+    CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+    CanvasTextFormat textFormat, Color textColor,
+    CanvasLinearGradientBrush gradientBrush)
     {
-        if (newCluster == null)
-        {
-            return;
-        }
+        if (newCluster == null || newTextLayout == null) return;
 
-        float opacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-        float bounceProgress = Easing.UpdateProgress((1.0f - newCluster.Progress), Easing.EasingFunction.ElasticIn);
-        using (ds.CreateLayer(opacityProgress))
-        {
-            ds.Transform = Matrix3x2.CreateTranslation(0,
-                    (float)newCluster.LayoutBounds.Height * 0.5f * bounceProgress);
+        float opacity = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (opacity <= 0f) return;
 
-            ds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)newCluster.DrawBounds.X,
-                (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
+        float bounce = Easing.UpdateProgress(1.0f - newCluster.Progress, Easing.EasingFunction.ElasticIn);
 
-            ds.Transform = Matrix3x2.Identity;
-        }
-    }
+        var c = Color.FromArgb((byte)(textColor.A * Math.Clamp(opacity, 0f, 1f)),
+            textColor.R, textColor.G, textColor.B);
 
-    private void DrawMove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
-
-        float oldProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
-
-        var oX = oldCluster.DrawBounds.X;
-        var oY = oldCluster.DrawBounds.Y;
-        var nX = newCluster.DrawBounds.X;
-        var nY = newCluster.DrawBounds.Y;
-
-        var dX = nX - oX;
-        var dY = nY - oY;
+        ds.Transform = Matrix3x2.CreateTranslation(0,
+            (float)newCluster.LayoutBounds.Height * 0.5f * bounce);
 
         ds.DrawText(
-            oldCluster.IsTrimmed
-                ? oldTextLayout.GenerateTrimmingSign()
-                : oldCluster.Characters,
-            (float)(oX + dX * oldProgress),
-            (float)(oY + dY * oldProgress),
-            textColor,
-            textFormat);
-    }
+            newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            (float)newCluster.DrawBounds.X,
+            (float)newCluster.DrawBounds.Y,
+            c, textFormat);
 
-    private void DrawUpdate(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
-        CanvasLinearGradientBrush gradientBrush)
-    {
-        if (oldCluster == null || newCluster == null)
-        {
-            return;
-        }
-
-        float oldOpacityProgress = Easing.UpdateProgress((1.0f - oldCluster.Progress), Easing.EasingFunction.CubicIn);
-        float oldBounceProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
-
-        float newOpacityProgress = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
-        float newBounceProgress = Easing.UpdateProgress((1.0f - newCluster.Progress), Easing.EasingFunction.ElasticIn);
-
-        using (ds.CreateLayer(oldOpacityProgress))
-        {
-            ds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)oldCluster.LayoutBounds.Height * 0.5f * oldBounceProgress);
-
-            ds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
-                (float)oldCluster.DrawBounds.X,
-                (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            ds.Transform = Matrix3x2.Identity;
-        }
-
-        using (ds.CreateLayer(newOpacityProgress))
-        {
-            ds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)newCluster.LayoutBounds.Height * newBounceProgress);
-
-            ds.DrawText(
-                newCluster.IsTrimmed
-                    ? newTextLayout.GenerateTrimmingSign()
-                    : newCluster.Characters,
-                (float)newCluster.DrawBounds.X,
-                (float)newCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
-
-            ds.Transform = Matrix3x2.Identity;
-        }
+        ds.Transform = Matrix3x2.Identity;
     }
 
     private void DrawRemove(CanvasDrawingSession ds,
-        GraphemeCluster oldCluster,
-        GraphemeCluster newCluster,
-        CanvasTextLayout oldTextLayout,
-        CanvasTextLayout newTextLayout,
-        CanvasTextFormat textFormat,
-        Color textColor,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
         CanvasLinearGradientBrush gradientBrush)
     {
-        if (oldCluster == null)
-        {
-            return;
-        }
+        if (oldCluster == null || oldTextLayout == null) return;
 
-        float opacityProgress = Easing.UpdateProgress((1.0f - oldCluster.Progress), Easing.EasingFunction.CubicIn);
-        float bounceProgress = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
+        float opacity = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.CubicIn);
+        if (opacity <= 0f) return;
 
-        using (ds.CreateLayer(opacityProgress))
+        float bounce = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
+
+        var c = Color.FromArgb((byte)(textColor.A * Math.Clamp(opacity, 0f, 1f)),
+            textColor.R, textColor.G, textColor.B);
+
+        ds.Transform = Matrix3x2.CreateTranslation(0,
+            (float)oldCluster.LayoutBounds.Height * 0.5f * bounce);
+
+        ds.DrawText(
+            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            (float)oldCluster.DrawBounds.X,
+            (float)oldCluster.DrawBounds.Y,
+            c, textFormat);
+
+        ds.Transform = Matrix3x2.Identity;
+    }
+
+    private void DrawMove(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
+
+        ds.DrawText(
+            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            (float)(oldCluster.DrawBounds.X + (newCluster.DrawBounds.X - oldCluster.DrawBounds.X) * p),
+            (float)(oldCluster.DrawBounds.Y + (newCluster.DrawBounds.Y - oldCluster.DrawBounds.Y) * p),
+            textColor, textFormat);
+    }
+
+    private void DrawUpdate(CanvasDrawingSession ds,
+        GraphemeCluster oldCluster, GraphemeCluster newCluster,
+        CanvasTextLayout oldTextLayout, CanvasTextLayout newTextLayout,
+        CanvasTextFormat textFormat, Color textColor,
+        CanvasLinearGradientBrush gradientBrush)
+    {
+        if (oldCluster == null || newCluster == null) return;
+        if (oldTextLayout == null || newTextLayout == null) return;
+
+        // 旧字符：向上弹出淡出
+        float oldOpacity = Easing.UpdateProgress(1.0f - oldCluster.Progress, Easing.EasingFunction.CubicIn);
+        if (oldOpacity > 0f)
         {
+            float oldBounce = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
+
+            var oldC = Color.FromArgb((byte)(textColor.A * Math.Clamp(oldOpacity, 0f, 1f)),
+                textColor.R, textColor.G, textColor.B);
+
             ds.Transform = Matrix3x2.CreateTranslation(0,
-                (float)oldCluster.LayoutBounds.Height * 0.5f * bounceProgress);
+                (float)oldCluster.LayoutBounds.Height * 0.5f * oldBounce);
 
             ds.DrawText(
-                oldCluster.IsTrimmed
-                    ? oldTextLayout.GenerateTrimmingSign()
-                    : oldCluster.Characters,
+                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor,
-                textFormat);
+                oldC, textFormat);
+
+            ds.Transform = Matrix3x2.Identity;
+        }
+
+        // 新字符：从下方弹入淡入
+        float newOpacity = Easing.UpdateProgress(newCluster.Progress, Easing.EasingFunction.CubicOut);
+        if (newOpacity > 0f)
+        {
+            float newBounce = Easing.UpdateProgress(1.0f - newCluster.Progress, Easing.EasingFunction.ElasticIn);
+
+            var newC = Color.FromArgb((byte)(textColor.A * Math.Clamp(newOpacity, 0f, 1f)),
+                textColor.R, textColor.G, textColor.B);
+
+            ds.Transform = Matrix3x2.CreateTranslation(0,
+                (float)newCluster.LayoutBounds.Height * newBounce);
+
+            ds.DrawText(
+                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                (float)newCluster.DrawBounds.X,
+                (float)newCluster.DrawBounds.Y,
+                newC, textFormat);
 
             ds.Transform = Matrix3x2.Identity;
         }

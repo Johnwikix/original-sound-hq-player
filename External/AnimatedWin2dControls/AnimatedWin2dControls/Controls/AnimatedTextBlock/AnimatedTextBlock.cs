@@ -33,8 +33,11 @@ public sealed partial class AnimatedTextBlock : Control
 
     // ── 动画驱动 ─────────────────────────────────────────────────────────
     private AnimatedTextBlockRedrawState _currentState = AnimatedTextBlockRedrawState.Idle;
-    private bool _isRenderingHooked = false;
-    private DateTimeOffset _lastRenderTime;
+    //private bool _isRenderingHooked = false;
+    //private DateTimeOffset _lastRenderTime;
+    private string _cachedLayoutText = null;
+    private float _cachedLayoutWidth, _cachedLayoutHeight;
+    private bool _isClockRegistered = false;
     private TimeSpan _totalAnimationTime;       // 替代 CanvasTimingInformation.TotalTime
     private TimeSpan _animationBeginTime;
 
@@ -376,53 +379,53 @@ public sealed partial class AnimatedTextBlock : Control
 
     #endregion
 
-    #region Rendering Loop (CompositionTarget)
+    #region Rendering Loop (SharedAnimationClock)
 
     private void StartRenderingLoop()
     {
-        if (_isRenderingHooked) return;
-        _lastRenderTime = DateTimeOffset.Now;
-        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += OnRendering;
-        _isRenderingHooked = true;
+        if (_isClockRegistered) return;
+        SharedAnimationClock.Register(this);
+        _isClockRegistered = true;
     }
 
     private void StopRenderingLoop()
     {
-        if (!_isRenderingHooked) return;
-        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= OnRendering;
-        _isRenderingHooked = false;
+        if (!_isClockRegistered) return;
+        SharedAnimationClock.Unregister(this);
+        _isClockRegistered = false;
     }
 
-    private void OnRendering(object sender, object e)
-    {
-        var now = DateTimeOffset.Now;
-        var elapsed = now - _lastRenderTime;
-        _lastRenderTime = now;
 
-        // 累加总时间（模拟 CanvasTimingInformation.TotalTime）
-        _totalAnimationTime += elapsed;
+    //private void OnRendering(object sender, object e)
+    //{
+    //    var now = DateTimeOffset.Now;
+    //    var elapsed = now - _lastRenderTime;
+    //    _lastRenderTime = now;
 
-        if (_currentState == AnimatedTextBlockRedrawState.Animating)
-        {
-            if (_textEffect is TextFadeEffect fadeEffect)
-            {
-                fadeEffect.Advance(elapsed);
-                if (fadeEffect.IsFinished)
-                    SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-            }
-            else if (_textEffect is TextWipeEffect textWipeEffect) // 补上这个判断
-            {
-                textWipeEffect.Advance(elapsed);
-                if (textWipeEffect.IsFinished) SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-            }
-            else
-            {
-                UpdateAllClusterProgress(elapsed);
-            }
-        }
+    //    // 累加总时间（模拟 CanvasTimingInformation.TotalTime）
+    //    _totalAnimationTime += elapsed;
 
-        _canvas?.Invalidate();
-    }
+    //    if (_currentState == AnimatedTextBlockRedrawState.Animating)
+    //    {
+    //        if (_textEffect is TextFadeEffect fadeEffect)
+    //        {
+    //            fadeEffect.Advance(elapsed);
+    //            if (fadeEffect.IsFinished)
+    //                SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+    //        }
+    //        else if (_textEffect is TextWipeEffect textWipeEffect) // 补上这个判断
+    //        {
+    //            textWipeEffect.Advance(elapsed);
+    //            if (textWipeEffect.IsFinished) SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+    //        }
+    //        else
+    //        {
+    //            UpdateAllClusterProgress(elapsed);
+    //        }
+    //    }
+
+    //    _canvas?.Invalidate();
+    //}
 
     #endregion
 
@@ -523,14 +526,24 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void RebuildNewTextLayout(CanvasControl resourceCreator)
     {
+        float w = (float)resourceCreator.Size.Width;
+        float h = (float)resourceCreator.Size.Height;
+
+        // 文字和尺寸都没变则跳过重建
+        if (_newTextLayout != null
+            && _cachedLayoutText == _newText
+            && Math.Abs(_cachedLayoutWidth - w) < 0.5f
+            && Math.Abs(_cachedLayoutHeight - h) < 0.5f)
+            return;
+
         _newTextLayout?.Dispose();
-        _newTextLayout = new CanvasTextLayout(resourceCreator, _newText, _textFormat,
-            (float)resourceCreator.Size.Width,
-            (float)resourceCreator.Size.Height);
+        _newTextLayout = new CanvasTextLayout(resourceCreator, _newText, _textFormat, w, h);
         _newTextLayout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
         _newTextLayout.VerticalAlignment = CanvasVerticalAlignment.Center;
 
-        // newTextLayout 更新后静态缓存也需要刷新
+        _cachedLayoutText = _newText;
+        _cachedLayoutWidth = w;
+        _cachedLayoutHeight = h;
         _staticLayoutDirty = true;
     }
 
@@ -676,7 +689,37 @@ public sealed partial class AnimatedTextBlock : Control
         RebuildNewTextLayout(_canvas);
     }
     #endregion
+    public void OnSharedTick(TimeSpan elapsed)
+    {
+        // 空闲状态不做任何事，连 Invalidate 也不调用
+        if (_currentState == AnimatedTextBlockRedrawState.Idle)
+            return;
 
+        _totalAnimationTime += elapsed;
+
+        if (_currentState == AnimatedTextBlockRedrawState.Animating)
+        {
+            if (_textEffect is TextFadeEffect fadeEffect)
+            {
+                fadeEffect.Advance(elapsed);
+                if (fadeEffect.IsFinished)
+                    SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+            }
+            else if (_textEffect is TextWipeEffect wipeEffect)
+            {
+                wipeEffect.Advance(elapsed);
+                if (wipeEffect.IsFinished)
+                    SetRedrawState(AnimatedTextBlockRedrawState.Idle);
+            }
+            else
+            {
+                UpdateAllClusterProgress(elapsed);
+            }
+        }
+
+        // 只有真正需要重绘时才 Invalidate
+        _canvas?.Invalidate();
+    }
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
         _currentState = state;
@@ -684,27 +727,21 @@ public sealed partial class AnimatedTextBlock : Control
         switch (state)
         {
             case AnimatedTextBlockRedrawState.Animating:
-                // 启动渲染循环驱动动画
                 StartRenderingLoop();
                 break;
 
             case AnimatedTextBlockRedrawState.TextChanged:
-                // TextChanged 时先启动循环，Draw 里完成初始化后切换为 Animating
-                // 如果没有 textEffect 则 Draw 里会直接画静态帧
                 if (_textEffect != null)
                     StartRenderingLoop();
-                _canvas?.Invalidate();
-                break;
-
-            case AnimatedTextBlockRedrawState.LayoutChanged:
-                // LayoutChanged 由 OnSizeChanged 直接处理，这里不应该到达
-                // 保险起见停止循环并刷新一帧
-                StopRenderingLoop();
-                _canvas?.Invalidate();
+                _canvas?.Invalidate(); // 触发一次 Draw 完成初始化
                 break;
 
             case AnimatedTextBlockRedrawState.Idle:
-                // 停止渲染循环，刷新最后一帧显示最终状态
+                StopRenderingLoop();          // 从共享时钟注销，不再收到 tick
+                _canvas?.Invalidate();        // 最后一帧刷新为最终状态
+                break;
+
+            case AnimatedTextBlockRedrawState.LayoutChanged:
                 StopRenderingLoop();
                 _canvas?.Invalidate();
                 break;

@@ -22,26 +22,6 @@ public interface ITextEffect
     TimeSpan DelayPerCluster { get; set; }
 
     /// <summary>
-    /// Implement this method to update any values used for the animation. This method is called on a timed interval. 
-    /// </summary>
-    /// <param name="oldText">The unchanged text.</param>
-    /// <param name="newText">The changed text.</param>
-    /// <param name="diffResults">A set of changes as a result of the calculated differences of the texts.</param>
-    /// <param name="oldTextLayout">The text layout instance of the unchanged text.</param>
-    /// <param name="newTextLayout">The text layout instance of the changed text.</param>
-    /// <param name="state">Current drawing state of the control.</param>
-    /// <param name="canvas">The animated Win2D canvas control intended for rendering text.</param>
-    /// <param name="args">Data for update calculations.</param>
-    //void Update(string oldText,
-    //    string newText,
-    //    List<TextDiffResult> diffResults,
-    //    CanvasTextLayout oldTextLayout,
-    //    CanvasTextLayout newTextLayout,
-    //    AnimatedTextBlockRedrawState state,
-    //    ICanvasAnimatedControl canvas,
-    //    CanvasAnimatedUpdateEventArgs args);
-
-    /// <summary>
     /// Implement this method to draw the texts.
     /// </summary>
     /// <param name="oldText">The unchanged text.</param>
