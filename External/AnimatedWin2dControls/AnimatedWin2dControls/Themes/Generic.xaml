@@ -36,32 +36,24 @@
 
     <Style x:Key="DefaultAlbumArtControlStyle" TargetType="local:AlbumArtControl">
 
-        <!--  不继承任何基类默认样式，从零开始  -->
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Stretch" />
-
         <Setter Property="Template">
             <Setter.Value>
-                <!--
-                    空模板：仅一个透明 Border。
-                    代码侧 EnsureCanvasInTree() 会把 CanvasControl 动态注入，
-                    因此这里不需要（也不应该）预先放置 CanvasControl，
-                    避免与代码创建的实例冲突。
-                -->
                 <ControlTemplate TargetType="local:AlbumArtControl">
-                    <Border
-                        x:Name="RootBorder"
-                        Padding="{TemplateBinding Padding}"
+                    <!--
+                        CanvasControl 的名称必须与 C# 中 PartCanvas 常量保持一致："canvas"。
+                        ClearColor 透明，让宿主背景透出。
+                        HorizontalAlignment/VerticalAlignment=Stretch 保证充满父容器，
+                        与原版 UserControl 的拉伸行为一致。
+                    -->
+                    <canvas:CanvasControl
+                        x:Name="canvas"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}" />
+                        ClearColor="Transparent" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

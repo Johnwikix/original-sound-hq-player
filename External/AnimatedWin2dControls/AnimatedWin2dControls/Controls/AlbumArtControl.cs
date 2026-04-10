@@ -7,9 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -17,12 +15,15 @@ using Windows.Graphics.Imaging;
 namespace AnimatedWin2dControls.Controls
 {
     /// <summary>
-    /// 无 XAML 文件版本的专辑封面控件。
-    /// 继承 UserControl，在构造函数里直接把 CanvasControl 赋给 Content，
-    /// 与原版 UserControl + XAML 的运行时行为完全等价，无需 Generic.xaml。
+    /// 继承 Control 的专辑封面控件。
+    /// ControlTemplate 在 Themes/Generic.xaml 中定义，
+    /// 模板根为一个命名为 "canvas" 的 CanvasControl。
     /// </summary>
-    public sealed class AlbumArtControl : UserControl, IDisposable
+    [TemplatePart(Name = PartCanvas, Type = typeof(CanvasControl))]
+    public sealed class AlbumArtControl : Control, IDisposable, ISharedTickable
     {
+        private const string PartCanvas = "canvas";
+
         // ── 依赖属性 ──────────────────────────────────────────────────────────
 
         public static readonly DependencyProperty DpiScaleProperty =
@@ -41,7 +42,7 @@ namespace AnimatedWin2dControls.Controls
             if (!ctrl._isResourcesCreated) return;
             ctrl._maskInvalidated = true;
             ctrl._rtInvalidated = true;
-            ctrl._canvas.Invalidate();
+            ctrl._canvas?.Invalidate();
         }
 
         public static readonly DependencyProperty ImageBytesProperty =
@@ -127,7 +128,6 @@ namespace AnimatedWin2dControls.Controls
             set => SetValue(MarginRightRatioProperty, value);
         }
 
-        // Control 基类自带 CornerRadius，此处改名为 ArtCornerRadius 避免冲突
         public static readonly DependencyProperty ArtCornerRadiusProperty =
             DependencyProperty.Register(nameof(ArtCornerRadius), typeof(double),
                 typeof(AlbumArtControl), new PropertyMetadata(16.0, OnLayoutChanged));
@@ -151,7 +151,7 @@ namespace AnimatedWin2dControls.Controls
             var ctrl = (AlbumArtControl)d;
             if (!ctrl._isResourcesCreated) return;
             ctrl._rtInvalidated = true;
-            ctrl._canvas.Invalidate();
+            ctrl._canvas?.Invalidate();
         }
 
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -161,7 +161,7 @@ namespace AnimatedWin2dControls.Controls
             if (!ctrl.IsActive) return;
             ctrl._maskInvalidated = true;
             ctrl._rtInvalidated = true;
-            ctrl._canvas.Invalidate();
+            ctrl._canvas?.Invalidate();
         }
 
         public static readonly DependencyProperty IsActiveProperty =
@@ -190,13 +190,14 @@ namespace AnimatedWin2dControls.Controls
             {
                 ctrl._loadCts?.Cancel();
                 ctrl._isFading = false;
-                ctrl._canvas.Invalidate();
+                ctrl._canvas?.Invalidate();
             }
         }
 
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
-        private readonly CanvasControl _canvas;
+        // 模板应用后才赋值；依赖属性回调中通过 null 守卫保护
+        private CanvasControl? _canvas;
 
         private CanvasBitmap? _currentBitmap;
         private float _currentAlpha = 0f;
@@ -228,21 +229,37 @@ namespace AnimatedWin2dControls.Controls
         private BakedRT? _incomingBaked;
         private (float w, float h) _lastBakeSize;
         private bool _rtInvalidated = false;
+        private bool _isClockRegistered = false;
 
         // ── 构造函数 ──────────────────────────────────────────────────────────
 
         public AlbumArtControl()
         {
-            // UserControl.Content 直接就是视觉根，不经过 ControlTemplate 展开，
-            // 与原版 <canvas:CanvasControl x:Name="canvas"/> 在 XAML 里声明完全等价。
-            // Win2D 的 CreateResources 和 Draw 事件在 CanvasControl 进入视觉树后正常触发。
-            _canvas = new CanvasControl { ClearColor = Microsoft.UI.Colors.Transparent };
-            Content = _canvas;
+            // 告知 WinUI/XAML 运行时去 Generic.xaml 里查找本类型的 ControlTemplate
+            DefaultStyleKey = typeof(AlbumArtControl);
+
+            Unloaded += (_, _) => Dispose(true);
+        }
+
+        // ── 模板应用 ──────────────────────────────────────────────────────────
+
+        protected override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            // 若之前已绑定过（热重载等场景），先解绑旧实例
+            if (_canvas != null)
+            {
+                _canvas.CreateResources -= Canvas_CreateResources;
+                _canvas.Draw -= Canvas_Draw;
+                _canvas = null;
+            }
+
+            _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
+            if (_canvas == null) return;
 
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
-
-            Unloaded += (_, _) => Dispose(true);
         }
 
         // ── Canvas 事件 ───────────────────────────────────────────────────────
@@ -252,11 +269,6 @@ namespace AnimatedWin2dControls.Controls
         {
             _isResourcesCreated = true;
             if (!IsActive) return;
-
-            // TrackAsyncAction：将异步任务的生命周期注册给 Win2D。
-            // 若改用 async void 直接 await，handler 在第一个挂起点返回，
-            // Win2D 认为 CreateResources 已完成并可能令 Device 失效，
-            // 导致后续 CanvasBitmap 操作抛出"no CanvasDevice associated"。
             e.TrackAsyncAction(CreateResourcesAsync(sender).AsAsyncAction());
         }
 
@@ -270,22 +282,8 @@ namespace AnimatedWin2dControls.Controls
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            long nowTicks = DateTime.UtcNow.Ticks;
-            float delta = _lastDrawTicks == 0
-                ? 0f
-                : (float)((nowTicks - _lastDrawTicks) / (double)TimeSpan.TicksPerSecond);
-            delta = Math.Min(delta, 0.1f);
-            _lastDrawTicks = nowTicks;
-
-            if (_isFading)
-                UpdateFadeState(delta);
-
             DrawImageLayer(e.DrawingSession);
-
-            if (_isFading || _queuedBitmap != null)
-                _canvas.Invalidate();
-            else
-                FlushDisposeQueue();
+            FlushDisposeQueue();
         }
 
         // ── 核心状态机 ────────────────────────────────────────────────────────
@@ -294,29 +292,25 @@ namespace AnimatedWin2dControls.Controls
         {
             if (_isFading)
             {
-                if (_queuedBitmap != null)
-                    _disposeQueue.Enqueue(_queuedBitmap);
+                if (_queuedBitmap != null) _disposeQueue.Enqueue(_queuedBitmap);
                 _queuedBitmap = newBitmap;
             }
             else
             {
                 StartTransition(newBitmap);
             }
-            _lastDrawTicks = 0;
-            _canvas.Invalidate();
+
+            StartRenderingLoop(); // 有动画任务时注册时钟
         }
 
         private void StartTransition(CanvasBitmap newBitmap)
         {
             if (_incomingBitmap != null)
             {
-                if (_currentBitmap != null)
-                    _disposeQueue.Enqueue(_currentBitmap);
-
+                if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
                 _currentBaked?.Dispose();
                 _currentBaked = _incomingBaked;
                 _incomingBaked = null;
-
                 _currentBitmap = _incomingBitmap;
                 _currentAlpha = _incomingAlpha;
                 _incomingBitmap = null;
@@ -339,13 +333,10 @@ namespace AnimatedWin2dControls.Controls
 
             if (_incomingAlpha >= 1f)
             {
-                if (_currentBitmap != null)
-                    _disposeQueue.Enqueue(_currentBitmap);
-
+                if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
                 _currentBaked?.Dispose();
                 _currentBaked = _incomingBaked;
                 _incomingBaked = null;
-
                 _currentBitmap = _incomingBitmap;
                 _currentAlpha = 1f;
                 _incomingBitmap = null;
@@ -394,10 +385,6 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 加载 ──────────────────────────────────────────────────────────────
 
-        /// <param name="resourceCreator">
-        /// CreateResources 路径传入事件的 sender（Win2D 保证其 Device 全程有效）。
-        /// 依赖属性变更路径传 null，降级使用 _canvas（此时控件已完全初始化）。
-        /// </param>
         public async Task LoadBitmapAsync(byte[]? imageBytes,
                                           ICanvasResourceCreator? resourceCreator = null)
         {
@@ -413,7 +400,6 @@ namespace AnimatedWin2dControls.Controls
 
             try
             {
-                // 像素解码在后台线程完成，完全不涉及 Device
                 var (pixels, bmpW, bmpH) = await Task.Run(async () =>
                 {
                     using var mem = new MemoryStream(imageBytes, writable: false);
@@ -422,6 +408,7 @@ namespace AnimatedWin2dControls.Controls
 
                     uint srcW = decoder.PixelWidth;
                     uint srcH = decoder.PixelHeight;
+                    // 保持原始宽高比缩放到 HardMaxSize 以内
                     float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                     uint dstW = Math.Max(1, (uint)(srcW * sc));
                     uint dstH = Math.Max(1, (uint)(srcH * sc));
@@ -445,9 +432,7 @@ namespace AnimatedWin2dControls.Controls
 
                 cts.Token.ThrowIfCancellationRequested();
 
-                // CanvasBitmap.CreateFromBytes 必须在 UI 线程上调用，
-                // 使用 resourceCreator（sender）或降级到 _canvas 作为 Device 来源
-                ICanvasResourceCreator creator = resourceCreator ?? _canvas;
+                ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
                 var bmp = CanvasBitmap.CreateFromBytes(
                     creator, pixels, (int)bmpW, (int)bmpH,
                     Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
@@ -479,18 +464,47 @@ namespace AnimatedWin2dControls.Controls
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
                 using var stream = await file.OpenReadAsync();
 
-                ICanvasResourceCreator creator = resourceCreator ?? _canvas;
+                ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
                 var bmp = await CanvasBitmap.LoadAsync(creator, stream);
                 EnqueueBitmap(bmp);
             }
             catch { }
         }
 
+        public void OnSharedTick(TimeSpan elapsed)
+        {
+            // 没有进行中的动画就不做任何事
+            if (!_isFading && _queuedBitmap == null) return;
+
+            float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
+            // 复用原有的 UpdateFadeState 逻辑（原来在 Canvas_Draw 里内联的）
+            UpdateFadeState(delta);
+            _canvas?.Invalidate();
+
+            // 动画结束后注销，停止空转
+            if (!_isFading && _queuedBitmap == null)
+                StopRenderingLoop();
+        }
+
+        private void StartRenderingLoop()
+        {
+            if (_isClockRegistered) return;
+            SharedAnimationClock.Register(this);
+            _isClockRegistered = true;
+        }
+
+        private void StopRenderingLoop()
+        {
+            if (!_isClockRegistered) return;
+            SharedAnimationClock.Unregister(this);
+            _isClockRegistered = false;
+        }
+
         // ── 绘制 ──────────────────────────────────────────────────────────────
 
         private void DrawImageLayer(CanvasDrawingSession ds)
         {
-            if (!IsActive) return;
+            if (!IsActive || _canvas == null) return;
 
             float canvasW = (float)_canvas.Size.Width;
             float canvasH = (float)_canvas.Size.Height;
@@ -514,6 +528,7 @@ namespace AnimatedWin2dControls.Controls
             CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
             if (refBmp == null) return;
 
+            // CalcDestRect 保留原始宽高比（aspect-fit）
             var destRect = CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
             float w = (float)destRect.Width;
             float h = (float)destRect.Height;
@@ -567,6 +582,7 @@ namespace AnimatedWin2dControls.Controls
                 using var rtDs = rt.CreateDrawingSession();
                 rtDs.Clear(Microsoft.UI.Colors.Transparent);
 
+                // 按实际宽高比缩放到目标尺寸，不拉伸
                 using var scale = new ScaleEffect
                 {
                     Source = bitmap,
@@ -640,6 +656,10 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 辅助 ──────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Aspect-fit：在 (cx, cy, cw, ch) 区域内保持图片原始宽高比居中绘制。
+        /// 图片比例完全不变，仅缩放后居中。
+        /// </summary>
         private static Windows.Foundation.Rect CalcDestRect(
             CanvasBitmap bmp, float cx, float cy, float cw, float ch)
         {
@@ -649,6 +669,7 @@ namespace AnimatedWin2dControls.Controls
 
             float aspect = imgW / imgH;
             float drawW, drawH;
+            // 以容器短边为基准，保证图片完整显示且不拉伸
             if (aspect >= cw / ch) { drawW = cw; drawH = drawW / aspect; }
             else { drawH = ch; drawW = drawH * aspect; }
 
@@ -656,6 +677,7 @@ namespace AnimatedWin2dControls.Controls
                        cy + (ch - drawH) * 0.5f,
                        drawW, drawH);
         }
+
 
         // ── 释放 ──────────────────────────────────────────────────────────────
 
@@ -674,8 +696,14 @@ namespace AnimatedWin2dControls.Controls
             _loadCts?.Dispose();
             _loadCts = null;
 
-            _canvas.CreateResources -= Canvas_CreateResources;
-            _canvas.Draw -= Canvas_Draw;
+            StopRenderingLoop(); // 新增
+
+            if (_canvas != null)
+            {
+                _canvas.CreateResources -= Canvas_CreateResources;
+                _canvas.Draw -= Canvas_Draw;
+                _canvas = null;
+            }
 
             _maskRT?.Dispose(); _maskRT = null;
             _currentBaked?.Dispose(); _currentBaked = null;
@@ -688,7 +716,7 @@ namespace AnimatedWin2dControls.Controls
         }
     }
 
-    // ── BakedRT ───────────────────────────────────────────────────────────────────
+    // ── BakedRT ───────────────────────────────────────────────────────────────
 
     internal sealed class BakedRT : IDisposable
     {

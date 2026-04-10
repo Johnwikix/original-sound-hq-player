@@ -1,23 +1,28 @@
-﻿using Microsoft.UI.Xaml.Media;
+﻿// SharedAnimationClock.cs
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace AnimatedWin2dControls.Controls.AnimatedTextBlock
+namespace AnimatedWin2dControls.Controls
 {
-    public class SharedAnimationClock
+    public static class SharedAnimationClock
     {
-        private static readonly List<WeakReference<AnimatedTextBlock>> _activeInstances = new();
+        private static readonly List<WeakReference<ISharedTickable>> _activeInstances = new();
         private static bool _isRunning = false;
         private static DateTimeOffset _lastTick = DateTimeOffset.Now;
 
-        public static void Register(AnimatedTextBlock instance)
+        public static void Register(ISharedTickable instance)
         {
-            // 清理已失效的弱引用
             _activeInstances.RemoveAll(wr => !wr.TryGetTarget(out _));
-            _activeInstances.Add(new WeakReference<AnimatedTextBlock>(instance));
+
+            // 防止重复注册同一实例
+            foreach (var wr in _activeInstances)
+            {
+                if (wr.TryGetTarget(out var existing) && ReferenceEquals(existing, instance))
+                    return;
+            }
+
+            _activeInstances.Add(new WeakReference<ISharedTickable>(instance));
 
             if (!_isRunning)
             {
@@ -27,7 +32,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock
             }
         }
 
-        public static void Unregister(AnimatedTextBlock instance)
+        public static void Unregister(ISharedTickable instance)
         {
             _activeInstances.RemoveAll(wr =>
                 !wr.TryGetTarget(out var t) || ReferenceEquals(t, instance));
@@ -45,7 +50,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock
             var elapsed = now - _lastTick;
             _lastTick = now;
 
-            // 清理失效引用并驱动所有活跃实例
             for (int i = _activeInstances.Count - 1; i >= 0; i--)
             {
                 if (_activeInstances[i].TryGetTarget(out var instance))
@@ -54,7 +58,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock
                     _activeInstances.RemoveAt(i);
             }
 
-            // 没有任何活跃实例时自动停止
             if (_activeInstances.Count == 0)
             {
                 CompositionTarget.Rendering -= OnRendering;

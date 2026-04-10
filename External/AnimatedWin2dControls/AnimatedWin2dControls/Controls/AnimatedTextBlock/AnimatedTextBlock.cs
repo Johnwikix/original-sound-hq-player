@@ -22,7 +22,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
 [TemplatePart(Name = "ContentBorder", Type = typeof(Border))]
 [TemplatePart(Name = "AnimatedCanvas", Type = typeof(CanvasControl))]
-public sealed partial class AnimatedTextBlock : Control
+public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 {
     // ── 替换为 CanvasControl ──────────────────────────────────────────────
     private CanvasControl _canvas = null;
@@ -394,38 +394,7 @@ public sealed partial class AnimatedTextBlock : Control
         SharedAnimationClock.Unregister(this);
         _isClockRegistered = false;
     }
-
-
-    //private void OnRendering(object sender, object e)
-    //{
-    //    var now = DateTimeOffset.Now;
-    //    var elapsed = now - _lastRenderTime;
-    //    _lastRenderTime = now;
-
-    //    // 累加总时间（模拟 CanvasTimingInformation.TotalTime）
-    //    _totalAnimationTime += elapsed;
-
-    //    if (_currentState == AnimatedTextBlockRedrawState.Animating)
-    //    {
-    //        if (_textEffect is TextFadeEffect fadeEffect)
-    //        {
-    //            fadeEffect.Advance(elapsed);
-    //            if (fadeEffect.IsFinished)
-    //                SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-    //        }
-    //        else if (_textEffect is TextWipeEffect textWipeEffect) // 补上这个判断
-    //        {
-    //            textWipeEffect.Advance(elapsed);
-    //            if (textWipeEffect.IsFinished) SetRedrawState(AnimatedTextBlockRedrawState.Idle);
-    //        }
-    //        else
-    //        {
-    //            UpdateAllClusterProgress(elapsed);
-    //        }
-    //    }
-
-    //    _canvas?.Invalidate();
-    //}
+   
 
     #endregion
 
