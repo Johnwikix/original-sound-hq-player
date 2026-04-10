@@ -526,6 +526,9 @@ public sealed partial class AnimatedTextBlock : Control
 
     private void RebuildNewTextLayout(CanvasControl resourceCreator)
     {
+        if (resourceCreator == null || !resourceCreator.ReadyToDraw)
+            return;
+
         float w = (float)resourceCreator.Size.Width;
         float h = (float)resourceCreator.Size.Height;
 
