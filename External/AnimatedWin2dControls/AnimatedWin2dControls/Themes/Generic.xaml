@@ -2,12 +2,14 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:animatedTextBlock="using:AnimatedWin2dControls.Controls.AnimatedTextBlock"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    xmlns:local="using:AnimatedWin2dControls.Controls.AnimatedTextBlock">
+    xmlns:local="using:AnimatedWin2dControls.Controls">
 
-    <Style BasedOn="{StaticResource DefaultAnimatedTextBlockStyle}" TargetType="local:AnimatedTextBlock" />
+    <Style BasedOn="{StaticResource DefaultAnimatedTextBlockStyle}" TargetType="animatedTextBlock:AnimatedTextBlock" />
+    <Style BasedOn="{StaticResource DefaultAlbumArtControlStyle}" TargetType="local:AlbumArtControl" />
 
-    <Style x:Key="DefaultAnimatedTextBlockStyle" TargetType="local:AnimatedTextBlock">
+    <Style x:Key="DefaultAnimatedTextBlockStyle" TargetType="animatedTextBlock:AnimatedTextBlock">
         <Setter Property="FontFamily" Value="XamlAutoFontFamily" />
         <Setter Property="FontSize" Value="{StaticResource BodyTextBlockFontSize}" />
         <Setter Property="FontWeight" Value="Normal" />
@@ -16,7 +18,7 @@
         <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="local:AnimatedTextBlock">
+                <ControlTemplate TargetType="animatedTextBlock:AnimatedTextBlock">
                     <Border
                         x:Name="ContentBorder"
                         Background="{TemplateBinding Background}"
@@ -27,6 +29,39 @@
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch" />
                     </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DefaultAlbumArtControlStyle" TargetType="local:AlbumArtControl">
+
+        <!--  不继承任何基类默认样式，从零开始  -->
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <!--
+                    空模板：仅一个透明 Border。
+                    代码侧 EnsureCanvasInTree() 会把 CanvasControl 动态注入，
+                    因此这里不需要（也不应该）预先放置 CanvasControl，
+                    避免与代码创建的实例冲突。
+                -->
+                <ControlTemplate TargetType="local:AlbumArtControl">
+                    <Border
+                        x:Name="RootBorder"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
