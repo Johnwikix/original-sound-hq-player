@@ -8,6 +8,7 @@
 
     <Style BasedOn="{StaticResource DefaultAnimatedTextBlockStyle}" TargetType="animatedTextBlock:AnimatedTextBlock" />
     <Style BasedOn="{StaticResource DefaultAlbumArtControlStyle}" TargetType="local:AlbumArtControl" />
+    <Style BasedOn="{StaticResource DefaultShaderBackgroundStyle}" TargetType="local:ShaderBackgroundControl" />
 
     <Style x:Key="DefaultAnimatedTextBlockStyle" TargetType="animatedTextBlock:AnimatedTextBlock">
         <Setter Property="FontFamily" Value="XamlAutoFontFamily" />
@@ -54,6 +55,16 @@
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         ClearColor="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DefaultShaderBackgroundStyle" TargetType="local:ShaderBackgroundControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:ShaderBackgroundControl">
+                    <canvas:CanvasAnimatedControl x:Name="PART_Canvas" ClearColor="Transparent" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

@@ -109,7 +109,6 @@
     <Page Remove="External\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ColorThief.ImageSharp" Version="1.0.0" />
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Controls.OpacityMaskView" Version="0.1.260109-build.2471" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.2.251219" />
@@ -182,12 +181,6 @@
     <Page Update="Controls\ShaderBackgroundControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <None Update="Shaders\effect.bin">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Shaders\effect.fxlib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Page Update="Controls\GradientBackgroundControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

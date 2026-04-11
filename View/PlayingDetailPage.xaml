@@ -21,7 +21,7 @@
     mc:Ignorable="d">
 
     <Grid>
-        <customControls:ShaderBackgroundControl
+        <awc:ShaderBackgroundControl
             x:Name="BackGround"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"

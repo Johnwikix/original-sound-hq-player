@@ -11,9 +11,19 @@
     <None Remove="Themes\Generic.xaml" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ColorThief.ImageSharp" Version="1.0.0" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Shaders\effect.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders\effect.fxlib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Themes\Generic.xaml">
