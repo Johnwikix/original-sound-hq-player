@@ -382,8 +382,7 @@ public class AlbumCoverBehavior : Behavior<Image>
             {
                 picture = System.IO.File.ReadAllBytes(filePath);
             }
-            else if (!AppData.UnknownAlbums.Contains(music.Album)
-                     && AppSettings.IsAutoLyricsEnabled)
+            else if (AppSettings.IsAutoLyricsEnabled)
             {
                 picture = await LrcService.GetCoverImageAsync(
                     music.Title, music.Album, music.Author);
