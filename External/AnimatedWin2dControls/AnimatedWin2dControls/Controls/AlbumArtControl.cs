@@ -10,15 +10,11 @@ using System.IO;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Graphics.Imaging;
 
 namespace AnimatedWin2dControls.Controls
 {
-    /// <summary>
-    /// 继承 Control 的专辑封面控件。
-    /// ControlTemplate 在 Themes/Generic.xaml 中定义，
-    /// 模板根为一个命名为 "canvas" 的 CanvasControl。
-    /// </summary>
     [TemplatePart(Name = PartCanvas, Type = typeof(CanvasControl))]
     public sealed class AlbumArtControl : Control, IDisposable, ISharedTickable
     {
@@ -196,17 +192,28 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
-        // 模板应用后才赋值；依赖属性回调中通过 null 守卫保护
         private CanvasControl? _canvas;
 
         private CanvasBitmap? _currentBitmap;
-        private float _currentAlpha = 0f;
-
         private CanvasBitmap? _incomingBitmap;
-        private float _incomingAlpha = 0f;
+
+        // ── 统一过渡进度 t ∈ [0, 1] ──────────────────────────────────────────
+        // t=0：完全显示 current，t=1：完全显示 incoming
+        // alpha 和 scale 都由同一个 t 驱动，确保同步
+        private float _transitionT = 0f;
+        private const float FadeSpeed = 1.5f;
+        private const float ScaleSpeed = FadeSpeed * 2f;   // 缩放比淡入快一倍
+        private const float EaseN = 5f;
+        private float _scaleT = 0f;   // 控制 scale，独立推进
+
+        // 记录过渡开始时 current 的实际绘制矩形，用于 scale 插值
+        private Rect _currentDestRectAtStart;
+        // incoming 的目标矩形，在 StartTransition 时计算
+        private Rect _incomingTargetRect;
+        // 标记 _incomingTargetRect 是否已计算（需要 canvas 尺寸）
+        private bool _targetRectDirty = true;
 
         private bool _isFading = false;
-        private const float FadeSpeed = 1.5f;
 
         private CanvasBitmap? _queuedBitmap;
         private readonly Queue<CanvasBitmap> _disposeQueue = new();
@@ -215,11 +222,9 @@ namespace AnimatedWin2dControls.Controls
         private bool _isResourcesCreated = false;
         private bool _disposed = false;
 
-        private long _lastDrawTicks = 0;
-        private const float HardMaxSize = 1536f;
-
         private long _lastLength = -1;
         private int _lastHash;
+        private const float HardMaxSize = 1536f;
 
         private CanvasRenderTarget? _maskRT;
         private (float w, float h, float radius) _maskSize;
@@ -235,9 +240,7 @@ namespace AnimatedWin2dControls.Controls
 
         public AlbumArtControl()
         {
-            // 告知 WinUI/XAML 运行时去 Generic.xaml 里查找本类型的 ControlTemplate
             DefaultStyleKey = typeof(AlbumArtControl);
-
             Unloaded += (_, _) => Dispose(true);
         }
 
@@ -247,7 +250,6 @@ namespace AnimatedWin2dControls.Controls
         {
             base.OnApplyTemplate();
 
-            // 若之前已绑定过（热重载等场景），先解绑旧实例
             if (_canvas != null)
             {
                 _canvas.CreateResources -= Canvas_CreateResources;
@@ -300,7 +302,7 @@ namespace AnimatedWin2dControls.Controls
                 StartTransition(newBitmap);
             }
 
-            StartRenderingLoop(); // 有动画任务时注册时钟
+            StartRenderingLoop();
         }
 
         private void StartTransition(CanvasBitmap newBitmap)
@@ -312,15 +314,38 @@ namespace AnimatedWin2dControls.Controls
                 _currentBaked = _incomingBaked;
                 _incomingBaked = null;
                 _currentBitmap = _incomingBitmap;
-                _currentAlpha = _incomingAlpha;
                 _incomingBitmap = null;
-                _incomingAlpha = 0f;
             }
 
+            _currentDestRectAtStart = GetCurrentDestRect();
             _incomingBitmap = newBitmap;
-            _incomingAlpha = 0f;
             _incomingBaked = null;
+            _transitionT = 0f;
+            _scaleT = 0f;   // ← 新增
+            _targetRectDirty = true;
             _isFading = true;
+        }
+
+        /// <summary>
+        /// 返回 _currentBitmap 在当前 canvas 尺寸下的目标矩形；
+        /// canvas 未就绪时退化为零矩形。
+        /// </summary>
+        private Rect GetCurrentDestRect()
+        {
+            if (_currentBitmap == null || _canvas == null) return Rect.Empty;
+            float cw = (float)_canvas.Size.Width;
+            float ch = (float)_canvas.Size.Height;
+            if (cw <= 0 || ch <= 0) return Rect.Empty;
+
+            float padL = (float)MarginLeftRatio;
+            float padR = (float)MarginRightRatio;
+            float padT = (float)MarginTopRatio;
+            float padB = (float)MarginBottomRatio;
+            float contentW = cw - padL - padR;
+            float contentH = ch - padT - padB;
+            if (contentW <= 0 || contentH <= 0) return Rect.Empty;
+
+            return CalcDestRect(_currentBitmap, padL, padT, contentW, contentH);
         }
 
         private void UpdateFadeState(float delta)
@@ -328,19 +353,19 @@ namespace AnimatedWin2dControls.Controls
             FlushDisposeQueue();
             if (!_isFading) return;
 
-            if (_currentBitmap != null) _currentAlpha = Math.Max(0f, _currentAlpha - delta * FadeSpeed);
-            if (_incomingBitmap != null) _incomingAlpha = Math.Min(1f, _incomingAlpha + delta * FadeSpeed);
+            _transitionT = Math.Min(1f, _transitionT + delta * FadeSpeed);
+            _scaleT = Math.Min(1f, _scaleT + delta * ScaleSpeed);
 
-            if (_incomingAlpha >= 1f)
+            if (_transitionT >= 1f)   // fade 结束才算整体过渡完成
             {
                 if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
                 _currentBaked?.Dispose();
                 _currentBaked = _incomingBaked;
                 _incomingBaked = null;
                 _currentBitmap = _incomingBitmap;
-                _currentAlpha = 1f;
                 _incomingBitmap = null;
-                _incomingAlpha = 0f;
+                _transitionT = 0f;
+                _scaleT = 0f;
                 _isFading = false;
 
                 if (_queuedBitmap != null)
@@ -362,6 +387,15 @@ namespace AnimatedWin2dControls.Controls
                     && bmp != _queuedBitmap)
                     bmp.Dispose();
             }
+        }
+
+        // ── 缓动函数 ─────────────────────────────────────────────────────────
+
+        /// <summary>Cubic ease-out：快进慢出，自然减速感。</summary>
+        private static float EaseOutN(float t, float n)
+        {
+            float f = 1f - t;
+            return 1f - MathF.Pow(f, n);
         }
 
         // ── 去重 ──────────────────────────────────────────────────────────────
@@ -408,7 +442,6 @@ namespace AnimatedWin2dControls.Controls
 
                     uint srcW = decoder.PixelWidth;
                     uint srcH = decoder.PixelHeight;
-                    // 保持原始宽高比缩放到 HardMaxSize 以内
                     float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                     uint dstW = Math.Max(1, (uint)(srcW * sc));
                     uint dstH = Math.Max(1, (uint)(srcH * sc));
@@ -473,15 +506,12 @@ namespace AnimatedWin2dControls.Controls
 
         public void OnSharedTick(TimeSpan elapsed)
         {
-            // 没有进行中的动画就不做任何事
             if (!_isFading && _queuedBitmap == null) return;
 
             float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            // 复用原有的 UpdateFadeState 逻辑（原来在 Canvas_Draw 里内联的）
             UpdateFadeState(delta);
             _canvas?.Invalidate();
 
-            // 动画结束后注销，停止空转
             if (!_isFading && _queuedBitmap == null)
                 StopRenderingLoop();
         }
@@ -524,14 +554,46 @@ namespace AnimatedWin2dControls.Controls
             CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
             if (refBmp == null) return;
 
-            var destRect = CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
-            float w = (float)destRect.Width;
-            float h = (float)destRect.Height;
+            // incoming 的最终目标矩形（以 incoming 的宽高比 aspect-fit 到内容区）
+            Rect incomingTarget = (_incomingBitmap != null)
+                ? CalcDestRect(_incomingBitmap, contentX, contentY, contentW, contentH)
+                : CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
+
+            // 在首帧过渡时延迟计算 incoming 目标矩形（此处 canvas 尺寸已就绪）
+            if (_isFading && _targetRectDirty)
+            {
+                _incomingTargetRect = incomingTarget;
+                // 如果 current 起点为空（第一张图），直接用 incoming 目标（无缩放）
+                if (_currentDestRectAtStart == Rect.Empty)
+                    _currentDestRectAtStart = incomingTarget;
+                _targetRectDirty = false;
+            }
+
+            // ── 计算缓动后的尺寸 ─────────────────────────────────────────────
+            // eased：用于 scale 插值（cubic ease-out）
+            // linear t：用于 alpha 插值，保持与 scale 同步但可单独调整
+            float easedT = _isFading ? EaseOutN(_scaleT, EaseN) : (_currentBitmap != null ? 1f : 0f);
+            float linearT = _transitionT;
+
+            // 当前图的实际绘制矩形：从 _currentDestRectAtStart 向 incomingTarget 插值
+            Rect currentDrawRect = _isFading
+                ? LerpRect(_currentDestRectAtStart, _incomingTargetRect, easedT)
+                : incomingTarget; // 不在过渡中时就用 current 的标准目标
+
+            // incoming 图的实际绘制矩形：从 _currentDestRectAtStart 向 incomingTarget 插值（同步）
+            Rect incomingDrawRect = currentDrawRect;
+
+            // ── 决定实际用于烘焙 mask/RT 的尺寸（以 incoming 目标为准，避免频繁重烘焙）
+            // mask 和 RT 以 incoming 目标尺寸烘焙，绘制时靠 DrawImage 的 destRect 参数缩放
+            float bakeW = (float)incomingTarget.Width;
+            float bakeH = (float)incomingTarget.Height;
             float radius = (float)ArtCornerRadius;
 
-            EnsureMaskRenderTarget(ds.Device, w, h, radius);
+            if (bakeW <= 0 || bakeH <= 0) return;
 
-            if (MathF.Abs(_lastBakeSize.w - w) > 0.5f || MathF.Abs(_lastBakeSize.h - h) > 0.5f)
+            EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
+
+            if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f || MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
                 _rtInvalidated = true;
 
             if (_rtInvalidated)
@@ -539,25 +601,71 @@ namespace AnimatedWin2dControls.Controls
                 _currentBaked?.Dispose(); _currentBaked = null;
                 _incomingBaked?.Dispose(); _incomingBaked = null;
                 _rtInvalidated = false;
-                _lastBakeSize = (w, h);
+                _lastBakeSize = (bakeW, bakeH);
             }
 
             if (_currentBitmap != null && _currentBaked == null)
-                _currentBaked = BakeRenderTarget(ds.Device, _currentBitmap, w, h);
+                _currentBaked = BakeRenderTarget(ds.Device, _currentBitmap, bakeW, bakeH);
             if (_incomingBitmap != null && _incomingBaked == null)
-                _incomingBaked = BakeRenderTarget(ds.Device, _incomingBitmap, w, h);
+                _incomingBaked = BakeRenderTarget(ds.Device, _incomingBitmap, bakeW, bakeH);
 
-            if (_currentBaked != null && _currentAlpha > 0f)
-                ds.DrawImage(_currentBaked.RT,
-                    new Vector2((float)destRect.X - _currentBaked.Pad,
-                                (float)destRect.Y - _currentBaked.Pad),
-                    _currentBaked.RT.Bounds, _currentAlpha);
+            // ── 绘制 current（正在淡出 + 缩放）────────────────────────────────
+            float currentAlpha = _isFading ? Math.Max(0f, 1f - linearT) : 1f;
+            if (_currentBaked != null && currentAlpha > 0f && _isFading)
+            {
+                DrawBaked(ds, _currentBaked, currentDrawRect, currentAlpha);
+            }
+            else if (_currentBaked != null && !_isFading)
+            {
+                // 静止状态直接绘制在正常位置
+                Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
+                DrawBaked(ds, _currentBaked, staticRect, 1f);
+            }
 
-            if (_incomingBaked != null && _incomingAlpha > 0f)
-                ds.DrawImage(_incomingBaked.RT,
-                    new Vector2((float)destRect.X - _incomingBaked.Pad,
-                                (float)destRect.Y - _incomingBaked.Pad),
-                    _incomingBaked.RT.Bounds, _incomingAlpha);
+            // ── 绘制 incoming（正在淡入 + 缩放）───────────────────────────────
+            float incomingAlpha = _isFading ? Math.Min(1f, linearT) : 0f;
+            if (_incomingBaked != null && incomingAlpha > 0f)
+            {
+                DrawBaked(ds, _incomingBaked, incomingDrawRect, incomingAlpha);
+            }
+        }
+
+        /// <summary>
+        /// 将 BakedRT 按 <paramref name="destRect"/> 指定的区域绘制，支持缩放。
+        /// BakedRT 内含 pad（用于阴影），destRect 是图像内容区域（不含 pad）。
+        /// </summary>
+        private static void DrawBaked(CanvasDrawingSession ds,
+                                      BakedRT baked,
+                                      Rect destRect,
+                                      float alpha)
+        {
+            if (destRect.Width <= 0 || destRect.Height <= 0) return;
+
+            // RT 里图像内容区域（去掉 pad 后的部分）
+            var sourceContentRect = new Rect(
+                baked.Pad, baked.Pad,
+                baked.RT.SizeInPixels.Width - baked.Pad * 2,
+                baked.RT.SizeInPixels.Height - baked.Pad * 2);
+
+            // 目标区域要扩展 pad 以包含阴影
+            var destWithPad = new Rect(
+                destRect.X - baked.Pad,
+                destRect.Y - baked.Pad,
+                destRect.Width + baked.Pad * 2,
+                destRect.Height + baked.Pad * 2);
+
+            ds.DrawImage(baked.RT, destWithPad, baked.RT.Bounds, alpha);
+        }
+
+        // ── 矩形线性插值 ──────────────────────────────────────────────────────
+
+        private static Rect LerpRect(Rect a, Rect b, float t)
+        {
+            return new Rect(
+                a.X + (b.X - a.X) * t,
+                a.Y + (b.Y - a.Y) * t,
+                a.Width + (b.Width - a.Width) * t,
+                a.Height + (b.Height - a.Height) * t);
         }
 
         // ── RenderTarget 烘焙 ─────────────────────────────────────────────────
@@ -577,12 +685,11 @@ namespace AnimatedWin2dControls.Controls
                 using var rtDs = rt.CreateDrawingSession();
                 rtDs.Clear(Microsoft.UI.Colors.Transparent);
 
-                // 按实际宽高比缩放到目标尺寸，不拉伸
                 using var scale = new ScaleEffect
                 {
                     Source = bitmap,
                     Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                                    h / bitmap.SizeInPixels.Height),
+                                       h / bitmap.SizeInPixels.Height),
                     InterpolationMode = CanvasImageInterpolation.HighQualityCubic
                 };
                 using var masked = new AlphaMaskEffect
@@ -651,11 +758,7 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 辅助 ──────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Aspect-fit：在 (cx, cy, cw, ch) 区域内保持图片原始宽高比居中绘制。
-        /// 图片比例完全不变，仅缩放后居中。
-        /// </summary>
-        private static Windows.Foundation.Rect CalcDestRect(
+        private static Rect CalcDestRect(
             CanvasBitmap bmp, float cx, float cy, float cw, float ch)
         {
             float imgW = bmp.SizeInPixels.Width;
@@ -664,7 +767,6 @@ namespace AnimatedWin2dControls.Controls
 
             float aspect = imgW / imgH;
             float drawW, drawH;
-            // 以容器短边为基准，保证图片完整显示且不拉伸
             if (aspect >= cw / ch) { drawW = cw; drawH = drawW / aspect; }
             else { drawH = ch; drawW = drawH * aspect; }
 
@@ -672,7 +774,6 @@ namespace AnimatedWin2dControls.Controls
                        cy + (ch - drawH) * 0.5f,
                        drawW, drawH);
         }
-
 
         // ── 释放 ──────────────────────────────────────────────────────────────
 
@@ -691,7 +792,7 @@ namespace AnimatedWin2dControls.Controls
             _loadCts?.Dispose();
             _loadCts = null;
 
-            StopRenderingLoop(); // 新增
+            StopRenderingLoop();
 
             if (_canvas != null)
             {
