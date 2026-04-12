@@ -202,9 +202,6 @@ namespace AnimatedWin2dControls.Controls
         // alpha 和 scale 都由同一个 t 驱动，确保同步
         private float _transitionT = 0f;
         private const float FadeSpeed = 1.5f;
-        private const float ScaleSpeed = FadeSpeed * 2f;   // 缩放比淡入快一倍
-        private const float EaseN = 5f;
-        private float _scaleT = 0f;   // 控制 scale，独立推进
 
         // 记录过渡开始时 current 的实际绘制矩形，用于 scale 插值
         private Rect _currentDestRectAtStart;
@@ -307,6 +304,7 @@ namespace AnimatedWin2dControls.Controls
 
         private void StartTransition(CanvasBitmap newBitmap)
         {
+            // 若上一次过渡还没完成就被新的打断，先把 incoming 提升为 current
             if (_incomingBitmap != null)
             {
                 if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
@@ -317,12 +315,14 @@ namespace AnimatedWin2dControls.Controls
                 _incomingBitmap = null;
             }
 
+            // 记录 current 当前的绘制矩形作为缩放起点
+            // 如果 current 为空（第一张图），起点 = 目标矩形（无缩放动画，只做淡入）
             _currentDestRectAtStart = GetCurrentDestRect();
+
             _incomingBitmap = newBitmap;
             _incomingBaked = null;
             _transitionT = 0f;
-            _scaleT = 0f;   // ← 新增
-            _targetRectDirty = true;
+            _targetRectDirty = true; // 等 DrawImageLayer 里有 canvas 尺寸时再算
             _isFading = true;
         }
 
@@ -354,10 +354,10 @@ namespace AnimatedWin2dControls.Controls
             if (!_isFading) return;
 
             _transitionT = Math.Min(1f, _transitionT + delta * FadeSpeed);
-            _scaleT = Math.Min(1f, _scaleT + delta * ScaleSpeed);
 
-            if (_transitionT >= 1f)   // fade 结束才算整体过渡完成
+            if (_transitionT >= 1f)
             {
+                // 过渡完成：incoming 变成 current
                 if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
                 _currentBaked?.Dispose();
                 _currentBaked = _incomingBaked;
@@ -365,7 +365,6 @@ namespace AnimatedWin2dControls.Controls
                 _currentBitmap = _incomingBitmap;
                 _incomingBitmap = null;
                 _transitionT = 0f;
-                _scaleT = 0f;
                 _isFading = false;
 
                 if (_queuedBitmap != null)
@@ -572,8 +571,8 @@ namespace AnimatedWin2dControls.Controls
             // ── 计算缓动后的尺寸 ─────────────────────────────────────────────
             // eased：用于 scale 插值（cubic ease-out）
             // linear t：用于 alpha 插值，保持与 scale 同步但可单独调整
-            float easedT = _isFading ? EaseOutN(_scaleT, EaseN) : (_currentBitmap != null ? 1f : 0f);
-            float linearT = _transitionT;
+            float easedT = _isFading ? EaseOutN(_transitionT, 8f) : (_currentBitmap != null ? 1f : 0f);
+            float linearT = _transitionT; // alpha 同步用线性即可（已有 eased scale 带来节奏感）
 
             // 当前图的实际绘制矩形：从 _currentDestRectAtStart 向 incomingTarget 插值
             Rect currentDrawRect = _isFading
