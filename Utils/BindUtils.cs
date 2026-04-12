@@ -58,9 +58,9 @@ namespace WinUIMusicPlayer.Utils
             return source is null ? Visibility.Visible: Visibility.Collapsed;
         }
         
-        public static Visibility BoolToVisibilityConverter(bool isVisible) {
-            return isVisible ? Visibility.Visible : Visibility.Collapsed;
-        }
+        //public static Visibility BoolToVisibilityConverter(bool isVisible) {
+        //    return isVisible ? Visibility.Visible : Visibility.Collapsed;
+        //}
 
         public static Visibility BoolToVisibilityReConverter(bool isVisible)
         {

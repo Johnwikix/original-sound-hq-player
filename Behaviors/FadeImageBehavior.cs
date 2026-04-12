@@ -47,6 +47,17 @@ namespace WinUIMusicPlayer.Behaviors
             _lastHash = 0;
         }
 
+        // ── ImageVisibility 依赖属性 ───────────────────────────────────
+        public Visibility ImageVisibility
+        {
+            get => (Visibility)GetValue(ImageVisibilityProperty);
+            private set => SetValue(ImageVisibilityProperty, value);
+        }
+
+        public static readonly DependencyProperty ImageVisibilityProperty =
+            DependencyProperty.Register(nameof(ImageVisibility), typeof(Visibility), typeof(FadeImageBehavior),
+                new PropertyMetadata(Visibility.Collapsed));
+
         // ── Enable 依赖属性 ────────────────────────────────────────────
         public bool Enable
         {
@@ -64,15 +75,13 @@ namespace WinUIMusicPlayer.Behaviors
 
             if (!(bool)e.NewValue)
             {
-                // 禁用：取消所有挂起操作，清理覆盖层，Source 置 null
                 behavior._cts?.Cancel();
                 behavior.StopAndCleanup();
                 if (behavior.AssociatedObject != null)
-                    behavior.AssociatedObject.Source = null;
+                    behavior.SetSource(null);
             }
             else
             {
-                // 重新启用：重置去重状态并重新触发当前 ImageBytes
                 behavior.Invalidate();
                 var bytes = behavior.ImageBytes;
                 if (behavior.AssociatedObject != null && bytes != null)
@@ -100,12 +109,11 @@ namespace WinUIMusicPlayer.Behaviors
         {
             if (d is not FadeImageBehavior behavior) return;
 
-            // Enable=false 时直接跳过所有计算，Source 置 null
             if (!behavior.Enable)
             {
                 behavior.StopAndCleanup();
                 if (behavior.AssociatedObject != null)
-                    behavior.AssociatedObject.Source = null;
+                    behavior.SetSource(null);
                 return;
             }
 
@@ -123,14 +131,14 @@ namespace WinUIMusicPlayer.Behaviors
             catch (OperationCanceledException) { }
         }
 
-        // ── 公共加载+过渡逻辑（供两处调用） ──────────────────────────
+        // ── 公共加载+过渡逻辑 ─────────────────────────────────────────
         private async Task LoadAndTransitionAsync(byte[]? bytes, CancellationToken token)
         {
             try
             {
                 var bitmapImage = await DecodeToBitmapAsync(bytes, token);
-                if (!token.IsCancellationRequested && bitmapImage != null)
-                    TransitionToNewSource(bitmapImage);
+                if (!token.IsCancellationRequested)
+                    TransitionToNewSource(bitmapImage); // null 也传下去
             }
             catch (OperationCanceledException) { }
         }
@@ -189,16 +197,21 @@ namespace WinUIMusicPlayer.Behaviors
         protected override void OnAttached()
         {
             base.OnAttached();
-            if (AssociatedObject != null && ImageBytes != null && Enable)
-                _ = InitAsync();
+            if (AssociatedObject != null && Enable)
+            {
+                if (ImageBytes is { Length: > 0 })
+                    _ = InitAsync();
+                else
+                    SetSource(null);
+            }
         }
 
         private async Task InitAsync()
         {
             _cts = new CancellationTokenSource();
             var bitmap = await DecodeToBitmapAsync(ImageBytes, _cts.Token);
-            if (AssociatedObject != null && bitmap != null)
-                AssociatedObject.Source = bitmap;
+            if (AssociatedObject != null)
+                SetSource(bitmap);
         }
 
         protected override void OnDetaching()
@@ -208,15 +221,24 @@ namespace WinUIMusicPlayer.Behaviors
             base.OnDetaching();
         }
 
-        // ── 淡入淡出过渡 ───────────────────────────────────────────────
-        private void TransitionToNewSource(ImageSource newSource)
+        // ── Source 统一设置入口 ────────────────────────────────────────
+        private void SetSource(ImageSource? source)
         {
-            if (AssociatedObject == null || AssociatedObject.Source == newSource) return;
+            if (AssociatedObject == null) return;
+            AssociatedObject.Source = source;
+            ImageVisibility = source != null ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        // ── 淡入淡出过渡 ───────────────────────────────────────────────
+        private void TransitionToNewSource(ImageSource? newSource)
+        {
+            if (AssociatedObject == null) return;
+            if (newSource != null && AssociatedObject.Source == newSource) return;
 
             var parent = VisualTreeHelper.GetParent(AssociatedObject) as Panel;
             if (parent == null || AssociatedObject.Visibility == Visibility.Collapsed)
             {
-                AssociatedObject.Source = newSource;
+                SetSource(newSource);
                 return;
             }
 
@@ -224,6 +246,7 @@ namespace WinUIMusicPlayer.Behaviors
 
             if (AssociatedObject.Source != null)
             {
+                // 旧图 → 新图：叠一层旧图做淡出
                 _tempOverlayImage = new Image
                 {
                     Source = AssociatedObject.Source,
@@ -250,15 +273,15 @@ namespace WinUIMusicPlayer.Behaviors
                 _currentTransitionStoryboard.Children.Add(ani);
                 Storyboard.SetTarget(ani, _tempOverlayImage);
                 Storyboard.SetTargetProperty(ani, "Opacity");
-
                 _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
 
-                AssociatedObject.Source = newSource;
+                SetSource(newSource);
                 _currentTransitionStoryboard.Begin();
             }
             else
             {
-                AssociatedObject.Source = newSource;
+                // newSource 为 null（清空）或旧图为 null（首次加载）：直接赋值
+                SetSource(newSource);
             }
         }
 

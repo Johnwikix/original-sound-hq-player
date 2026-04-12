@@ -510,25 +510,20 @@ namespace AnimatedWin2dControls.Controls
             float canvasH = (float)_canvas.Size.Height;
             if (canvasW <= 0 || canvasH <= 0) return;
 
-            float squareSize = Math.Min(canvasW, canvasH);
-            float squareX = (canvasW - squareSize) * 0.5f;
-            float squareY = (canvasH - squareSize) * 0.5f;
-
             float padTop = (float)MarginTopRatio;
             float padBottom = (float)MarginBottomRatio;
             float padLeft = (float)MarginLeftRatio;
             float padRight = (float)MarginRightRatio;
 
-            float contentX = squareX + padLeft;
-            float contentY = squareY + padTop;
-            float contentW = squareSize - padLeft - padRight;
-            float contentH = squareSize - padTop - padBottom;
+            float contentX = padLeft;
+            float contentY = padTop;
+            float contentW = canvasW - padLeft - padRight;
+            float contentH = canvasH - padTop - padBottom;
             if (contentW <= 0 || contentH <= 0) return;
 
             CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
             if (refBmp == null) return;
 
-            // CalcDestRect 保留原始宽高比（aspect-fit）
             var destRect = CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
             float w = (float)destRect.Width;
             float h = (float)destRect.Height;
