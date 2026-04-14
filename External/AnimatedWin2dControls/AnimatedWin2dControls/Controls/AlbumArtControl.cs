@@ -324,6 +324,28 @@ namespace AnimatedWin2dControls.Controls
             _transitionT = 0f;
             _targetRectDirty = true; // 等 DrawImageLayer 里有 canvas 尺寸时再算
             _isFading = true;
+            TryPreBakeIncoming();
+        }
+
+        private void TryPreBakeIncoming()
+        {
+            if (_canvas == null || _incomingBitmap == null) return;
+            float cw = (float)_canvas.Size.Width;
+            float ch = (float)_canvas.Size.Height;
+            if (cw <= 0 || ch <= 0) return;
+
+            float contentW = cw - (float)MarginLeftRatio - (float)MarginRightRatio;
+            float contentH = ch - (float)MarginTopRatio - (float)MarginBottomRatio;
+            if (contentW <= 0 || contentH <= 0) return;
+
+            var targetRect = CalcDestRect(_incomingBitmap,
+                (float)MarginLeftRatio, (float)MarginTopRatio, contentW, contentH);
+            float bakeW = (float)targetRect.Width;
+            float bakeH = (float)targetRect.Height;
+            if (bakeW <= 0 || bakeH <= 0) return;
+
+            EnsureMaskRenderTarget(_canvas.Device, bakeW, bakeH, (float)ArtCornerRadius);
+            _incomingBaked = BakeRenderTarget(_canvas.Device, _incomingBitmap, bakeW, bakeH);
         }
 
         /// <summary>
@@ -454,7 +476,7 @@ namespace AnimatedWin2dControls.Controls
                         {
                             ScaledWidth = dstW,
                             ScaledHeight = dstH,
-                            InterpolationMode = BitmapInterpolationMode.Linear
+                            InterpolationMode = BitmapInterpolationMode.Fant
                         },
                         ExifOrientationMode.RespectExifOrientation,
                         ColorManagementMode.DoNotColorManage);
@@ -640,12 +662,6 @@ namespace AnimatedWin2dControls.Controls
         {
             if (destRect.Width <= 0 || destRect.Height <= 0) return;
 
-            // RT 里图像内容区域（去掉 pad 后的部分）
-            var sourceContentRect = new Rect(
-                baked.Pad, baked.Pad,
-                baked.RT.SizeInPixels.Width - baked.Pad * 2,
-                baked.RT.SizeInPixels.Height - baked.Pad * 2);
-
             // 目标区域要扩展 pad 以包含阴影
             var destWithPad = new Rect(
                 destRect.X - baked.Pad,
@@ -689,7 +705,7 @@ namespace AnimatedWin2dControls.Controls
                     Source = bitmap,
                     Scale = new Vector2(w / bitmap.SizeInPixels.Width,
                                        h / bitmap.SizeInPixels.Height),
-                    InterpolationMode = CanvasImageInterpolation.Linear
+                    InterpolationMode = CanvasImageInterpolation.HighQualityCubic
                 };
                 using var masked = new AlphaMaskEffect
                 {
