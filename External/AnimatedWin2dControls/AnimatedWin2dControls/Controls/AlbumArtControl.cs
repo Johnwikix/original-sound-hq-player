@@ -454,7 +454,7 @@ namespace AnimatedWin2dControls.Controls
                         {
                             ScaledWidth = dstW,
                             ScaledHeight = dstH,
-                            InterpolationMode = BitmapInterpolationMode.Fant
+                            InterpolationMode = BitmapInterpolationMode.Linear
                         },
                         ExifOrientationMode.RespectExifOrientation,
                         ColorManagementMode.DoNotColorManage);
@@ -689,7 +689,7 @@ namespace AnimatedWin2dControls.Controls
                     Source = bitmap,
                     Scale = new Vector2(w / bitmap.SizeInPixels.Width,
                                        h / bitmap.SizeInPixels.Height),
-                    InterpolationMode = CanvasImageInterpolation.HighQualityCubic
+                    InterpolationMode = CanvasImageInterpolation.Linear
                 };
                 using var masked = new AlphaMaskEffect
                 {
