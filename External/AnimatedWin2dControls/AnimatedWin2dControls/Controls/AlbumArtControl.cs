@@ -304,7 +304,6 @@ namespace AnimatedWin2dControls.Controls
 
         private void StartTransition(CanvasBitmap newBitmap)
         {
-            // 若上一次过渡还没完成就被新的打断，先把 incoming 提升为 current
             if (_incomingBitmap != null)
             {
                 if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
@@ -315,21 +314,19 @@ namespace AnimatedWin2dControls.Controls
                 _incomingBitmap = null;
             }
 
-            // 记录 current 当前的绘制矩形作为缩放起点
-            // 如果 current 为空（第一张图），起点 = 目标矩形（无缩放动画，只做淡入）
             _currentDestRectAtStart = GetCurrentDestRect();
-
             _incomingBitmap = newBitmap;
             _incomingBaked = null;
             _transitionT = 0f;
-            _targetRectDirty = true; // 等 DrawImageLayer 里有 canvas 尺寸时再算
+            _targetRectDirty = true;
             _isFading = true;
-            TryPreBakeIncoming();
+
+            _ = TryPreBakeIncomingAsync(newBitmap); // fire-and-forget，不阻塞
         }
 
-        private void TryPreBakeIncoming()
+        private async Task TryPreBakeIncomingAsync(CanvasBitmap bitmap)
         {
-            if (_canvas == null || _incomingBitmap == null) return;
+            if (_canvas == null) return;
             float cw = (float)_canvas.Size.Width;
             float ch = (float)_canvas.Size.Height;
             if (cw <= 0 || ch <= 0) return;
@@ -338,14 +335,43 @@ namespace AnimatedWin2dControls.Controls
             float contentH = ch - (float)MarginTopRatio - (float)MarginBottomRatio;
             if (contentW <= 0 || contentH <= 0) return;
 
-            var targetRect = CalcDestRect(_incomingBitmap,
+            var targetRect = CalcDestRect(bitmap,
                 (float)MarginLeftRatio, (float)MarginTopRatio, contentW, contentH);
             float bakeW = (float)targetRect.Width;
             float bakeH = (float)targetRect.Height;
             if (bakeW <= 0 || bakeH <= 0) return;
 
+            // mask 必须在 UI 线程上准备好再传给后台线程
             EnsureMaskRenderTarget(_canvas.Device, bakeW, bakeH, (float)ArtCornerRadius);
-            _incomingBaked = BakeRenderTarget(_canvas.Device, _incomingBitmap, bakeW, bakeH);
+
+            await PreBakeIncomingAsync(bitmap, bakeW, bakeH);
+        }
+
+        private async Task PreBakeIncomingAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
+        {
+            if (_canvas == null) return;
+            var device = _canvas.Device;
+
+            // 快照当前参数（避免闭包捕获 this 上的可变字段）
+            bool shadow = IsShadowEnabled;
+            float dpiScale = (float)DpiScale;
+            float radius = (float)ArtCornerRadius;
+            var maskRT = _maskRT; // 此时 mask 已在调用方 EnsureMask 后就绪
+
+            BakedRT? baked = null;
+            try
+            {
+                baked = await Task.Run(() =>
+                    BakeRenderTargetCore(device, bitmap, bakeW, bakeH,
+                                         maskRT!, shadow, dpiScale));
+            }
+            catch { return; }
+
+            // 回到 UI 线程再赋值
+            if (_incomingBitmap == bitmap) // 确认没被新的过渡取代
+                _incomingBaked = baked;
+            else
+                baked?.Dispose(); // 已过时，丢弃
         }
 
         /// <summary>
@@ -575,46 +601,37 @@ namespace AnimatedWin2dControls.Controls
             CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
             if (refBmp == null) return;
 
-            // incoming 的最终目标矩形（以 incoming 的宽高比 aspect-fit 到内容区）
             Rect incomingTarget = (_incomingBitmap != null)
                 ? CalcDestRect(_incomingBitmap, contentX, contentY, contentW, contentH)
                 : CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
 
-            // 在首帧过渡时延迟计算 incoming 目标矩形（此处 canvas 尺寸已就绪）
             if (_isFading && _targetRectDirty)
             {
                 _incomingTargetRect = incomingTarget;
-                // 如果 current 起点为空（第一张图），直接用 incoming 目标（无缩放）
                 if (_currentDestRectAtStart == Rect.Empty)
                     _currentDestRectAtStart = incomingTarget;
                 _targetRectDirty = false;
             }
 
-            // ── 计算缓动后的尺寸 ─────────────────────────────────────────────
-            // eased：用于 scale 插值（cubic ease-out）
-            // linear t：用于 alpha 插值，保持与 scale 同步但可单独调整
             float easedT = _isFading ? EaseOutN(_transitionT, 8f) : (_currentBitmap != null ? 1f : 0f);
-            float linearT = _transitionT; // alpha 同步用线性即可（已有 eased scale 带来节奏感）
+            float linearT = _transitionT;
 
-            // 当前图的实际绘制矩形：从 _currentDestRectAtStart 向 incomingTarget 插值
             Rect currentDrawRect = _isFading
                 ? LerpRect(_currentDestRectAtStart, _incomingTargetRect, easedT)
-                : incomingTarget; // 不在过渡中时就用 current 的标准目标
+                : incomingTarget;
 
-            // incoming 图的实际绘制矩形：从 _currentDestRectAtStart 向 incomingTarget 插值（同步）
             Rect incomingDrawRect = currentDrawRect;
 
-            // ── 决定实际用于烘焙 mask/RT 的尺寸（以 incoming 目标为准，避免频繁重烘焙）
-            // mask 和 RT 以 incoming 目标尺寸烘焙，绘制时靠 DrawImage 的 destRect 参数缩放
             float bakeW = (float)incomingTarget.Width;
             float bakeH = (float)incomingTarget.Height;
             float radius = (float)ArtCornerRadius;
-
             if (bakeW <= 0 || bakeH <= 0) return;
 
+            // mask 仍需在 UI 线程同步维护
             EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
 
-            if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f || MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
+            if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f ||
+                MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
                 _rtInvalidated = true;
 
             if (_rtInvalidated)
@@ -623,32 +640,73 @@ namespace AnimatedWin2dControls.Controls
                 _incomingBaked?.Dispose(); _incomingBaked = null;
                 _rtInvalidated = false;
                 _lastBakeSize = (bakeW, bakeH);
+                // 尺寸变化时重新触发异步烘焙
+                if (_currentBitmap != null) _ = ReBakeCurrentAsync(_currentBitmap, bakeW, bakeH);
+                if (_incomingBitmap != null) _ = ReBakeIncomingAsync(_incomingBitmap, bakeW, bakeH);
             }
 
-            if (_currentBitmap != null && _currentBaked == null)
-                _currentBaked = BakeRenderTarget(ds.Device, _currentBitmap, bakeW, bakeH);
-            if (_incomingBitmap != null && _incomingBaked == null)
-                _incomingBaked = BakeRenderTarget(ds.Device, _incomingBitmap, bakeW, bakeH);
+            // ── 不再有任何同步 BakeRenderTarget 调用 ────────────────────────────
+            // _currentBaked / _incomingBaked 由异步路径填充，未就绪时静默跳过
 
-            // ── 绘制 current（正在淡出 + 缩放）────────────────────────────────
+            // ── 绘制 current ────────────────────────────────────────────────────
             float currentAlpha = _isFading ? Math.Max(0f, 1f - linearT) : 1f;
-            if (_currentBaked != null && currentAlpha > 0f && _isFading)
+            if (_currentBaked != null)
             {
-                DrawBaked(ds, _currentBaked, currentDrawRect, currentAlpha);
-            }
-            else if (_currentBaked != null && !_isFading)
-            {
-                // 静止状态直接绘制在正常位置
-                Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
-                DrawBaked(ds, _currentBaked, staticRect, 1f);
+                if (_isFading && currentAlpha > 0f)
+                {
+                    DrawBaked(ds, _currentBaked, currentDrawRect, currentAlpha);
+                }
+                else if (!_isFading)
+                {
+                    Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
+                    DrawBaked(ds, _currentBaked, staticRect, 1f);
+                }
             }
 
-            // ── 绘制 incoming（正在淡入 + 缩放）───────────────────────────────
+            // ── 绘制 incoming ───────────────────────────────────────────────────
             float incomingAlpha = _isFading ? Math.Min(1f, linearT) : 0f;
             if (_incomingBaked != null && incomingAlpha > 0f)
             {
                 DrawBaked(ds, _incomingBaked, incomingDrawRect, incomingAlpha);
             }
+        }
+
+        private async Task ReBakeCurrentAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
+        {
+            if (_canvas == null) return;
+            var device = _canvas.Device;
+            bool shadow = IsShadowEnabled;
+            float dpi = (float)DpiScale;
+            float radius = (float)ArtCornerRadius;
+            var maskRT = _maskRT;
+            if (maskRT == null) return;
+
+            BakedRT? baked = null;
+            try { baked = await Task.Run(() => BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi)); }
+            catch { return; }
+
+            if (_currentBitmap == bitmap) _currentBaked = baked;
+            else baked?.Dispose();
+            _canvas?.Invalidate();
+        }
+
+        private async Task ReBakeIncomingAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
+        {
+            if (_canvas == null) return;
+            var device = _canvas.Device;
+            bool shadow = IsShadowEnabled;
+            float dpi = (float)DpiScale;
+            float radius = (float)ArtCornerRadius;
+            var maskRT = _maskRT;
+            if (maskRT == null) return;
+
+            BakedRT? baked = null;
+            try { baked = await Task.Run(() => BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi)); }
+            catch { return; }
+
+            if (_incomingBitmap == bitmap) _incomingBaked = baked;
+            else baked?.Dispose();
+            _canvas?.Invalidate();
         }
 
         /// <summary>
@@ -685,58 +743,63 @@ namespace AnimatedWin2dControls.Controls
 
         // ── RenderTarget 烘焙 ─────────────────────────────────────────────────
 
-        private BakedRT BakeRenderTarget(CanvasDevice device,
-                                         CanvasBitmap bitmap,
-                                         float w, float h)
+        private static BakedRT BakeRenderTargetCore(
+            CanvasDevice device,
+            CanvasBitmap bitmap,
+            float w, float h,
+            CanvasRenderTarget maskRT,
+            bool shadow, float dpiScale)
         {
-            float pad = IsShadowEnabled ? 10f * 3f + 4f : 0f;
+            float pad = shadow ? 10f * 3f + 4f : 0f;
             float rtW = w + pad * 2f;
             float rtH = h + pad * 2f;
-            float dpi = 96f * (float)DpiScale;
+            float dpi = 96f * dpiScale;
             var rt = new CanvasRenderTarget(device, rtW, rtH, dpi);
 
-            try
+            using var rtDs = rt.CreateDrawingSession();
+            rtDs.Clear(Microsoft.UI.Colors.Transparent);
+
+            float scaleRatio = Math.Min(w / bitmap.SizeInPixels.Width,
+                                        h / bitmap.SizeInPixels.Height);
+            var interpolation = scaleRatio < 0.5f
+                ? CanvasImageInterpolation.HighQualityCubic
+                : CanvasImageInterpolation.Linear;
+
+            using var scale = new ScaleEffect
             {
-                using var rtDs = rt.CreateDrawingSession();
-                rtDs.Clear(Microsoft.UI.Colors.Transparent);
+                Source = bitmap,
+                Scale = new Vector2(w / bitmap.SizeInPixels.Width,
+                                    h / bitmap.SizeInPixels.Height),
+                InterpolationMode = interpolation
+            };
+            using var masked = new AlphaMaskEffect
+            {
+                Source = scale,
+                AlphaMask = maskRT
+            };
 
-                using var scale = new ScaleEffect
+            if (shadow)
+            {
+                using var shadowFx = new ShadowEffect
                 {
-                    Source = bitmap,
-                    Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                       h / bitmap.SizeInPixels.Height),
-                    InterpolationMode = CanvasImageInterpolation.MultiSampleLinear
+                    Source = masked,
+                    BlurAmount = 10f,
+                    ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
                 };
-                using var masked = new AlphaMaskEffect
+                using var shadowOffset = new Transform2DEffect
                 {
-                    Source = scale,
-                    AlphaMask = _maskRT!
+                    Source = shadowFx,
+                    TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
                 };
-
-                if (IsShadowEnabled)
-                {
-                    using var shadow = new ShadowEffect
-                    {
-                        Source = masked,
-                        BlurAmount = 10f,
-                        ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
-                    };
-                    using var shadowOffset = new Transform2DEffect
-                    {
-                        Source = shadow,
-                        TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
-                    };
-                    using var composite = new CompositeEffect();
-                    composite.Sources.Add(shadowOffset);
-                    composite.Sources.Add(masked);
-                    rtDs.DrawImage(composite, pad, pad);
-                }
-                else
-                {
-                    rtDs.DrawImage(masked, pad, pad);
-                }
+                using var composite = new CompositeEffect();
+                composite.Sources.Add(shadowOffset);
+                composite.Sources.Add(masked);
+                rtDs.DrawImage(composite, pad, pad);
             }
-            catch { }
+            else
+            {
+                rtDs.DrawImage(masked, pad, pad);
+            }
 
             return new BakedRT(rt, pad);
         }
