@@ -705,7 +705,7 @@ namespace AnimatedWin2dControls.Controls
                     Source = bitmap,
                     Scale = new Vector2(w / bitmap.SizeInPixels.Width,
                                        h / bitmap.SizeInPixels.Height),
-                    InterpolationMode = CanvasImageInterpolation.HighQualityCubic
+                    InterpolationMode = CanvasImageInterpolation.MultiSampleLinear
                 };
                 using var masked = new AlphaMaskEffect
                 {
