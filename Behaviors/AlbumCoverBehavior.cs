@@ -160,11 +160,7 @@ public class AlbumCoverBehavior : Behavior<Image>
 
                     if (System.IO.File.Exists(cachePath))
                     {
-                        var cacheInfo = new FileInfo(cachePath);
-                        DateTime musicTime = music.UpdateTime != default
-                            ? music.UpdateTime : music.CreateTime;
-
-                        if (cacheInfo.LastWriteTime > musicTime)
+                        if (System.IO.File.GetLastWriteTime(cachePath) > System.IO.File.GetLastWriteTime(music.Path))
                         {
                             // 直接用 StorageFile 流，零拷贝进内存
                             var result = await LoadFromFilePathAsync(cachePath, music, bitmap);
