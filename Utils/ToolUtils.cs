@@ -850,7 +850,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 else
                 {
-                    picture ??= await LrcService.GetCoverImageAsync(music.Title, music.Album, music.Author, cancellationToken.Token);
+                    picture ??= await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(music, cancellationToken.Token);
                     if (picture is not null)
                     {
                         System.IO.File.WriteAllBytes(filePath, picture);
@@ -960,7 +960,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<(string,string)> GetLyricsFromNet(Music musicDetail)
         {
             //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            return await LrcService.GetMixedLyricsAsync(musicDetail);
+            return await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
         }
 
         public static DateTime GetSafeFileCreateTime(string filePath)

@@ -380,8 +380,7 @@ public class AlbumCoverBehavior : Behavior<Image>
             }
             else if (AppSettings.IsAutoLyricsEnabled)
             {
-                picture = await LrcService.GetCoverImageAsync(
-                    music.Title, music.Album, music.Author);
+                picture = await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(music);
 
                 if (picture is { Length: > 0 })
                     System.IO.File.WriteAllBytes(filePath, picture);

@@ -7,11 +7,13 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new NeteaseSearcher();
 
-        public NeteaseSearchResult(string title, string[] artists, string album, string[]? albumArtists, int durationMs, string id)
+        public NeteaseSearchResult(string title, string[] artists, string album, string albumId, string albumPicUrl, string[]? albumArtists, int durationMs, string id)
         {
             Title = title;
             Artists = artists;
             Album = album;
+            AlbumId = albumId;
+            AlbumPicUrl = albumPicUrl;
             AlbumArtists = albumArtists;
             DurationMs = durationMs;
             Id = id;
@@ -21,6 +23,8 @@ namespace Lyricify.Lyrics.Searchers
             song.Name,
             song.Artists.Select(s => s.Name).ToArray(),
             song.Album.Name,
+            song.Album.Id.ToString(),
+            song.Album.PicUrl,
             null,
             (int)song.Duration,
             song.Id
@@ -32,6 +36,8 @@ namespace Lyricify.Lyrics.Searchers
         public string[] Artists { get; }
 
         public string Album { get; }
+        public string? AlbumId { get; }
+        public string? AlbumPicUrl { get; }
 
         public string Id { get; }
 

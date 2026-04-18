@@ -7,11 +7,13 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new SodaMusicSearcher();
 
-        public SodaMusicSearchResult(string title, string[] artists, string album, string[]? albumArtists, int durationMs, string id)
+        public SodaMusicSearchResult(string title, string[] artists, string album, string albumId, string albumPicUrl, string[]? albumArtists, int durationMs, string id)
         {
             Title = title;
             Artists = artists;
             Album = album;
+            AlbumId = albumId;
+            AlbumPicUrl = albumPicUrl;
             AlbumArtists = albumArtists;
             DurationMs = durationMs;
             Id = id;
@@ -21,6 +23,8 @@ namespace Lyricify.Lyrics.Searchers
             Track.Entity.Track.Name,
             Track.Entity.Track.Artists.Select(a => a.Name).ToArray(),
             Track.Entity.Track.Album.Name,
+            Track.Entity.Track.Album.Id,
+            Track.Entity.Track.Album.UrlPlayerBg.Uri,
             null,
             (int)Track.Entity.Track.Duration,
             Track.Entity.Track.Id
@@ -32,6 +36,8 @@ namespace Lyricify.Lyrics.Searchers
         public string[] Artists { get; }
 
         public string Album { get; }
+        public string? AlbumId { get; }
+        public string? AlbumPicUrl { get; }
 
         public string Id { get; }
 

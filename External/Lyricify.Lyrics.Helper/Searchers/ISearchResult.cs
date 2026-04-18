@@ -31,6 +31,14 @@ namespace Lyricify.Lyrics.Searchers
         /// 专辑
         /// </summary>
         public string Album { get; }
+        /// <summary>
+        /// 专辑ID（如果提供者支持）用于获取专辑封面等信息
+        /// </summary>
+        public string? AlbumId { get; }
+        /// <summary>
+        /// 专辑图片URL（如果提供者支持）用于获取专辑封面等信息
+        /// </summary>
+        public string? AlbumPicUrl { get; }
 
         /// <summary>
         /// 专辑艺人列表
@@ -40,7 +48,7 @@ namespace Lyricify.Lyrics.Searchers
         /// <summary>
         /// 专辑艺人名
         /// </summary>
-        public string? AlbumArtist => string.Join(", ", AlbumArtists ?? new string[0]);
+        public string? AlbumArtist => string.Join(", ", AlbumArtists ?? []);
 
         /// <summary>
         /// 曲目时长

@@ -18,6 +18,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
+using WinUIMusicPlayer.WebService;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -64,20 +65,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();                 
-                 //services.AddSingleton<AddFolderPage>();
-                 //services.AddSingleton<MusicBrowsePage>();
-                 //services.AddSingleton<SettingsPage>();
                  services.AddSingleton<PlayingDetailPage>();
-                 //services.AddSingleton<FavouritePlayListPage>();
-                 //services.AddSingleton<AlbumPage>();
-                 //services.AddSingleton<ArtistPage>();
-                 //services.AddSingleton<SongArtistListPage>();                 
-                 //services.AddSingleton<FolderBrowsePage>();
-                 //services.AddSingleton<SongFolderListPage>();                 
-                 //services.AddSingleton<PlayListPage>();
-                 //services.AddSingleton<PlayListSongPage>();
-                 //services.AddSingleton<SongListPage>();
-                 //services.AddSingleton<SongCollectionPage>();
                  services.AddSingleton<MainViewModel>();
                  services.AddSingleton<AppViewModel>();
                  services.AddSingleton<MusicBrowseViewModel>();
@@ -101,6 +89,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<BassPlayerCommandService>();                 
                  services.AddSingleton<MusicDatabaseService>();
+                 services.AddSingleton<LrcService>();
              }).Build();
 
         /// <summary>
@@ -219,8 +208,9 @@ namespace WinUIMusicPlayer
             {
                 //MainWindow.Hide();                
                 await _host.StopAsync();
+                Services.GetRequiredService<LrcService>().Dispose();
                 Services.GetRequiredService<PlayingDetailPage>().Dispose();
-                Services.GetRequiredService<AppViewModel>().Dispose();
+                Services.GetRequiredService<AppViewModel>().Dispose();                
                 //_host.Dispose();
                 MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");                

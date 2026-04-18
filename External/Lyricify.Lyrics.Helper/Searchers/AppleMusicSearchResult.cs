@@ -67,7 +67,8 @@ namespace Lyricify.Lyrics.Searchers
         public string Album { get; }
 
         public string Id { get; }
-
+        public string? AlbumId { get; }
+        public string? AlbumPicUrl { get; }
         public string[]? AlbumArtists { get; }
 
         public int? DurationMs { get; }

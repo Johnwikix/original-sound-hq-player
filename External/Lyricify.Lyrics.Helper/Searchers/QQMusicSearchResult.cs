@@ -7,11 +7,12 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new QQMusicSearcher();
 
-        public QQMusicSearchResult(string title, string[] artists, string album, string[]? albumArtists, int durationMs, string id, string mid)
+        public QQMusicSearchResult(string title, string[] artists, string album, string albumId,string[]? albumArtists, int durationMs, string id, string mid)
         {
             Title = title;
             Artists = artists;
             Album = album;
+            AlbumId = albumId;
             AlbumArtists = albumArtists;
             DurationMs = durationMs;
             Id = id;
@@ -22,6 +23,7 @@ namespace Lyricify.Lyrics.Searchers
             song.Title,
             song.Singer.Select(s => s.Name).ToArray(),
             song.Album.Title,
+            song.Album.Id.ToString(),
             null,
             song.Interval * 1000,
             song.Id,
@@ -34,6 +36,8 @@ namespace Lyricify.Lyrics.Searchers
         public string[] Artists { get; }
 
         public string Album { get; }
+        public string? AlbumId { get; }
+        public string? AlbumPicUrl { get; }
 
         public string Id { get; }
 

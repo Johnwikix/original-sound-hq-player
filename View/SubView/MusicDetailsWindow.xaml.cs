@@ -253,7 +253,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
-            AlbumCoverData = await LrcService.GetCoverImageAsync(MusicDetail.Title, MusicDetail.Album, MusicDetail.Author);
+            AlbumCoverData = await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(MusicDetail);
             if (AlbumCoverData is not null)
             {
                 DispatcherQueue.TryEnqueue(async () => {

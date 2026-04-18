@@ -7,11 +7,12 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new MusixmatchSearcher();
 
-        public MusixmatchSearchResult(string title, string[] artists, string album, string[]? albumArtists, int durationMs, int id, string isrc, string vanityId)
+        public MusixmatchSearchResult(string title, string[] artists, string album,string albumId, string[]? albumArtists, int durationMs, int id, string isrc, string vanityId)
         {
             Title = title;
             Artists = artists;
             Album = album;
+            AlbumId = albumId;
             AlbumArtists = albumArtists;
             DurationMs = durationMs;
             Id = id;
@@ -23,6 +24,7 @@ namespace Lyricify.Lyrics.Searchers
             track.TrackName,
             track.ArtistName.Split(new string[] { " feat. ", " & " }, StringSplitOptions.RemoveEmptyEntries),
             track.AlbumName,
+            track.AlbumId.ToString(),
             null,
             track.TrackLength * 1000,
             track.TrackId,
@@ -36,6 +38,8 @@ namespace Lyricify.Lyrics.Searchers
         public string[] Artists { get; }
 
         public string Album { get; }
+        public string? AlbumId { get; }
+        public string? AlbumPicUrl { get; }
 
         public int Id { get; }
 
