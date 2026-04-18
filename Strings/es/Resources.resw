@@ -933,4 +933,7 @@
   <data name="TextZoomEffect" xml:space="preserve">
     <value>Zoom(Bajo consumo de GPU)</value>
   </data>
+  <data name="KrcTranslation.Text" xml:space="preserve">
+    <value>Traducción Krc</value>
+  </data>
 </root>

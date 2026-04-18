@@ -239,6 +239,34 @@
                                             Text="{x:Bind MusicDetail.TranslatedLyrics, Mode=TwoWay}"
                                             TextWrapping="Wrap" />
                                     </PivotItem>
+                                    <PivotItem>
+                                        <PivotItem.Header>
+                                            <TextBlock FontSize="16" Text="Krc" />
+                                        </PivotItem.Header>
+                                        <TextBox
+                                            Grid.Row="2"
+                                            Height="200"
+                                            Margin="0,5,0,5"
+                                            HorizontalAlignment="Stretch"
+                                            BorderThickness="0"
+                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                            Text="{x:Bind MusicDetail.Krc, Mode=TwoWay}"
+                                            TextWrapping="Wrap" />
+                                    </PivotItem>
+                                    <PivotItem>
+                                        <PivotItem.Header>
+                                            <TextBlock FontSize="16" x:Uid="KrcTranslation" />
+                                        </PivotItem.Header>
+                                        <TextBox
+                                            Grid.Row="2"
+                                            Height="200"
+                                            Margin="0,5,0,5"
+                                            HorizontalAlignment="Stretch"
+                                            BorderThickness="0"
+                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                            Text="{x:Bind MusicDetail.TKrc, Mode=TwoWay}"
+                                            TextWrapping="Wrap" />
+                                    </PivotItem>
                                 </Pivot>
                             </Grid>
                             <Grid

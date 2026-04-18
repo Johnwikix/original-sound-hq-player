@@ -915,9 +915,11 @@ namespace WinUIMusicPlayer.ViewModel
                 foreach (Music item in uniqueSelectedMusics)
                 {
                     (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-                    //Music? music = SongsSource.AsValueEnumerable().Where(m => m.Id == item.Id).FirstOrDefault();
+                    (string krc, string tKrc) = await ToolUtils.GetKrcFromNet(item);
                     item.Lyrics = lyrics;
                     item.TranslatedLyrics = transLrc;
+                    item.Krc = krc ?? string.Empty;
+                    item.TKrc = tKrc ?? string.Empty;
                     await _musicDatabaseService.UpdateMusicInfo(item);
                 }
             }

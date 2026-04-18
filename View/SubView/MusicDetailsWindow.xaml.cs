@@ -269,9 +269,12 @@ namespace WinUIMusicPlayer.View.SubView
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
             (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(MusicDetail);
+            (string krc,string tKrc) = await ToolUtils.GetKrcFromNet(MusicDetail);
             MusicDetail.Lyrics = lyrics ?? string.Empty;
             MusicDetail.TranslatedLyrics = transLrc ?? string.Empty;
-            if (lyrics is null && transLrc is null)
+            MusicDetail.Krc = krc ?? string.Empty;
+            MusicDetail.TKrc = tKrc ?? string.Empty;
+            if (string.IsNullOrEmpty(lyrics) && string.IsNullOrEmpty(transLrc) && string.IsNullOrEmpty(krc) && string.IsNullOrEmpty(tKrc))
             {
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
             }

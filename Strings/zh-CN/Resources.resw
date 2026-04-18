@@ -933,4 +933,7 @@
   <data name="TextZoomEffect" xml:space="preserve">
     <value>缩放效果（较低GPU开销）</value>
   </data>
+  <data name="KrcTranslation.Text" xml:space="preserve">
+    <value>Krc翻译</value>
+  </data>
 </root>

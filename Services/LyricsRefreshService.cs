@@ -143,7 +143,6 @@ namespace WinUIMusicPlayer.Services
                     {
                         var (lyric, trans) = await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(
                             currentMusic,cancellationToken);
-
                         if (!string.IsNullOrEmpty(lyric))
                         {
                             lrcContent = lyric;

@@ -36,6 +36,8 @@ namespace WinUIMusicPlayer.Model
         public int DiskNumber { get; set => SetProperty(ref field, value); } = 0;
         public string Lyrics { get; set => SetProperty(ref field, value); } = string.Empty;
         public string TranslatedLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string Krc { get; set => SetProperty(ref field, value); } = string.Empty;
+        public string TKrc { get; set => SetProperty(ref field, value); } = string.Empty;
         public int PlayCount { get; set => SetProperty(ref field, value); } = 0;
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;

@@ -993,6 +993,12 @@ namespace WinUIMusicPlayer.Utils
             return await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
         }
 
+        public static async Task<(string, string)> GetKrcFromNet(Music musicDetail)
+        {
+            //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
+            return await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(musicDetail);
+        }
+
         public static DateTime GetSafeFileCreateTime(string filePath)
         {
             try
