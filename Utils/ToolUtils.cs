@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -354,7 +355,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture.Length > 0)
                 {
-                    var imageHash = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(picture));
+                    var imageHash = Convert.ToHexString(XxHash64.Hash(picture));
                     if (music.ImageHash != imageHash)
                     {
                         music.ImageHash = imageHash;
