@@ -70,56 +70,23 @@ namespace WinUIMusicPlayer.View
             ChangeControlsFontSize();
         }
 
-        private void ChangeControlsFontSize() {
-            var width =  App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
-            if (width <= 1440)
+        private void ChangeControlsFontSize()
+        {
+            var width = App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
+            var (title, artist, info) = width switch
             {
-                ViewModel.TitleFontSize = 24;
-                ViewModel.ArtistAlbumFontSize = 22;
-                ViewModel.InfoFontSize = 12;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 24;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 22;
-            }
-            else if (width <= 1680)
-            {
-                ViewModel.TitleFontSize = 26;
-                ViewModel.ArtistAlbumFontSize = 24;
-                ViewModel.InfoFontSize = 13;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 26;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 24;
-            }
-            else if (width <= 1920)
-            {
-                ViewModel.TitleFontSize = 28;
-                ViewModel.ArtistAlbumFontSize = 26;
-                ViewModel.InfoFontSize = 14;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 28;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 26;
-            }
-            else if (width <= 2160)
-            {
-                ViewModel.TitleFontSize = 30;
-                ViewModel.ArtistAlbumFontSize = 28;
-                ViewModel.InfoFontSize = 15;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 30;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 28;
-            }
-            else if (width <= 2560)
-            {
-                ViewModel.TitleFontSize = 32;
-                ViewModel.ArtistAlbumFontSize = 30;
-                ViewModel.InfoFontSize = 16;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 32;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 30;
-            }
-            else
-            {
-                ViewModel.TitleFontSize = 36;
-                ViewModel.ArtistAlbumFontSize = 34;
-                ViewModel.InfoFontSize = 18;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = 36;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = 34;
-            }
+                <= 1440 => (24, 22, 12),
+                <= 1680 => (26, 24, 13),
+                <= 1920 => (28, 26, 14),
+                <= 2160 => (30, 28, 15),
+                <= 2560 => (32, 30, 16),
+                _ => (36, 34, 18)
+            };
+            ViewModel.TitleFontSize = title;
+            ViewModel.ArtistAlbumFontSize = artist;
+            ViewModel.InfoFontSize = info;
+            AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
+            AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
