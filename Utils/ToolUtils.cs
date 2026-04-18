@@ -331,7 +331,10 @@ namespace WinUIMusicPlayer.Utils
                 if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                    picture = res?.Pictures[0]?.ImageData ?? [];
+                    if (res?.Pictures != null && res.Pictures.Count > 0)
+                    {
+                        picture = res.Pictures[0]?.ImageData ?? [];
+                    }
                 }
                 else
                 {
@@ -347,13 +350,31 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture is null || picture.Length == 0)
                 {
-                    picture = await GetPicByteFromNet(music, isManual);
+                    picture = await GetPicByteFromNet(music, isManual) ?? [];
                 }
+                if (picture.Length > 0)
+                {
+                    var imageHash = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(picture));
+                    if (music.ImageHash != imageHash)
+                    {
+                        music.ImageHash = imageHash;
+                        _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
+                    }
+                }
+                else {
+                    if (string.IsNullOrEmpty(music.ImageHash))
+                    {
+                        music.ImageHash = string.Empty;
+                        _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
+                    }
+                }               
                 return picture;
             }
             catch
             {
-                try {
+                try
+                {
+
                     Track track = new(music.Path);
                     byte[] picture = track?.EmbeddedPictures[0]?.PictureData ?? [];
                     if (picture is not null && picture.Length > 0)
@@ -362,11 +383,13 @@ namespace WinUIMusicPlayer.Utils
                     }
                     else
                     {
-                        return await GetPicByteFromNet(music, isManual);
+                        return await GetPicByteFromNet(music, isManual) ?? [];
                     }
-                } catch {
-                    return await GetPicByteFromNet(music, isManual);
-                }                
+                }
+                catch
+                {
+                    return await GetPicByteFromNet(music, isManual) ?? [];
+                }
             }
         }
 
@@ -830,34 +853,40 @@ namespace WinUIMusicPlayer.Utils
         //    }, ct);
         //}        
 
-        private static async Task<byte[]> GetPicByteFromNet(Music music, bool isManual = false)
+        private static async Task<byte[]?> GetPicByteFromNet(Music music, bool isManual = false)
         {
-            byte[] picture = null;
-            if (AppSettings.IsAutoLyricsEnabled && !isManual)
+            try
             {
-                var cancellationToken = new CancellationTokenSource();
-                if (!Directory.Exists(AppSettings.MusicCoverCache))
+                byte[] picture = null;
+                if (AppSettings.IsAutoLyricsEnabled && !isManual)
                 {
-                    Directory.CreateDirectory(AppSettings.MusicCoverCache);
-                }
-                string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-                if (System.IO.File.Exists(filePath))
-                {
-                    picture = System.IO.File.ReadAllBytes(filePath);
-                }
-                else
-                {
-                    picture ??= await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(music, cancellationToken.Token);
-                    if (picture is not null)
+                    var cancellationToken = new CancellationTokenSource();
+                    if (!Directory.Exists(AppSettings.MusicCoverCache))
                     {
-                        System.IO.File.WriteAllBytes(filePath, picture);
+                        Directory.CreateDirectory(AppSettings.MusicCoverCache);
+                    }
+                    string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        picture = System.IO.File.ReadAllBytes(filePath);
+                    }
+                    else
+                    {
+                        picture ??= await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music, cancellationToken.Token);
+                        if (picture is not null)
+                        {
+                            System.IO.File.WriteAllBytes(filePath, picture);
+                        }
                     }
                 }
+                return picture;
             }
-            return picture;
+            catch {
+                return null;
+            }            
         }
 
         /// <summary>

@@ -222,7 +222,7 @@ namespace WinUIMusicPlayer.View.SubView
             //{
             //    albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
             //}
-            albumCoverData = await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(MusicDetail);
+            albumCoverData = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(MusicDetail);
             if (albumCoverData is not null)
             {
                 AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);

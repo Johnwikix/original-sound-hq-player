@@ -23,7 +23,7 @@ namespace Lyricify.Lyrics.Searchers
             song.Title,
             song.Singer.Select(s => s.Name).ToArray(),
             song.Album.Title,
-            song.Album.Id.ToString(),
+            song.Album.Mid,
             null,
             song.Interval * 1000,
             song.Id,

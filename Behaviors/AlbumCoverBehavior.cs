@@ -17,11 +17,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TagLib;
+using TagLib.Flac;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.WebService;
 using ZLinq;
 
@@ -174,53 +176,36 @@ public class AlbumCoverBehavior : Behavior<Image>
                 }
 
                 // ── 从标签读取原始图片 ────────────────────────────────────
-                byte[]? picture = null;
+                byte[]? picture =  await ToolUtils.GetRawImage(music);
+                return await DecodePictureAsync(picture, music, bitmap, coverSize);
+                //if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
+                //{
+                //    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
+                //    picture = res?.Pictures?.AsValueEnumerable().Count() > 0
+                //        ? res.Pictures[0]?.ImageData : null;
+                //}
+                //else
+                //{
+                //    picture = AudioCoverReader.ReadCover(music.Path);
+                //    if (picture is null || picture.Length == 0)
+                //    {
+                //        using var file = TagLib.File.Create(music.Path, ReadStyle.None);
+                //        picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
+                //    }
+                //}
 
-                if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                    picture = res?.Pictures?.AsValueEnumerable().Count() > 0
-                        ? res.Pictures[0]?.ImageData : null;
-                }
-                else
-                {
-                    picture = AudioCoverReader.ReadCover(music.Path);
-                    if (picture is null || picture.Length == 0)
-                    {
-                        using var file = TagLib.File.Create(music.Path, ReadStyle.None);
-                        picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
-                    }
-                }
+                //if (picture is { Length: > 0 })
+                //{
+                //    var result = await DecodePictureAsync(picture, music, bitmap, coverSize);
+                //    if (result != null) return result;
+                //    return await FetchFromNetAsync(picture, music, bitmap, coverSize);
+                //}
 
-                if (picture is { Length: > 0 })
-                {
-                    var result = await DecodePictureAsync(picture, music, bitmap, coverSize);
-                    if (result != null) return result;
-                    return await FetchFromNetAsync(picture, music, bitmap, coverSize);
-                }
-
-                return await FetchFromNetAsync(null, music, bitmap, coverSize);
+                //return await FetchFromNetAsync(null, music, bitmap, coverSize);
             }
             catch (Exception)
             {
-                // 降级：用 ATL 读取
-                try
-                {
-                    var track = new Track(music.Path);
-                    var picture = track?.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
-                    if (picture is { Length: > 0 })
-                    {
-                        var result = await DecodePictureAsync(picture, music, bitmap, coverSize);
-                        if (result != null) return result;
-                        return await FetchFromNetAsync(picture, music, bitmap, coverSize);
-                    }
-                    return await FetchFromNetAsync(null, music, bitmap, coverSize);
-                }
-                catch
-                {
-                    try { return await FetchFromNetAsync(null, music, bitmap, coverSize); } catch { }
-                    return null;
-                }
+                return null;
             }
         });
     }
@@ -228,16 +213,19 @@ public class AlbumCoverBehavior : Behavior<Image>
     // ── 解码并写缓存 ──────────────────────────────────────────────────────
 
     private static async Task<ImageSource?> DecodePictureAsync(
-        byte[] picture, Music music, BitmapImage bitmap, int coverSize)
+        byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
     {
+        if (picture is not { Length: > 0 })
+        {
+            return null;
+        }
         return await Task.Run(async () =>
         {
             SoftwareBitmap? softwareBitmap = null;
             InMemoryRandomAccessStream? outputStream = null;
             try
             {
-                var imageHash = Convert.ToHexString(
-                    System.Security.Cryptography.MD5.HashData(picture));
+
 
                 using var inputStream = new InMemoryRandomAccessStream();
                 await inputStream.WriteAsync(picture.AsBuffer());
@@ -255,7 +243,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                     {
                         ScaledWidth = newW,
                         ScaledHeight = newH,
-                        InterpolationMode = BitmapInterpolationMode.Cubic
+                        InterpolationMode = BitmapInterpolationMode.Fant
                     },
                     ExifOrientationMode.RespectExifOrientation,
                     ColorManagementMode.DoNotColorManage);
@@ -271,7 +259,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                 {
                     try
                     {
-                        var cachePath = GetDiskCachePath(imageHash, coverSize);
+                        var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
                         Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
                         outputStream.Seek(0);
                         using var fs = new FileStream(
@@ -296,13 +284,6 @@ public class AlbumCoverBehavior : Behavior<Image>
                         var cacheKey = CacheKey(music);
                         AddToCache(cacheKey, bitmap, MaxCacheSize);
 
-                        if (music.ImageHash != imageHash)
-                        {
-                            music.ImageHash = imageHash;
-                            await App.Services
-                                .GetRequiredService<MusicDatabaseService>()
-                                .UpdateMusicInfo(music);
-                        }
 
                         result = bitmap;
                     }
@@ -360,39 +341,39 @@ public class AlbumCoverBehavior : Behavior<Image>
 
     // ── 网络获取 ──────────────────────────────────────────────────────────
 
-    private static async Task<ImageSource?> FetchFromNetAsync(
-        byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
-    {
-        try
-        {
-            if (!Directory.Exists(AppSettings.MusicCoverCache))
-                Directory.CreateDirectory(AppSettings.MusicCoverCache);
+    //private static async Task<ImageSource?> FetchFromNetAsync(
+    //    byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
+    //{
+    //    try
+    //    {
+    //        if (!Directory.Exists(AppSettings.MusicCoverCache))
+    //            Directory.CreateDirectory(AppSettings.MusicCoverCache);
 
-            string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-            string invalidChars = new string(Path.GetInvalidFileNameChars())
-                                + new string(Path.GetInvalidPathChars());
-            fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-            string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+    //        string fileName = $"{music.Title}_{music.Album}_{music.Author}";
+    //        string invalidChars = new string(Path.GetInvalidFileNameChars())
+    //                            + new string(Path.GetInvalidPathChars());
+    //        fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+    //        string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
 
-            if (System.IO.File.Exists(filePath))
-            {
-                picture = System.IO.File.ReadAllBytes(filePath);
-            }
-            else if (AppSettings.IsAutoLyricsEnabled)
-            {
-                picture = await App.Services.GetRequiredService<LrcService>().GetCoverImageAsync(music);
+    //        if (System.IO.File.Exists(filePath))
+    //        {
+    //            picture = System.IO.File.ReadAllBytes(filePath);
+    //        }
+    //        else if (AppSettings.IsAutoLyricsEnabled)
+    //        {
+    //            picture = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music);
 
-                if (picture is { Length: > 0 })
-                    System.IO.File.WriteAllBytes(filePath, picture);
-            }
+    //            if (picture is { Length: > 0 })
+    //                System.IO.File.WriteAllBytes(filePath, picture);
+    //        }
 
-            if (picture is { Length: > 0 })
-                return await DecodePictureAsync(picture, music, bitmap, coverSize);
-        }
-        catch { }
+    //        if (picture is { Length: > 0 })
+    //            return await DecodePictureAsync(picture, music, bitmap, coverSize);
+    //    }
+    //    catch { }
 
-        return null;
-    }
+    //    return null;
+    //}
 
     // ── 缓存管理 ──────────────────────────────────────────────────────────
 

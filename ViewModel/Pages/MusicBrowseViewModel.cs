@@ -410,7 +410,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UpdatePlayBar(Music music)
         {
-            AppViewModel.LyricPageBackgroundData = await ToolUtils.GetRawImage(music);
+            AppViewModel.LyricPageBackgroundData = await GetRawImage(music);
             //BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {

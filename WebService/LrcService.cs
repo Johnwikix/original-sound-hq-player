@@ -28,20 +28,45 @@ namespace WinUIMusicPlayer.WebService
             };
             _httpClient = new HttpClient(_clientHandler);
         }
-
-        public async Task<byte[]?> GetCoverImageAsync(Music music, CancellationToken cancellationToken = default)
+        public async Task<byte[]?> GetMixedCoverImageAsync(Music music, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var imageBytes = await GetCoverImageAsync(music, Searchers.Netease, cancellationToken);
+                if (imageBytes is null || imageBytes.Length == 0)
+                {
+                    return await GetCoverImageAsync(music, Searchers.QQMusic, cancellationToken);
+                }
+                return imageBytes;
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        public async Task<byte[]?> GetCoverImageAsync(Music music, Searchers searchers = Searchers.Netease, CancellationToken cancellationToken = default)
         {
             try
             {
                 var search = await SearchHelper.Search(new TrackMultiArtistMetadata()
                 {
                     Album = music.Album,
-                    Artists = [music.Author],
-                    DurationMs = (int)music.Duration.TotalMilliseconds,
                     Title = music.Title,
-                }, Searchers.Netease, CompareHelper.MatchType.Medium);
+                }, searchers, CompareHelper.MatchType.Low);
                 cancellationToken.ThrowIfCancellationRequested();
-                return await GetSongAlbumPicData(search?.AlbumPicUrl, cancellationToken);
+                if (search is NeteaseSearchResult neteaseSearch)
+                {
+                    return await GetSongAlbumPicData(neteaseSearch?.AlbumPicUrl, cancellationToken);
+                }
+                else if (search is QQMusicSearchResult qQMusicSearchResult)
+                {
+                    return await GetSongAlbumPicDataFromQQ(qQMusicSearchResult?.AlbumId, cancellationToken);
+                }
+                return null;
             }
             catch (OperationCanceledException)
             {
@@ -146,6 +171,31 @@ namespace WinUIMusicPlayer.WebService
             try
             {
                 if(string.IsNullOrEmpty(url)) return null;
+                cancellationToken.ThrowIfCancellationRequested();
+                byte[] imageBytes = await _httpClient.GetByteArrayAsync(url, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                return imageBytes;
+            }
+            catch (HttpRequestException ex)
+            {
+                return null;
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public async Task<byte[]?> GetSongAlbumPicDataFromQQ(string? albumMid, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(albumMid)) return null;
+                string url = $"https://y.qq.com/music/photo_new/T002R800x800M000{albumMid}.jpg";
                 cancellationToken.ThrowIfCancellationRequested();
                 byte[] imageBytes = await _httpClient.GetByteArrayAsync(url, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
