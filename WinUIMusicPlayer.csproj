@@ -343,5 +343,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj" />
+    <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
   </ItemGroup>
 </Project>

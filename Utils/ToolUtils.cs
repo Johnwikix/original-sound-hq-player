@@ -960,7 +960,7 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<(string,string)> GetLyricsFromNet(Music musicDetail)
         {
             //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            return await LrcService.GetLyricsAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
+            return await LrcService.GetMixedLyricsAsync(musicDetail);
         }
 
         public static DateTime GetSafeFileCreateTime(string filePath)
