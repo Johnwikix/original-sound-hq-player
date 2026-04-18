@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,54 +44,22 @@ namespace WinUIMusicPlayer.View
         {
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
-                // ====================== 核心 switch 完整代码 ======================
-                switch (ViewModel.AppViewModel.Win2dTextEffectType.Value)
+                var effectType = ViewModel.AppViewModel.Win2dTextEffectType.Value;
+                // 1. 定义一个简单的局部函数或直接在表达式中实例化
+                AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateEffect(AnimatedTextEffect type) => type switch
                 {
-                    case AnimatedTextEffect.TextBlurEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextDefaultEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextElasticEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextFadeEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextFadeEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextFadeEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextMotionBlurEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextPivotEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextWipeEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
-                        break;
-
-                    case AnimatedTextEffect.TextZoomEffect:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect();
-                        break;
-
-                    default:
-                        AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
-                        AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect();
-                        break;
-                }
+                    AnimatedTextEffect.TextBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect(),
+                    AnimatedTextEffect.TextElasticEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect(),
+                    AnimatedTextEffect.TextFadeEffect => new TextFadeEffect(),
+                    AnimatedTextEffect.TextMotionBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect(),
+                    AnimatedTextEffect.TextPivotEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect(),
+                    AnimatedTextEffect.TextWipeEffect => new TextWipeEffect(),
+                    AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
+                    _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
+                };
+                var effect = CreateEffect(effectType);
+                AnimatedPlayingDetailTitleTextBlock?.TextEffect = effect;
+                AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = effect;
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             ChangeControlsFontSize();

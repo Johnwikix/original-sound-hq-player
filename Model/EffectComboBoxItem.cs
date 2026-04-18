@@ -8,6 +8,6 @@ namespace WinUIMusicPlayer.Model
     public class EffectComboBoxItem
     {
         public string DisplayName { get; set; } = string.Empty;
-        public byte Value { get; set; } = AnimatedTextEffect.TextDefaultEffect;
+        public AnimatedTextEffect Value { get; set; } = AnimatedTextEffect.TextDefaultEffect;
     }
 }
