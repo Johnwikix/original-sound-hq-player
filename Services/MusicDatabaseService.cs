@@ -1,5 +1,7 @@
-﻿using ATL;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using ATL;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using SQLite;
@@ -36,8 +38,13 @@ namespace WinUIMusicPlayer.Services
         private readonly ConcurrentBag<Music> _toDelete = [];
         private readonly ConcurrentBag<Music> _toUpdate = [];
         private List<StorageFile> _files = [];
-        private List<Music> _musicFilesInFolder = null;
+        private List<Music> _musicFilesInFolder = null;        
         private AppViewModel AppViewModel { get; set; }
+        private ILogger<MusicDatabaseService> _logger;
+
+        public MusicDatabaseService(ILogger<MusicDatabaseService> logger) {
+            _logger = logger;
+        }
 
         public async Task Initialize()
         {
@@ -513,7 +520,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"读取设置文件时出错: {ex.Message}");
+                _logger.LogError(ex,ex.Message,ex.StackTrace);
                 return new SaveSettings();
             }
         }
@@ -710,11 +717,11 @@ namespace WinUIMusicPlayer.Services
                     MusicCoverCache = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache")
                 };
                 await InsertSettings(settings);
-            }            
+            }
             if (settings is not null)
             {
-                AppSettings.OutputMode = settings.OutputMode;               
-                AppSettings.DeviceName = settings.DeviceFriendlyName;                
+                AppSettings.OutputMode = settings.OutputMode;
+                AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefualtEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefualtPlayList;
@@ -725,7 +732,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
-                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;               
+                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 //AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
                 //AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
@@ -757,7 +764,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
                 AppViewModel.IsWin2dCoverImageControlEnable = settings.IsWin2dCoverImageControlEnable;
                 AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
-                AppViewModel.Win2dTextEffectType = settings.Win2dTextEffectType;
+                AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t=>t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
                 LoadSettingsToAppViewModel();
             }
         }
@@ -817,7 +824,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
-            newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType;
+            newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
             //newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
             //newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;

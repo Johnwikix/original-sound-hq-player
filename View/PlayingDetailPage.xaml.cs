@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
                 // ====================== 核心 switch 完整代码 ======================
-                switch (ViewModel.AppViewModel.Win2dTextEffectType)
+                switch (ViewModel.AppViewModel.Win2dTextEffectType.Value)
                 {
                     case AnimatedTextEffect.TextBlurEffect:
                         AnimatedPlayingDetailTitleTextBlock?.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect();

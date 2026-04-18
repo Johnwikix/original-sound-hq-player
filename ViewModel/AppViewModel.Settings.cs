@@ -325,7 +325,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDarkMode { get => field; set => SetProperty(ref field, value);} = false;
 
-        public byte Win2dTextEffectType
+        public EffectComboBoxItem Win2dTextEffectType
         {
             get => field;
             set
@@ -338,7 +338,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = AnimatedTextEffect.TextDefaultEffect;
+        } = new EffectComboBoxItem { DisplayName= ToolUtils.GetString("TextDefaultEffect"), Value= AnimatedTextEffect.TextDefaultEffect };
 
         //public int SlideAnimationTime
         //{

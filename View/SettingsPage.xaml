@@ -230,11 +230,15 @@
                                 <ComboBox
                                     Grid.Column="1"
                                     HorizontalAlignment="Stretch"
-                                    DisplayMemberPath="DisplayName"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
                                     ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
-                                    SelectedValue="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}"
-                                    SelectedValuePath="Value" />
+                                    SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="model:EffectComboBoxItem">
+                                            <TextBlock Text="{x:Bind DisplayName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
