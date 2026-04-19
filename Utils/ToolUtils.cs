@@ -347,6 +347,10 @@ namespace WinUIMusicPlayer.Utils
                             var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
                             picture = pic?.Data?.Data;
                         }
+                        //Track track = new(music.Path);
+                        //if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0) {
+                        //    picture = track.EmbeddedPictures[0].PictureData;
+                        //}                        
                     }                    
                 }
                 if (picture is null || picture.Length == 0)
@@ -375,21 +379,11 @@ namespace WinUIMusicPlayer.Utils
             {
                 try
                 {
-
-                    Track track = new(music.Path);
-                    byte[] picture = track?.EmbeddedPictures[0]?.PictureData ?? [];
-                    if (picture is not null && picture.Length > 0)
-                    {
-                        return picture;
-                    }
-                    else
-                    {
-                        return await GetPicByteFromNet(music, isManual) ?? [];
-                    }
+                    return await GetPicByteFromNet(music, isManual) ?? [];
                 }
                 catch
                 {
-                    return await GetPicByteFromNet(music, isManual) ?? [];
+                   return [];
                 }
             }
         }
