@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -7,74 +8,124 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Taskbar
 {
-    public class TaskbarHelper : IDisposable
+    // ThumbButton 必须是完全 blittable 的 struct，fixed char[] 代替托管 string
+    // 原来的 [MarshalAs(UnmanagedType.ByValTStr)] 在手动 vtable 调用时不会自动 marshal
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct NativeThumbButton
+    {
+        public ThumbButtonMask dwMask;
+        public uint iId;
+        public uint iBitmap;
+        public IntPtr hIcon;
+        public fixed char szTip[260];   // 内嵌字符数组，与 Win32 结构体完全一致
+        public ThumbButtonFlags dwFlags;
+
+        public void SetTip(string tip)
+        {
+            if (tip == null) return;
+            fixed (char* p = szTip)
+            {
+                int len = Math.Min(tip.Length, 259);
+                for (int i = 0; i < len; i++)
+                    p[i] = tip[i];
+                p[len] = '\0';
+            }
+        }
+    }
+
+    public unsafe partial class TaskbarHelper : IDisposable
     {
         // 消息常量
         private const int WM_COMMAND = 0x0111;
         private const int THBN_CLICKED = 0x1800;
 
-        // SetWindowSubclass 函数
-        [DllImport("Comctl32.dll", SetLastError = true)]
-        private static extern bool SetWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, IntPtr uIdSubclass, IntPtr dwRefData);
+        // ── P/Invoke ────────────────────────────────────────────────────────────
 
-        [DllImport("Comctl32.dll", SetLastError = true)]
-        private static extern bool RemoveWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, IntPtr uIdSubclass);
+        [LibraryImport("Comctl32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool SetWindowSubclass(
+            IntPtr hWnd,
+            delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr> pfnSubclass,
+            IntPtr uIdSubclass,
+            IntPtr dwRefData);
 
+        [LibraryImport("Comctl32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool RemoveWindowSubclass(
+            IntPtr hWnd,
+            delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr> pfnSubclass,
+            IntPtr uIdSubclass);
 
-        // DefSubclassProc 函数
-        [DllImport("Comctl32.dll", SetLastError = true)]
-        private static extern IntPtr DefSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+        [LibraryImport("Comctl32.dll", SetLastError = true)]
+        private static partial IntPtr DefSubclassProc(
+            IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
 
-        [ComImport]
-        [Guid("56FDF344-FD6D-11d0-958A-006097C9A090")]
-        [ClassInterface(ClassInterfaceType.None)]
-        internal class TaskbarList { }
+        [LibraryImport("user32.dll", EntryPoint = "LoadIconW", SetLastError = true)]
+        private static partial IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
 
-        // LoadIcon 函数
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
+        [LibraryImport("user32.dll", EntryPoint = "LoadImageW", SetLastError = true,
+            StringMarshalling = StringMarshalling.Utf16)]
+        private static partial IntPtr LoadImage(
+            IntPtr hinst, string lpszName,
+            uint uType, int cxDesired, int cyDesired, uint fuLoad);
 
-        // 系统图标资源ID
-        private static IntPtr IDI_APPLICATION = (IntPtr)32512;
+        [LibraryImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool DestroyIcon(IntPtr hIcon);
 
-        // 子类过程委托
-        private delegate IntPtr SubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData);
-        private IntPtr _hwnd;
-        private ITaskbarList3 _taskbarList;
-        private ThumbButton[] _buttons;
-        private SubclassProc _wndProc; // 保持引用，防止被垃圾回收
+        [LibraryImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool IsWindow(IntPtr hWnd);
 
+        [LibraryImport("ole32.dll")]
+        private static partial int CoCreateInstance(
+            in Guid rclsid, IntPtr pUnkOuter,
+            uint dwClsContext, in Guid riid, out IntPtr ppv);
+
+        // ── COM vtable 槽位 ─────────────────────────────────────────────────────
+        //
+        // IUnknown      : 0=QueryInterface  1=AddRef        2=Release
+        // ITaskbarList  : 3=HrInit          4=AddTab        5=DeleteTab
+        //                 6=ActivateTab     7=SetActiveAlt
+        // ITaskbarList2 : 8=MarkFullscreenWindow
+        // ITaskbarList3 : 9=SetProgressValue   10=SetProgressState
+        //                 11=RegisterTab        12=UnregisterTab
+        //                 13=SetTabOrder        14=SetTabActive
+        //                 15=ThumbBarAddButtons 16=ThumbBarUpdateButtons
+        //                 17=ThumbBarSetImageList
+        //                 18=SetOverlayIcon     19=SetThumbnailTooltip
+        //                 20=SetThumbnailClip
+        private const int SLOT_Release = 2;
+        private const int SLOT_HrInit = 3;
+        private const int SLOT_ThumbBarAddButtons = 15;
+        private const int SLOT_ThumbBarUpdateButtons = 16;
+
+        private static readonly Guid CLSID_TaskbarList =
+            new("56FDF344-FD6D-11d0-958A-006097C9A090");
+        private static readonly Guid IID_ITaskbarList3 =
+            new("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf");
+
+        private const uint CLSCTX_INPROC_SERVER = 0x1;
         private const int LR_LOADFROMFILE = 0x0010;
         private const int LR_DEFAULTSIZE = 0x0040;
-        private const int IMAGE_ICON = 1;
+        private const uint IMAGE_ICON = 1;
+        private static readonly IntPtr IDI_APPLICATION = (IntPtr)32512;
 
-        // 加载图片并创建图标
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr LoadImage(
-            IntPtr hinst,
-            string lpszName,
-            uint uType,
-            int cxDesired,
-            int cyDesired,
-            uint fuLoad);
+        // ── 字段 ────────────────────────────────────────────────────────────────
 
-        // 销毁图标
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool DestroyIcon(IntPtr hIcon);
+        private IntPtr _hwnd;
+        private IntPtr _pTaskbarList;
+        private readonly IntPtr[] _iconHandles = new IntPtr[3];
+        private NativeThumbButton[] _nativeButtons;   // blittable，直接 fixed 传给 COM
 
-        [DllImport("user32.dll")]
-        private static extern bool IsWindow(IntPtr hWnd);
-
-        private IntPtr[] _iconHandles = new IntPtr[3]; // 存储图标句柄以便后续释放
-
-        private bool _isDisposed = false;
+        private GCHandle _selfHandle;
         private bool _isSubclassed = false;
+        private bool _isDisposed = false;
+        private bool _isCurrentPlaying = false;
 
-        private bool _isCurrentPlaying = false; // 当前播放状态
-
-
-        // 缩略图按钮点击事件
         private MusicBrowseViewModel _musicBrowseViewModel;
+
+        // ── 构造 ────────────────────────────────────────────────────────────────
 
         public TaskbarHelper(IntPtr hwnd)
         {
@@ -82,141 +133,70 @@ namespace WinUIMusicPlayer.Taskbar
             _musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
         }
 
+        // ── 公共方法 ─────────────────────────────────────────────────────────────
+
         public void RecoverTaskbarHelper()
         {
-            _taskbarList.ThumbBarAddButtons(_hwnd, (uint)_buttons.Length, _buttons);
-        }
-
-
-        private IntPtr CreateIconFromImage(string imagePath, int size = 16)
-        {
-            if (!System.IO.File.Exists(imagePath))
-            {
-                System.Diagnostics.Debug.WriteLine($"图片文件不存在: {imagePath}");
-                return LoadIcon(IntPtr.Zero, IDI_APPLICATION); // 使用默认图标
-            }
-
-            try
-            {
-                IntPtr hIcon = LoadImage(
-                    IntPtr.Zero,
-                    imagePath,
-                    IMAGE_ICON,
-                    size,
-                    size,
-                    LR_LOADFROMFILE | LR_DEFAULTSIZE);
-
-                if (hIcon == IntPtr.Zero)
-                {
-                    int error = Marshal.GetLastWin32Error();
-                    System.Diagnostics.Debug.WriteLine($"加载图片失败，错误码: {error}");
-                    return LoadIcon(IntPtr.Zero, IDI_APPLICATION); // 使用默认图标
-                }
-
-                return hIcon;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"创建图标时出错: {ex.Message}");
-                return LoadIcon(IntPtr.Zero, IDI_APPLICATION); // 使用默认图标
-            }
-        }
-
-        // 释放图标资源
-        private void ReleaseIcons()
-        {
-            foreach (IntPtr handle in _iconHandles)
-            {
-                if (handle != IntPtr.Zero)
-                {
-                    DestroyIcon(handle);
-                }
-            }
+            CallThumbBarAddButtons(_pTaskbarList, _hwnd, _nativeButtons);
         }
 
         public void InitializeThumbButtons()
         {
             try
             {
-                // 创建TaskbarList实例
-                _taskbarList = (ITaskbarList3)new TaskbarList();
-                _taskbarList.HrInit();
+                int hr = CoCreateInstance(
+                    CLSID_TaskbarList, IntPtr.Zero,
+                    CLSCTX_INPROC_SERVER, IID_ITaskbarList3,
+                    out _pTaskbarList);
+                if (hr != 0) Marshal.ThrowExceptionForHR(hr);
 
-                _isCurrentPlaying = AppData.IsPlaying; // 初始化当前播放状态
+                CallHrInit(_pTaskbarList);
 
-                // 创建3个任务栏按钮
-                _buttons = new ThumbButton[3];
+                _isCurrentPlaying = AppData.IsPlaying;
 
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 _iconHandles[0] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\last.ico"), 32);
-
-                _iconHandles[1] = AppData.IsPlaying ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32) : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
+                _iconHandles[1] = AppData.IsPlaying
+                    ? CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\stop.ico"), 32)
+                    : CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\play.ico"), 32);
                 _iconHandles[2] = CreateIconFromImage(System.IO.Path.Combine(appDir, "Assets\\next.ico"), 32);
 
-                _buttons[0] = new ThumbButton
-                {
-                    dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
-                    iId = 0,
-                    hIcon = _iconHandles[0],
-                    szTip = ToolUtils.GetString("LastSong"),
-                    dwFlags = ThumbButtonFlags.Enabled
-                };
+                _nativeButtons = new NativeThumbButton[3];
 
-                _buttons[1] = new ThumbButton
-                {
-                    dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
-                    iId = 1,
-                    hIcon = _iconHandles[1],
-                    szTip = ToolUtils.GetString("PlayNPause"),
-                    dwFlags = ThumbButtonFlags.Enabled
-                };
+                _nativeButtons[0].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
+                _nativeButtons[0].iId = 0;
+                _nativeButtons[0].hIcon = _iconHandles[0];
+                _nativeButtons[0].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[0].SetTip(ToolUtils.GetString("LastSong"));
 
-                _buttons[2] = new ThumbButton
-                {
-                    dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS,
-                    iId = 2,
-                    hIcon = _iconHandles[2],
-                    szTip = ToolUtils.GetString("NextSong"),
-                    dwFlags = ThumbButtonFlags.Enabled
-                };
+                _nativeButtons[1].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
+                _nativeButtons[1].iId = 1;
+                _nativeButtons[1].hIcon = _iconHandles[1];
+                _nativeButtons[1].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[1].SetTip(ToolUtils.GetString("PlayNPause"));
 
-                // 添加任务栏按钮
-                _taskbarList.ThumbBarAddButtons(_hwnd, (uint)_buttons.Length, _buttons);
+                _nativeButtons[2].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
+                _nativeButtons[2].iId = 2;
+                _nativeButtons[2].hIcon = _iconHandles[2];
+                _nativeButtons[2].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[2].SetTip(ToolUtils.GetString("NextSong"));
 
-                // 设置窗口子类过程来处理按钮点击事件
-                _wndProc = new SubclassProc(WindowSubclassProc);
-                _isSubclassed = SetWindowSubclass(_hwnd, _wndProc, (IntPtr)1, IntPtr.Zero);
+                CallThumbBarAddButtons(_pTaskbarList, _hwnd, _nativeButtons);
+
+                _selfHandle = GCHandle.Alloc(this);
+                _isSubclassed = SetWindowSubclass(
+                    _hwnd, &WindowSubclassProc, (IntPtr)1,
+                    GCHandle.ToIntPtr(_selfHandle));
 
                 if (!_isSubclassed)
-                {
-                    int error = Marshal.GetLastWin32Error();
-                    System.Diagnostics.Debug.WriteLine($"设置窗口子类失败，错误码: {error}");
-                }
+                    System.Diagnostics.Debug.WriteLine(
+                        $"设置窗口子类失败，错误码: {Marshal.GetLastWin32Error()}");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"初始化任务栏按钮出错: {ex.Message}");
                 throw;
             }
-        }
-
-        // 窗口子类过程，用于处理任务栏按钮点击消息
-        private IntPtr WindowSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData)
-        {
-            // 处理按钮点击事件
-            if (uMsg == WM_COMMAND)
-            {
-                int notifyCode = ((int)wParam >> 16) & 0xFFFF;
-                int buttonId = ((int)wParam) & 0xFFFF;
-
-                if (notifyCode == THBN_CLICKED)
-                {
-                    HandleThumbButtonClick(buttonId);
-                    return IntPtr.Zero;
-                }
-            }
-
-            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
         }
 
         public void UpdateButtonIcon(int buttonId, string iconPath, int size = 32)
@@ -226,40 +206,14 @@ namespace WinUIMusicPlayer.Taskbar
                 IntPtr newIcon = CreateIconFromImage(iconPath, size);
                 IntPtr oldIcon = _iconHandles[buttonId];
                 _iconHandles[buttonId] = newIcon;
-                _buttons[buttonId].hIcon = newIcon;
-                _taskbarList.ThumbBarUpdateButtons(_hwnd, (uint)_buttons.Length, _buttons);
+                _nativeButtons[buttonId].hIcon = newIcon;
+                CallThumbBarUpdateButtons(_pTaskbarList, _hwnd, _nativeButtons);
                 if (oldIcon != IntPtr.Zero)
-                {
                     DestroyIcon(oldIcon);
-                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"更新按钮图标出错: {ex.Message}");
-            }
-        }
-
-        // 处理任务栏按钮点击事件
-        private void HandleThumbButtonClick(int buttonId)
-        {
-            if (buttonId == 0)
-            {
-                _musicBrowseViewModel.LastMusicButton_Click();
-            }
-            else if (buttonId == 1)
-            {
-                _musicBrowseViewModel.PlayButton_Click();
-            }
-            else if (buttonId == 2)
-            {
-                _musicBrowseViewModel.NextMusicButton_Click();
-            }
-
-            if (buttonId == 1) // 按钮1的ID是0
-            {
-                string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string newIconPath = AppData.IsPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
-                UpdateButtonIcon(1, newIconPath);
             }
         }
 
@@ -269,43 +223,169 @@ namespace WinUIMusicPlayer.Taskbar
             {
                 _isCurrentPlaying = AppData.IsPlaying;
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string newIconPath = AppData.IsPlaying ? System.IO.Path.Combine(appDir, "Assets\\stop.ico") : newIconPath = System.IO.Path.Combine(appDir, "Assets\\play.ico");
+                string newIconPath = AppData.IsPlaying
+                    ? System.IO.Path.Combine(appDir, "Assets\\stop.ico")
+                    : System.IO.Path.Combine(appDir, "Assets\\play.ico");
                 UpdateButtonIcon(1, newIconPath);
             }
         }
 
-        ~TaskbarHelper()
+        // ── 静态子类回调 ─────────────────────────────────────────────────────────
+
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+        private static IntPtr WindowSubclassProc(
+            IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam,
+            IntPtr uIdSubclass, IntPtr dwRefData)
         {
-            Dispose(false);
+            if (dwRefData != IntPtr.Zero)
+            {
+                var handle = GCHandle.FromIntPtr(dwRefData);
+                if (handle.Target is TaskbarHelper helper)
+                    return helper.HandleWindowMessage(hWnd, uMsg, wParam, lParam);
+            }
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
         }
+
+        private IntPtr HandleWindowMessage(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
+        {
+            if (uMsg == WM_COMMAND)
+            {
+                int notifyCode = ((int)wParam >> 16) & 0xFFFF;
+                int buttonId = ((int)wParam) & 0xFFFF;
+                if (notifyCode == THBN_CLICKED)
+                {
+                    HandleThumbButtonClick(buttonId);
+                    return IntPtr.Zero;
+                }
+            }
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        private void HandleThumbButtonClick(int buttonId)
+        {
+            switch (buttonId)
+            {
+                case 0: _musicBrowseViewModel.LastMusicButton_Click(); break;
+                case 1: _musicBrowseViewModel.PlayButton_Click(); break;
+                case 2: _musicBrowseViewModel.NextMusicButton_Click(); break;
+            }
+
+            if (buttonId == 1)
+            {
+                string appDir = AppDomain.CurrentDomain.BaseDirectory;
+                string newIconPath = AppData.IsPlaying
+                    ? System.IO.Path.Combine(appDir, "Assets\\stop.ico")
+                    : System.IO.Path.Combine(appDir, "Assets\\play.ico");
+                UpdateButtonIcon(1, newIconPath);
+            }
+        }
+
+        // ── COM vtable 调用 ──────────────────────────────────────────────────────
+
+        private static void CallHrInit(IntPtr pUnk)
+        {
+            var fn = (delegate* unmanaged[Stdcall]<IntPtr, int>)(*(IntPtr**)pUnk)[SLOT_HrInit];
+            int hr = fn(pUnk);
+            if (hr != 0) Marshal.ThrowExceptionForHR(hr);
+        }
+
+        private static void CallThumbBarAddButtons(
+            IntPtr pUnk, IntPtr hwnd, NativeThumbButton[] buttons)
+        {
+            fixed (NativeThumbButton* pButtons = buttons)
+            {
+                var fn = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, NativeThumbButton*, int>)
+                    (*(IntPtr**)pUnk)[SLOT_ThumbBarAddButtons];
+                int hr = fn(pUnk, hwnd, (uint)buttons.Length, pButtons);
+                if (hr != 0) Marshal.ThrowExceptionForHR(hr);
+            }
+        }
+
+        private static void CallThumbBarUpdateButtons(
+            IntPtr pUnk, IntPtr hwnd, NativeThumbButton[] buttons)
+        {
+            fixed (NativeThumbButton* pButtons = buttons)
+            {
+                var fn = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, NativeThumbButton*, int>)
+                    (*(IntPtr**)pUnk)[SLOT_ThumbBarUpdateButtons];
+                int hr = fn(pUnk, hwnd, (uint)buttons.Length, pButtons);
+                if (hr != 0) Marshal.ThrowExceptionForHR(hr);
+            }
+        }
+
+        private static void CallRelease(IntPtr pUnk)
+        {
+            var fn = (delegate* unmanaged[Stdcall]<IntPtr, uint>)(*(IntPtr**)pUnk)[SLOT_Release];
+            fn(pUnk);
+        }
+
+        // ── 图标辅助 ─────────────────────────────────────────────────────────────
+
+        private static IntPtr CreateIconFromImage(string imagePath, int size = 16)
+        {
+            if (!System.IO.File.Exists(imagePath))
+            {
+                System.Diagnostics.Debug.WriteLine($"图片文件不存在: {imagePath}");
+                return LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+            }
+            try
+            {
+                IntPtr hIcon = LoadImage(
+                    IntPtr.Zero, imagePath, IMAGE_ICON,
+                    size, size, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+                if (hIcon == IntPtr.Zero)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"加载图片失败，错误码: {Marshal.GetLastWin32Error()}");
+                    return LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+                }
+                return hIcon;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"创建图标时出错: {ex.Message}");
+                return LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+            }
+        }
+
+        private void ReleaseIcons()
+        {
+            foreach (IntPtr h in _iconHandles)
+                if (h != IntPtr.Zero) DestroyIcon(h);
+        }
+
+        // ── Dispose ──────────────────────────────────────────────────────────────
+
+        ~TaskbarHelper() => Dispose(false);
+
         public void Dispose()
         {
-            // 释放图标资源
-            ReleaseIcons();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed)
-                return;
+            if (_isDisposed) return;
 
-            // 释放非托管资源
-            Uninitialize();
-            ReleaseIcons();
-
-            _isDisposed = true;
-        }
-
-        private void Uninitialize()
-        {
-            if (_isSubclassed && _wndProc is not null && IsWindow(_hwnd))
+            if (_isSubclassed && IsWindow(_hwnd))
             {
-                RemoveWindowSubclass(_hwnd, _wndProc, (IntPtr)1);
+                RemoveWindowSubclass(_hwnd, &WindowSubclassProc, (IntPtr)1);
                 _isSubclassed = false;
             }
 
-            _taskbarList = null;
-            _buttons = null;
+            if (_selfHandle.IsAllocated)
+                _selfHandle.Free();
+
+            if (_pTaskbarList != IntPtr.Zero)
+            {
+                CallRelease(_pTaskbarList);
+                _pTaskbarList = IntPtr.Zero;
+            }
+
+            ReleaseIcons();
+            _nativeButtons = null;
+            _isDisposed = true;
         }
     }
 }

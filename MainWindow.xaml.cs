@@ -64,15 +64,12 @@ namespace WinUIMusicPlayer
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
-            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (args.WindowActivationState != WindowActivationState.Deactivated)
-            {
-                InitializeTaskbarHelper();
-            }          
+            InitializeTaskbarHelper();
         }
 
         private void SetWindow()
