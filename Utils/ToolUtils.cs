@@ -88,6 +88,10 @@ namespace WinUIMusicPlayer.Utils
             [16000f] = "16kHz"
         };
 
+        private static readonly HashSet<string> FastReadExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "mp3", "flac", "m4a", "wav","ogg","opus","oga"
+        };
         public static string GetString(string key)
         {
             try
@@ -329,7 +333,7 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 byte[]? picture = [];
-                if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
+                if (music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
                 {
                     var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
                     if (res?.Pictures != null && res.Pictures.Count > 0)
@@ -339,19 +343,30 @@ namespace WinUIMusicPlayer.Utils
                 }
                 else
                 {
-                    picture = AudioCoverReader.ReadCover(music.Path);
-                    if(picture is null || picture.Length == 0)
+                    if (FastReadExtensions.Contains(music.Extension))
                     {
-                        using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
-                        {
-                            var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
-                            picture = pic?.Data?.Data;
-                        }
-                        //Track track = new(music.Path);
-                        //if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0) {
-                        //    picture = track.EmbeddedPictures[0].PictureData;
-                        //}                        
-                    }                    
+                        long startMemory = GC.GetTotalMemory(true);
+                        picture = AudioCoverReader.ReadCover(music.Path);
+                        long endMemory = GC.GetTotalMemory(true);
+                    }
+                    else
+                    {
+                        using var audioFile = TagLib.File.Create(music.Path, ReadStyle.None);
+                        picture = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data?.Data;
+                    }
+
+                    //if(picture is null || picture.Length == 0)
+                    //{
+                    //    using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
+                    //    {
+                    //        var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
+                    //        picture = pic?.Data?.Data;
+                    //    }
+                    //    //Track track = new(music.Path);
+                    //    //if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0) {
+                    //    //    picture = track.EmbeddedPictures[0].PictureData;
+                    //    //}                        
+                    //}                    
                 }
                 if (picture is null || picture.Length == 0)
                 {

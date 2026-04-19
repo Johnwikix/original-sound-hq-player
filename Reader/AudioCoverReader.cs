@@ -26,7 +26,7 @@ public static class AudioCoverReader
                 //".aiff" or ".aif" => ReadAiffCover(fs),
                 ".wav" => ReadRiffCover(fs),
                 ".flac" => ReadFlacCover(fs),
-                //".ogg" or ".oga" or ".opus" => ReadOggCover(fs),
+                ".ogg" or ".oga" or ".opus" => ReadOggCover(fs),
                 ".m4a" => ReadMp4Cover(fs),
                 //".ape" => ReadApeCover(fs),
                 _ => Array.Empty<byte>()
@@ -133,7 +133,6 @@ public static class AudioCoverReader
         Span<byte> buf = stackalloc byte[12];
         if (!ReadExact(s, buf)) return Array.Empty<byte>();
 
-        // "FORM" + size + "AIFF"
         if (!MatchFourCC(buf, 0, "FORM")) return Array.Empty<byte>();
         if (!MatchFourCC(buf, 8, "AIFF") && !MatchFourCC(buf, 8, "AIFC"))
             return Array.Empty<byte>();
@@ -142,12 +141,15 @@ public static class AudioCoverReader
         while (ReadExact(s, chunkHdr))
         {
             string id = Encoding.Latin1.GetString(chunkHdr[..4]);
-            int size = (int)BinaryPrimitives.ReadUInt32BigEndian(chunkHdr[4..]);
+            // ★ 用 uint 避免大 chunk（如 SSND）size 溢出成负数
+            uint size = BinaryPrimitives.ReadUInt32BigEndian(chunkHdr[4..]);
 
             if (id == "ID3 " || id == "id3 ")
-                return ReadId3v2Cover(s); // 流当前位置即 ID3v2 头
+                return ReadId3v2Cover(s);
 
-            if (!Skip(s, size + (size & 1))) break; // IFF 偶数对齐
+            // IFF 偶数对齐，size 为奇数时跳过额外 1 字节
+            long toSkip = (long)size + (size & 1);
+            if (!Skip(s, toSkip)) break;
         }
 
         return Array.Empty<byte>();
@@ -251,16 +253,13 @@ public static class AudioCoverReader
 
     private static byte[]? ReadFirstOggCommentPacket(Stream s)
     {
-        // Ogg 页头固定部分：capture(4) + version(1) + type(1) + granule(8)
-        //   + serial(4) + seqno(4) + crc(4) + nsegs(1) = 27 bytes
-        // 然后是 nsegs 个 lacing 字节，再是数据
-
         using var ms = new MemoryStream();
         Span<byte> hdr = stackalloc byte[27];
         bool foundComment = false;
+        bool identSkipped = false;
         int pageCount = 0;
 
-        while (pageCount++ < 8) // comment packet 必在前几页，超出即放弃
+        while (pageCount++ < 2048) // 封面大图可能跨几百页，放宽限制
         {
             if (!ReadExact(s, hdr)) return null;
             if (hdr[0] != 'O' || hdr[1] != 'g' || hdr[2] != 'g' || hdr[3] != 'S')
@@ -272,41 +271,37 @@ public static class AudioCoverReader
             Span<byte> segtab = stackalloc byte[nsegs];
             if (!ReadExact(s, segtab)) return null;
 
-            // 计算本页数据总长
             int pageDataLen = 0;
             foreach (byte b in segtab) pageDataLen += b;
 
-            // 第 1 页（序号 0）是 ident packet，跳过；
-            // 第 2 页开始是 comment packet（type byte = 3 for Vorbis, 分析内容）
-            if (pageCount == 1 && (headerType & 0x02) != 0) // BOS
+            if ((headerType & 0x02) != 0 && !identSkipped)
             {
-                // 跳过 ident 页
+                identSkipped = true;
                 if (!Skip(s, pageDataLen)) return null;
                 continue;
             }
 
-            // 读取页数据
             var pageData = new byte[pageDataLen];
             if (!ReadExact(s, pageData)) return null;
             ms.Write(pageData);
 
-            // 检查是否为 comment packet（Vorbis: 0x03+"vorbis"；Opus: "OpusTags"）
             if (!foundComment)
             {
                 var buf = ms.GetBuffer().AsSpan(0, (int)ms.Length);
-                if (buf.Length >= 7 &&
-                    (IsVorbisComment(buf) || IsOpusComment(buf)))
-                {
+                if (IsVorbisComment(buf) || IsOpusComment(buf))
                     foundComment = true;
-                }
             }
 
-            // 最后一个 lacing 字节 < 255 表示 packet 结束
             if (foundComment && segtab[nsegs - 1] < 255)
                 return ms.ToArray();
 
-            if (!foundComment && ms.Length > 128 * 1024)
-                return null; // comment 不可能这么大还没找到
+            if (!foundComment && ms.Length > 64 * 1024)
+                return null;
+
+            // foundComment 但还没结束：comment packet 跨页，继续累积
+            // 限制总大小防止异常文件耗尽内存（封面一般不超过 20MB）
+            if (foundComment && ms.Length > MaxCoverBytes)
+                return null;
         }
 
         return null;
