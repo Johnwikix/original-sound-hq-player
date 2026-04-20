@@ -203,13 +203,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private float _transitionT = 0f;
         private const float FadeSpeed = 1.5f;
 
-        // 记录过渡开始时 current 的实际绘制矩形，用于 scale 插值
-        private Rect _currentDestRectAtStart;
-        // incoming 的目标矩形，在 StartTransition 时计算
-        private Rect _incomingTargetRect;
-        // 标记 _incomingTargetRect 是否已计算（需要 canvas 尺寸）
-        private bool _targetRectDirty = true;
-
         private bool _isFading = false;
 
         private CanvasBitmap? _queuedBitmap;
@@ -314,14 +307,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _incomingBitmap = null;
             }
 
-            _currentDestRectAtStart = GetCurrentDestRect();
             _incomingBitmap = newBitmap;
             _incomingBaked = null;
             _transitionT = 0f;
-            _targetRectDirty = true;
             _isFading = true;
 
-            _ = TryPreBakeIncomingAsync(newBitmap); // fire-and-forget，不阻塞
+            _ = TryPreBakeIncomingAsync(newBitmap);
         }
 
         private async Task TryPreBakeIncomingAsync(CanvasBitmap bitmap)
@@ -610,33 +601,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
             if (refBmp == null) return;
 
-            Rect incomingTarget = (_incomingBitmap != null)
-                ? CalcDestRect(_incomingBitmap, contentX, contentY, contentW, contentH)
-                : CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
-
-            if (_isFading && _targetRectDirty)
-            {
-                _incomingTargetRect = incomingTarget;
-                if (_currentDestRectAtStart == Rect.Empty)
-                    _currentDestRectAtStart = incomingTarget;
-                _targetRectDirty = false;
-            }
-
-            float easedT = _isFading ? EaseOutN(_transitionT, 8f) : (_currentBitmap != null ? 1f : 0f);
-            float linearT = _transitionT;
-
-            Rect currentDrawRect = _isFading
-                ? LerpRect(_currentDestRectAtStart, _incomingTargetRect, easedT)
-                : incomingTarget;
-
-            Rect incomingDrawRect = currentDrawRect;
-
-            float bakeW = (float)incomingTarget.Width;
-            float bakeH = (float)incomingTarget.Height;
+            float bakeW = (float)CalcDestRect(refBmp, contentX, contentY, contentW, contentH).Width;
+            float bakeH = (float)CalcDestRect(refBmp, contentX, contentY, contentW, contentH).Height;
             float radius = (float)ArtCornerRadius;
             if (bakeW <= 0 || bakeH <= 0) return;
 
-            // EnsureMaskRenderTarget 已从热路径移出，仅在 _rtInvalidated 时执行
             if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f ||
                 MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
                 _rtInvalidated = true;
@@ -646,7 +615,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _rtInvalidated = false;
                 _lastBakeSize = (bakeW, bakeH);
 
-                // mask 重建只在尺寸/参数真正变化时执行一次
                 EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
 
                 _currentBaked?.Dispose(); _currentBaked = null;
@@ -656,26 +624,26 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 if (_incomingBitmap != null) _ = ReBakeIncomingAsync(_incomingBitmap, bakeW, bakeH);
             }
 
-            // ── 绘制 current ────────────────────────────────────────────────────
-            float currentAlpha = _isFading ? Math.Max(0f, 1f - linearT) : 1f;
+            // ── 绘制 current（过渡期间保持全不透明静止，GPU 无需混合）────────────
             if (_currentBaked != null)
             {
-                if (_isFading && currentAlpha > 0f)
-                {
-                    DrawBaked(ds, _currentBaked, currentDrawRect, currentAlpha);
-                }
-                else if (!_isFading)
-                {
-                    Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
-                    DrawBaked(ds, _currentBaked, staticRect, 1f);
-                }
+                Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
+                DrawBaked(ds, _currentBaked, staticRect, 1f);
             }
 
-            // ── 绘制 incoming ───────────────────────────────────────────────────
-            float incomingAlpha = _isFading ? Math.Min(1f, linearT) : 0f;
-            if (_incomingBaked != null && incomingAlpha > 0f)
+            // ── 绘制 incoming（从缩小+透明 弹入到正常大小+不透明）───────────────
+            if (_isFading && _incomingBaked != null)
             {
-                DrawBaked(ds, _incomingBaked, incomingDrawRect, incomingAlpha);
+                float easedAlpha = EaseOutN(_transitionT, 3f);
+                float easedScale = EaseOutN(_transitionT, 4f);
+
+                const float ScaleFrom = 0.92f;
+                float scale = ScaleFrom + (1f - ScaleFrom) * easedScale;
+
+                Rect baseRect = CalcDestRect(_incomingBitmap!, contentX, contentY, contentW, contentH);
+                Rect scaledRect = ScaleRectFromCenter(baseRect, scale);
+
+                DrawBaked(ds, _incomingBaked, scaledRect, easedAlpha);
             }
         }
 
@@ -775,17 +743,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 destRect.Height + baked.Pad * 2);
 
             ds.DrawImage(baked.RT, destWithPad, baked.RT.Bounds, alpha);
-        }
-
-        // ── 矩形线性插值 ──────────────────────────────────────────────────────
-
-        private static Rect LerpRect(Rect a, Rect b, float t)
-        {
-            return new Rect(
-                a.X + (b.X - a.X) * t,
-                a.Y + (b.Y - a.Y) * t,
-                a.Width + (b.Width - a.Width) * t,
-                a.Height + (b.Height - a.Height) * t);
         }
 
         // ── RenderTarget 烘焙 ─────────────────────────────────────────────────
@@ -939,6 +896,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             while (_disposeQueue.TryDequeue(out var b)) b?.Dispose();
         }
+
+        private static Rect ScaleRectFromCenter(Rect r, float scale)
+        {
+            double cx = r.X + r.Width * 0.5;
+            double cy = r.Y + r.Height * 0.5;
+            double nw = r.Width * scale;
+            double nh = r.Height * scale;
+            return new Rect(cx - nw * 0.5, cy - nh * 0.5, nw, nh);
+        }
     }
 
     // ── BakedRT ───────────────────────────────────────────────────────────────
@@ -950,4 +916,5 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         public BakedRT(CanvasRenderTarget rt, float pad) { RT = rt; Pad = pad; }
         public void Dispose() => RT.Dispose();
     }
+
 }
