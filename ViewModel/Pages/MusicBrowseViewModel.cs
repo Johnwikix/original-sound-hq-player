@@ -403,17 +403,18 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (AppViewModel.CurrentPlayingMusic is not null)
             {
-                UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
                 AppViewModel.LoadLyricsToUI();                
             }
         }       
 
-        public async void UpdatePlayBar(Music music)
+        public async Task UpdatePlayBar(Music music)
         {
-            AppViewModel.LyricPageBackgroundData = await GetRawImage(music);
+            var picData = await GetRawImage(music);
             //BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                AppViewModel.LyricPageBackgroundData = picData;
                 AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                 //AppViewModel.MusicDetailCover = DetailCover;
             });
@@ -643,7 +644,7 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 AppViewModel.CurrentPlayingMusic = music;
-                UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
                 AppViewModel.LoadLyricsToUI();
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();

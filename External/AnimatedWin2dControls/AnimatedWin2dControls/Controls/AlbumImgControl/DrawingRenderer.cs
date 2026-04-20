@@ -1,19 +1,16 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AlbumImgControl;
+using Microsoft.Graphics.Canvas;
 using System;
 using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
 {
     /// <summary>
-    /// 纯绘制器：读取 <see cref="TransitionState"/> 和 <see cref="BakedRTCache"/> 的状态，
-    /// 将结果写入 <see cref="CanvasDrawingSession"/>。
-    /// <para>不持有任何 GPU 资源，也不修改传入状态的字段（仅写 TargetRectDirty / IncomingTargetRect / CurrentDestRectAtStart）。</para>
+    /// 纯绘制器，忠实还原原始单文件中的 DrawImageLayer 逻辑。
+    /// 不持有任何 GPU 资源；仅写 TransitionState 的矩形缓存字段。
     /// </summary>
     internal static class DrawingRenderer
     {
-        /// <summary>
-        /// 执行一帧绘制。
-        /// </summary>
         public static void Draw(
             CanvasDrawingSession ds,
             TransitionState state,
@@ -29,13 +26,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float contentH = canvasH - padTop - padBottom;
             if (contentW <= 0 || contentH <= 0) return;
 
-            // 确定参考位图（用于计算 incoming 目标矩形）
-            CanvasBitmap? refBmp = state.IncomingBitmap ?? state.CurrentBitmap;
+            // 参考位图：优先 incoming（过渡期），其次 current
+            var refBmp = state.IncomingBitmap ?? state.CurrentBitmap;
             if (refBmp == null) return;
 
-            // ── 计算/缓存 incoming 目标矩形 ─────────────────────────────────
+            // incoming 目标矩形
             var incomingTarget = CalcDestRect(refBmp, contentX, contentY, contentW, contentH);
 
+            // 首帧缓存矩形（还原原始 _targetRectDirty 逻辑）
             if (state.IsFading && state.TargetRectDirty)
             {
                 state.IncomingTargetRect = incomingTarget;
@@ -44,13 +42,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 state.TargetRectDirty = false;
             }
 
-            // ── 计算 eased/linear 进度 ───────────────────────────────────────
             float easedT = state.IsFading
                 ? TransitionState.EaseOut(state.TransitionT)
                 : (state.CurrentBitmap != null ? 1f : 0f);
             float linearT = state.TransitionT;
 
-            // ── 计算绘制矩形 ─────────────────────────────────────────────────
+            // 位置插值矩形（current 从起点滑向 incoming 目标）
             Rect currentDrawRect = state.IsFading
                 ? LerpRect(state.CurrentDestRectAtStart, state.IncomingTargetRect, easedT)
                 : incomingTarget;
@@ -77,9 +74,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 DrawBaked(ds, cache.Incoming, currentDrawRect, incomingAlpha);
         }
 
-        // ── 静态辅助 ─────────────────────────────────────────────────────────
+        // ── 辅助（公开供 AlbumArtControl 复用）──────────────────────────────
 
-        /// <summary>在内容区域内等比例居中绘制位图，返回目标矩形。</summary>
         public static Rect CalcDestRect(
             CanvasBitmap bmp, float cx, float cy, float cw, float ch)
         {
@@ -98,29 +94,22 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 drawW, drawH);
         }
 
-        /// <summary>矩形线性插值。</summary>
-        public static Rect LerpRect(Rect a, Rect b, float t) =>
-            new(a.X + (b.X - a.X) * t,
-                a.Y + (b.Y - a.Y) * t,
-                a.Width + (b.Width - a.Width) * t,
-                a.Height + (b.Height - a.Height) * t);
+        public static Rect LerpRect(Rect a, Rect b, float t) => new(
+            a.X + (b.X - a.X) * t,
+            a.Y + (b.Y - a.Y) * t,
+            a.Width + (b.Width - a.Width) * t,
+            a.Height + (b.Height - a.Height) * t);
 
-        /// <summary>将 BakedRT 绘制到 destRect（图像内容区域，不含 pad）。</summary>
         private static void DrawBaked(
-            CanvasDrawingSession ds,
-            BakedRT baked,
-            Rect destRect,
-            float alpha)
+            CanvasDrawingSession ds, BakedRT baked, Rect destRect, float alpha)
         {
             if (destRect.Width <= 0 || destRect.Height <= 0) return;
-
-            var destWithPad = new Rect(
+            var padded = new Rect(
                 destRect.X - baked.Pad,
                 destRect.Y - baked.Pad,
                 destRect.Width + baked.Pad * 2,
                 destRect.Height + baked.Pad * 2);
-
-            ds.DrawImage(baked.RT, destWithPad, baked.RT.Bounds, alpha);
+            ds.DrawImage(baked.RT, padded, baked.RT.Bounds, alpha);
         }
     }
 }

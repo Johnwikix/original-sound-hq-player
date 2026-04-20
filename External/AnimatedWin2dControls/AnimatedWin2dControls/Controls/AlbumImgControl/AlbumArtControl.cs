@@ -1,77 +1,60 @@
-﻿using AnimatedWin2dControls.Utils;
+﻿using AnimatedWin2dControls.Controls.AlbumImgControl;
+using AnimatedWin2dControls.Utils;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
 {
-    /// <summary>
-    /// 专辑封面显示控件（Win2D）。
-    /// <para>
-    /// 职责仅限于：
-    /// <list type="bullet">
-    ///   <item>声明 DependencyProperty；</item>
-    ///   <item>响应属性变化并协调四个子系统（<see cref="BitmapLoader"/>、
-    ///         <see cref="TransitionState"/>、<see cref="BakedRTCache"/>、<see cref="DrawingRenderer"/>）；</item>
-    ///   <item>驱动 <see cref="SharedAnimationClock"/>。</item>
-    /// </list>
-    /// 所有 GPU 资源生命周期由 <see cref="BakedRTCache"/> 统一管理；
-    /// 所有位图生命周期由 <see cref="TransitionState"/> 统一管理。
-    /// </para>
-    /// </summary>
     [TemplatePart(Name = PartCanvas, Type = typeof(CanvasControl))]
     public sealed class AlbumArtControl : Control, IDisposable, ISharedTickable
     {
         private const string PartCanvas = "canvas";
 
-        // ── 子系统 ────────────────────────────────────────────────────────────
-
         private readonly BitmapLoader _loader = new();
         private readonly TransitionState _transition = new();
         private readonly BakedRTCache _cache = new();
-
-        // ── Win2D canvas ──────────────────────────────────────────────────────
 
         private CanvasControl? _canvas;
         private bool _isResourcesCreated;
         private bool _isClockRegistered;
         private bool _disposed;
 
-        // ── 构造 & 模板 ───────────────────────────────────────────────────────
+        // ── 构造 ──────────────────────────────────────────────────────────────
 
         public AlbumArtControl()
         {
             DefaultStyleKey = typeof(AlbumArtControl);
 
-            // incoming 提升为 current 时，同步更新 cache 并记录新的 current 起始矩形
-            _transition.OnIncomingPromotedToCurrent += () =>
+            // 还原原始 StartTransition 中"incoming → current"时对 cache 的同步
+            _transition.IncomingPromotedToCurrent += () =>
             {
+                // 更新起始矩形供下一次过渡插值使用
                 _transition.CurrentDestRectAtStart = GetCurrentDestRect();
+                // cache 同步翻转（与原始 _currentBaked = _incomingBaked 对应）
                 _cache.PromoteIncomingToCurrent();
             };
 
             Unloaded += (_, _) => Dispose(true);
         }
 
+        // ── 模板 ──────────────────────────────────────────────────────────────
+
         protected override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-
             if (_canvas != null)
             {
                 _canvas.CreateResources -= Canvas_CreateResources;
                 _canvas.Draw -= Canvas_Draw;
                 _canvas = null;
             }
-
             _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
             if (_canvas == null) return;
-
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
         }
@@ -174,10 +157,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             var ctrl = (AlbumArtControl)d;
             if (!ctrl._isResourcesCreated || !ctrl.IsActive) return;
-
             var newBytes = e.NewValue as byte[];
             if (ctrl._loader.IsDuplicate(newBytes)) return;
-
             _ = ctrl.LoadAndEnqueueAsync(newBytes);
         }
 
@@ -189,23 +170,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _ = ctrl.LoadAndEnqueueAsync(ctrl.ImageBytes);
         }
 
-        /// <summary>
-        /// 布局参数（margin / corner radius）变化：mask 尺寸或形状变化，
-        /// 需要重建 mask 并重新烘焙两张 RT。
-        /// 通过在下一帧 Draw 时调用 EnsureMask 来触发，不在此处直接操作 GPU 资源。
-        /// </summary>
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (AlbumArtControl)d;
             if (!ctrl._isResourcesCreated || !ctrl.IsActive) return;
-            // 强制 EnsureMask 在下一帧重建（通过将 mask 参数标记为脏）
-            ctrl._cache.InvalidateBaked(); // 清空旧 RT，下帧 EnsureMask 因 w/h/radius 不同会重建 mask
+            // mask 尺寸/形状变化：清空 baked RT，下一帧 EnsureMask 会因参数不同自动重建
+            ctrl._cache.InvalidateBaked();
             ctrl._canvas?.Invalidate();
         }
 
-        /// <summary>
-        /// Shadow / DpiScale 变化：mask 本身不需要重建，只需重新烘焙 RT。
-        /// </summary>
         private static void OnRebakeParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (AlbumArtControl)d;
@@ -218,11 +191,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             var ctrl = (AlbumArtControl)d;
             if (!ctrl._isResourcesCreated) return;
-
             if ((bool)e.NewValue)
-            {
                 _ = ctrl.LoadAndEnqueueAsync(ctrl.ImageBytes);
-            }
             else
             {
                 ctrl._loader.CancelCurrent();
@@ -248,7 +218,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float ch = (float)sender.Size.Height;
             float padL = (float)MarginLeftRatio, padR = (float)MarginRightRatio;
             float padT = (float)MarginTopRatio, padB = (float)MarginBottomRatio;
-
             float contentW = cw - padL - padR;
             float contentH = ch - padT - padB;
             if (contentW <= 0 || contentH <= 0) return;
@@ -256,25 +225,30 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float radius = (float)ArtCornerRadius;
             float dpi = 96f * (float)DpiScale;
 
-            // EnsureMask 若检测到参数变化，会内部 InvalidateBaked + 触发 onNeedRebake
+            // 还原原始 EnsureMaskRenderTarget + _rtInvalidated 逻辑：
+            // EnsureMask 检测参数变化 → 清空 baked RT → 回调触发重烘焙
             _cache.EnsureMask(
                 sender.Device, contentW, contentH, radius, dpi,
                 _transition.CurrentBitmap, _transition.IncomingBitmap,
                 IsShadowEnabled,
-                onNeedRebake: (bmp, w, h) => TriggerRebake(bmp, w, h));
+                onNeedRebake: (bmp, w, h) =>
+                {
+                    if (_transition.IsStillCurrent(bmp))
+                        _ = BakeCurrentAsync(bmp, w, h);
+                    else if (_transition.IsStillIncoming(bmp))
+                        _ = BakeIncomingAsync(bmp, w, h);
+                });
 
             DrawingRenderer.Draw(
-                e.DrawingSession,
-                _transition, _cache,
+                e.DrawingSession, _transition, _cache,
                 cw, ch, padT, padB, padL, padR);
         }
 
-        // ── 加载协调 ─────────────────────────────────────────────────────────
+        // ── 加载 ─────────────────────────────────────────────────────────────
 
         private async Task LoadAndEnqueueAsync(byte[]? bytes)
         {
             if (_canvas == null) return;
-
             var ct = _loader.RenewCancellation();
 
             CanvasBitmap? bmp = null;
@@ -288,74 +262,52 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             catch
             {
                 _loader.InvalidateDedup();
-                try
-                {
-                    bmp = await _loader.LoadDefaultAsync(IsDark, _canvas, ct);
-                }
+                try { bmp = await _loader.LoadDefaultAsync(IsDark, _canvas, ct); }
                 catch { return; }
             }
-
             if (bmp == null) return;
 
-            // 记录过渡起始矩形（在 UI 线程上，canvas 尺寸此时已知）
+            // 还原原始 EnqueueBitmap 之前记录起始矩形的时机
             _transition.CurrentDestRectAtStart = GetCurrentDestRect();
-
             _transition.Enqueue(bmp);
             StartRenderingLoop();
 
-            // 立即触发异步烘焙（如果 canvas 尺寸已知）
-            TriggerRebakeIncoming(bmp);
+            // 立即触发 incoming 的异步烘焙（对应原始 TryPreBakeIncomingAsync）
+            var (w, h) = GetContentSize();
+            if (w > 0 && h > 0)
+                _ = BakeIncomingAsync(bmp, w, h);
+
             _canvas?.Invalidate();
         }
 
-        // ── 烘焙触发 ─────────────────────────────────────────────────────────
+        // ── 烘焙 ─────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 响应 EnsureMask 的 onNeedRebake 回调，判断是 current 还是 incoming 并触发对应烘焙。
-        /// </summary>
-        private void TriggerRebake(CanvasBitmap bmp, float w, float h)
-        {
-            if (ReferenceEquals(bmp, _transition.CurrentBitmap))
-                _ = RebakeCurrentAsync(bmp, w, h);
-            else if (ReferenceEquals(bmp, _transition.IncomingBitmap))
-                _ = RebakeIncomingAsync(bmp, w, h);
-        }
-
-        private void TriggerRebakeIncoming(CanvasBitmap bmp)
-        {
-            var (w, h) = GetContentSize();
-            if (w <= 0 || h <= 0) return;
-            _ = RebakeIncomingAsync(bmp, w, h);
-        }
-
-        private async Task RebakeCurrentAsync(CanvasBitmap bitmap, float w, float h)
+        private async Task BakeCurrentAsync(CanvasBitmap bitmap, float w, float h)
         {
             if (_canvas == null) return;
             await _cache.BakeCurrentAsync(
                 bitmap, _canvas.Device, w, h, IsShadowEnabled, (float)DpiScale,
-                isBitmapStillCurrent: () => _transition.IsCurrentStillPending(bitmap),
+                isStillValid: () => _transition.IsStillCurrent(bitmap),
                 onReady: () => _canvas?.Invalidate());
         }
 
-        private async Task RebakeIncomingAsync(CanvasBitmap bitmap, float w, float h)
+        private async Task BakeIncomingAsync(CanvasBitmap bitmap, float w, float h)
         {
             if (_canvas == null) return;
             await _cache.BakeIncomingAsync(
                 bitmap, _canvas.Device, w, h, IsShadowEnabled, (float)DpiScale,
-                isBitmapStillIncoming: () => _transition.IsIncomingStillPending(bitmap),
+                isStillValid: () => _transition.IsStillIncoming(bitmap),
                 onReady: () => _canvas?.Invalidate());
         }
 
-        // ── SharedAnimationClock ──────────────────────────────────────────────
+        // ── 时钟 ─────────────────────────────────────────────────────────────
 
         public void OnSharedTick(TimeSpan elapsed)
         {
             float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            bool stillRunning = _transition.Advance(delta);
+            bool still = _transition.Advance(delta);
             _canvas?.Invalidate();
-
-            if (!stillRunning)
-                StopRenderingLoop();
+            if (!still) StopRenderingLoop();
         }
 
         private void StartRenderingLoop()
@@ -377,58 +329,40 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private Rect GetCurrentDestRect()
         {
             if (_transition.CurrentBitmap == null || _canvas == null) return Rect.Empty;
-
-            float cw = (float)_canvas.Size.Width;
-            float ch = (float)_canvas.Size.Height;
-            if (cw <= 0 || ch <= 0) return Rect.Empty;
-
-            float padL = (float)MarginLeftRatio, padR = (float)MarginRightRatio;
-            float padT = (float)MarginTopRatio, padB = (float)MarginBottomRatio;
-            float contentW = cw - padL - padR;
-            float contentH = ch - padT - padB;
-            if (contentW <= 0 || contentH <= 0) return Rect.Empty;
-
+            var (w, h) = GetContentSize();
+            if (w <= 0 || h <= 0) return Rect.Empty;
             return DrawingRenderer.CalcDestRect(
-                _transition.CurrentBitmap, padL, padT, contentW, contentH);
+                _transition.CurrentBitmap,
+                (float)MarginLeftRatio, (float)MarginTopRatio, w, h);
         }
 
         private (float w, float h) GetContentSize()
         {
             if (_canvas == null) return (0, 0);
-            float cw = (float)_canvas.Size.Width;
-            float ch = (float)_canvas.Size.Height;
             float padL = (float)MarginLeftRatio, padR = (float)MarginRightRatio;
             float padT = (float)MarginTopRatio, padB = (float)MarginBottomRatio;
-            return (cw - padL - padR, ch - padT - padB);
+            return ((float)_canvas.Size.Width - padL - padR,
+                    (float)_canvas.Size.Height - padT - padB);
         }
 
-        // ── IDisposable ───────────────────────────────────────────────────────
+        // ── Dispose ───────────────────────────────────────────────────────────
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
 
         private void Dispose(bool disposing)
         {
             if (!disposing || _disposed) return;
             _disposed = true;
-
             _loader.CancelCurrent();
             StopRenderingLoop();
-
             if (_canvas != null)
             {
                 _canvas.CreateResources -= Canvas_CreateResources;
                 _canvas.Draw -= Canvas_Draw;
                 _canvas = null;
             }
-
-            // 先 Dispose cache（GPU 资源），再 Dispose transition（位图）
-            // 顺序很重要：cache 中的 RT 持有对 mask 的引用，mask 必须在 RT 之后才释放
-            _cache.Dispose();
-            _transition.Dispose();
+            _cache.Dispose();       // 先释放 GPU RT（依赖 mask）
+            _transition.Dispose();  // 再释放位图
             _loader.Dispose();
         }
     }
