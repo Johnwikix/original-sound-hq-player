@@ -297,18 +297,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void StartTransition(CanvasBitmap newBitmap)
         {
-            if (_incomingBitmap != null)
+            if (_currentBitmap != null)
             {
-                if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
+                _disposeQueue.Enqueue(_currentBitmap);
+                _currentBitmap = null;
                 _currentBaked?.Dispose();
-                _currentBaked = _incomingBaked;
-                _incomingBaked = null;
-                _currentBitmap = _incomingBitmap;
-                _incomingBitmap = null;
+                _currentBaked = null;
             }
 
             _incomingBitmap = newBitmap;
             _incomingBaked = null;
+
             _transitionT = 0f;
             _isFading = true;
 
