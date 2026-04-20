@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Windows.Foundation;
 
-namespace AnimatedWin2dControls.Controls.AlbumImgControl
+namespace AnimatedWin2dControls.Controls
 {
     /// <summary>
     /// 管理 current/incoming/queued 三张位图的过渡状态机。
@@ -144,6 +144,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             IncomingBitmap = null;
             TransitionT = 0f;
             IsFading = false;
+
+            // 通知 BakedRTCache 将 Incoming RT 提升为 Current RT
+            OnIncomingPromotedToCurrent?.Invoke();
         }
 
         /// <summary>
