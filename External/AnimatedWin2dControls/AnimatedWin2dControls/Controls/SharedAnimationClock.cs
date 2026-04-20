@@ -1,5 +1,4 @@
-﻿// SharedAnimationClock.cs
-using Microsoft.UI.Xaml.Media;
+﻿using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 
@@ -9,13 +8,12 @@ namespace AnimatedWin2dControls.Controls
     {
         private static readonly List<WeakReference<ISharedTickable>> _activeInstances = new();
         private static bool _isRunning = false;
-        private static DateTimeOffset _lastTick = DateTimeOffset.Now;
+        private static TimeSpan _lastTick = TimeSpan.Zero;
 
         public static void Register(ISharedTickable instance)
         {
             _activeInstances.RemoveAll(wr => !wr.TryGetTarget(out _));
 
-            // 防止重复注册同一实例
             foreach (var wr in _activeInstances)
             {
                 if (wr.TryGetTarget(out var existing) && ReferenceEquals(existing, instance))
@@ -26,7 +24,7 @@ namespace AnimatedWin2dControls.Controls
 
             if (!_isRunning)
             {
-                _lastTick = DateTimeOffset.Now;
+                _lastTick = TimeSpan.Zero; // 首帧 elapsed 会被 cap，无害
                 CompositionTarget.Rendering += OnRendering;
                 _isRunning = true;
             }
@@ -46,9 +44,20 @@ namespace AnimatedWin2dControls.Controls
 
         private static void OnRendering(object sender, object e)
         {
-            var now = DateTimeOffset.Now;
-            var elapsed = now - _lastTick;
-            _lastTick = now;
+            // 使用系统渲染时间戳，比 DateTimeOffset.Now 更准确且避免系统调用
+            var renderingTime = ((RenderingEventArgs)e).RenderingTime;
+
+            TimeSpan elapsed;
+            if (_lastTick == TimeSpan.Zero)
+                elapsed = TimeSpan.Zero;
+            else
+                elapsed = renderingTime - _lastTick;
+
+            _lastTick = renderingTime;
+
+            // 防止暂停/首帧后超大 delta 造成动画跳变
+            if (elapsed.TotalSeconds > 0.1)
+                elapsed = TimeSpan.FromSeconds(0.1);
 
             for (int i = _activeInstances.Count - 1; i >= 0; i--)
             {

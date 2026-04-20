@@ -428,7 +428,9 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 });
                 App.Services.GetRequiredService<LyricsRefreshService>().UpdateLyrics(CurrentTime);
-                SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
+                _ = Task.Run(() => {
+                    SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
+                } );
             }
             catch
             {

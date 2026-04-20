@@ -221,7 +221,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private long _lastLength = -1;
         private int _lastHash;
-        private const float HardMaxSize = 1536f;
+        private const float HardMaxSize = 1280f;
 
         private CanvasRenderTarget? _maskRT;
         private (float w, float h, float radius) _maskSize;
@@ -232,7 +232,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private (float w, float h) _lastBakeSize;
         private bool _rtInvalidated = false;
         private bool _isClockRegistered = false;
-
+        private CancellationTokenSource? _bakeCts;
         // ── 构造函数 ──────────────────────────────────────────────────────────
 
         public AlbumArtControl()
@@ -467,7 +467,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── 加载 ──────────────────────────────────────────────────────────────
 
         public async Task LoadBitmapAsync(byte[]? imageBytes,
-                                          ICanvasResourceCreator? resourceCreator = null)
+                                  ICanvasResourceCreator? resourceCreator = null)
         {
             if (imageBytes == null || imageBytes.Length == 0)
             {
@@ -481,6 +481,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             try
             {
+                // 快速连续切换时等待 80ms，若期间有新任务则取消本次解码
+                // 避免每次切换都触发完整的 BitmapDecoder 解码
+                await Task.Delay(80, cts.Token);
+
                 var (pixels, bmpW, bmpH) = await Task.Run(async () =>
                 {
                     using var mem = new MemoryStream(imageBytes, writable: false);
@@ -556,8 +560,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!_isFading && _queuedBitmap == null) return;
 
             float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
+            bool wasF = _isFading;
             UpdateFadeState(delta);
-            _canvas?.Invalidate();
+
+            // 仅当状态实际改变，或 baked 已就绪时才重绘
+            bool needRedraw = _isFading || wasF != _isFading
+                              || (_currentBaked != null && !_isFading);
+            if (needRedraw) _canvas?.Invalidate();
 
             if (!_isFading && _queuedBitmap == null)
                 StopRenderingLoop();
@@ -627,26 +636,25 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float radius = (float)ArtCornerRadius;
             if (bakeW <= 0 || bakeH <= 0) return;
 
-            // mask 仍需在 UI 线程同步维护
-            EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
-
+            // EnsureMaskRenderTarget 已从热路径移出，仅在 _rtInvalidated 时执行
             if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f ||
                 MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
                 _rtInvalidated = true;
 
             if (_rtInvalidated)
             {
-                _currentBaked?.Dispose(); _currentBaked = null;
-                _incomingBaked?.Dispose(); _incomingBaked = null;
                 _rtInvalidated = false;
                 _lastBakeSize = (bakeW, bakeH);
-                // 尺寸变化时重新触发异步烘焙
+
+                // mask 重建只在尺寸/参数真正变化时执行一次
+                EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
+
+                _currentBaked?.Dispose(); _currentBaked = null;
+                _incomingBaked?.Dispose(); _incomingBaked = null;
+
                 if (_currentBitmap != null) _ = ReBakeCurrentAsync(_currentBitmap, bakeW, bakeH);
                 if (_incomingBitmap != null) _ = ReBakeIncomingAsync(_incomingBitmap, bakeW, bakeH);
             }
-
-            // ── 不再有任何同步 BakeRenderTarget 调用 ────────────────────────────
-            // _currentBaked / _incomingBaked 由异步路径填充，未就绪时静默跳过
 
             // ── 绘制 current ────────────────────────────────────────────────────
             float currentAlpha = _isFading ? Math.Max(0f, 1f - linearT) : 1f;
@@ -673,40 +681,79 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private async Task ReBakeCurrentAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
         {
+            _bakeCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _bakeCts = cts;
+
             if (_canvas == null) return;
             var device = _canvas.Device;
             bool shadow = IsShadowEnabled;
             float dpi = (float)DpiScale;
-            float radius = (float)ArtCornerRadius;
             var maskRT = _maskRT;
             if (maskRT == null) return;
 
             BakedRT? baked = null;
-            try { baked = await Task.Run(() => BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi)); }
+            try
+            {
+                baked = await Task.Run(() =>
+                {
+                    cts.Token.ThrowIfCancellationRequested();
+                    return BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi);
+                }, cts.Token);
+            }
+            catch (OperationCanceledException) { return; }
             catch { return; }
+            finally
+            {
+                if (ReferenceEquals(_bakeCts, cts)) _bakeCts = null;
+                cts.Dispose();
+            }
 
-            if (_currentBitmap == bitmap) _currentBaked = baked;
+            if (_currentBitmap == bitmap && !cts.IsCancellationRequested)
+            {
+                _currentBaked = baked;
+                _canvas?.Invalidate();
+            }
             else baked?.Dispose();
-            _canvas?.Invalidate();
         }
 
         private async Task ReBakeIncomingAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
         {
+            _bakeCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _bakeCts = cts;
+
             if (_canvas == null) return;
             var device = _canvas.Device;
             bool shadow = IsShadowEnabled;
             float dpi = (float)DpiScale;
-            float radius = (float)ArtCornerRadius;
             var maskRT = _maskRT;
             if (maskRT == null) return;
 
             BakedRT? baked = null;
-            try { baked = await Task.Run(() => BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi)); }
+            try
+            {
+                baked = await Task.Run(() =>
+                {
+                    cts.Token.ThrowIfCancellationRequested();
+                    return BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi);
+                }, cts.Token);
+            }
+            catch (OperationCanceledException) { return; }
             catch { return; }
+            finally
+            {
+                if (ReferenceEquals(_bakeCts, cts)) _bakeCts = null;
+                cts.Dispose();
+            }
 
-            if (_incomingBitmap == bitmap) _incomingBaked = baked;
+            if (_incomingBitmap == bitmap)
+            {
+                _incomingBaked?.Dispose();
+                _incomingBaked = baked;
+                _canvas?.Invalidate();
+            }
             else baked?.Dispose();
-            _canvas?.Invalidate();
         }
 
         /// <summary>
@@ -869,6 +916,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _loadCts?.Cancel();
             _loadCts?.Dispose();
             _loadCts = null;
+
+            _bakeCts?.Cancel();
+            _bakeCts?.Dispose();
+            _bakeCts = null;
 
             StopRenderingLoop();
 

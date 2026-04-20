@@ -59,6 +59,7 @@ namespace WinUIMusicPlayer.ViewModel
         private DeviceWatcher DeviceWatcher { get; set; }
         private List<FileSystemWatcher> Watchers { get; set; } = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
+        private CancellationTokenSource? _musicUpdateCts;
 
         public AppViewModel AppViewModel { get;}
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -406,21 +407,60 @@ namespace WinUIMusicPlayer.ViewModel
                 _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
                 AppViewModel.LoadLyricsToUI();                
             }
-        }       
+        }
 
-        public async Task UpdatePlayBar(Music music)
+        public async Task UpdatePlayBar(Music music, CancellationToken token = default)
         {
-            var picData = await GetRawImage(music);
-            //BitmapImage DetailCover = await ToolUtils.ConvertByteArrayToBitmapImage(AppViewModel.LyricPageBackgroundData);
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                AppViewModel.LyricPageBackgroundData = picData;
-                AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                //AppViewModel.MusicDetailCover = DetailCover;
-            });
-            SystemMediaControlsService.UpdateSystemMediaControlsState();
-            SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
-            _ = SystemMediaControlsService.UpdateMediaInfo(music.Title, music.Author, music.Album, AppViewModel.LyricPageBackgroundData);           
+                // --- 阶段 A: 耗时的数据读取 ---
+                // 使用 Task.Run 彻底解决 Track 初始化阻塞 UI 的问题
+                byte[] picData = await Task.Run(async () =>
+                {
+                    // 如果在启动前就已经切歌了，直接退出
+                    token.ThrowIfCancellationRequested();
+                    return await GetRawImage(music);
+                }, token);
+
+                // --- 阶段 B: 检查有效性 ---
+                if (token.IsCancellationRequested) return;
+
+                // --- 阶段 C: 回到 UI 线程更新界面 ---
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    // 双重检查：确保此时用户没有又点了一次切歌
+                    if (!token.IsCancellationRequested)
+                    {
+                        AppViewModel.LyricPageBackgroundData = picData;
+                        AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+                    }
+                });
+
+                // --- 阶段 D: 更新系统媒体控制 (SMTC) ---
+                // 同样在后台运行，避免 SMTC 的 COM 组件调用阻塞 UI
+                await Task.Run(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+
+                    SystemMediaControlsService.UpdateSystemMediaControlsState();
+                    SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
+                    _ = SystemMediaControlsService.UpdateMediaInfo(
+                        music.Title,
+                        music.Author,
+                        music.Album,
+                        picData);
+                }, token);
+            }
+            catch (OperationCanceledException)
+            {
+                // 任务被正常取消，不作为异常处理
+                System.Diagnostics.Debug.WriteLine($"UpdatePlayBar 取消: {music.Title}");
+            }
+            catch (Exception ex)
+            {
+                // 记录其他可能的异常
+                System.Diagnostics.Debug.WriteLine($"UpdatePlayBar 出错: {ex.Message}");
+            }
         }
 
         public async void ThemeChangedUpdateCover()
@@ -640,21 +680,32 @@ namespace WinUIMusicPlayer.ViewModel
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
-        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false) {
+        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
+        {
             try
             {
+                // 1. 立即取消上一次正在进行的 UI 更新任务（图片读取、网络请求等）
+                _musicUpdateCts?.Cancel();
+                _musicUpdateCts?.Dispose();
+                _musicUpdateCts = new CancellationTokenSource();
+                var token = _musicUpdateCts.Token;
+                // 2. 基础数据赋值
                 AppViewModel.CurrentPlayingMusic = music;
-                _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                // 4. 立即启动音频播放（确保听感上的无延迟）
+                MusicPlaybackService.PlayMusic(music);
+                // 5. 启动异步 UI 更新，不阻塞当前方法
+                _ = UpdatePlayBar(music, token);
+                // 6. 其他 UI 同步/轻量操作
                 AppViewModel.LoadLyricsToUI();
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();
-                MusicPlaybackService.PlayMusic(music);
                 AppViewModel.UpdateProgressTimerUI();
                 App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();
             }
             catch (Exception ex)
             {
-                App.Services.GetRequiredService<NotificationService>().SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                App.Services.GetRequiredService<NotificationService>()
+                   .SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
 
