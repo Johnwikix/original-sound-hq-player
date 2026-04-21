@@ -20,72 +20,58 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
     {
         private const string PartCanvas = "canvas";
 
-        // ── 依赖属性 ──────────────────────────────────────────────────────────
+        // ── 依赖属性（保持不变） ──────────────────────────────────────────────
 
         public static readonly DependencyProperty DpiScaleProperty =
             DependencyProperty.Register(nameof(DpiScale), typeof(double),
                 typeof(AlbumArtControl), new PropertyMetadata(1.0, OnDpiScaleChanged));
-
         public double DpiScale
         {
             get => (double)GetValue(DpiScaleProperty);
             set => SetValue(DpiScaleProperty, value);
         }
-
         private static void OnDpiScaleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-            ctrl._maskInvalidated = true;
-            ctrl._rtInvalidated = true;
-            ctrl._canvas?.Invalidate();
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated) return;
+            c._maskInvalidated = true;
+            c._rtInvalidated = true;
+            c._canvas?.Invalidate();
         }
 
         public static readonly DependencyProperty ImageBytesProperty =
             DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
                 typeof(AlbumArtControl), new PropertyMetadata(null, OnImageBytesChanged));
-
         public byte[] ImageBytes
         {
             get => (byte[])GetValue(ImageBytesProperty);
             set => SetValue(ImageBytesProperty, value);
         }
-
         private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-            if (!ctrl.IsActive) return;
-
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
             var newBytes = e.NewValue as byte[];
-            if (ctrl.IsDuplicateAndUpdate(newBytes)) return;
-
-            if (newBytes is { Length: > 0 })
-                _ = ctrl.LoadBitmapAsync(newBytes);
-            else
-                _ = ctrl.LoadDefaultCoverAsync();
+            if (c.IsDuplicateAndUpdate(newBytes)) return;
+            if (newBytes is { Length: > 0 }) _ = c.LoadBitmapAsync(newBytes);
+            else _ = c.LoadDefaultCoverAsync();
         }
 
         public static readonly DependencyProperty IsDarkProperty =
             DependencyProperty.Register(nameof(IsDark), typeof(bool),
                 typeof(AlbumArtControl), new PropertyMetadata(true, OnIsDarkChanged));
-
         public bool IsDark
         {
             get => (bool)GetValue(IsDarkProperty);
             set => SetValue(IsDarkProperty, value);
         }
-
         private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-            if (!ctrl.IsActive) return;
-            ctrl.InvalidateDedup();
-            if (ctrl.ImageBytes is { Length: > 0 })
-                _ = ctrl.LoadBitmapAsync(ctrl.ImageBytes);
-            else
-                _ = ctrl.LoadDefaultCoverAsync();
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
+            c.InvalidateDedup();
+            if (c.ImageBytes is { Length: > 0 }) _ = c.LoadBitmapAsync(c.ImageBytes);
+            else _ = c.LoadDefaultCoverAsync();
         }
 
         public static readonly DependencyProperty MarginTopRatioProperty =
@@ -141,92 +127,97 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             get => (bool)GetValue(IsShadowEnabledProperty);
             set => SetValue(IsShadowEnabledProperty, value);
         }
-
         private static void OnShadowEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-            ctrl._rtInvalidated = true;
-            ctrl._canvas?.Invalidate();
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated) return;
+            c._rtInvalidated = true;
+            c._canvas?.Invalidate();
         }
 
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-            if (!ctrl.IsActive) return;
-            ctrl._maskInvalidated = true;
-            ctrl._rtInvalidated = true;
-            ctrl._canvas?.Invalidate();
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
+            c._maskInvalidated = true;
+            c._rtInvalidated = true;
+            c._canvas?.Invalidate();
         }
 
         public static readonly DependencyProperty IsActiveProperty =
             DependencyProperty.Register(nameof(IsActive), typeof(bool),
                 typeof(AlbumArtControl), new PropertyMetadata(false, OnIsActiveChanged));
-
         public bool IsActive
         {
             get => (bool)GetValue(IsActiveProperty);
             set => SetValue(IsActiveProperty, value);
         }
-
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = (AlbumArtControl)d;
-            if (!ctrl._isResourcesCreated) return;
-
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated) return;
             if ((bool)e.NewValue)
             {
-                if (ctrl.ImageBytes is { Length: > 0 } bytes)
-                    _ = ctrl.LoadBitmapAsync(bytes);
-                else
-                    _ = ctrl.LoadDefaultCoverAsync();
+                if (c.ImageBytes is { Length: > 0 } b) _ = c.LoadBitmapAsync(b);
+                else _ = c.LoadDefaultCoverAsync();
             }
             else
             {
-                ctrl._loadCts?.Cancel();
-                ctrl._isFading = false;
-                ctrl._canvas?.Invalidate();
+                c._loadCts?.Cancel();
+                c._isFading = false;
+                c._canvas?.Invalidate();
             }
         }
 
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
         private CanvasControl? _canvas;
+        private bool _isResourcesCreated;
+        private bool _disposed;
 
+        // ── 单张 RT 架构 ──────────────────────────────────────────────────────
+        // 当前正在显示的 baked RT（已含圆角+阴影）
+        private BakedRT? _currentRT;
+        // 即将替换 _currentRT 的下一张 RT（bake 完成后在 Draw 里切换）
+        private BakedRT? _nextRT;
+
+        // 解码完成、等待在 Draw 里 bake 的 bitmap
+        // （bake 必须在 UI 线程，所以不能在 Task.Run 里完成）
+        private CanvasBitmap? _pendingBitmap;
+        // 当前 RT 对应的原始 bitmap（用于 _rtInvalidated 时重新 bake）
         private CanvasBitmap? _currentBitmap;
-        private CanvasBitmap? _incomingBitmap;
-
-        // ── 统一过渡进度 t ∈ [0, 1] ──────────────────────────────────────────
-        // t=0：完全显示 current，t=1：完全显示 incoming
-        // alpha 和 scale 都由同一个 t 驱动，确保同步
-        private float _transitionT = 0f;
-        private const float FadeSpeed = 1.5f;
-
-        private bool _isFading = false;
-
+        // 队列中最新一张（过渡期间到来的更新只保留最新）
         private CanvasBitmap? _queuedBitmap;
-        private readonly Queue<CanvasBitmap> _disposeQueue = new();
+
+        private readonly Queue<object> _disposeQueue = new();
+
+        // ── Scale-fade 过渡 ───────────────────────────────────────────────────
+        // t ∈ [0,1]：0=旧图全显，1=新图全显
+        // [0, 0.5)：旧图 scale-out + fade-out
+        // [0.5, 1]：新图 scale-in  + fade-in
+        private float _t;
+        private bool _isFading;
+        private const float FadeSpeed = 2.2f;   // 整个动画约 0.45s
+        private const float ScaleSmall = 0.90f; // 缩放最小值（新图从此 scale in）
+
+        // ── 内容区域缓存 ──────────────────────────────────────────────────────
+        private Rect _contentRect;
+
+        // ── Mask / RT 缓存 ────────────────────────────────────────────────────
+        private CanvasRenderTarget? _maskRT;
+        private (float w, float h, float radius) _maskSize;
+        private bool _maskInvalidated;
+        private bool _rtInvalidated;
+        private (float w, float h) _lastBakeSize;
 
         private CancellationTokenSource? _loadCts;
-        private bool _isResourcesCreated = false;
-        private bool _disposed = false;
+        private bool _isClockRegistered;
 
         private long _lastLength = -1;
         private int _lastHash;
         private const float HardMaxSize = 1280f;
 
-        private CanvasRenderTarget? _maskRT;
-        private (float w, float h, float radius) _maskSize;
-        private bool _maskInvalidated = false;
-
-        private BakedRT? _currentBaked;
-        private BakedRT? _incomingBaked;
-        private (float w, float h) _lastBakeSize;
-        private bool _rtInvalidated = false;
-        private bool _isClockRegistered = false;
-        private CancellationTokenSource? _bakeCts;
-        // ── 构造函数 ──────────────────────────────────────────────────────────
+        // ── 构造 ──────────────────────────────────────────────────────────────
 
         public AlbumArtControl()
         {
@@ -234,22 +225,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             Unloaded += (_, _) => Dispose(true);
         }
 
-        // ── 模板应用 ──────────────────────────────────────────────────────────
-
         protected override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-
             if (_canvas != null)
             {
                 _canvas.CreateResources -= Canvas_CreateResources;
                 _canvas.Draw -= Canvas_Draw;
                 _canvas = null;
             }
-
             _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
             if (_canvas == null) return;
-
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
         }
@@ -266,200 +252,351 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private async Task CreateResourcesAsync(CanvasControl sender)
         {
-            if (ImageBytes is { Length: > 0 } bytes)
-                await LoadBitmapAsync(bytes, sender);
-            else
-                await LoadDefaultCoverAsync(sender);
+            if (ImageBytes is { Length: > 0 } b) await LoadBitmapAsync(b, sender);
+            else await LoadDefaultCoverAsync(sender);
         }
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            DrawImageLayer(e.DrawingSession);
+            // ── 在 Draw 回调里做 bake（保证 UI 线程 + GPU 上下文就绪）──────
+            TryBakePending(sender);
+
+            DrawFrame(e.DrawingSession, sender);
             FlushDisposeQueue();
         }
 
-        // ── 核心状态机 ────────────────────────────────────────────────────────
+        // ── Pending bake（UI 线程，Draw 回调内执行）──────────────────────────
 
-        private void EnqueueBitmap(CanvasBitmap newBitmap)
+        /// <summary>
+        /// 如果有待 bake 的 bitmap，在此处同步完成 bake 并存入 _nextRT。
+        /// 全程在 UI 线程，不涉及跨线程 GPU 资源创建。
+        /// </summary>
+        private void TryBakePending(CanvasControl sender)
+        {
+            if (_pendingBitmap == null) return;
+            var bitmap = _pendingBitmap;
+            _pendingBitmap = null;
+
+            float cw = (float)sender.Size.Width;
+            float ch = (float)sender.Size.Height;
+            if (cw <= 0 || ch <= 0) return;
+
+            ComputeContentRect(cw, ch);
+            if (_contentRect == Rect.Empty) return;
+
+            // letterbox 计算出实际绘制尺寸，bake 就按这个尺寸做
+            Rect destRect = CalcDestRect(bitmap, _contentRect);
+            float bakeW = (float)destRect.Width;
+            float bakeH = (float)destRect.Height;
+            if (bakeW <= 0 || bakeH <= 0) return;
+
+            float radius = (float)ArtCornerRadius;
+            EnsureMask(sender.Device, bakeW, bakeH, radius);
+            if (_maskRT == null) return;
+
+            var baked = BakeCore(sender.Device, bitmap, bakeW, bakeH,
+                                  _maskRT, IsShadowEnabled, (float)DpiScale);
+
+            if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
+            _nextRT = baked;
+
+            if (_currentBitmap != null && _currentBitmap != bitmap)
+                _disposeQueue.Enqueue(_currentBitmap);
+            _currentBitmap = bitmap;
+
+            StartTransition();
+        }
+
+        // ── 状态机 ────────────────────────────────────────────────────────────
+
+        private void StartTransition()
+        {
+            _t = 0f;
+            _isFading = true;
+            StartRenderingLoop();
+        }
+
+        /// <summary>
+        /// 新 bitmap 解码完成后调用。
+        /// 过渡中：只更新队列（只保留最新），不立刻插入新过渡。
+        /// 空闲时：直接存入 _pendingBitmap，触发下一帧 bake。
+        /// </summary>
+        private void EnqueueDecoded(CanvasBitmap bitmap)
         {
             if (_isFading)
             {
                 if (_queuedBitmap != null) _disposeQueue.Enqueue(_queuedBitmap);
-                _queuedBitmap = newBitmap;
+                _queuedBitmap = bitmap;
+                // 不调用 SetPending，等当前过渡结束后由 OnSharedTick 拉队列
             }
             else
             {
-                StartTransition(newBitmap);
+                SetPending(bitmap);
             }
-
-            StartRenderingLoop();
         }
 
-        private void StartTransition(CanvasBitmap newBitmap)
+
+        private void SetPending(CanvasBitmap bitmap)
         {
-            if (_currentBitmap != null)
+            if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
+            _pendingBitmap = bitmap;
+            _canvas?.Invalidate();
+        }
+
+        // ── Tick ─────────────────────────────────────────────────────────────
+
+        public void OnSharedTick(TimeSpan elapsed)
+        {
+            if (!_isFading && _queuedBitmap == null) return;
+
+            float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
+            bool wasF = _isFading;
+
+            if (_isFading)
             {
-                _disposeQueue.Enqueue(_currentBitmap);
-                _currentBitmap = null;
-                _currentBaked?.Dispose();
-                _currentBaked = null;
+                _t = Math.Min(1f, _t + delta * FadeSpeed);
+
+                if (_t >= 0.5f && _nextRT != null)
+                {
+                    if (_currentRT != null) _disposeQueue.Enqueue(_currentRT);
+                    _currentRT = _nextRT;
+                    _nextRT = null;
+                }
+
+                if (_t >= 1f)
+                {
+                    _t = 0f;
+                    _isFading = false;
+                }
             }
 
-            _incomingBitmap = newBitmap;
-            _incomingBaked = null;
+            // 过渡刚结束，拉队列里最新的一张
+            if (wasF && !_isFading && _queuedBitmap != null)
+            {
+                var next = _queuedBitmap;
+                _queuedBitmap = null;
+                SetPending(next);
+            }
 
-            _transitionT = 0f;
-            _isFading = true;
-
-            _ = TryPreBakeIncomingAsync(newBitmap);
+            if (_isFading || wasF != _isFading) _canvas?.Invalidate();
+            if (!_isFading && _queuedBitmap == null) StopRenderingLoop();
         }
 
-        private async Task TryPreBakeIncomingAsync(CanvasBitmap bitmap)
+        // ── 绘制 ──────────────────────────────────────────────────────────────
+
+        // ── DrawFrame：用 CalcDestRect 计算 letterbox 矩形传给 DrawBaked ───────
+        private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
         {
-            if (_canvas == null) return;
-            float cw = (float)_canvas.Size.Width;
-            float ch = (float)_canvas.Size.Height;
+            if (!IsActive) return;
+            float cw = (float)sender.Size.Width;
+            float ch = (float)sender.Size.Height;
             if (cw <= 0 || ch <= 0) return;
 
-            float contentW = cw - (float)MarginLeftRatio - (float)MarginRightRatio;
-            float contentH = ch - (float)MarginTopRatio - (float)MarginBottomRatio;
-            if (contentW <= 0 || contentH <= 0) return;
+            ComputeContentRect(cw, ch);
+            if (_contentRect == Rect.Empty) return;
 
-            var targetRect = CalcDestRect(bitmap,
-                (float)MarginLeftRatio, (float)MarginTopRatio, contentW, contentH);
-            float bakeW = (float)targetRect.Width;
-            float bakeH = (float)targetRect.Height;
-            if (bakeW <= 0 || bakeH <= 0) return;
-
-            // mask 必须在 UI 线程上准备好再传给后台线程
-            EnsureMaskRenderTarget(_canvas.Device, bakeW, bakeH, (float)ArtCornerRadius);
-
-            await PreBakeIncomingAsync(bitmap, bakeW, bakeH);
-        }
-
-        private async Task PreBakeIncomingAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
-        {
-            if (_canvas == null) return;
-            var device = _canvas.Device;
-
-            // 快照当前参数（避免闭包捕获 this 上的可变字段）
-            bool shadow = IsShadowEnabled;
-            float dpiScale = (float)DpiScale;
-            float radius = (float)ArtCornerRadius;
-            var maskRT = _maskRT; // 此时 mask 已在调用方 EnsureMask 后就绪
-
-            BakedRT? baked = null;
-            try
+            // 尺寸变化检测（以 contentRect 的宽高为基准）
+            float contentW = (float)_contentRect.Width;
+            float contentH = (float)_contentRect.Height;
+            if (MathF.Abs(_lastBakeSize.w - contentW) > 0.5f ||
+                MathF.Abs(_lastBakeSize.h - contentH) > 0.5f)
             {
-                baked = await Task.Run(() =>
-                    BakeRenderTargetCore(device, bitmap, bakeW, bakeH,
-                                         maskRT!, shadow, dpiScale));
+                _lastBakeSize = (contentW, contentH);
+                _rtInvalidated = true;
             }
-            catch { return; }
 
-            // 回到 UI 线程再赋值
-            if (_incomingBitmap == bitmap) // 确认没被新的过渡取代
-                _incomingBaked = baked;
-            else
-                baked?.Dispose(); // 已过时，丢弃
-        }
-
-        /// <summary>
-        /// 返回 _currentBitmap 在当前 canvas 尺寸下的目标矩形；
-        /// canvas 未就绪时退化为零矩形。
-        /// </summary>
-        private Rect GetCurrentDestRect()
-        {
-            if (_currentBitmap == null || _canvas == null) return Rect.Empty;
-            float cw = (float)_canvas.Size.Width;
-            float ch = (float)_canvas.Size.Height;
-            if (cw <= 0 || ch <= 0) return Rect.Empty;
-
-            float padL = (float)MarginLeftRatio;
-            float padR = (float)MarginRightRatio;
-            float padT = (float)MarginTopRatio;
-            float padB = (float)MarginBottomRatio;
-            float contentW = cw - padL - padR;
-            float contentH = ch - padT - padB;
-            if (contentW <= 0 || contentH <= 0) return Rect.Empty;
-
-            return CalcDestRect(_currentBitmap, padL, padT, contentW, contentH);
-        }
-
-        private void UpdateFadeState(float delta)
-        {
-            FlushDisposeQueue();
-            if (!_isFading) return;
-
-            _transitionT = Math.Min(1f, _transitionT + delta * FadeSpeed);
-
-            if (_transitionT >= 1f)
+            if (_rtInvalidated)
             {
-                // 过渡完成：incoming 变成 current
-                if (_currentBitmap != null) _disposeQueue.Enqueue(_currentBitmap);
-                _currentBaked?.Dispose();
-                _currentBaked = _incomingBaked;
-                _incomingBaked = null;
-                _currentBitmap = _incomingBitmap;
-                _incomingBitmap = null;
-                _transitionT = 0f;
-                _isFading = false;
-
-                if (_queuedBitmap != null)
+                _rtInvalidated = false;
+                _maskInvalidated = true;
+                if (_currentBitmap != null)
                 {
-                    var next = _queuedBitmap;
-                    _queuedBitmap = null;
-                    StartTransition(next);
+                    if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
+                    _pendingBitmap = _currentBitmap;
+                }
+                if (_currentRT != null) { _disposeQueue.Enqueue(_currentRT); _currentRT = null; }
+                if (_nextRT != null) { _disposeQueue.Enqueue(_nextRT); _nextRT = null; }
+                _canvas?.Invalidate();
+                return; // 本帧跳过绘制，下一帧 TryBakePending 会重建
+            }
+
+            if (_currentRT == null && _nextRT == null) return;
+
+            // 用 BakedRT 里记录的 srcW/srcH 还原 aspect ratio，计算 letterbox 矩形
+            BakedRT? drawRT = _currentRT ?? _nextRT;
+            Rect destRect = drawRT != null
+                ? CalcDestRectFromSize(drawRT.SrcW, drawRT.SrcH, _contentRect)
+                : _contentRect;
+
+            if (!_isFading)
+            {
+                if (_currentRT != null)
+                    DrawBaked(ds, _currentRT, destRect, 1f, 1f);
+            }
+            else
+            {
+                float t = _t;
+                if (t < 0.5f)
+                {
+                    float localT = t / 0.5f;
+                    float easedT = EaseIn(localT);
+                    float alpha = 1f - easedT;
+                    float scale = 1f - (1f - ScaleSmall) * easedT;
+                    if (_currentRT != null && alpha > 0f)
+                    {
+                        Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
+                        DrawBaked(ds, _currentRT, r, alpha, scale);
+                    }
+                }
+                else
+                {
+                    float localT = (t - 0.5f) / 0.5f;
+                    float easedT = EaseOut(localT);
+                    float alpha = easedT;
+                    float scale = ScaleSmall + (1f - ScaleSmall) * easedT;
+                    if (_currentRT != null && alpha > 0f)
+                    {
+                        Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
+                        DrawBaked(ds, _currentRT, r, alpha, scale);
+                    }
                 }
             }
         }
 
-        private void FlushDisposeQueue()
+        private static Rect CalcDestRectFromSize(float srcW, float srcH, Rect contentRect)
         {
-            while (_disposeQueue.TryDequeue(out var bmp))
+            float cw = (float)contentRect.Width;
+            float ch = (float)contentRect.Height;
+            if (srcW <= 0 || srcH <= 0 || cw <= 0 || ch <= 0)
+                return contentRect;
+
+            float aspect = srcW / srcH;
+            float drawW, drawH;
+            if (aspect >= cw / ch) { drawW = cw; drawH = drawW / aspect; }
+            else { drawH = ch; drawW = drawH * aspect; }
+
+            return new Rect(
+                contentRect.X + (cw - drawW) * 0.5f,
+                contentRect.Y + (ch - drawH) * 0.5f,
+                drawW, drawH);
+        }
+
+        private static void DrawBaked(CanvasDrawingSession ds,
+                                       BakedRT baked, Rect destRect,
+                                       float alpha, float scale)
+        {
+            if (destRect.Width <= 0 || destRect.Height <= 0) return;
+
+            double cx = destRect.X + destRect.Width * 0.5;
+            double cy = destRect.Y + destRect.Height * 0.5;
+            double dw = (destRect.Width + baked.Pad * 2) * scale;
+            double dh = (destRect.Height + baked.Pad * 2) * scale;
+            var dest = new Rect(cx - dw * 0.5, cy - dh * 0.5, dw, dh);
+
+            ds.DrawImage(baked.RT, dest, baked.RT.Bounds, alpha,
+                         CanvasImageInterpolation.Linear);
+        }
+
+        // ── 缓动 ─────────────────────────────────────────────────────────────
+
+        private static float EaseIn(float t) => t * t;              // 加速淡出
+        private static float EaseOut(float t) => 1f - (1f - t) * (1f - t); // 减速淡入
+
+        // ── 内容矩形 ──────────────────────────────────────────────────────────
+
+        private void ComputeContentRect(float cw, float ch)
+        {
+            float x = (float)MarginLeftRatio;
+            float y = (float)MarginTopRatio;
+            float w = cw - x - (float)MarginRightRatio;
+            float h = ch - y - (float)MarginBottomRatio;
+            _contentRect = w > 0 && h > 0 ? new Rect(x, y, w, h) : Rect.Empty;
+        }
+
+        // ── Mask ──────────────────────────────────────────────────────────────
+
+        private void EnsureMask(CanvasDevice device, float w, float h, float radius)
+        {
+            if (!_maskInvalidated && _maskRT != null
+                && MathF.Abs(_maskSize.w - w) < 0.5f
+                && MathF.Abs(_maskSize.h - h) < 0.5f
+                && MathF.Abs(_maskSize.radius - radius) < 0.5f)
+                return;
+
+            _maskRT?.Dispose();
+            float dpi = 96f * (float)DpiScale;
+            _maskRT = new CanvasRenderTarget(device, w, h, dpi);
+            using (var mds = _maskRT.CreateDrawingSession())
             {
-                if (bmp != null
-                    && bmp != _currentBitmap
-                    && bmp != _incomingBitmap
-                    && bmp != _queuedBitmap)
-                    bmp.Dispose();
+                mds.Clear(Microsoft.UI.Colors.Transparent);
+                mds.FillRoundedRectangle(0, 0, w, h, radius, radius, Microsoft.UI.Colors.White);
             }
+            _maskSize = (w, h, radius);
+            _maskInvalidated = false;
         }
 
-        // ── 缓动函数 ─────────────────────────────────────────────────────────
+        // ── Bake（全部在 UI 线程，由 Canvas_Draw → TryBakePending 调用）──────
 
-        /// <summary>Cubic ease-out：快进慢出，自然减速感。</summary>
-        private static float EaseOutN(float t, float n)
+        private static BakedRT BakeCore(
+    CanvasDevice device, CanvasBitmap bitmap,
+    float w, float h,
+    CanvasRenderTarget maskRT,
+    bool shadow, float dpiScale)
         {
-            float f = 1f - t;
-            return 1f - MathF.Pow(f, n);
-        }
+            float pad = shadow ? 34f : 0f;
+            var rt = new CanvasRenderTarget(device, w + pad * 2, h + pad * 2, 96f * dpiScale);
 
-        // ── 去重 ──────────────────────────────────────────────────────────────
+            using var rtDs = rt.CreateDrawingSession();
+            rtDs.Clear(Microsoft.UI.Colors.Transparent);
 
-        public bool IsDuplicateAndUpdate(byte[]? newBytes)
-        {
-            if (newBytes is not { Length: > 0 })
+            float scaleRatio = Math.Min(w / bitmap.SizeInPixels.Width,
+                                        h / bitmap.SizeInPixels.Height);
+            var interp = scaleRatio < 0.5f
+                ? CanvasImageInterpolation.HighQualityCubic
+                : CanvasImageInterpolation.Linear;
+
+            using var scaleEff = new ScaleEffect
             {
-                bool wasEmpty = _lastLength == 0;
-                _lastLength = 0; _lastHash = 0;
-                return wasEmpty;
-            }
-            int hash = ToolUtils.ComputeFastHash(newBytes);
-            if (newBytes.Length == _lastLength && hash == _lastHash) return true;
-            _lastLength = newBytes.Length;
-            _lastHash = hash;
-            return false;
-        }
+                Source = bitmap,
+                Scale = new Vector2(w / bitmap.SizeInPixels.Width,
+                                    h / bitmap.SizeInPixels.Height),
+                InterpolationMode = interp
+            };
+            using var masked = new AlphaMaskEffect { Source = scaleEff, AlphaMask = maskRT };
 
-        public void InvalidateDedup() { _lastLength = -1; _lastHash = 0; }
+            if (shadow)
+            {
+                using var shadowFx = new ShadowEffect
+                {
+                    Source = masked,
+                    BlurAmount = 10f,
+                    ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
+                };
+                using var shadowOff = new Transform2DEffect
+                {
+                    Source = shadowFx,
+                    TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
+                };
+                using var comp = new CompositeEffect();
+                comp.Sources.Add(shadowOff);
+                comp.Sources.Add(masked);
+                rtDs.DrawImage(comp, pad, pad);
+            }
+            else
+            {
+                rtDs.DrawImage(masked, pad, pad);
+            }
+
+            return new BakedRT(rt, pad,
+                bitmap.SizeInPixels.Width, bitmap.SizeInPixels.Height);
+        }
 
         // ── 加载 ──────────────────────────────────────────────────────────────
 
         public async Task LoadBitmapAsync(byte[]? imageBytes,
-                                  ICanvasResourceCreator? resourceCreator = null)
+                                          ICanvasResourceCreator? resourceCreator = null)
         {
-            if (imageBytes == null || imageBytes.Length == 0)
+            if (imageBytes is not { Length: > 0 })
             {
                 await LoadDefaultCoverAsync(resourceCreator);
                 return;
@@ -471,27 +608,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             try
             {
-                // 快速连续切换时等待 80ms，若期间有新任务则取消本次解码
-                // 避免每次切换都触发完整的 BitmapDecoder 解码
-                await Task.Delay(80, cts.Token);
+                await Task.Delay(80, cts.Token); // 防抖
 
+                // Task.Run 只做像素解码，不碰 GPU 资源
                 var (pixels, bmpW, bmpH) = await Task.Run(async () =>
                 {
                     using var mem = new MemoryStream(imageBytes, writable: false);
                     using var ras = mem.AsRandomAccessStream();
                     var decoder = await BitmapDecoder.CreateAsync(ras);
 
-                    uint srcW = decoder.PixelWidth;
-                    uint srcH = decoder.PixelHeight;
+                    uint srcW = decoder.PixelWidth, srcH = decoder.PixelHeight;
                     float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                     uint dstW = Math.Max(1, (uint)(srcW * sc));
                     uint dstH = Math.Max(1, (uint)(srcH * sc));
 
                     cts.Token.ThrowIfCancellationRequested();
 
-                    var pixelData = await decoder.GetPixelDataAsync(
-                        BitmapPixelFormat.Rgba8,
-                        BitmapAlphaMode.Premultiplied,
+                    var pd = await decoder.GetPixelDataAsync(
+                        BitmapPixelFormat.Rgba8, BitmapAlphaMode.Premultiplied,
                         new BitmapTransform
                         {
                             ScaledWidth = dstW,
@@ -501,18 +635,18 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         ExifOrientationMode.RespectExifOrientation,
                         ColorManagementMode.DoNotColorManage);
 
-                    return (pixelData.DetachPixelData(), dstW, dstH);
+                    return (pd.DetachPixelData(), dstW, dstH);
                 }, cts.Token);
 
                 cts.Token.ThrowIfCancellationRequested();
 
+                // CanvasBitmap.CreateFromBytes 必须在 UI 线程
                 ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
                 var bmp = CanvasBitmap.CreateFromBytes(
                     creator, pixels, (int)bmpW, (int)bmpH,
                     Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
 
-                pixels = null;
-                EnqueueBitmap(bmp);
+                EnqueueDecoded(bmp);
             }
             catch (OperationCanceledException) { }
             catch
@@ -532,35 +666,35 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             try
             {
                 string fileName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
-                string path = Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
-
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
                 using var stream = await file.OpenReadAsync();
-
                 ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
                 var bmp = await CanvasBitmap.LoadAsync(creator, stream);
-                EnqueueBitmap(bmp);
+                EnqueueDecoded(bmp);
             }
             catch { }
         }
 
-        public void OnSharedTick(TimeSpan elapsed)
+        // ── 去重 ──────────────────────────────────────────────────────────────
+
+        public bool IsDuplicateAndUpdate(byte[]? newBytes)
         {
-            if (!_isFading && _queuedBitmap == null) return;
-
-            float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            bool wasF = _isFading;
-            UpdateFadeState(delta);
-
-            // 仅当状态实际改变，或 baked 已就绪时才重绘
-            bool needRedraw = _isFading || wasF != _isFading
-                              || (_currentBaked != null && !_isFading);
-            if (needRedraw) _canvas?.Invalidate();
-
-            if (!_isFading && _queuedBitmap == null)
-                StopRenderingLoop();
+            if (newBytes is not { Length: > 0 })
+            {
+                bool wasEmpty = _lastLength == 0;
+                _lastLength = 0; _lastHash = 0;
+                return wasEmpty;
+            }
+            int hash = ToolUtils.ComputeFastHash(newBytes);
+            if (newBytes.Length == _lastLength && hash == _lastHash) return true;
+            _lastLength = newBytes.Length; _lastHash = hash;
+            return false;
         }
+
+        public void InvalidateDedup() { _lastLength = -1; _lastHash = 0; }
+
+        // ── 时钟 ──────────────────────────────────────────────────────────────
 
         private void StartRenderingLoop()
         {
@@ -576,307 +710,35 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _isClockRegistered = false;
         }
 
-        // ── 绘制 ──────────────────────────────────────────────────────────────
+        // ── 释放队列 ──────────────────────────────────────────────────────────
 
-        private void DrawImageLayer(CanvasDrawingSession ds)
+        private void FlushDisposeQueue()
         {
-            if (!IsActive || _canvas == null) return;
-
-            float canvasW = (float)_canvas.Size.Width;
-            float canvasH = (float)_canvas.Size.Height;
-            if (canvasW <= 0 || canvasH <= 0) return;
-
-            float padTop = (float)MarginTopRatio;
-            float padBottom = (float)MarginBottomRatio;
-            float padLeft = (float)MarginLeftRatio;
-            float padRight = (float)MarginRightRatio;
-
-            float contentX = padLeft;
-            float contentY = padTop;
-            float contentW = canvasW - padLeft - padRight;
-            float contentH = canvasH - padTop - padBottom;
-            if (contentW <= 0 || contentH <= 0) return;
-
-            CanvasBitmap? refBmp = _incomingBitmap ?? _currentBitmap;
-            if (refBmp == null) return;
-
-            float bakeW = (float)CalcDestRect(refBmp, contentX, contentY, contentW, contentH).Width;
-            float bakeH = (float)CalcDestRect(refBmp, contentX, contentY, contentW, contentH).Height;
-            float radius = (float)ArtCornerRadius;
-            if (bakeW <= 0 || bakeH <= 0) return;
-
-            if (MathF.Abs(_lastBakeSize.w - bakeW) > 0.5f ||
-                MathF.Abs(_lastBakeSize.h - bakeH) > 0.5f)
-                _rtInvalidated = true;
-
-            if (_rtInvalidated)
+            while (_disposeQueue.TryDequeue(out var item))
             {
-                _rtInvalidated = false;
-                _lastBakeSize = (bakeW, bakeH);
-
-                EnsureMaskRenderTarget(ds.Device, bakeW, bakeH, radius);
-
-                _currentBaked?.Dispose(); _currentBaked = null;
-                _incomingBaked?.Dispose(); _incomingBaked = null;
-
-                if (_currentBitmap != null) _ = ReBakeCurrentAsync(_currentBitmap, bakeW, bakeH);
-                if (_incomingBitmap != null) _ = ReBakeIncomingAsync(_incomingBitmap, bakeW, bakeH);
-            }
-
-            // ── 绘制 current（过渡期间保持全不透明静止，GPU 无需混合）────────────
-            if (_currentBaked != null)
-            {
-                Rect staticRect = CalcDestRect(_currentBitmap!, contentX, contentY, contentW, contentH);
-                DrawBaked(ds, _currentBaked, staticRect, 1f);
-            }
-
-            // ── 绘制 incoming（从缩小+透明 弹入到正常大小+不透明）───────────────
-            if (_isFading && _incomingBaked != null)
-            {
-                float easedAlpha = EaseOutN(_transitionT, 3f);
-                float easedScale = EaseOutN(_transitionT, 4f);
-
-                const float ScaleFrom = 0.92f;
-                float scale = ScaleFrom + (1f - ScaleFrom) * easedScale;
-
-                Rect baseRect = CalcDestRect(_incomingBitmap!, contentX, contentY, contentW, contentH);
-                Rect scaledRect = ScaleRectFromCenter(baseRect, scale);
-
-                DrawBaked(ds, _incomingBaked, scaledRect, easedAlpha);
-            }
-        }
-
-        private async Task ReBakeCurrentAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
-        {
-            _bakeCts?.Cancel();
-            var cts = new CancellationTokenSource();
-            _bakeCts = cts;
-
-            if (_canvas == null) return;
-            var device = _canvas.Device;
-            bool shadow = IsShadowEnabled;
-            float dpi = (float)DpiScale;
-            var maskRT = _maskRT;
-            if (maskRT == null) return;
-
-            BakedRT? baked = null;
-            try
-            {
-                baked = await Task.Run(() =>
+                switch (item)
                 {
-                    cts.Token.ThrowIfCancellationRequested();
-                    return BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi);
-                }, cts.Token);
+                    case BakedRT b:
+                        if (b != _currentRT && b != _nextRT) b.Dispose();
+                        break;
+                    case CanvasBitmap bmp:
+                        if (bmp != _currentBitmap && bmp != _pendingBitmap && bmp != _queuedBitmap)
+                            bmp.Dispose();
+                        break;
+                }
             }
-            catch (OperationCanceledException) { return; }
-            catch { return; }
-            finally
-            {
-                if (ReferenceEquals(_bakeCts, cts)) _bakeCts = null;
-                cts.Dispose();
-            }
-
-            if (_currentBitmap == bitmap && !cts.IsCancellationRequested)
-            {
-                _currentBaked = baked;
-                _canvas?.Invalidate();
-            }
-            else baked?.Dispose();
         }
 
-        private async Task ReBakeIncomingAsync(CanvasBitmap bitmap, float bakeW, float bakeH)
-        {
-            _bakeCts?.Cancel();
-            var cts = new CancellationTokenSource();
-            _bakeCts = cts;
+        // ── Dispose ───────────────────────────────────────────────────────────
 
-            if (_canvas == null) return;
-            var device = _canvas.Device;
-            bool shadow = IsShadowEnabled;
-            float dpi = (float)DpiScale;
-            var maskRT = _maskRT;
-            if (maskRT == null) return;
-
-            BakedRT? baked = null;
-            try
-            {
-                baked = await Task.Run(() =>
-                {
-                    cts.Token.ThrowIfCancellationRequested();
-                    return BakeRenderTargetCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi);
-                }, cts.Token);
-            }
-            catch (OperationCanceledException) { return; }
-            catch { return; }
-            finally
-            {
-                if (ReferenceEquals(_bakeCts, cts)) _bakeCts = null;
-                cts.Dispose();
-            }
-
-            if (_incomingBitmap == bitmap)
-            {
-                _incomingBaked?.Dispose();
-                _incomingBaked = baked;
-                _canvas?.Invalidate();
-            }
-            else baked?.Dispose();
-        }
-
-        /// <summary>
-        /// 将 BakedRT 按 <paramref name="destRect"/> 指定的区域绘制，支持缩放。
-        /// BakedRT 内含 pad（用于阴影），destRect 是图像内容区域（不含 pad）。
-        /// </summary>
-        private static void DrawBaked(CanvasDrawingSession ds,
-                                      BakedRT baked,
-                                      Rect destRect,
-                                      float alpha)
-        {
-            if (destRect.Width <= 0 || destRect.Height <= 0) return;
-
-            // 目标区域要扩展 pad 以包含阴影
-            var destWithPad = new Rect(
-                destRect.X - baked.Pad,
-                destRect.Y - baked.Pad,
-                destRect.Width + baked.Pad * 2,
-                destRect.Height + baked.Pad * 2);
-
-            ds.DrawImage(baked.RT, destWithPad, baked.RT.Bounds, alpha);
-        }
-
-        // ── RenderTarget 烘焙 ─────────────────────────────────────────────────
-
-        private static BakedRT BakeRenderTargetCore(
-            CanvasDevice device,
-            CanvasBitmap bitmap,
-            float w, float h,
-            CanvasRenderTarget maskRT,
-            bool shadow, float dpiScale)
-        {
-            float pad = shadow ? 10f * 3f + 4f : 0f;
-            float rtW = w + pad * 2f;
-            float rtH = h + pad * 2f;
-            float dpi = 96f * dpiScale;
-            var rt = new CanvasRenderTarget(device, rtW, rtH, dpi);
-
-            using var rtDs = rt.CreateDrawingSession();
-            rtDs.Clear(Microsoft.UI.Colors.Transparent);
-
-            float scaleRatio = Math.Min(w / bitmap.SizeInPixels.Width,
-                                        h / bitmap.SizeInPixels.Height);
-            var interpolation = scaleRatio < 0.5f
-                ? CanvasImageInterpolation.HighQualityCubic
-                : CanvasImageInterpolation.Linear;
-
-            using var scale = new ScaleEffect
-            {
-                Source = bitmap,
-                Scale = new Vector2(w / bitmap.SizeInPixels.Width,
-                                    h / bitmap.SizeInPixels.Height),
-                InterpolationMode = interpolation
-            };
-            using var masked = new AlphaMaskEffect
-            {
-                Source = scale,
-                AlphaMask = maskRT
-            };
-
-            if (shadow)
-            {
-                using var shadowFx = new ShadowEffect
-                {
-                    Source = masked,
-                    BlurAmount = 10f,
-                    ShadowColor = Windows.UI.Color.FromArgb(100, 0, 0, 0)
-                };
-                using var shadowOffset = new Transform2DEffect
-                {
-                    Source = shadowFx,
-                    TransformMatrix = Matrix3x2.CreateTranslation(2f, 3f)
-                };
-                using var composite = new CompositeEffect();
-                composite.Sources.Add(shadowOffset);
-                composite.Sources.Add(masked);
-                rtDs.DrawImage(composite, pad, pad);
-            }
-            else
-            {
-                rtDs.DrawImage(masked, pad, pad);
-            }
-
-            return new BakedRT(rt, pad);
-        }
-
-        // ── 遮罩缓存 ──────────────────────────────────────────────────────────
-
-        private void EnsureMaskRenderTarget(CanvasDevice device,
-                                            float w, float h, float radius)
-        {
-            if (!_maskInvalidated
-                && _maskRT != null
-                && MathF.Abs(_maskSize.w - w) < 0.5f
-                && MathF.Abs(_maskSize.h - h) < 0.5f
-                && MathF.Abs(_maskSize.radius - radius) < 0.5f)
-                return;
-
-            _maskRT?.Dispose();
-            float dpi = 96f * (float)DpiScale;
-            _maskRT = new CanvasRenderTarget(device, w, h, dpi);
-
-            using (var maskDs = _maskRT.CreateDrawingSession())
-            {
-                maskDs.Clear(Microsoft.UI.Colors.Transparent);
-                maskDs.FillRoundedRectangle(0, 0, w, h, radius, radius,
-                                            Microsoft.UI.Colors.White);
-            }
-
-            _maskSize = (w, h, radius);
-            _maskInvalidated = false;
-
-            _currentBaked?.Dispose(); _currentBaked = null;
-            _incomingBaked?.Dispose(); _incomingBaked = null;
-        }
-
-        // ── 辅助 ──────────────────────────────────────────────────────────────
-
-        private static Rect CalcDestRect(
-            CanvasBitmap bmp, float cx, float cy, float cw, float ch)
-        {
-            float imgW = bmp.SizeInPixels.Width;
-            float imgH = bmp.SizeInPixels.Height;
-            if (imgW <= 0 || imgH <= 0) return new(cx, cy, cw, ch);
-
-            float aspect = imgW / imgH;
-            float drawW, drawH;
-            if (aspect >= cw / ch) { drawW = cw; drawH = drawW / aspect; }
-            else { drawH = ch; drawW = drawH * aspect; }
-
-            return new(cx + (cw - drawW) * 0.5f,
-                       cy + (ch - drawH) * 0.5f,
-                       drawW, drawH);
-        }
-
-        // ── 释放 ──────────────────────────────────────────────────────────────
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
 
         private void Dispose(bool disposing)
         {
             if (!disposing || _disposed) return;
             _disposed = true;
 
-            _loadCts?.Cancel();
-            _loadCts?.Dispose();
-            _loadCts = null;
-
-            _bakeCts?.Cancel();
-            _bakeCts?.Dispose();
-            _bakeCts = null;
-
+            _loadCts?.Cancel(); _loadCts?.Dispose(); _loadCts = null;
             StopRenderingLoop();
 
             if (_canvas != null)
@@ -887,33 +749,47 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
 
             _maskRT?.Dispose(); _maskRT = null;
-            _currentBaked?.Dispose(); _currentBaked = null;
-            _incomingBaked?.Dispose(); _incomingBaked = null;
+            _currentRT?.Dispose(); _currentRT = null;
+            _nextRT?.Dispose(); _nextRT = null;
             _currentBitmap?.Dispose(); _currentBitmap = null;
-            _incomingBitmap?.Dispose(); _incomingBitmap = null;
+            _pendingBitmap?.Dispose(); _pendingBitmap = null;
             _queuedBitmap?.Dispose(); _queuedBitmap = null;
 
-            while (_disposeQueue.TryDequeue(out var b)) b?.Dispose();
+            while (_disposeQueue.TryDequeue(out var item))
+            {
+                if (item is BakedRT b) b.Dispose();
+                else if (item is CanvasBitmap bmp) bmp.Dispose();
+            }
         }
-
-        private static Rect ScaleRectFromCenter(Rect r, float scale)
+        private static Rect CalcDestRect(CanvasBitmap bmp, Rect contentRect)
         {
-            double cx = r.X + r.Width * 0.5;
-            double cy = r.Y + r.Height * 0.5;
-            double nw = r.Width * scale;
-            double nh = r.Height * scale;
-            return new Rect(cx - nw * 0.5, cy - nh * 0.5, nw, nh);
+            float cw = (float)contentRect.Width;
+            float ch = (float)contentRect.Height;
+            float imgW = bmp.SizeInPixels.Width;
+            float imgH = bmp.SizeInPixels.Height;
+            if (imgW <= 0 || imgH <= 0 || cw <= 0 || ch <= 0)
+                return contentRect;
+
+            float aspect = imgW / imgH;
+            float drawW, drawH;
+            if (aspect >= cw / ch) { drawW = cw; drawH = drawW / aspect; }
+            else { drawH = ch; drawW = drawH * aspect; }
+
+            return new Rect(
+                contentRect.X + (cw - drawW) * 0.5f,
+                contentRect.Y + (ch - drawH) * 0.5f,
+                drawW, drawH);
         }
     }
-
-    // ── BakedRT ───────────────────────────────────────────────────────────────
 
     internal sealed class BakedRT : IDisposable
     {
         public readonly CanvasRenderTarget RT;
         public readonly float Pad;
-        public BakedRT(CanvasRenderTarget rt, float pad) { RT = rt; Pad = pad; }
+        public readonly float SrcW; // bitmap 原始像素宽
+        public readonly float SrcH; // bitmap 原始像素高
+        public BakedRT(CanvasRenderTarget rt, float pad, float srcW, float srcH)
+        { RT = rt; Pad = pad; SrcW = srcW; SrcH = srcH; }
         public void Dispose() => RT.Dispose();
     }
-
 }
