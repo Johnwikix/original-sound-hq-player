@@ -216,6 +216,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private long _lastLength = -1;
         private int _lastHash;
         private const float HardMaxSize = 1280f;
+        private readonly SemaphoreSlim _decodeSemaphore = new(1, 1);
+        private CancellationTokenSource? _decodeCts; // 独立于 _loadCts
 
         // ── 构造 ──────────────────────────────────────────────────────────────
 
@@ -594,7 +596,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── 加载 ──────────────────────────────────────────────────────────────
 
         public async Task LoadBitmapAsync(byte[]? imageBytes,
-                                          ICanvasResourceCreator? resourceCreator = null)
+                                  ICanvasResourceCreator? resourceCreator = null)
         {
             if (imageBytes is not { Length: > 0 })
             {
@@ -608,21 +610,87 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             try
             {
-                await Task.Delay(80, cts.Token); // 防抖
+                await Task.Delay(80, cts.Token); // 防抖保留
 
-                // Task.Run 只做像素解码，不碰 GPU 资源
-                var (pixels, bmpW, bmpH) = await Task.Run(async () =>
+                // ── 替换原来整个 Task.Run 块 ──────────────────────────────────
+                using (PerformanceTracker.Measure("A1_decode_Task.Run"))
+                {
+                    var result = await DecodeImageAsync(imageBytes, cts.Token);
+                    if (result == null) return; // 被新请求抢占，静默退出
+
+                    cts.Token.ThrowIfCancellationRequested();
+
+                    CanvasBitmap bmp;
+                    using (PerformanceTracker.Measure("A2_CreateFromBytes"))
+                    {
+                        ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
+                        bmp = CanvasBitmap.CreateFromBytes(
+                            creator,
+                            result.Value.pixels,
+                            (int)result.Value.w,
+                            (int)result.Value.h,
+                            Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
+                    }
+
+                    EnqueueDecoded(bmp);
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch
+            {
+                InvalidateDedup();
+                await LoadDefaultCoverAsync(resourceCreator);
+            }
+            finally
+            {
+                if (ReferenceEquals(_loadCts, cts)) _loadCts = null;
+                cts.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// 替换原来的 Task.Run 解码块。
+        /// 保证同时只有 1 个解码在跑，新调用会取消上一个（但不会堆积）。
+        /// </summary>
+        private async Task<(byte[] pixels, uint w, uint h)?> DecodeImageAsync(
+            byte[] imageBytes, CancellationToken outerToken)
+        {
+            // 取消上一次解码
+            var oldCts = Interlocked.Exchange(ref _decodeCts,
+                             new CancellationTokenSource());
+            oldCts?.Cancel();
+            oldCts?.Dispose();
+
+            var cts = _decodeCts!;
+            // 合并外部 cancel（控件卸载）和内部 cancel（被新请求抢占）
+            using var linked = CancellationTokenSource
+                                   .CreateLinkedTokenSource(outerToken, cts.Token);
+            var token = linked.Token;
+
+            // 等待前一个解码释放（最多等一个解码周期）
+            // 用 TryWait 而非 Wait，避免在高频切换时阻塞调用方
+            bool gotSlot = await _decodeSemaphore.WaitAsync(2000, token)
+                               .ConfigureAwait(false);
+            if (!gotSlot) return null;
+
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                return await Task.Run(async () =>
                 {
                     using var mem = new MemoryStream(imageBytes, writable: false);
                     using var ras = mem.AsRandomAccessStream();
                     var decoder = await BitmapDecoder.CreateAsync(ras);
 
                     uint srcW = decoder.PixelWidth, srcH = decoder.PixelHeight;
-                    float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
+                    float sc = Math.Min(1f,
+                        Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
                     uint dstW = Math.Max(1, (uint)(srcW * sc));
                     uint dstH = Math.Max(1, (uint)(srcH * sc));
 
-                    cts.Token.ThrowIfCancellationRequested();
+                    // BitmapDecoder 内部 IO 完成后再检查取消
+                    token.ThrowIfCancellationRequested();
 
                     var pd = await decoder.GetPixelDataAsync(
                         BitmapPixelFormat.Rgba8, BitmapAlphaMode.Premultiplied,
@@ -635,29 +703,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         ExifOrientationMode.RespectExifOrientation,
                         ColorManagementMode.DoNotColorManage);
 
+                    token.ThrowIfCancellationRequested();
                     return (pd.DetachPixelData(), dstW, dstH);
-                }, cts.Token);
 
-                cts.Token.ThrowIfCancellationRequested();
-
-                // CanvasBitmap.CreateFromBytes 必须在 UI 线程
-                ICanvasResourceCreator creator = resourceCreator ?? _canvas!;
-                var bmp = CanvasBitmap.CreateFromBytes(
-                    creator, pixels, (int)bmpW, (int)bmpH,
-                    Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
-
-                EnqueueDecoded(bmp);
-            }
-            catch (OperationCanceledException) { }
-            catch
-            {
-                InvalidateDedup();
-                await LoadDefaultCoverAsync(resourceCreator);
+                }, token).ConfigureAwait(false);
             }
             finally
             {
-                if (ReferenceEquals(_loadCts, cts)) _loadCts = null;
-                cts.Dispose();
+                _decodeSemaphore.Release();
             }
         }
 
