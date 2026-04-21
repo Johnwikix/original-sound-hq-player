@@ -1,5 +1,4 @@
-﻿// PerformanceTracker.cs — 放在 Utils 文件夹
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -8,7 +7,6 @@ namespace AnimatedWin2dControls.Utils
 {
     internal static class PerformanceTracker
     {
-        // 每个 probe 的统计数据
         private sealed class Stat
         {
             public long Count;
@@ -18,41 +16,55 @@ namespace AnimatedWin2dControls.Utils
         }
 
         private static readonly ConcurrentDictionary<string, Stat> _stats = new();
+        private static int _frameCnt;
+        private const int ReportInterval = 120;
 
-        // ── 计时 scope（using 语法糖）────────────────────────────────────────
         public readonly struct Scope : IDisposable
         {
             private readonly string _key;
             private readonly long _start;
-            public Scope(string key) { _key = key; _start = Stopwatch.GetTimestamp(); }
+
+            public Scope(string key)
+            {
+                #if DEBUG
+                _key = key;
+                _start = Stopwatch.GetTimestamp();
+                #endif
+            }
+
             public void Dispose()
             {
+                #if DEBUG
                 double ms = (Stopwatch.GetTimestamp() - _start)
                             * 1000.0 / Stopwatch.Frequency;
                 Record(_key, ms);
+                #endif
             }
         }
 
-        public static Scope Measure(string key) => new(key);
+        public static Scope Measure(string key)
+        {
+            #if DEBUG
+            return new Scope(key);
+            #else
+            return default;
+            #endif
+        }
 
+        [Conditional("DEBUG")]
         public static void Record(string key, double ms)
         {
             var s = _stats.GetOrAdd(key, _ => new Stat());
-            // 非原子，但对于诊断工具可接受
             s.Count++;
             s.TotalMs += ms;
             if (ms > s.MaxMs) s.MaxMs = ms;
             s.LastMs = ms;
 
-            // 超阈值立即打警告
             if (ms > 8.0)
                 Debug.WriteLine($"[Perf ⚠] {key} took {ms:F1} ms  (count={s.Count})");
         }
 
-        // ── 每隔 N 帧打一次汇总 ───────────────────────────────────────────────
-        private static int _frameCnt;
-        private const int ReportInterval = 120; // 约每 2 秒
-
+        [Conditional("DEBUG")]
         public static void FrameTick()
         {
             if (++_frameCnt < ReportInterval) return;
@@ -60,6 +72,7 @@ namespace AnimatedWin2dControls.Utils
             PrintReport();
         }
 
+        [Conditional("DEBUG")]
         public static void PrintReport()
         {
             var sb = new StringBuilder();
@@ -74,6 +87,7 @@ namespace AnimatedWin2dControls.Utils
             Debug.WriteLine(sb.ToString());
         }
 
+        [Conditional("DEBUG")]
         public static void Reset() => _stats.Clear();
     }
 }

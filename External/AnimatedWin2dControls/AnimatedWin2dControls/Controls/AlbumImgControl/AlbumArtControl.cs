@@ -260,54 +260,61 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            // ── 在 Draw 回调里做 bake（保证 UI 线程 + GPU 上下文就绪）──────
-            TryBakePending(sender);
+            PerformanceTracker.FrameTick();   // ← 新增
 
+            //TryBakePending(sender);
             DrawFrame(e.DrawingSession, sender);
             FlushDisposeQueue();
         }
 
         // ── Pending bake（UI 线程，Draw 回调内执行）──────────────────────────
 
-        /// <summary>
-        /// 如果有待 bake 的 bitmap，在此处同步完成 bake 并存入 _nextRT。
-        /// 全程在 UI 线程，不涉及跨线程 GPU 资源创建。
-        /// </summary>
-        private void TryBakePending(CanvasControl sender)
-        {
-            if (_pendingBitmap == null) return;
-            var bitmap = _pendingBitmap;
-            _pendingBitmap = null;
+        ///// <summary>
+        ///// 如果有待 bake 的 bitmap，在此处同步完成 bake 并存入 _nextRT。
+        ///// 全程在 UI 线程，不涉及跨线程 GPU 资源创建。
+        ///// </summary>
+        //private void TryBakePending(CanvasControl sender)
+        //{
+        //    if (_pendingBitmap == null) return;
+        //    var bitmap = _pendingBitmap;
+        //    _pendingBitmap = null;
 
-            float cw = (float)sender.Size.Width;
-            float ch = (float)sender.Size.Height;
-            if (cw <= 0 || ch <= 0) return;
+        //    float cw = (float)sender.Size.Width;
+        //    float ch = (float)sender.Size.Height;
+        //    if (cw <= 0 || ch <= 0) return;
 
-            ComputeContentRect(cw, ch);
-            if (_contentRect == Rect.Empty) return;
+        //    ComputeContentRect(cw, ch);
+        //    if (_contentRect == Rect.Empty) return;
 
-            // letterbox 计算出实际绘制尺寸，bake 就按这个尺寸做
-            Rect destRect = CalcDestRect(bitmap, _contentRect);
-            float bakeW = (float)destRect.Width;
-            float bakeH = (float)destRect.Height;
-            if (bakeW <= 0 || bakeH <= 0) return;
+        //    Rect destRect = CalcDestRect(bitmap, _contentRect);
+        //    float bakeW = (float)destRect.Width;
+        //    float bakeH = (float)destRect.Height;
+        //    if (bakeW <= 0 || bakeH <= 0) return;
 
-            float radius = (float)ArtCornerRadius;
-            EnsureMask(sender.Device, bakeW, bakeH, radius);
-            if (_maskRT == null) return;
+        //    float radius = (float)ArtCornerRadius;
 
-            var baked = BakeCore(sender.Device, bitmap, bakeW, bakeH,
-                                  _maskRT, IsShadowEnabled, (float)DpiScale);
+        //    BakedRT baked;
+        //    using (PerformanceTracker.Measure("B_TryBakePending_total"))   // ← probe B
+        //    {
+        //        using (PerformanceTracker.Measure("B1_EnsureMask"))         // ← probe B1
+        //            EnsureMask(sender.Device, bakeW, bakeH, radius);
 
-            if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
-            _nextRT = baked;
+        //        if (_maskRT == null) return;
 
-            if (_currentBitmap != null && _currentBitmap != bitmap)
-                _disposeQueue.Enqueue(_currentBitmap);
-            _currentBitmap = bitmap;
+        //        using (PerformanceTracker.Measure("B2_BakeCore"))           // ← probe B2 ★
+        //            baked = BakeCore(sender.Device, bitmap, bakeW, bakeH,
+        //                             _maskRT, IsShadowEnabled, (float)DpiScale);
+        //    }
 
-            StartTransition();
-        }
+        //    if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
+        //    _nextRT = baked;
+
+        //    if (_currentBitmap != null && _currentBitmap != bitmap)
+        //        _disposeQueue.Enqueue(_currentBitmap);
+        //    _currentBitmap = bitmap;
+
+        //    StartTransition();
+        //}
 
         // ── 状态机 ────────────────────────────────────────────────────────────
 
@@ -329,11 +336,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             {
                 if (_queuedBitmap != null) _disposeQueue.Enqueue(_queuedBitmap);
                 _queuedBitmap = bitmap;
-                // 不调用 SetPending，等当前过渡结束后由 OnSharedTick 拉队列
             }
             else
             {
-                SetPending(bitmap);
+                // 不再 SetPending，改为异步 bake
+                _ = PreBakeAsync(bitmap);
             }
         }
 
@@ -345,43 +352,100 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _canvas?.Invalidate();
         }
 
+        // ── PreBakeAsync：在 UI 线程但用 ConfigureAwait 让 bake 跨帧执行 ───────
+        private async Task PreBakeAsync(CanvasBitmap bitmap)
+        {
+            if (_canvas == null) return;
+
+            float cw = (float)_canvas.Size.Width;
+            float ch = (float)_canvas.Size.Height;
+            if (cw <= 0 || ch <= 0) { _disposeQueue.Enqueue(bitmap); return; }
+
+            ComputeContentRect(cw, ch);
+            if (_contentRect == Rect.Empty) { _disposeQueue.Enqueue(bitmap); return; }
+
+            Rect destRect = CalcDestRect(bitmap, _contentRect);
+            float bakeW = (float)destRect.Width;
+            float bakeH = (float)destRect.Height;
+            if (bakeW <= 0 || bakeH <= 0) { _disposeQueue.Enqueue(bitmap); return; }
+
+            float radius = (float)ArtCornerRadius;
+            bool shadow = IsShadowEnabled;
+            float dpi = (float)DpiScale;
+            var device = _canvas.Device;
+
+            // ── Bake 在后台线程完成，不占 UI 线程 ────────────────────────────
+            BakedRT baked;
+            try
+            {
+                // EnsureMask 必须在 UI 线程（访问 _maskRT 字段）
+                EnsureMask(device, bakeW, bakeH, radius);
+                if (_maskRT == null) { _disposeQueue.Enqueue(bitmap); return; }
+
+                // 把 maskRT 的像素数据传给后台，BakeCore 完全在后台线程跑
+                // 注意：CanvasRenderTarget 可以跨线程读，但不能跨线程写
+                // 所以把 BakeCore 里的 new CanvasRenderTarget 也移到后台
+                var maskRT = _maskRT; // 局部引用，bake 期间不会被替换
+
+                baked = await Task.Run(() =>
+                    BakeCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi));
+            }
+            catch
+            {
+                _disposeQueue.Enqueue(bitmap);
+                return;
+            }
+
+            // ── 回到 UI 线程，仅做指针替换，不做任何 GPU 工作 ────────────────
+            if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
+            _nextRT = baked;
+
+            if (_currentBitmap != null && _currentBitmap != bitmap)
+                _disposeQueue.Enqueue(_currentBitmap);
+            _currentBitmap = bitmap;
+
+            StartTransition(); // 这里才触发动画，_nextRT 已经就绪
+        }
+
         // ── Tick ─────────────────────────────────────────────────────────────
 
         public void OnSharedTick(TimeSpan elapsed)
         {
-            if (!_isFading && _queuedBitmap == null) return;
-
-            float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            bool wasF = _isFading;
-
-            if (_isFading)
+            using (PerformanceTracker.Measure("E_OnSharedTick"))            // ← probe E
             {
-                _t = Math.Min(1f, _t + delta * FadeSpeed);
+                if (!_isFading && _queuedBitmap == null) return;
 
-                if (_t >= 0.5f && _nextRT != null)
+                float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
+                bool wasF = _isFading;
+
+                if (_isFading)
                 {
-                    if (_currentRT != null) _disposeQueue.Enqueue(_currentRT);
-                    _currentRT = _nextRT;
-                    _nextRT = null;
+                    _t = Math.Min(1f, _t + delta * FadeSpeed);
+
+                    if (_t >= 0.5f && _nextRT != null)
+                    {
+                        if (_currentRT != null) _disposeQueue.Enqueue(_currentRT);
+                        _currentRT = _nextRT;
+                        _nextRT = null;
+                    }
+
+                    if (_t >= 1f)
+                    {
+                        _t = 0f;
+                        _isFading = false;
+                    }
                 }
 
-                if (_t >= 1f)
+                if (wasF && !_isFading && _queuedBitmap != null)
                 {
-                    _t = 0f;
-                    _isFading = false;
+                    var next = _queuedBitmap;
+                    _queuedBitmap = null;
+                    _ = PreBakeAsync(next);   // ← 原来是 SetPending(next)
                 }
-            }
 
-            // 过渡刚结束，拉队列里最新的一张
-            if (wasF && !_isFading && _queuedBitmap != null)
-            {
-                var next = _queuedBitmap;
-                _queuedBitmap = null;
-                SetPending(next);
-            }
-
-            if (_isFading || wasF != _isFading) _canvas?.Invalidate();
-            if (!_isFading && _queuedBitmap == null) StopRenderingLoop();
+                if (_isFading || wasF != _isFading) _canvas?.Invalidate();
+                if (!_isFading && _queuedBitmap == null) StopRenderingLoop();
+            }            
         }
 
         // ── 绘制 ──────────────────────────────────────────────────────────────
@@ -389,80 +453,83 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── DrawFrame：用 CalcDestRect 计算 letterbox 矩形传给 DrawBaked ───────
         private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
         {
-            if (!IsActive) return;
-            float cw = (float)sender.Size.Width;
-            float ch = (float)sender.Size.Height;
-            if (cw <= 0 || ch <= 0) return;
-
-            ComputeContentRect(cw, ch);
-            if (_contentRect == Rect.Empty) return;
-
-            // 尺寸变化检测（以 contentRect 的宽高为基准）
-            float contentW = (float)_contentRect.Width;
-            float contentH = (float)_contentRect.Height;
-            if (MathF.Abs(_lastBakeSize.w - contentW) > 0.5f ||
-                MathF.Abs(_lastBakeSize.h - contentH) > 0.5f)
+            using (PerformanceTracker.Measure("D_DrawFrame"))               // ← probe D
             {
-                _lastBakeSize = (contentW, contentH);
-                _rtInvalidated = true;
-            }
+                if (!IsActive) return;
+                float cw = (float)sender.Size.Width;
+                float ch = (float)sender.Size.Height;
+                if (cw <= 0 || ch <= 0) return;
 
-            if (_rtInvalidated)
-            {
-                _rtInvalidated = false;
-                _maskInvalidated = true;
-                if (_currentBitmap != null)
+                ComputeContentRect(cw, ch);
+                if (_contentRect == Rect.Empty) return;
+
+                // 尺寸变化检测（以 contentRect 的宽高为基准）
+                float contentW = (float)_contentRect.Width;
+                float contentH = (float)_contentRect.Height;
+                if (MathF.Abs(_lastBakeSize.w - contentW) > 0.5f ||
+                    MathF.Abs(_lastBakeSize.h - contentH) > 0.5f)
                 {
-                    if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
-                    _pendingBitmap = _currentBitmap;
+                    _lastBakeSize = (contentW, contentH);
+                    _rtInvalidated = true;
                 }
-                if (_currentRT != null) { _disposeQueue.Enqueue(_currentRT); _currentRT = null; }
-                if (_nextRT != null) { _disposeQueue.Enqueue(_nextRT); _nextRT = null; }
-                _canvas?.Invalidate();
-                return; // 本帧跳过绘制，下一帧 TryBakePending 会重建
-            }
 
-            if (_currentRT == null && _nextRT == null) return;
-
-            // 用 BakedRT 里记录的 srcW/srcH 还原 aspect ratio，计算 letterbox 矩形
-            BakedRT? drawRT = _currentRT ?? _nextRT;
-            Rect destRect = drawRT != null
-                ? CalcDestRectFromSize(drawRT.SrcW, drawRT.SrcH, _contentRect)
-                : _contentRect;
-
-            if (!_isFading)
-            {
-                if (_currentRT != null)
-                    DrawBaked(ds, _currentRT, destRect, 1f, 1f);
-            }
-            else
-            {
-                float t = _t;
-                if (t < 0.5f)
+                if (_rtInvalidated)
                 {
-                    float localT = t / 0.5f;
-                    float easedT = EaseIn(localT);
-                    float alpha = 1f - easedT;
-                    float scale = 1f - (1f - ScaleSmall) * easedT;
-                    if (_currentRT != null && alpha > 0f)
+                    _rtInvalidated = false;
+                    _maskInvalidated = true;
+                    if (_currentBitmap != null)
                     {
-                        Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
-                        DrawBaked(ds, _currentRT, r, alpha, scale);
+                        if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
+                        _pendingBitmap = _currentBitmap;
                     }
+                    if (_currentRT != null) { _disposeQueue.Enqueue(_currentRT); _currentRT = null; }
+                    if (_nextRT != null) { _disposeQueue.Enqueue(_nextRT); _nextRT = null; }
+                    _canvas?.Invalidate();
+                    return; // 本帧跳过绘制，下一帧 TryBakePending 会重建
+                }
+
+                if (_currentRT == null && _nextRT == null) return;
+
+                // 用 BakedRT 里记录的 srcW/srcH 还原 aspect ratio，计算 letterbox 矩形
+                BakedRT? drawRT = _currentRT ?? _nextRT;
+                Rect destRect = drawRT != null
+                    ? CalcDestRectFromSize(drawRT.SrcW, drawRT.SrcH, _contentRect)
+                    : _contentRect;
+
+                if (!_isFading)
+                {
+                    if (_currentRT != null)
+                        DrawBaked(ds, _currentRT, destRect, 1f, 1f);
                 }
                 else
                 {
-                    float localT = (t - 0.5f) / 0.5f;
-                    float easedT = EaseOut(localT);
-                    float alpha = easedT;
-                    float scale = ScaleSmall + (1f - ScaleSmall) * easedT;
-                    if (_currentRT != null && alpha > 0f)
+                    float t = _t;
+                    if (t < 0.5f)
                     {
-                        Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
-                        DrawBaked(ds, _currentRT, r, alpha, scale);
+                        float localT = t / 0.5f;
+                        float easedT = EaseIn(localT);
+                        float alpha = 1f - easedT;
+                        float scale = 1f - (1f - ScaleSmall) * easedT;
+                        if (_currentRT != null && alpha > 0f)
+                        {
+                            Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
+                            DrawBaked(ds, _currentRT, r, alpha, scale);
+                        }
+                    }
+                    else
+                    {
+                        float localT = (t - 0.5f) / 0.5f;
+                        float easedT = EaseOut(localT);
+                        float alpha = easedT;
+                        float scale = ScaleSmall + (1f - ScaleSmall) * easedT;
+                        if (_currentRT != null && alpha > 0f)
+                        {
+                            Rect r = CalcDestRectFromSize(_currentRT.SrcW, _currentRT.SrcH, _contentRect);
+                            DrawBaked(ds, _currentRT, r, alpha, scale);
+                        }
                     }
                 }
-            }
+            }            
         }
 
         private static Rect CalcDestRectFromSize(float srcW, float srcH, Rect contentRect)
@@ -791,7 +858,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!disposing || _disposed) return;
             _disposed = true;
 
-            _loadCts?.Cancel(); _loadCts?.Dispose(); _loadCts = null;
+            _loadCts?.Cancel(); 
+            _loadCts?.Dispose(); 
+            _loadCts = null;
+            _decodeCts?.Cancel();
+            _decodeCts?.Dispose();
+            _decodeCts = null;
+            _decodeSemaphore.Dispose();
             StopRenderingLoop();
 
             if (_canvas != null)
