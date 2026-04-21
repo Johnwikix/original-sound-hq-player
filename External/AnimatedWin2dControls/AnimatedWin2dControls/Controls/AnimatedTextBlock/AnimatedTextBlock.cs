@@ -15,6 +15,8 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.UI;
 using Windows.UI.Text;
 
@@ -69,6 +71,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     private AnimatedTextBlockTextDirection _textDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
     private TextTrimming _textTrimming = TextTrimming.None;
     private TextWrapping _textWrapping = TextWrapping.NoWrap;
+    private bool _isFirstTextLoad = true;
+    private CancellationTokenSource? _textDebounceCts;
 
     #region DependencyProperties
 
@@ -80,10 +84,41 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         get => (string)GetValue(TextProperty);
         set
         {
-            _oldText = _newText ?? string.Empty;
-            _newText = value ?? string.Empty;
-            SetValue(TextProperty, value);
-            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+            var oldVal = (string)GetValue(TextProperty);
+            if (oldVal == value) return;
+
+            if (_isFirstTextLoad)
+            {
+                _oldText = string.Empty;
+                _newText = value ?? string.Empty;
+                SetValue(TextProperty, value);
+                _isFirstTextLoad = false;
+                SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+            }
+            else
+            {
+                // 注意：这里不要立即改 _newText！
+                _textDebounceCts?.Cancel();
+                _textDebounceCts?.Dispose();
+                var cts = new CancellationTokenSource();
+                _textDebounceCts = cts;
+
+                Task.Run(async () => {
+                    await Task.Delay(300, cts.Token);
+                    DispatcherQueue.TryEnqueue(() => {
+                        if (cts.IsCancellationRequested) return;
+
+                        // 450ms 到了，现在才真正切换数据源
+                        _oldText = (string)GetValue(TextProperty) ?? string.Empty;
+                        _newText = value ?? string.Empty;
+
+                        // 这行会触发一次重绘，但此时状态已经是 TextChanged 了
+                        SetValue(TextProperty, value);
+
+                        SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+                    });
+                });
+            }
         }
     }
 
@@ -197,12 +232,20 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        _newText = Text ?? string.Empty;
-        SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+        // 如果 Loaded 时已经有 Text 且尚未初始化
+        if (_isFirstTextLoad && !string.IsNullOrEmpty(Text))
+        {
+            _newText = Text;
+            _isFirstTextLoad = false;
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _textDebounceCts?.Cancel();
+        _textDebounceCts?.Dispose();
+        _textDebounceCts = null;
         // 停止渲染循环
         StopRenderingLoop();
 

@@ -24,7 +24,9 @@ namespace AnimatedWin2dControls.Controls
 
             if (!_isRunning)
             {
-                _lastTick = TimeSpan.Zero; // 首帧 elapsed 会被 cap，无害
+                // 删掉这行：_lastTick = TimeSpan.Zero;
+                // _lastTick 保留上次的值，首帧 elapsed 过大会被 cap 到 0.1s
+                // 但实际上重启间隔很短（bake 耗时），cap 不会触发
                 CompositionTarget.Rendering += OnRendering;
                 _isRunning = true;
             }

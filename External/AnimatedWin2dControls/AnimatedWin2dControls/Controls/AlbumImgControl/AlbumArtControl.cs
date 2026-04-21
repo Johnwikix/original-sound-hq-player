@@ -197,7 +197,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // [0.5, 1]：新图 scale-in  + fade-in
         private float _t;
         private bool _isFading;
-        private const float FadeSpeed = 2.2f;   // 整个动画约 0.45s
+        private const float FadeSpeed = 4f;   // 整个动画约 0.45s
         private const float ScaleSmall = 0.90f; // 缩放最小值（新图从此 scale in）
 
         // ── 内容区域缓存 ──────────────────────────────────────────────────────
@@ -218,6 +218,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float HardMaxSize = 1280f;
         private readonly SemaphoreSlim _decodeSemaphore = new(1, 1);
         private CancellationTokenSource? _decodeCts; // 独立于 _loadCts
+        private bool _isBaking; // PreBakeAsync 正在执行
+        private int _delayMs = 500;
 
         // ── 构造 ──────────────────────────────────────────────────────────────
 
@@ -261,60 +263,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
             PerformanceTracker.FrameTick();   // ← 新增
-
-            //TryBakePending(sender);
             DrawFrame(e.DrawingSession, sender);
             FlushDisposeQueue();
         }
-
-        // ── Pending bake（UI 线程，Draw 回调内执行）──────────────────────────
-
-        ///// <summary>
-        ///// 如果有待 bake 的 bitmap，在此处同步完成 bake 并存入 _nextRT。
-        ///// 全程在 UI 线程，不涉及跨线程 GPU 资源创建。
-        ///// </summary>
-        //private void TryBakePending(CanvasControl sender)
-        //{
-        //    if (_pendingBitmap == null) return;
-        //    var bitmap = _pendingBitmap;
-        //    _pendingBitmap = null;
-
-        //    float cw = (float)sender.Size.Width;
-        //    float ch = (float)sender.Size.Height;
-        //    if (cw <= 0 || ch <= 0) return;
-
-        //    ComputeContentRect(cw, ch);
-        //    if (_contentRect == Rect.Empty) return;
-
-        //    Rect destRect = CalcDestRect(bitmap, _contentRect);
-        //    float bakeW = (float)destRect.Width;
-        //    float bakeH = (float)destRect.Height;
-        //    if (bakeW <= 0 || bakeH <= 0) return;
-
-        //    float radius = (float)ArtCornerRadius;
-
-        //    BakedRT baked;
-        //    using (PerformanceTracker.Measure("B_TryBakePending_total"))   // ← probe B
-        //    {
-        //        using (PerformanceTracker.Measure("B1_EnsureMask"))         // ← probe B1
-        //            EnsureMask(sender.Device, bakeW, bakeH, radius);
-
-        //        if (_maskRT == null) return;
-
-        //        using (PerformanceTracker.Measure("B2_BakeCore"))           // ← probe B2 ★
-        //            baked = BakeCore(sender.Device, bitmap, bakeW, bakeH,
-        //                             _maskRT, IsShadowEnabled, (float)DpiScale);
-        //    }
-
-        //    if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
-        //    _nextRT = baked;
-
-        //    if (_currentBitmap != null && _currentBitmap != bitmap)
-        //        _disposeQueue.Enqueue(_currentBitmap);
-        //    _currentBitmap = bitmap;
-
-        //    StartTransition();
-        //}
 
         // ── 状态机 ────────────────────────────────────────────────────────────
 
@@ -344,67 +295,67 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
         }
 
-
-        private void SetPending(CanvasBitmap bitmap)
-        {
-            if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
-            _pendingBitmap = bitmap;
-            _canvas?.Invalidate();
-        }
-
         // ── PreBakeAsync：在 UI 线程但用 ConfigureAwait 让 bake 跨帧执行 ───────
         private async Task PreBakeAsync(CanvasBitmap bitmap)
         {
-            if (_canvas == null) return;
-
-            float cw = (float)_canvas.Size.Width;
-            float ch = (float)_canvas.Size.Height;
-            if (cw <= 0 || ch <= 0) { _disposeQueue.Enqueue(bitmap); return; }
-
-            ComputeContentRect(cw, ch);
-            if (_contentRect == Rect.Empty) { _disposeQueue.Enqueue(bitmap); return; }
-
-            Rect destRect = CalcDestRect(bitmap, _contentRect);
-            float bakeW = (float)destRect.Width;
-            float bakeH = (float)destRect.Height;
-            if (bakeW <= 0 || bakeH <= 0) { _disposeQueue.Enqueue(bitmap); return; }
-
-            float radius = (float)ArtCornerRadius;
-            bool shadow = IsShadowEnabled;
-            float dpi = (float)DpiScale;
-            var device = _canvas.Device;
-
-            // ── Bake 在后台线程完成，不占 UI 线程 ────────────────────────────
-            BakedRT baked;
+            _isBaking = true;
             try
             {
-                // EnsureMask 必须在 UI 线程（访问 _maskRT 字段）
-                EnsureMask(device, bakeW, bakeH, radius);
-                if (_maskRT == null) { _disposeQueue.Enqueue(bitmap); return; }
+                if (_canvas == null) return;
 
-                // 把 maskRT 的像素数据传给后台，BakeCore 完全在后台线程跑
-                // 注意：CanvasRenderTarget 可以跨线程读，但不能跨线程写
-                // 所以把 BakeCore 里的 new CanvasRenderTarget 也移到后台
-                var maskRT = _maskRT; // 局部引用，bake 期间不会被替换
+                float cw = (float)_canvas.Size.Width;
+                float ch = (float)_canvas.Size.Height;
+                if (cw <= 0 || ch <= 0) { _disposeQueue.Enqueue(bitmap); return; }
 
-                baked = await Task.Run(() =>
-                    BakeCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi));
+                ComputeContentRect(cw, ch);
+                if (_contentRect == Rect.Empty) { _disposeQueue.Enqueue(bitmap); return; }
+
+                Rect destRect = CalcDestRect(bitmap, _contentRect);
+                float bakeW = (float)destRect.Width;
+                float bakeH = (float)destRect.Height;
+                if (bakeW <= 0 || bakeH <= 0) { _disposeQueue.Enqueue(bitmap); return; }
+
+                float radius = (float)ArtCornerRadius;
+                bool shadow = IsShadowEnabled;
+                float dpi = (float)DpiScale;
+                var device = _canvas.Device;
+
+                // ── Bake 在后台线程完成，不占 UI 线程 ────────────────────────────
+                BakedRT baked;
+                try
+                {
+                    // EnsureMask 必须在 UI 线程（访问 _maskRT 字段）
+                    EnsureMask(device, bakeW, bakeH, radius);
+                    if (_maskRT == null) { _disposeQueue.Enqueue(bitmap); return; }
+
+                    // 把 maskRT 的像素数据传给后台，BakeCore 完全在后台线程跑
+                    // 注意：CanvasRenderTarget 可以跨线程读，但不能跨线程写
+                    // 所以把 BakeCore 里的 new CanvasRenderTarget 也移到后台
+                    var maskRT = _maskRT; // 局部引用，bake 期间不会被替换
+
+                    baked = await Task.Run(() =>
+                        BakeCore(device, bitmap, bakeW, bakeH, maskRT, shadow, dpi));
+                }
+                catch
+                {
+                    _disposeQueue.Enqueue(bitmap);
+                    return;
+                }
+
+                // ── 回到 UI 线程，仅做指针替换，不做任何 GPU 工作 ────────────────
+                if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
+                _nextRT = baked;
+
+                if (_currentBitmap != null && _currentBitmap != bitmap)
+                    _disposeQueue.Enqueue(_currentBitmap);
+                _currentBitmap = bitmap;
+
+                StartTransition(); // 这里才触发动画，_nextRT 已经就绪
             }
-            catch
+            finally
             {
-                _disposeQueue.Enqueue(bitmap);
-                return;
-            }
-
-            // ── 回到 UI 线程，仅做指针替换，不做任何 GPU 工作 ────────────────
-            if (_nextRT != null) _disposeQueue.Enqueue(_nextRT);
-            _nextRT = baked;
-
-            if (_currentBitmap != null && _currentBitmap != bitmap)
-                _disposeQueue.Enqueue(_currentBitmap);
-            _currentBitmap = bitmap;
-
-            StartTransition(); // 这里才触发动画，_nextRT 已经就绪
+                _isBaking = false;
+            }            
         }
 
         // ── Tick ─────────────────────────────────────────────────────────────
@@ -444,7 +395,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 }
 
                 if (_isFading || wasF != _isFading) _canvas?.Invalidate();
-                if (!_isFading && _queuedBitmap == null) StopRenderingLoop();
+                if (!_isFading && !_isBaking && _queuedBitmap == null) StopRenderingLoop();
             }            
         }
 
@@ -477,15 +428,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 {
                     _rtInvalidated = false;
                     _maskInvalidated = true;
-                    if (_currentBitmap != null)
-                    {
-                        if (_pendingBitmap != null) _disposeQueue.Enqueue(_pendingBitmap);
-                        _pendingBitmap = _currentBitmap;
-                    }
                     if (_currentRT != null) { _disposeQueue.Enqueue(_currentRT); _currentRT = null; }
                     if (_nextRT != null) { _disposeQueue.Enqueue(_nextRT); _nextRT = null; }
+
+                    if (_currentBitmap != null)
+                        _ = PreBakeAsync(_currentBitmap);  // ← 不再走 _pendingBitmap
+
                     _canvas?.Invalidate();
-                    return; // 本帧跳过绘制，下一帧 TryBakePending 会重建
+                    return;
                 }
 
                 if (_currentRT == null && _nextRT == null) return;
@@ -607,10 +557,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── Bake（全部在 UI 线程，由 Canvas_Draw → TryBakePending 调用）──────
 
         private static BakedRT BakeCore(
-    CanvasDevice device, CanvasBitmap bitmap,
-    float w, float h,
-    CanvasRenderTarget maskRT,
-    bool shadow, float dpiScale)
+            CanvasDevice device, CanvasBitmap bitmap,
+            float w, float h,
+            CanvasRenderTarget maskRT,
+            bool shadow, float dpiScale)
         {
             float pad = shadow ? 34f : 0f;
             var rt = new CanvasRenderTarget(device, w + pad * 2, h + pad * 2, 96f * dpiScale);
@@ -620,9 +570,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             float scaleRatio = Math.Min(w / bitmap.SizeInPixels.Width,
                                         h / bitmap.SizeInPixels.Height);
-            var interp = scaleRatio < 0.5f
-                ? CanvasImageInterpolation.HighQualityCubic
-                : CanvasImageInterpolation.Linear;
+            var interp = CanvasImageInterpolation.MultiSampleLinear;
 
             using var scaleEff = new ScaleEffect
             {
@@ -677,7 +625,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             try
             {
-                await Task.Delay(80, cts.Token); // 防抖保留
+                await Task.Delay(_delayMs, cts.Token); // 防抖保留
 
                 // ── 替换原来整个 Task.Run 块 ──────────────────────────────────
                 using (PerformanceTracker.Measure("A1_decode_Task.Run"))
