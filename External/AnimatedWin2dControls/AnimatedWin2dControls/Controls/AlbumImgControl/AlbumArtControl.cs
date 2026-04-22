@@ -5,8 +5,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
-using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -34,13 +32,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             get => (double)GetValue(DpiScaleProperty);
             set => SetValue(DpiScaleProperty, value);
         }
-        private static void OnDpiScaleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated) return;
-
-            c._canvas?.Invalidate();
-        }
 
         public static readonly DependencyProperty ImageBytesProperty =
             DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
@@ -50,19 +41,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             get => (byte[])GetValue(ImageBytesProperty);
             set => SetValue(ImageBytesProperty, value);
         }
-        private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated || !c.IsActive) return;
-
-            var newBytes = e.NewValue as byte[];
-            if (c.IsDuplicateAndUpdate(newBytes)) return;
-
-            if (newBytes is { Length: > 0 })
-                _ = c.RequestLoadAsync(newBytes);
-            else
-                _ = c.RequestLoadDefaultAsync();
-        }
 
         public static readonly DependencyProperty IsDarkProperty =
             DependencyProperty.Register(nameof(IsDark), typeof(bool),
@@ -71,18 +49,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             get => (bool)GetValue(IsDarkProperty);
             set => SetValue(IsDarkProperty, value);
-        }
-        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated || !c.IsActive) return;
-
-            c.InvalidateDedup();
-
-            if (c.ImageBytes is { Length: > 0 })
-                _ = c.RequestLoadAsync(c.ImageBytes);
-            else
-                _ = c.RequestLoadDefaultAsync();
         }
 
         public static readonly DependencyProperty MarginTopRatioProperty =
@@ -138,25 +104,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             get => (bool)GetValue(IsShadowEnabledProperty);
             set => SetValue(IsShadowEnabledProperty, value);
         }
-        private static void OnShadowEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated) return;
-
-            c._canvas?.Invalidate();
-        }
-
-        private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated || !c.IsActive) return;
-
-            // 触发重新 bake（关键）
-            if (c.ImageBytes is { Length: > 0 })
-                _ = c.RequestLoadAsync(c.ImageBytes, isResize: true);
-            else
-                _ = c.RequestLoadDefaultAsync(isResize: true);
-        }
 
         public static readonly DependencyProperty IsActiveProperty =
             DependencyProperty.Register(nameof(IsActive), typeof(bool),
@@ -166,22 +113,68 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             get => (bool)GetValue(IsActiveProperty);
             set => SetValue(IsActiveProperty, value);
         }
-        private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnImageBytesChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
+            c.RequestLoad(e.NewValue as byte[]);
+        }
+
+        private static void OnIsDarkChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
+            c.InvalidateDedup();
+            // IsDark 变化需要重新加载默认封面或重新解码（重新 bake 颜色不变，只有默认封面受影响）
+            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b);
+            else c.RequestLoad(null);
+        }
+
+        private static void OnDpiScaleChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
+            // DpiScale 变化：重新 bake，当前 bitmap 字节不变
+            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b, isResize: true);
+            else c.RequestLoad(null, isResize: true);
+        }
 
+        private static void OnLayoutChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated || !c.IsActive) return;
+            c.OnContentSizeChanged();  // 走 isResize=true 路径
+        }
+
+        private static void OnShadowEnabledChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated) return;
+            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b, isResize: true);
+            else c.RequestLoad(null, isResize: true);
+        }
+
+        private static void OnIsActiveChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            var c = (AlbumArtControl)d;
+            if (!c._isResourcesCreated) return;
             if ((bool)e.NewValue)
             {
-                if (c.ImageBytes is { Length: > 0 } b)
-                    _ = c.RequestLoadAsync(b);
-                else
-                    _ = c.RequestLoadDefaultAsync();
+                if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b);
+                else c.RequestLoad(null);
             }
             else
             {
-                c._pipelineCts.Cancel(); // 替代 _loadCts
+                // 停用时：取消 pending，清空动画状态
+                Interlocked.Exchange(ref c._pendingLoad, null);
                 c._isFading = false;
+                c.StopRenderingLoop();
                 c._canvas?.Invalidate();
             }
         }
@@ -204,7 +197,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── Pipeline 管道 ─────────────────────────────────────────────────────
 
         // capacity=1，WriteAsync 时若满则先丢弃旧值再写入
-        private readonly Channel<RawFrame> _rawChannel;
+        private readonly Channel<RawFrameWithParams> _rawChannel;
+        private readonly record struct RawFrameWithParams(RawFrame Raw, BakeParams Params);
         private readonly Channel<BakedFrame> _bakedChannel;
 
         // ── 渲染状态（仅 UI 线程访问） ────────────────────────────────────────
@@ -241,8 +235,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private long _lastLength = -1;
         private int _lastHash;
         private const float HardMaxSize = 1280f;
+        private int _debounceSeq;
 
-        private readonly record struct PendingLoad(byte[]? Bytes, bool IsResize);
+        /// <summary>UI 线程写，Bake loop 读，用 Interlocked 保证原子替换</summary>
+        private sealed class BakeParams
+        {
+            public readonly float ContentW;
+            public readonly float ContentH;
+            public readonly float Radius;
+            public readonly bool Shadow;
+            public readonly float DpiScale;
+            public readonly bool IsResize;
+            public BakeParams(float cw, float ch, float r, bool s, float d, bool resize)
+            { ContentW = cw; ContentH = ch; Radius = r; Shadow = s; DpiScale = d; IsResize = resize; }
+        }
+        // 字段声明（替换三个 volatile）：
+        private BakeParams? _pendingBakeParams;  // Interlocked.Exchange 访问
+
+        private sealed record PendingLoad(byte[]? Bytes, bool IsResize);
 
         // ── 构造 ──────────────────────────────────────────────────────────────
 
@@ -252,13 +262,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             // capacity=1 的 bounded channel，满时 WriteAsync 会等待
             // 我们用 DropOldest 策略：写前先 TryRead 丢弃
-            _rawChannel = Channel.CreateBounded<RawFrame>(
-                new BoundedChannelOptions(1)
-                {
-                    FullMode = BoundedChannelFullMode.DropOldest,
-                    SingleReader = true,
-                    SingleWriter = true,
-                });
+            _rawChannel = Channel.CreateBounded<RawFrameWithParams>(
+                    new BoundedChannelOptions(1)
+                    {
+                        FullMode = BoundedChannelFullMode.DropOldest,
+                        SingleReader = true,
+                        SingleWriter = true,
+                    });
             _bakedChannel = Channel.CreateBounded<BakedFrame>(
                 new BoundedChannelOptions(1)
                 {
@@ -298,8 +308,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private async Task CreateResourcesAsync()
         {
-            if (ImageBytes is { Length: > 0 } b) await RequestLoadAsync(b);
-            else await RequestLoadDefaultAsync();
+            // 启动 pipeline loops（如果还没启动）
+            if (_decodeLoop.IsCompleted) StartPipelineLoops();
+
+            if (ImageBytes is { Length: > 0 } b) RequestLoad(b);
+            else RequestLoad(null);
+            await Task.CompletedTask;
         }
 
         // ── Draw（Stage 3 入口） ──────────────────────────────────────────────
@@ -318,10 +332,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             // GPU 上传：在 Draw 回调里做，此时设备锁已持有，无竞争
             var bmp = CanvasBitmap.CreateFromBytes(
-                sender,
-                frame.Pixels,
-                frame.W, frame.H,
-                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized);
+                        sender,
+                        frame.Pixels,
+                        frame.W, frame.H,
+                        // 明确告知 Win2D 数据是预乘格式，不做额外转换
+                        Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                        96f * (float)DpiScale,  // dpi
+                        CanvasAlphaMode.Premultiplied);  // ← 新增
 
             if (frame.IsResize)
             {
@@ -363,17 +380,20 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             while (!ct.IsCancellationRequested)
             {
-                // 等待新的加载请求
-                await _decodeSignal.WaitAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    await _decodeSignal.WaitAsync(ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { break; }
 
-                var req = _pendingLoad;
-                if (req == null) continue;
-                _pendingLoad = null;
+                var req = Interlocked.Exchange(ref _pendingLoad, null);
+                var bakeP = Interlocked.Exchange(ref _pendingBakeParams, null);
+                if (req == null || bakeP == null) continue;
 
                 try
                 {
                     RawFrame raw;
-                    if (req.Value.Bytes is { Length: > 0 } bytes)
+                    if (req.Bytes is { Length: > 0 } bytes)
                     {
                         var decoded = await DecodeImageAsync(bytes, ct).ConfigureAwait(false);
                         if (decoded == null) continue;
@@ -383,17 +403,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     }
                     else
                     {
-                        // 默认封面：直接读文件像素
                         var decoded = await DecodeDefaultAsync(ct).ConfigureAwait(false);
                         if (decoded == null) continue;
                         raw = decoded.Value;
                     }
 
-                    // 写入 channel（满时自动丢弃旧值）
-                    await _rawChannel.Writer.WriteAsync(raw, ct).ConfigureAwait(false);
+                    // 把 bakeParams 和 raw 一起写入 channel
+                    await _rawChannel.Writer.WriteAsync(
+                        new RawFrameWithParams(raw, bakeP), ct).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) { }
-                catch { /* 静默，避免 loop 崩溃 */ }
+                catch (OperationCanceledException) { break; }
+                catch { /* 静默 */ }
             }
         }
 
@@ -401,35 +421,28 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private async Task BakeLoopAsync(CancellationToken ct)
         {
-            await foreach (var raw in _rawChannel.Reader.ReadAllAsync(ct))
+            await foreach (var item in _rawChannel.Reader.ReadAllAsync(ct))
             {
                 try
                 {
-                    // 读取当前布局参数（volatile 读，UI 线程写）
-                    float contentW = (float)_pendingContentW;
-                    float contentH = (float)_pendingContentH;
-                    float radius = _bakedRadius;
-                    bool shadow = _bakedShadowEnabled;
-                    float dpiScale = _bakedDpiScale;
-                    bool isResize = _pendingIsResize;
-                    _pendingIsResize = false;
+                    var raw = item.Raw;
+                    var p = item.Params;  // 完全从快照读，不碰 DependencyProperty
 
-                    if (contentW <= 0 || contentH <= 0) continue;
+                    if (p.ContentW <= 0 || p.ContentH <= 0) continue;
 
-                    // 全 CPU 合成
                     var baked = await Task.Run(() =>
-                        CpuBake(raw, contentW, contentH, radius, shadow, dpiScale, isResize),
-                        ct).ConfigureAwait(false);
+                        CpuBake(raw, p.ContentW, p.ContentH,
+                                p.Radius, p.Shadow, p.DpiScale, p.IsResize), ct)
+                        .ConfigureAwait(false);
 
                     if (baked == null) continue;
 
                     await _bakedChannel.Writer.WriteAsync(baked.Value, ct)
                         .ConfigureAwait(false);
 
-                    // 通知 UI 线程来取
                     _canvas?.Invalidate();
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException) { break; }
                 catch { }
             }
         }
@@ -437,12 +450,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── CPU Bake（纯软件，无 D2D） ────────────────────────────────────────
 
         private static BakedFrame? CpuBake(
-            RawFrame raw,
-            float contentW, float contentH,
-            float radius, bool shadow, float dpiScale,
-            bool isResize)
+    RawFrame raw,
+    float contentW, float contentH,
+    float radius, bool shadow, float dpiScale,
+    bool isResize)
         {
-            // 1. 计算 letterbox 目标尺寸
             float aspect = (float)raw.SrcW / raw.SrcH;
             float drawW, drawH;
             if (aspect >= contentW / contentH) { drawW = contentW; drawH = drawW / aspect; }
@@ -451,31 +463,37 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             int dstW = Math.Max(1, (int)drawW);
             int dstH = Math.Max(1, (int)drawH);
 
-            // 2. 双线性缩放到目标尺寸
+            // 1. 缩放
             var scaled = BilinearScale(raw.Pixels, raw.W, raw.H, dstW, dstH);
 
-            // 3. 应用圆角 mask（CPU alpha 运算）
+            // 2. 圆角 mask —— 输入是预乘，输出也是预乘，RGB+A 同步缩放
             ApplyRoundedCornerMask(scaled, dstW, dstH, radius);
 
-            // 4. 阴影
             int pad = shadow ? 34 : 0;
             int rtW = dstW + pad * 2;
             int rtH = dstH + pad * 2;
-
-            var result = new byte[rtW * rtH * 4];
+            var result = new byte[rtW * rtH * 4];  // 全透明黑底
 
             if (shadow)
             {
-                // 用 scaled alpha 通道生成阴影层（CPU 高斯模糊）
+                // 3a. 生成阴影层（已是预乘格式：RGB=0, A=模糊alpha*shadowAlpha）
                 var shadowLayer = GenerateShadow(scaled, dstW, dstH, rtW, rtH,
-                    pad, blurRadius: 10, shadowAlpha: 100,
-                    offsetX: 2, offsetY: 3);
-                // 合并：先画阴影，再画图像
-                BlendOver(result, shadowLayer, rtW, rtH);
-            }
+                    pad, blurRadius: 10, shadowAlpha: 100, offsetX: 2, offsetY: 3);
 
-            // 把 scaled 贴到 result 的 (pad, pad) 位置
-            PasteBitmap(result, rtW, scaled, dstW, dstH, pad, pad);
+                // 3b. 先把阴影 blend 到 result
+                BlendOver(result, shadowLayer, rtW, rtH);
+
+                // 3c. 再把图像层（预乘）blend 到 result 上方
+                //     不能用 PasteBitmap（直接覆盖会踩掉阴影），改用 BlendOver
+                var imageLayer = new byte[rtW * rtH * 4];  // 全透明
+                PasteBitmap(imageLayer, rtW, scaled, dstW, dstH, pad, pad);
+                BlendOver(result, imageLayer, rtW, rtH);
+            }
+            else
+            {
+                // 无阴影：直接贴，pad=0 所以 imageLayer 就是 result
+                PasteBitmap(result, rtW, scaled, dstW, dstH, pad, pad);
+            }
 
             return new BakedFrame(result, rtW, rtH, pad,
                 raw.SrcW, raw.SrcH, isResize);
@@ -522,21 +540,25 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         }
 
         private static void ApplyRoundedCornerMask(byte[] pixels,
-                                                    int w, int h, float r)
+                                             int w, int h, float r)
         {
             r = Math.Min(r, Math.Min(w, h) * 0.5f);
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    // 判断是否在圆角矩形内
                     float cx = Math.Max(0, Math.Max(r - x, x - (w - r - 1)));
                     float cy = Math.Max(0, Math.Max(r - y, y - (h - r - 1)));
                     float dist = MathF.Sqrt(cx * cx + cy * cy);
-
-                    // 亚像素抗锯齿
                     float alpha = Math.Clamp(r - dist + 0.5f, 0f, 1f);
-                    int idx = (y * w + x) * 4 + 3;
+
+                    if (alpha >= 1f) continue; // 完全不透明，跳过
+
+                    int idx = (y * w + x) * 4;
+                    // 预乘格式：RGB 和 A 必须同比例缩放
                     pixels[idx] = (byte)(pixels[idx] * alpha);
+                    pixels[idx + 1] = (byte)(pixels[idx + 1] * alpha);
+                    pixels[idx + 2] = (byte)(pixels[idx + 2] * alpha);
+                    pixels[idx + 3] = (byte)(pixels[idx + 3] * alpha);
                 }
         }
 
@@ -624,13 +646,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             for (int i = 0; i < w * h * 4; i += 4)
             {
-                float sa = src[i + 3] / 255f;
-                float da = dst[i + 3] / 255f;
-                float oa = sa + da * (1 - sa);
-                if (oa < 1e-6f) continue;
-                for (int c = 0; c < 3; c++)
-                    dst[i + c] = (byte)((src[i + c] * sa + dst[i + c] * da * (1 - sa)) / oa);
-                dst[i + 3] = (byte)(oa * 255);
+                float invA = (255 - src[i + 3]) / 255f;  // (1 - src_alpha)
+                dst[i] = (byte)Math.Clamp(src[i] + dst[i] * invA, 0, 255);
+                dst[i + 1] = (byte)Math.Clamp(src[i + 1] + dst[i + 1] * invA, 0, 255);
+                dst[i + 2] = (byte)Math.Clamp(src[i + 2] + dst[i + 2] * invA, 0, 255);
+                dst[i + 3] = (byte)Math.Clamp(src[i + 3] + dst[i + 3] * invA, 0, 255);
             }
         }
 
@@ -648,55 +668,62 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 加载请求接口 ──────────────────────────────────────────────────────
 
-        // UI 线程写，decode loop 读
-        private  double _pendingContentW;
-        private  double _pendingContentH;
-        private volatile bool _pendingIsResize;
-
-        public Task RequestLoadAsync(byte[]? bytes, bool isResize = false)
+        public void RequestLoad(byte[]? bytes, bool isResize = false)
         {
-            if (!IsActive && _isResourcesCreated) return Task.CompletedTask;
+            if (_disposed) return;
+            if (!IsActive && _isResourcesCreated) return;
 
             if (bytes is { Length: > 0 })
             {
-                if (IsDuplicateAndUpdate(bytes)) return Task.CompletedTask;
+                if (IsDuplicateAndUpdate(bytes)) return;
             }
-            _bakedRadius = (float)this.ArtCornerRadius;
-            _bakedShadowEnabled = this.IsShadowEnabled;
-            _bakedDpiScale = (float)this.DpiScale;
-            // 更新布局参数供 bake loop 读取
+
+            // 在 UI 线程打包好所有参数，后台线程只读这一个对象
+            float cw = 0, ch = 0;
             if (_canvas is { } c)
             {
-                float cw = (float)c.Size.Width;
-                float ch = (float)c.Size.Height;
-                ComputeContentRect(cw, ch);
-                _pendingContentW = _contentRect.Width;
-                _pendingContentH = _contentRect.Height;
+                ComputeContentRect((float)c.Size.Width, (float)c.Size.Height);
+                cw = (float)_contentRect.Width;
+                ch = (float)_contentRect.Height;
             }
-            _pendingIsResize = isResize;
 
-            // 防抖：直接替换 pending，decode loop 只处理最新
-            int delay = _hasEverLoaded ? 300 : 0;
+            var p = new BakeParams(cw, ch,
+                (float)ArtCornerRadius, IsShadowEnabled, (float)DpiScale, isResize);
+            Interlocked.Exchange(ref _pendingBakeParams, p);
+
+            bool firstLoad = !_hasEverLoaded;
             _hasEverLoaded = true;
-            _pendingLoad = new PendingLoad(bytes, isResize);
 
-            // 用 Task.Delay 实现防抖，不阻塞调用方
-            _ = Task.Run(async () =>
+            // 原子替换 pending load
+            Interlocked.Exchange(ref _pendingLoad,
+                new PendingLoad(bytes, isResize));
+
+            int delay = firstLoad ? 0 : 300;
+            if (delay == 0)
             {
-                if (delay > 0) await Task.Delay(delay).ConfigureAwait(false);
-                // 只有还是同一个请求时才触发
-                if (_pendingLoad?.Bytes == bytes || (_pendingLoad?.Bytes == null && bytes == null))
+                // 首次：直接触发
+                TrySignalDecode();
+            }
+            else
+            {
+                // 防抖：用 sequence 号避免旧闭包误触发
+                int seq = Interlocked.Increment(ref _debounceSeq);
+                _ = Task.Run(async () =>
                 {
-                    if (_decodeSignal.CurrentCount == 0)
-                        _decodeSignal.Release();
-                }
-            });
-
-            return Task.CompletedTask;
+                    await Task.Delay(delay).ConfigureAwait(false);
+                    // 序列号没被新请求覆盖才触发
+                    if (Interlocked.CompareExchange(ref _debounceSeq, seq, seq) == seq)
+                        TrySignalDecode();
+                });
+            }
         }
 
-        public Task RequestLoadDefaultAsync(bool isResize = false)
-            => RequestLoadAsync(null, isResize);
+        private void TrySignalDecode()
+        {
+            // SemaphoreSlim 最多 1，避免信号堆积
+            if (_decodeSignal.CurrentCount == 0)
+                _decodeSignal.Release();
+        }
 
         private async Task<(byte[] Pixels, uint W, uint H)?> DecodeImageAsync(
             byte[] bytes, CancellationToken ct)
@@ -819,18 +846,28 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         }
 
         private void DrawBitmap(CanvasDrawingSession ds, CanvasBitmap bmp,
-            float srcW, float srcH, float pad,
-            float alpha, float scale)
+    float srcW, float srcH, float pad,
+    float alpha, float scale)
         {
+            // destRect 是图像内容区（不含 pad）的 letterbox 矩形
             var destRect = CalcDestRectFromSize(srcW, srcH, _contentRect);
             if (destRect.Width <= 0 || destRect.Height <= 0) return;
 
+            // 中心点
             double cx = destRect.X + destRect.Width * 0.5;
             double cy = destRect.Y + destRect.Height * 0.5;
+
+            // RT 实际尺寸 = 内容尺寸 + pad*2，scale 作用于整体
+            // bmp.Bounds 是 RT 的物理像素矩形（含 pad），
+            // 但我们要把它映射到 destRect+pad 扩展后的区域
             double dw = (destRect.Width + pad * 2) * scale;
             double dh = (destRect.Height + pad * 2) * scale;
+
+            // dest 是以内容中心为锚点的扩展矩形（阴影自然溢出内容区域）
             var dest = new Rect(cx - dw * 0.5, cy - dh * 0.5, dw, dh);
 
+            // DrawImage 第三参数 sourceRect 必须是 bmp 的完整 Bounds，
+            // 这样 RT 里的 pad 区域（阴影）才会被画出来
             ds.DrawImage(bmp, dest, bmp.Bounds, alpha,
                          CanvasImageInterpolation.Linear);
         }
@@ -841,8 +878,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void OnContentSizeChanged()
         {
             if (!_isResourcesCreated || !IsActive) return;
-            if (ImageBytes is { Length: > 0 } b) _ = RequestLoadAsync(b, isResize: true);
-            else _ = RequestLoadDefaultAsync(isResize: true);
+            if (ImageBytes is { Length: > 0 } b) RequestLoad(b, isResize: true);
+            else RequestLoad(null, isResize: true);
         }
 
         // ── 工具函数 ──────────────────────────────────────────────────────────
