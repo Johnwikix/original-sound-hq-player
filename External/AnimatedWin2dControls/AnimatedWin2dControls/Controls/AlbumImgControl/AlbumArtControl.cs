@@ -106,7 +106,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         }
 
         private static void OnIsActiveChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+                DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
@@ -119,8 +119,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             {
                 Interlocked.Exchange(ref c._pendingLoad, null);
                 c._isFading = false;
-                c.StopRenderingLoop();
-                c._canvas?.Invalidate();
+                c._lastDrawTicks = 0;
+                // StopRenderingLoop 现在是空操作，但仍调用保持语义清晰
+                // Draw 回调检测到 _isFading==false 后自动不续帧
+                c._canvas?.Invalidate();   // 触发最后一次 Draw 清空画面
             }
         }
 
@@ -180,9 +182,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // ── Pipeline 控制 ─────────────────────────────────────────────────────
 
         private CancellationTokenSource _pipelineCts = new();
-        private Task _decodeLoop = Task.CompletedTask;
-        private Task _bakeLoop = Task.CompletedTask;
-
         private PendingLoad? _pendingLoad;
         private readonly SemaphoreSlim _decodeSignal = new(0, 1);
         private BakeParams? _pendingBakeParams;
@@ -192,7 +191,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private int _lastHash;
         private int _debounceSeq;
         private const float HardMaxSize = 1280f;
-
+        private long _lastDrawTicks = 0;
         // ── 构造 ──────────────────────────────────────────────────────────────
 
         public AlbumArtControl()
@@ -247,7 +246,50 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
             ConsumeBakedChannel(sender);
+
+            // 自驱动动画推进：在 Draw 内部计算 delta，消除 Rendering→Invalidate→Draw 的帧错位
+            if (_isFading)
+            {
+                long nowTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                float delta = 0f;
+
+                if (_lastDrawTicks != 0)
+                {
+                    long elapsed = nowTicks - _lastDrawTicks;
+                    delta = (float)((double)elapsed / System.Diagnostics.Stopwatch.Frequency);
+                    delta = Math.Min(delta, 0.1f);   // 防止暂停后首帧跳变
+                }
+                _lastDrawTicks = nowTicks;
+
+                // 推进动画状态（原 OnSharedTick 的逻辑）
+                _t = Math.Min(1f, _t + delta * FadeSpeed);
+
+                if (_t >= 0.5f && _nextBmp != null)
+                {
+                    _currentBmp?.Dispose();
+                    _currentBmp = _nextBmp;
+                    _nextBmp = null;
+                    _srcWCur = _srcWNext;
+                    _srcHCur = _srcHNext;
+                    _padCur = _padNext;
+                }
+
+                if (_t >= 1f)
+                {
+                    _t = 0f;
+                    _isFading = false;
+                    _lastDrawTicks = 0;
+                }
+            }
+
             DrawFrame(e.DrawingSession, sender);
+
+            // 动画未完成时主动请求下一帧，形成 Draw→Invalidate→Draw 自驱动循环
+            // 不再依赖 SharedAnimationClock
+            if (_isFading)
+            {
+                sender.Invalidate();
+            }
         }
 
         // ── Stage 3 入口：消费 Baked Channel ─────────────────────────────────
@@ -292,8 +334,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             _pipelineCts = new CancellationTokenSource();
             var token = _pipelineCts.Token;
-            _decodeLoop = Task.Run(() => DecodeLoopAsync(token), token);
-            _bakeLoop = Task.Run(() => BakeLoopAsync(token), token);
+            Task.Run(() => DecodeLoopAsync(token), token);
+            Task.Run(() => BakeLoopAsync(token), token);
         }
 
         private async Task DecodeLoopAsync(CancellationToken ct)
@@ -354,7 +396,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     await _bakedChannel.Writer.WriteAsync(baked.Value, ct)
                         .ConfigureAwait(false);
 
-                    _canvas?.Invalidate();
+                    // 修复：通过 DispatcherQueue 回到 UI 线程调用 Invalidate
+                    // 避免后台线程直接调用导致的跨线程调度延迟和潜在竞态
+                    var canvas = _canvas;
+                    canvas?.DispatcherQueue.TryEnqueue(
+                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
+                            () => _canvas?.Invalidate());
                 }
                 catch (OperationCanceledException) { break; }
                 catch { }
@@ -594,7 +641,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 int seq = Interlocked.Increment(ref _debounceSeq);
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(300).ConfigureAwait(false);
+                    await Task.Delay(80).ConfigureAwait(false);
                     if (Interlocked.CompareExchange(ref _debounceSeq, seq, seq) == seq)
                         TrySignalDecode();
                 });
@@ -665,32 +712,33 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             _t = 0f;
             _isFading = true;
-            StartRenderingLoop();
+            _lastDrawTicks = 0;          // 重置，让首帧 delta = 0 避免跳变
+            _canvas?.Invalidate();       // 触发第一次 Draw，后续由 Draw 自续
         }
 
         public void OnSharedTick(TimeSpan elapsed)
         {
-            if (!_isFading) return;
+            //if (!_isFading) return;
 
-            float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            _t = Math.Min(1f, _t + delta * FadeSpeed);
+            //float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
+            //_t = Math.Min(1f, _t + delta * FadeSpeed);
 
-            if (_t >= 0.5f && _nextBmp != null)
-            {
-                _currentBmp?.Dispose();
-                _currentBmp = _nextBmp; _nextBmp = null;
-                _srcWCur = _srcWNext; _srcHCur = _srcHNext;
-                _padCur = _padNext;
-            }
+            //if (_t >= 0.5f && _nextBmp != null)
+            //{
+            //    _currentBmp?.Dispose();
+            //    _currentBmp = _nextBmp; _nextBmp = null;
+            //    _srcWCur = _srcWNext; _srcHCur = _srcHNext;
+            //    _padCur = _padNext;
+            //}
 
-            if (_t >= 1f)
-            {
-                _t = 0f;
-                _isFading = false;
-                StopRenderingLoop();
-            }
+            //if (_t >= 1f)
+            //{
+            //    _t = 0f;
+            //    _isFading = false;
+            //    StopRenderingLoop();
+            //}
 
-            _canvas?.Invalidate();
+            //_canvas?.Invalidate();
         }
 
         private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
@@ -781,16 +829,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void StartRenderingLoop()
         {
-            if (_isClockRegistered) return;
-            SharedAnimationClock.Register(this);
-            _isClockRegistered = true;
+            // 现在动画完全由 Canvas_Draw 自驱动，此方法仅保留供外部或旧路径调用兼容
+            _canvas?.Invalidate();
         }
 
         private void StopRenderingLoop()
         {
-            if (!_isClockRegistered) return;
-            SharedAnimationClock.Unregister(this);
-            _isClockRegistered = false;
+            // Draw 回调里检测 _isFading==false 后自动停止续帧，此处无需操作
+            _isClockRegistered = false;   // 保留字段赋值，防止其他地方读取时状态错误
         }
 
         // ── Dispose ───────────────────────────────────────────────────────────
@@ -807,7 +853,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _rawChannel.Writer.TryComplete();
             _bakedChannel.Writer.TryComplete();
             _decodeSignal.Dispose();
-            StopRenderingLoop();
+
+            // 不再需要 StopRenderingLoop 取消注册 SharedAnimationClock
+            _isFading = false;
+            _lastDrawTicks = 0;
 
             if (_canvas != null)
             {
