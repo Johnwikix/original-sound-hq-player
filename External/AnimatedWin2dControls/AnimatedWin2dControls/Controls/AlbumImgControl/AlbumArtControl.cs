@@ -641,7 +641,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 int seq = Interlocked.Increment(ref _debounceSeq);
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(80).ConfigureAwait(false);
+                    await Task.Delay(500).ConfigureAwait(false);
                     if (Interlocked.CompareExchange(ref _debounceSeq, seq, seq) == seq)
                         TrySignalDecode();
                 });

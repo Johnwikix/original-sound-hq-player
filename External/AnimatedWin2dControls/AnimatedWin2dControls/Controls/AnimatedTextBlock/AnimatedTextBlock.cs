@@ -104,15 +104,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                 _textDebounceCts = cts;
 
                 Task.Run(async () => {
-                    await Task.Delay(150, cts.Token);
+                    await Task.Delay(250, cts.Token);
                     DispatcherQueue.TryEnqueue(() => {
                         if (cts.IsCancellationRequested) return;
-
-                        // 450ms 到了，现在才真正切换数据源
                         _oldText = (string)GetValue(TextProperty) ?? string.Empty;
                         _newText = value ?? string.Empty;
-
-                        // 这行会触发一次重绘，但此时状态已经是 TextChanged 了
                         SetValue(TextProperty, value);
 
                         SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
