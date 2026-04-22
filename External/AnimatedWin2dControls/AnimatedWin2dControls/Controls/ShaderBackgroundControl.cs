@@ -122,7 +122,7 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
                 try
                 {
-                    await Task.Delay(300, cts.Token);
+                    await Task.Delay(200, cts.Token);
                     // 延迟结束后，执行真正的加载逻辑
                     _ = ctrl.LoadColorsFromBytesAsync(bytes);
                 }

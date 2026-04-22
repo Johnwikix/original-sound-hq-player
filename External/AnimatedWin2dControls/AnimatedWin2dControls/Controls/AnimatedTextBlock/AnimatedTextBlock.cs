@@ -104,7 +104,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                 _textDebounceCts = cts;
 
                 Task.Run(async () => {
-                    await Task.Delay(250, cts.Token);
+                    await Task.Delay(150, cts.Token);
                     DispatcherQueue.TryEnqueue(() => {
                         if (cts.IsCancellationRequested) return;
                         _oldText = (string)GetValue(TextProperty) ?? string.Empty;

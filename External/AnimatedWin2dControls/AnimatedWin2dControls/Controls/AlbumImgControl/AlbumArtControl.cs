@@ -1,10 +1,13 @@
 ﻿using AnimatedWin2dControls.Utils;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -14,7 +17,7 @@ using Windows.Graphics.Imaging;
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
 {
     [TemplatePart(Name = PartCanvas, Type = typeof(CanvasControl))]
-    public sealed class AlbumArtControl : Control, IDisposable, ISharedTickable
+    public sealed class AlbumArtControl : Control, IDisposable
     {
         private const string PartCanvas = "canvas";
         private const float Margin = 20f;
@@ -120,8 +123,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 Interlocked.Exchange(ref c._pendingLoad, null);
                 c._isFading = false;
                 c._lastDrawTicks = 0;
-                // StopRenderingLoop 现在是空操作，但仍调用保持语义清晰
-                // Draw 回调检测到 _isFading==false 后自动不续帧
                 c._canvas?.Invalidate();   // 触发最后一次 Draw 清空画面
             }
         }
@@ -285,7 +286,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             DrawFrame(e.DrawingSession, sender);
 
             // 动画未完成时主动请求下一帧，形成 Draw→Invalidate→Draw 自驱动循环
-            // 不再依赖 SharedAnimationClock
             if (_isFading)
             {
                 sender.Invalidate();
@@ -296,35 +296,93 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void ConsumeBakedChannel(CanvasControl sender)
         {
-            if (!_bakedChannel.Reader.TryRead(out var frame)) return;
-
-            var bmp = CanvasBitmap.CreateFromBytes(
-                sender,
-                frame.Pixels,
-                frame.W, frame.H,
-                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
-                96f * (float)DpiScale,
-                CanvasAlphaMode.Premultiplied);
-
-            if (frame.IsResize)
+            if (_rawChannel.Reader.TryRead(out var item))
             {
-                _currentBmp?.Dispose();
-                _currentBmp = bmp;
-                _srcWCur = frame.SrcW; _srcHCur = frame.SrcH;
-                _padCur = frame.Pad;
+                System.Diagnostics.Debug.WriteLine("[UI] consumed raw frame");
+                var p = item.Params;
+
+                // ── Bug Fix #2：BakeParams 里 ContentW/H 为 0 时（RequestLoad 在 layout
+                //    之前调用），从 sender.Size 实时补充，避免 GpuBake 因尺寸为 0 返回 null
+                float cw = p.ContentW, ch = p.ContentH;
+                if (cw <= 0 || ch <= 0)
+                {
+                    ComputeContentRect((float)sender.Size.Width, (float)sender.Size.Height);
+                    cw = (float)_contentRect.Width;
+                    ch = (float)_contentRect.Height;
+                }
+
+                if (cw > 0 && ch > 0)
+                {
+                    var bmp = GpuBake(item.Raw, cw, ch,
+                        p.Shadow, p.DpiScale, p.IsResize, sender);
+
+                    if (bmp != null)
+                        ApplyNewBitmap(bmp, item.Raw.SrcW, item.Raw.SrcH, p.IsResize);
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[UI] rawChannel empty");
+            }
+        }
+
+        /// <summary>
+        /// 将新 bitmap 应用到渲染状态。
+        ///
+        /// Bug Fix #1（图片消失根因）：
+        /// 原代码在 _isFading=true 时直接 Dispose(_nextBmp) 并赋新值，
+        /// 但 Canvas_Draw 的动画推进逻辑在 _t>=0.5 时会执行
+        ///   _currentBmp?.Dispose(); _currentBmp = _nextBmp;
+        /// 若此时 _nextBmp 已被替换/置 null，_currentBmp 就变成 null 或已释放对象，
+        /// 导致后续帧画面为空（消失）。
+        ///
+        /// 修复策略：收到新帧时，若正在 fade，先将动画"快进"到终态
+        ///（_currentBmp = 旧 _nextBmp），再开启新一轮过渡。
+        /// 这样 _nextBmp 在被替换前不会被 Canvas_Draw 的动画逻辑读取。
+        /// </summary>
+        private void ApplyNewBitmap(CanvasBitmap bmp, int srcW, int srcH, bool isResize)
+        {
+            float pad = IsShadowEnabled ? 34f : 0f;
+
+            if (isResize)
+            {
+                // 中止任何进行中的动画，直接替换为新图
                 _nextBmp?.Dispose();
                 _nextBmp = null;
+                _currentBmp?.Dispose();
+                _currentBmp = bmp;
+                _srcWCur = srcW; _srcHCur = srcH;
+                _padCur = pad;
                 _isFading = false;
+                _lastDrawTicks = 0;
                 _canvas?.Invalidate();
             }
             else
             {
-                _nextBmp?.Dispose();
-                _nextBmp = bmp;
-                _srcWNext = frame.SrcW; _srcHNext = frame.SrcH;
-                _padNext = frame.Pad;
+                if (_isFading)
+                {
+                    // 快进旧动画到终态：把 _nextBmp（旧的下一帧）升为 _currentBmp，
+                    // 避免它在下面被 Dispose 后仍被 Canvas_Draw 的 "_t>=0.5" 分支读取。
+                    if (_nextBmp != null)
+                    {
+                        _currentBmp?.Dispose();
+                        _currentBmp = _nextBmp;
+                        _nextBmp = null;
+                        _srcWCur = _srcWNext;
+                        _srcHCur = _srcHNext;
+                        _padCur = _padNext;
+                    }
+                    // 重置动画状态，下面的 BeginTransition() 会重新启动
+                    _isFading = false;
+                    _t = 0f;
+                    _lastDrawTicks = 0;
+                }
 
-                if (!_isFading) BeginTransition();
+                // 此时 _nextBmp 必定为 null，安全赋值
+                _nextBmp = bmp;
+                _srcWNext = srcW; _srcHNext = srcH;
+                _padNext = pad;
+                BeginTransition();
             }
         }
 
@@ -335,7 +393,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _pipelineCts = new CancellationTokenSource();
             var token = _pipelineCts.Token;
             Task.Run(() => DecodeLoopAsync(token), token);
-            Task.Run(() => BakeLoopAsync(token), token);
         }
 
         private async Task DecodeLoopAsync(CancellationToken ct)
@@ -369,243 +426,131 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
                     await _rawChannel.Writer.WriteAsync(
                         new RawFrameWithParams(raw, bakeP), ct).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) { break; }
-                catch { /* 静默 */ }
-            }
-        }
+                    System.Diagnostics.Debug.WriteLine("[Decode] wrote to _rawChannel");
 
-        // ── Stage 2：Bake Loop ────────────────────────────────────────────────
-
-        private async Task BakeLoopAsync(CancellationToken ct)
-        {
-            await foreach (var item in _rawChannel.Reader.ReadAllAsync(ct))
-            {
-                try
-                {
-                    var p = item.Params;
-                    if (p.ContentW <= 0 || p.ContentH <= 0) continue;
-
-                    var baked = await Task.Run(() =>
-                        CpuBake(item.Raw, p.ContentW, p.ContentH,
-                                p.Shadow, p.DpiScale, p.IsResize), ct)
-                        .ConfigureAwait(false);
-
-                    if (baked == null) continue;
-
-                    await _bakedChannel.Writer.WriteAsync(baked.Value, ct)
-                        .ConfigureAwait(false);
-
-                    // 修复：通过 DispatcherQueue 回到 UI 线程调用 Invalidate
-                    // 避免后台线程直接调用导致的跨线程调度延迟和潜在竞态
+                    // 通知 UI 线程来 Draw，触发 ConsumeBakedChannel 里的 TryRead
                     var canvas = _canvas;
                     canvas?.DispatcherQueue.TryEnqueue(
-                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
-                            () => _canvas?.Invalidate());
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
+                        () => _canvas?.Invalidate());
                 }
                 catch (OperationCanceledException) { break; }
                 catch { }
             }
         }
 
-        // ── CPU Bake（纯软件，无 D2D） ────────────────────────────────────────
-
-        private static BakedFrame? CpuBake(
-            RawFrame raw,
-            float contentW, float contentH,
-            bool shadow, float dpiScale,
-            bool isResize)
+        private CanvasBitmap? GpuBake(
+                RawFrame raw,
+                float contentW, float contentH,
+                bool shadow, float dpiScale,
+                bool isResize,
+                CanvasControl sender)
         {
+            System.Diagnostics.Debug.WriteLine(
+            $"[GpuBake] raw={raw.W}×{raw.H} content={contentW}×{contentH} dpi={dpiScale}");
+            if (raw.W <= 0 || raw.H <= 0 || contentW <= 0 || contentH <= 0) return null;
+            var device = sender.Device;
+
+            // 1. 上传原始像素 → GPU
+            using var srcBmp = CanvasBitmap.CreateFromBytes(
+                device,
+                raw.Pixels,
+                raw.W, raw.H,
+                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                96f * dpiScale,
+                CanvasAlphaMode.Premultiplied);
+
+            // 2. 计算目标尺寸（保持宽高比）
             float aspect = (float)raw.SrcW / raw.SrcH;
             float drawW, drawH;
             if (aspect >= contentW / contentH) { drawW = contentW; drawH = drawW / aspect; }
             else { drawH = contentH; drawW = drawH * aspect; }
-
             int dstW = Math.Max(1, (int)drawW);
             int dstH = Math.Max(1, (int)drawH);
 
-            var scaled = BilinearScale(raw.Pixels, raw.W, raw.H, dstW, dstH);
-            ApplyRoundedCornerMask(scaled, dstW, dstH, CornerRadius);
+            // 3. 缩放 + 圆角 → 中间 RenderTarget
+            float pad = shadow ? 34f : 0f;
+            int rtW = dstW + (int)pad * 2;
+            int rtH = dstH + (int)pad * 2;
 
-            int pad = shadow ? 34 : 0;
-            int rtW = dstW + pad * 2;
-            int rtH = dstH + pad * 2;
-            var result = new byte[rtW * rtH * 4];
+            using var scaledRt = new CanvasRenderTarget(device, dstW, dstH, 96f * dpiScale,
+                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                CanvasAlphaMode.Premultiplied);
 
-            if (shadow)
+            // 3a. 缩放到 dstW×dstH，同时用 ScaleEffect 触发 GPU 插值
+            using (var ds = scaledRt.CreateDrawingSession())
             {
-                var shadowLayer = GenerateShadow(scaled, dstW, dstH, rtW, rtH,
-                    pad, blurRadius: 10, shadowAlpha: 100, offsetX: 2, offsetY: 3);
-                BlendOver(result, shadowLayer, rtW, rtH);
+                ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
 
-                var imageLayer = new byte[rtW * rtH * 4];
-                PasteBitmap(imageLayer, rtW, scaled, dstW, dstH, pad, pad);
-                BlendOver(result, imageLayer, rtW, rtH);
-            }
-            else
-            {
-                PasteBitmap(result, rtW, scaled, dstW, dstH, pad, pad);
-            }
+                // 圆角 clip
+                var roundedRect = new Windows.Foundation.Rect(0, 0, dstW, dstH);
+                using var geom = CanvasGeometry.CreateRoundedRectangle(device,
+                    roundedRect, CornerRadius, CornerRadius);
 
-            return new BakedFrame(result, rtW, rtH, pad, raw.SrcW, raw.SrcH, isResize);
-        }
-
-        // ── CPU 图像工具函数 ──────────────────────────────────────────────────
-
-        private static byte[] BilinearScale(byte[] src, int srcW, int srcH,
-                                             int dstW, int dstH)
-        {
-            var dst = new byte[dstW * dstH * 4];
-            float xRatio = (float)(srcW - 1) / Math.Max(1, dstW - 1);
-            float yRatio = (float)(srcH - 1) / Math.Max(1, dstH - 1);
-
-            for (int dy = 0; dy < dstH; dy++)
-            {
-                float fy = dy * yRatio;
-                int y0 = (int)fy, y1 = Math.Min(y0 + 1, srcH - 1);
-                float yw = fy - y0;
-
-                for (int dx = 0; dx < dstW; dx++)
+                using (ds.CreateLayer(1f, geom))
                 {
-                    float fx = dx * xRatio;
-                    int x0 = (int)fx, x1 = Math.Min(x0 + 1, srcW - 1);
-                    float xw = fx - x0;
+                    ds.DrawImage(srcBmp,
+                        new Windows.Foundation.Rect(0, 0, dstW, dstH),
+                        new Windows.Foundation.Rect(0, 0, raw.W, raw.H),
+                        1f, CanvasImageInterpolation.MultiSampleLinear);
+                }
+            }
 
-                    int s00 = (y0 * srcW + x0) * 4;
-                    int s10 = (y0 * srcW + x1) * 4;
-                    int s01 = (y1 * srcW + x0) * 4;
-                    int s11 = (y1 * srcW + x1) * 4;
+            // 4. 合成最终 RenderTarget（含阴影）
+            var finalRt = new CanvasRenderTarget(device, rtW, rtH, 96f * dpiScale,
+                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                CanvasAlphaMode.Premultiplied);
 
-                    int d = (dy * dstW + dx) * 4;
-                    for (int c = 0; c < 4; c++)
+            using (var ds = finalRt.CreateDrawingSession())
+            {
+                ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+
+                if (shadow)
+                {
+                    // 4a. 阴影：GaussianBlur + 偏移 + 压暗
+                    var blurEffect = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
                     {
-                        float v = src[s00 + c] * (1 - xw) * (1 - yw)
-                                + src[s10 + c] * xw * (1 - yw)
-                                + src[s01 + c] * (1 - xw) * yw
-                                + src[s11 + c] * xw * yw;
-                        dst[d + c] = (byte)Math.Clamp((int)v, 0, 255);
-                    }
-                }
-            }
-            return dst;
-        }
-
-        private static void ApplyRoundedCornerMask(byte[] pixels, int w, int h, float r)
-        {
-            r = Math.Min(r, Math.Min(w, h) * 0.5f);
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float cx = Math.Max(0, Math.Max(r - x, x - (w - r - 1)));
-                    float cy = Math.Max(0, Math.Max(r - y, y - (h - r - 1)));
-                    float dist = MathF.Sqrt(cx * cx + cy * cy);
-                    float alpha = Math.Clamp(r - dist + 0.5f, 0f, 1f);
-
-                    if (alpha >= 1f) continue;
-
-                    int idx = (y * w + x) * 4;
-                    pixels[idx] = (byte)(pixels[idx] * alpha);
-                    pixels[idx + 1] = (byte)(pixels[idx + 1] * alpha);
-                    pixels[idx + 2] = (byte)(pixels[idx + 2] * alpha);
-                    pixels[idx + 3] = (byte)(pixels[idx + 3] * alpha);
-                }
-        }
-
-        private static byte[] GenerateShadow(
-            byte[] src, int srcW, int srcH,
-            int rtW, int rtH,
-            int pad, int blurRadius,
-            byte shadowAlpha, int offsetX, int offsetY)
-        {
-            var alpha = new float[rtW * rtH];
-            for (int y = 0; y < srcH; y++)
-                for (int x = 0; x < srcW; x++)
-                {
-                    int dx = x + pad + offsetX;
-                    int dy = y + pad + offsetY;
-                    if ((uint)dx < (uint)rtW && (uint)dy < (uint)rtH)
-                        alpha[dy * rtW + dx] = src[(y * srcW + x) * 4 + 3] / 255f;
-                }
-
-            alpha = GaussianBlur1D(alpha, rtW, rtH, blurRadius, horizontal: true);
-            alpha = GaussianBlur1D(alpha, rtW, rtH, blurRadius, horizontal: false);
-
-            var shadow = new byte[rtW * rtH * 4];
-            for (int i = 0; i < rtW * rtH; i++)
-                shadow[i * 4 + 3] = (byte)Math.Clamp((int)(alpha[i] * shadowAlpha), 0, 255);
-
-            return shadow;
-        }
-
-        private static float[] GaussianBlur1D(
-            float[] src, int w, int h, int radius, bool horizontal)
-        {
-            int size = radius * 2 + 1;
-            float sigma = radius / 2f;
-            float[] kernel = new float[size];
-            float sum = 0;
-            for (int i = 0; i < size; i++)
-            {
-                int x = i - radius;
-                kernel[i] = MathF.Exp(-x * x / (2 * sigma * sigma));
-                sum += kernel[i];
-            }
-            for (int i = 0; i < size; i++) kernel[i] /= sum;
-
-            var dst = new float[w * h];
-            if (horizontal)
-            {
-                for (int y = 0; y < h; y++)
-                    for (int x = 0; x < w; x++)
+                        Source = scaledRt,
+                        BlurAmount = 8f,
+                        BorderMode = Microsoft.Graphics.Canvas.Effects.EffectBorderMode.Soft,
+                    };
+                    var shadowColorEffect = new Microsoft.Graphics.Canvas.Effects.ColorMatrixEffect
                     {
-                        float v = 0;
-                        for (int k = 0; k < size; k++)
+                        Source = blurEffect,
+                        ColorMatrix = new Matrix5x4
                         {
-                            int sx = Math.Clamp(x + k - radius, 0, w - 1);
-                            v += src[y * w + sx] * kernel[k];
+                            M11 = 0,
+                            M12 = 0,
+                            M13 = 0,
+                            M14 = 0,
+                            M21 = 0,
+                            M22 = 0,
+                            M23 = 0,
+                            M24 = 0,
+                            M31 = 0,
+                            M32 = 0,
+                            M33 = 0,
+                            M34 = 0,
+                            M41 = 0,
+                            M42 = 0,
+                            M43 = 0,
+                            M44 = 100f / 255f,
+                            M51 = 0,
+                            M52 = 0,
+                            M53 = 0,
+                            M54 = 0
                         }
-                        dst[y * w + x] = v;
-                    }
+                    };
+                    ds.DrawImage(shadowColorEffect, new Vector2(pad + 2, pad + 3));
+                    ds.DrawImage(scaledRt, new Vector2(pad, pad));
+                }
+                else
+                {
+                    ds.DrawImage(scaledRt, new Vector2(pad, pad));
+                }
             }
-            else
-            {
-                for (int y = 0; y < h; y++)
-                    for (int x = 0; x < w; x++)
-                    {
-                        float v = 0;
-                        for (int k = 0; k < size; k++)
-                        {
-                            int sy = Math.Clamp(y + k - radius, 0, h - 1);
-                            v += src[sy * w + x] * kernel[k];
-                        }
-                        dst[y * w + x] = v;
-                    }
-            }
-            return dst;
-        }
 
-        private static void BlendOver(byte[] dst, byte[] src, int w, int h)
-        {
-            for (int i = 0; i < w * h * 4; i += 4)
-            {
-                float invA = (255 - src[i + 3]) / 255f;
-                dst[i] = (byte)Math.Clamp(src[i] + dst[i] * invA, 0, 255);
-                dst[i + 1] = (byte)Math.Clamp(src[i + 1] + dst[i + 1] * invA, 0, 255);
-                dst[i + 2] = (byte)Math.Clamp(src[i + 2] + dst[i + 2] * invA, 0, 255);
-                dst[i + 3] = (byte)Math.Clamp(src[i + 3] + dst[i + 3] * invA, 0, 255);
-            }
-        }
-
-        private static void PasteBitmap(byte[] dst, int dstW,
-                                         byte[] src, int srcW, int srcH,
-                                         int offX, int offY)
-        {
-            for (int y = 0; y < srcH; y++)
-            {
-                int dRow = ((y + offY) * dstW + offX) * 4;
-                int sRow = y * srcW * 4;
-                Buffer.BlockCopy(src, sRow, dst, dRow, srcW * 4);
-            }
+            return finalRt;
         }
 
         // ── 加载请求 ──────────────────────────────────────────────────────────
@@ -623,6 +568,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 ComputeContentRect((float)c.Size.Width, (float)c.Size.Height);
                 cw = (float)_contentRect.Width;
                 ch = (float)_contentRect.Height;
+                // 注意：若 canvas 尚未完成首次 layout，Size 可能为 0。
+                // ConsumeBakedChannel 里会做二次补救，此处允许 cw/ch 为 0 继续传入。
             }
 
             Interlocked.Exchange(ref _pendingBakeParams,
@@ -641,7 +588,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 int seq = Interlocked.Increment(ref _debounceSeq);
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(500).ConfigureAwait(false);
+                    await Task.Delay(300).ConfigureAwait(false);
                     if (Interlocked.CompareExchange(ref _debounceSeq, seq, seq) == seq)
                         TrySignalDecode();
                 });
@@ -712,33 +659,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             _t = 0f;
             _isFading = true;
-            _lastDrawTicks = 0;          // 重置，让首帧 delta = 0 避免跳变
-            _canvas?.Invalidate();       // 触发第一次 Draw，后续由 Draw 自续
-        }
-
-        public void OnSharedTick(TimeSpan elapsed)
-        {
-            //if (!_isFading) return;
-
-            //float delta = Math.Min((float)elapsed.TotalSeconds, 0.1f);
-            //_t = Math.Min(1f, _t + delta * FadeSpeed);
-
-            //if (_t >= 0.5f && _nextBmp != null)
-            //{
-            //    _currentBmp?.Dispose();
-            //    _currentBmp = _nextBmp; _nextBmp = null;
-            //    _srcWCur = _srcWNext; _srcHCur = _srcHNext;
-            //    _padCur = _padNext;
-            //}
-
-            //if (_t >= 1f)
-            //{
-            //    _t = 0f;
-            //    _isFading = false;
-            //    StopRenderingLoop();
-            //}
-
-            //_canvas?.Invalidate();
+            _lastDrawTicks = 0;
+            _canvas?.Invalidate();
         }
 
         private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
@@ -827,18 +749,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             return false;
         }
 
-        private void StartRenderingLoop()
-        {
-            // 现在动画完全由 Canvas_Draw 自驱动，此方法仅保留供外部或旧路径调用兼容
-            _canvas?.Invalidate();
-        }
-
-        private void StopRenderingLoop()
-        {
-            // Draw 回调里检测 _isFading==false 后自动停止续帧，此处无需操作
-            _isClockRegistered = false;   // 保留字段赋值，防止其他地方读取时状态错误
-        }
-
         // ── Dispose ───────────────────────────────────────────────────────────
 
         public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
@@ -854,7 +764,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _bakedChannel.Writer.TryComplete();
             _decodeSignal.Dispose();
 
-            // 不再需要 StopRenderingLoop 取消注册 SharedAnimationClock
             _isFading = false;
             _lastDrawTicks = 0;
 
