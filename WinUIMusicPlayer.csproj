@@ -110,8 +110,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
-    <PackageReference Include="DevWinUI" Version="9.9.3" />
-    <PackageReference Include="DevWinUI.Controls" Version="9.9.3" />
+    <PackageReference Include="DevWinUI" Version="9.9.4" />
+    <PackageReference Include="DevWinUI.Controls" Version="9.9.4" />
     <PackageReference Include="DffTagReader" Version="1.0.2" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="ManagedBass" Version="4.0.2" />
@@ -119,26 +119,26 @@
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Wasapi" Version="4.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.PinYinConverter" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.7" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260416003" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
-    <PackageReference Include="System.IO.Hashing" Version="10.0.6" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
+    <PackageReference Include="System.IO.Hashing" Version="10.0.7" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.7" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.9.0" />
-    <PackageReference Include="z440.atl.core" Version="7.11.0" />
-    <PackageReference Include="ZLinq" Version="1.5.5" />
+    <PackageReference Include="z440.atl.core" Version="7.12.0" />
+    <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\SettingsPage.xaml">
