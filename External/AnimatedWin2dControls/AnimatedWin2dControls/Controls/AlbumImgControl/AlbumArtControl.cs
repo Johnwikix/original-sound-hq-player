@@ -23,12 +23,26 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const string PartCanvas = "canvas";
         private const float Margin = 20f;
         private const float CornerRadius = 16f;
+        private const float ShadowPad = 34f;
+        private const float HardMaxSize = 1280f;
+        private const float FadeSpeed = 4f;       // t 从 0→1 的速度，总时长 = 1/FadeSpeed 秒
+        private const float ScaleSmall = 0.90f;
+        private const int ResizeDebounceMs = 200;
+
+        // 动画锁冷却时长 = 动画总时长，在 RequestLoad 入口启动，覆盖整个动画执行窗口
+        // 动画总时长：t 从 0 跑到 1，FadeSpeed = 4f → 1000/4 = 250 ms
+        private static readonly int AnimLockMs = (int)(1000f * 4 / FadeSpeed);
+
+        // ── 帧描述符 ──────────────────────────────────────────────────────────
+
+        /// <summary>随 bitmap 一起存储的绘制参数，避免多个平行字段失步。</summary>
+        private readonly record struct FrameInfo(float SrcW, float SrcH, float Pad);
 
         // ── 依赖属性 ──────────────────────────────────────────────────────────
 
         public static readonly DependencyProperty DpiScaleProperty =
             DependencyProperty.Register(nameof(DpiScale), typeof(double),
-                typeof(AlbumArtControl), new PropertyMetadata(1.0, OnDpiScaleChanged));
+                typeof(AlbumArtControl), new PropertyMetadata(1.0, OnResizeTriggerChanged));
         public double DpiScale
         {
             get => (double)GetValue(DpiScaleProperty);
@@ -55,7 +69,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         public static readonly DependencyProperty IsShadowEnabledProperty =
             DependencyProperty.Register(nameof(IsShadowEnabled), typeof(bool),
-                typeof(AlbumArtControl), new PropertyMetadata(true, OnShadowEnabledChanged));
+                typeof(AlbumArtControl), new PropertyMetadata(true, OnResizeTriggerChanged));
         public bool IsShadowEnabled
         {
             get => (bool)GetValue(IsShadowEnabledProperty);
@@ -73,60 +87,45 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 依赖属性回调 ──────────────────────────────────────────────────────
 
-        private static void OnImageBytesChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+        private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated || !c.IsActive) return;
             c.RequestLoad(e.NewValue as byte[]);
         }
 
-        private static void OnIsDarkChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated || !c.IsActive) return;
-            c._lastLength = -1; c._lastHash = 0;
-            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b);
-            else c.RequestLoad(null);
+            c.InvalidateDedup(); // default cover 换了，强制绕过 dedup
+            c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null);
         }
 
-        private static void OnDpiScaleChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+        // DpiScale / IsShadowEnabled 变化需重新 bake，走 isResize 直接替换（不播动画）
+        private static void OnResizeTriggerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
-            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b, isResize: true);
-            else c.RequestLoad(null, isResize: true);
+            c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
         }
 
-        private static void OnShadowEnabledChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            var c = (AlbumArtControl)d;
-            if (!c._isResourcesCreated) return;
-            if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b, isResize: true);
-            else c.RequestLoad(null, isResize: true);
-        }
-
-        private static void OnIsActiveChanged(DependencyObject d,
-                DependencyPropertyChangedEventArgs e)
+        private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
             if ((bool)e.NewValue)
             {
-                if (c.ImageBytes is { Length: > 0 } b) c.RequestLoad(b);
-                else c.RequestLoad(null);
+                c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null);
             }
             else
             {
-                // 停用时：清空所有待处理状态，全部在 UI 线程执行，无跨线程风险
-                Interlocked.Exchange(ref c._pendingLoad, null);
-                c.CancelPostAnimTimer();
+                Interlocked.Exchange(ref c._pendingRequest, null);
+                CancelTimer(ref c._animLockTimer);
+                CancelTimer(ref c._resizeTimer);
                 c._isFading = false;
                 c._animLock = false;
-                c._pendingBytesAfterAnim = null;
+                c._pendingAfterAnim = null;
                 c._lastDrawTicks = 0;
                 c._canvas?.Invalidate();
             }
@@ -134,109 +133,79 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── Pipeline 数据结构 ─────────────────────────────────────────────────
 
-        private readonly record struct RawFrame(
-            byte[] Pixels, int W, int H, int SrcW, int SrcH);
+        /// <summary>解码后的原始像素（后台线程 → UI 线程）。</summary>
+        private readonly record struct DecodedFrame(byte[] Pixels, int W, int H);
 
-        private readonly record struct BakedFrame(
-            byte[] Pixels, int W, int H,
-            float Pad, float SrcW, float SrcH,
+        /// <summary>
+        /// 将 bytes 与所有 bake 参数合并为一个原子单元，
+        /// 通过单次 Interlocked.Exchange 存储，消除两个独立字段间的不一致窗口。
+        /// </summary>
+        private sealed record PendingRequest(
+            byte[]? Bytes,
+            float ContentW, float ContentH,
+            bool Shadow, float DpiScale,
             bool IsResize);
 
-        private sealed class BakeParams
-        {
-            public readonly float ContentW, ContentH;
-            public readonly bool Shadow;
-            public readonly float DpiScale;
-            public readonly bool IsResize;
-            public BakeParams(float cw, float ch, bool s, float d, bool resize)
-            { ContentW = cw; ContentH = ch; Shadow = s; DpiScale = d; IsResize = resize; }
-        }
+        // ── Pipeline 通道 ─────────────────────────────────────────────────────
 
-        private sealed record PendingLoad(byte[]? Bytes, bool IsResize);
+        // 容量 1 + DropOldest：解码速度快于 UI 消费时自动丢弃旧帧，始终只保留最新
+        private readonly Channel<(DecodedFrame Frame, PendingRequest Req)> _decodeChannel =
+            Channel.CreateBounded<(DecodedFrame, PendingRequest)>(
+                new BoundedChannelOptions(1)
+                {
+                    FullMode = BoundedChannelFullMode.DropOldest,
+                    SingleReader = true,
+                    SingleWriter = true,
+                });
 
-        // ── Pipeline 管道 ─────────────────────────────────────────────────────
-
-        private readonly Channel<RawFrameWithParams> _rawChannel;
-        private readonly record struct RawFrameWithParams(RawFrame Raw, BakeParams Params);
-        private readonly Channel<BakedFrame> _bakedChannel;
-
-        // ── 渲染状态（仅 UI 线程访问） ────────────────────────────────────────
+        // ── 渲染状态（仅 UI 线程） ────────────────────────────────────────────
 
         private CanvasControl? _canvas;
         private bool _isResourcesCreated;
         private bool _disposed;
 
         private CanvasBitmap? _currentBmp;
+        private FrameInfo _currentInfo;
         private CanvasBitmap? _nextBmp;
+        private FrameInfo _nextInfo;
 
-        private float _srcWCur, _srcHCur;
-        private float _srcWNext, _srcHNext;
-        private float _padCur, _padNext;
-
-        // Scale-fade 动画
         private float _t;
         private bool _isFading;
-        private const float FadeSpeed = 4f;
-        private const float ScaleSmall = 0.90f;
-
+        private long _lastDrawTicks;
         private Rect _contentRect;
 
-        // ── 动画锁 & 冷却（全部仅 UI 线程访问，无需 Interlocked） ────────────
+        // ── 动画锁（仅 UI 线程读写，无需 Interlocked） ───────────────────────
         //
-        // 设计原则：
-        //   _animLock 在 RequestLoad 入口拦截新的 bytes 请求。
-        //   它在 BeginTransition() 置 true，在动画结束后的 DispatcherQueueTimer 回调置 false。
-        //   所有读写均在 UI 线程（Canvas_Draw、RequestLoad、Timer 回调），无跨线程竞态。
+        //  逻辑说明：
+        //    RequestLoad 入口收到新 bytes 时立即启动 _animLockTimer（时长 = 动画总时长）。
+        //    锁期间的后续 bytes 只暂存到 _pendingAfterAnim，不进入解码流程。
+        //    Timer 到期（= 动画应已完成）时解锁，检查 _pendingAfterAnim 与当前显示图的
+        //    hash，不同则触发下一轮 RequestLoad。
         //
-        //   _pendingBytesAfterAnim 保存锁期间最后一次收到的 bytes，
-        //   动画结束冷却后检查其 hash 与当前显示图是否不同，不同才触发下一次过渡。
-        //
-        //   _currentDisplayHash 记录当前屏幕上图片的 hash，用于上述对比。
-        //   它在动画切换完成（_t >= 1f）时更新。
+        //    _currentDisplayHash：动画完成时快照的 _lastHash，代表屏幕上实际展示的图片，
+        //    用于 timer 到期后的 dedup 对比。
 
         private bool _animLock;
-        private byte[]? _pendingBytesAfterAnim;
+        private byte[]? _pendingAfterAnim;
         private int _currentDisplayHash;
 
-        // 冷却 timer：纯 UI 线程，不持有后台 Task，Dispose 时直接 Stop，无悬挂引用
-        private DispatcherQueueTimer? _postAnimTimer;
-        private const int PostAnimDelayMs = 400;
+        private DispatcherQueueTimer? _animLockTimer;
+        private DispatcherQueueTimer? _resizeTimer;
 
-        // ── Pipeline 控制 ─────────────────────────────────────────────────────
+        // ── Pipeline 控制（跨线程字段） ───────────────────────────────────────
 
         private CancellationTokenSource _pipelineCts = new();
-        private PendingLoad? _pendingLoad;
+        private PendingRequest? _pendingRequest;  // Interlocked.Exchange 原子替换
         private readonly SemaphoreSlim _decodeSignal = new(0, 1);
-        private BakeParams? _pendingBakeParams;
 
-        private bool _hasEverLoaded;
         private long _lastLength = -1;
         private int _lastHash;
-        private int _debounceSeq;
-        private const float HardMaxSize = 1280f;
-        private long _lastDrawTicks = 0;
 
-        // ── 构造 ──────────────────────────────────────────────────────────────
+        // ── 构造 / 模板 ───────────────────────────────────────────────────────
 
         public AlbumArtControl()
         {
             DefaultStyleKey = typeof(AlbumArtControl);
-
-            _rawChannel = Channel.CreateBounded<RawFrameWithParams>(
-                new BoundedChannelOptions(1)
-                {
-                    FullMode = BoundedChannelFullMode.DropOldest,
-                    SingleReader = true,
-                    SingleWriter = true,
-                });
-            _bakedChannel = Channel.CreateBounded<BakedFrame>(
-                new BoundedChannelOptions(1)
-                {
-                    FullMode = BoundedChannelFullMode.DropOldest,
-                    SingleReader = true,
-                    SingleWriter = true,
-                });
-
             Unloaded += (_, _) => Dispose(true);
         }
 
@@ -250,8 +219,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _canvas.SizeChanged -= Canvas_SizeChanged;
                 _canvas = null;
             }
+
             _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
             if (_canvas == null) return;
+
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
             _canvas.SizeChanged += Canvas_SizeChanged;
@@ -262,355 +233,326 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_CreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs e)
         {
+            // 设备丢失恢复时可能重复触发，先取消旧 pipeline 再重建
+            _pipelineCts.Cancel();
+            _pipelineCts.Dispose();
+            _pipelineCts = new CancellationTokenSource();
+
             _isResourcesCreated = true;
-            StartPipelineLoops();
+            Task.Run(() => DecodeLoopAsync(_pipelineCts.Token));
+
             if (!IsActive) return;
-            if (ImageBytes is { Length: > 0 } b) RequestLoad(b);
-            else RequestLoad(null);
+            RequestLoad(ImageBytes is { Length: > 0 } b ? b : null);
         }
 
-        // 画布尺寸变化（窗口拖拽缩放）：防抖后触发 isResize 重绘，保持像素清晰
-        private int _resizeSeq;
         private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (!_isResourcesCreated || !IsActive) return;
-            int seq = Interlocked.Increment(ref _resizeSeq);
-            _ = Task.Run(async () =>
+            // 防抖：拖拽期间只响应最后一次稳定尺寸，整个逻辑在 UI 线程，无跨线程开销
+            RestartTimer(ref _resizeTimer, ResizeDebounceMs, () =>
             {
-                await Task.Delay(200).ConfigureAwait(false);
-                if (Interlocked.CompareExchange(ref _resizeSeq, seq, seq) != seq) return;
-                _canvas?.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
-                {
-                    if (_disposed || !IsActive) return;
-                    if (ImageBytes is { Length: > 0 } b) RequestLoad(b, isResize: true);
-                    else RequestLoad(null, isResize: true);
-                });
+                if (_disposed || !IsActive) return;
+                RequestLoad(ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
             });
         }
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            // Stage 3：尝试从 raw channel 拿到解码帧，GpuBake 后应用
-            ConsumeBakedChannel(sender);
+            // 消费解码通道（GpuBake 必须在能访问 GPU 设备的 UI 线程上执行）
+            ConsumeDecodeChannel(sender);
 
-            // 推进动画状态（自驱动：Draw 内部计算 delta，消除帧错位）
+            // 推进动画（自驱动 delta time，消除 Rendering→Invalidate→Draw 帧错位）
             if (_isFading)
-            {
-                long nowTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-                float delta = 0f;
-
-                if (_lastDrawTicks != 0)
-                {
-                    long elapsed = nowTicks - _lastDrawTicks;
-                    delta = (float)((double)elapsed / System.Diagnostics.Stopwatch.Frequency);
-                    delta = Math.Min(delta, 0.1f);
-                }
-                _lastDrawTicks = nowTicks;
-
-                _t = Math.Min(1f, _t + delta * FadeSpeed);
-
-                if (_t >= 0.5f && _nextBmp != null)
-                {
-                    _currentBmp?.Dispose();
-                    _currentBmp = _nextBmp;
-                    _nextBmp = null;
-                    _srcWCur = _srcWNext;
-                    _srcHCur = _srcHNext;
-                    _padCur = _padNext;
-                }
-
-                if (_t >= 1f)
-                {
-                    _t = 0f;
-                    _isFading = false;
-                    _lastDrawTicks = 0;
-
-                    // 动画播完：记录当前显示 hash，启动纯 UI 线程冷却 timer
-                    _currentDisplayHash = _lastHash;
-                    StartPostAnimTimer();
-                }
-            }
+                TickAnimation();
 
             DrawFrame(e.DrawingSession, sender);
 
             if (_isFading)
-                sender.Invalidate();
+                sender.Invalidate(); // 动画未结束，请求下一帧
         }
 
-        // ── Stage 3：消费 Raw Channel ─────────────────────────────────────────
+        // ── 解码通道消费 ──────────────────────────────────────────────────────
 
-        private void ConsumeBakedChannel(CanvasControl sender)
+        private void ConsumeDecodeChannel(CanvasControl sender)
         {
-            if (!_rawChannel.Reader.TryRead(out var item)) return;
+            if (!_decodeChannel.Reader.TryRead(out var item)) return;
 
-            var p = item.Params;
-            float cw = p.ContentW, ch = p.ContentH;
+            var (frame, req) = item;
+
+            // ContentW/H 在 canvas layout 之前可能为 0，此处用实际 Size 补救
+            float cw = req.ContentW, ch = req.ContentH;
             if (cw <= 0 || ch <= 0)
             {
                 ComputeContentRect((float)sender.Size.Width, (float)sender.Size.Height);
                 cw = (float)_contentRect.Width;
                 ch = (float)_contentRect.Height;
             }
+            if (cw <= 0 || ch <= 0) return;
 
-            if (cw > 0 && ch > 0)
-            {
-                var bmp = GpuBake(item.Raw, cw, ch, p.Shadow, p.DpiScale, p.IsResize, sender);
-                if (bmp != null)
-                    ApplyNewBitmap(bmp, item.Raw.SrcW, item.Raw.SrcH, p.IsResize);
-            }
+            var bmp = GpuBake(frame, cw, ch, req.Shadow, req.DpiScale, sender);
+            if (bmp == null) return;
+
+            float pad = req.Shadow ? ShadowPad : 0f;
+            ApplyNewBitmap(bmp, new FrameInfo(frame.W, frame.H, pad), req.IsResize);
         }
 
-        private void ApplyNewBitmap(CanvasBitmap bmp, int srcW, int srcH, bool isResize)
+        private void ApplyNewBitmap(CanvasBitmap bmp, FrameInfo info, bool isResize)
         {
-            float pad = IsShadowEnabled ? 34f : 0f;
-
             if (isResize)
             {
-                _nextBmp?.Dispose();
-                _nextBmp = null;
+                // 尺寸/参数变化：立即替换，不播过渡动画
+                FinishFadeImmediately();
                 _currentBmp?.Dispose();
                 _currentBmp = bmp;
-                _srcWCur = srcW; _srcHCur = srcH;
-                _padCur = pad;
-                _isFading = false;
-                _lastDrawTicks = 0;
+                _currentInfo = info;
                 _canvas?.Invalidate();
                 return;
             }
 
-            // 若有进行中的动画，先快进到终态（保护 _nextBmp 不被 Canvas_Draw 读到已释放对象）
-            if (_isFading)
-            {
-                if (_nextBmp != null)
-                {
-                    _currentBmp?.Dispose();
-                    _currentBmp = _nextBmp;
-                    _nextBmp = null;
-                    _srcWCur = _srcWNext;
-                    _srcHCur = _srcHNext;
-                    _padCur = _padNext;
-                }
-                _isFading = false;
-                _t = 0f;
-                _lastDrawTicks = 0;
-            }
+            // 若有进行中的动画，先快进到终态，避免 _nextBmp 被替换后仍被 Canvas_Draw 读到
+            FinishFadeImmediately();
 
             _nextBmp = bmp;
-            _srcWNext = srcW; _srcHNext = srcH;
-            _padNext = pad;
+            _nextInfo = info;
             BeginTransition();
         }
 
-        // ── Stage 1：Decode Loop ──────────────────────────────────────────────
-
-        private void StartPipelineLoops()
+        /// <summary>将正在进行的动画立即推进到终态。</summary>
+        private void FinishFadeImmediately()
         {
-            _pipelineCts = new CancellationTokenSource();
-            var token = _pipelineCts.Token;
-            Task.Run(() => DecodeLoopAsync(token), token);
+            if (!_isFading) return;
+            if (_nextBmp != null)
+            {
+                _currentBmp?.Dispose();
+                _currentBmp = _nextBmp;
+                _currentInfo = _nextInfo;
+                _nextBmp = null;
+            }
+            _isFading = false;
+            _t = 0f;
+            _lastDrawTicks = 0;
         }
 
-        private async Task DecodeLoopAsync(CancellationToken ct)
+        // ── 动画推进 ──────────────────────────────────────────────────────────
+
+        private void TickAnimation()
         {
-            while (!ct.IsCancellationRequested)
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            float delta = 0f;
+            if (_lastDrawTicks != 0)
             {
-                try { await _decodeSignal.WaitAsync(ct).ConfigureAwait(false); }
-                catch (OperationCanceledException) { break; }
+                float elapsed = (float)((double)(now - _lastDrawTicks)
+                                        / System.Diagnostics.Stopwatch.Frequency);
+                delta = Math.Min(elapsed, 0.1f); // 防暂停后首帧跳变
+            }
+            _lastDrawTicks = now;
 
-                var req = Interlocked.Exchange(ref _pendingLoad, null);
-                var bakeP = Interlocked.Exchange(ref _pendingBakeParams, null);
-                if (req == null || bakeP == null) continue;
+            _t = Math.Min(1f, _t + delta * FadeSpeed);
 
-                try
-                {
-                    RawFrame raw;
-                    if (req.Bytes is { Length: > 0 } bytes)
-                    {
-                        var decoded = await DecodeImageAsync(bytes, ct).ConfigureAwait(false);
-                        if (decoded == null) continue;
-                        raw = new RawFrame(decoded.Value.Pixels,
-                            (int)decoded.Value.W, (int)decoded.Value.H,
-                            (int)decoded.Value.W, (int)decoded.Value.H);
-                    }
-                    else
-                    {
-                        var decoded = await DecodeDefaultAsync(ct).ConfigureAwait(false);
-                        if (decoded == null) continue;
-                        raw = decoded.Value;
-                    }
+            // 过半时将 _nextBmp 升为 _currentBmp，新图从淡入阶段起就已就位
+            if (_t >= 0.5f && _nextBmp != null)
+            {
+                _currentBmp?.Dispose();
+                _currentBmp = _nextBmp;
+                _currentInfo = _nextInfo;
+                _nextBmp = null;
+            }
 
-                    await _rawChannel.Writer.WriteAsync(
-                        new RawFrameWithParams(raw, bakeP), ct).ConfigureAwait(false);
-
-                    // 通知 UI 线程触发 Draw，在 ConsumeBakedChannel 里消费帧
-                    var canvas = _canvas;
-                    canvas?.DispatcherQueue.TryEnqueue(
-                        DispatcherQueuePriority.Normal,
-                        () => _canvas?.Invalidate());
-                }
-                catch (OperationCanceledException) { break; }
-                catch { }
+            if (_t >= 1f)
+            {
+                _t = 0f;
+                _isFading = false;
+                _lastDrawTicks = 0;
+                // 动画完成：记录当前显示 hash，供 timer 到期后 dedup 对比
+                _currentDisplayHash = _lastHash;
             }
         }
 
-        // ── GpuBake ───────────────────────────────────────────────────────────
+        // ── 绘制 ──────────────────────────────────────────────────────────────
 
-        private CanvasBitmap? GpuBake(
-                RawFrame raw,
-                float contentW, float contentH,
-                bool shadow, float dpiScale,
-                bool isResize,
-                CanvasControl sender)
+        private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
         {
-            if (raw.W <= 0 || raw.H <= 0 || contentW <= 0 || contentH <= 0) return null;
+            if (!IsActive) return;
+            float cw = (float)sender.Size.Width;
+            float ch = (float)sender.Size.Height;
+            if (cw <= 0 || ch <= 0) return;
+
+            ComputeContentRect(cw, ch);
+            if (_contentRect == Rect.Empty) return;
+
+            if (!_isFading)
+            {
+                if (_currentBmp != null)
+                    DrawBitmap(ds, _currentBmp, _currentInfo, alpha: 1f, scale: 1f);
+                return;
+            }
+
+            float t = _t;
+            if (t < 0.5f)
+            {
+                float e = EaseIn(t / 0.5f);
+                if (_currentBmp != null)
+                    DrawBitmap(ds, _currentBmp, _currentInfo,
+                        alpha: 1f - e,
+                        scale: 1f - (1f - ScaleSmall) * e);
+            }
+            else
+            {
+                float e = EaseOut((t - 0.5f) / 0.5f);
+                if (_currentBmp != null)
+                    DrawBitmap(ds, _currentBmp, _currentInfo,
+                        alpha: e,
+                        scale: ScaleSmall + (1f - ScaleSmall) * e);
+            }
+        }
+
+        private void DrawBitmap(CanvasDrawingSession ds, CanvasBitmap bmp,
+            FrameInfo info, float alpha, float scale)
+        {
+            // info.SrcW/H 是图片内容尺寸（不含 pad），用于在 _contentRect 内做 aspect-fit
+            var contentDest = CalcAspectFitRect(info.SrcW, info.SrcH, _contentRect);
+            if (contentDest.Width <= 0 || contentDest.Height <= 0) return;
+
+            // bitmap 已内嵌 pad（阴影区域），以内容区中心为锚点向外扩展
+            double cx = contentDest.X + contentDest.Width * 0.5;
+            double cy = contentDest.Y + contentDest.Height * 0.5;
+            double bmpW = (contentDest.Width + info.Pad * 2) * scale;
+            double bmpH = (contentDest.Height + info.Pad * 2) * scale;
+            var dest = new Rect(cx - bmpW * 0.5, cy - bmpH * 0.5, bmpW, bmpH);
+
+            ds.DrawImage(bmp, dest, bmp.Bounds, alpha, CanvasImageInterpolation.Linear);
+        }
+
+        // ── GPU Bake ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 在 UI 线程上将解码像素上传 GPU，执行缩放 + 圆角裁剪 + 阴影合成，
+        /// 返回已含阴影 padding 的 CanvasRenderTarget。
+        /// </summary>
+        private static CanvasBitmap? GpuBake(
+            DecodedFrame frame,
+            float contentW, float contentH,
+            bool shadow, float dpiScale,
+            CanvasControl sender)
+        {
+            if (frame.W <= 0 || frame.H <= 0 || contentW <= 0 || contentH <= 0) return null;
+
             var device = sender.Device;
+            float dpi = 96f * dpiScale;
 
+            // 1. 上传原始像素
             using var srcBmp = CanvasBitmap.CreateFromBytes(
-                device,
-                raw.Pixels,
-                raw.W, raw.H,
+                device, frame.Pixels, frame.W, frame.H,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
-                96f * dpiScale,
-                CanvasAlphaMode.Premultiplied);
+                dpi, CanvasAlphaMode.Premultiplied);
 
-            float aspect = (float)raw.SrcW / raw.SrcH;
+            // 2. 计算 aspect-fit 目标尺寸
+            float aspect = (float)frame.W / frame.H;
             float drawW, drawH;
             if (aspect >= contentW / contentH) { drawW = contentW; drawH = drawW / aspect; }
             else { drawH = contentH; drawW = drawH * aspect; }
             int dstW = Math.Max(1, (int)drawW);
             int dstH = Math.Max(1, (int)drawH);
 
-            float pad = shadow ? 34f : 0f;
-            int rtW = dstW + (int)pad * 2;
-            int rtH = dstH + (int)pad * 2;
-
-            using var scaledRt = new CanvasRenderTarget(device, dstW, dstH, 96f * dpiScale,
+            // 3. 缩放 + 圆角裁剪 → 中间 RT
+            using var scaledRt = new CanvasRenderTarget(device, dstW, dstH, dpi,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
                 CanvasAlphaMode.Premultiplied);
 
             using (var ds = scaledRt.CreateDrawingSession())
             {
                 ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
-                var roundedRect = new Windows.Foundation.Rect(0, 0, dstW, dstH);
-                using var geom = CanvasGeometry.CreateRoundedRectangle(device,
-                    roundedRect, CornerRadius, CornerRadius);
+                using var geom = CanvasGeometry.CreateRoundedRectangle(
+                    device, new Rect(0, 0, dstW, dstH), CornerRadius, CornerRadius);
                 using (ds.CreateLayer(1f, geom))
                 {
                     ds.DrawImage(srcBmp,
-                        new Windows.Foundation.Rect(0, 0, dstW, dstH),
-                        new Windows.Foundation.Rect(0, 0, raw.W, raw.H),
+                        new Rect(0, 0, dstW, dstH),
+                        new Rect(0, 0, frame.W, frame.H),
                         1f, CanvasImageInterpolation.MultiSampleLinear);
                 }
             }
 
-            var finalRt = new CanvasRenderTarget(device, rtW, rtH, 96f * dpiScale,
+            // 4. 合成阴影 → 最终 RT
+            float pad = shadow ? ShadowPad : 0f;
+            int rtW = dstW + (int)(pad * 2);
+            int rtH = dstH + (int)(pad * 2);
+
+            var finalRt = new CanvasRenderTarget(device, rtW, rtH, dpi,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
                 CanvasAlphaMode.Premultiplied);
 
             using (var ds = finalRt.CreateDrawingSession())
             {
                 ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+
                 if (shadow)
                 {
-                    var blurEffect = new GaussianBlurEffect
+                    // 模糊 → 压暗成纯黑半透明阴影（RGB 清零，alpha 乘以 ~0.39）
+                    using var blur = new GaussianBlurEffect
                     {
                         Source = scaledRt,
                         BlurAmount = 8f,
                         BorderMode = EffectBorderMode.Soft,
                     };
-                    var shadowColorEffect = new ColorMatrixEffect
+                    using var shadowEffect = new ColorMatrixEffect
                     {
-                        Source = blurEffect,
-                        ColorMatrix = new Matrix5x4
-                        {
-                            M11 = 0,
-                            M12 = 0,
-                            M13 = 0,
-                            M14 = 0,
-                            M21 = 0,
-                            M22 = 0,
-                            M23 = 0,
-                            M24 = 0,
-                            M31 = 0,
-                            M32 = 0,
-                            M33 = 0,
-                            M34 = 0,
-                            M41 = 0,
-                            M42 = 0,
-                            M43 = 0,
-                            M44 = 100f / 255f,
-                            M51 = 0,
-                            M52 = 0,
-                            M53 = 0,
-                            M54 = 0
-                        }
+                        Source = blur,
+                        ColorMatrix = new Matrix5x4 { M44 = 100f / 255f }
                     };
-                    ds.DrawImage(shadowColorEffect, new Vector2(pad + 2, pad + 3));
-                    ds.DrawImage(scaledRt, new Vector2(pad, pad));
+                    ds.DrawImage(shadowEffect, new Vector2(pad + 2, pad + 3));
                 }
-                else
-                {
-                    ds.DrawImage(scaledRt, new Vector2(pad, pad));
-                }
+
+                ds.DrawImage(scaledRt, new Vector2(pad, pad));
             }
 
             return finalRt;
         }
 
-        // ── 加载请求 ──────────────────────────────────────────────────────────
+        // ── 加载请求入口 ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// 请求加载新图片。
+        /// 请求加载新图片。isResize = true 时绕过动画锁，直接替换（不播过渡动画）。
         ///
-        /// 动画锁逻辑：
-        ///   _animLock 在 BeginTransition() 置 true，在动画播完后的冷却 Timer 回调里置 false。
-        ///   锁期间（非 resize）：只暂存最新 bytes 到 _pendingBytesAfterAnim，
-        ///   直接返回，不进入 dedup / decode 流程，彻底杜绝"解码比动画先跑完"的问题。
-        ///   冷却结束后：对比 pending 与当前显示 hash，不同才触发下一轮 RequestLoad。
+        /// 动画锁逻辑（全部在 UI 线程读写，无竞态）：
+        ///   收到新 bytes 时立即启动 _animLockTimer（时长 = 动画总时长 AnimLockMs），
+        ///   覆盖整个动画执行窗口。锁期间的后续请求只暂存到 _pendingAfterAnim。
+        ///   Timer 到期时解锁，对比 pending 与当前显示 hash，不同则触发下一轮过渡。
         /// </summary>
         public void RequestLoad(byte[]? bytes, bool isResize = false)
         {
             if (_disposed) return;
             if (!IsActive && _isResourcesCreated) return;
 
-            // 动画锁期间：暂存最新 bytes，其余全部忽略，连解码都不进入
             if (_animLock && !isResize)
             {
-                _pendingBytesAfterAnim = bytes;
+                _pendingAfterAnim = bytes;
                 return;
             }
 
             if (bytes is { Length: > 0 } && IsDuplicateAndUpdate(bytes)) return;
 
-            float cw = 0, ch = 0;
+            // 非 resize 的正常图片切换：在解码开始前就加锁并启动计时
+            // 计时长度覆盖解码 + 动画全程，timer 到期时动画应已自然结束
+            if (!isResize)
+            {
+                _animLock = true;
+                RestartTimer(ref _animLockTimer, AnimLockMs, UnlockAndCheckPending);
+            }
+
+            float cw = 0f, ch = 0f;
             if (_canvas is { } c)
             {
                 ComputeContentRect((float)c.Size.Width, (float)c.Size.Height);
                 cw = (float)_contentRect.Width;
                 ch = (float)_contentRect.Height;
+                // canvas 首次 layout 前 Size 为 0，ConsumeDecodeChannel 里会补救
             }
 
-            Interlocked.Exchange(ref _pendingBakeParams,
-                new BakeParams(cw, ch, IsShadowEnabled, (float)DpiScale, isResize));
-            Interlocked.Exchange(ref _pendingLoad, new PendingLoad(bytes, isResize));
+            Interlocked.Exchange(ref _pendingRequest,
+                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize));
 
-            bool firstLoad = !_hasEverLoaded;
-            _hasEverLoaded = true;
-
-            if (firstLoad)
-            {
-                TrySignalDecode();
-            }
-            else
-            {
-                int seq = Interlocked.Increment(ref _debounceSeq);
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(200).ConfigureAwait(false);
-                    if (Interlocked.CompareExchange(ref _debounceSeq, seq, seq) == seq)
-                        TrySignalDecode();
-                });
-            }
+            TrySignalDecode();
         }
 
         private void TrySignalDecode()
@@ -619,69 +561,52 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _decodeSignal.Release();
         }
 
-        // ── 动画锁冷却 Timer（纯 UI 线程，无后台 Task） ───────────────────────
+        // ── 解码循环（后台线程） ──────────────────────────────────────────────
 
-        /// <summary>
-        /// 启动动画结束后的冷却 timer。
-        /// 全部在 DispatcherQueueTimer 上执行，不涉及任何后台线程，
-        /// 彻底避免 Task.Run + TryEnqueue 在控件 Dispose 后访问已销毁消息泵的崩溃。
-        /// </summary>
-        private void StartPostAnimTimer()
+        private async Task DecodeLoopAsync(CancellationToken ct)
         {
-            CancelPostAnimTimer();
-
-            // 必须有 DispatcherQueue 才能创建 timer（正常情况下 UI 控件一定有）
-            var dq = DispatcherQueue.GetForCurrentThread() ?? _canvas?.DispatcherQueue;
-            if (dq is null) { UnlockAndCheckPending(); return; }
-
-            _postAnimTimer = dq.CreateTimer();
-            _postAnimTimer.Interval = TimeSpan.FromMilliseconds(PostAnimDelayMs);
-            _postAnimTimer.IsRepeating = false;
-            _postAnimTimer.Tick += (_, _) =>
+            while (!ct.IsCancellationRequested)
             {
-                CancelPostAnimTimer();      // 停掉自己
-                UnlockAndCheckPending();    // 解锁 + 检查 pending
-            };
-            _postAnimTimer.Start();
-        }
+                try { await _decodeSignal.WaitAsync(ct).ConfigureAwait(false); }
+                catch (OperationCanceledException) { break; }
 
-        private void CancelPostAnimTimer()
-        {
-            if (_postAnimTimer is null) return;
-            _postAnimTimer.Stop();
-            _postAnimTimer = null;
-        }
+                var req = Interlocked.Exchange(ref _pendingRequest, null);
+                if (req == null) continue;
 
-        /// <summary>
-        /// 冷却结束后：解除动画锁，若有 pending bytes 且与当前显示图不同则触发下一轮过渡。
-        /// 此方法只在 UI 线程调用（timer tick 或 OnIsActiveChanged）。
-        /// </summary>
-        private void UnlockAndCheckPending()
-        {
-            _animLock = false;
+                try
+                {
+                    DecodedFrame frame;
+                    if (req.Bytes is { Length: > 0 } bytes)
+                    {
+                        var d = await DecodeImageAsync(bytes, ct).ConfigureAwait(false);
+                        if (d == null) continue;
+                        frame = d.Value;
+                    }
+                    else
+                    {
+                        var d = await DecodeDefaultAsync(ct).ConfigureAwait(false);
+                        if (d == null) continue;
+                        frame = d.Value;
+                    }
 
-            var pending = _pendingBytesAfterAnim;
-            _pendingBytesAfterAnim = null;
-            if (pending is null) return;
+                    // DropOldest 保证 UI 线程来不及消费时只保留最新帧
+                    await _decodeChannel.Writer.WriteAsync((frame, req), ct).ConfigureAwait(false);
 
-            // 对比 pending 与当前屏幕上图片的 hash，相同则不触发
-            int pendingHash = ToolUtils.ComputeFastHash(pending);
-            if (pending.Length == _lastLength && pendingHash == _currentDisplayHash) return;
-
-            // 重置 dedup 状态，避免被当作重复帧忽略
-            _lastLength = -1;
-            _lastHash = 0;
-            RequestLoad(pending);
+                    _canvas?.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal,
+                        () => _canvas?.Invalidate());
+                }
+                catch (OperationCanceledException) { break; }
+                catch { /* 解码失败静默忽略 */ }
+            }
         }
 
         // ── 图像解码 ──────────────────────────────────────────────────────────
 
-        private async Task<(byte[] Pixels, uint W, uint H)?> DecodeImageAsync(
-            byte[] bytes, CancellationToken ct)
+        private static async Task<DecodedFrame?> DecodeImageAsync(byte[] bytes, CancellationToken ct)
         {
             using var mem = new MemoryStream(bytes, writable: false);
-            using var ras = mem.AsRandomAccessStream();
-            var decoder = await BitmapDecoder.CreateAsync(ras).AsTask(ct).ConfigureAwait(false);
+            using var stream = mem.AsRandomAccessStream();
+            var decoder = await BitmapDecoder.CreateAsync(stream).AsTask(ct).ConfigureAwait(false);
 
             uint srcW = decoder.PixelWidth, srcH = decoder.PixelHeight;
             float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
@@ -696,109 +621,98 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 {
                     ScaledWidth = dstW,
                     ScaledHeight = dstH,
-                    InterpolationMode = BitmapInterpolationMode.Fant
+                    InterpolationMode = BitmapInterpolationMode.Fant,
                 },
                 ExifOrientationMode.RespectExifOrientation,
                 ColorManagementMode.DoNotColorManage).AsTask(ct).ConfigureAwait(false);
 
             ct.ThrowIfCancellationRequested();
-            return (pd.DetachPixelData(), dstW, dstH);
+            return new DecodedFrame(pd.DetachPixelData(), (int)dstW, (int)dstH);
         }
 
-        private async Task<RawFrame?> DecodeDefaultAsync(CancellationToken ct)
+        private async Task<DecodedFrame?> DecodeDefaultAsync(CancellationToken ct)
         {
             try
             {
                 string name = IsDark ? "default_cover_black.png" : "default_cover_white.png";
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", name);
                 var file = await Windows.Storage.StorageFile
-                               .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
-                using var stream = await file.OpenReadAsync().AsTask(ct).ConfigureAwait(false);
+                                  .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
+                using var s = await file.OpenReadAsync().AsTask(ct).ConfigureAwait(false);
 
                 var ms = new MemoryStream();
-                using (var s = stream.AsStream()) await s.CopyToAsync(ms, ct).ConfigureAwait(false);
-                var decoded = await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
-                if (decoded == null) return null;
-                return new RawFrame(decoded.Value.Pixels,
-                    (int)decoded.Value.W, (int)decoded.Value.H,
-                    (int)decoded.Value.W, (int)decoded.Value.H);
+                using (var rs = s.AsStream()) await rs.CopyToAsync(ms, ct).ConfigureAwait(false);
+
+                return await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
             }
             catch { return null; }
         }
 
-        // ── 动画 ──────────────────────────────────────────────────────────────
+        // ── 动画控制 ──────────────────────────────────────────────────────────
 
         private void BeginTransition()
         {
             _t = 0f;
             _isFading = true;
-            _animLock = true;       // 加锁：从此刻起直到冷却 timer 触发前，拒绝所有新请求进入解码
             _lastDrawTicks = 0;
             _canvas?.Invalidate();
         }
 
-        private void DrawFrame(CanvasDrawingSession ds, CanvasControl sender)
-        {
-            if (!IsActive) return;
-            float cw = (float)sender.Size.Width;
-            float ch = (float)sender.Size.Height;
-            if (cw <= 0 || ch <= 0) return;
-            ComputeContentRect(cw, ch);
-            if (_contentRect == Rect.Empty) return;
+        // ── 动画锁 Timer 回调 ─────────────────────────────────────────────────
 
-            if (!_isFading)
-            {
-                if (_currentBmp != null)
-                    DrawBitmap(ds, _currentBmp, _srcWCur, _srcHCur, _padCur, 1f, 1f);
-            }
-            else
-            {
-                float t = _t;
-                if (t < 0.5f)
-                {
-                    float e = EaseIn(t / 0.5f);
-                    if (_currentBmp != null)
-                        DrawBitmap(ds, _currentBmp, _srcWCur, _srcHCur, _padCur,
-                            1f - e, 1f - (1f - ScaleSmall) * e);
-                }
-                else
-                {
-                    float e = EaseOut((t - 0.5f) / 0.5f);
-                    if (_currentBmp != null)
-                        DrawBitmap(ds, _currentBmp, _srcWCur, _srcHCur, _padCur,
-                            e, ScaleSmall + (1f - ScaleSmall) * e);
-                }
-            }
+        /// <summary>
+        /// Timer 到期（= 动画窗口结束）：解锁，若有暂存 bytes 且与当前显示图不同则触发下一轮。
+        /// 只在 UI 线程调用（DispatcherQueueTimer tick）。
+        /// </summary>
+        private void UnlockAndCheckPending()
+        {
+            _animLock = false;
+
+            var pending = _pendingAfterAnim;
+            _pendingAfterAnim = null;
+            if (pending is null) return;
+
+            int pendingHash = ToolUtils.ComputeFastHash(pending);
+            bool isSame = pending.Length == _lastLength && pendingHash == _currentDisplayHash;
+            if (isSame) return;
+
+            InvalidateDedup();
+            RequestLoad(pending);
         }
 
-        private void DrawBitmap(CanvasDrawingSession ds, CanvasBitmap bmp,
-            float srcW, float srcH, float pad, float alpha, float scale)
+        // ── Timer 工具 ────────────────────────────────────────────────────────
+
+        /// <summary>停止旧 timer，新建单次 timer，到期后在 UI 线程执行 callback。</summary>
+        private void RestartTimer(ref DispatcherQueueTimer? field, int delayMs, Action callback)
         {
-            // srcW/srcH 是图片内容尺寸（不含 pad），用来计算内容在 _contentRect 内的位置和大小
-            var contentDest = CalcDestRectFromSize(srcW, srcH, _contentRect);
-            if (contentDest.Width <= 0 || contentDest.Height <= 0) return;
+            CancelTimer(ref field);
 
-            // bitmap 本身已经包含 pad（阴影区域），以内容区中心为锚点向外扩展
-            double cx = contentDest.X + contentDest.Width * 0.5;
-            double cy = contentDest.Y + contentDest.Height * 0.5;
-            double bmpW = (contentDest.Width + pad * 2) * scale;
-            double bmpH = (contentDest.Height + pad * 2) * scale;
-            var dest = new Rect(cx - bmpW * 0.5, cy - bmpH * 0.5, bmpW, bmpH);
+            var dq = DispatcherQueue.GetForCurrentThread() ?? _canvas?.DispatcherQueue;
+            if (dq is null) { callback(); return; }
 
-            // 用 bmp.Bounds 作为 sourceRect，确保阴影像素被完整采样
-            ds.DrawImage(bmp, dest, bmp.Bounds, alpha, CanvasImageInterpolation.Linear);
+            var t = dq.CreateTimer();
+            t.Interval = TimeSpan.FromMilliseconds(delayMs);
+            t.IsRepeating = false;
+            t.Tick += (sender, _) => { sender.Stop(); callback(); };
+            t.Start();
+            field = t;
+        }
+
+        private static void CancelTimer(ref DispatcherQueueTimer? field)
+        {
+            field?.Stop();
+            field = null;
         }
 
         // ── 工具函数 ──────────────────────────────────────────────────────────
 
         private void ComputeContentRect(float cw, float ch)
         {
-            float w = cw - Margin * 2;
-            float h = ch - Margin * 2;
-            _contentRect = w > 0 && h > 0 ? new Rect(Margin, Margin, w, h) : Rect.Empty;
+            float w = cw - Margin * 2, h = ch - Margin * 2;
+            _contentRect = (w > 0 && h > 0) ? new Rect(Margin, Margin, w, h) : Rect.Empty;
         }
 
-        private static Rect CalcDestRectFromSize(float srcW, float srcH, Rect cr)
+        private static Rect CalcAspectFitRect(float srcW, float srcH, Rect cr)
         {
             float cw = (float)cr.Width, ch = (float)cr.Height;
             if (srcW <= 0 || srcH <= 0 || cw <= 0 || ch <= 0) return cr;
@@ -812,17 +726,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private static float EaseIn(float t) => t * t;
         private static float EaseOut(float t) => 1f - (1f - t) * (1f - t);
 
-        public bool IsDuplicateAndUpdate(byte[]? b)
+        private void InvalidateDedup() { _lastLength = -1; _lastHash = 0; }
+
+        private bool IsDuplicateAndUpdate(byte[] b)
         {
-            if (b is not { Length: > 0 })
-            {
-                bool empty = _lastLength == 0;
-                _lastLength = 0; _lastHash = 0;
-                return empty;
-            }
             int hash = ToolUtils.ComputeFastHash(b);
             if (b.Length == _lastLength && hash == _lastHash) return true;
-            _lastLength = b.Length; _lastHash = hash;
+            _lastLength = b.Length;
+            _lastHash = hash;
             return false;
         }
 
@@ -837,17 +748,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _pipelineCts.Cancel();
             _pipelineCts.Dispose();
-            _rawChannel.Writer.TryComplete();
-            _bakedChannel.Writer.TryComplete();
+            _decodeChannel.Writer.TryComplete();
             _decodeSignal.Dispose();
 
-            // 停掉冷却 timer，避免在已销毁的消息泵上触发回调
-            CancelPostAnimTimer();
-
-            _isFading = false;
-            _animLock = false;
-            _pendingBytesAfterAnim = null;
-            _lastDrawTicks = 0;
+            CancelTimer(ref _animLockTimer);
+            CancelTimer(ref _resizeTimer);
 
             if (_canvas != null)
             {
