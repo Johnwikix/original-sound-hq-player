@@ -98,7 +98,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!c._isResourcesCreated || !c.IsActive) return;
             // default cover 换了，强制绕过 dedup
             c.InvalidateDedup();
-            c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null);
+            c.RequestLoad(c.ImageBytes);
         }
 
         // DpiScale / IsShadowEnabled 变化需重新 bake，走 isResize 直接替换（不播动画）
@@ -106,7 +106,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
-            c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
+            c.RequestLoad(c.ImageBytes, isResize: true);
         }
 
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -115,7 +115,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!c._isResourcesCreated) return;
             if ((bool)e.NewValue)
             {
-                c.RequestLoad(c.ImageBytes is { Length: > 0 } b ? b : null);
+                c.RequestLoad(c.ImageBytes);
             }
             else
             {
@@ -248,7 +248,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             Task.Run(() => DecodeLoopAsync(_pipelineCts.Token));
 
             if (!IsActive) return;
-            RequestLoad(ImageBytes is { Length: > 0 } b ? b : null);
+            RequestLoad(ImageBytes);
         }
 
         // resize 防抖保留：高频 resize 每次都需要 GpuBake，防抖有实际性能意义
@@ -273,7 +273,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     {
                         if (_disposed || !IsActive) return;
                         // isResize=true：绕过 animLock，直接进解码替换，不播动画
-                        RequestLoad(ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
+                        RequestLoad(ImageBytes);
                     });
                 }
                 catch (OperationCanceledException) { }
@@ -541,27 +541,32 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (_disposed) return;
             if (!IsActive && _isResourcesCreated) return;
 
+            // 规范化输入：空引用或 0 长度统一视为 null (即触发默认图)
+            byte[]? targetBytes = (bytes is { Length: > 0 }) ? bytes : null;
+
             if (isResize)
             {
-                DispatchToDecoder(bytes, isResize: true);
+                DispatchToDecoder(targetBytes, isResize: true);
                 return;
             }
 
-            // 1. 动画锁期间：严禁修改任何 Hash 记录，只暂存最新请求
+            // 1. 动画锁期间：暂存请求，直接返回
             if (_animLock)
             {
-                _pendingAfterAnim = bytes;
+                _pendingAfterAnim = targetBytes;
                 return;
             }
 
-            // 2. 此时锁是开的，检查是否与“当前正在处理/显示”的图重复
-            if (bytes != null && IsDuplicate(bytes)) return;
+            // 2. 此时锁是开的：检查重复
+            if (IsDuplicate(targetBytes)) return;
 
-            // 3. 确认为新请求：加锁，并立即更新“处理中”的标识
+            // 3. 确认为新请求（可能是新图，也可能是从有图切回默认图）
             _animLock = true;
-            UpdateLastHash(bytes);
 
-            DispatchToDecoder(bytes, isResize: false);
+            // 更新 Hash 记录：如果是 null，UpdateLastHash 会把 _lastLength 设为 -1
+            UpdateLastHash(targetBytes);
+
+            DispatchToDecoder(targetBytes, isResize: false);
         }
 
         /// <summary>将请求打包发送给解码后台线程。</summary>
@@ -593,7 +598,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             while (!ct.IsCancellationRequested)
             {
-                try { await _decodeSignal.WaitAsync(ct).ConfigureAwait(false); }
+                try
+                {
+                    await _decodeSignal.WaitAsync(ct).ConfigureAwait(false);
+                }
                 catch (OperationCanceledException) { break; }
 
                 var req = Interlocked.Exchange(ref _pendingRequest, null);
@@ -602,14 +610,27 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 try
                 {
                     DecodedFrame frame;
-                    if (req.Bytes is { Length: > 0 } bytes)
+                    // 检查字节合法性
+                    if (req.Bytes is { Length: > 0 })
                     {
-                        var d = await DecodeImageAsync(bytes, ct).ConfigureAwait(false);
-                        if (d == null) continue;
-                        frame = d.Value;
+                        try
+                        {
+                            var d = await DecodeImageAsync(req.Bytes, ct).ConfigureAwait(false);
+                            // 如果解码返回 null，视作失败，进 catch
+                            frame = d ?? throw new InvalidDataException("Image decoding returned null.");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AlbumArt] Decode failed: {ex.Message}. Falling back to default.");
+                            // 原始图片解码失败，加载默认图
+                            var d = await DecodeDefaultAsync(ct).ConfigureAwait(false);
+                            if (d == null) continue; // 默认图也没了就真没办法了
+                            frame = d.Value;
+                        }
                     }
                     else
                     {
+                        // 输入为空或长度为 0
                         var d = await DecodeDefaultAsync(ct).ConfigureAwait(false);
                         if (d == null) continue;
                         frame = d.Value;
@@ -621,7 +642,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         () => _canvas?.Invalidate());
                 }
                 catch (OperationCanceledException) { break; }
-                catch { /* 解码失败静默忽略 */ }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AlbumArt] Critical error in pipeline: {ex.Message}");
+                }
             }
         }
 
@@ -774,6 +798,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private bool IsDuplicate(byte[] b)
         {
+            // 如果 b 为空，判断当前是否已是默认图状态 (_lastLength == -1)
+            if (b == null || b.Length == 0)
+                return _lastLength == -1;
+
+            // 此时 b 必然不为 null 且有长度，可以安全计算 Hash
             int hash = ToolUtils.ComputeFastHash(b);
             return b.Length == _lastLength && hash == _lastHash;
         }
