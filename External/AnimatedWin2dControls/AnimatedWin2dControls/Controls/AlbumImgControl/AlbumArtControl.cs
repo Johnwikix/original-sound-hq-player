@@ -27,7 +27,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float HardMaxSize = 1280f;
         private const float FadeSpeed = 4f;
         private const float ScaleSmall = 0.90f;
-        private const int ResizeDebounceMs = 200;
+        private const int ResizeDebounceMs = 20;
         // 动画总时长：t 从 0 跑到 1，FadeSpeed=4f → 1000/4=250ms
         // 留 50ms 余量，确保 CT 到期时动画必然已完成
         private static readonly int AnimLockMs = (int)(1000f * 4 / FadeSpeed);

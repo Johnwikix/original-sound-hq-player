@@ -333,41 +333,45 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 byte[]? picture = [];
-                if (music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
+                if (FastReadExtensions.Contains(music.Extension))
                 {
-                    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                    if (res?.Pictures != null && res.Pictures.Count > 0)
-                    {
-                        picture = res.Pictures[0]?.ImageData ?? [];
-                    }
+                    picture = AudioCoverReader.ReadCover(music.Path);
                 }
                 else
                 {
-                    if (FastReadExtensions.Contains(music.Extension))
+                    //using var audioFile = TagLib.File.Create(music.Path, ReadStyle.None);
+                    //picture = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data?.Data;
+                    Track track = new(music.Path);
+                    if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
                     {
-                        long startMemory = GC.GetTotalMemory(true);
-                        picture = AudioCoverReader.ReadCover(music.Path);
-                        long endMemory = GC.GetTotalMemory(true);
+                        picture = track.EmbeddedPictures[0].PictureData;
                     }
-                    else
-                    {
-                        using var audioFile = TagLib.File.Create(music.Path, ReadStyle.None);
-                        picture = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data?.Data;
-                    }
-
-                    //if(picture is null || picture.Length == 0)
-                    //{
-                    //    using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
-                    //    {
-                    //        var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
-                    //        picture = pic?.Data?.Data;
-                    //    }
-                    //    //Track track = new(music.Path);
-                    //    //if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0) {
-                    //    //    picture = track.EmbeddedPictures[0].PictureData;
-                    //    //}                        
-                    //}                    
                 }
+                //if (music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase))
+                //{
+                //    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
+                //    if (res?.Pictures != null && res.Pictures.Count > 0)
+                //    {
+                //        picture = res.Pictures[0]?.ImageData ?? [];
+                //    }
+                //}
+                //else
+                //{
+
+
+                //    //if(picture is null || picture.Length == 0)
+                //    //{
+                //    //    using (var audioFile = TagLib.File.Create(music.Path, ReadStyle.None))
+                //    //    {
+                //    //        var pic = audioFile.Tag.Pictures.AsValueEnumerable().FirstOrDefault();
+                //    //        picture = pic?.Data?.Data;
+                //    //    }
+                //    //    //Track track = new(music.Path);
+                //    //    //if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0) {
+                //    //    //    picture = track.EmbeddedPictures[0].PictureData;
+                //    //    //}                        
+                //    //}                    
+                //}
                 if (picture is null || picture.Length == 0)
                 {
                     picture = await GetPicByteFromNet(music, isManual) ?? [];

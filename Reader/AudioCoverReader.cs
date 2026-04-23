@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 
+namespace WinUIMusicPlayer.Reader;
 public static class AudioCoverReader
 {
     private const int MaxCoverBytes = 30 * 1024 * 1024;

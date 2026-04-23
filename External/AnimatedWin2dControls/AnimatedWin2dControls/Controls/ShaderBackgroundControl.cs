@@ -91,51 +91,22 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     // ── 依赖属性回调 ──────────────────────────────────────────────────────
 
-    private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
         if (ctrl._effect == null) { ctrl.ApplyDefaultColors(); return; }
 
         if (e.NewValue is byte[] bytes && bytes.Length > 0)
         {
-            // 如果是重复数据，仅做随机重排（原有逻辑）
             if (ctrl.IsDuplicateAndUpdate(bytes))
             {
                 ctrl.ShuffleCurrentColors();
                 return;
             }
-
-            // --- 防抖逻辑开始 ---
-            if (ctrl._isFirstLoad)
-            {
-                // 首次加载：直接执行，不设延迟
-                ctrl._isFirstLoad = false;
-                _ = ctrl.LoadColorsFromBytesAsync(bytes);
-            }
-            else
-            {
-                // 非首次加载：执行 450ms 防抖
-                ctrl._debounceCts?.Cancel();
-                ctrl._debounceCts?.Dispose();
-                var cts = new CancellationTokenSource();
-                ctrl._debounceCts = cts;
-
-                try
-                {
-                    await Task.Delay(200, cts.Token);
-                    // 延迟结束后，执行真正的加载逻辑
-                    _ = ctrl.LoadColorsFromBytesAsync(bytes);
-                }
-                catch (OperationCanceledException)
-                {
-                    // 请求被取消（在 450ms 内有了新的 PropertyChanged）
-                }
-            }
-            // --- 防抖逻辑结束 ---
+            _ = ctrl.LoadColorsFromBytesAsync(bytes);
         }
         else
         {
-            ctrl._debounceCts?.Cancel(); // 清除可能的待执行防抖任务
             ctrl.IsDuplicateAndUpdate(null);
             ctrl.ApplyDefaultColors();
         }
@@ -173,8 +144,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     private long _lastLength = -1;
     private int _lastHash;
-    private bool _isFirstLoad = true; // 标记是否为首次加载
-    private CancellationTokenSource? _debounceCts; // 专门用于处理防抖的 CTS
 
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
@@ -633,10 +602,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     {
         if (!dispose) return;
         DetachCanvasEvents();
-        // 清理防抖用的 CTS
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
-        _debounceCts = null;
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
