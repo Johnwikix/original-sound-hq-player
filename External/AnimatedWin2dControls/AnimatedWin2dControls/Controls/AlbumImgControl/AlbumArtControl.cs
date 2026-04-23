@@ -25,11 +25,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float CornerRadius = 16f;
         private const float ShadowPad = 34f;
         private const float HardMaxSize = 1280f;
-        private const float FadeSpeed = 4f;       // t 从 0→1 的速度，总时长 = 1/FadeSpeed 秒
+        private const float FadeSpeed = 4f;    // t 从 0→1 的速度，总时长 = 1/FadeSpeed 秒
         private const float ScaleSmall = 0.90f;
         private const int ResizeDebounceMs = 200;
-
-        // 动画锁冷却时长 = 动画总时长，在 RequestLoad 入口启动，覆盖整个动画执行窗口
         // 动画总时长：t 从 0 跑到 1，FadeSpeed = 4f → 1000/4 = 250 ms
         private static readonly int AnimLockMs = (int)(1000f * 4 / FadeSpeed);
 
@@ -121,8 +119,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             else
             {
                 Interlocked.Exchange(ref c._pendingRequest, null);
-                CancelTimer(ref c._animLockTimer);
-                CancelTimer(ref c._resizeTimer);
+                c.CancelAnimLock();
+                c._resizeCts.Cancel();
                 c._isFading = false;
                 c._animLock = false;
                 c._pendingAfterAnim = null;
@@ -174,23 +172,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private long _lastDrawTicks;
         private Rect _contentRect;
 
-        // ── 动画锁（仅 UI 线程读写，无需 Interlocked） ───────────────────────
+        // ── 动画锁（仅 UI 线程读写）──────────────────────────────────────────
         //
-        //  逻辑说明：
-        //    RequestLoad 入口收到新 bytes 时立即启动 _animLockTimer（时长 = 动画总时长）。
-        //    锁期间的后续 bytes 只暂存到 _pendingAfterAnim，不进入解码流程。
-        //    Timer 到期（= 动画应已完成）时解锁，检查 _pendingAfterAnim 与当前显示图的
-        //    hash，不同则触发下一轮 RequestLoad。
+        //  RequestLoad 入口收到新 bytes → _animLock = true（仅加锁，不启动计时）
+        //  BeginTransition() 动画真正开始时 → 启动 _animLockCts，Task.Delay(AnimLockMs)
+        //    到期后回到 UI 线程执行 UnlockAndCheckPending
+        //  锁期间的后续 bytes → 只暂存到 _pendingAfterAnim，不进入解码流程
+        //  CT 到期时解锁 → 对比 _pendingAfterAnim 与 _currentDisplayHash，不同则触发下一轮
         //
-        //    _currentDisplayHash：动画完成时快照的 _lastHash，代表屏幕上实际展示的图片，
-        //    用于 timer 到期后的 dedup 对比。
+        //  _currentDisplayHash：TickAnimation 中 _t≥1 时快照的 _lastHash，
+        //    代表屏幕上实际展示的图片，用于 dedup 对比。
 
         private bool _animLock;
         private byte[]? _pendingAfterAnim;
         private int _currentDisplayHash;
+        private CancellationTokenSource _animLockCts = new();
 
-        private DispatcherQueueTimer? _animLockTimer;
-        private DispatcherQueueTimer? _resizeTimer;
+        // resize 防抖 CT（替换原来的 DispatcherQueueTimer）
+        private CancellationTokenSource _resizeCts = new();
 
         // ── Pipeline 控制（跨线程字段） ───────────────────────────────────────
 
@@ -248,11 +247,29 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (!_isResourcesCreated || !IsActive) return;
-            // 防抖：拖拽期间只响应最后一次稳定尺寸，整个逻辑在 UI 线程，无跨线程开销
-            RestartTimer(ref _resizeTimer, ResizeDebounceMs, () =>
+
+            // 防抖：取消旧的延迟，重新计时；整个逻辑全在 UI 线程
+            _resizeCts.Cancel();
+            _resizeCts.Dispose();
+            _resizeCts = new CancellationTokenSource();
+            var ct = _resizeCts.Token;
+
+            // 捕获 DispatcherQueue，避免 lambda 捕获 this 后控件已 Dispose
+            var dq = _canvas?.DispatcherQueue;
+            if (dq is null) return;
+
+            _ = Task.Run(async () =>
             {
-                if (_disposed || !IsActive) return;
-                RequestLoad(ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
+                try
+                {
+                    await Task.Delay(ResizeDebounceMs, ct).ConfigureAwait(false);
+                    dq.TryEnqueue(DispatcherQueuePriority.Normal, () =>
+                    {
+                        if (_disposed || !IsActive) return;
+                        RequestLoad(ImageBytes is { Length: > 0 } b ? b : null, isResize: true);
+                    });
+                }
+                catch (OperationCanceledException) { }
             });
         }
 
@@ -363,7 +380,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _t = 0f;
                 _isFading = false;
                 _lastDrawTicks = 0;
-                // 动画完成：记录当前显示 hash，供 timer 到期后 dedup 对比
+                // 动画完成：快照当前显示 hash，供 CT 到期后 dedup 对比
                 _currentDisplayHash = _lastHash;
             }
         }
@@ -515,9 +532,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         /// 请求加载新图片。isResize = true 时绕过动画锁，直接替换（不播过渡动画）。
         ///
         /// 动画锁逻辑（全部在 UI 线程读写，无竞态）：
-        ///   收到新 bytes 时立即启动 _animLockTimer（时长 = 动画总时长 AnimLockMs），
-        ///   覆盖整个动画执行窗口。锁期间的后续请求只暂存到 _pendingAfterAnim。
-        ///   Timer 到期时解锁，对比 pending 与当前显示 hash，不同则触发下一轮过渡。
+        ///   收到新 bytes 时只加锁（_animLock = true），不启动计时。
+        ///   BeginTransition() 动画真正开始时才启动 _animLockCts，Task.Delay(AnimLockMs)
+        ///   精确覆盖动画执行窗口。锁期间的后续请求只暂存到 _pendingAfterAnim。
+        ///   CT 到期时解锁，对比 pending 与 _currentDisplayHash，不同则触发下一轮过渡。
         /// </summary>
         public void RequestLoad(byte[]? bytes, bool isResize = false)
         {
@@ -532,13 +550,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             if (bytes is { Length: > 0 } && IsDuplicateAndUpdate(bytes)) return;
 
-            // 非 resize 的正常图片切换：在解码开始前就加锁并启动计时
-            // 计时长度覆盖解码 + 动画全程，timer 到期时动画应已自然结束
+            // 非 resize 的正常图片切换：在解码前加锁，等 BeginTransition 时再启动计时
             if (!isResize)
-            {
                 _animLock = true;
-                RestartTimer(ref _animLockTimer, AnimLockMs, UnlockAndCheckPending);
-            }
 
             float cw = 0f, ch = 0f;
             if (_canvas is { } c)
@@ -650,22 +664,47 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 动画控制 ──────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 动画真正开始时调用。此处启动 _animLockCts 计时（AnimLockMs），
+        /// 精确覆盖动画执行窗口，到期后回 UI 线程执行 UnlockAndCheckPending。
+        /// </summary>
         private void BeginTransition()
         {
             _t = 0f;
             _isFading = true;
             _lastDrawTicks = 0;
+
+            // 取消上一轮残留计时（理论上不会有，但防御性取消）
+            CancelAnimLock();
+
+            _animLockCts = new CancellationTokenSource();
+            var ct = _animLockCts.Token;
+            var dq = _canvas?.DispatcherQueue;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(AnimLockMs, ct).ConfigureAwait(false);
+                    // 回到 UI 线程解锁
+                    dq?.TryEnqueue(DispatcherQueuePriority.Normal, UnlockAndCheckPending);
+                }
+                catch (OperationCanceledException) { }
+            });
+
             _canvas?.Invalidate();
         }
 
-        // ── 动画锁 Timer 回调 ─────────────────────────────────────────────────
+        // ── 动画锁解除 ────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Timer 到期（= 动画窗口结束）：解锁，若有暂存 bytes 且与当前显示图不同则触发下一轮。
-        /// 只在 UI 线程调用（DispatcherQueueTimer tick）。
+        /// CT 到期（= 动画窗口结束）：解锁，若有暂存 bytes 且与当前显示图不同则触发下一轮。
+        /// 只在 UI 线程调用（TryEnqueue 回调）。
         /// </summary>
         private void UnlockAndCheckPending()
         {
+            if (_disposed) return;
+
             _animLock = false;
 
             var pending = _pendingAfterAnim;
@@ -677,31 +716,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (isSame) return;
 
             InvalidateDedup();
-            RequestLoad(pending);
+            RequestLoad(pending); // 收尾这一轮同样会走 _animLock = true + BeginTransition 重新计时
         }
 
-        // ── Timer 工具 ────────────────────────────────────────────────────────
-
-        /// <summary>停止旧 timer，新建单次 timer，到期后在 UI 线程执行 callback。</summary>
-        private void RestartTimer(ref DispatcherQueueTimer? field, int delayMs, Action callback)
+        private void CancelAnimLock()
         {
-            CancelTimer(ref field);
-
-            var dq = DispatcherQueue.GetForCurrentThread() ?? _canvas?.DispatcherQueue;
-            if (dq is null) { callback(); return; }
-
-            var t = dq.CreateTimer();
-            t.Interval = TimeSpan.FromMilliseconds(delayMs);
-            t.IsRepeating = false;
-            t.Tick += (sender, _) => { sender.Stop(); callback(); };
-            t.Start();
-            field = t;
-        }
-
-        private static void CancelTimer(ref DispatcherQueueTimer? field)
-        {
-            field?.Stop();
-            field = null;
+            _animLockCts.Cancel();
+            _animLockCts.Dispose();
+            _animLockCts = new CancellationTokenSource();
         }
 
         // ── 工具函数 ──────────────────────────────────────────────────────────
@@ -751,8 +773,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _decodeChannel.Writer.TryComplete();
             _decodeSignal.Dispose();
 
-            CancelTimer(ref _animLockTimer);
-            CancelTimer(ref _resizeTimer);
+            _animLockCts.Cancel();
+            _animLockCts.Dispose();
+            _resizeCts.Cancel();
+            _resizeCts.Dispose();
 
             if (_canvas != null)
             {
