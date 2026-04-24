@@ -28,7 +28,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float FadeSpeed = 4f;
         private const float ScaleSmall = 0.90f;
         private const int ResizeDebounceMs = 20;
-        private bool _initialized = false;
+
+        // 哨兵值：表示"从未初始化"，区别于"上次为 null（-1）"
+        private const long NeverInitialized = long.MinValue;
         private static readonly int AnimLockMs = (int)(1000f * 2 / FadeSpeed);
 
         // ── 帧描述符 ──────────────────────────────────────────────────────────
@@ -134,11 +136,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private readonly record struct DecodedFrame(byte[] Pixels, int W, int H);
 
         private sealed record PendingRequest(
-                byte[]? Bytes,
-                float ContentW, float ContentH,
-                bool Shadow, float DpiScale,
-                bool IsResize,
-                bool IsDark);
+            byte[]? Bytes,
+            float ContentW, float ContentH,
+            bool Shadow, float DpiScale,
+            bool IsResize,
+            bool IsDark);
 
         // ── Pipeline 通道 ─────────────────────────────────────────────────────
 
@@ -165,33 +167,22 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private float _t;
         private bool _isFading;
         private long _lastDrawTicks;
-        private Rect _contentRect;
 
-        // ── 动画锁与序列状态（仅 UI 线程）───────────────────────────────────
-        //
-        //  【序列防抖逻辑】
-        //
-        //  _animLock：第一张图开始解码到动画播完之前为 true，期间所有新请求只更新
-        //             _pendingAfterAnim，不进解码流程。
-        //
-        //  _sequenceActive：动画播完（UnlockAndCheckPending 执行）后，如果有
-        //             _pendingAfterAnim，不立即触发 RequestLoad，而是：
-        //               1. 设 _sequenceActive = true
-        //               2. 启动 _sequenceEndCts，等待 AnimLockMs（序列结束检测窗口）
-        //               3. 等待期间若又来新请求：只更新 _pendingAfterAnim，并重置计时
-        //               4. 等待期满无新请求：触发 RequestLoad（_sequenceActive = false）
-        //
-        //  对外效果：一串快速切换只播两次动画——序列第一张和序列最后一张，中间静默。
-        //
-        //  _currentDisplayHash：动画自然完成时快照，代表屏幕上实际展示的图像。
+        // ── contentRect 缓存（避免每帧重复计算） ─────────────────────────────
+        private Rect _contentRect;
+        private float _cachedContentW = -1f;
+        private float _cachedContentH = -1f;
+
+        // ── 动画锁与序列状态（仅 UI 线程） ───────────────────────────────────
 
         private bool _animLock;
         private bool _sequenceActive;
         private byte[]? _pendingAfterAnim;
         private int _currentDisplayHash;
+
+        // 用 Interlocked.Exchange 做无锁安全替换，避免 Cancel/Dispose 竞态
         private CancellationTokenSource _animLockCts = new();
         private CancellationTokenSource _sequenceEndCts = new();
-
         private CancellationTokenSource _resizeCts = new();
 
         // ── Pipeline 控制（跨线程字段） ───────────────────────────────────────
@@ -200,8 +191,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private PendingRequest? _pendingRequest;
         private readonly SemaphoreSlim _decodeSignal = new(0, 1);
 
-        private long _lastLength = -1;
+        // 用 NeverInitialized 哨兵替代额外的 _initialized 布尔字段
+        private long _lastLength = NeverInitialized;
         private int _lastHash;
+
+        // ── 默认封面缓存（避免重复 IO + 解码） ───────────────────────────────
+        // key: IsDark；value: 解码后的像素数据（只读，可安全跨请求共享）
+        private static DecodedFrame? _cachedDefaultDark;
+        private static DecodedFrame? _cachedDefaultLight;
+        private static readonly SemaphoreSlim _defaultCacheLock = new(1, 1);
 
         // ── 构造 / 模板 ───────────────────────────────────────────────────────
 
@@ -235,9 +233,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_CreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs e)
         {
-            _pipelineCts.Cancel();
-            _pipelineCts.Dispose();
-            _pipelineCts = new CancellationTokenSource();
+            // 取消旧 pipeline，重置内容缓存
+            var oldCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());
+            oldCts.Cancel();
+            oldCts.Dispose();
+
+            // 失效 contentRect 缓存（设备/DPI 可能已变）
+            _cachedContentW = -1f;
+            _cachedContentH = -1f;
 
             _isResourcesCreated = true;
             Task.Run(() => DecodeLoopAsync(_pipelineCts.Token));
@@ -250,11 +253,16 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             if (!_isResourcesCreated || !IsActive) return;
 
-            _resizeCts.Cancel();
-            _resizeCts.Dispose();
-            _resizeCts = new CancellationTokenSource();
-            var ct = _resizeCts.Token;
+            // 失效 contentRect 缓存
+            _cachedContentW = -1f;
+            _cachedContentH = -1f;
 
+            // 安全替换 resizeCts，避免旧 CTS 被 double-dispose
+            var oldCts = Interlocked.Exchange(ref _resizeCts, new CancellationTokenSource());
+            oldCts.Cancel();
+            oldCts.Dispose();
+
+            var ct = _resizeCts.Token;
             var dq = _canvas?.DispatcherQueue;
             if (dq is null) return;
 
@@ -352,6 +360,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _currentBmp = _nextBmp;
                 _currentInfo = _nextInfo;
                 _nextBmp = null;
+                // 修复：强制结束时同步 _currentDisplayHash，防止 dedup 误判
                 _currentDisplayHash = _lastHash;
             }
             _isFading = false;
@@ -470,56 +479,68 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             int dstW = Math.Max(1, (int)drawW);
             int dstH = Math.Max(1, (int)drawH);
 
-            using var scaledRt = new CanvasRenderTarget(device, dstW, dstH, dpi,
-                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
-                CanvasAlphaMode.Premultiplied);
-
-            using (var ds = scaledRt.CreateDrawingSession())
+            // scaledRt 的生命周期须延伸到 finalRt 的 DrawImage 调用之后，
+            // 因为 shadowEffect → blur → scaledRt 形成引用链，提前 Dispose 会崩溃。
+            // 所以不使用 using，改为手动 Dispose。
+            CanvasRenderTarget? scaledRt = null;
+            try
             {
-                ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
-                using var geom = CanvasGeometry.CreateRoundedRectangle(
-                    device, new Rect(0, 0, dstW, dstH), CornerRadius, CornerRadius);
-                using (ds.CreateLayer(1f, geom))
+                scaledRt = new CanvasRenderTarget(device, dstW, dstH, dpi,
+                    Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                    CanvasAlphaMode.Premultiplied);
+
+                using (var ds = scaledRt.CreateDrawingSession())
                 {
-                    ds.DrawImage(srcBmp,
-                        new Rect(0, 0, dstW, dstH),
-                        new Rect(0, 0, frame.W, frame.H),
-                        1f, CanvasImageInterpolation.MultiSampleLinear);
-                }
-            }
-
-            float pad = shadow ? ShadowPad : 0f;
-            int rtW = dstW + (int)(pad * 2);
-            int rtH = dstH + (int)(pad * 2);
-
-            var finalRt = new CanvasRenderTarget(device, rtW, rtH, dpi,
-                Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
-                CanvasAlphaMode.Premultiplied);
-
-            using (var ds = finalRt.CreateDrawingSession())
-            {
-                ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
-
-                if (shadow)
-                {
-                    using var blur = new GaussianBlurEffect
+                    ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+                    using var geom = CanvasGeometry.CreateRoundedRectangle(
+                        device, new Rect(0, 0, dstW, dstH), CornerRadius, CornerRadius);
+                    using (ds.CreateLayer(1f, geom))
                     {
-                        Source = scaledRt,
-                        BlurAmount = 8f,
-                        BorderMode = EffectBorderMode.Soft,
-                    };
-                    using var shadowEffect = new ColorMatrixEffect
-                    {
-                        Source = blur,
-                        ColorMatrix = new Matrix5x4 { M44 = 100f / 255f }
-                    };
-                    ds.DrawImage(shadowEffect, new Vector2(pad + 2, pad + 3));
+                        ds.DrawImage(srcBmp,
+                            new Rect(0, 0, dstW, dstH),
+                            new Rect(0, 0, frame.W, frame.H),
+                            1f, CanvasImageInterpolation.MultiSampleLinear);
+                    }
                 }
 
-                ds.DrawImage(scaledRt, new Vector2(pad, pad));
-            }
+                float pad = shadow ? ShadowPad : 0f;
+                int rtW = dstW + (int)(pad * 2);
+                int rtH = dstH + (int)(pad * 2);
 
-            return finalRt;
+                var finalRt = new CanvasRenderTarget(device, rtW, rtH, dpi,
+                    Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                    CanvasAlphaMode.Premultiplied);
+
+                using (var ds = finalRt.CreateDrawingSession())
+                {
+                    ds.Clear(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+
+                    if (shadow)
+                    {
+                        // blur 和 shadowEffect 必须在 scaledRt dispose 之前 DrawImage 完成
+                        using var blur = new GaussianBlurEffect
+                        {
+                            Source = scaledRt,
+                            BlurAmount = 8f,
+                            BorderMode = EffectBorderMode.Soft,
+                        };
+                        using var shadowEffect = new ColorMatrixEffect
+                        {
+                            Source = blur,
+                            ColorMatrix = new Matrix5x4 { M44 = 100f / 255f }
+                        };
+                        ds.DrawImage(shadowEffect, new Vector2(pad + 2, pad + 3));
+                    }
+
+                    ds.DrawImage(scaledRt, new Vector2(pad, pad));
+                }
+
+                return finalRt;
+            }
+            finally
+            {
+                scaledRt?.Dispose();
+            }
         }
 
         // ── 加载请求入口 ──────────────────────────────────────────────────────
@@ -634,17 +655,18 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                             var d = await DecodeImageAsync(req.Bytes, ct).ConfigureAwait(false);
                             frame = d ?? throw new InvalidDataException("Image decoding returned null.");
                         }
-                        catch (Exception ex)
+                        catch (Exception ex) when (ex is not OperationCanceledException)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[AlbumArt] Decode failed: {ex.Message}. Falling back to default.");
-                            var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
+                            System.Diagnostics.Debug.WriteLine(
+                                $"[AlbumArt] Decode failed: {ex.Message}. Falling back to default.");
+                            var d = await GetOrDecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                             if (d == null) continue;
                             frame = d.Value;
                         }
                     }
                     else
                     {
-                        var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
+                        var d = await GetOrDecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                         if (d == null) continue;
                         frame = d.Value;
                     }
@@ -657,7 +679,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 catch (OperationCanceledException) { break; }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[AlbumArt] Critical error in pipeline: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[AlbumArt] Critical error in pipeline: {ex.Message}");
                 }
             }
         }
@@ -692,22 +715,43 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             return new DecodedFrame(pd.DetachPixelData(), (int)dstW, (int)dstH);
         }
 
-        private async Task<DecodedFrame?> DecodeDefaultAsync(bool isDark, CancellationToken ct)
+        /// <summary>
+        /// 获取默认封面。首次调用执行 IO + 解码，后续从静态缓存直接返回。
+        /// 缓存的 DecodedFrame.Pixels 数组只读，可安全复用。
+        /// </summary>
+        private static async Task<DecodedFrame?> GetOrDecodeDefaultAsync(bool isDark, CancellationToken ct)
         {
+            // 快速路径：已缓存
+            if (isDark && _cachedDefaultDark.HasValue) return _cachedDefaultDark;
+            if (!isDark && _cachedDefaultLight.HasValue) return _cachedDefaultLight;
+
+            await _defaultCacheLock.WaitAsync(ct).ConfigureAwait(false);
             try
             {
+                // 双重检查
+                if (isDark && _cachedDefaultDark.HasValue) return _cachedDefaultDark;
+                if (!isDark && _cachedDefaultLight.HasValue) return _cachedDefaultLight;
+
                 string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", name);
+                string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", name);
                 var file = await Windows.Storage.StorageFile
-                                  .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
+                    .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
+
                 using var s = await file.OpenReadAsync().AsTask(ct).ConfigureAwait(false);
-
                 var ms = new MemoryStream();
-                using (var rs = s.AsStream()) await rs.CopyToAsync(ms, ct).ConfigureAwait(false);
+                using (var rs = s.AsStream())
+                    await rs.CopyToAsync(ms, ct).ConfigureAwait(false);
 
-                return await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
+                var frame = await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
+                if (frame == null) return null;
+
+                if (isDark) _cachedDefaultDark = frame;
+                else _cachedDefaultLight = frame;
+
+                return frame;
             }
             catch { return null; }
+            finally { _defaultCacheLock.Release(); }
         }
 
         // ── 动画控制 ──────────────────────────────────────────────────────────
@@ -718,9 +762,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _isFading = true;
             _lastDrawTicks = 0;
 
-            CancelAnimLock();
-            _animLockCts = new CancellationTokenSource();
-            var ct = _animLockCts.Token;
+            // 先构造新 CTS，再取消旧的，避免 double-dispose
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _animLockCts, newCts);
+            oldCts.Cancel();
+            oldCts.Dispose();
+
+            var ct = newCts.Token;
             var dq = _canvas?.DispatcherQueue;
 
             _ = Task.Run(async () =>
@@ -738,11 +786,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 动画锁解除与序列检测 ──────────────────────────────────────────────
 
-        /// <summary>
-        /// AnimLockMs 到期后在 UI 线程执行。
-        /// 解锁 _animLock。若有 pending，进入序列检测窗口（_sequenceActive）；
-        /// 若无 pending，直接回到空闲。
-        /// </summary>
         private void UnlockAndCheckPending()
         {
             if (_disposed) return;
@@ -754,23 +797,20 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             if (pending == null) return;
 
-            // 有 pending：进入序列检测窗口，而非立即触发
             _sequenceActive = true;
-            // 暂存最新 pending 供 SequenceEndFire 使用
             _pendingAfterAnim = pending;
             RestartSequenceEndTimer();
         }
 
-        /// <summary>
-        /// 启动/重置序列结束检测计时器。
-        /// 每次在阶段 C 收到新请求时调用，重置窗口。
-        /// AnimLockMs 内无新请求则触发 SequenceEndFire。
-        /// </summary>
         private void RestartSequenceEndTimer()
         {
-            CancelSequenceEnd();
-            _sequenceEndCts = new CancellationTokenSource();
-            var ct = _sequenceEndCts.Token;
+            // 先构造新 CTS，再取消旧的，避免 double-dispose
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _sequenceEndCts, newCts);
+            oldCts.Cancel();
+            oldCts.Dispose();
+
+            var ct = newCts.Token;
             var dq = _canvas?.DispatcherQueue;
 
             _ = Task.Run(async () =>
@@ -784,9 +824,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             });
         }
 
-        /// <summary>
-        /// 序列结束：AnimLockMs 内无新请求，触发最后一张图的加载。
-        /// </summary>
         private void SequenceEndFire()
         {
             if (_disposed) return;
@@ -798,37 +835,48 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             if (pending == null) return;
 
-            // dedup：如果 pending 和屏幕上当前展示的图一样，不播动画
             int pendingHash = ToolUtils.ComputeFastHash(pending);
             if (pending.Length == _lastLength && pendingHash == _currentDisplayHash)
                 return;
 
-            // 触发最后一张，此时 _animLock=false、_sequenceActive=false，正常进入解码
             RequestLoad(pending);
         }
 
         private void CheckPendingAfterUnlock()
         {
-            // GPU bake 失败时的快速路径：直接复用 UnlockAndCheckPending 逻辑
             UnlockAndCheckPending();
         }
 
         private void CancelAnimLock()
         {
-            _animLockCts.Cancel();
-            _animLockCts.Dispose();
+            // 替换为已取消的 dummy CTS，确保旧 CTS 只被 Cancel+Dispose 一次
+            var oldCts = Interlocked.Exchange(ref _animLockCts, new CancellationTokenSource());
+            oldCts.Cancel();
+            oldCts.Dispose();
         }
 
         private void CancelSequenceEnd()
         {
-            _sequenceEndCts.Cancel();
-            _sequenceEndCts.Dispose();
+            var oldCts = Interlocked.Exchange(ref _sequenceEndCts, new CancellationTokenSource());
+            oldCts.Cancel();
+            oldCts.Dispose();
         }
 
         // ── 工具函数 ──────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// 计算内容区域，结果缓存至 _contentRect。
+        /// 仅当画布尺寸变化时重新计算。
+        /// </summary>
         private void ComputeContentRect(float cw, float ch)
         {
+            // 尺寸未变化则直接复用缓存
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (cw == _cachedContentW && ch == _cachedContentH) return;
+
+            _cachedContentW = cw;
+            _cachedContentH = ch;
+
             float w = cw - Margin * 2, h = ch - Margin * 2;
             _contentRect = (w > 0 && h > 0) ? new Rect(Margin, Margin, w, h) : Rect.Empty;
         }
@@ -849,15 +897,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void InvalidateDedup()
         {
-            _initialized = false;
-            _lastLength = -1;
+            _lastLength = NeverInitialized;
             _lastHash = 0;
             _currentDisplayHash = -1;
         }
 
         private bool IsDuplicate(byte[]? b)
         {
-            if (!_initialized) return false;
+            // 从未初始化（NeverInitialized 哨兵），不判重
+            if (_lastLength == NeverInitialized) return false;
 
             if (b == null || b.Length == 0)
                 return _lastLength == -1;
@@ -868,7 +916,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void UpdateLastHash(byte[]? b)
         {
-            _initialized = true;
             if (b == null || b.Length == 0)
             {
                 _lastLength = -1;
@@ -887,18 +934,21 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             if (!disposing || _disposed) return;
             _disposed = true;
+            _isResourcesCreated = false; // 防止 dispose 后回调进入逻辑
 
-            _pipelineCts.Cancel();
-            _pipelineCts.Dispose();
+            var pCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());
+            pCts.Cancel();
+            pCts.Dispose();
+
             _decodeChannel.Writer.TryComplete();
             _decodeSignal.Dispose();
 
-            _animLockCts.Cancel();
-            _animLockCts.Dispose();
-            _sequenceEndCts.Cancel();
-            _sequenceEndCts.Dispose();
-            _resizeCts.Cancel();
-            _resizeCts.Dispose();
+            CancelAnimLock();
+            CancelSequenceEnd();
+
+            var rCts = Interlocked.Exchange(ref _resizeCts, new CancellationTokenSource());
+            rCts.Cancel();
+            rCts.Dispose();
 
             if (_canvas != null)
             {
