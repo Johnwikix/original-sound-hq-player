@@ -28,6 +28,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float FadeSpeed = 4f;
         private const float ScaleSmall = 0.90f;
         private const int ResizeDebounceMs = 20;
+        private bool _initialized = false;
         // 动画总时长：t 从 0 跑到 1，FadeSpeed=4f → 1000/4=250ms
         // 留 50ms 余量，确保 CT 到期时动画必然已完成
         private static readonly int AnimLockMs = (int)(1000f * 4 / FadeSpeed);
@@ -137,10 +138,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private readonly record struct DecodedFrame(byte[] Pixels, int W, int H);
 
         private sealed record PendingRequest(
-            byte[]? Bytes,
-            float ContentW, float ContentH,
-            bool Shadow, float DpiScale,
-            bool IsResize);
+                byte[]? Bytes,
+                float ContentW, float ContentH,
+                bool Shadow, float DpiScale,
+                bool IsResize,
+                bool IsDark);  // ★ 新增
 
         // ── Pipeline 通道 ─────────────────────────────────────────────────────
 
@@ -309,13 +311,38 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 cw = (float)_contentRect.Width;
                 ch = (float)_contentRect.Height;
             }
-            if (cw <= 0 || ch <= 0) return;
+            if (cw <= 0 || ch <= 0)
+            {
+                // ★ GPU bake 无法执行，必须解锁，否则 _animLock 永远不会被 BeginTransition 释放
+                ReleaseAnimLockIfNeeded(req.IsResize);
+                return;
+            }
 
             var bmp = GpuBake(frame, cw, ch, req.Shadow, req.DpiScale, sender);
-            if (bmp == null) return;
+            if (bmp == null)
+            {
+                // ★ 同上
+                ReleaseAnimLockIfNeeded(req.IsResize);
+                return;
+            }
 
             float pad = req.Shadow ? ShadowPad : 0f;
             ApplyNewBitmap(bmp, new FrameInfo(frame.W, frame.H, pad), req.IsResize);
+        }
+
+        /// <summary>
+        /// 当解码结果因尺寸或 GPU 异常而无法进入 BeginTransition 时，
+        /// 手动释放 animLock，并检查是否有 pending 请求需要处理。
+        /// isResize 路径本来就不设锁，不需要释放。
+        /// </summary>
+        private void ReleaseAnimLockIfNeeded(bool isResize)
+        {
+            if (isResize || !_animLock) return;
+            _animLock = false;
+            var pending = _pendingAfterAnim;
+            _pendingAfterAnim = null;
+            if (pending != null)
+                RequestLoad(pending);
         }
 
         private void ApplyNewBitmap(CanvasBitmap bmp, FrameInfo info, bool isResize)
@@ -541,7 +568,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (_disposed) return;
             if (!IsActive && _isResourcesCreated) return;
 
-            // 规范化输入：空引用或 0 长度统一视为 null (即触发默认图)
             byte[]? targetBytes = (bytes is { Length: > 0 }) ? bytes : null;
 
             if (isResize)
@@ -557,14 +583,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 return;
             }
 
-            // 2. 此时锁是开的：检查重复
+            // 2. dedup 检查
             if (IsDuplicate(targetBytes)) return;
 
-            // 3. 确认为新请求（可能是新图，也可能是从有图切回默认图）
-            _animLock = true;
-
-            // 更新 Hash 记录：如果是 null，UpdateLastHash 会把 _lastLength 设为 -1
+            // 3. ★ 先更新 Hash，再加锁，再 dispatch
+            //    顺序必须是这样：一旦 _animLock=true，UnlockAndCheckPending
+            //    才能用 _lastLength/_lastHash 正确判断 pending 是否重复
             UpdateLastHash(targetBytes);
+            _animLock = true;
 
             DispatchToDecoder(targetBytes, isResize: false);
         }
@@ -581,7 +607,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
 
             Interlocked.Exchange(ref _pendingRequest,
-                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize));
+                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize, IsDark));  // ★
 
             TrySignalDecode();
         }
@@ -610,28 +636,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 try
                 {
                     DecodedFrame frame;
-                    // 检查字节合法性
                     if (req.Bytes is { Length: > 0 })
                     {
                         try
                         {
                             var d = await DecodeImageAsync(req.Bytes, ct).ConfigureAwait(false);
-                            // 如果解码返回 null，视作失败，进 catch
                             frame = d ?? throw new InvalidDataException("Image decoding returned null.");
                         }
                         catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"[AlbumArt] Decode failed: {ex.Message}. Falling back to default.");
-                            // 原始图片解码失败，加载默认图
-                            var d = await DecodeDefaultAsync(ct).ConfigureAwait(false);
-                            if (d == null) continue; // 默认图也没了就真没办法了
+                            var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false); // ★
+                            if (d == null) continue;
                             frame = d.Value;
                         }
                     }
                     else
                     {
-                        // 输入为空或长度为 0
-                        var d = await DecodeDefaultAsync(ct).ConfigureAwait(false);
+                        var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false); // ★
                         if (d == null) continue;
                         frame = d.Value;
                     }
@@ -679,11 +701,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             return new DecodedFrame(pd.DetachPixelData(), (int)dstW, (int)dstH);
         }
 
-        private async Task<DecodedFrame?> DecodeDefaultAsync(CancellationToken ct)
+        private async Task<DecodedFrame?> DecodeDefaultAsync(bool isDark, CancellationToken ct)
         {
             try
             {
-                string name = IsDark ? "default_cover_black.png" : "default_cover_white.png";
+                string name = isDark ? "default_cover_black.png" : "default_cover_white.png";  // ★
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", name);
                 var file = await Windows.Storage.StorageFile
                                   .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
@@ -791,18 +813,20 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void InvalidateDedup()
         {
+            _initialized = false; // ★ 改为重置初始化标志，而不是仅改 _lastLength
             _lastLength = -1;
             _lastHash = 0;
-            _currentDisplayHash = -1; // 同时也重置显示快照
+            _currentDisplayHash = -1;
         }
 
-        private bool IsDuplicate(byte[] b)
+        private bool IsDuplicate(byte[]? b)
         {
-            // 如果 b 为空，判断当前是否已是默认图状态 (_lastLength == -1)
+            // ★ 从未初始化过，任何请求都不是重复
+            if (!_initialized) return false;
+
             if (b == null || b.Length == 0)
                 return _lastLength == -1;
 
-            // 此时 b 必然不为 null 且有长度，可以安全计算 Hash
             int hash = ToolUtils.ComputeFastHash(b);
             return b.Length == _lastLength && hash == _lastHash;
         }
@@ -810,6 +834,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         // 新增：专门用于在确定处理新图时更新标识
         private void UpdateLastHash(byte[]? b)
         {
+            _initialized = true; // ★ 标记已提交过请求
             if (b == null || b.Length == 0)
             {
                 _lastLength = -1;
