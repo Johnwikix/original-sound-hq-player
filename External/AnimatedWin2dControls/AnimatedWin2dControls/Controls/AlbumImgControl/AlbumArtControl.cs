@@ -29,9 +29,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float ScaleSmall = 0.90f;
         private const int ResizeDebounceMs = 20;
         private bool _initialized = false;
-        // 动画总时长：t 从 0 跑到 1，FadeSpeed=4f → 1000/4=250ms
-        // 留 50ms 余量，确保 CT 到期时动画必然已完成
-        private static readonly int AnimLockMs = (int)(1000f * 4 / FadeSpeed);
+        private static readonly int AnimLockMs = (int)(1000f * 2 / FadeSpeed);
 
         // ── 帧描述符 ──────────────────────────────────────────────────────────
 
@@ -97,12 +95,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated || !c.IsActive) return;
-            // default cover 换了，强制绕过 dedup
             c.InvalidateDedup();
             c.RequestLoad(c.ImageBytes);
         }
 
-        // DpiScale / IsShadowEnabled 变化需重新 bake，走 isResize 直接替换（不播动画）
         private static void OnResizeTriggerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
@@ -120,11 +116,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
             else
             {
-                // 停用：清空所有待处理状态，重置动画
                 Interlocked.Exchange(ref c._pendingRequest, null);
                 c.CancelAnimLock();
-                c._resizeCts.Cancel();
+                c.CancelSequenceEnd();
                 c._animLock = false;
+                c._sequenceActive = false;
                 c._pendingAfterAnim = null;
                 c._isFading = false;
                 c._t = 0f;
@@ -142,7 +138,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 float ContentW, float ContentH,
                 bool Shadow, float DpiScale,
                 bool IsResize,
-                bool IsDark);  // ★ 新增
+                bool IsDark);
 
         // ── Pipeline 通道 ─────────────────────────────────────────────────────
 
@@ -171,39 +167,37 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private long _lastDrawTicks;
         private Rect _contentRect;
 
-        // ── 动画锁（仅 UI 线程读写）──────────────────────────────────────────
+        // ── 动画锁与序列状态（仅 UI 线程）───────────────────────────────────
         //
-        //  【新逻辑】
-        //  RequestLoad 收到普通请求：
-        //    - _animLock=true 时：只更新 _pendingAfterAnim，完全不进解码流程，直接 return
-        //    - _animLock=false 时：通过 dedup 检查后，设 _animLock=true，进入解码
+        //  【序列防抖逻辑】
         //
-        //  BeginTransition()（UI 线程，解码完成后调用）：
-        //    - 启动 _animLockCts，Task.Delay(AnimLockMs) 精确覆盖动画窗口
-        //    - CT 到期回 UI 线程执行 UnlockAndCheckPending
+        //  _animLock：第一张图开始解码到动画播完之前为 true，期间所有新请求只更新
+        //             _pendingAfterAnim，不进解码流程。
         //
-        //  UnlockAndCheckPending：
-        //    - _animLock = false
-        //    - 对比 _pendingAfterAnim 的 hash 与 _currentDisplayHash（屏幕上实际图的 hash）
-        //    - 不同则触发下一轮 RequestLoad（此时 _animLock 已解，能正常进入解码）
+        //  _sequenceActive：动画播完（UnlockAndCheckPending 执行）后，如果有
+        //             _pendingAfterAnim，不立即触发 RequestLoad，而是：
+        //               1. 设 _sequenceActive = true
+        //               2. 启动 _sequenceEndCts，等待 AnimLockMs（序列结束检测窗口）
+        //               3. 等待期间若又来新请求：只更新 _pendingAfterAnim，并重置计时
+        //               4. 等待期满无新请求：触发 RequestLoad（_sequenceActive = false）
         //
-        //  isResize=true 的请求：绕过 _animLock，直接替换，不播动画，不影响锁状态
+        //  对外效果：一串快速切换只播两次动画——序列第一张和序列最后一张，中间静默。
         //
-        //  _currentDisplayHash：TickAnimation 中 _t≥1（动画结束）时快照 _lastHash，
-        //    代表屏幕上实际展示的图片。
+        //  _currentDisplayHash：动画自然完成时快照，代表屏幕上实际展示的图像。
 
         private bool _animLock;
+        private bool _sequenceActive;
         private byte[]? _pendingAfterAnim;
         private int _currentDisplayHash;
         private CancellationTokenSource _animLockCts = new();
+        private CancellationTokenSource _sequenceEndCts = new();
 
-        // resize 防抖 CTS（高频 resize 会触发 GpuBake，防抖有性能意义，保留）
         private CancellationTokenSource _resizeCts = new();
 
         // ── Pipeline 控制（跨线程字段） ───────────────────────────────────────
 
         private CancellationTokenSource _pipelineCts = new();
-        private PendingRequest? _pendingRequest;  // Interlocked.Exchange 原子替换
+        private PendingRequest? _pendingRequest;
         private readonly SemaphoreSlim _decodeSignal = new(0, 1);
 
         private long _lastLength = -1;
@@ -241,7 +235,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_CreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs e)
         {
-            // 设备丢失恢复时可能重复触发，先取消旧 pipeline 再重建
             _pipelineCts.Cancel();
             _pipelineCts.Dispose();
             _pipelineCts = new CancellationTokenSource();
@@ -253,7 +246,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             RequestLoad(ImageBytes);
         }
 
-        // resize 防抖保留：高频 resize 每次都需要 GpuBake，防抖有实际性能意义
         private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (!_isResourcesCreated || !IsActive) return;
@@ -274,8 +266,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     dq.TryEnqueue(DispatcherQueuePriority.Normal, () =>
                     {
                         if (_disposed || !IsActive) return;
-                        // isResize=true：绕过 animLock，直接进解码替换，不播动画
-                        RequestLoad(ImageBytes);
+                        RequestLoad(ImageBytes, isResize: true);
                     });
                 }
                 catch (OperationCanceledException) { }
@@ -284,7 +275,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            // 消费解码通道（GpuBake 必须在能访问 GPU 设备的 UI 线程上执行）
             ConsumeDecodeChannel(sender);
 
             if (_isFading)
@@ -313,7 +303,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
             if (cw <= 0 || ch <= 0)
             {
-                // ★ GPU bake 无法执行，必须解锁，否则 _animLock 永远不会被 BeginTransition 释放
                 ReleaseAnimLockIfNeeded(req.IsResize);
                 return;
             }
@@ -321,7 +310,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             var bmp = GpuBake(frame, cw, ch, req.Shadow, req.DpiScale, sender);
             if (bmp == null)
             {
-                // ★ 同上
                 ReleaseAnimLockIfNeeded(req.IsResize);
                 return;
             }
@@ -330,26 +318,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             ApplyNewBitmap(bmp, new FrameInfo(frame.W, frame.H, pad), req.IsResize);
         }
 
-        /// <summary>
-        /// 当解码结果因尺寸或 GPU 异常而无法进入 BeginTransition 时，
-        /// 手动释放 animLock，并检查是否有 pending 请求需要处理。
-        /// isResize 路径本来就不设锁，不需要释放。
-        /// </summary>
         private void ReleaseAnimLockIfNeeded(bool isResize)
         {
             if (isResize || !_animLock) return;
             _animLock = false;
-            var pending = _pendingAfterAnim;
-            _pendingAfterAnim = null;
-            if (pending != null)
-                RequestLoad(pending);
+            CheckPendingAfterUnlock();
         }
 
         private void ApplyNewBitmap(CanvasBitmap bmp, FrameInfo info, bool isResize)
         {
             if (isResize)
             {
-                // resize：立即替换，不播动画，不触发/影响 animLock
                 FinishFadeImmediately();
                 _currentBmp?.Dispose();
                 _currentBmp = bmp;
@@ -358,7 +337,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 return;
             }
 
-            // 正常图片切换：快进当前动画终态，然后开始新的过渡
             FinishFadeImmediately();
             _nextBmp = bmp;
             _nextInfo = info;
@@ -374,8 +352,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _currentBmp = _nextBmp;
                 _currentInfo = _nextInfo;
                 _nextBmp = null;
-
-                // 关键修复：强行结束动画时，必须同步当前展示的 Hash
                 _currentDisplayHash = _lastHash;
             }
             _isFading = false;
@@ -412,7 +388,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 _t = 0f;
                 _isFading = false;
                 _lastDrawTicks = 0;
-                // 动画自然完成：快照此时屏幕上展示的图像 Hash
                 _currentDisplayHash = _lastHash;
             }
         }
@@ -552,16 +527,27 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         /// <summary>
         /// 请求加载新图片。
         ///
-        /// isResize=true：绕过 animLock，直接进解码替换，不播动画。
+        /// isResize=true：绕过所有锁，直接替换，不播动画。
         ///
-        /// 普通请求（isResize=false）流程：
-        ///   1. _animLock=true → 只更新 _pendingAfterAnim，完全不进解码，直接 return。
-        ///      （天然防抖：动画窗口内的所有请求被截流，只保留最新一个）
-        ///   2. _animLock=false → dedup 检查，通过后设 _animLock=true，进入解码。
-        ///   3. 解码完成 → ConsumeDecodeChannel → BeginTransition 启动 CT 计时。
-        ///   4. CT 到期（AnimLockMs 后）→ UnlockAndCheckPending：
-        ///      对比 _pendingAfterAnim hash 与 _currentDisplayHash，
-        ///      不同则触发下一轮 RequestLoad。
+        /// 普通请求流程（序列防抖）：
+        ///
+        ///   阶段 A — _animLock=false 且 _sequenceActive=false（空闲状态）：
+        ///     dedup 通过后 → 设 _animLock=true → 进解码 → 播第一帧动画
+        ///     这是"序列开始"动画。
+        ///
+        ///   阶段 B — _animLock=true（动画正在播放）：
+        ///     只更新 _pendingAfterAnim，不进解码。
+        ///     动画播完 → UnlockAndCheckPending：
+        ///       有 pending → 进入阶段 C（序列检测）
+        ///       无 pending → 回到阶段 A
+        ///
+        ///   阶段 C — _sequenceActive=true（序列结束检测窗口）：
+        ///     启动 _sequenceEndCts 等待 AnimLockMs。
+        ///     等待期间收到新请求 → 只更新 _pendingAfterAnim，重置计时。
+        ///     等待期满无新请求 → SequenceEndFire：
+        ///       触发 RequestLoad(pending) → 播最后一帧动画 → 回到阶段 A/B。
+        ///
+        ///   对外效果：连续快速切换只播两次动画（第一张 + 最后一张），中间静默跳过。
         /// </summary>
         public void RequestLoad(byte[]? bytes, bool isResize = false)
         {
@@ -570,32 +556,37 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             byte[]? targetBytes = (bytes is { Length: > 0 }) ? bytes : null;
 
+            // isResize 绕过所有状态，直接进解码
             if (isResize)
             {
                 DispatchToDecoder(targetBytes, isResize: true);
                 return;
             }
 
-            // 1. 动画锁期间：暂存请求，直接返回
+            // 阶段 B：动画正在播放，暂存请求
             if (_animLock)
             {
                 _pendingAfterAnim = targetBytes;
                 return;
             }
 
-            // 2. dedup 检查
+            // 阶段 C：序列检测窗口，重置计时并暂存
+            if (_sequenceActive)
+            {
+                _pendingAfterAnim = targetBytes;
+                RestartSequenceEndTimer();
+                return;
+            }
+
+            // 阶段 A：空闲，dedup 检查后进解码
             if (IsDuplicate(targetBytes)) return;
 
-            // 3. ★ 先更新 Hash，再加锁，再 dispatch
-            //    顺序必须是这样：一旦 _animLock=true，UnlockAndCheckPending
-            //    才能用 _lastLength/_lastHash 正确判断 pending 是否重复
             UpdateLastHash(targetBytes);
             _animLock = true;
 
             DispatchToDecoder(targetBytes, isResize: false);
         }
 
-        /// <summary>将请求打包发送给解码后台线程。</summary>
         private void DispatchToDecoder(byte[]? bytes, bool isResize)
         {
             float cw = 0f, ch = 0f;
@@ -607,7 +598,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
 
             Interlocked.Exchange(ref _pendingRequest,
-                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize, IsDark));  // ★
+                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize, IsDark));
 
             TrySignalDecode();
         }
@@ -646,14 +637,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"[AlbumArt] Decode failed: {ex.Message}. Falling back to default.");
-                            var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false); // ★
+                            var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                             if (d == null) continue;
                             frame = d.Value;
                         }
                     }
                     else
                     {
-                        var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false); // ★
+                        var d = await DecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                         if (d == null) continue;
                         frame = d.Value;
                     }
@@ -705,7 +696,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             try
             {
-                string name = isDark ? "default_cover_black.png" : "default_cover_white.png";  // ★
+                string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", name);
                 var file = await Windows.Storage.StorageFile
                                   .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
@@ -721,17 +712,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 动画控制 ──────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 动画真正开始时调用（在 ConsumeDecodeChannel → ApplyNewBitmap 后）。
-        /// 启动 CT 计时，AnimLockMs 后回 UI 线程执行 UnlockAndCheckPending。
-        /// </summary>
         private void BeginTransition()
         {
             _t = 0f;
             _isFading = true;
             _lastDrawTicks = 0;
 
-            // 取消上一轮残留计时（防御性）
             CancelAnimLock();
             _animLockCts = new CancellationTokenSource();
             var ct = _animLockCts.Token;
@@ -750,19 +736,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _canvas?.Invalidate();
         }
 
-        // ── 动画锁解除 ────────────────────────────────────────────────────────
+        // ── 动画锁解除与序列检测 ──────────────────────────────────────────────
 
         /// <summary>
-        /// CT 到期后在 UI 线程执行。
-        /// 解锁 _animLock，对比 _pendingAfterAnim 与 _currentDisplayHash：
-        ///   - 相同 → 不重复触发，直接丢弃 pending
-        ///   - 不同 → 触发新一轮 RequestLoad，此时 _animLock 已解，能正常进入解码
+        /// AnimLockMs 到期后在 UI 线程执行。
+        /// 解锁 _animLock。若有 pending，进入序列检测窗口（_sequenceActive）；
+        /// 若无 pending，直接回到空闲。
         /// </summary>
         private void UnlockAndCheckPending()
         {
             if (_disposed) return;
 
-            // 1. 解锁
             _animLock = false;
 
             var pending = _pendingAfterAnim;
@@ -770,23 +754,75 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             if (pending == null) return;
 
-            // 2. 对比暂存请求与“屏幕上最终展示”的图
-            int pendingHash = ToolUtils.ComputeFastHash(pending);
+            // 有 pending：进入序列检测窗口，而非立即触发
+            _sequenceActive = true;
+            // 暂存最新 pending 供 SequenceEndFire 使用
+            _pendingAfterAnim = pending;
+            RestartSequenceEndTimer();
+        }
 
-            // 如果暂存的图和现在屏幕上跑完动画的图是一样的，直接丢弃
+        /// <summary>
+        /// 启动/重置序列结束检测计时器。
+        /// 每次在阶段 C 收到新请求时调用，重置窗口。
+        /// AnimLockMs 内无新请求则触发 SequenceEndFire。
+        /// </summary>
+        private void RestartSequenceEndTimer()
+        {
+            CancelSequenceEnd();
+            _sequenceEndCts = new CancellationTokenSource();
+            var ct = _sequenceEndCts.Token;
+            var dq = _canvas?.DispatcherQueue;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(AnimLockMs, ct).ConfigureAwait(false);
+                    dq?.TryEnqueue(DispatcherQueuePriority.Normal, SequenceEndFire);
+                }
+                catch (OperationCanceledException) { }
+            });
+        }
+
+        /// <summary>
+        /// 序列结束：AnimLockMs 内无新请求，触发最后一张图的加载。
+        /// </summary>
+        private void SequenceEndFire()
+        {
+            if (_disposed) return;
+
+            _sequenceActive = false;
+
+            var pending = _pendingAfterAnim;
+            _pendingAfterAnim = null;
+
+            if (pending == null) return;
+
+            // dedup：如果 pending 和屏幕上当前展示的图一样，不播动画
+            int pendingHash = ToolUtils.ComputeFastHash(pending);
             if (pending.Length == _lastLength && pendingHash == _currentDisplayHash)
                 return;
 
-            // 3. 如果不同，说明在动画期间用户又换图了，触发最后一轮
-            // 此时 _animLock 已为 false，RequestLoad 会正常进入加锁流程
+            // 触发最后一张，此时 _animLock=false、_sequenceActive=false，正常进入解码
             RequestLoad(pending);
+        }
+
+        private void CheckPendingAfterUnlock()
+        {
+            // GPU bake 失败时的快速路径：直接复用 UnlockAndCheckPending 逻辑
+            UnlockAndCheckPending();
         }
 
         private void CancelAnimLock()
         {
             _animLockCts.Cancel();
             _animLockCts.Dispose();
-            // 注意：不在这里 new 新的 CTS，由调用方决定是否需要重建
+        }
+
+        private void CancelSequenceEnd()
+        {
+            _sequenceEndCts.Cancel();
+            _sequenceEndCts.Dispose();
         }
 
         // ── 工具函数 ──────────────────────────────────────────────────────────
@@ -813,7 +849,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void InvalidateDedup()
         {
-            _initialized = false; // ★ 改为重置初始化标志，而不是仅改 _lastLength
+            _initialized = false;
             _lastLength = -1;
             _lastHash = 0;
             _currentDisplayHash = -1;
@@ -821,7 +857,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private bool IsDuplicate(byte[]? b)
         {
-            // ★ 从未初始化过，任何请求都不是重复
             if (!_initialized) return false;
 
             if (b == null || b.Length == 0)
@@ -831,10 +866,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             return b.Length == _lastLength && hash == _lastHash;
         }
 
-        // 新增：专门用于在确定处理新图时更新标识
         private void UpdateLastHash(byte[]? b)
         {
-            _initialized = true; // ★ 标记已提交过请求
+            _initialized = true;
             if (b == null || b.Length == 0)
             {
                 _lastLength = -1;
@@ -861,6 +895,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _animLockCts.Cancel();
             _animLockCts.Dispose();
+            _sequenceEndCts.Cancel();
+            _sequenceEndCts.Dispose();
             _resizeCts.Cancel();
             _resizeCts.Dispose();
 
