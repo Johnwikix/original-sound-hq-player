@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -148,13 +149,7 @@ namespace WinUIMusicPlayer.Services
                             lrcContent = lyric;
                             transLrcStr = trans;
                             currentMusic.Lyrics = lyric;
-                            currentMusic.TranslatedLyrics = trans;                            
-                            //if (songInMemory != null)
-                            //{
-                            //    songInMemory.Lyrics = lyric;
-                            //    songInMemory.TranslatedLyrics = trans;
-                            //}
-
+                            currentMusic.TranslatedLyrics = trans;
                         }
                     }
                     catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
@@ -173,11 +168,27 @@ namespace WinUIMusicPlayer.Services
             // 无歌词时的默认占位
             lyrics.Add(new LyricLine
             {
-                Text = ToolUtils.GetString("LyricsGetFailed"),
+                //Text = ToolUtils.GetString("LyricsGetFailed"),
                 Time = TimeSpan.Zero,
                 IsCurrent = true
             });
             return lyrics;
+        }
+
+        public static List<string> Split(string input)
+        {
+            // 解释这个正则：
+            // 1. [\u4e00-\u9fa5] : 匹配中文字符（单字切分）
+            // 2. [\u3040-\u30ff] : 匹配日文（单字切分）
+            // 3. [\p{L}\p{N}]+   : \p{L} 匹配任何语言的字母，\p{N} 匹配数字
+            //                      这将连续的法语、德语、俄语、英语、希腊语视为一个单词
+
+            string pattern = @"([\u4e00-\u9fa5]|[\u3040-\u30ff]|[\p{L}\p{N}]+)";
+
+            return Regex.Matches(input, pattern)
+                        .Cast<Match>()
+                        .Select(m => m.Value)
+                        .ToList();
         }
 
         private void CancelPreviousLyricsTask()
@@ -207,71 +218,52 @@ namespace WinUIMusicPlayer.Services
         {
             lyrics.Clear();
 
+            // 1. 解析原文
             ParseLrcToLines(lrcContent, (time, text) =>
             {
-                // 查找是否已有时间相近的行
-                var existingLine = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
-
-                if (existingLine != null)
+                var line = new LyricLine { Time = time, IsCurrent = false };
+                var wordStrings = Split(text);
+                foreach (var w in wordStrings)
                 {
-                    // 如果时间接近，合并文本（换行处理）
-                    existingLine.Text += "\n" + text;
+                    line.Words.Add(new LyricWord { Word = w });
                 }
-                else
-                {
-                    // 如果是新时间点，添加新行
-                    lyrics.Add(new LyricLine
-                    {
-                        Time = time,
-                        Text = text,
-                        IsCurrent = false
-                    });
-                }
+                lyrics.Add(line);
             });
 
-            // 2. 解析翻译歌词
+            // 2. 解析翻译 (保持不变)
             if (!string.IsNullOrEmpty(transLrc))
             {
-                ParseLrcToLines(transLrc, (time, transText) =>
-                {
-                    // 匹配原文中时间最接近的行
+                ParseLrcToLines(transLrc, (time, transText) => {
                     var lyric = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
-                    // 赋值翻译文本（如果有多行翻译，也可以考虑用 += "\n" + transText）
-                    lyric?.TransLateText = transText;
+                    if (lyric != null) lyric.TransLateText = transText;
                 });
             }
 
-            // 3. 兜底处理：无歌词情况
-            if (lyrics.Count == 0)
-            {
-                lyrics.Add(new LyricLine
-                {
-                    Text = ToolUtils.GetString("NoRecognizableLyrics"),
-                    Time = TimeSpan.Zero,
-                    IsCurrent = true
-                });
-                return lyrics;
-            }
-
-            // 4. 按时间排序（必须先排序，才能计算相邻行差值）
+            // 3. 排序
             var sortedLyrics = lyrics.OrderBy(l => l.Time).ToList();
 
-            // 5. 计算 LineAnimateDuration
+            // 4. 计算行时长及单词时长 (核心逻辑)
             for (int i = 0; i < sortedLyrics.Count; i++)
             {
-                if (i < sortedLyrics.Count - 1)
+                var currentLine = sortedLyrics[i];
+                TimeSpan lineDuration = (i < sortedLyrics.Count - 1)
+                    ? sortedLyrics[i + 1].Time - currentLine.Time
+                    : TimeSpan.FromSeconds(5);
+
+                currentLine.LineAnimateDuration = lineDuration;
+
+                // 计算单词时间：平均分配
+                if (currentLine.Words.Count > 0)
                 {
-                    // 当前行持续时间 = 下一行时间 - 当前行时间
-                    sortedLyrics[i].LineAnimateDuration = sortedLyrics[i + 1].Time - sortedLyrics[i].Time;
-                }
-                else
-                {
-                    // 最后一行，默认为 5s
-                    sortedLyrics[i].LineAnimateDuration = TimeSpan.FromSeconds(5);
+                    double perWordMs = lineDuration.TotalMilliseconds / currentLine.Words.Count;
+                    for (int j = 0; j < currentLine.Words.Count; j++)
+                    {
+                        // StartTime 必须是绝对时间：行开始时间 + 单词偏移
+                        currentLine.Words[j].StartTime = currentLine.Time + TimeSpan.FromMilliseconds(perWordMs * j);
+                        currentLine.Words[j].Duration = TimeSpan.FromMilliseconds(perWordMs);
+                    }
                 }
             }
-
-            // 4. 按时间排序返回
             return sortedLyrics;
         }
 

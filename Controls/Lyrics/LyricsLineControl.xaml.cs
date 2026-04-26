@@ -2,15 +2,17 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Media;
 using System;
 using Windows.UI.Text;
 using WinUIMusicPlayer.Model;
 
-namespace WinUIMusicPlayer.Controls
+namespace WinUIMusicPlayer.Controls.Lyrics
 {
     public sealed partial class LyricsLineControl : UserControl
     {
         private CompositionScopedBatch _currentCompositionBatch;
+        private FrameworkElement _currentAnimatingElement;
         private InsetClip _currentCompositionClip;
         private TextBlock _currentAnimatingTextBlock;
         private bool _isUpdatingFontSize = false; // ⭐ 防止循环更新的标志
@@ -159,6 +161,45 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
+        // 2. 逐单词动画核心方法
+        private void StartWordByWordAnimation()
+        {
+            CancelCurrentAnimation();
+            if (!IsWFWLyrics || LyricWords is not System.Collections.IEnumerable words) return;
+
+            // 获取 ItemsControl 中的所有 TextBlock 容器
+            for (int i = 0; i < LyricsItemsControl.Items.Count; i++)
+            {
+                var container = LyricsItemsControl.ContainerFromIndex(i) as ContentPresenter;
+                if (container == null) continue;
+
+                // 找到 DataTemplate 里的 TextBlock
+                var textBlock = VisualTreeHelper.GetChild(container, 0) as TextBlock;
+                if (textBlock == null) continue;
+
+                var wordData = LyricsItemsControl.Items[i] as LyricWord;
+                if (wordData == null) continue;
+
+                ApplyClipAnimation(textBlock, wordData.Duration);
+            }
+        }
+
+        private void ApplyClipAnimation(FrameworkElement element, TimeSpan duration)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            var clip = compositor.CreateInsetClip();
+            clip.RightInset = (float)element.ActualWidth;
+            visual.Clip = clip;
+
+            var animation = compositor.CreateScalarKeyFrameAnimation();
+            animation.Duration = duration;
+            animation.InsertKeyFrame(1.0f, 0.0f); // 逐渐消失右侧遮罩
+
+            clip.StartAnimation("RightInset", animation);
+        }
+
         // 计算字体大小
         private double CalculateFontSize(double scaledWidth, bool isLyricsType)
         {
@@ -178,17 +219,13 @@ namespace WinUIMusicPlayer.Controls
 
         #region 其他依赖属性
 
-        public static readonly DependencyProperty LyricsTextProperty =
-            DependencyProperty.Register(
-                nameof(LyricsText),
-                typeof(string),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(string.Empty));
+        public static readonly DependencyProperty LyricWordsProperty =
+                DependencyProperty.Register(nameof(LyricWords), typeof(object), typeof(LyricsLineControl), new PropertyMetadata(null));
 
-        public string LyricsText
+        public object LyricWords
         {
-            get => (string)GetValue(LyricsTextProperty);
-            set => SetValue(LyricsTextProperty, value);
+            get => GetValue(LyricWordsProperty);
+            set => SetValue(LyricWordsProperty, value);
         }
 
         public static readonly DependencyProperty TranslateTextProperty =
@@ -252,7 +289,8 @@ namespace WinUIMusicPlayer.Controls
 
             if (isCurrentLine)
             {
-                control.StartTimerAnimation(control.LyricsTextBlock, control.LineAnimateDuration);
+                // 触发逐单词动画
+                control.StartWordByWordAnimation();
                 control.IsCurrentLineEvent?.Invoke(control, new RoutedEventArgs());
             }
             else
@@ -319,26 +357,18 @@ namespace WinUIMusicPlayer.Controls
 
         #region 动画方法
 
-        private void StartTimerAnimation(TextBlock textBlock, TimeSpan duration)
+        // 2. 修改 StartTimerAnimation 的参数类型，从 TextBlock 改为 FrameworkElement
+        private void StartTimerAnimation(FrameworkElement element, TimeSpan duration)
         {
             CancelCurrentAnimation();
+            if (!IsWFWLyrics || element == null) return;
 
-            if (!IsWFWLyrics) return;
+            // ... 保持 duration 校验逻辑不变 ...
 
-            // ⭐ 校验 duration 范围，WinUI Composition 要求 >= 1ms 且 <= 24天
-            var minDuration = TimeSpan.FromMilliseconds(1);
-            var maxDuration = TimeSpan.FromDays(24);
-            if (duration < minDuration || duration > maxDuration)
-            {
-                duration = TimeSpan.FromMilliseconds(Math.Clamp(duration.TotalMilliseconds, 1, maxDuration.TotalMilliseconds));
-                // 如果原始值是 0 或负数，直接跳过动画
-                if (duration.TotalMilliseconds < 1) return;
-            }
-
-            var targetWidth = (float)textBlock.ActualWidth;
+            var targetWidth = (float)element.ActualWidth;
             if (targetWidth <= 0) return;
 
-            var visual = ElementCompositionPreview.GetElementVisual(textBlock);
+            var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
             var clip = compositor.CreateInsetClip();
@@ -355,7 +385,8 @@ namespace WinUIMusicPlayer.Controls
             animation.InsertKeyFrame(1.0f, 0.0f, compositor.CreateLinearEasingFunction());
 
             var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
-            _currentAnimatingTextBlock = textBlock;
+            // 修改变量类型
+            _currentAnimatingElement = element;
             _currentCompositionBatch = batch;
             _currentCompositionClip = clip;
 

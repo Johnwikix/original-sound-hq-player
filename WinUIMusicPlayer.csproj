@@ -109,6 +109,7 @@
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Controls.OpacityMaskView" Version="0.1.260109-build.2471" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="DevWinUI" Version="9.9.4" />
     <PackageReference Include="DevWinUI.Controls" Version="9.9.4" />

@@ -10,12 +10,12 @@
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
-    xmlns:customControls="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
+    xmlns:lyrics="using:WinUIMusicPlayer.Controls.Lyrics"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
@@ -607,22 +607,23 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                                 <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="model:LyricLine">
+                                    <DataTemplate x:DataType="lyrics:LyricLine">
                                         <Grid
                                             x:Name="LyricsLineGrid"
                                             Padding="0"
                                             CornerRadius="5"
                                             PointerEntered="LyricsLineGrid_PointerEntered"
                                             PointerExited="LyricsLineGrid_PointerExited">
-                                            <customControls:LyricsLineControl
+                                            <lyrics:LyricsLineControl
                                                 x:Name="LyricsLineControl"
                                                 HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                                CurrentPlayTime="{x:Bind CurrentPlayTime, Mode=OneWay}"
                                                 FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                 IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                                 IsGlobalFontSizeEnabled="{x:Bind model:AppSettings.IsGlobalFontSizeEnabled, Mode=OneWay}"
                                                 LineAnimateDuration="{x:Bind LineAnimateDuration, Mode=OneWay}"
+                                                LyricWords="{x:Bind Words, Mode=OneWay}"
                                                 LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
-                                                LyricsText="{x:Bind Text}"
                                                 TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                                 TranslateFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                                 TranslateText="{x:Bind TransLateText}"
@@ -630,7 +631,7 @@
                                                 <interactivity:Interaction.Behaviors>
                                                     <behaviors:LyricsAutoScrollBehavior />
                                                 </interactivity:Interaction.Behaviors>
-                                            </customControls:LyricsLineControl>
+                                            </lyrics:LyricsLineControl>
                                             <dev:BlurEffectControl
                                                 x:Name="BlurEffectControlSample"
                                                 Margin="0"

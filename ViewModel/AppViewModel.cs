@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using WinUIMusicPlayer.Behaviors;
+using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI;
 using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;

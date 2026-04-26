@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using Windows.Foundation;
 using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Behaviors
