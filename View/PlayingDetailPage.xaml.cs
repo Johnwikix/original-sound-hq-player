@@ -106,56 +106,7 @@ namespace WinUIMusicPlayer.View
             {
                 ViewModel.AppViewModel.TopControlsOpacity = 0.0f;
             }
-        }
-
-        private void LyricsListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            if (e.ClickedItem is LyricLine lyricLine)
-            {
-                Task.Run(() =>
-                {
-                    int index = ViewModel.AppViewModel.UILyrics.IndexOf(ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= lyricLine.Time));
-                    ViewModel.AppViewModel.IsManualSelect = true;
-                    ViewModel.UpdateLyricsToUI(index);
-                    App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(lyricLine.Time);
-                    ViewModel.AppViewModel.IsManualSelect = false;
-                });
-            }
-        }
-
-        private void LyricsLineGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is Grid grid)
-            {
-                var blurControl = grid?.Children.AsValueEnumerable()
-                          .OfType<BlurEffectControl>()
-                          .FirstOrDefault();
-                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                if (AppSettings.LyricsBlurAmount < 1)
-                {
-                    if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
-                    {
-                        var secondaryBrush = resourceValue as SolidColorBrush;
-                        grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
-                    }
-                }
-            }
-        }
-
-        private void LyricsLineGrid_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is Grid grid)
-            {
-                var blurControl = grid?.Children.AsValueEnumerable()
-                        .OfType<BlurEffectControl>()
-                        .FirstOrDefault();
-                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                if (AppSettings.LyricsBlurAmount < 1)
-                {
-                    grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                }
-            }
-        }
+        }       
 
         private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -325,6 +276,21 @@ namespace WinUIMusicPlayer.View
                 AppSettings.ElementTheme = ElementTheme.Light;
             }
             App.MainWindow?.SetAppTheme();
+        }
+
+        private void LyricsControl_LyricInteracted(object sender, TimeSpan e)
+        {
+            Task.Run(() =>
+            {
+                LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= e);
+                ViewModel.AppViewModel.IsManualSelect = true;
+                if (lyricLine is not null) {
+                    int index = ViewModel.AppViewModel.UILyrics.IndexOf(lyricLine);
+                    ViewModel.UpdateLyricsToUI(index);
+                } 
+                App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(e);
+                ViewModel.AppViewModel.IsManualSelect = false;
+            });
         }
     }
 }

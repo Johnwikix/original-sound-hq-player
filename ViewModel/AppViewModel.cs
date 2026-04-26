@@ -151,6 +151,7 @@ namespace WinUIMusicPlayer.ViewModel
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public ObservableCollection<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
+        public (string, string) CurrentLyricsText { get; set => SetProperty(ref field, value); } = (string.Empty, string.Empty);
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
         //public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
@@ -216,20 +217,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 1000;
 
-        //public bool IsCoverCacheEnabled
-        //{
-        //    get => field;
-        //    set
-        //    {
-        //        if (SetProperty(ref field, value))
-        //        {
-        //            if (IsInitialized)
-        //            {
-        //                _ = _musicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //}
         public bool IsBackgroundCoverEnabled
         {
             get => field;
@@ -438,18 +425,26 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void LoadLyricsToUI()
+        public void LoadLyricsToUI(Music music)
         {
-            LastLyricIndex = -1;
-            UILyrics.Clear();
-            // 设置播放服务中的歌词
-            await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics();
-            // 解析歌词并添加到UI集合
-            List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
-            foreach (var lyric in parsedLyrics)
+
+            _ = Task.Run(async () =>
             {
-                UILyrics.Add(lyric);
-            }
+                LastLyricIndex = -1;
+                
+                //设置播放服务中的歌词
+                await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
+                // 解析歌词并添加到UI集合
+                List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                    UILyrics.Clear();
+                    foreach (var lyric in parsedLyrics)
+                    {
+                        UILyrics.Add(lyric);
+                    }
+                });
+            });
+            
         }
 
         public void UpdateLyricsToUI(int index)

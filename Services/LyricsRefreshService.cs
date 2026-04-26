@@ -63,11 +63,11 @@ namespace WinUIMusicPlayer.Services
             AppViewModel.UpdateLyricsToUI(0);
         }
 
-        public async Task SetLyrics()
+        public async Task SetLyrics(Music music)
         {
             CancelPreviousLyricsTask();
             Lyrics.Clear();
-            var (lrcContent,transLrcStr) = GetLyricsContentFromLrc(AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Id == AppViewModel.CurrentPlayingMusic?.Id)?.Path);
+            var (lrcContent,transLrcStr) = GetLyricsContentFromLrc(music.Path);
             var lyricsContent = await ParseLrcLyrics(lrcContent, transLrcStr);
             if (lyricsContent is not null)
             {

@@ -21,6 +21,7 @@
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
     <None Remove="Controls\LyricsLineControl.xaml" />
+    <None Remove="Controls\Lyrics\LyricsControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
@@ -171,6 +172,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Controls\Lyrics\LyricsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\ComboBoxNMenuFlyoutStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
