@@ -17,7 +17,10 @@
             <RowDefinition Height="12" />
         </Grid.RowDefinitions>
 
-        <ItemsControl Grid.Row="1" ItemsSource="{x:Bind LyricWords, Mode=OneWay}">
+        <ItemsControl
+            Grid.Row="1"
+            FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
+            ItemsSource="{x:Bind LyricWords, Mode=OneWay}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <controls:WrapPanel Orientation="Horizontal" />
@@ -38,6 +41,7 @@
         <ItemsControl
             x:Name="LyricsItemsControl"
             Grid.Row="1"
+            FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
             ItemsSource="{x:Bind LyricWords, Mode=OneWay}"
             Opacity="{x:Bind IsCurrentLine, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}">
             <ItemsControl.ItemsPanel>

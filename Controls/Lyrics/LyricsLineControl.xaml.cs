@@ -12,7 +12,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     public sealed partial class LyricsLineControl : UserControl
     {
         private CompositionScopedBatch _currentCompositionBatch;
-        private FrameworkElement _currentAnimatingElement;
         private InsetClip _currentCompositionClip;
         private TextBlock _currentAnimatingTextBlock;
         private bool _isUpdatingFontSize = false; // ⭐ 防止循环更新的标志
@@ -165,39 +164,61 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private void StartWordByWordAnimation()
         {
             CancelCurrentAnimation();
-            if (!IsWFWLyrics || LyricWords is not System.Collections.IEnumerable words) return;
 
-            // 获取 ItemsControl 中的所有 TextBlock 容器
+            // 确保我们能拿到 LyricLine 对象来获取 Line.Time
+            // 假设 DataContext 就是 LyricLine
+            if (DataContext is not LyricLine currentLine || !IsWFWLyrics) return;
+
             for (int i = 0; i < LyricsItemsControl.Items.Count; i++)
             {
                 var container = LyricsItemsControl.ContainerFromIndex(i) as ContentPresenter;
                 if (container == null) continue;
 
-                // 找到 DataTemplate 里的 TextBlock
                 var textBlock = VisualTreeHelper.GetChild(container, 0) as TextBlock;
                 if (textBlock == null) continue;
 
                 var wordData = LyricsItemsControl.Items[i] as LyricWord;
                 if (wordData == null) continue;
 
-                ApplyClipAnimation(textBlock, wordData.Duration);
+                // 计算当前单词相对于行开始时间的延迟
+                TimeSpan delay = wordData.StartTime - currentLine.Time;
+
+                // 如果延迟小于 0（理论上不应该，除非数据有误），取 Zero
+                if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
+
+                ApplyClipAnimation(textBlock, wordData.Duration, delay);
             }
         }
 
-        private void ApplyClipAnimation(FrameworkElement element, TimeSpan duration)
+        private void ApplyClipAnimation(FrameworkElement element, TimeSpan duration, TimeSpan delay)
         {
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
+            // 创建裁剪区域
             var clip = compositor.CreateInsetClip();
+            // 初始状态：右侧内缩进 100%，即完全隐藏文字
             clip.RightInset = (float)element.ActualWidth;
             visual.Clip = clip;
 
             var animation = compositor.CreateScalarKeyFrameAnimation();
             animation.Duration = duration;
-            animation.InsertKeyFrame(1.0f, 0.0f); // 逐渐消失右侧遮罩
+            animation.DelayTime = delay; // ⭐ 核心：在这里设置延迟
+
+            // 动画过程：
+            // 0.0f 处保持 RightInset 为宽度全值（开始动之前是不可见的）
+            animation.InsertKeyFrame(0.0f, (float)element.ActualWidth);
+            // 1.0f 处 RightInset 变为 0（完全显示）
+            animation.InsertKeyFrame(1.0f, 0.0f);
+
+            // 使用 Linear 缓动让填充看起来更平滑（类似卡拉OK）
+            animation.IterationBehavior = AnimationIterationBehavior.Count;
+            animation.IterationCount = 1;
 
             clip.StartAnimation("RightInset", animation);
+
+            // 记录引用以便后续取消（可选）
+            _currentCompositionClip = clip;
         }
 
         // 计算字体大小
@@ -356,44 +377,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         #endregion
 
         #region 动画方法
-
-        // 2. 修改 StartTimerAnimation 的参数类型，从 TextBlock 改为 FrameworkElement
-        private void StartTimerAnimation(FrameworkElement element, TimeSpan duration)
-        {
-            CancelCurrentAnimation();
-            if (!IsWFWLyrics || element == null) return;
-
-            // ... 保持 duration 校验逻辑不变 ...
-
-            var targetWidth = (float)element.ActualWidth;
-            if (targetWidth <= 0) return;
-
-            var visual = ElementCompositionPreview.GetElementVisual(element);
-            var compositor = visual.Compositor;
-
-            var clip = compositor.CreateInsetClip();
-            clip.LeftInset = 0;
-            clip.TopInset = 0;
-            clip.BottomInset = 0;
-            clip.RightInset = targetWidth;
-
-            visual.Clip = clip;
-
-            var animation = compositor.CreateScalarKeyFrameAnimation();
-            animation.Duration = duration;
-            animation.InsertKeyFrame(0.0f, targetWidth);
-            animation.InsertKeyFrame(1.0f, 0.0f, compositor.CreateLinearEasingFunction());
-
-            var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
-            // 修改变量类型
-            _currentAnimatingElement = element;
-            _currentCompositionBatch = batch;
-            _currentCompositionClip = clip;
-
-            batch.Completed += OnCompositionBatchCompleted;
-            clip.StartAnimation("RightInset", animation);
-            batch.End();
-        }
 
         private void OnCompositionBatchCompleted(object sender, CompositionBatchCompletedEventArgs args)
         {
