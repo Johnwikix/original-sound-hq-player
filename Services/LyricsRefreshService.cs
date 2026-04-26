@@ -175,15 +175,18 @@ namespace WinUIMusicPlayer.Services
             return lyrics;
         }
 
-        public static List<string> Split(string input)
+        public static List<string> SplitEverything(string input)
         {
-            // 解释这个正则：
-            // 1. [\u4e00-\u9fa5] : 匹配中文字符（单字切分）
-            // 2. [\u3040-\u30ff] : 匹配日文（单字切分）
-            // 3. [\p{L}\p{N}]+   : \p{L} 匹配任何语言的字母，\p{N} 匹配数字
-            //                      这将连续的法语、德语、俄语、英语、希腊语视为一个单词
+            if (string.IsNullOrEmpty(input)) return new List<string>();
 
-            string pattern = @"([\u4e00-\u9fa5]|[\u3040-\u30ff]|[\p{L}\p{N}]+)";
+            // 逻辑解释：
+            // 1. [\u4e00-\u9fa5] : 匹配中文字符（单字）
+            // 2. [\u3040-\u30ff] : 匹配日文字符（单字）
+            // 3. [\p{L}\p{N}]+   : 匹配表音文字单词（连续的字母或数字，涵盖德法俄希等）
+            // 4. \s+             : 匹配连续的空格
+            // 5. .               : 匹配任何其他单个字符（包括所有中西文标点）
+
+            string pattern = @"([\u4e00-\u9fa5]|[\u3040-\u30ff]|[\p{L}\p{N}]+|\s+|.)";
 
             return Regex.Matches(input, pattern)
                         .Cast<Match>()
@@ -222,7 +225,7 @@ namespace WinUIMusicPlayer.Services
             ParseLrcToLines(lrcContent, (time, text) =>
             {
                 var line = new LyricLine { Time = time, IsCurrent = false };
-                var wordStrings = Split(text);
+                var wordStrings = SplitEverything(text);
                 foreach (var w in wordStrings)
                 {
                     line.Words.Add(new LyricWord { Word = w });

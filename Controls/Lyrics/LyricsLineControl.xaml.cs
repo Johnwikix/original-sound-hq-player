@@ -11,16 +11,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 {
     public sealed partial class LyricsLineControl : UserControl
     {
-        private CompositionScopedBatch _currentCompositionBatch;
-        private InsetClip _currentCompositionClip;
-        private TextBlock _currentAnimatingTextBlock;
+        private CompositionScopedBatch? _currentCompositionBatch;
+        private InsetClip? _currentCompositionClip;
+        private TextBlock? _currentAnimatingTextBlock;
         private bool _isUpdatingFontSize = false; // ⭐ 防止循环更新的标志
 
         public LyricsLineControl()
         {
-            this.InitializeComponent();
-            this.Loaded += OnLoaded;
-            this.Unloaded += OnUnloaded;
+            InitializeComponent();
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -177,8 +177,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 var textBlock = VisualTreeHelper.GetChild(container, 0) as TextBlock;
                 if (textBlock == null) continue;
 
-                var wordData = LyricsItemsControl.Items[i] as LyricWord;
-                if (wordData == null) continue;
+                if (LyricsItemsControl.Items[i] is not LyricWord wordData) continue;
 
                 // 计算当前单词相对于行开始时间的延迟
                 TimeSpan delay = wordData.StartTime - currentLine.Time;
@@ -195,34 +194,33 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
-            // 创建裁剪区域
+            // 1. 创建裁剪区域
             var clip = compositor.CreateInsetClip();
-            // 初始状态：右侧内缩进 100%，即完全隐藏文字
             clip.RightInset = (float)element.ActualWidth;
             visual.Clip = clip;
 
+            // 2. 创建线性缓动函数 (Linear Easing)
+            // 显式指定线性，确保 RightInset 随时间匀速减小
+            var linearEasing = compositor.CreateLinearEasingFunction();
+
+            // 3. 创建动画
             var animation = compositor.CreateScalarKeyFrameAnimation();
             animation.Duration = duration;
-            animation.DelayTime = delay; // ⭐ 核心：在这里设置延迟
+            animation.DelayTime = delay;
 
-            // 动画过程：
-            // 0.0f 处保持 RightInset 为宽度全值（开始动之前是不可见的）
-            animation.InsertKeyFrame(0.0f, (float)element.ActualWidth);
-            // 1.0f 处 RightInset 变为 0（完全显示）
-            animation.InsertKeyFrame(1.0f, 0.0f);
+            // 4. 插入关键帧并指定线性缓动
+            // 参数 3 为缓动函数
+            animation.InsertKeyFrame(0.0f, (float)element.ActualWidth, linearEasing);
+            animation.InsertKeyFrame(1.0f, 0.0f, linearEasing);
 
-            // 使用 Linear 缓动让填充看起来更平滑（类似卡拉OK）
-            animation.IterationBehavior = AnimationIterationBehavior.Count;
-            animation.IterationCount = 1;
-
+            // 5. 启动动画
             clip.StartAnimation("RightInset", animation);
 
-            // 记录引用以便后续取消（可选）
             _currentCompositionClip = clip;
         }
 
         // 计算字体大小
-        private double CalculateFontSize(double scaledWidth, bool isLyricsType)
+        private static double CalculateFontSize(double scaledWidth, bool isLyricsType)
         {
             if (scaledWidth <= 1440)
                 return isLyricsType ? 32.0 : 24.0;
@@ -396,17 +394,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public void CancelCurrentAnimation()
         {
-            if (_currentCompositionBatch != null)
-            {
-                _currentCompositionBatch.Completed -= OnCompositionBatchCompleted;
-                _currentCompositionBatch = null;
-            }
-
-            if (_currentCompositionClip != null)
-            {
-                _currentCompositionClip.StopAnimation("RightInset");
-                _currentCompositionClip = null;
-            }
+            _currentCompositionBatch?.Completed -= OnCompositionBatchCompleted;
+            _currentCompositionBatch = null;
+            _currentCompositionClip?.StopAnimation("RightInset");
+            _currentCompositionClip = null;
 
             if (_currentAnimatingTextBlock != null)
             {
