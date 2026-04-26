@@ -253,8 +253,6 @@ namespace WinUIMusicPlayer.Services
                     ? sortedLyrics[i + 1].Time - currentLine.Time
                     : TimeSpan.FromSeconds(5);
 
-                currentLine.LineAnimateDuration = lineDuration;
-
                 // 计算单词时间：平均分配
                 if (currentLine.Words.Count > 0)
                 {

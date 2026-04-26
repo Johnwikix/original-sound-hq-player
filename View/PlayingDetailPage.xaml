@@ -620,7 +620,6 @@
                                                 FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                                 IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                                 IsGlobalFontSizeEnabled="{x:Bind model:AppSettings.IsGlobalFontSizeEnabled, Mode=OneWay}"
-                                                LineAnimateDuration="{x:Bind LineAnimateDuration, Mode=OneWay}"
                                                 LyricWords="{x:Bind Words, Mode=OneWay}"
                                                 LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                                 TextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"

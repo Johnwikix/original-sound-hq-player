@@ -273,19 +273,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(TranslateVisibilityProperty, value);
         }
 
-        public static readonly DependencyProperty LineAnimateDurationProperty =
-            DependencyProperty.Register(
-                nameof(LineAnimateDuration),
-                typeof(TimeSpan),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(TimeSpan.Zero));
-
-        public TimeSpan LineAnimateDuration
-        {
-            get => (TimeSpan)GetValue(LineAnimateDurationProperty);
-            set => SetValue(LineAnimateDurationProperty, value);
-        }
-
         public static readonly DependencyProperty IsCurrentLineProperty =
             DependencyProperty.Register(
                 nameof(IsCurrentLine),
