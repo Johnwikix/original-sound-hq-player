@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
@@ -25,6 +26,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         } = TimeSpan.Zero;
 
         public TimeSpan CurrentPlayingTime { get => field; set => SetProperty(ref field, value); } = TimeSpan.Zero;
+        public string LyricText => string.Join(string.Empty, Words.Select(w => w.Word));
     }
 
     public class LyricWord

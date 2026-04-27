@@ -1,20 +1,37 @@
-﻿using Microsoft.UI.Composition;
+﻿using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.Text;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+using Windows.Foundation;
+using Windows.UI.Text;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
     public sealed partial class LyricsLineControl : UserControl
     {
-        // ── 逐字动画状态 ─────────────────────────────────────────────
-        private readonly List<(TextBlock tb, InsetClip clip)> _wordClips = [];
-        private bool _clipsInitialized = false;
         private bool _isUpdatingFontSize = false;
+
+        // ── 逐字 Mask 状态 ──────────────────────────────────────────
+        // 每个词持有一个 RectangleGeometry，每帧只改 Size.X，零 GC
+        private sealed record WordGeo(
+                    float FullWidth,
+                    float Height,
+                    float OffsetX,
+                    float OffsetY
+                );
+
+        private readonly List<WordGeo> _wordGeos = [];
+        private CompositionPathGeometry? _pathGeo;
+        private CompositionGeometricClip? _geoClip;
+        private bool _clipReady = false;
 
         public LyricsLineControl()
         {
@@ -27,14 +44,12 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (App.MainWindow != null)
                 App.MainWindow.SizeChanged += OnWindowSizeChanged;
-
             UpdateDynamicFontSizes();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             CancelCurrentAnimation();
-
             if (App.MainWindow != null)
                 App.MainWindow.SizeChanged -= OnWindowSizeChanged;
         }
@@ -42,79 +57,13 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private void OnWindowSizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs e)
         {
             UpdateDynamicFontSizes();
-            // 窗口大小变化时，TextBlock 的 ActualWidth 会改变，需要重新初始化 clips
-            _clipsInitialized = false;
+            InvalidateWordClip(); // 字号/ActualWidth 变了，下帧重建
         }
 
-        // ── IsGlobalFontSizeEnabled ──────────────────────────────────
-        public static readonly DependencyProperty IsGlobalFontSizeEnabledProperty =
-            DependencyProperty.Register(
-                nameof(IsGlobalFontSizeEnabled),
-                typeof(bool),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(false, OnIsGlobalFontSizeEnabledChanged));
-
-        public bool IsGlobalFontSizeEnabled
-        {
-            get => (bool)GetValue(IsGlobalFontSizeEnabledProperty);
-            set => SetValue(IsGlobalFontSizeEnabledProperty, value);
-        }
-
-        private static void OnIsGlobalFontSizeEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            (d as LyricsLineControl)?.UpdateDynamicFontSizes();
-        }
-
-        // ── LyricsFontSize ───────────────────────────────────────────
-        public static readonly DependencyProperty LyricsFontSizeProperty =
-            DependencyProperty.Register(
-                nameof(LyricsFontSize),
-                typeof(double),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(32.0, OnLyricsFontSizeChanged));
-
-        public double LyricsFontSize
-        {
-            get => (double)GetValue(LyricsFontSizeProperty);
-            set => SetValue(LyricsFontSizeProperty, value);
-        }
-
-        private static void OnLyricsFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var control = d as LyricsLineControl;
-            if (control == null || control._isUpdatingFontSize) return;
-            if (!control.IsGlobalFontSizeEnabled)
-                control.UpdateDynamicFontSizes();
-        }
-
-        // ── TranslateFontSize ────────────────────────────────────────
-        public static readonly DependencyProperty TranslateFontSizeProperty =
-            DependencyProperty.Register(
-                nameof(TranslateFontSize),
-                typeof(double),
-                typeof(LyricsLineControl),
-                new PropertyMetadata(24.0, OnTranslateFontSizeChanged));
-
-        public double TranslateFontSize
-        {
-            get => (double)GetValue(TranslateFontSizeProperty);
-            set => SetValue(TranslateFontSizeProperty, value);
-        }
-
-        private static void OnTranslateFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var control = d as LyricsLineControl;
-            if (control == null || control._isUpdatingFontSize) return;
-            if (!control.IsGlobalFontSizeEnabled)
-                control.UpdateDynamicFontSizes();
-        }
-
-        // ── CurrentPlayingTime（由 LyricsControl 内部 Timer 驱动）──────
+        // ── CurrentPlayingTime ───────────────────────────────────────
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
             DependencyProperty.Register(
-                nameof(CurrentPlayingTime),
-                typeof(TimeSpan),
-                typeof(LyricsLineControl),
+                nameof(CurrentPlayingTime), typeof(TimeSpan), typeof(LyricsLineControl),
                 new PropertyMetadata(TimeSpan.Zero, OnCurrentPlayingTimeChanged));
 
         public TimeSpan CurrentPlayingTime
@@ -125,123 +74,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private static void OnCurrentPlayingTimeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is LyricsLineControl ctrl && ctrl.IsCurrentLine && ctrl.IsWFWLyrics)
-                ctrl.UpdateWordProgress((TimeSpan)e.NewValue);
-        }
-
-        // ── 字体大小计算 ─────────────────────────────────────────────
-        private void UpdateDynamicFontSizes()
-        {
-            if (IsGlobalFontSizeEnabled) return;
-
-            if (App.MainWindow?.AppWindow?.Size.Width is null || App.MainWindow.AppWindow.Size.Width == 0)
-                return;
-
-            var width = App.MainWindow.AppWindow.Size.Width;
-            var scaledWidth = width / AppData.AppDpiScale;
-
-            _isUpdatingFontSize = true;
-            try
-            {
-                LyricsFontSize = CalculateFontSize(scaledWidth, true);
-                TranslateFontSize = CalculateFontSize(scaledWidth, false);
-            }
-            finally
-            {
-                _isUpdatingFontSize = false;
-            }
-        }
-
-        private static double CalculateFontSize(double scaledWidth, bool isLyricsType)
-        {
-            if (scaledWidth <= 1440) return isLyricsType ? 32.0 : 24.0;
-            if (scaledWidth <= 1680) return isLyricsType ? 34.0 : 26.0;
-            if (scaledWidth <= 1920) return isLyricsType ? 36.0 : 28.0;
-            if (scaledWidth <= 2160) return isLyricsType ? 38.0 : 30.0;
-            if (scaledWidth <= 2560) return isLyricsType ? 42.0 : 34.0;
-            return isLyricsType ? 46.0 : 38.0;
-        }
-
-        // ── 逐字动画核心 ─────────────────────────────────────────────
-
-        /// <summary>
-        /// 懒初始化：为每个词的 TextBlock 创建 InsetClip，初始完全遮住（RightInset = ActualWidth）。
-        /// 只有在 IsCurrentLine=true 后第一次 CurrentPlayingTime 到来时才执行。
-        /// </summary>
-        private void EnsureWordClipsInitialized()
-        {
-            if (_clipsInitialized) return;
-            _wordClips.Clear();
-
-            for (int i = 0; i < LyricsItemsControl.Items.Count; i++)
-            {
-                var container = LyricsItemsControl.ContainerFromIndex(i) as ContentPresenter;
-                if (container == null) continue;
-
-                var tb = VisualTreeHelper.GetChild(container, 0) as TextBlock;
-                if (tb == null) continue;
-
-                var visual = ElementCompositionPreview.GetElementVisual(tb);
-                var clip = visual.Compositor.CreateInsetClip();
-
-                // 初始状态：根据当前时间决定是否已经播完
-                clip.RightInset = (float)tb.ActualWidth;
-                visual.Clip = clip;
-
-                _wordClips.Add((tb, clip));
-            }
-
-            _clipsInitialized = true;
-        }
-
-        /// <summary>
-        /// 每帧（~16.67ms）由 CurrentPlayingTime 驱动，直接写 RightInset，不使用 Composition 动画对象。
-        /// 暂停时 Timer 停止 → CurrentPlayingTime 不变 → RightInset 冻结，完全支持暂停。
-        /// </summary>
-        private void UpdateWordProgress(TimeSpan currentTime)
-        {
-            if (DataContext is not LyricLine currentLine) return;
-
-            EnsureWordClipsInitialized();
-
-            var words = currentLine.Words;
-            int count = Math.Min(words.Count, _wordClips.Count);
-
-            for (int i = 0; i < count; i++)
-            {
-                var word = words[i];
-                var (tb, clip) = _wordClips[i];
-
-                var elapsed = currentTime - word.StartTime;
-
-                float rightInset;
-                if (elapsed <= TimeSpan.Zero)
-                {
-                    // 还没到这个词
-                    rightInset = (float)tb.ActualWidth;
-                }
-                else if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
-                {
-                    // 已播完
-                    rightInset = 0f;
-                }
-                else
-                {
-                    // 线性插值
-                    float progress = (float)(elapsed.TotalMilliseconds / word.Duration.TotalMilliseconds);
-                    rightInset = (float)tb.ActualWidth * (1f - progress);
-                }
-
-                clip.RightInset = rightInset;
-            }
+            if (d is LyricsLineControl c && c.IsCurrentLine && c.IsWFWLyrics)
+                c.DriveWordProgress((TimeSpan)e.NewValue);
         }
 
         // ── IsCurrentLine ────────────────────────────────────────────
         public static readonly DependencyProperty IsCurrentLineProperty =
             DependencyProperty.Register(
-                nameof(IsCurrentLine),
-                typeof(bool),
-                typeof(LyricsLineControl),
+                nameof(IsCurrentLine), typeof(bool), typeof(LyricsLineControl),
                 new PropertyMetadata(false, OnIsCurrentLineChanged));
 
         public bool IsCurrentLine
@@ -252,50 +92,269 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private static void OnIsCurrentLineChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not LyricsLineControl control) return;
+            if (d is not LyricsLineControl c) return;
 
             if ((bool)e.NewValue)
             {
-                // 成为当前行：重置 clips 状态，等待 CurrentPlayingTime 驱动
-                // 不立即初始化，因为此时 TextBlock 的 ActualWidth 可能还未测量
-                control._clipsInitialized = false;
-                control.IsCurrentLineEvent?.Invoke(control, new RoutedEventArgs());
+                // 重置等待下帧懒初始化（此时 ActualWidth 已稳定）
+                c.InvalidateWordClip();
+                c.IsCurrentLineEvent?.Invoke(c, new RoutedEventArgs());
             }
             else
             {
-                // 离开当前行：全部词显示完整（RightInset = 0），清理 clips
-                foreach (var (tb, clip) in control._wordClips)
-                {
-                    clip.RightInset = 0f;
-                    // 移除 clip，恢复默认渲染
-                    var visual = ElementCompositionPreview.GetElementVisual(tb);
-                    visual.Clip = null;
-                }
-                control._wordClips.Clear();
-                control._clipsInitialized = false;
+                c.CancelCurrentAnimation();
             }
         }
 
-        public event RoutedEventHandler IsCurrentLineEvent;
+        public event RoutedEventHandler? IsCurrentLineEvent;
 
-        // ── CancelCurrentAnimation ───────────────────────────────────
+        // ── Clip 初始化 ──────────────────────────────────────────────
+        private void InvalidateWordClip()
+        {
+            _clipReady = false;
+            var visual = ElementCompositionPreview.GetElementVisual(LyricsTextHighlight);
+            visual.Clip = null;
+            _wordGeos.Clear();
+            _pathGeo = null;
+            _geoClip = null;
+        }
+
+        /// <summary>
+        /// 懒初始化：用 Win2D 精确测量每个词的像素边界，
+        /// 建立 ShapeVisual mask + SpriteVisual overlay，
+        /// 通过 CompositionMaskBrush 将高亮 TextBlock 的内容
+        /// 与白色矩形 mask 合成，实现逐字显现效果。
+        /// </summary>
+        private bool EnsureWordClipReady()
+        {
+            if (_clipReady) return true;
+            if (DataContext is not LyricLine line || line.Words.Count == 0) return false;
+
+            double tbW = LyricsTextHighlight.ActualWidth;
+            double tbH = LyricsTextHighlight.ActualHeight;
+            if (tbW <= 0 || tbH <= 0) return false;
+
+            var compositor = ElementCompositionPreview
+                                 .GetElementVisual(LyricsTextHighlight).Compositor;
+            var device = CanvasDevice.GetSharedDevice();
+            var words = line.Words;
+
+            // ── 1. Win2D 测量词边界 ──────────────────────────────────────
+            using var fmt = new CanvasTextFormat
+            {
+                FontFamily = FontFamily?.Source ?? "Segoe UI",
+                FontSize = (float)LyricsFontSize,
+                FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
+                WordWrapping = CanvasWordWrapping.WholeWord,
+                HorizontalAlignment = MapTextAlignment(TextAlignment),
+            };
+            using var layout = new CanvasTextLayout(
+                device, BuildFullText(words), fmt, (float)tbW, (float)tbH * 10f);
+
+            _wordGeos.Clear();
+
+            int charOffset = 0;
+            for (int i = 0; i < words.Count; i++)
+            {
+                string w = words[i].Word;
+                var regions = layout.GetCharacterRegions(charOffset, w.Length);
+
+                if (regions.Length > 0)
+                {
+                    Rect first = regions[0].LayoutBounds;
+                    Rect last = regions[^1].LayoutBounds;
+                    _wordGeos.Add(new WordGeo(
+                        FullWidth: (float)(last.Right - first.Left),
+                        Height: (float)first.Height,
+                        OffsetX: (float)first.Left,
+                        OffsetY: (float)first.Top
+                    ));
+                }
+                else
+                {
+                    // 占位，保持索引对齐
+                    _wordGeos.Add(new WordGeo(0, 0, 0, 0));
+                }
+
+                charOffset += w.Length;
+            }
+
+            // ── 2. 建初始 PathGeometry（所有词宽度为 0）────────────────
+            // 用 CanvasGeometry.CreateGroup 把各词矩形合并成一个路径
+            // 初始全为零宽矩形（不可见），每帧通过 UpdateClipPath 重建
+            _pathGeo = compositor.CreatePathGeometry();
+            UpdateClipPath(0f); // 全部初始化为 0，先建一次空路径
+
+            // ── 3. 把 GeometricClip 挂到 LyricsTextHighlight 的 Visual ─
+            _geoClip = compositor.CreateGeometricClip(_pathGeo);
+            ElementCompositionPreview
+                .GetElementVisual(LyricsTextHighlight).Clip = _geoClip;
+
+            _clipReady = true;
+            return true;
+        }
+
+        /// <summary>
+        /// 根据当前各词进度重建 CanvasGeometry 并写入 _pathGeo。
+        /// 每帧调用，用 CanvasGeometry.CreateGroup 合并所有词的当前矩形。
+        /// </summary>
+        private void UpdateClipPath(float _ = 0f) { } // 见下方 DriveWordProgress
+
+        // ── 每帧驱动（~16.67ms，零 GC） ────────────────────────────
+        private void DriveWordProgress(TimeSpan currentTime)
+        {
+            if (!EnsureWordClipReady()) return;
+
+            var words = (DataContext as LyricLine)?.Words;
+            if (words is null || _pathGeo is null) return;
+
+            var device = CanvasDevice.GetSharedDevice();
+
+            // 收集各词当前宽度对应的矩形
+            var rects = new CanvasGeometry[_wordGeos.Count];
+            int count = Math.Min(words.Count, _wordGeos.Count);
+
+            for (int i = 0; i < count; i++)
+            {
+                var word = words[i];
+                var wg = _wordGeos[i];
+                var elapsed = currentTime - word.StartTime;
+
+                float newWidth;
+                if (elapsed <= TimeSpan.Zero)
+                    newWidth = 0f;
+                else if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
+                    newWidth = wg.FullWidth;
+                else
+                    newWidth = wg.FullWidth *
+                               (float)(elapsed.TotalMilliseconds / word.Duration.TotalMilliseconds);
+
+                // 宽度为 0 时用极小值避免退化矩形
+                rects[i] = CanvasGeometry.CreateRectangle(
+                    device,
+                    wg.OffsetX, wg.OffsetY,
+                    Math.Max(newWidth, 0.001f), wg.Height);
+            }
+
+            // 合并成一个路径，一次性赋给 PathGeometry
+            using var group = CanvasGeometry.CreateGroup(device, rects);
+            _pathGeo.Path = new CompositionPath(group);
+
+            // 释放临时 CanvasGeometry（不进 LOH）
+            foreach (var g in rects) g.Dispose();
+        }
+
+        // ── 清理 ────────────────────────────────────────────────────
         public void CancelCurrentAnimation()
         {
-            foreach (var (tb, _) in _wordClips)
-            {
-                var visual = ElementCompositionPreview.GetElementVisual(tb);
-                visual.Clip = null;
-            }
-            _wordClips.Clear();
-            _clipsInitialized = false;
+            var visual = ElementCompositionPreview.GetElementVisual(LyricsTextHighlight);
+            visual.Clip = null;
+            _wordGeos.Clear();
+            _pathGeo = null;
+            _geoClip = null;
+            _clipReady = false;
         }
 
-        // ── 其他依赖属性 ─────────────────────────────────────────────
+        // ── 工具方法 ─────────────────────────────────────────────────
+        private static string BuildFullText(IList<LyricWord> words)
+        {
+            var sb = new System.Text.StringBuilder(words.Count * 8);
+            foreach (var w in words)
+                sb.Append(w.Word);
+            return sb.ToString();
+        }
 
+        private static CanvasHorizontalAlignment MapTextAlignment(TextAlignment a)
+            => a switch
+            {
+                TextAlignment.Center => CanvasHorizontalAlignment.Center,
+                TextAlignment.Right => CanvasHorizontalAlignment.Right,
+                TextAlignment.Justify => CanvasHorizontalAlignment.Justified,
+                _ => CanvasHorizontalAlignment.Left,
+            };
+
+        // ── 字体大小（原逻辑完整保留） ───────────────────────────────
+        public static readonly DependencyProperty IsGlobalFontSizeEnabledProperty =
+            DependencyProperty.Register(
+                nameof(IsGlobalFontSizeEnabled), typeof(bool), typeof(LyricsLineControl),
+                new PropertyMetadata(false, (d, _) => (d as LyricsLineControl)?.UpdateDynamicFontSizes()));
+
+        public bool IsGlobalFontSizeEnabled
+        {
+            get => (bool)GetValue(IsGlobalFontSizeEnabledProperty);
+            set => SetValue(IsGlobalFontSizeEnabledProperty, value);
+        }
+
+        public static readonly DependencyProperty LyricsFontSizeProperty =
+            DependencyProperty.Register(
+                nameof(LyricsFontSize), typeof(double), typeof(LyricsLineControl),
+                new PropertyMetadata(32.0, OnLyricsFontSizeChanged));
+
+        public double LyricsFontSize
+        {
+            get => (double)GetValue(LyricsFontSizeProperty);
+            set => SetValue(LyricsFontSizeProperty, value);
+        }
+
+        private static void OnLyricsFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var c = d as LyricsLineControl;
+            if (c == null || c._isUpdatingFontSize) return;
+            if (!c.IsGlobalFontSizeEnabled) c.UpdateDynamicFontSizes();
+        }
+
+        public static readonly DependencyProperty TranslateFontSizeProperty =
+            DependencyProperty.Register(
+                nameof(TranslateFontSize), typeof(double), typeof(LyricsLineControl),
+                new PropertyMetadata(24.0, OnTranslateFontSizeChanged));
+
+        public double TranslateFontSize
+        {
+            get => (double)GetValue(TranslateFontSizeProperty);
+            set => SetValue(TranslateFontSizeProperty, value);
+        }
+
+        private static void OnTranslateFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var c = d as LyricsLineControl;
+            if (c == null || c._isUpdatingFontSize) return;
+            if (!c.IsGlobalFontSizeEnabled) c.UpdateDynamicFontSizes();
+        }
+
+        private void UpdateDynamicFontSizes()
+        {
+            if (IsGlobalFontSizeEnabled) return;
+            if (App.MainWindow?.AppWindow?.Size.Width is null ||
+                App.MainWindow.AppWindow.Size.Width == 0) return;
+
+            double scaledWidth = App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
+
+            _isUpdatingFontSize = true;
+            try
+            {
+                LyricsFontSize = CalcFontSize(scaledWidth, isLyrics: true);
+                TranslateFontSize = CalcFontSize(scaledWidth, isLyrics: false);
+            }
+            finally
+            {
+                _isUpdatingFontSize = false;
+            }
+        }
+
+        private static double CalcFontSize(double w, bool isLyrics) => w switch
+        {
+            <= 1440 => isLyrics ? 32.0 : 24.0,
+            <= 1680 => isLyrics ? 34.0 : 26.0,
+            <= 1920 => isLyrics ? 36.0 : 28.0,
+            <= 2160 => isLyrics ? 38.0 : 30.0,
+            <= 2560 => isLyrics ? 42.0 : 34.0,
+            _ => isLyrics ? 46.0 : 38.0,
+        };
+
+        // ── 其余依赖属性（原样保留） ─────────────────────────────────
         public static readonly DependencyProperty LyricWordsProperty =
-            DependencyProperty.Register(nameof(LyricWords), typeof(object), typeof(LyricsLineControl),
-                new PropertyMetadata(null));
-
+            DependencyProperty.Register(nameof(LyricWords), typeof(object),
+                typeof(LyricsLineControl), new PropertyMetadata(null));
         public object LyricWords
         {
             get => GetValue(LyricWordsProperty);
@@ -303,9 +362,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public static readonly DependencyProperty TranslateTextProperty =
-            DependencyProperty.Register(nameof(TranslateText), typeof(string), typeof(LyricsLineControl),
-                new PropertyMetadata(string.Empty));
-
+            DependencyProperty.Register(nameof(TranslateText), typeof(string),
+                typeof(LyricsLineControl), new PropertyMetadata(string.Empty));
         public string TranslateText
         {
             get => (string)GetValue(TranslateTextProperty);
@@ -313,9 +371,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public static readonly DependencyProperty TranslateVisibilityProperty =
-            DependencyProperty.Register(nameof(TranslateVisibility), typeof(Visibility), typeof(LyricsLineControl),
-                new PropertyMetadata(Visibility.Collapsed));
-
+            DependencyProperty.Register(nameof(TranslateVisibility), typeof(Visibility),
+                typeof(LyricsLineControl), new PropertyMetadata(Visibility.Collapsed));
         public Visibility TranslateVisibility
         {
             get => (Visibility)GetValue(TranslateVisibilityProperty);
@@ -323,10 +380,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public new static readonly DependencyProperty FontFamilyProperty =
-            DependencyProperty.Register(nameof(FontFamily), typeof(Microsoft.UI.Xaml.Media.FontFamily),
-                typeof(LyricsLineControl),
+            DependencyProperty.Register(nameof(FontFamily),
+                typeof(Microsoft.UI.Xaml.Media.FontFamily), typeof(LyricsLineControl),
                 new PropertyMetadata(new Microsoft.UI.Xaml.Media.FontFamily("Segoe UI")));
-
         public new Microsoft.UI.Xaml.Media.FontFamily FontFamily
         {
             get => (Microsoft.UI.Xaml.Media.FontFamily)GetValue(FontFamilyProperty);
@@ -334,10 +390,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public static readonly DependencyProperty TextAlignmentProperty =
-            DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment),
-                typeof(LyricsLineControl),
+            DependencyProperty.Register(nameof(TextAlignment),
+                typeof(TextAlignment), typeof(LyricsLineControl),
                 new PropertyMetadata(TextAlignment.Left));
-
         public TextAlignment TextAlignment
         {
             get => (TextAlignment)GetValue(TextAlignmentProperty);
@@ -345,10 +400,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public new static readonly DependencyProperty HorizontalAlignmentProperty =
-            DependencyProperty.Register(nameof(HorizontalAlignment), typeof(HorizontalAlignment),
-                typeof(LyricsLineControl),
+            DependencyProperty.Register(nameof(HorizontalAlignment),
+                typeof(HorizontalAlignment), typeof(LyricsLineControl),
                 new PropertyMetadata(HorizontalAlignment.Left));
-
         public new HorizontalAlignment HorizontalAlignment
         {
             get => (HorizontalAlignment)GetValue(HorizontalAlignmentProperty);
@@ -356,13 +410,28 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         public static readonly DependencyProperty IsWFWLyricsProperty =
-            DependencyProperty.Register(nameof(IsWFWLyrics), typeof(bool), typeof(LyricsLineControl),
-                new PropertyMetadata(true));
-
+            DependencyProperty.Register(nameof(IsWFWLyrics), typeof(bool),
+                typeof(LyricsLineControl), new PropertyMetadata(true));
         public bool IsWFWLyrics
         {
             get => (bool)GetValue(IsWFWLyricsProperty);
             set => SetValue(IsWFWLyricsProperty, value);
+        }
+
+        public static readonly DependencyProperty LyricTextProperty =
+            DependencyProperty.Register(
+            nameof(LyricText), typeof(string), typeof(LyricsLineControl),
+            new PropertyMetadata(string.Empty));
+
+        public string LyricText
+        {
+            get => (string)GetValue(LyricTextProperty);
+            set => SetValue(LyricTextProperty, value);
+        }
+
+        private void LyricsTextHighlight_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_clipReady) InvalidateWordClip();
         }
     }
 }

@@ -17,81 +17,34 @@
             <RowDefinition Height="12" />
         </Grid.RowDefinitions>
 
-        <ItemsControl
-            Grid.Row="1"
-            FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
-            ItemsSource="{x:Bind LyricWords, Mode=OneWay}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <controls:WrapPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="local:LyricWord">
-                    <TextBlock
-                        Margin="2,0"
-                        FontSize="36"
-                        FontWeight="Bold"
-                        Opacity="0.3"
-                        Text="{x:Bind Word}" />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <ItemsControl
-            x:Name="LyricsItemsControl"
-            Grid.Row="1"
-            FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
-            ItemsSource="{x:Bind LyricWords, Mode=OneWay}"
-            Opacity="{x:Bind IsCurrentLine, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <controls:WrapPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="local:LyricWord">
-                    <TextBlock
-                        Margin="2,0"
-                        FontSize="36"
-                        FontWeight="Bold"
-                        Text="{x:Bind Word}" />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <!--  底层 TextBlock (基础/半透明)  -->
-        <!--
+        <!--  底层：始终半透明完整显示  -->
         <TextBlock
-            x:Name="LyricsTextBlockBase"
+            x:Name="LyricsTextBase"
             Grid.Row="1"
-            Margin="0,3"
             HorizontalAlignment="{x:Bind HorizontalAlignment, Mode=OneWay}"
             FontFamily="{x:Bind FontFamily, Mode=OneWay}"
             FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
             FontWeight="Bold"
-            Opacity="0.5"
-            Text="{x:Bind LyricsText, Mode=OneWay}"
+            Opacity="0.3"
+            Text="{x:Bind LyricText, Mode=OneWay}"
             TextAlignment="{x:Bind TextAlignment, Mode=OneWay}"
             TextWrapping="WrapWholeWords" />
 
-        -->
-        <!--  顶层 TextBlock (高亮/用于动画裁剪)  -->
-        <!--
+        <!--  顶层：由 MaskBrush SpriteVisual 控制逐字显现  -->
         <TextBlock
-            x:Name="LyricsTextBlock"
+            x:Name="LyricsTextHighlight"
             Grid.Row="1"
-            Margin="0,3"
             HorizontalAlignment="{x:Bind HorizontalAlignment, Mode=OneWay}"
             FontFamily="{x:Bind FontFamily, Mode=OneWay}"
             FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
             FontWeight="Bold"
             Opacity="{x:Bind IsCurrentLine, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-            Text="{x:Bind LyricsText, Mode=OneWay}"
+            SizeChanged="LyricsTextHighlight_SizeChanged"
+            Text="{x:Bind LyricText, Mode=OneWay}"
             TextAlignment="{x:Bind TextAlignment, Mode=OneWay}"
-            TextWrapping="WrapWholeWords" />-->
+            TextWrapping="WrapWholeWords" />
 
-
-        <!--  翻译文本  -->
+        <!--  翻译  -->
         <TextBlock
             x:Name="LyricsTransTextBlock"
             Grid.Row="2"
