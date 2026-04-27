@@ -358,6 +358,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             int count = Math.Min(words.Count, _wordLayouts.Count);
 
+            // OnDraw 里替换每个词的绘制
+
             for (int i = 0; i < count; i++)
             {
                 var wl = _wordLayouts[i];
@@ -365,18 +367,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 if (wl.FullWidth <= 0) continue;
 
-                float drawX = wl.X;
-                float drawY = wl.Y + PaddingV;
+                // 用 Rect 重载替代 (x, y) 重载，避免亚像素抖动
+                var wordRect = new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height);
 
-                // ── 底层：始终显示的暗色文字 ────────────────────────
-                ds.DrawText(wl.Text, drawX, drawY, DimColor, lyricsFmt);
+                // 底层暗色，fmt 用 Left 对齐（位置已由 wordRect 控制）
+                ds.DrawText(wl.Text, wordRect, DimColor, lyricsFmt);
 
                 if (!_isCurrentLine) continue;
 
-                // ── 计算进度 ────────────────────────────────────────
                 var elapsed = _currentTime - word.StartTime;
                 float progress;
-
                 if (elapsed <= TimeSpan.Zero)
                     progress = 0f;
                 else if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
@@ -390,34 +390,37 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 float revealWidth = wl.FullWidth * progress;
 
-                // ── 实心高亮区域（硬边 clip） ───────────────────────
+                // 实心高亮区域
                 using (ds.CreateLayer(1f,
-                    new Rect(drawX, drawY, revealWidth, wl.Height)))
+                    new Rect(wl.X, wl.Y + PaddingV, revealWidth, wl.Height)))
                 {
-                    ds.DrawText(wl.Text, drawX, drawY, BrightColor, lyricsFmt);
+                    ds.DrawText(wl.Text, wordRect, BrightColor, lyricsFmt);
                 }
 
-                // ── 羽化边缘（渐变 opacity mask） ───────────────────
+                // 羽化边缘
                 if (progress < 1f)
                 {
-                    float featherX = drawX + revealWidth;
+                    float featherX = (float)(wl.X + revealWidth);
                     float featherActual = Math.Min(FeatherWidth, wl.FullWidth - revealWidth);
+                    float drawY = (float)(wl.Y + PaddingV);
 
                     if (featherActual > 0.5f)
                     {
-                        using var featherBrush = new CanvasLinearGradientBrush(
-                            sender,
-                            BrightColor,
-                            Color.FromArgb(0, 255, 255, 255))
-                        {
-                            StartPoint = new Vector2(featherX, drawY),
-                            EndPoint = new Vector2(featherX + featherActual, drawY),
-                        };
+                        // 把羽化区域分成 N 段，每段用递减的 opacity 绘制
+                        // 避免任何 Brush 对象创建，纯 float 运算
+                        const int steps = 6;
+                        float stepW = featherActual / steps;
 
-                        using (ds.CreateLayer(featherBrush,
-                            new Rect(featherX, drawY, featherActual, wl.Height)))
+                        for (int s = 0; s < steps; s++)
                         {
-                            ds.DrawText(wl.Text, drawX, drawY, BrightColor, lyricsFmt);
+                            float segX = featherX + s * stepW;
+                            float opacity = 1f - (float)(s + 1) / steps; // 1.0 → 接近 0
+                            var segRect = new Rect(segX, drawY, stepW + 0.5f, wl.Height);
+
+                            using (ds.CreateLayer(opacity, segRect))
+                            {
+                                ds.DrawText(wl.Text, wordRect, BrightColor, lyricsFmt);
+                            }
                         }
                     }
                 }
