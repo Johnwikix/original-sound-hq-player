@@ -205,51 +205,81 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (!EnsureWordClipReady()) return;
 
-            var words = (DataContext as LyricLine)?.Words;
-            if (words is null || _pathGeo is null || words.Count == 0) return;
+            var line = DataContext as LyricLine;
+            if (line == null || line.Words.Count == 0 || _pathGeo == null) return;
 
-            try
+            var device = CanvasDevice.GetSharedDevice();
+            var words = line.Words;
+            int wordCount = words.Count;
+
+            // 预分配数组，避免 List 扩容开销
+            var rects = new CanvasGeometry[wordCount];
+            int activeCount = 0;
+
+            for (int i = 0; i < wordCount; i++)
             {
-                var device = CanvasDevice.GetSharedDevice();
-                var geometries = new List<CanvasGeometry>(); // 使用 List 动态添加更安全
+                var word = words[i];
+                var wg = _wordGeos[i];
 
-                for (int i = 0; i < Math.Min(words.Count, _wordGeos.Count); i++)
+                // 逻辑优化：跳过无效宽度（如 Win2D 测量失败的情况）
+                if (wg.FullWidth <= 0) continue;
+
+                float progress = 0f;
+                if (currentTime >= word.StartTime + word.Duration)
                 {
-                    var word = words[i];
-                    var wg = _wordGeos[i];
-                    var elapsed = currentTime - word.StartTime;
-
-                    float newWidth = 0f;
-                    if (elapsed > TimeSpan.Zero)
+                    // 情况 A：词已唱完
+                    progress = 1f;
+                }
+                else if (currentTime > word.StartTime)
+                {
+                    // 情况 B：正在唱这个词
+                    // 避免 Duration 为 0 导致的除以零异常
+                    if (word.Duration > TimeSpan.Zero)
                     {
-                        if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
-                            newWidth = wg.FullWidth;
-                        else
-                            newWidth = wg.FullWidth * (float)(elapsed.TotalSeconds / word.Duration.TotalSeconds);
-                    }
-
-                    // 只有宽度大于 0 且有效时才添加，减少底层负担
-                    if (newWidth > 0)
-                    {
-                        geometries.Add(CanvasGeometry.CreateRectangle(
-                            device, wg.OffsetX, wg.OffsetY, newWidth, wg.Height));
+                        // 使用 Ticks 计算比 TotalSeconds/Milliseconds 更快，因为它是 long 型原子单位
+                        progress = (float)((double)(currentTime.Ticks - word.StartTime.Ticks) / word.Duration.Ticks);
+                        if (progress > 1f) progress = 1f;
                     }
                 }
+                // 情况 C：还没唱到（progress 为 0），不进入 rects 数组以减少 Group 压力
 
-                if (geometries.Count > 0)
+                if (progress > 0)
                 {
-                    using var group = CanvasGeometry.CreateGroup(device, geometries.ToArray());
-                    _pathGeo.Path = new CompositionPath(group);
+                    float drawWidth = (progress >= 1f) ? wg.FullWidth : (wg.FullWidth * progress);
 
-                    // 批量释放，确保在 group 创建完成后
-                    foreach (var g in geometries) g.Dispose();
+                    // 仅当宽度足够可见时才创建几何体
+                    if (drawWidth > 0.1f)
+                    {
+                        rects[activeCount++] = CanvasGeometry.CreateRectangle(
+                            device, wg.OffsetX, wg.OffsetY, drawWidth, wg.Height);
+                    }
                 }
             }
-            catch (Exception ex)
+
+            if (activeCount > 0)
             {
-                // 捕获可能的设备丢失或非法参数，下一帧自动重试
-                System.Diagnostics.Debug.WriteLine($"Lyrics Render Error: {ex.Message}");
-                _clipReady = false;
+                // 裁剪数组到实际有效长度
+                ReadOnlySpan<CanvasGeometry> activeGeos = rects.AsSpan(0, activeCount);
+
+                try
+                {
+                    // 注意：CreateGroup 接受 IEnumerable，传入 Array 会稍微高效点
+                    using var group = CanvasGeometry.CreateGroup(device, rects[..activeCount]);
+                    _pathGeo.Path = new CompositionPath(group);
+                }
+                catch (ArgumentException)
+                {
+                    // 捕捉可能的非法参数（如坐标或尺寸异常）
+                    InvalidateWordClip();
+                }
+                finally
+                {
+                    // 必须在 Group 创建后立即释放，防止 Native 资源堆积
+                    for (int i = 0; i < activeCount; i++)
+                    {
+                        rects[i]?.Dispose();
+                    }
+                }
             }
         }
 
