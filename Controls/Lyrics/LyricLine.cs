@@ -23,6 +23,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             get => field;
             set => SetProperty(ref field, value);
         } = TimeSpan.Zero;
+
+        public TimeSpan CurrentPlayingTime { get => field; set => SetProperty(ref field, value); } = TimeSpan.Zero;
     }
 
     public class LyricWord

@@ -31,30 +31,30 @@ namespace WinUIMusicPlayer.Services
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
-        public void UpdateLyrics(TimeSpan currentPosition)
-        {
-            if (Lyrics.Count == 0)
-                return;
-            // 查找当前应显示的歌词
-            int currentIndex = -1;
-            for (int i = 0; i < Lyrics.Count; i++)
-            {
-                // 找到时间戳小于等于当前播放位置的最后一条歌词
-                if (Lyrics[i].Time <= currentPosition)
-                {
-                    currentIndex = i;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            // 触发事件通知UI更新
-            if (currentIndex >= 0)
-            {
-                AppViewModel.UpdateLyricsToUI(currentIndex);
-            }
-        }
+        //public void UpdateLyrics(TimeSpan currentPosition)
+        //{
+        //    if (Lyrics.Count == 0)
+        //        return;
+        //    // 查找当前应显示的歌词
+        //    int currentIndex = -1;
+        //    for (int i = 0; i < Lyrics.Count; i++)
+        //    {
+        //        // 找到时间戳小于等于当前播放位置的最后一条歌词
+        //        if (Lyrics[i].Time <= currentPosition)
+        //        {
+        //            currentIndex = i;
+        //        }
+        //        else
+        //        {
+        //            break;
+        //        }
+        //    }
+        //    // 触发事件通知UI更新
+        //    if (currentIndex >= 0)
+        //    {
+        //        AppViewModel.UpdateLyricsToUI(currentIndex);
+        //    }
+        //}
 
         public void ResetLyrics()
         {

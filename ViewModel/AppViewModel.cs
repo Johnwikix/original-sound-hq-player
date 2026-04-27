@@ -174,6 +174,7 @@ namespace WinUIMusicPlayer.ViewModel
         private System.Timers.Timer ProgressTimer { get; set; }
         private TimeSpan TotalTime { get; set; }
         private TimeSpan CurrentTime { get; set; }
+        public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
         private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);        
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
@@ -390,6 +391,7 @@ namespace WinUIMusicPlayer.ViewModel
                 TimeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    CurrentPlayingTime = CurrentTime;
                     if (!IsManualSelect)
                     {
                         try
@@ -415,7 +417,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 });
-                App.Services.GetRequiredService<LyricsRefreshService>().UpdateLyrics(CurrentTime);
+                //App.Services.GetRequiredService<LyricsRefreshService>().UpdateLyrics(CurrentTime);
                 _ = Task.Run(() => {
                     SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
                 } );

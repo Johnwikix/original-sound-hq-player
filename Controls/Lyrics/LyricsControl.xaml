@@ -92,6 +92,7 @@
                                 <local:LyricsLineControl
                                     x:Name="LyricsLineControl"
                                     HorizontalAlignment="{x:Bind model:AppSettings.LyricsAlignment, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}, Mode=OneWay}"
+                                    CurrentPlayingTime="{x:Bind CurrentPlayingTime, Mode=OneWay}"
                                     FontFamily="{x:Bind model:AppSettings.GlobalFont}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                     IsGlobalFontSizeEnabled="{x:Bind model:AppSettings.IsGlobalFontSizeEnabled, Mode=OneWay}"
