@@ -38,7 +38,7 @@
             FontFamily="{x:Bind FontFamily, Mode=OneWay}"
             FontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
             FontWeight="Bold"
-            Opacity="{x:Bind IsCurrentLine, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+            Opacity="0"
             SizeChanged="LyricsTextHighlight_SizeChanged"
             Text="{x:Bind LyricText, Mode=OneWay}"
             TextAlignment="{x:Bind TextAlignment, Mode=OneWay}"

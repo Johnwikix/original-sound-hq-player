@@ -74,8 +74,13 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private static void OnCurrentPlayingTimeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is LyricsLineControl c && c.IsCurrentLine && c.IsWFWLyrics)
-                c.DriveWordProgress((TimeSpan)e.NewValue);
+            if (d is not LyricsLineControl c) return;
+            if (!c.IsCurrentLine || !c.IsWFWLyrics) return;
+
+            // 控件未完成布局时跳过，下一帧 SizeChanged 会触发 InvalidateWordClip 重来
+            if (c.ActualWidth <= 0 || c.ActualHeight <= 0) return;
+
+            c.DriveWordProgress((TimeSpan)e.NewValue);
         }
 
         // ── IsCurrentLine ────────────────────────────────────────────
@@ -112,11 +117,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private void InvalidateWordClip()
         {
             _clipReady = false;
-            var visual = ElementCompositionPreview.GetElementVisual(LyricsTextHighlight);
-            visual.Clip = null;
             _wordGeos.Clear();
             _pathGeo = null;
             _geoClip = null;
+
+            if (LyricsTextHighlight is null) return;
+
+            LyricsTextHighlight.Opacity = 0.0; // 同上，重建期间保持不可见
+
+            var visual = ElementCompositionPreview.GetElementVisual(LyricsTextHighlight);
+            visual.Clip = null;
         }
 
         /// <summary>
@@ -129,6 +139,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (_clipReady) return true;
             if (DataContext is not LyricLine line || line.Words.Count == 0) return false;
+
+            if (LyricsTextHighlight is null) return false;
 
             double tbW = LyricsTextHighlight.ActualWidth;
             double tbH = LyricsTextHighlight.ActualHeight;
@@ -144,12 +156,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             {
                 FontFamily = FontFamily?.Source ?? "Segoe UI",
                 FontSize = (float)LyricsFontSize,
-                FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
+                FontWeight = new FontWeight { Weight = 700 },
                 WordWrapping = CanvasWordWrapping.WholeWord,
                 HorizontalAlignment = MapTextAlignment(TextAlignment),
             };
+
+            string fullText = BuildFullText(words);
+            if (string.IsNullOrEmpty(fullText)) return false;
+
             using var layout = new CanvasTextLayout(
-                device, BuildFullText(words), fmt, (float)tbW, (float)tbH * 10f);
+                device, fullText, fmt, (float)tbW, (float)tbH * 10f);
 
             _wordGeos.Clear();
 
@@ -157,39 +173,58 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             for (int i = 0; i < words.Count; i++)
             {
                 string w = words[i].Word;
-                var regions = layout.GetCharacterRegions(charOffset, w.Length);
+                int len = Math.Max(w.Length, 1);
+
+                var regions = layout.GetCharacterRegions(charOffset, len);
 
                 if (regions.Length > 0)
                 {
                     Rect first = regions[0].LayoutBounds;
                     Rect last = regions[^1].LayoutBounds;
-                    _wordGeos.Add(new WordGeo(
-                        FullWidth: (float)(last.Right - first.Left),
-                        Height: (float)first.Height,
-                        OffsetX: (float)first.Left,
-                        OffsetY: (float)first.Top
-                    ));
+                    float fw = (float)(last.Right - first.Left);
+                    float h = (float)first.Height;
+
+                    if (fw > 0 && h > 0)
+                    {
+                        _wordGeos.Add(new WordGeo(
+                            FullWidth: fw,
+                            Height: h,
+                            OffsetX: (float)first.Left,
+                            OffsetY: (float)first.Top
+                        ));
+                    }
+                    else
+                    {
+                        _wordGeos.Add(new WordGeo(0, 0, 0, 0));
+                    }
                 }
                 else
                 {
-                    // 占位，保持索引对齐
                     _wordGeos.Add(new WordGeo(0, 0, 0, 0));
                 }
 
                 charOffset += w.Length;
             }
 
-            // ── 2. 建初始 PathGeometry（所有词宽度为 0）────────────────
-            // 用 CanvasGeometry.CreateGroup 把各词矩形合并成一个路径
-            // 初始全为零宽矩形（不可见），每帧通过 UpdateClipPath 重建
-            _pathGeo = compositor.CreatePathGeometry();
-            UpdateClipPath(0f); // 全部初始化为 0，先建一次空路径
+            // 所有词测量都失败，放弃初始化
+            if (_wordGeos.TrueForAll(wg => wg.FullWidth <= 0))
+            {
+                _wordGeos.Clear();
+                return false;
+            }
 
-            // ── 3. 把 GeometricClip 挂到 LyricsTextHighlight 的 Visual ─
+            // ── 2. 建初始 PathGeometry（极小矩形，视觉上不可见） ────────
+            _pathGeo = compositor.CreatePathGeometry();
+
+            var initGeo = CanvasGeometry.CreateRectangle(device, 0, 0, 0.001f, 0.001f);
+            _pathGeo.Path = new CompositionPath(initGeo);
+            initGeo.Dispose();
+
+            // ── 3. 挂 GeometricClip ──────────────────────────────────────
             _geoClip = compositor.CreateGeometricClip(_pathGeo);
             ElementCompositionPreview
                 .GetElementVisual(LyricsTextHighlight).Clip = _geoClip;
-
+            LyricsTextHighlight.Opacity = 1.0;
             _clipReady = true;
             return true;
         }
@@ -205,87 +240,81 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (!EnsureWordClipReady()) return;
 
-            var line = DataContext as LyricLine;
-            if (line == null || line.Words.Count == 0 || _pathGeo == null) return;
+            var words = (DataContext as LyricLine)?.Words;
+
+            // _pathGeo 和 words 的 null 保护
+            if (words is null || _pathGeo is null || _wordGeos.Count == 0) return;
 
             var device = CanvasDevice.GetSharedDevice();
-            var words = line.Words;
-            int wordCount = words.Count;
+            int count = Math.Min(words.Count, _wordGeos.Count);
 
-            // 预分配数组，避免 List 扩容开销
-            var rects = new CanvasGeometry[wordCount];
-            int activeCount = 0;
+            // 只收集有效词（FullWidth > 0 且进度 > 0）
+            // 全为 0 时传空数组给 CreateGroup 会崩，用 List 动态收集
+            var rects = new List<CanvasGeometry>(count);
 
-            for (int i = 0; i < wordCount; i++)
+            try
             {
-                var word = words[i];
-                var wg = _wordGeos[i];
-
-                // 逻辑优化：跳过无效宽度（如 Win2D 测量失败的情况）
-                if (wg.FullWidth <= 0) continue;
-
-                float progress = 0f;
-                if (currentTime >= word.StartTime + word.Duration)
+                for (int i = 0; i < count; i++)
                 {
-                    // 情况 A：词已唱完
-                    progress = 1f;
-                }
-                else if (currentTime > word.StartTime)
-                {
-                    // 情况 B：正在唱这个词
-                    // 避免 Duration 为 0 导致的除以零异常
-                    if (word.Duration > TimeSpan.Zero)
-                    {
-                        // 使用 Ticks 计算比 TotalSeconds/Milliseconds 更快，因为它是 long 型原子单位
-                        progress = (float)((double)(currentTime.Ticks - word.StartTime.Ticks) / word.Duration.Ticks);
-                        if (progress > 1f) progress = 1f;
-                    }
-                }
-                // 情况 C：还没唱到（progress 为 0），不进入 rects 数组以减少 Group 压力
+                    var word = words[i];
+                    var wg = _wordGeos[i];
 
-                if (progress > 0)
-                {
-                    float drawWidth = (progress >= 1f) ? wg.FullWidth : (wg.FullWidth * progress);
+                    // 跳过占位词（Win2D 测量失败的词）
+                    if (wg.FullWidth <= 0 || wg.Height <= 0) continue;
 
-                    // 仅当宽度足够可见时才创建几何体
-                    if (drawWidth > 0.1f)
-                    {
-                        rects[activeCount++] = CanvasGeometry.CreateRectangle(
-                            device, wg.OffsetX, wg.OffsetY, drawWidth, wg.Height);
-                    }
+                    var elapsed = currentTime - word.StartTime;
+
+                    float newWidth;
+                    if (elapsed <= TimeSpan.Zero)
+                        newWidth = 0f;
+                    else if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
+                        newWidth = wg.FullWidth;
+                    else
+                        newWidth = wg.FullWidth *
+                                   (float)(elapsed.TotalMilliseconds / word.Duration.TotalMilliseconds);
+
+                    // 跳过宽度为 0 的词，不生成退化矩形
+                    if (newWidth < 0.5f) continue;
+
+                    // 用 Math.Min 防止浮点误差超出 FullWidth
+                    newWidth = Math.Min(newWidth, wg.FullWidth);
+
+                    rects.Add(CanvasGeometry.CreateRectangle(
+                        device,
+                        wg.OffsetX, wg.OffsetY,
+                        newWidth, wg.Height));
                 }
+
+                if (rects.Count == 0)
+                {
+                    // 没有任何可见词：清空 clip（全遮住）
+                    _pathGeo.Path = new CompositionPath(
+                        CanvasGeometry.CreateRectangle(device, 0, 0, 0.001f, 0.001f));
+                    return;
+                }
+
+                // 单个词不需要 CreateGroup，直接用
+                if (rects.Count == 1)
+                {
+                    _pathGeo.Path = new CompositionPath(rects[0]);
+                    return;
+                }
+
+                using var group = CanvasGeometry.CreateGroup(device, [.. rects]);
+                _pathGeo.Path = new CompositionPath(group);
             }
-
-            if (activeCount > 0)
+            finally
             {
-                // 裁剪数组到实际有效长度
-                ReadOnlySpan<CanvasGeometry> activeGeos = rects.AsSpan(0, activeCount);
-
-                try
-                {
-                    // 注意：CreateGroup 接受 IEnumerable，传入 Array 会稍微高效点
-                    using var group = CanvasGeometry.CreateGroup(device, rects[..activeCount]);
-                    _pathGeo.Path = new CompositionPath(group);
-                }
-                catch (ArgumentException)
-                {
-                    // 捕捉可能的非法参数（如坐标或尺寸异常）
-                    InvalidateWordClip();
-                }
-                finally
-                {
-                    // 必须在 Group 创建后立即释放，防止 Native 资源堆积
-                    for (int i = 0; i < activeCount; i++)
-                    {
-                        rects[i]?.Dispose();
-                    }
-                }
+                // 无论是否异常都释放临时几何体
+                foreach (var g in rects) g.Dispose();
             }
         }
 
         // ── 清理 ────────────────────────────────────────────────────
         public void CancelCurrentAnimation()
         {
+            if (LyricsTextHighlight is null) return;
+            LyricsTextHighlight.Opacity = 0.0; // 先归零再移除 Clip，避免移除瞬间全亮
             var visual = ElementCompositionPreview.GetElementVisual(LyricsTextHighlight);
             visual.Clip = null;
             _wordGeos.Clear();
@@ -293,6 +322,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _geoClip = null;
             _clipReady = false;
         }
+
 
         // ── 工具方法 ─────────────────────────────────────────────────
         private static string BuildFullText(IList<LyricWord> words)
