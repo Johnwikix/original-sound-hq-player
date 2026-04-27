@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -27,12 +28,5 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public TimeSpan CurrentPlayingTime { get => field; set => SetProperty(ref field, value); } = TimeSpan.Zero;
         public string LyricText => string.Join(string.Empty, Words.Select(w => w.Word));
-    }
-
-    public class LyricWord
-    {
-        public string Word { get; set; } = string.Empty;
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan Duration { get; set; }
     }
 }

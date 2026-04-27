@@ -5,7 +5,8 @@
     xmlns:albumImg="using:AnimatedWin2dControls.Controls.AlbumImgControl"
     xmlns:animatedTextBlock="using:AnimatedWin2dControls.Controls.AnimatedTextBlock"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    xmlns:local="using:AnimatedWin2dControls.Controls">
+    xmlns:local="using:AnimatedWin2dControls.Controls"
+    xmlns:lyrics="using:AnimatedWin2dControls.Controls.AnimatedLyricsLineControl">
 
     <Style BasedOn="{StaticResource DefaultAnimatedTextBlockStyle}" TargetType="animatedTextBlock:AnimatedTextBlock" />
     <Style BasedOn="{StaticResource DefaultAlbumArtControlStyle}" TargetType="albumImg:AlbumArtControl" />
@@ -66,6 +67,20 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:ShaderBackgroundControl">
                     <canvas:CanvasAnimatedControl x:Name="PART_Canvas" ClearColor="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="lyrics:AnimatedLyricsLineControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="lyrics:AnimatedLyricsLineControl">
+                    <canvas:CanvasControl
+                        xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+                        x:Name="PART_Canvas"
+                        HorizontalAlignment="Stretch"
+                        ClearColor="Transparent" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

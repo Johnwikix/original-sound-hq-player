@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Composition;

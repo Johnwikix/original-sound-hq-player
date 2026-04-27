@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Dispatching;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

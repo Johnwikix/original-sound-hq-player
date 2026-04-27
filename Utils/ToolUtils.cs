@@ -1329,9 +1329,9 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static TextAlignment ConvertStringToTextAlignment(string alignment)
+        public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)
         {
-            return Enum.TryParse(alignment, true, out TextAlignment result) ? result : TextAlignment.Left;
+            return Enum.TryParse(alignment, true, out CanvasHorizontalAlignment result) ? result : CanvasHorizontalAlignment.Left;
         }
         public static string ConvertTextAlignmentToString(TextAlignment alignment)
         {
