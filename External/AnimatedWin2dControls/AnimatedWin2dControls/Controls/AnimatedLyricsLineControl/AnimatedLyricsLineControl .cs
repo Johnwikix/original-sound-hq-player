@@ -39,9 +39,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _isCurrentLine = false;
 
         // ── 颜色 ─────────────────────────────────────────────────────
-        private static readonly Color DimColor = Color.FromArgb(76, 255, 255, 255);
+        private static readonly Color DimColor = Color.FromArgb(128, 255, 255, 255);
         private static readonly Color BrightColor = Color.FromArgb(255, 255, 255, 255);
-        private static readonly Color TranslateColor = Color.FromArgb(128, 255, 255, 255);
+        private static readonly Color TranslateColor = Color.FromArgb(155, 255, 255, 255);
         private const float FeatherWidth = 22f;
         private const float PaddingV = 12f; // 上下各 12px
         private CanvasHorizontalAlignment _cachedAlignment = CanvasHorizontalAlignment.Left;

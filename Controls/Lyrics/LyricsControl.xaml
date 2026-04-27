@@ -98,7 +98,7 @@
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
                                     LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                     LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                    TranslateFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
+                                    TranslateFontSize="28"
                                     TranslateText="{x:Bind TransLateText, Mode=OneWay}">
                                     <interactivity:Interaction.Behaviors>
                                         <behaviors:AnimatedLyricsAutoScrollBehavior />
