@@ -237,7 +237,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float fontSize = (float)LyricsFontSize;
             var alignment = LyricsTextAlignment;
 
-
             if (fullText == _cachedText &&
                 availableWidth == _cachedWidth &&
                 fontSize == _cachedFontSize &&
@@ -246,17 +245,29 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             _wordLayouts.Clear();
 
+            // 测量始终用 Left，拿到相对于左边的原始坐标
             using var fmt = new CanvasTextFormat
             {
                 FontFamily = FontFamilyName,
                 FontSize = fontSize,
                 FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                 WordWrapping = CanvasWordWrapping.WholeWord,
-                HorizontalAlignment = LyricsTextAlignment,
+                HorizontalAlignment = CanvasHorizontalAlignment.Left, // 始终 Left
             };
 
             using var layout = new CanvasTextLayout(
                 creator, fullText, fmt, availableWidth, 9999f);
+
+            // 计算整行文字的实际宽度，用于后续对齐偏移
+            float lineWidth = (float)layout.LayoutBounds.Width;
+
+            // 根据对齐计算 X 偏移量
+            float alignOffsetX = alignment switch
+            {
+                CanvasHorizontalAlignment.Center => (availableWidth - lineWidth) / 2f,
+                CanvasHorizontalAlignment.Right => availableWidth - lineWidth,
+                _ => 0f, // Left / Justified
+            };
 
             int charOffset = 0;
             for (int i = 0; i < words.Count; i++)
@@ -273,7 +284,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     float h = (float)first.Height;
 
                     _wordLayouts.Add(fw > 0 && h > 0
-                        ? new WordLayout(w, (float)first.Left, (float)first.Top, fw, h)
+                        ? new WordLayout(
+                            w,
+                            (float)first.Left + alignOffsetX, // 加上对齐偏移
+                            (float)first.Top,
+                            fw,
+                            h)
                         : new WordLayout(w, 0, 0, 0, 0));
                 }
                 else
@@ -284,7 +300,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 charOffset += w.Length;
             }
 
-            // 计算总高度
+            // 计算总高度（不变）
             float lyricsBottom = 0f;
             foreach (var wl in _wordLayouts)
                 lyricsBottom = Math.Max(lyricsBottom, wl.Y + wl.Height);
@@ -298,7 +314,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     FontSize = (float)TranslateFontSize,
                     FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                     WordWrapping = CanvasWordWrapping.WholeWord,
-                    HorizontalAlignment = LyricsTextAlignment,
+                    HorizontalAlignment = CanvasHorizontalAlignment.Left,
                 };
                 using var transLayout = new CanvasTextLayout(
                     creator, TranslateText, transFmt, availableWidth, 9999f);
@@ -306,10 +322,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             _canvasHeight = PaddingV + lyricsBottom + translateHeight + PaddingV;
-
-            // 同步 CanvasControl 和自身高度，让 ListView 正确测量行高
-            if (_canvas is not null)
-                _canvas.Height = _canvasHeight;
+            if (_canvas is not null) _canvas.Height = _canvasHeight;
             Height = _canvasHeight;
 
             _cachedText = fullText;
@@ -340,7 +353,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 FontSize = (float)LyricsFontSize,
                 FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                 WordWrapping = CanvasWordWrapping.WholeWord,
-                HorizontalAlignment = LyricsTextAlignment,
+                HorizontalAlignment = CanvasHorizontalAlignment.Left, // 始终 Left，位置由 wl.X 控制
             };
 
             int count = Math.Min(words.Count, _wordLayouts.Count);
@@ -423,6 +436,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     FontSize = (float)TranslateFontSize,
                     FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                     WordWrapping = CanvasWordWrapping.WholeWord,
+                    // 翻译行用原始对齐，因为它是整行绘制，Rect 约束宽度和测量一致
                     HorizontalAlignment = LyricsTextAlignment,
                 };
 
