@@ -206,42 +206,51 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (!EnsureWordClipReady()) return;
 
             var words = (DataContext as LyricLine)?.Words;
-            if (words is null || _pathGeo is null) return;
+            if (words is null || _pathGeo is null || words.Count == 0) return;
 
-            var device = CanvasDevice.GetSharedDevice();
-
-            // 收集各词当前宽度对应的矩形
-            var rects = new CanvasGeometry[_wordGeos.Count];
-            int count = Math.Min(words.Count, _wordGeos.Count);
-
-            for (int i = 0; i < count; i++)
+            try
             {
-                var word = words[i];
-                var wg = _wordGeos[i];
-                var elapsed = currentTime - word.StartTime;
+                var device = CanvasDevice.GetSharedDevice();
+                var geometries = new List<CanvasGeometry>(); // 使用 List 动态添加更安全
 
-                float newWidth;
-                if (elapsed <= TimeSpan.Zero)
-                    newWidth = 0f;
-                else if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
-                    newWidth = wg.FullWidth;
-                else
-                    newWidth = wg.FullWidth *
-                               (float)(elapsed.TotalMilliseconds / word.Duration.TotalMilliseconds);
+                for (int i = 0; i < Math.Min(words.Count, _wordGeos.Count); i++)
+                {
+                    var word = words[i];
+                    var wg = _wordGeos[i];
+                    var elapsed = currentTime - word.StartTime;
 
-                // 宽度为 0 时用极小值避免退化矩形
-                rects[i] = CanvasGeometry.CreateRectangle(
-                    device,
-                    wg.OffsetX, wg.OffsetY,
-                    Math.Max(newWidth, 0.001f), wg.Height);
+                    float newWidth = 0f;
+                    if (elapsed > TimeSpan.Zero)
+                    {
+                        if (word.Duration <= TimeSpan.Zero || elapsed >= word.Duration)
+                            newWidth = wg.FullWidth;
+                        else
+                            newWidth = wg.FullWidth * (float)(elapsed.TotalSeconds / word.Duration.TotalSeconds);
+                    }
+
+                    // 只有宽度大于 0 且有效时才添加，减少底层负担
+                    if (newWidth > 0)
+                    {
+                        geometries.Add(CanvasGeometry.CreateRectangle(
+                            device, wg.OffsetX, wg.OffsetY, newWidth, wg.Height));
+                    }
+                }
+
+                if (geometries.Count > 0)
+                {
+                    using var group = CanvasGeometry.CreateGroup(device, geometries.ToArray());
+                    _pathGeo.Path = new CompositionPath(group);
+
+                    // 批量释放，确保在 group 创建完成后
+                    foreach (var g in geometries) g.Dispose();
+                }
             }
-
-            // 合并成一个路径，一次性赋给 PathGeometry
-            using var group = CanvasGeometry.CreateGroup(device, rects);
-            _pathGeo.Path = new CompositionPath(group);
-
-            // 释放临时 CanvasGeometry（不进 LOH）
-            foreach (var g in rects) g.Dispose();
+            catch (Exception ex)
+            {
+                // 捕获可能的设备丢失或非法参数，下一帧自动重试
+                System.Diagnostics.Debug.WriteLine($"Lyrics Render Error: {ex.Message}");
+                _clipReady = false;
+            }
         }
 
         // ── 清理 ────────────────────────────────────────────────────
