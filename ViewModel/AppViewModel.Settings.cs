@@ -323,7 +323,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = "Default";
 
-        public bool IsDarkMode { get => field; set => SetProperty(ref field, value);} = false;
+        public bool IsDarkMode 
+        { 
+            get => field; 
+            set {
+                if (SetProperty(ref field, value)) {
+                    AppSettings.IsDarkMode = value;
+                }
+            } 
+        } = false;
 
         public EffectComboBoxItem Win2dTextEffectType
         {

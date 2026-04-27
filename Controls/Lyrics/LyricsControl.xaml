@@ -86,15 +86,15 @@
                         <DataTemplate x:DataType="local:LyricLine">
                             <Grid
                                 x:Name="LyricsLineGrid"
-                                Height="100"
                                 CornerRadius="5"
                                 PointerEntered="LyricsLineGrid_PointerEntered"
                                 PointerExited="LyricsLineGrid_PointerExited">
-
                                 <alc:AnimatedLyricsLineControl
+                                    Margin="10"
                                     CurrentPlayingTime="{x:Bind CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
+                                    IsDark="{x:Bind model:AppSettings.IsDarkMode, Mode=OneWay}"
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
                                     LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                     LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"

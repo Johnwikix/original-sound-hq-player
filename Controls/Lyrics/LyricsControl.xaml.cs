@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 var diff = (externalTime - ctrl._internalPosition).Duration(); // 取绝对值
 
                 // 误差超过 50ms 才强制校准，避免外部轮询抖动干扰内部节拍
-                if (diff > TimeSpan.FromMilliseconds(50))
+                if (diff > TimeSpan.FromMilliseconds(100))
                     ctrl._internalPosition = externalTime;
             }
         }
@@ -182,17 +182,22 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is Grid grid)
             {
-                var blurControl = grid?.Children.AsValueEnumerable()
-                          .OfType<BlurEffectControl>()
-                          .FirstOrDefault();
-                blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                if (AppSettings.LyricsBlurAmount < 1)
+                //var blurControl = grid?.Children.AsValueEnumerable()
+                //          .OfType<BlurEffectControl>()
+                //          .FirstOrDefault();
+                //blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+                //if (AppSettings.LyricsBlurAmount < 1)
+                //{
+                //    if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
+                //    {
+                //        var secondaryBrush = resourceValue as SolidColorBrush;
+                //        grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
+                //    }
+                //}
+                if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
                 {
-                    if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
-                    {
-                        var secondaryBrush = resourceValue as SolidColorBrush;
-                        grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
-                    }
+                    var secondaryBrush = resourceValue as SolidColorBrush;
+                    grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
                 }
             }
         }
@@ -201,14 +206,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is Grid grid)
             {
-                var blurControl = grid?.Children.AsValueEnumerable()
-                        .OfType<BlurEffectControl>()
-                        .FirstOrDefault();
-                blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                if (AppSettings.LyricsBlurAmount < 1)
-                {
-                    grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                }
+                //var blurControl = grid?.Children.AsValueEnumerable()
+                //        .OfType<BlurEffectControl>()
+                //        .FirstOrDefault();
+                //blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
+                //if (AppSettings.LyricsBlurAmount < 1)
+                //{
+                //    grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                //}
+                grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             }
         }
     }
