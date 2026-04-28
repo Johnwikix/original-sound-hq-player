@@ -325,12 +325,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDarkMode 
         { 
-            get => field; 
-            set {
-                if (SetProperty(ref field, value)) {
-                    AppSettings.IsDarkMode = value;
-                }
-            } 
+            get => field;
+            set => SetProperty(ref field, value);
         } = false;
 
         public EffectComboBoxItem Win2dTextEffectType
@@ -520,7 +516,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.GlobalFontSize = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();

@@ -91,12 +91,13 @@
                                 PointerExited="LyricsLineGrid_PointerExited">
                                 <alc:AnimatedLyricsLineControl
                                     Margin="0"
-                                    CurrentPlayingTime="{x:Bind CurrentPlayingTime, Mode=OneWay}"
+                                    CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                     IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"
+                                    IsPlaying="{x:Bind AppViewModel.IsPlaying, Mode=OneWay}"
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
-                                    LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
+                                    LyricsFontSize="{x:Bind AppViewModel.GlobalFontSize, Mode=OneWay}"
                                     LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
                                     TranslateFontSize="28"
                                     TranslateText="{x:Bind TransLateText, Mode=OneWay}">

@@ -135,11 +135,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _internalPosition += elapsed;
             UpdateLyricsInternal(_internalPosition);
-            var lyrics = UILyrics;
-            if (lyrics != null && _lastLyricIndex >= 0 && _lastLyricIndex < lyrics.Count)
-            {
-                lyrics[_lastLyricIndex].CurrentPlayingTime = _internalPosition;
-            }
+            //var lyrics = UILyrics;
+            //if (lyrics != null && _lastLyricIndex >= 0 && _lastLyricIndex < lyrics.Count)
+            //{
+            //    lyrics[_lastLyricIndex].CurrentPlayingTime = _internalPosition;
+            //}
         }
 
         // ── 歌词匹配逻辑（从外部移入控件）────────────────────────────────
@@ -175,7 +175,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             this.InitializeComponent();
             _internalTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(16.67) // ~60fps
+                Interval = TimeSpan.FromMilliseconds(50)
             };
             _internalTimer.Tick += InternalTimer_Tick;
 

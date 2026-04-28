@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.Model
         public static string AppTheme { get; set; } = "Default";
         public static ElementTheme ElementTheme { get; set; } = ElementTheme.Default;
         public static bool IsRunningBackend { get; set; } = true;
-        public static bool IsDarkMode { get; set; } = false;
+        //public static bool IsDarkMode { get; set; } = false;
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> Equalizer { get; set; } = new()
@@ -67,7 +67,7 @@ namespace WinUIMusicPlayer.Model
         public static int AppHeight { get; set; } = 810;
         public static FontFamily GlobalFont { get; set; } = new FontFamily("Segoe UI");
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
-        public static double GlobalFontSize { get; set; } = 32;
+        //public static double GlobalFontSize { get; set; } = 32;
         public static bool IsUpdateBackDrop { get; set; } = false;
         public static CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
