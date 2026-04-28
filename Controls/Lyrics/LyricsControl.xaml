@@ -46,7 +46,7 @@
                 <StackPanel Height="1080" />
                 <ListView
                     x:Name="LyricsListView"
-                    Margin="0"
+                    Margin="{x:Bind LyricsMargin, Mode=OneWay}"
                     VerticalAlignment="Stretch"
                     behaviors:AnimatedLyricsAutoScrollBehavior.TargetScrollView="{x:Bind LyricViewer}"
                     IsItemClickEnabled="True"
@@ -94,7 +94,7 @@
                                     CurrentPlayingTime="{x:Bind CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
-                                    IsDark="{x:Bind model:AppSettings.IsDarkMode, Mode=OneWay}"
+                                    IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
                                     LyricsFontSize="{x:Bind model:AppSettings.GlobalFontSize, Mode=OneWay}"
                                     LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"

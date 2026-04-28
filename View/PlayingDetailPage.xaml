@@ -539,10 +539,10 @@
                 Margin="0,40,0,40">
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
-                    Margin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
                     LyricInteracted="LyricsControl_LyricInteracted"
+                    LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}" />
             </Grid>
         </Grid>

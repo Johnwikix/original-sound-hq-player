@@ -407,7 +407,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             // 非当前行加最大 2 的模糊；当前行不模糊（或可设为极小值 0）
-            float blurAmount = _isCurrentLine ? 0f : 1.5f;
+            float blurAmount = _isCurrentLine ? 0f : 1.25f;
 
             if (blurAmount > 0f)
             {

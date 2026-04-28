@@ -42,6 +42,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(UILyricsProperty, value);
         }
 
+        public static readonly DependencyProperty LyricsMarginProperty = DependencyProperty.Register(
+            nameof(LyricsMargin),
+            typeof(Thickness),
+            typeof(LyricsControl),
+            new PropertyMetadata(new Thickness(0)));
+
+        public Thickness LyricsMargin
+        {
+            get => (Thickness)GetValue(LyricsMarginProperty);
+            set => SetValue(LyricsMarginProperty, value);
+        }
+
 
         // ── 新增：当前播放时间（外部 200ms 轮询写入）──────────────────────
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
