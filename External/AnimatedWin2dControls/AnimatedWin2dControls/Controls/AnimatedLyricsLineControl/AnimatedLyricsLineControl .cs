@@ -35,20 +35,42 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private float _cachedFontSize = 0f;
         private float _measuredHeight = 0f;
 
-        // ── 速度曲线预计算 ────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════
+        // 速度曲线预计算（三次 Hermite 样条）
         //
-        // 每个视觉行对应 _rowCurves 里的一个 List<WordCurvePoint>。
-        // 每个控制点记录：
-        //   TimeMs  = 该字扫光起点相对于本行首字 StartTime 的毫秒偏移
-        //   PixelX  = 扫光到达该控制点时已走过的累计像素（相对于行 minX 的偏移）
-        // 末尾追加一个哨兵点 { 最后一字结束时间, 行总宽 }。
+        // 设计原则：精确优先，平滑在精确约束下尽力而为。
         //
-        // CalcRevealXFromCurve 在此表上做分段线性插值 + 段内 smoothstep。
-        private sealed record WordCurvePoint(double TimeMs, float PixelX);
-        private readonly List<List<WordCurvePoint>> _rowCurves = [];
+        // 精确约束（不可违反）：
+        //   控制点时间 = 原始 StartTime（一律不调整）
+        //   控制点像素 = 真实布局 X（一律不移动）
+        //   => 扫光在每个字的 StartTime 时刻，严格位于该字的像素起点
+        //
+        // 平滑策略（Hermite 切线）：
+        //   每个字的自然速度 = FullWidth / Duration (px/ms)
+        //   对自然速度做加权移动平均 → 平滑速度，用作两端切线
+        //   平滑速度只影响字与字之间的过渡曲线形状，不影响控制点本身
+        //   => 相邻字速度差异大时，扫光在字边界处平滑加/减速，无突变
+        //
+        // 防过冲：
+        //   切线速度上限 = 自然速度 × MaxTangentRatio
+        //   插值结果 clamp 到 [p0.PixelX, p1.PixelX]
+        // ══════════════════════════════════════════════════════════════
+
+        private sealed record CurvePoint(
+            double TimeMs,  // 相对于行首 StartTime 的 ms 偏移（原始值）
+            float PixelX,   // 该字在行内真实像素起点（= _wordLayouts[i].X - minX）
+            float VelIn,    // 进入切线速度 px/ms
+            float VelOut    // 离开切线速度 px/ms
+        );
+
+        private sealed record RowCurve(TimeSpan Origin, List<CurvePoint> Points);
+        private readonly List<RowCurve> _rowCurves = [];
 
         // 速度平滑窗口半径：前后各取 N 个字参与加权平均
         private const int VelocitySmoothRadius = 2;
+
+        // Hermite 切线速度上限倍率（相对于该字自然速度），防止过冲
+        private const double MaxTangentRatio = 1.6;
 
         // ── 独立时钟 ─────────────────────────────────────────────────
         private DispatcherTimer? _timer;
@@ -57,7 +79,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private TimeSpan _lastExternalTime = TimeSpan.Zero;
         private const double SyncThresholdMs = 150.0;
 
-        // ── 平滑追赶（消除行切换/seek 时的跳变） ──────────────────────
+        // ── 平滑追赶（消除 seek / 行切换跳变） ────────────────────────
         private readonly Dictionary<int, float> _smoothedRevealX = [];
         private const float SmoothLerpSpeed = 18f;
         private const float SmoothMaxPixelsPerSec = 2000f;
@@ -75,14 +97,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float PaddingV = 12f;
         private const float RenderPadding = 10f;
 
-        /// <summary>smoothstep：头尾缓入缓出，用于段内进度缓动。</summary>
-        private static float EaseInOut(float t) => t * t * (3f - 2f * t);
-
         private CanvasHorizontalAlignment _cachedAlignment = CanvasHorizontalAlignment.Left;
 
+        // ── 构造 ─────────────────────────────────────────────────────
         public AnimatedLyricsLineControl()
         {
             DefaultStyleKey = typeof(AnimatedLyricsLineControl);
+            // 读依赖属性当前值（默认 false = 浅色），不硬编码
             UpdateColors(IsDark);
         }
 
@@ -108,6 +129,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.ClearColor = Colors.Transparent;
             }
 
+            // 模板应用时强制同步颜色：
+            // x:Bind 初始值 == 依赖属性默认值时会跳过 SetValue，这里兜底
+            UpdateColors(IsDark);
             UpdateTimerState();
         }
 
@@ -118,26 +142,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ? 400f
                 : (float)availableSize.Width;
 
-            float fallbackHeight = CalcFallbackHeight();
+            float fallback = CalcFallbackHeight();
 
             if (_measuredHeight > 0f && Math.Abs(_cachedWidth - w) < 1f)
-                return new Size(availableSize.Width, Math.Max(_measuredHeight, fallbackHeight));
+                return new Size(availableSize.Width, Math.Max(_measuredHeight, fallback));
 
             try
             {
                 var device = CanvasDevice.GetSharedDevice();
                 EnsureLayout(device, w);
                 if (_measuredHeight > 0f)
-                    return new Size(availableSize.Width, Math.Max(_measuredHeight, fallbackHeight));
+                    return new Size(availableSize.Width, Math.Max(_measuredHeight, fallback));
             }
             catch { }
 
-            return new Size(availableSize.Width, fallbackHeight);
+            return new Size(availableSize.Width, fallback);
         }
 
-        /// <summary>
-        /// 不依赖 Win2D 的保底高度，防止 EnsureLayout 失败时控件塌缩为 0。
-        /// </summary>
+        /// <summary>不依赖 Win2D 的保底高度，防止控件塌缩为 0。</summary>
         private float CalcFallbackHeight()
         {
             float lyricLineH = (float)LyricsFontSize * 1.4f;
@@ -156,7 +178,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             => InvalidateLayoutCache();
 
         // ══════════════════════════════════════════════════════════════
-        // 独立时钟管理
+        // 独立时钟
         // ══════════════════════════════════════════════════════════════
 
         private void UpdateTimerState()
@@ -198,7 +220,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _canvas?.Invalidate();
         }
 
-        // ── 依赖属性 ─────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════
+        // 依赖属性
+        // ══════════════════════════════════════════════════════════════
 
         public static readonly DependencyProperty LyricWordsProperty =
             DependencyProperty.Register(nameof(LyricWords),
@@ -305,6 +329,34 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
+        // ── OffsetMs ─────────────────────────────────────────────────
+        public static readonly DependencyProperty OffsetMsProperty =
+            DependencyProperty.Register(nameof(OffsetMs),
+                typeof(double), typeof(AnimatedLyricsLineControl),
+                new PropertyMetadata(-50.0, OnOffsetMsChanged));
+
+        /// <summary>
+        /// 全局动画偏移（毫秒）。
+        /// 正值：动画整体延后（视觉上歌词"慢半拍"）。
+        /// 负值：动画整体提前（视觉上歌词"快半拍"）。
+        /// 仅影响渲染时的时间查询，不修改任何时间轴数据。
+        /// </summary>
+        public double OffsetMs
+        {
+            get => (double)GetValue(OffsetMsProperty);
+            set => SetValue(OffsetMsProperty, value);
+        }
+
+        private static void OnOffsetMsChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            // 偏移改变只需重绘，不需要重建布局或曲线
+            if (d is not AnimatedLyricsLineControl c) return;
+            c._canvas?.Invalidate();
+        }
+
+        // ── 其余布局属性 ──────────────────────────────────────────────
+
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize),
                 typeof(double), typeof(AnimatedLyricsLineControl),
@@ -384,7 +436,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        // ── 属性变化回调 ─────────────────────────────────────────────
         private static void OnLayoutPropertyChanged(DependencyObject d,
             DependencyPropertyChangedEventArgs e)
         {
@@ -393,7 +444,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             c.InvalidateMeasure();
         }
 
-        // ── 布局 + 速度曲线缓存 ───────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════
+        // 布局 + 曲线缓存
+        // ══════════════════════════════════════════════════════════════
+
         private void InvalidateLayoutCache()
         {
             _cachedText = null;
@@ -459,7 +513,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     Rect last = regions[^1].LayoutBounds;
                     float fw = (float)(last.Right - first.Left);
                     float h = (float)first.Height;
-
                     _wordLayouts.Add(fw > 0 && h > 0
                         ? new WordLayout(wt,
                             (float)first.Left + alignOffsetX + RenderPadding,
@@ -475,7 +528,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             float lyricsHeight = (float)layout.LayoutBounds.Height;
-
             float translateHeight = 0f;
             if (!string.IsNullOrEmpty(TranslateText))
             {
@@ -493,10 +545,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             float totalHeight = RenderPadding + PaddingV + lyricsHeight + translateHeight + PaddingV + RenderPadding;
-            float fallback = CalcFallbackHeight();
-            _measuredHeight = Math.Max(totalHeight, fallback);
+            _measuredHeight = Math.Max(totalHeight, CalcFallbackHeight());
 
-            // 只在 draw 回调路径（creator == _canvas）才写 Height，避免 layout pass 重入
+            // 只在 draw 回调路径（creator == _canvas）写 Height，避免 layout pass 重入
             if (_canvas is not null && creator == _canvas)
             {
                 _canvas.Height = _measuredHeight;
@@ -508,7 +559,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedFontSize = fontSize;
             _cachedAlignment = alignment;
 
-            // 布局完成，立即预计算速度曲线
             BuildRowCurves(words);
         }
 
@@ -516,30 +566,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 速度曲线预计算
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// 对每个视觉行预计算「时间→累计像素」映射曲线。
-        ///
-        /// 问题根源：
-        ///   原始速度 = FullWidth / Duration，单位 px/ms。
-        ///   中文每字宽度相近，但英语单词宽度差异悬殊（"I" vs "World"），
-        ///   加上歌词标注时 Duration 不一定与字符宽度成正比，
-        ///   导致相邻词像素速度可相差数倍，切换瞬间产生明显速度突变。
-        ///
-        /// 解决思路：
-        ///   1. 计算每个字的原始速度 px/ms。
-        ///   2. 对原始速度做加权移动平均（窗口半径 = VelocitySmoothRadius），
-        ///      权重 = 三角形窗口 × 字像素宽（宽字对视觉速度感知影响更大）。
-        ///   3. 用平滑后的速度 × 原始 Duration 重新推算每个字的像素分配量，
-        ///      再等比归一化确保总宽不变，时间轴（StartTime）完全不动。
-        ///   4. 将结果存为控制点列表，CalcRevealXFromCurve 做分段线性插值 + smoothstep。
-        /// </summary>
         private void BuildRowCurves(IList<LyricWord> words)
         {
             _rowCurves.Clear();
             int count = Math.Min(words.Count, _wordLayouts.Count);
             if (count == 0) return;
 
-            // ── 分组为视觉行（与 DrawContent 保持完全相同的分组逻辑）──
             int rowStart = 0;
             while (rowStart < count)
             {
@@ -547,11 +579,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     rowStart++;
                 if (rowStart >= count) break;
 
-                var first = _wordLayouts[rowStart];
-                float rowY = first.Y;
-                float rowH = first.Height;
-                float minX = first.X;
-                float maxX = first.X + first.FullWidth;
+                var firstWl = _wordLayouts[rowStart];
+                float rowY = firstWl.Y, rowH = firstWl.Height;
+                float minX = firstWl.X, maxX = firstWl.X + firstWl.FullWidth;
                 int rowEnd = rowStart + 1;
 
                 while (rowEnd < count)
@@ -569,109 +599,103 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 int lv = rowEnd - 1;
                 while (lv >= rowStart && _wordLayouts[lv].FullWidth <= 0) lv--;
 
-                if (fv <= lv)
-                    _rowCurves.Add(BuildSingleRowCurve(words, fv, lv, minX, maxX));
-                else
-                    _rowCurves.Add([]);
+                _rowCurves.Add(fv <= lv
+                    ? BuildSingleRowCurve(words, fv, lv, minX, maxX)
+                    : new RowCurve(TimeSpan.Zero, []));
 
                 rowStart = rowEnd;
             }
         }
 
-        private List<WordCurvePoint> BuildSingleRowCurve(
+        private RowCurve BuildSingleRowCurve(
             IList<LyricWord> words,
             int firstValid, int lastValid,
             float minX, float maxX)
         {
-            // ── 收集本行有效字 ────────────────────────────────────────
+            // ── 收集有效字 ────────────────────────────────────────────
             var indices = new List<int>();
-            var rawPxWidths = new List<float>();
-            var rawDurMs = new List<double>();
+            var pxWidths = new List<float>();
+            var durMs = new List<double>();
 
             for (int i = firstValid; i <= lastValid; i++)
             {
                 if (_wordLayouts[i].FullWidth <= 0) continue;
                 indices.Add(i);
-                rawPxWidths.Add(_wordLayouts[i].FullWidth);
-                // Duration=0 的字（标点/数据缺失）至少给 1ms，防止除零
-                rawDurMs.Add(Math.Max(words[i].Duration.TotalMilliseconds, 1.0));
+                pxWidths.Add(_wordLayouts[i].FullWidth);
+                // Duration=0 给最小值 1ms，防止除零
+                durMs.Add(Math.Max(words[i].Duration.TotalMilliseconds, 1.0));
             }
 
             int n = indices.Count;
-            if (n == 0) return [];
+            if (n == 0) return new RowCurve(words[firstValid].StartTime, []);
 
-            // ── 原始速度 px/ms ────────────────────────────────────────
-            var rawVel = new float[n];
+            // ── 自然速度 px/ms ─────────────────────────────────────────
+            var natVel = new double[n];
             for (int k = 0; k < n; k++)
-                rawVel[k] = rawPxWidths[k] / (float)rawDurMs[k];
+                natVel[k] = pxWidths[k] / durMs[k];
 
-            // ── 加权移动平均平滑速度 ──────────────────────────────────
+            // ── 加权移动平均 → 平滑速度（用作 Hermite 切线） ────────────
             //
-            // 权重 = 三角形窗口（中心最高，两侧线性衰减）× 字像素宽。
-            // 乘以像素宽是因为：宽字在视线上停留更久，对速度感知权重更大，
-            // 平滑时理应向宽字的速度靠拢。
-            var smoothVel = new float[n];
+            // 权重 = 三角形窗口（距离越近权重越高）× 字像素宽（宽字视觉影响更大）。
+            // 平滑速度代表「周围字的感知均值速度」，用作切线使交接处连续过渡。
+            var smoothVel = new double[n];
             for (int k = 0; k < n; k++)
             {
-                float sumW = 0f, sumV = 0f;
+                double sumW = 0, sumV = 0;
                 for (int j = k - VelocitySmoothRadius; j <= k + VelocitySmoothRadius; j++)
                 {
                     if (j < 0 || j >= n) continue;
-                    float triW = 1f - (float)Math.Abs(j - k) / (VelocitySmoothRadius + 1);
-                    float impW = rawPxWidths[j]; // 像素宽重要性权重
-                    float w = triW * impW;
+                    double triW = 1.0 - (double)Math.Abs(j - k) / (VelocitySmoothRadius + 1);
+                    double w = triW * pxWidths[j];
                     sumW += w;
-                    sumV += rawVel[j] * w;
+                    sumV += natVel[j] * w;
                 }
-                smoothVel[k] = sumW > 0f ? sumV / sumW : rawVel[k];
+                smoothVel[k] = sumW > 0 ? sumV / sumW : natVel[k];
             }
 
-            // ── 重新分配像素，归一化保持总宽不变 ─────────────────────
+            // ── 限制切线速度，防止 Hermite 过冲 ───────────────────────
             //
-            // allocPx[k] = smoothVel[k] × Duration[k]
-            // 之后等比缩放，使 sum(allocPx) == 行总宽。
-            // 时间轴（StartTime）完全不变，只有像素分配量被调整。
-            float totalRowWidth = maxX - minX;
-            var allocPx = new float[n];
-            float allocSum = 0f;
+            // 切线速度上限 = 自然速度 × MaxTangentRatio。
+            // 若平滑速度超限，退化为自然速度（精确）而非过冲。
+            // 同时保证切线非负（扫光不后退）。
+            var clampedVel = new double[n];
             for (int k = 0; k < n; k++)
-            {
-                allocPx[k] = smoothVel[k] * (float)rawDurMs[k];
-                allocSum += allocPx[k];
-            }
+                clampedVel[k] = Math.Clamp(smoothVel[k], 0.0, natVel[k] * MaxTangentRatio);
 
-            if (allocSum > 0f)
-            {
-                float scale = totalRowWidth / allocSum;
-                for (int k = 0; k < n; k++) allocPx[k] *= scale;
-            }
-            else
-            {
-                float each = totalRowWidth / n;
-                for (int k = 0; k < n; k++) allocPx[k] = each;
-            }
-
-            // ── 构建控制点：(StartTimeMs相对行首, 累计像素偏移) ────────
+            // ── 构建控制点 ────────────────────────────────────────────
+            //
+            // 精确约束严格执行：
+            //   TimeMs = 原始 StartTime 偏移（不调整）
+            //   PixelX = 真实布局 X（不移动）
+            //
+            // 切线：VelIn = VelOut = clampedVel（进出速度相等，保证 C1 连续）
+            //
+            // 末尾哨兵：
+            //   TimeMs = 最后一字 EndTime
+            //   PixelX = 行总宽
+            //   切线   = 最后一字自然速度（不平滑，让最后一字精确收尾）
             var lineOrigin = words[firstValid].StartTime;
-            var curve = new List<WordCurvePoint>(n + 1);
-            float accPx = 0f;
+            var points = new List<CurvePoint>(n + 1);
 
             for (int k = 0; k < n; k++)
             {
                 int wi = indices[k];
                 double tMs = (words[wi].StartTime - lineOrigin).TotalMilliseconds;
-                curve.Add(new WordCurvePoint(tMs, accPx));
-                accPx += allocPx[k];
+                float pixelX = _wordLayouts[wi].X - minX;
+                float vel = (float)clampedVel[k];
+                points.Add(new CurvePoint(tMs, pixelX, vel, vel));
             }
 
-            // 末尾哨兵：最后一字结束 → 行总宽
+            // 末尾哨兵
             {
                 int lastIdx = indices[n - 1];
-                double endMs = (words[lastIdx].StartTime + words[lastIdx].Duration - lineOrigin).TotalMilliseconds;
-                curve.Add(new WordCurvePoint(endMs, totalRowWidth));
+                double endMs = (words[lastIdx].StartTime + words[lastIdx].Duration - lineOrigin)
+                               .TotalMilliseconds;
+                float endVel = (float)natVel[n - 1];
+                points.Add(new CurvePoint(endMs, maxX - minX, endVel, endVel));
             }
 
-            return curve;
+            return new RowCurve(lineOrigin, points);
         }
 
         // ── 核心绘制 ─────────────────────────────────────────────────
@@ -697,9 +721,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             using var cl = new CanvasCommandList(ds);
             using (var clDs = cl.CreateDrawingSession())
-            {
                 DrawContent(clDs, words, w);
-            }
 
             float blurAmount = _isCurrentLine ? 0f : 1.25f;
             if (blurAmount > 0f)
@@ -739,7 +761,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int count = Math.Min(words.Count, _wordLayouts.Count);
             if (count == 0) return;
 
-            // ── 1. 暗色底层 ───────────────────────────────────────────
+            // ── 暗色底层 ──────────────────────────────────────────────
             for (int i = 0; i < count; i++)
             {
                 var wl = _wordLayouts[i];
@@ -751,38 +773,39 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             if (!_isCurrentLine) goto DrawTranslate;
 
-            // ── 2. 视觉行分组 ─────────────────────────────────────────
+            // ── 视觉行分组 ────────────────────────────────────────────
             var visualRows = new List<(float MinX, float MaxX, float Y, float H,
-                                        int WordStart, int WordEnd)>();
+                                       int WordStart, int WordEnd)>();
             {
-                int rowStart = 0;
-                while (rowStart < count)
+                int rs = 0;
+                while (rs < count)
                 {
-                    while (rowStart < count && _wordLayouts[rowStart].FullWidth <= 0)
-                        rowStart++;
-                    if (rowStart >= count) break;
+                    while (rs < count && _wordLayouts[rs].FullWidth <= 0) rs++;
+                    if (rs >= count) break;
 
-                    var first = _wordLayouts[rowStart];
-                    float rowY = first.Y;
-                    float rowH = first.Height;
-                    float minX = first.X;
-                    float maxX = first.X + first.FullWidth;
-                    int rowEnd = rowStart + 1;
+                    var first = _wordLayouts[rs];
+                    float ry = first.Y, rh = first.Height;
+                    float mnX = first.X, mxX = first.X + first.FullWidth;
+                    int re = rs + 1;
 
-                    while (rowEnd < count)
+                    while (re < count)
                     {
-                        var wl = _wordLayouts[rowEnd];
-                        if (wl.FullWidth <= 0) { rowEnd++; continue; }
-                        if (Math.Abs(wl.Y - rowY) > rowH * 0.5f) break;
-                        if (wl.X < minX) minX = wl.X;
-                        if (wl.X + wl.FullWidth > maxX) maxX = wl.X + wl.FullWidth;
-                        rowEnd++;
+                        var wl = _wordLayouts[re];
+                        if (wl.FullWidth <= 0) { re++; continue; }
+                        if (Math.Abs(wl.Y - ry) > rh * 0.5f) break;
+                        if (wl.X < mnX) mnX = wl.X;
+                        if (wl.X + wl.FullWidth > mxX) mxX = wl.X + wl.FullWidth;
+                        re++;
                     }
 
-                    visualRows.Add((minX, maxX, rowY, rowH, rowStart, rowEnd - 1));
-                    rowStart = rowEnd;
+                    visualRows.Add((mnX, mxX, ry, rh, rs, re - 1));
+                    rs = re;
                 }
             }
+
+            // OffsetMs：正值延后 = 查询时间减去偏移；负值提前 = 查询时间加上偏移的绝对值
+            // 统一表达：effectiveTime = _currentTime - OffsetMs（ms）
+            var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
 
             int rowCount = visualRows.Count;
             const float kDeltaSec = 0.016f;
@@ -790,34 +813,31 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             for (int ri = 0; ri < rowCount; ri++)
             {
                 var (minX, maxX, rowY, rowH, wordStart, wordEnd) = visualRows[ri];
-                float rowWidth = maxX - minX;
-                if (rowWidth <= 0) continue;
+                if (maxX - minX <= 0) continue;
 
-                int firstValid = wordStart;
-                while (firstValid <= wordEnd && _wordLayouts[firstValid].FullWidth <= 0)
-                    firstValid++;
-                int lastValid = wordEnd;
-                while (lastValid >= wordStart && _wordLayouts[lastValid].FullWidth <= 0)
-                    lastValid--;
-                if (firstValid > lastValid) continue;
+                int fv = wordStart;
+                while (fv <= wordEnd && _wordLayouts[fv].FullWidth <= 0) fv++;
+                int lv = wordEnd;
+                while (lv >= wordStart && _wordLayouts[lv].FullWidth <= 0) lv--;
+                if (fv > lv) continue;
 
-                // ── 从预计算曲线查询目标 revealX ─────────────────────
-                float targetRevealX = ri < _rowCurves.Count && _rowCurves[ri].Count > 0
-                    ? CalcRevealXFromCurve(_rowCurves[ri], words[firstValid].StartTime, minX, maxX)
-                    : CalcRevealXFallback(words, firstValid, lastValid, minX);
+                // ── 目标 revealX（Hermite 样条插值） ──────────────────
+                float targetRevealX = ri < _rowCurves.Count && _rowCurves[ri].Points.Count > 0
+                    ? CalcRevealXHermite(_rowCurves[ri], effectiveTime, minX, maxX)
+                    : CalcRevealXFallback(words, fv, lv, minX, effectiveTime);
 
-                // ── 指数衰减 lerp 平滑追赶（消除 seek / 行切换跳变）──
+                // ── 指数衰减 lerp（消除 seek / 行切换跳变） ────────────
                 if (!_smoothedRevealX.TryGetValue(ri, out float smoothed))
                     smoothed = targetRevealX;
 
                 float diff = targetRevealX - smoothed;
                 if (Math.Abs(diff) > 0.5f)
                 {
-                    float lerpFactor = 1f - MathF.Exp(-SmoothLerpSpeed * kDeltaSec);
-                    float lerpStep = diff * lerpFactor;
+                    float lf = 1f - MathF.Exp(-SmoothLerpSpeed * kDeltaSec);
+                    float step = diff * lf;
                     float maxStep = SmoothMaxPixelsPerSec * kDeltaSec;
-                    if (Math.Abs(lerpStep) > maxStep) lerpStep = Math.Sign(lerpStep) * maxStep;
-                    smoothed += lerpStep;
+                    if (Math.Abs(step) > maxStep) step = Math.Sign(step) * maxStep;
+                    smoothed += step;
                     if (Math.Abs(targetRevealX - smoothed) < 0.5f) smoothed = targetRevealX;
                 }
                 else
@@ -835,7 +855,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     using (ds.CreateLayer(1f,
                         new Rect(minX, rowY + drawOffsetY + PaddingV, highlightWidth, rowH)))
                     {
-                        for (int i = firstValid; i <= lastValid; i++)
+                        for (int i = fv; i <= lv; i++)
                         {
                             var wl = _wordLayouts[i];
                             if (wl.FullWidth <= 0) continue;
@@ -850,8 +870,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 // ── 羽化边缘 ──────────────────────────────────────────
                 if (revealX > minX && revealX < maxX)
                 {
-                    float featherActual = Math.Min(FeatherWidth, maxX - revealX);
-                    if (featherActual > 0.5f)
+                    float feather = Math.Min(FeatherWidth, maxX - revealX);
+                    if (feather > 0.5f)
                     {
                         var gradStops = new CanvasGradientStop[]
                         {
@@ -863,13 +883,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         using var gradBrush = new CanvasLinearGradientBrush(ds, gradStops)
                         {
                             StartPoint = new Vector2(revealX, 0f),
-                            EndPoint = new Vector2(revealX + featherActual, 0f),
+                            EndPoint = new Vector2(revealX + feather, 0f),
                         };
                         using (ds.CreateLayer(gradBrush,
-                            new Rect(revealX, rowY + drawOffsetY + PaddingV,
-                                     featherActual, rowH)))
+                            new Rect(revealX, rowY + drawOffsetY + PaddingV, feather, rowH)))
                         {
-                            for (int i = firstValid; i <= lastValid; i++)
+                            for (int i = fv; i <= lv; i++)
                             {
                                 var wl = _wordLayouts[i];
                                 if (wl.FullWidth <= 0) continue;
@@ -916,80 +935,111 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ══════════════════════════════════════════════════════════════
-        // 曲线查询
+        // 三次 Hermite 样条插值
         // ══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// 在预计算曲线上做分段线性插值 + 段内 smoothstep，
-        /// 返回当前时刻对应的 revealX 像素坐标。
+        /// 三次 Hermite 插值。
         ///
-        /// 两层缓动叠加：
-        ///   行级：速度平滑后的控制点（消除词宽/时长比例不一致）
-        ///   段内：smoothstep（让每个字起止时的速度感更圆滑）
+        /// 公式：h(t) = (2t³-3t²+1)·p0 + (t³-2t²+t)·m0·dt
+        ///            + (-2t³+3t²)·p1 + (t³-t²)·m1·dt
+        ///
+        /// 其中 t ∈ [0,1] 是段内时间归一化值，m0/m1 是切线速度（px/ms），
+        /// dt 是段长（ms），乘积 m·dt 将速度转换为像素域切线幅度。
+        ///
+        /// t=0 严格输出 p0，t=1 严格输出 p1（精确约束满足）。
         /// </summary>
-        private float CalcRevealXFromCurve(
-            List<WordCurvePoint> curve,
-            TimeSpan rowOrigin,
-            float minX, float maxX)
+        private static float HermiteInterp(
+            float p0, float p1,
+            float m0, float m1,
+            double dt, double elapsed)
         {
-            if (curve.Count == 0) return minX;
+            if (dt <= 0) return p1;
+            float t = Math.Clamp((float)(elapsed / dt), 0f, 1f);
+            float t2 = t * t, t3 = t2 * t;
 
-            double elapsedMs = (_currentTime - rowOrigin).TotalMilliseconds;
+            // 像素域切线幅度 = vel(px/ms) × dt(ms)
+            float tm0 = m0 * (float)dt;
+            float tm1 = m1 * (float)dt;
 
-            if (elapsedMs <= curve[0].TimeMs) return minX;
-            if (elapsedMs >= curve[^1].TimeMs) return maxX;
+            return (2 * t3 - 3 * t2 + 1) * p0
+                 + (t3 - 2 * t2 + t) * tm0
+                 + (-2 * t3 + 3 * t2) * p1
+                 + (t3 - t2) * tm1;
+        }
+
+        /// <summary>
+        /// 在 Hermite 曲线上查询当前有效时刻对应的 revealX。
+        /// 结果 clamp 到 [p0.PixelX, p1.PixelX] 防止极端情况过冲。
+        /// </summary>
+        private static float CalcRevealXHermite(
+            RowCurve curve, TimeSpan effectiveTime, float minX, float maxX)
+        {
+            var pts = curve.Points;
+            if (pts.Count == 0) return minX;
+
+            double elapsedMs = (effectiveTime - curve.Origin).TotalMilliseconds;
+
+            if (elapsedMs <= pts[0].TimeMs) return minX;
+            if (elapsedMs >= pts[^1].TimeMs) return maxX;
 
             // 二分查找所在段
-            int lo = 0, hi = curve.Count - 2;
+            int lo = 0, hi = pts.Count - 2;
             while (lo < hi)
             {
                 int mid = (lo + hi) / 2;
-                if (curve[mid + 1].TimeMs <= elapsedMs) lo = mid + 1;
+                if (pts[mid + 1].TimeMs <= elapsedMs) lo = mid + 1;
                 else hi = mid;
             }
 
-            var p0 = curve[lo];
-            var p1 = curve[lo + 1];
-            double segDur = p1.TimeMs - p0.TimeMs;
+            var p0 = pts[lo];
+            var p1 = pts[lo + 1];
+            double dt = p1.TimeMs - p0.TimeMs;
+            double segElapsed = elapsedMs - p0.TimeMs;
 
-            float t = segDur > 0
-                ? Math.Clamp((float)((elapsedMs - p0.TimeMs) / segDur), 0f, 1f)
-                : 1f;
+            float px = HermiteInterp(p0.PixelX, p1.PixelX,
+                                     p0.VelOut, p1.VelIn,
+                                     dt, segElapsed);
 
-            float px = p0.PixelX + (p1.PixelX - p0.PixelX) * EaseInOut(t);
+            // 严格 clamp 到本段范围，防止极端切线导致过冲
+            px = Math.Clamp(px,
+                Math.Min(p0.PixelX, p1.PixelX),
+                Math.Max(p0.PixelX, p1.PixelX));
+
             return minX + px;
         }
 
-        /// <summary>曲线未就绪时的退路（正常情况下不应触发）。</summary>
+        /// <summary>曲线未就绪时的 fallback（正常情况不触发）。</summary>
         private float CalcRevealXFallback(
-            IList<LyricWord> words, int firstValid, int lastValid, float minX)
+            IList<LyricWord> words, int fv, int lv,
+            float minX, TimeSpan effectiveTime)
         {
-            if (_currentTime <= words[firstValid].StartTime) return minX;
+            if (effectiveTime <= words[fv].StartTime) return minX;
 
             float totalW = 0f;
-            for (int i = firstValid; i <= lastValid; i++)
+            for (int i = fv; i <= lv; i++)
                 if (_wordLayouts[i].FullWidth > 0) totalW += _wordLayouts[i].FullWidth;
 
-            if (_currentTime >= words[lastValid].StartTime + words[lastValid].Duration)
+            if (effectiveTime >= words[lv].StartTime + words[lv].Duration)
                 return minX + totalW;
 
             float accX = minX;
-            for (int i = firstValid; i <= lastValid; i++)
+            for (int i = fv; i <= lv; i++)
             {
                 var wl = _wordLayouts[i];
                 if (wl.FullWidth <= 0) continue;
                 var word = words[i];
                 var wordEnd = word.StartTime + word.Duration;
-                if (_currentTime >= wordEnd)
+                if (effectiveTime >= wordEnd)
                     accX += wl.FullWidth;
-                else if (_currentTime >= word.StartTime)
+                else if (effectiveTime >= word.StartTime)
                 {
                     float t = word.Duration > TimeSpan.Zero
-                        ? Math.Clamp(
-                            (float)((_currentTime - word.StartTime).TotalMilliseconds
-                                    / word.Duration.TotalMilliseconds), 0f, 1f)
+                        ? Math.Clamp((float)((effectiveTime - word.StartTime).TotalMilliseconds
+                                             / word.Duration.TotalMilliseconds), 0f, 1f)
                         : 1f;
-                    accX += wl.FullWidth * EaseInOut(t);
+                    float t2 = t * t;
+                    accX += wl.FullWidth * (t2 * (3f - 2f * t)); // smoothstep
                     break;
                 }
                 else break;
