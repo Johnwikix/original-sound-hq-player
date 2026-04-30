@@ -57,10 +57,22 @@ namespace WinUIMusicPlayer.Utils
         public static Visibility ImageSourceToVisibilityConverter(ImageSource source) {
             return source is null ? Visibility.Visible: Visibility.Collapsed;
         }
-        
-        //public static Visibility BoolToVisibilityConverter(bool isVisible) {
-        //    return isVisible ? Visibility.Visible : Visibility.Collapsed;
-        //}
+      
+        public static double LyricsFontSizeConverter(double fontSize,double globalFontSize,bool isGlobalFontSizeEnable) {
+            if(isGlobalFontSizeEnable) {
+                return globalFontSize;
+            }
+            return fontSize;
+        }
+
+        public static double TranslateLyricsFontSizeConverter(double fontSize, double globalFontSize, bool isGlobalFontSizeEnable)
+        {
+            if (isGlobalFontSizeEnable)
+            {
+                return Math.Max(globalFontSize - 4,18);
+            }
+            return Math.Max(fontSize - 4, 18);
+        }
 
         public static Visibility BoolToVisibilityReConverter(bool isVisible)
         {

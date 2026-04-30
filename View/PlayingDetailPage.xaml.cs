@@ -74,18 +74,21 @@ namespace WinUIMusicPlayer.View
         private void ChangeControlsFontSize()
         {
             var width = App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
-            var (title, artist, info) = width switch
+            var (title, artist, info,lyrics) = width switch
             {
-                <= 1440 => (24, 22, 12),
-                <= 1680 => (26, 24, 13),
-                <= 1920 => (28, 26, 14),
-                <= 2160 => (30, 28, 15),
-                <= 2560 => (32, 30, 16),
-                _ => (36, 34, 18)
+                <= 1440 => (24, 22, 12, 32),
+                <= 1680 => (26, 24, 13, 34),
+                <= 1920 => (28, 26, 14, 36),
+                <= 2160 => (30, 28, 15, 38),
+                <= 2560 => (32, 30, 16, 40),
+                _ => (36, 34, 18, 44)
             };
-            ViewModel.TitleFontSize = title;
-            ViewModel.ArtistAlbumFontSize = artist;
-            ViewModel.InfoFontSize = info;
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                ViewModel.TitleFontSize = title;
+                ViewModel.ArtistAlbumFontSize = artist;
+                ViewModel.InfoFontSize = info;
+                ViewModel.AppViewModel.LyricsFontSize = lyrics;
+            });            
             AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
             AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
         }

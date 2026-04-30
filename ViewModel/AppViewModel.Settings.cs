@@ -524,6 +524,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 32f;
 
+        public double LyricsFontSize { get => field; set => SetProperty(ref field, value); } = 32;
+
         public string MusicCoverCache
         {
             get => field;

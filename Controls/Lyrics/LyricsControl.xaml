@@ -12,6 +12,7 @@
     xmlns:local="using:WinUIMusicPlayer.Controls.Lyrics"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:utils="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
 
     <controls:OpacityMaskView
@@ -97,9 +98,9 @@
                                     IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"
                                     IsPlaying="{x:Bind AppViewModel.IsPlaying, Mode=OneWay}"
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
-                                    LyricsFontSize="{x:Bind AppViewModel.GlobalFontSize, Mode=OneWay}"
+                                    LyricsFontSize="{x:Bind utils:BindUtils.LyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                                     LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
-                                    TranslateFontSize="28"
+                                    TranslateFontSize="{x:Bind utils:BindUtils.TranslateLyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                                     TranslateText="{x:Bind TransLateText, Mode=OneWay}">
                                     <interactivity:Interaction.Behaviors>
                                         <behaviors:AnimatedLyricsAutoScrollBehavior />
