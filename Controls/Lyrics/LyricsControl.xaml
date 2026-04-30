@@ -93,6 +93,7 @@
                                 PointerExited="LyricsLineGrid_PointerExited">
                                 <alc:AnimatedLyricsLineControl
                                     Margin="0"
+                                    AnimationSmoothness="1"
                                     BlurMax="{x:Bind AppViewModel.LyricsBlurAmount, Mode=OneWay}"
                                     CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
