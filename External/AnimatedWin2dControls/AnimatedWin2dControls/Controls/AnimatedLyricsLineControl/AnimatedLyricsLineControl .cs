@@ -99,6 +99,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _isCurrentLine = false;
         private bool _isPlaying = false;
 
+        // ── 模糊过渡 ─────────────────────────────────────────────────
+        // 当前实际模糊量（0 ~ 1.25），每帧向目标值插值
+        private float _blurAmount = 1.25f;
+        // 过渡专用计时器，仅在模糊值未收敛时运转，与主计时器互相独立
+        private DispatcherTimer? _blurTimer;
+        private const float BlurMax = 1.25f;
+        // 500ms 达到目标的指数衰减速率：k = -ln(ε) / t，ε=0.01，t=0.5s → k≈9.2
+        private const float BlurDecaySpeed = 4.6f;
+        private const float BlurSnapThreshold = 0.02f;
+
         // ── 颜色 ─────────────────────────────────────────────────────
         private Color _dimColor = Color.FromArgb(128, 0, 0, 0);
         private Color _brightColor = Color.FromArgb(255, 255, 255, 255);
@@ -263,6 +273,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _timer.Stop();
             _timer.Tick -= OnTimerTick;
             _timer = null;
+
+            // 主计时器销毁时，若模糊过渡未完成，交给 _blurTimer 接管
+            float target = (_isCurrentLine || !IsBlur) ? 0f : BlurMax;
+            if (Math.Abs(_blurAmount - target) >= BlurSnapThreshold)
+                StartBlurTransition();
         }
 
         private void OnTimerTick(object? sender, object e)
@@ -273,6 +288,39 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(16);
             _currentTime += delta;
             _canvas?.Invalidate();
+        }
+
+        /// <summary>
+        /// 通知模糊系统目标值已变化，启动过渡计时器。
+        /// 若当前已在主计时器驱动下（IsCurrentLine=true），
+        /// 主计时器的每帧 Invalidate 已足够，不需要额外计时器。
+        /// </summary>
+        private void StartBlurTransition()
+        {
+            // 主计时器在跑时 canvas 每帧都会 Invalidate，过渡自然推进，不需要额外计时器
+            if (_timer is { IsEnabled: true }) return;
+
+            if (_blurTimer is null)
+            {
+                _blurTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+                _blurTimer.Tick += OnBlurTimerTick;
+            }
+
+            if (!_blurTimer.IsEnabled)
+                _blurTimer.Start();
+        }
+
+        private void OnBlurTimerTick(object? sender, object e)
+        {
+            _canvas?.Invalidate();
+
+            // 收敛后自停，避免空转
+            float target = (_isCurrentLine || !IsBlur) ? 0f : BlurMax;
+            if (Math.Abs(_blurAmount - target) < BlurSnapThreshold)
+            {
+                _blurAmount = target;
+                _blurTimer?.Stop();
+            }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -313,7 +361,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private static void OnIsCurrentLineChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+    DependencyPropertyChangedEventArgs e)
         {
             if (d is not AnimatedLyricsLineControl c) return;
             c._isCurrentLine = (bool)e.NewValue;
@@ -324,6 +372,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 c.ResetSmoothedRevealX();
             }
             c.UpdateTimerState();
+            c.StartBlurTransition();
             c.IsCurrentLineChanged?.Invoke(c, c._isCurrentLine);
             c._canvas?.Invalidate();
         }
@@ -544,9 +593,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DependencyPropertyChangedEventArgs e)
         {
             if (d is not AnimatedLyricsLineControl c) return;
-            // 只在非当前行时才需要重绘，当前行模糊状态由 IsCurrentLine 决定
             if (!c._isCurrentLine)
-                c._canvas?.Invalidate();
+                c.StartBlurTransition();
         }
 
         private static void OnLayoutPropertyChanged(DependencyObject d,
@@ -1042,7 +1090,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             using (var clDs = cl.CreateDrawingSession())
                 DrawContent(clDs, words, w);
 
-            float blurAmount = (_isCurrentLine || !IsBlur) ? 0f : 1.25f;
+            float targetBlur = (_isCurrentLine || !IsBlur) ? 0f : BlurMax;
+            if (Math.Abs(_blurAmount - targetBlur) >= BlurSnapThreshold)
+            {
+                float lf = 1f - MathF.Exp(-BlurDecaySpeed * 0.016f);
+                _blurAmount += (targetBlur - _blurAmount) * lf;
+                if (Math.Abs(_blurAmount - targetBlur) < BlurSnapThreshold)
+                {
+                    _blurAmount = targetBlur;
+                    _blurTimer?.Stop();
+                }
+            }
+            float blurAmount = _blurAmount;
             if (blurAmount > 0f)
             {
                 using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
