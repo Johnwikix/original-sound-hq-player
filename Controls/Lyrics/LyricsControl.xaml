@@ -93,7 +93,7 @@
                                 PointerExited="LyricsLineGrid_PointerExited">
                                 <alc:AnimatedLyricsLineControl
                                     Margin="0"
-                                    CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
+                                    CurrentPlayingTime="{x:Bind AppViewModel.CurrentlLyricsTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                     IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"

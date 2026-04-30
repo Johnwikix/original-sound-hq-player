@@ -84,11 +84,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private int _visualRowCount = 0;
 
         // ── 独立时钟 ─────────────────────────────────────────────────
-        private DispatcherTimer? _timer;
-        private DateTimeOffset _lastTickAt;
+        //private DispatcherTimer? _timer;
+        //private DateTimeOffset _lastTickAt;
         private TimeSpan _currentTime = TimeSpan.Zero;
-        private TimeSpan _lastExternalTime = TimeSpan.Zero;
-        private const double SyncThresholdMs = 150.0;
+        //private TimeSpan _lastExternalTime = TimeSpan.Zero;
+        //private const double SyncThresholdMs = 150.0;
 
         // ── 平滑追赶：float[] 替代 Dictionary<int,float>，避免装箱 ───
         private float[] _smoothedRevealX = [];
@@ -156,7 +156,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             UpdateColors(IsDark);
-            UpdateTimerState();
+            //UpdateTimerState();
         }
 
         // ── MeasureOverride ──────────────────────────────────────────
@@ -235,44 +235,44 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 独立时钟
         // ══════════════════════════════════════════════════════════════
 
-        private void UpdateTimerState()
-        {
-            if (!_isCurrentLine) { DestroyTimer(); return; }
-            if (_timer is null) CreateTimer();
-            if (_isPlaying)
-            {
-                if (!_timer!.IsEnabled) { _lastTickAt = DateTimeOffset.UtcNow; _timer.Start(); }
-            }
-            else
-            {
-                _timer!.Stop();
-            }
-        }
+        //private void UpdateTimerState()
+        //{
+        //    if (!_isCurrentLine) { DestroyTimer(); return; }
+        //    if (_timer is null) CreateTimer();
+        //    if (_isPlaying)
+        //    {
+        //        if (!_timer!.IsEnabled) { _lastTickAt = DateTimeOffset.UtcNow; _timer.Start(); }
+        //    }
+        //    else
+        //    {
+        //        _timer!.Stop();
+        //    }
+        //}
 
-        private void CreateTimer()
-        {
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-            _timer.Tick += OnTimerTick;
-            _lastTickAt = DateTimeOffset.UtcNow;
-        }
+        //private void CreateTimer()
+        //{
+        //    _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        //    _timer.Tick += OnTimerTick;
+        //    _lastTickAt = DateTimeOffset.UtcNow;
+        //}
 
-        private void DestroyTimer()
-        {
-            if (_timer is null) return;
-            _timer.Stop();
-            _timer.Tick -= OnTimerTick;
-            _timer = null;
-        }
+        //private void DestroyTimer()
+        //{
+        //    if (_timer is null) return;
+        //    _timer.Stop();
+        //    _timer.Tick -= OnTimerTick;
+        //    _timer = null;
+        //}
 
-        private void OnTimerTick(object? sender, object e)
-        {
-            var now = DateTimeOffset.UtcNow;
-            var delta = now - _lastTickAt;
-            _lastTickAt = now;
-            if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(16);
-            _currentTime += delta;
-            _canvas?.Invalidate();
-        }
+        //private void OnTimerTick(object? sender, object e)
+        //{
+        //    var now = DateTimeOffset.UtcNow;
+        //    var delta = now - _lastTickAt;
+        //    _lastTickAt = now;
+        //    if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(16);
+        //    _currentTime += delta;
+        //    _canvas?.Invalidate();
+        //}
 
         // ══════════════════════════════════════════════════════════════
         // 依赖属性
@@ -319,10 +319,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (!c._isCurrentLine)
             {
                 c._currentTime = TimeSpan.Zero;
-                c._lastExternalTime = TimeSpan.Zero;
+                //c._lastExternalTime = TimeSpan.Zero;
                 c.ResetSmoothedRevealX();
             }
-            c.UpdateTimerState();
+            //c.UpdateTimerState();
             c.IsCurrentLineChanged?.Invoke(c, c._isCurrentLine);
             c._canvas?.Invalidate();
         }
@@ -343,8 +343,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (d is not AnimatedLyricsLineControl c) return;
             c._isPlaying = (bool)e.NewValue;
-            if (c._isPlaying && c._timer is not null) c._lastTickAt = DateTimeOffset.UtcNow;
-            c.UpdateTimerState();
+            //if (c._isPlaying && c._timer is not null) c._lastTickAt = DateTimeOffset.UtcNow;
+            //c.UpdateTimerState();
         }
 
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
@@ -362,25 +362,28 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DependencyPropertyChangedEventArgs e)
         {
             if (d is not AnimatedLyricsLineControl c) return;
-            var externalTime = (TimeSpan)e.NewValue;
-            c._lastExternalTime = externalTime;
-            if (!c._isCurrentLine) return;
-
-            if (c._timer is null || !c._timer.IsEnabled)
-            {
-                c._currentTime = externalTime;
+            c._currentTime = (TimeSpan)e.NewValue;
+            if(c._isPlaying)
                 c._canvas?.Invalidate();
-                return;
-            }
+            //var externalTime = (TimeSpan)e.NewValue;
+            //c._lastExternalTime = externalTime;
+            //if (!c._isCurrentLine) return;
 
-            double diffMs = Math.Abs((externalTime - c._currentTime).TotalMilliseconds);
-            if (diffMs > SyncThresholdMs)
-            {
-                c._currentTime = externalTime;
-                c._lastTickAt = DateTimeOffset.UtcNow;
-                c.ResetSmoothedRevealX();
-                c._canvas?.Invalidate();
-            }
+            //if (c._timer is null || !c._timer.IsEnabled)
+            //{
+            //    c._currentTime = externalTime;
+            //    c._canvas?.Invalidate();
+            //    return;
+            //}
+
+            //double diffMs = Math.Abs((externalTime - c._currentTime).TotalMilliseconds);
+            //if (diffMs > SyncThresholdMs)
+            //{
+            //    c._currentTime = externalTime;
+            //    c._lastTickAt = DateTimeOffset.UtcNow;
+            //    c.ResetSmoothedRevealX();
+            //    c._canvas?.Invalidate();
+            //}
         }
 
         // ── OffsetMs ─────────────────────────────────────────────────

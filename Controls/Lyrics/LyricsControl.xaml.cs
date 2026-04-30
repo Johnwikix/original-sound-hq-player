@@ -1,5 +1,6 @@
 using DevWinUI;
 using Lyricify.Lyrics.Providers.Web.Netease;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -18,6 +19,7 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -76,8 +78,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 var externalTime = (TimeSpan)e.NewValue;
                 var diff = (externalTime - ctrl._internalPosition).Duration(); // 取绝对值
 
-                // 误差超过 50ms 才强制校准，避免外部轮询抖动干扰内部节拍
-                if (diff > TimeSpan.FromMilliseconds(100))
+                // 误差超过 150ms 才强制校准，避免外部轮询抖动干扰内部节拍
+                if (diff > TimeSpan.FromMilliseconds(150))
                     ctrl._internalPosition = externalTime;
             }
         }
@@ -135,11 +137,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _internalPosition += elapsed;
             UpdateLyricsInternal(_internalPosition);
-            //var lyrics = UILyrics;
-            //if (lyrics != null && _lastLyricIndex >= 0 && _lastLyricIndex < lyrics.Count)
-            //{
-            //    lyrics[_lastLyricIndex].CurrentPlayingTime = _internalPosition;
-            //}
+            App.Services.GetRequiredService<AppViewModel>().CurrentlLyricsTime = _internalPosition;
         }
 
         // ── 歌词匹配逻辑（从外部移入控件）────────────────────────────────
@@ -175,7 +173,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             this.InitializeComponent();
             _internalTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(50)
+                Interval = TimeSpan.FromMilliseconds(16.7)
             };
             _internalTimer.Tick += InternalTimer_Tick;
 

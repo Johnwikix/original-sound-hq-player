@@ -175,6 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
         private TimeSpan TotalTime { get; set; }
         private TimeSpan CurrentTime { get; set; }
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
+        public TimeSpan CurrentlLyricsTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
         private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);        
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
