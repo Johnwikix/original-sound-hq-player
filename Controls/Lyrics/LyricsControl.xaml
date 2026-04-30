@@ -95,6 +95,7 @@
                                     Margin="0"
                                     CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
+                                    IsBlur="{x:Bind IsBlur, Mode=OneWay}"
                                     IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
                                     IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"
                                     IsPlaying="{x:Bind AppViewModel.IsPlaying, Mode=OneWay}"

@@ -523,6 +523,32 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _gradStopsValid = false;
         }
 
+        public static readonly DependencyProperty IsBlurProperty =
+            DependencyProperty.Register(nameof(IsBlur),
+            typeof(bool), typeof(AnimatedLyricsLineControl),
+            new PropertyMetadata(true, OnIsBlurChanged));
+
+        /// <summary>
+        /// 控制此行是否应用模糊效果。
+        /// 当 IsCurrentLine 为 true 时，无论此值为何，模糊始终关闭。
+        /// 当 IsCurrentLine 为 false 时，由此属性决定是否模糊。
+        /// 默认为 true（启用模糊）。
+        /// </summary>
+        public bool IsBlur
+        {
+            get => (bool)GetValue(IsBlurProperty);
+            set => SetValue(IsBlurProperty, value);
+        }
+
+        private static void OnIsBlurChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not AnimatedLyricsLineControl c) return;
+            // 只在非当前行时才需要重绘，当前行模糊状态由 IsCurrentLine 决定
+            if (!c._isCurrentLine)
+                c._canvas?.Invalidate();
+        }
+
         private static void OnLayoutPropertyChanged(DependencyObject d,
             DependencyPropertyChangedEventArgs e)
         {
@@ -1016,7 +1042,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             using (var clDs = cl.CreateDrawingSession())
                 DrawContent(clDs, words, w);
 
-            float blurAmount = _isCurrentLine ? 0f : 1.25f;
+            float blurAmount = (_isCurrentLine || !IsBlur) ? 0f : 1.25f;
             if (blurAmount > 0f)
             {
                 using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect

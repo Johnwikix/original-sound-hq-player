@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -194,18 +195,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is Grid grid)
             {
-                //var blurControl = grid?.Children.AsValueEnumerable()
-                //          .OfType<BlurEffectControl>()
-                //          .FirstOrDefault();
-                //blurControl?.GetBlurEffectManager()?.StartBlurReverseAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                //if (AppSettings.LyricsBlurAmount < 1)
-                //{
-                //    if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
-                //    {
-                //        var secondaryBrush = resourceValue as SolidColorBrush;
-                //        grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
-                //    }
-                //}
+                if (grid.DataContext is LyricLine currentLine)
+                {
+                    currentLine.IsBlur = false;
+                }
                 if (Application.Current.Resources.TryGetValue("ControlFillColorDefaultBrush", out var resourceValue))
                 {
                     var secondaryBrush = resourceValue as SolidColorBrush;
@@ -219,14 +212,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is Grid grid)
             {
-                //var blurControl = grid?.Children.AsValueEnumerable()
-                //        .OfType<BlurEffectControl>()
-                //        .FirstOrDefault();
-                //blurControl?.GetBlurEffectManager()?.StartBlurAnimation(AppSettings.LyricsBlurAmount, TimeSpan.FromMilliseconds(350));
-                //if (AppSettings.LyricsBlurAmount < 1)
-                //{
-                //    grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                //}
+                if (grid.DataContext is LyricLine currentLine)
+                {
+                    currentLine.IsBlur = true;
+                }
                 grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             }
             e.Handled = true;
