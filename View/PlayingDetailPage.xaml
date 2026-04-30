@@ -539,6 +539,7 @@
                 Margin="0,40,0,40">
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
+                    CurrentPlayingTimeEvent="LyricsControl_CurrentPlayingTimeEvent"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
                     LyricInteracted="LyricsControl_LyricInteracted"

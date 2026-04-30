@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     public sealed partial class LyricsControl : UserControl
     {
         public event EventHandler<TimeSpan> LyricInteracted;
+        public event EventHandler<TimeSpan> CurrentPlayingTimeEvent;
         // 依赖属性
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(
@@ -78,8 +79,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 var externalTime = (TimeSpan)e.NewValue;
                 var diff = (externalTime - ctrl._internalPosition).Duration(); // 取绝对值
 
-                // 误差超过 150ms 才强制校准，避免外部轮询抖动干扰内部节拍
-                if (diff > TimeSpan.FromMilliseconds(150))
+                // 误差超过 100ms 才强制校准，避免外部轮询抖动干扰内部节拍
+                if (diff > TimeSpan.FromMilliseconds(100))
                     ctrl._internalPosition = externalTime;
             }
         }
@@ -137,7 +138,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _internalPosition += elapsed;
             UpdateLyricsInternal(_internalPosition);
-            App.Services.GetRequiredService<AppViewModel>().CurrentlLyricsTime = _internalPosition;
+            CurrentPlayingTimeEvent?.Invoke(this, _internalPosition);
         }
 
         // ── 歌词匹配逻辑（从外部移入控件）────────────────────────────────

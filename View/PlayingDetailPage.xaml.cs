@@ -295,5 +295,10 @@ namespace WinUIMusicPlayer.View
                 ViewModel.AppViewModel.IsManualSelect = false;
             });
         }
+
+        private void LyricsControl_CurrentPlayingTimeEvent(object sender, TimeSpan e)
+        {
+            ViewModel.AppViewModel.CurrentlLyricsTime = e;
+        }
     }
 }
