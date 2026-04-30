@@ -212,6 +212,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     grid?.Background = secondaryBrush ?? new(Color.FromArgb(25, 255, 255, 255));
                 }
             }
+            e.Handled = true;
         }
 
         private void LyricsLineGrid_PointerExited(object sender, PointerRoutedEventArgs e)
@@ -228,13 +229,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 //}
                 grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             }
+            e.Handled = true;
         }
 
         private void MaskView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             var pointerPoint = e.GetCurrentPoint(LyricViewer);
             double delta = pointerPoint.Properties.MouseWheelDelta;
-            double scrollAmount = -delta * 5;
+            double scrollAmount = - delta * 3;
             LyricViewer.ScrollBy(
                 0,
                 scrollAmount,

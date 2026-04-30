@@ -107,6 +107,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float FeatherWidth = 22f;
         private const float PaddingV = 12f;
         private const float RenderPadding = 10f;
+        private const float TranslateGapV = 3f;
 
         // ── CanvasTextFormat 跨帧复用 ─────────────────────────────────
         // CanvasTextFormat 构造涉及 DirectWrite 字体回退树，复用可降低每帧 CPU 开销
@@ -200,7 +201,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float lyricLineH = (float)LyricsFontSize * 1.4f;
             float transLineH = string.IsNullOrEmpty(TranslateText)
                 ? 0f
-                : (float)TranslateFontSize * 1.4f + 6f;
+                : (float)TranslateFontSize * 1.4f + TranslateGapV;
             return RenderPadding * 2f + PaddingV * 2f + lyricLineH + transLineH;
         }
 
@@ -714,14 +715,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 };
                 using var transLayout = new CanvasTextLayout(
                     creator, TranslateText, transFmt, layoutWidth, 9999f);
-                translateHeight = (float)transLayout.DrawBounds.Height + 6f;
+                translateHeight = (float)transLayout.LayoutBounds.Height + TranslateGapV;
             }
 
-            // 缓存翻译行 Y 偏移，DrawContent 直接读取，不再重复 layout
-            _cachedTranslateOffsetY = RenderPadding + PaddingV + lyricsHeight + 6f;
-
-            float totalHeight = RenderPadding + PaddingV + lyricsHeight
-                              + translateHeight + PaddingV + RenderPadding;
+            _cachedTranslateOffsetY = PaddingV + lyricsHeight + TranslateGapV;
+            float totalHeight = RenderPadding + PaddingV
+                              + lyricsHeight
+                              + translateHeight          // = transLayoutBounds.Height + TranslateGapV，无翻译时 = 0
+                              + PaddingV + RenderPadding;
             _measuredHeight = Math.Max(totalHeight, CalcFallbackHeight());
 
             _cachedText = fullText;
