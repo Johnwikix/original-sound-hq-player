@@ -1329,14 +1329,14 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)
-        {
-            return Enum.TryParse(alignment, true, out CanvasHorizontalAlignment result) ? result : CanvasHorizontalAlignment.Left;
-        }
-        public static string ConvertTextAlignmentToString(TextAlignment alignment)
-        {
-            return alignment.ToString();
-        }
+        //public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)
+        //{
+        //    return Enum.TryParse(alignment, true, out CanvasHorizontalAlignment result) ? result : CanvasHorizontalAlignment.Left;
+        //}
+        //public static string ConvertTextAlignmentToString(TextAlignment alignment)
+        //{
+        //    return alignment.ToString();
+        //}
 
         public static async void ExportPlayList(PlayList playList)
         {

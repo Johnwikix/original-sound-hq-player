@@ -104,7 +104,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private float _blurAmount = 1.25f;
         // 过渡专用计时器，仅在模糊值未收敛时运转，与主计时器互相独立
         private DispatcherTimer? _blurTimer;
-        private const float BlurMax = 1.25f;
+        //private const float BlurMax = 1.25f;
         // 500ms 达到目标的指数衰减速率：k = -ln(ε) / t，ε=0.01，t=0.5s → k≈9.2
         private const float BlurDecaySpeed = 4.6f;
         private const float BlurSnapThreshold = 0.02f;
@@ -351,6 +351,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ══════════════════════════════════════════════════════════════
         // 依赖属性
         // ══════════════════════════════════════════════════════════════
+        public static readonly DependencyProperty BlurMaxProperty =
+            DependencyProperty.Register(nameof(BlurMax),
+            typeof(float), typeof(AnimatedLyricsLineControl),
+            new PropertyMetadata(1.5f, OnBlurMaxChanged));
+
+        public float BlurMax
+        {
+            get => (float)GetValue(BlurMaxProperty);
+            set => SetValue(BlurMaxProperty, value);
+        }
+
+        private static void OnBlurMaxChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not AnimatedLyricsLineControl c) return;
+            if (!c._isCurrentLine)
+                c.StartBlurTransition();
+        }
 
         public static readonly DependencyProperty LyricWordsProperty =
             DependencyProperty.Register(nameof(LyricWords),

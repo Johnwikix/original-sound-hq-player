@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.Model
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");        
-        public static double LyricsBlurAmount { get; set; } = 4;
+        //public static double LyricsBlurAmount { get; set; } = 4;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;
         public static byte CustomColorAlpha { get; set; } = 255;
@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsGlobalFontSizeEnabled { get; set; } = false;
         //public static double GlobalFontSize { get; set; } = 32;
         public static bool IsUpdateBackDrop { get; set; } = false;
-        public static CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
+        //public static CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
 
     }

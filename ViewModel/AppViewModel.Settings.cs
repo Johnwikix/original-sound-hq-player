@@ -484,7 +484,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.LyricsAlignment = ToolUtils.ConvertStringToTextAlignment(value);
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -610,21 +609,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public double LyricsBlurAmount
+        public float LyricsBlurAmount
         {
             get => field;
             set
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.LyricsBlurAmount = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
                 }
             }
-        }
+        } = 1.5f;
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =
         [        

@@ -27,11 +27,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <!--<Grid.Transitions>
-            <TransitionCollection>
-                <EntranceThemeTransition FromVerticalOffset="100" />
-            </TransitionCollection>
-        </Grid.Transitions>-->
 
         <Grid Grid.Row="0" Margin="32,0,32,0">
             <TextBlock
@@ -249,10 +244,10 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
-                                Maximum="8"
+                                Maximum="3"
                                 Minimum="0"
                                 SnapsTo="Ticks"
-                                TickFrequency="0.5"
+                                TickFrequency="0.1"
                                 TickPlacement="Outside"
                                 Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
                         </controls:SettingsCard>

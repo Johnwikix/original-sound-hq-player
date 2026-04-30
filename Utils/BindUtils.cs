@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -72,6 +73,11 @@ namespace WinUIMusicPlayer.Utils
                 return Math.Max(globalFontSize - 4,18);
             }
             return Math.Max(fontSize - 4, 18);
+        }
+
+        public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)
+        {
+            return Enum.TryParse(alignment, true, out CanvasHorizontalAlignment result) ? result : CanvasHorizontalAlignment.Left;
         }
 
         public static Visibility BoolToVisibilityReConverter(bool isVisible)

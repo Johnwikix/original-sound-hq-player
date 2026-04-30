@@ -93,6 +93,7 @@
                                 PointerExited="LyricsLineGrid_PointerExited">
                                 <alc:AnimatedLyricsLineControl
                                     Margin="0"
+                                    BlurMax="{x:Bind AppViewModel.LyricsBlurAmount, Mode=OneWay}"
                                     CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                                     IsBlur="{x:Bind IsBlur, Mode=OneWay}"
@@ -101,7 +102,7 @@
                                     IsPlaying="{x:Bind AppViewModel.IsPlaying, Mode=OneWay}"
                                     LyricWords="{x:Bind Words, Mode=OneWay}"
                                     LyricsFontSize="{x:Bind utils:BindUtils.LyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
-                                    LyricsTextAlignment="{x:Bind model:AppSettings.LyricsAlignment, Mode=OneWay}"
+                                    LyricsTextAlignment="{x:Bind utils:BindUtils.ConvertStringToTextAlignment(AppViewModel.LyricsAlignment), Mode=OneWay}"
                                     TranslateFontSize="{x:Bind utils:BindUtils.TranslateLyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                                     TranslateText="{x:Bind TransLateText, Mode=OneWay}">
                                     <interactivity:Interaction.Behaviors>
