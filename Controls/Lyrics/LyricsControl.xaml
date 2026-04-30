@@ -20,7 +20,8 @@
         Margin="0"
         Padding="0"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
+        VerticalAlignment="Stretch"
+        PointerWheelChanged="MaskView_PointerWheelChanged">
         <controls:OpacityMaskView.OpacityMask>
             <Rectangle Stretch="UniformToFill">
                 <Rectangle.Fill>

@@ -229,5 +229,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 grid?.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             }
         }
+
+        private void MaskView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var pointerPoint = e.GetCurrentPoint(LyricViewer);
+            double delta = pointerPoint.Properties.MouseWheelDelta;
+            double scrollAmount = -delta * 5;
+            LyricViewer.ScrollBy(
+                0,
+                scrollAmount,
+                new ScrollingScrollOptions(ScrollingAnimationMode.Enabled) // 确保开启平滑模式
+            );
+            e.Handled = true;
+        }
     }
 }
