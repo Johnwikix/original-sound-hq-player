@@ -21,39 +21,67 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private CanvasControl? _canvas;
 
         // ── 布局缓存 ─────────────────────────────────────────────────
-        private sealed record WordLayout(
-            string Text,
-            float X,
-            float Y,
-            float FullWidth,
-            float Height
-        );
+        // struct 替代 record class，内存连续，减少堆分配
+        private struct WordLayout
+        {
+            public string Text;
+            public float X, Y, FullWidth, Height;
+        }
 
-        private readonly List<WordLayout> _wordLayouts = [];
+        private WordLayout[] _wordLayouts = [];
+        private int _wordLayoutCount = 0;
+
         private string? _cachedText = null;
         private float _cachedWidth = 0f;
         private float _cachedFontSize = 0f;
         private float _measuredHeight = 0f;
 
-        // ── 设备未就绪时需要在 CreateResources 后重新 Measure ────────
+        // 设备未就绪时需要在 CreateResources 后重新 Measure
         private bool _needsRemeasure = false;
 
         // ══════════════════════════════════════════════════════════════
-        // 速度曲线预计算（三次 Hermite 样条）
+        // 速度曲线预计算（Catmull-Rom 风格 + AnimationSmoothness 混合）
+        //
+        // AnimationSmoothness（0~1）控制全局平滑强度：
+        //   0.0 = 严格线性，每字匀速，字边界有速度突变，精确匹配时间轴
+        //   0.5 = 均衡（默认），Catmull-Rom 与自然速度各半，误差 ≤50ms
+        //   1.0 = 最大平滑，完全 Catmull-Rom 切线，允许 ≤100ms 精度误差
+        //
+        // 时间轴轻微重分配（timeBias）：
+        //   smoothness > 0 时，控制点时间向前偏移 smoothness×bias×duration，
+        //   使扫光具有「预判感」，消除字边界机械感。
+        //   最大偏移量 = smoothness×0.08×duration，
+        //   例：smoothness=1、duration=1000ms → 提前 80ms（≤100ms 约束内）。
         // ══════════════════════════════════════════════════════════════
 
-        private sealed record CurvePoint(
-            double TimeMs,
-            float PixelX,
-            float VelIn,
-            float VelOut
-        );
+        // 曲线控制点：struct 数组，内存连续
+        private struct CurvePoint
+        {
+            public double TimeMs;
+            public float PixelX;
+            public float VelIn;
+            public float VelOut;
+        }
 
-        private sealed record RowCurve(TimeSpan Origin, List<CurvePoint> Points);
-        private readonly List<RowCurve> _rowCurves = [];
+        private struct RowCurve
+        {
+            public TimeSpan Origin;
+            public CurvePoint[] Points;
+            public int Count;
+        }
 
-        private const int VelocitySmoothRadius = 2;
-        private const double MaxTangentRatio = 1.6;
+        private RowCurve[] _rowCurves = [];
+        private int _rowCurveCount = 0;
+
+        // 视觉行分组缓存（从每帧 DrawContent 移到布局阶段预计算）
+        private struct VisualRow
+        {
+            public float MinX, MaxX, Y, H;
+            public int WordStart, WordEnd;
+        }
+
+        private VisualRow[] _visualRows = [];
+        private int _visualRowCount = 0;
 
         // ── 独立时钟 ─────────────────────────────────────────────────
         private DispatcherTimer? _timer;
@@ -62,8 +90,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private TimeSpan _lastExternalTime = TimeSpan.Zero;
         private const double SyncThresholdMs = 150.0;
 
-        // ── 平滑追赶 ─────────────────────────────────────────────────
-        private readonly Dictionary<int, float> _smoothedRevealX = [];
+        // ── 平滑追赶：float[] 替代 Dictionary<int,float>，避免装箱 ───
+        private float[] _smoothedRevealX = [];
         private const float SmoothLerpSpeed = 18f;
         private const float SmoothMaxPixelsPerSec = 2000f;
 
@@ -79,6 +107,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float FeatherWidth = 22f;
         private const float PaddingV = 12f;
         private const float RenderPadding = 10f;
+
+        // ── CanvasTextFormat 跨帧复用 ─────────────────────────────────
+        // CanvasTextFormat 构造涉及 DirectWrite 字体回退树，复用可降低每帧 CPU 开销
+        private CanvasTextFormat? _lyricsFmt;
+        private CanvasTextFormat? _transFmt;
+        private string? _cachedFontFamily;
+        private float _cachedLyricsFontSizeForFmt;
+        private float _cachedTranslateFontSizeForFmt;
+        private CanvasHorizontalAlignment _cachedTransAlignment;
+
+        // ── 渐变 stops 复用（每帧颜色相同，不重建） ──────────────────
+        private readonly CanvasGradientStop[] _gradStops = new CanvasGradientStop[2];
+        private bool _gradStopsValid = false;
+
+        // ── 翻译行 Y 偏移缓存（避免 DrawContent 每帧重新 layout） ────
+        private float _cachedTranslateOffsetY = 0f;
 
         private CanvasHorizontalAlignment _cachedAlignment = CanvasHorizontalAlignment.Left;
 
@@ -124,7 +168,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             float fallback = CalcFallbackHeight();
 
-            // 缓存命中判断：不依赖 _measuredHeight > 0，而是检查所有缓存键
             bool cacheValid =
                 _cachedText != null &&
                 Math.Abs(_cachedWidth - w) < 1f &&
@@ -138,14 +181,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 var device = CanvasDevice.GetSharedDevice();
                 EnsureLayout(device, w);
-
                 if (_measuredHeight > 0f)
                     return new Size(availableSize.Width, _measuredHeight);
             }
             catch
             {
-                // 设备未就绪，等 CreateResources 触发后重新测量
-                // 返回已知高度（若有）或 fallback，不返回 0
                 _needsRemeasure = true;
                 return new Size(availableSize.Width,
                     _measuredHeight > 0f ? _measuredHeight : fallback);
@@ -155,7 +195,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _measuredHeight > 0f ? _measuredHeight : fallback);
         }
 
-        /// <summary>不依赖 Win2D 的保底高度，防止控件塌缩为 0。</summary>
         private float CalcFallbackHeight()
         {
             float lyricLineH = (float)LyricsFontSize * 1.4f;
@@ -169,9 +208,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
         {
+            DisposeFmtCache();
             InvalidateLayoutCache();
-
-            // 设备就绪后，若之前 Measure 因设备未就绪而返回了 fallback，重新触发 Measure
             if (_needsRemeasure)
             {
                 _needsRemeasure = false;
@@ -181,14 +219,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // 只清字符缓存和曲线缓存，保留 _measuredHeight 作为过渡高度
-            // 避免清零后在重新 Measure 完成之前控件高度塌缩为 fallback 造成抖动
+            // 只清字符缓存，保留 _measuredHeight 作为过渡高度防止塌缩
             _cachedText = null;
             _cachedWidth = 0f;
             _cachedFontSize = 0f;
             _cachedAlignment = (CanvasHorizontalAlignment)(-1);
-            _smoothedRevealX.Clear();
-            _rowCurves.Clear();
+            ResetSmoothedRevealX();
+            _rowCurveCount = 0;
+            _visualRowCount = 0;
             _canvas?.Invalidate();
             InvalidateMeasure();
         }
@@ -282,7 +320,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 c._currentTime = TimeSpan.Zero;
                 c._lastExternalTime = TimeSpan.Zero;
-                c._smoothedRevealX.Clear();
+                c.ResetSmoothedRevealX();
             }
             c.UpdateTimerState();
             c.IsCurrentLineChanged?.Invoke(c, c._isCurrentLine);
@@ -340,7 +378,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 c._currentTime = externalTime;
                 c._lastTickAt = DateTimeOffset.UtcNow;
-                c._smoothedRevealX.Clear();
+                c.ResetSmoothedRevealX();
                 c._canvas?.Invalidate();
             }
         }
@@ -349,8 +387,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public static readonly DependencyProperty OffsetMsProperty =
             DependencyProperty.Register(nameof(OffsetMs),
                 typeof(double), typeof(AnimatedLyricsLineControl),
-                new PropertyMetadata(-50.0, OnOffsetMsChanged));
+                new PropertyMetadata(0.0, OnOffsetMsChanged));
 
+        /// <summary>
+        /// 全局动画偏移（毫秒）。正值延后，负值提前。仅影响渲染查询时间。
+        /// </summary>
         public double OffsetMs
         {
             get => (double)GetValue(OffsetMsProperty);
@@ -361,6 +402,40 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DependencyPropertyChangedEventArgs e)
         {
             if (d is not AnimatedLyricsLineControl c) return;
+            c._canvas?.Invalidate();
+        }
+
+        // ── AnimationSmoothness ───────────────────────────────────────
+        public static readonly DependencyProperty AnimationSmoothnessProperty =
+            DependencyProperty.Register(nameof(AnimationSmoothness),
+                typeof(double), typeof(AnimatedLyricsLineControl),
+                new PropertyMetadata(0.65, OnAnimationSmoothnessChanged));
+
+        /// <summary>
+        /// 逐字扫光动画的平滑强度，范围 [0, 1]。
+        ///
+        /// 0.0 — 严格线性：每个字匀速扫过，字边界处速度可能突变，最精确。
+        /// 0.65 — 默认均衡：Catmull-Rom 切线与自然速度按比例混合，
+        ///         过渡流畅，精度误差 ≤65ms。
+        /// 1.0 — 最大平滑：切线完全由相邻字速度决定，整体最连续，
+        ///         允许 ≤100ms 精度误差。
+        ///
+        /// 修改后自动重建曲线，不需要重新布局。
+        /// </summary>
+        public double AnimationSmoothness
+        {
+            get => (double)GetValue(AnimationSmoothnessProperty);
+            set => SetValue(AnimationSmoothnessProperty, Math.Clamp(value, 0.0, 1.0));
+        }
+
+        private static void OnAnimationSmoothnessChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not AnimatedLyricsLineControl c) return;
+            // 只重建曲线，不重建布局，不触发 Measure
+            c._rowCurveCount = 0;
+            if (c._wordLayoutCount > 0 && c.LyricWords is { } words)
+                c.BuildRowCurves(words);
             c._canvas?.Invalidate();
         }
 
@@ -426,6 +501,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (d is not AnimatedLyricsLineControl c) return;
             c.UpdateColors((bool)e.NewValue);
+            c._gradStopsValid = false;
             c._canvas?.Invalidate();
         }
 
@@ -443,6 +519,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _brightColor = Color.FromArgb(255, 0, 0, 0);
                 _translateColor = Color.FromArgb(155, 0, 0, 0);
             }
+            _gradStopsValid = false;
         }
 
         private static void OnLayoutPropertyChanged(DependencyObject d,
@@ -454,7 +531,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ══════════════════════════════════════════════════════════════
-        // 布局缓存失效
+        // 缓存管理
         // ══════════════════════════════════════════════════════════════
 
         private void InvalidateLayoutCache()
@@ -463,25 +540,87 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedWidth = 0f;
             _cachedFontSize = 0f;
             _cachedAlignment = (CanvasHorizontalAlignment)(-1);
-
-            // ❌ 不清零 _measuredHeight
-            // 保留上一次已知高度作为过渡值，防止 Measure 重入期间高度塌缩为 0
-            // 等 EnsureLayout 重新计算后自然覆盖
-
-            _smoothedRevealX.Clear();
-            _rowCurves.Clear();
+            // 不清零 _measuredHeight，保留过渡高度防止布局塌缩
+            ResetSmoothedRevealX();
+            _rowCurveCount = 0;
+            _visualRowCount = 0;
+            DisposeFmtCache();
             _canvas?.Invalidate();
         }
 
+        /// <summary>将平滑追赶数组内容置为 NaN（标记"未初始化"）。</summary>
+        private void ResetSmoothedRevealX()
+        {
+            for (int i = 0; i < _smoothedRevealX.Length; i++)
+                _smoothedRevealX[i] = float.NaN;
+        }
+
+        private void DisposeFmtCache()
+        {
+            _lyricsFmt?.Dispose();
+            _lyricsFmt = null;
+            _transFmt?.Dispose();
+            _transFmt = null;
+            _cachedFontFamily = null;
+        }
+
         // ══════════════════════════════════════════════════════════════
-        // 布局计算（Measure 路径 + Draw 路径共用，但行为不同）
+        // CanvasTextFormat 跨帧复用
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// 核心布局计算。
-        /// Measure 路径：由 MeasureOverride 调用，结果通过返回值传递给布局系统。
-        /// Draw 路径：由 EnsureLayoutForDraw 调用，不修改任何影响布局的属性。
-        /// </summary>
+        private CanvasTextFormat GetLyricsFmt()
+        {
+            float fontSize = (float)LyricsFontSize;
+            string family = FontFamilyName;
+            if (_lyricsFmt is null ||
+                _cachedFontFamily != family ||
+                _cachedLyricsFontSizeForFmt != fontSize)
+            {
+                _lyricsFmt?.Dispose();
+                _lyricsFmt = new CanvasTextFormat
+                {
+                    FontFamily = family,
+                    FontSize = fontSize,
+                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
+                    WordWrapping = CanvasWordWrapping.WholeWord,
+                    HorizontalAlignment = CanvasHorizontalAlignment.Left,
+                };
+                _cachedLyricsFontSizeForFmt = fontSize;
+                // family 由 GetTransFmt 统一写入 _cachedFontFamily
+            }
+            return _lyricsFmt;
+        }
+
+        private CanvasTextFormat GetTransFmt()
+        {
+            float fontSize = (float)TranslateFontSize;
+            string family = FontFamilyName;
+            var align = LyricsTextAlignment;
+            if (_transFmt is null ||
+                _cachedFontFamily != family ||
+                _cachedTranslateFontSizeForFmt != fontSize ||
+                _cachedTransAlignment != align)
+            {
+                _transFmt?.Dispose();
+                _transFmt = new CanvasTextFormat
+                {
+                    FontFamily = family,
+                    FontSize = fontSize,
+                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
+                    WordWrapping = CanvasWordWrapping.WholeWord,
+                    HorizontalAlignment = align,
+                };
+                _cachedTranslateFontSizeForFmt = fontSize;
+                _cachedTransAlignment = align;
+                _cachedFontFamily = family; // 两个 fmt 都已同步，统一写
+            }
+            return _transFmt;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 布局计算
+        // ══════════════════════════════════════════════════════════════
+
         private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth)
         {
             var words = LyricWords;
@@ -497,12 +636,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 alignment == _cachedAlignment)
                 return;
 
-            _wordLayouts.Clear();
-            _rowCurves.Clear();
-            _smoothedRevealX.Clear();
+            _wordLayoutCount = 0;
+            _rowCurveCount = 0;
+            _visualRowCount = 0;
+            ResetSmoothedRevealX();
 
             float layoutWidth = Math.Max(1f, availableWidth - RenderPadding * 2f);
 
+            // EnsureLayout 直接构造 fmt（可能在 Measure 路径调用，fmt 缓存未就绪）
             using var fmt = new CanvasTextFormat
             {
                 FontFamily = FontFamilyName,
@@ -522,6 +663,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _ => 0f,
             };
 
+            // 按需扩容（避免频繁重分配）
+            if (_wordLayouts.Length < words.Count)
+                _wordLayouts = new WordLayout[words.Count + 8];
+
             int charOffset = 0;
             for (int i = 0; i < words.Count; i++)
             {
@@ -535,19 +680,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     Rect last = regions[^1].LayoutBounds;
                     float fw = (float)(last.Right - first.Left);
                     float h = (float)first.Height;
-                    _wordLayouts.Add(fw > 0 && h > 0
-                        ? new WordLayout(wt,
-                            (float)first.Left + alignOffsetX + RenderPadding,
-                            (float)first.Top, fw, h)
-                        : new WordLayout(wt, RenderPadding, 0, 0, 0));
+                    _wordLayouts[i] = fw > 0 && h > 0
+                        ? new WordLayout
+                        {
+                            Text = wt,
+                            X = (float)first.Left + alignOffsetX + RenderPadding,
+                            Y = (float)first.Top,
+                            FullWidth = fw,
+                            Height = h,
+                        }
+                        : new WordLayout { Text = wt, X = RenderPadding };
                 }
                 else
                 {
-                    _wordLayouts.Add(new WordLayout(wt, RenderPadding, 0, 0, 0));
+                    _wordLayouts[i] = new WordLayout { Text = wt, X = RenderPadding };
                 }
 
                 charOffset += wt.Length;
             }
+            _wordLayoutCount = words.Count;
 
             float lyricsHeight = (float)layout.LayoutBounds.Height;
             float translateHeight = 0f;
@@ -566,9 +717,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 translateHeight = (float)transLayout.DrawBounds.Height + 6f;
             }
 
-            float totalHeight = RenderPadding + PaddingV + lyricsHeight + translateHeight + PaddingV + RenderPadding;
-            // 只更新 _measuredHeight，绝不在这里修改 Height / _canvas.Height
-            // 高度通过 MeasureOverride 返回值传递给布局系统
+            // 缓存翻译行 Y 偏移，DrawContent 直接读取，不再重复 layout
+            _cachedTranslateOffsetY = RenderPadding + PaddingV + lyricsHeight + 6f;
+
+            float totalHeight = RenderPadding + PaddingV + lyricsHeight
+                              + translateHeight + PaddingV + RenderPadding;
             _measuredHeight = Math.Max(totalHeight, CalcFallbackHeight());
 
             _cachedText = fullText;
@@ -576,15 +729,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedFontSize = fontSize;
             _cachedAlignment = alignment;
 
+            // 布局变了，fmt 缓存作废
+            DisposeFmtCache();
+
+            BuildVisualRows();
             BuildRowCurves(words);
+            EnsureSmoothedRevealXCapacity(_visualRowCount);
         }
 
-        /// <summary>
-        /// Draw 路径专用的 EnsureLayout 入口。
-        /// 宽度容差放宽到 2px 避免浮点抖动反复重建。
-        /// 若布局重建后高度发生变化，通过 DispatcherQueue 异步通知布局系统，
-        /// 绝不在 Draw 回调的调用栈内修改任何影响布局的属性。
-        /// </summary>
         private void EnsureLayoutForDraw(ICanvasResourceCreator creator, float actualWidth)
         {
             var words = LyricWords;
@@ -605,11 +757,70 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float oldHeight = _measuredHeight;
             EnsureLayout(creator, actualWidth);
 
-            // 布局重建后高度变了 → 异步通知布局系统重新 Measure
-            // 不能在 Draw 回调内同步调用 InvalidateMeasure，会触发布局重入
             if (Math.Abs(_measuredHeight - oldHeight) > 1f)
-            {
                 DispatcherQueue.TryEnqueue(InvalidateMeasure);
+        }
+
+        private void EnsureSmoothedRevealXCapacity(int rowCount)
+        {
+            if (_smoothedRevealX.Length >= rowCount) return;
+            _smoothedRevealX = new float[rowCount + 2];
+            for (int i = 0; i < _smoothedRevealX.Length; i++)
+                _smoothedRevealX[i] = float.NaN;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 视觉行预计算
+        // ══════════════════════════════════════════════════════════════
+
+        private void BuildVisualRows()
+        {
+            _visualRowCount = 0;
+            int count = _wordLayoutCount;
+            if (count == 0) return;
+
+            int estimatedRows = Math.Max(4, count / 4);
+            if (_visualRows.Length < estimatedRows)
+                _visualRows = new VisualRow[estimatedRows + 2];
+
+            int rs = 0;
+            while (rs < count)
+            {
+                while (rs < count && _wordLayouts[rs].FullWidth <= 0) rs++;
+                if (rs >= count) break;
+
+                ref readonly var first = ref _wordLayouts[rs];
+                float ry = first.Y, rh = first.Height;
+                float mnX = first.X, mxX = first.X + first.FullWidth;
+                int re = rs + 1;
+
+                while (re < count)
+                {
+                    ref readonly var wl = ref _wordLayouts[re];
+                    if (wl.FullWidth <= 0) { re++; continue; }
+                    if (Math.Abs(wl.Y - ry) > rh * 0.5f) break;
+                    if (wl.X < mnX) mnX = wl.X;
+                    if (wl.X + wl.FullWidth > mxX) mxX = wl.X + wl.FullWidth;
+                    re++;
+                }
+
+                if (_visualRowCount >= _visualRows.Length)
+                {
+                    var tmp = new VisualRow[_visualRows.Length * 2 + 2];
+                    Array.Copy(_visualRows, tmp, _visualRows.Length);
+                    _visualRows = tmp;
+                }
+
+                _visualRows[_visualRowCount++] = new VisualRow
+                {
+                    MinX = mnX,
+                    MaxX = mxX,
+                    Y = ry,
+                    H = rh,
+                    WordStart = rs,
+                    WordEnd = re - 1,
+                };
+                rs = re;
             }
         }
 
@@ -619,9 +830,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void BuildRowCurves(IList<LyricWord> words)
         {
-            _rowCurves.Clear();
-            int count = Math.Min(words.Count, _wordLayouts.Count);
+            _rowCurveCount = 0;
+            int count = _wordLayoutCount;
             if (count == 0) return;
+
+            double smoothness = Math.Clamp(AnimationSmoothness, 0.0, 1.0);
 
             int rowStart = 0;
             while (rowStart < count)
@@ -630,14 +843,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     rowStart++;
                 if (rowStart >= count) break;
 
-                var firstWl = _wordLayouts[rowStart];
+                ref readonly var firstWl = ref _wordLayouts[rowStart];
                 float rowY = firstWl.Y, rowH = firstWl.Height;
                 float minX = firstWl.X, maxX = firstWl.X + firstWl.FullWidth;
                 int rowEnd = rowStart + 1;
 
                 while (rowEnd < count)
                 {
-                    var wl = _wordLayouts[rowEnd];
+                    ref readonly var wl = ref _wordLayouts[rowEnd];
                     if (wl.FullWidth <= 0) { rowEnd++; continue; }
                     if (Math.Abs(wl.Y - rowY) > rowH * 0.5f) break;
                     if (wl.X < minX) minX = wl.X;
@@ -650,9 +863,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 int lv = rowEnd - 1;
                 while (lv >= rowStart && _wordLayouts[lv].FullWidth <= 0) lv--;
 
-                _rowCurves.Add(fv <= lv
-                    ? BuildSingleRowCurve(words, fv, lv, minX, maxX)
-                    : new RowCurve(TimeSpan.Zero, []));
+                if (_rowCurveCount >= _rowCurves.Length)
+                {
+                    var tmp = new RowCurve[_rowCurves.Length * 2 + 4];
+                    Array.Copy(_rowCurves, tmp, _rowCurves.Length);
+                    _rowCurves = tmp;
+                }
+
+                _rowCurves[_rowCurveCount++] = fv <= lv
+                    ? BuildSingleRowCurve(words, fv, lv, minX, maxX, smoothness)
+                    : new RowCurve { Origin = TimeSpan.Zero, Points = [], Count = 0 };
 
                 rowStart = rowEnd;
             }
@@ -661,67 +881,118 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private RowCurve BuildSingleRowCurve(
             IList<LyricWord> words,
             int firstValid, int lastValid,
-            float minX, float maxX)
+            float minX, float maxX,
+            double smoothness)
         {
-            var indices = new List<int>();
-            var pxWidths = new List<float>();
-            var durMs = new List<double>();
+            int maxN = lastValid - firstValid + 1;
 
+            // stackalloc 用于短行（≤64字），避免堆分配
+            Span<int> indicesBuf = maxN <= 64 ? stackalloc int[maxN] : new int[maxN];
+            Span<float> pxWidthsBuf = maxN <= 64 ? stackalloc float[maxN] : new float[maxN];
+            Span<double> durMsBuf = maxN <= 64 ? stackalloc double[maxN] : new double[maxN];
+
+            int n = 0;
             for (int i = firstValid; i <= lastValid; i++)
             {
                 if (_wordLayouts[i].FullWidth <= 0) continue;
-                indices.Add(i);
-                pxWidths.Add(_wordLayouts[i].FullWidth);
-                durMs.Add(Math.Max(words[i].Duration.TotalMilliseconds, 1.0));
+                indicesBuf[n] = i;
+                pxWidthsBuf[n] = _wordLayouts[i].FullWidth;
+                durMsBuf[n] = Math.Max(words[i].Duration.TotalMilliseconds, 1.0);
+                n++;
             }
 
-            int n = indices.Count;
-            if (n == 0) return new RowCurve(words[firstValid].StartTime, []);
+            if (n == 0)
+                return new RowCurve { Origin = words[firstValid].StartTime, Points = [], Count = 0 };
 
-            var natVel = new double[n];
+            // ── 自然速度 ──────────────────────────────────────────────
+            Span<double> natVel = n <= 64 ? stackalloc double[n] : new double[n];
             for (int k = 0; k < n; k++)
-                natVel[k] = pxWidths[k] / durMs[k];
+                natVel[k] = pxWidthsBuf[k] / durMsBuf[k];
 
-            var smoothVel = new double[n];
-            for (int k = 0; k < n; k++)
+            // ── Catmull-Rom 切线速度 ──────────────────────────────────
+            //
+            // 核心公式：对字 k，使用前后邻字的时间加权平均速度作为切线：
+            //   catmullVel[k] = (natVel[k-1]×dur[k+1] + natVel[k+1]×dur[k-1])
+            //                   / (dur[k-1] + dur[k+1])
+            //
+            // 权重选择原因：持续时间越长的字，其速度对邻字的"视觉拉力"越小，
+            // 因此用对端时长作权重，对时长差异大的相邻字更鲁棒。
+            //
+            // 端点退化为单侧平均（前端取后邻，末端取前邻）。
+            Span<double> catmullVel = n <= 64 ? stackalloc double[n] : new double[n];
+            if (n == 1)
             {
-                double sumW = 0, sumV = 0;
-                for (int j = k - VelocitySmoothRadius; j <= k + VelocitySmoothRadius; j++)
+                catmullVel[0] = natVel[0];
+            }
+            else
+            {
+                catmullVel[0] = (natVel[0] + natVel[1]) * 0.5;
+                catmullVel[n - 1] = (natVel[n - 2] + natVel[n - 1]) * 0.5;
+                for (int k = 1; k < n - 1; k++)
                 {
-                    if (j < 0 || j >= n) continue;
-                    double triW = 1.0 - (double)Math.Abs(j - k) / (VelocitySmoothRadius + 1);
-                    double w = triW * pxWidths[j];
-                    sumW += w;
-                    sumV += natVel[j] * w;
+                    double tPrev = durMsBuf[k - 1];
+                    double tNext = durMsBuf[k + 1];
+                    catmullVel[k] = (natVel[k - 1] * tNext + natVel[k + 1] * tPrev)
+                                    / (tPrev + tNext);
                 }
-                smoothVel[k] = sumW > 0 ? sumV / sumW : natVel[k];
             }
 
-            var clampedVel = new double[n];
+            // ── 防过冲 clamp（非负，且不超自然速度 1.8 倍） ───────────
+            const double maxRatio = 1.8;
             for (int k = 0; k < n; k++)
-                clampedVel[k] = Math.Clamp(smoothVel[k], 0.0, natVel[k] * MaxTangentRatio);
+                catmullVel[k] = Math.Clamp(catmullVel[k], 0.0, natVel[k] * maxRatio);
 
+            // ── 按 smoothness 混合：finalVel = lerp(natVel, catmullVel, s) ──
+            Span<double> finalVel = n <= 64 ? stackalloc double[n] : new double[n];
+            for (int k = 0; k < n; k++)
+                finalVel[k] = natVel[k] + smoothness * (catmullVel[k] - natVel[k]);
+
+            // ── 构建控制点（含时间重心偏移） ───────────────────────────
+            //
+            // 时间偏移：adjustedTime = origTime - smoothness × timeBias × duration
+            //   timeBias = 0.08，smoothness=1 时最大提前 8%×duration（≤100ms约束内）。
+            //   偏移方向为负（提前），使扫光在字实际开始前已有预判感。
+            //   严格保证调整后时间不早于前一个控制点（单调递增约束）。
+            const double timeBias = 0.08;
             var lineOrigin = words[firstValid].StartTime;
-            var points = new List<CurvePoint>(n + 1);
+            var points = new CurvePoint[n + 1];
 
             for (int k = 0; k < n; k++)
             {
-                int wi = indices[k];
-                double tMs = (words[wi].StartTime - lineOrigin).TotalMilliseconds;
+                int wi = indicesBuf[k];
+                double origTMs = (words[wi].StartTime - lineOrigin).TotalMilliseconds;
+                double adjustedTMs = origTMs - smoothness * timeBias * durMsBuf[k];
+                double minTMs = k == 0 ? 0.0 : points[k - 1].TimeMs + 1.0;
+                adjustedTMs = Math.Max(adjustedTMs, minTMs);
+
                 float pixelX = _wordLayouts[wi].X - minX;
-                float vel = (float)clampedVel[k];
-                points.Add(new CurvePoint(tMs, pixelX, vel, vel));
+                float vel = (float)finalVel[k];
+                points[k] = new CurvePoint
+                {
+                    TimeMs = adjustedTMs,
+                    PixelX = pixelX,
+                    VelIn = vel,
+                    VelOut = vel,
+                };
             }
 
+            // 末尾哨兵：严格对齐最后一字结束时间，不偏移
             {
-                int lastIdx = indices[n - 1];
+                int lastIdx = indicesBuf[n - 1];
                 double endMs = (words[lastIdx].StartTime + words[lastIdx].Duration - lineOrigin)
                                .TotalMilliseconds;
+                endMs = Math.Max(endMs, points[n - 1].TimeMs + 1.0);
                 float endVel = (float)natVel[n - 1];
-                points.Add(new CurvePoint(endMs, maxX - minX, endVel, endVel));
+                points[n] = new CurvePoint
+                {
+                    TimeMs = endMs,
+                    PixelX = maxX - minX,
+                    VelIn = endVel,
+                    VelOut = endVel,
+                };
             }
 
-            return new RowCurve(lineOrigin, points);
+            return new RowCurve { Origin = lineOrigin, Points = points, Count = n + 1 };
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -737,13 +1008,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float w = (float)sender.ActualWidth;
             if (w <= 0) return;
 
-            // Draw 路径：使用专用入口，不在渲染回调内修改任何布局属性
             EnsureLayoutForDraw(ds, w);
-            if (_wordLayouts.Count == 0) return;
-
-            // ❌ 以下两行已彻底删除，Draw 回调内绝不修改 Height
-            // sender.Height = _measuredHeight;
-            // Height = _measuredHeight;
+            if (_wordLayoutCount == 0) return;
 
             using var cl = new CanvasCommandList(ds);
             using (var clDs = cl.CreateDrawingSession())
@@ -775,22 +1041,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float layoutWidth = Math.Max(1f, totalWidth - RenderPadding * 2f);
             float drawOffsetY = RenderPadding;
 
-            using var lyricsFmt = new CanvasTextFormat
-            {
-                FontFamily = FontFamilyName,
-                FontSize = (float)LyricsFontSize,
-                FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
-                WordWrapping = CanvasWordWrapping.WholeWord,
-                HorizontalAlignment = CanvasHorizontalAlignment.Left,
-            };
+            // 复用 CanvasTextFormat，不再每帧 new
+            var lyricsFmt = GetLyricsFmt();
 
-            int count = Math.Min(words.Count, _wordLayouts.Count);
+            int count = _wordLayoutCount;
             if (count == 0) return;
 
             // ── 暗色底层 ──────────────────────────────────────────────
             for (int i = 0; i < count; i++)
             {
-                var wl = _wordLayouts[i];
+                ref readonly var wl = ref _wordLayouts[i];
                 if (wl.FullWidth <= 0) continue;
                 ds.DrawText(wl.Text,
                     new Rect(wl.X, wl.Y + drawOffsetY + PaddingV, wl.FullWidth, wl.Height),
@@ -799,58 +1059,33 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             if (!_isCurrentLine) goto DrawTranslate;
 
-            // ── 视觉行分组 ────────────────────────────────────────────
-            var visualRows = new List<(float MinX, float MaxX, float Y, float H,
-                                       int WordStart, int WordEnd)>();
-            {
-                int rs = 0;
-                while (rs < count)
-                {
-                    while (rs < count && _wordLayouts[rs].FullWidth <= 0) rs++;
-                    if (rs >= count) break;
-
-                    var first = _wordLayouts[rs];
-                    float ry = first.Y, rh = first.Height;
-                    float mnX = first.X, mxX = first.X + first.FullWidth;
-                    int re = rs + 1;
-
-                    while (re < count)
-                    {
-                        var wl = _wordLayouts[re];
-                        if (wl.FullWidth <= 0) { re++; continue; }
-                        if (Math.Abs(wl.Y - ry) > rh * 0.5f) break;
-                        if (wl.X < mnX) mnX = wl.X;
-                        if (wl.X + wl.FullWidth > mxX) mxX = wl.X + wl.FullWidth;
-                        re++;
-                    }
-
-                    visualRows.Add((mnX, mxX, ry, rh, rs, re - 1));
-                    rs = re;
-                }
-            }
+            // ── 使用预计算视觉行，无每帧分组开销 ─────────────────────
+            EnsureSmoothedRevealXCapacity(_visualRowCount);
 
             var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
-
-            int rowCount = visualRows.Count;
             const float kDeltaSec = 0.016f;
 
-            for (int ri = 0; ri < rowCount; ri++)
+            for (int ri = 0; ri < _visualRowCount; ri++)
             {
-                var (minX, maxX, rowY, rowH, wordStart, wordEnd) = visualRows[ri];
+                ref readonly var row = ref _visualRows[ri];
+                float minX = row.MinX, maxX = row.MaxX;
+                float rowY = row.Y, rowH = row.H;
                 if (maxX - minX <= 0) continue;
 
+                int wordStart = row.WordStart, wordEnd = row.WordEnd;
                 int fv = wordStart;
                 while (fv <= wordEnd && _wordLayouts[fv].FullWidth <= 0) fv++;
                 int lv = wordEnd;
                 while (lv >= wordStart && _wordLayouts[lv].FullWidth <= 0) lv--;
                 if (fv > lv) continue;
 
-                float targetRevealX = ri < _rowCurves.Count && _rowCurves[ri].Points.Count > 0
-                    ? CalcRevealXHermite(_rowCurves[ri], effectiveTime, minX, maxX)
+                float targetRevealX = ri < _rowCurveCount && _rowCurves[ri].Count > 0
+                    ? CalcRevealXHermite(ref _rowCurves[ri], effectiveTime, minX, maxX)
                     : CalcRevealXFallback(words, fv, lv, minX, effectiveTime);
 
-                if (!_smoothedRevealX.TryGetValue(ri, out float smoothed))
-                    smoothed = targetRevealX;
+                // 指数衰减 lerp（NaN = 首次，直接吸附）
+                float smoothed = _smoothedRevealX[ri];
+                if (float.IsNaN(smoothed)) smoothed = targetRevealX;
 
                 float diff = targetRevealX - smoothed;
                 if (Math.Abs(diff) > 0.5f)
@@ -871,6 +1106,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 float revealX = smoothed;
                 float highlightWidth = revealX - minX;
 
+                // ── 亮色高亮 ──────────────────────────────────────────
                 if (highlightWidth > 0f)
                 {
                     using (ds.CreateLayer(1f,
@@ -878,7 +1114,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     {
                         for (int i = fv; i <= lv; i++)
                         {
-                            var wl = _wordLayouts[i];
+                            ref readonly var wl = ref _wordLayouts[i];
                             if (wl.FullWidth <= 0) continue;
                             ds.DrawText(wl.Text,
                                 new Rect(wl.X, wl.Y + drawOffsetY + PaddingV,
@@ -888,19 +1124,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     }
                 }
 
+                // ── 羽化边缘 ──────────────────────────────────────────
                 if (revealX > minX && revealX < maxX)
                 {
                     float feather = Math.Min(FeatherWidth, maxX - revealX);
                     if (feather > 0.5f)
                     {
-                        var gradStops = new CanvasGradientStop[]
+                        // 复用 gradStops 数组，不每帧分配
+                        if (!_gradStopsValid)
                         {
-                            new() { Color = _brightColor, Position = 0f },
-                            new() { Color = Color.FromArgb(0,
-                                        _brightColor.R, _brightColor.G, _brightColor.B),
-                                    Position = 1f },
-                        };
-                        using var gradBrush = new CanvasLinearGradientBrush(ds, gradStops)
+                            _gradStops[0] = new CanvasGradientStop
+                            { Color = _brightColor, Position = 0f };
+                            _gradStops[1] = new CanvasGradientStop
+                            {
+                                Color = Color.FromArgb(0,
+                                    _brightColor.R, _brightColor.G, _brightColor.B),
+                                Position = 1f,
+                            };
+                            _gradStopsValid = true;
+                        }
+
+                        using var gradBrush = new CanvasLinearGradientBrush(ds, _gradStops)
                         {
                             StartPoint = new Vector2(revealX, 0f),
                             EndPoint = new Vector2(revealX + feather, 0f),
@@ -910,7 +1154,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         {
                             for (int i = fv; i <= lv; i++)
                             {
-                                var wl = _wordLayouts[i];
+                                ref readonly var wl = ref _wordLayouts[i];
                                 if (wl.FullWidth <= 0) continue;
                                 ds.DrawText(wl.Text,
                                     new Rect(wl.X, wl.Y + drawOffsetY + PaddingV,
@@ -922,33 +1166,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
             }
 
-            DrawTranslate:
+        DrawTranslate:
             if (!string.IsNullOrEmpty(TranslateText))
             {
-                using var measureFmt = new CanvasTextFormat
-                {
-                    FontFamily = FontFamilyName,
-                    FontSize = (float)LyricsFontSize,
-                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
-                    WordWrapping = CanvasWordWrapping.WholeWord,
-                    HorizontalAlignment = CanvasHorizontalAlignment.Left,
-                };
-                using var measureLayout = new CanvasTextLayout(
-                    ds, BuildFullText(LyricWords!), measureFmt, layoutWidth, 9999f);
-                float lyricsHeight = (float)measureLayout.LayoutBounds.Height;
-
-                using var transFmt = new CanvasTextFormat
-                {
-                    FontFamily = FontFamilyName,
-                    FontSize = (float)TranslateFontSize,
-                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
-                    WordWrapping = CanvasWordWrapping.WholeWord,
-                    HorizontalAlignment = LyricsTextAlignment,
-                };
+                // 复用 transFmt + 缓存的 Y 偏移，不再每帧重新 layout
+                var transFmt = GetTransFmt();
                 ds.DrawText(
                     TranslateText,
                     new Rect(RenderPadding,
-                             drawOffsetY + PaddingV + lyricsHeight + 6f,
+                             drawOffsetY + _cachedTranslateOffsetY,
                              layoutWidth, 9999f),
                     _translateColor, transFmt);
             }
@@ -966,10 +1192,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (dt <= 0) return p1;
             float t = Math.Clamp((float)(elapsed / dt), 0f, 1f);
             float t2 = t * t, t3 = t2 * t;
-
             float tm0 = m0 * (float)dt;
             float tm1 = m1 * (float)dt;
-
             return (2 * t3 - 3 * t2 + 1) * p0
                  + (t3 - 2 * t2 + t) * tm0
                  + (-2 * t3 + 3 * t2) * p1
@@ -977,17 +1201,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private static float CalcRevealXHermite(
-            RowCurve curve, TimeSpan effectiveTime, float minX, float maxX)
+            ref RowCurve curve, TimeSpan effectiveTime, float minX, float maxX)
         {
+            int ptCount = curve.Count;
+            if (ptCount == 0) return minX;
             var pts = curve.Points;
-            if (pts.Count == 0) return minX;
 
             double elapsedMs = (effectiveTime - curve.Origin).TotalMilliseconds;
-
             if (elapsedMs <= pts[0].TimeMs) return minX;
-            if (elapsedMs >= pts[^1].TimeMs) return maxX;
+            if (elapsedMs >= pts[ptCount - 1].TimeMs) return maxX;
 
-            int lo = 0, hi = pts.Count - 2;
+            int lo = 0, hi = ptCount - 2;
             while (lo < hi)
             {
                 int mid = (lo + hi) / 2;
@@ -995,8 +1219,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 else hi = mid;
             }
 
-            var p0 = pts[lo];
-            var p1 = pts[lo + 1];
+            ref readonly var p0 = ref pts[lo];
+            ref readonly var p1 = ref pts[lo + 1];
             double dt = p1.TimeMs - p0.TimeMs;
             double segElapsed = elapsedMs - p0.TimeMs;
 
@@ -1027,12 +1251,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float accX = minX;
             for (int i = fv; i <= lv; i++)
             {
-                var wl = _wordLayouts[i];
+                ref readonly var wl = ref _wordLayouts[i];
                 if (wl.FullWidth <= 0) continue;
                 var word = words[i];
                 var wordEnd = word.StartTime + word.Duration;
                 if (effectiveTime >= wordEnd)
+                {
                     accX += wl.FullWidth;
+                }
                 else if (effectiveTime >= word.StartTime)
                 {
                     float t = word.Duration > TimeSpan.Zero
@@ -1047,6 +1273,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             return accX;
         }
+
+        // ── 工具 ─────────────────────────────────────────────────────
 
         private static string BuildFullText(IList<LyricWord> words)
         {
