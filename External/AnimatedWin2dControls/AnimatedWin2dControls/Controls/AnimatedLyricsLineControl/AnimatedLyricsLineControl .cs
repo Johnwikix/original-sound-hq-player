@@ -142,6 +142,31 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             DefaultStyleKey = typeof(AnimatedLyricsLineControl);
             UpdateColors(IsDark);
+            Unloaded += OnUnloaded; // ← 添加
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            // 解绑计时器
+            DestroyTimer();
+            if (_blurTimer is not null)
+            {
+                _blurTimer.Stop();
+                _blurTimer.Tick -= OnBlurTimerTick;
+                _blurTimer = null;
+            }
+
+            // 解绑 Canvas 事件
+            if (_canvas is not null)
+            {
+                _canvas.Draw -= OnDraw;
+                _canvas.SizeChanged -= OnCanvasSizeChanged;
+                _canvas.CreateResources -= OnCreateResources;
+                _canvas = null;
+            }
+
+            // 释放 DirectWrite 原生资源
+            DisposeFmtCache();
         }
 
         // ── OnApplyTemplate ──────────────────────────────────────────
