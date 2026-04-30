@@ -331,7 +331,7 @@ namespace WinUIMusicPlayer.ViewModel
             SystemMediaControlsService = systemMediaControlsService;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             SongsSource.CollectionChanged += SongsSource_CollectionChanged;
-            ProgressTimer = new System.Timers.Timer(200);
+            ProgressTimer = new System.Timers.Timer(500);
             ProgressTimer.Elapsed += ProgressTimer_Elapsed;
         }
 

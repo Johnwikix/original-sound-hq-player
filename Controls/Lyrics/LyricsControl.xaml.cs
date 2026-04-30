@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 var diff = (externalTime - ctrl._internalPosition).Duration(); // 取绝对值
 
                 // 误差超过 50ms 才强制校准，避免外部轮询抖动干扰内部节拍
-                if (diff > TimeSpan.FromMilliseconds(100))
+                if (diff > TimeSpan.FromMilliseconds(250))
                     ctrl._internalPosition = externalTime;
             }
         }
@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
 
-        // ── 内部高频计时器（~16.67ms / 60fps）─────────────────────────
+        // ── 内部计时器 ─────────────────────────
         private DispatcherTimer _internalTimer;
         private TimeSpan _internalPosition = TimeSpan.Zero;
         private DateTime _lastTickTime;
@@ -136,11 +136,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _internalPosition += elapsed;
             UpdateLyricsInternal(_internalPosition);
-            //var lyrics = UILyrics;
-            //if (lyrics != null && _lastLyricIndex >= 0 && _lastLyricIndex < lyrics.Count)
-            //{
-            //    lyrics[_lastLyricIndex].CurrentPlayingTime = _internalPosition;
-            //}
         }
 
         // ── 歌词匹配逻辑（从外部移入控件）────────────────────────────────

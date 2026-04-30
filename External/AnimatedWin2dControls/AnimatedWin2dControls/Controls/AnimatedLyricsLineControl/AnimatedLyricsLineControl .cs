@@ -88,7 +88,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private DateTimeOffset _lastTickAt;
         private TimeSpan _currentTime = TimeSpan.Zero;
         private TimeSpan _lastExternalTime = TimeSpan.Zero;
-        private const double SyncThresholdMs = 150.0;
+        private const double SyncThresholdMs = 250.0;
 
         // ── 平滑追赶：float[] 替代 Dictionary<int,float>，避免装箱 ───
         private float[] _smoothedRevealX = [];
