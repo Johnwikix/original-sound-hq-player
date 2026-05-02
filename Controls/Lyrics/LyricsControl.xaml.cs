@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (d is not LyricsControl c) return;
             var ext = (TimeSpan)e.NewValue;
             // 误差 > 100ms 才强制校准内部时钟，避免外部轮询抖动
-            if (Math.Abs((ext - c._internalPosition).TotalMilliseconds) > 100)
+            if (Math.Abs((ext - c._internalPosition).TotalMilliseconds) > 150)
                 c._internalPosition = ext;
             // 同步透传给画布（画布自己也有独立时钟，但需要外部基准做漂移修正）
             c.LyricsCanvas.CurrentPlayingTime = ext;
@@ -257,7 +257,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             this.InitializeComponent();
 
-            _internalTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _internalTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33.3) };
             _internalTimer.Tick += InternalTimer_Tick;
 
             // 画布点击 → 透传 LyricInteracted
