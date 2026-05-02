@@ -8,6 +8,11 @@ using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
+    /// <summary>
+    /// 歌词外壳控件。
+    /// 职责：布局（ScrollView + OpacityMask + 上下占位）、属性透传、滚动响应、鼠标滚轮。
+    /// 行匹配、动画帧推进、时钟全部由 UnifiedLyricsCanvasControl 的单一计时器负责。
+    /// </summary>
     public sealed partial class LyricsControl : UserControl
     {
         // ─────────────────────────────────────────────────────────────────────
@@ -25,21 +30,17 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
                 typeof(ObservableCollection<LyricLine>), typeof(LyricsControl),
-                new PropertyMetadata(null, OnUILyricsChanged));
+                new PropertyMetadata(null, (d, e) =>
+                {
+                    if (d is not LyricsControl c) return;
+                    // 直接透传，Canvas 内部会自行重置行索引 / 计时器
+                    c.LyricsCanvas.UILyrics = e.NewValue as ObservableCollection<LyricLine>;
+                }));
 
         public ObservableCollection<LyricLine>? UILyrics
         {
             get => (ObservableCollection<LyricLine>?)GetValue(UILyricsProperty);
             set => SetValue(UILyricsProperty, value);
-        }
-
-        private static void OnUILyricsChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not LyricsControl c) return;
-            c.LyricsCanvas.UILyrics = e.NewValue as ObservableCollection<LyricLine>;
-            c._lastLyricIndex = -1;
-            c.LyricsCanvas.CurrentLineIndex = -1;
         }
 
         // ── LyricsMargin ──────────────────────────────────────────────────────
@@ -58,7 +59,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
             DependencyProperty.Register(nameof(CurrentPlayingTime),
                 typeof(TimeSpan), typeof(LyricsControl),
-                new PropertyMetadata(TimeSpan.Zero, OnCurrentPlayingTimeChanged));
+                new PropertyMetadata(TimeSpan.Zero,
+                    (d, e) => ((LyricsControl)d).LyricsCanvas.CurrentPlayingTime = (TimeSpan)e.NewValue));
 
         public TimeSpan CurrentPlayingTime
         {
@@ -66,23 +68,12 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(CurrentPlayingTimeProperty, value);
         }
 
-        private static void OnCurrentPlayingTimeChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not LyricsControl c) return;
-            var ext = (TimeSpan)e.NewValue;
-            // 误差 > 100ms 才强制校准内部时钟，避免外部轮询抖动
-            if (Math.Abs((ext - c._internalPosition).TotalMilliseconds) > 150)
-                c._internalPosition = ext;
-            // 同步透传给画布（画布自己也有独立时钟，但需要外部基准做漂移修正）
-            c.LyricsCanvas.CurrentPlayingTime = ext;
-        }
-
         // ── IsPlaying ─────────────────────────────────────────────────────────
         public static readonly DependencyProperty IsPlayingProperty =
             DependencyProperty.Register(nameof(IsPlaying),
                 typeof(bool), typeof(LyricsControl),
-                new PropertyMetadata(false, OnIsPlayingChanged));
+                new PropertyMetadata(false,
+                    (d, e) => ((LyricsControl)d).LyricsCanvas.IsPlaying = (bool)e.NewValue));
 
         public bool IsPlaying
         {
@@ -90,18 +81,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(IsPlayingProperty, value);
         }
 
-        private static void OnIsPlayingChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not LyricsControl c) return;
-            c.LyricsCanvas.IsPlaying = (bool)e.NewValue;
-            if ((bool)e.NewValue)
-                c.StartInternalTimer();
-            else
-                c.StopInternalTimer();
-        }
-
-        // ── 画布视觉属性（透传到 UnifiedLyricsCanvasControl）─────────────────
+        // ── 画布视觉属性（透传）──────────────────────────────────────────────
 
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize), typeof(double),
@@ -147,8 +127,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment LyricsTextAlignment
         {
-            get => (Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment)
-                       GetValue(LyricsTextAlignmentProperty);
+            get => (Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment)GetValue(LyricsTextAlignmentProperty);
             set => SetValue(LyricsTextAlignmentProperty, value);
         }
 
@@ -175,70 +154,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 内部高频计时器（歌词匹配）
+        // 自动滚动：监听 Canvas 的 CurrentLineOffsetYChanged
         // ─────────────────────────────────────────────────────────────────────
 
-        private readonly DispatcherTimer _internalTimer;
-        private TimeSpan _internalPosition = TimeSpan.Zero;
-        private DateTime _lastTickTime;
-        private int _lastLyricIndex = -1;
-
-        private void StartInternalTimer()
-        {
-            if (_internalTimer.IsEnabled) return;
-            _lastTickTime = DateTime.UtcNow;
-            _internalTimer.Start();
-        }
-
-        private void StopInternalTimer()
-        {
-            _internalTimer.Stop();
-        }
-
-        private void InternalTimer_Tick(object sender, object e)
-        {
-            var now = DateTime.UtcNow;
-            _internalPosition += now - _lastTickTime;
-            _lastTickTime = now;
-            UpdateLyricsHighlight(_internalPosition);
-        }
-
-        // ── 歌词匹配 → 写入 CurrentLineIndex ─────────────────────────────────
-
-        private void UpdateLyricsHighlight(TimeSpan position)
-        {
-            var lyrics = UILyrics;
-            if (lyrics is null || lyrics.Count == 0) return;
-
-            int currentIndex = -1;
-            for (int i = 0; i < lyrics.Count; i++)
-            {
-                if (lyrics[i].Time <= position) currentIndex = i;
-                else break;
-            }
-
-            if (currentIndex < 0 || currentIndex == _lastLyricIndex) return;
-
-            _lastLyricIndex = currentIndex;
-            // 通过依赖属性写入，画布的 OnCurrentLineIndexChanged 自动触发滚动 + 动画
-            LyricsCanvas.CurrentLineIndex = currentIndex;
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // 自动滚动：监听画布的 CurrentLineOffsetYChanged 事件
-        // ─────────────────────────────────────────────────────────────────────
-
-        // [修复4] LyricsControl.OnCurrentLineOffsetYChanged：_canvas → LyricsCanvas
-        // 同时简化计算：canvasOffsetY 现在已经是行中心，直接减去 ScrollView 高度一半即可
         private void OnCurrentLineOffsetYChanged(object? sender, double canvasOffsetY)
         {
             // canvasOffsetY = 目标行在 LyricsCanvas 内的垂直中心 Y
-
-            // 将 LyricsCanvas 的原点转换到 ScrollView 内容坐标系
             var transform = LyricsCanvas.TransformToVisual(LyricViewer.Content as UIElement ?? LyricsCanvas);
             var canvasOrigin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
 
-            // 目标：让行中心对齐 ScrollView 中央
             double scrollTarget = canvasOrigin.Y + canvasOffsetY - LyricViewer.ActualHeight / 2.0;
             scrollTarget = Math.Max(0, scrollTarget);
 
@@ -257,25 +181,24 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             this.InitializeComponent();
 
-            _internalTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33.3) };
-            _internalTimer.Tick += InternalTimer_Tick;
+            // Canvas 点击 → 透传 LyricInteracted
+            LyricsCanvas.LyricLineClicked += OnCanvasLyricLineClicked;
 
-            // 画布点击 → 透传 LyricInteracted
-            LyricsCanvas.LyricLineClicked += (_, ts) => LyricInteracted?.Invoke(this, ts);
-
-            // 画布当前行 Y 偏移变化 → 自动滚动
+            // Canvas 行变化 → 自动滚动
             LyricsCanvas.CurrentLineOffsetYChanged += OnCurrentLineOffsetYChanged;
 
             Unloaded += (_, _) =>
             {
-                StopInternalTimer();
-                LyricsCanvas.LyricLineClicked -= (_, ts) => LyricInteracted?.Invoke(this, ts);
+                LyricsCanvas.LyricLineClicked -= OnCanvasLyricLineClicked;
                 LyricsCanvas.CurrentLineOffsetYChanged -= OnCurrentLineOffsetYChanged;
             };
         }
 
+        private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
+            => LyricInteracted?.Invoke(this, ts);
+
         // ─────────────────────────────────────────────────────────────────────
-        // 鼠标滚轮（保持原有行为）
+        // 鼠标滚轮
         // ─────────────────────────────────────────────────────────────────────
 
         private void MaskView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
