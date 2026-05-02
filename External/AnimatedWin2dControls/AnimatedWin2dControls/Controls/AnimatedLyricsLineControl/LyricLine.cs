@@ -1,12 +1,10 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using WinUIMusicPlayer.ViewModel;
 
-namespace WinUIMusicPlayer.Controls.Lyrics
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
     public partial class LyricLine : ObservableObject
     {
@@ -27,10 +25,5 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             get => field;
             set => SetProperty(ref field, value);
         } = TimeSpan.Zero;
-
-        public bool IsBlur { get => field; set => SetProperty(ref field, value); } = true;
-
-        public string LyricText => string.Join(string.Empty, Words.Select(w => w.Word));
-        public AppViewModel AppViewModel => App.Services.GetRequiredService<AppViewModel>();
     }
 }

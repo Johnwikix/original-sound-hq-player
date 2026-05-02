@@ -40,80 +40,23 @@
                 </Rectangle.Fill>
             </Rectangle>
         </controls:OpacityMaskView.OpacityMask>
-        <ScrollView
-            x:Name="LyricViewer"
-            Margin="0"
-            VerticalScrollBarVisibility="Auto">
+        <ScrollView x:Name="LyricViewer" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <StackPanel Height="1080" />
-                <ListView
-                    x:Name="LyricsListView"
+                <!--  上方占位，让第一行歌词能滚到屏幕中央  -->
+                <StackPanel x:Name="TopSpacer" Height="1080" />
+                <!--  单一画布控件，替换原 ListView  -->
+                <alc:UnifiedLyricsCanvasControl
+                    x:Name="LyricsCanvas"
                     Margin="{x:Bind LyricsMargin, Mode=OneWay}"
-                    VerticalAlignment="Stretch"
-                    behaviors:AnimatedLyricsAutoScrollBehavior.TargetScrollView="{x:Bind LyricViewer}"
-                    IsItemClickEnabled="True"
-                    ItemClick="LyricsListView_ItemClick"
-                    ItemsSource="{x:Bind UILyrics, Mode=OneWay}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollMode="Disabled"
-                    SelectionMode="None">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0" />
-                            <Setter Property="MinHeight" Value="0" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListViewItem">
-                                        <ContentPresenter
-                                            x:Name="ContentPresenter"
-                                            Margin="{TemplateBinding Padding}"
-                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                            Background="{TemplateBinding Background}"
-                                            Content="{TemplateBinding Content}"
-                                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                                            ContentTransitions="{TemplateBinding ContentTransitions}" />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="local:LyricLine">
-                            <Grid
-                                x:Name="LyricsLineGrid"
-                                CornerRadius="5"
-                                PointerEntered="LyricsLineGrid_PointerEntered"
-                                PointerExited="LyricsLineGrid_PointerExited">
-                                <alc:AnimatedLyricsLineControl
-                                    Margin="0"
-                                    AnimationSmoothness="1"
-                                    BlurMax="{x:Bind AppViewModel.LyricsBlurAmount, Mode=OneWay}"
-                                    CurrentPlayingTime="{x:Bind AppViewModel.CurrentPlayingTime, Mode=OneWay}"
-                                    FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
-                                    IsBlur="{x:Bind IsBlur, Mode=OneWay}"
-                                    IsCurrentLine="{x:Bind IsCurrent, Mode=OneWay}"
-                                    IsDark="{x:Bind AppViewModel.IsDarkMode, Mode=OneWay}"
-                                    IsPlaying="{x:Bind AppViewModel.IsPlaying, Mode=OneWay}"
-                                    LyricWords="{x:Bind Words, Mode=OneWay}"
-                                    LyricsFontSize="{x:Bind utils:BindUtils.LyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
-                                    LyricsTextAlignment="{x:Bind utils:BindUtils.ConvertStringToTextAlignment(AppViewModel.LyricsAlignment), Mode=OneWay}"
-                                    TranslateFontSize="{x:Bind utils:BindUtils.TranslateLyricsFontSizeConverter(AppViewModel.LyricsFontSize, AppViewModel.GlobalFontSize, AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
-                                    TranslateText="{x:Bind TransLateText, Mode=OneWay}">
-                                    <interactivity:Interaction.Behaviors>
-                                        <behaviors:AnimatedLyricsAutoScrollBehavior />
-                                    </interactivity:Interaction.Behaviors>
-                                </alc:AnimatedLyricsLineControl>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                    HorizontalAlignment="Stretch"
+                    AnimationSmoothness="{x:Bind AnimationSmoothness, Mode=OneWay}"
+                    FontFamilyName="{x:Bind FontFamilyName, Mode=OneWay}"
+                    IsDark="{x:Bind IsDark, Mode=OneWay}"
+                    LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
+                    LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
+                    TranslateFontSize="{x:Bind TranslateFontSize, Mode=OneWay}" />
+                <!--  下方占位  -->
+
                 <StackPanel Height="1080" />
             </StackPanel>
         </ScrollView>

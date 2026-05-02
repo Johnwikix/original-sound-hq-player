@@ -539,10 +539,17 @@
                 Margin="0,40,0,40">
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
+                    x:Name="LyricsView"
+                    AnimationSmoothness="0.65"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
+                    FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
+                    IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
-                    LyricInteracted="LyricsControl_LyricInteracted"
+                    LyricInteracted="LyricsView_LyricInteracted"
+                    LyricsFontSize="{x:Bind tool:BindUtils.LyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
+                    LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
+                    TranslateFontSize="{x:Bind tool:BindUtils.TranslateLyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}" />
             </Grid>
         </Grid>
