@@ -224,14 +224,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ═════════════════════════════════════════════════════════════════════
 
         // ── UILyrics ──────────────────────────────────────────────────────────
+        // UILyricsProperty 回调：切歌时完整重置，但不做数量断言
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
                 typeof(ObservableCollection<LyricLine>), typeof(UnifiedLyricsCanvasControl),
                 new PropertyMetadata(null, (d, _) =>
                 {
-                    var c = (UnifiedLyricsCanvasControl)d;
-                    c.InvalidateLayoutCache();
+                    if (d is not UnifiedLyricsCanvasControl c) return;
+                    c._currentLineIndex = -1;
+                    c._currentTime = TimeSpan.Zero;
+                    c._lastExternalTime = TimeSpan.Zero;
+                    c.DestroyTimer();
+                    c.InvalidateLayoutCache();  // 清零 _cachedLayoutKey，强制下次 EnsureLayout 完整重建
                     c.InvalidateMeasure();
+                    c._canvas?.Invalidate();
                 }));
 
         public ObservableCollection<LyricLine>? UILyrics
@@ -420,10 +426,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
 
-
-        //public static readonly DependencyProperty CurrentLineOffsetYProperty =
-        //    CurrentLineOffsetYPropertyKey.DependencyProperty;
-
         /// <summary>
         /// 当前高亮行在 CanvasControl 中的 Y 偏移（px）。
         /// 外部 ScrollView behavior 绑定此值，无需遍历 ListView。
@@ -529,9 +531,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void UpdateCurrentLineOffsetY()
         {
-            double newY = (_currentLineIndex >= 0 && _currentLineIndex < _lineLayoutCount)
-                ? _lineLayouts[_currentLineIndex].OffsetY
-                : 0.0;
+            double newY;
+            if (_currentLineIndex >= 0 && _currentLineIndex < _lineLayoutCount)
+            {
+                ref readonly var ll = ref _lineLayouts[_currentLineIndex];
+                // 返回行的垂直中心点，外部 ScrollView 直接以此为基准做 ActualHeight/2 偏移
+                newY = ll.OffsetY + ll.Height / 2.0;
+            }
+            else
+            {
+                newY = 0.0;
+            }
 
             if (Math.Abs(newY - _currentLineOffsetY) > 0.5)
             {
@@ -555,7 +565,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 return;
             }
 
-            string key = BuildLayoutKey(lyrics);
+            // Count 作为 key 前缀：切歌后 Count 变化时必然 miss，触发完整重建
+            string key = $"{lyrics.Count}:{BuildLayoutKey(lyrics)}";
             if (key == _cachedLayoutKey && Math.Abs(availableWidth - _cachedLayoutWidth) < 1f)
                 return;
 
@@ -997,14 +1008,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float w = (float)sender.ActualWidth;
             if (w <= 0) return;
 
-            // 宽度变化 / 内容变化时在绘制路径重建布局
+            // 无论何种原因导致布局失效，都让 EnsureLayout 自己判断是否需要重建
             if (_lineLayoutCount == 0 || Math.Abs(w - _cachedLayoutWidth) >= 2f)
             {
                 float oldH = _totalCanvasHeight;
-                EnsureLayout(ds, w);
+                EnsureLayout(sender, w);
                 if (Math.Abs(_totalCanvasHeight - oldH) > 1f)
                     DispatcherQueue.TryEnqueue(InvalidateMeasure);
             }
+
             if (_lineLayoutCount == 0) return;
 
             ds.Antialiasing = CanvasAntialiasing.Antialiased;

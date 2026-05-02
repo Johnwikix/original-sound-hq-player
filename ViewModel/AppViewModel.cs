@@ -1,5 +1,6 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Lyricify.Lyrics.Providers.Web.Netease;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
@@ -440,11 +441,12 @@ namespace WinUIMusicPlayer.ViewModel
                 // 解析歌词并添加到UI集合
                 List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
                 App.MainWindow.DispatcherQueue.TryEnqueue(() => {
-                    UILyrics.Clear();
-                    foreach (var lyric in parsedLyrics)
-                    {
-                        UILyrics.Add(lyric);
-                    }
+                    UILyrics = new(parsedLyrics);
+                    //UILyrics.Clear();
+                    //foreach (var lyric in parsedLyrics)
+                    //{
+                    //    UILyrics.Add(lyric);
+                    //}
                 });
             });
             

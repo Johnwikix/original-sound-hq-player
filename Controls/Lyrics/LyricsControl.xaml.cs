@@ -228,30 +228,25 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         // 自动滚动：监听画布的 CurrentLineOffsetYChanged 事件
         // ─────────────────────────────────────────────────────────────────────
 
+        // [修复4] LyricsControl.OnCurrentLineOffsetYChanged：_canvas → LyricsCanvas
+        // 同时简化计算：canvasOffsetY 现在已经是行中心，直接减去 ScrollView 高度一半即可
         private void OnCurrentLineOffsetYChanged(object? sender, double canvasOffsetY)
         {
-            //if (_canvas is null) return; // _canvas = LyricsCanvas 的宿主 CanvasControl，这里指 LyricsCanvas
+            // canvasOffsetY = 目标行在 LyricsCanvas 内的垂直中心 Y
 
-            // canvasOffsetY 是目标行在 CanvasControl 内的 Y 偏移。
-            // 我们需要把它转换为 ScrollView 的滚动目标：
-            //   scrollTarget = TopSpacer.Height + CanvasControl 在 StackPanel 中的 Y + canvasOffsetY
-            //                  - ScrollView.ActualHeight / 2（使当前行居中）
-            //
-            // 这里使用 TransformToVisual 做精确坐标转换：
-            var transform = LyricsCanvas.TransformToVisual(LyricViewer.Content as UIElement
-                            ?? LyricsCanvas);
-            var canvasOrigin = transform.TransformPoint(new Point(0, 0));
+            // 将 LyricsCanvas 的原点转换到 ScrollView 内容坐标系
+            var transform = LyricsCanvas.TransformToVisual(LyricViewer.Content as UIElement ?? LyricsCanvas);
+            var canvasOrigin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
 
-            double scrollTarget = canvasOrigin.Y + canvasOffsetY
-                                  - LyricViewer.ActualHeight / 2.0
-                                  + LyricsCanvas.ActualHeight / 20.0; // 微调让行略高于中央
-
+            // 目标：让行中心对齐 ScrollView 中央
+            double scrollTarget = canvasOrigin.Y + canvasOffsetY - LyricViewer.ActualHeight / 2.0;
             scrollTarget = Math.Max(0, scrollTarget);
 
             LyricViewer.ScrollTo(
                 0, scrollTarget,
-                new ScrollingScrollOptions(ScrollingAnimationMode.Enabled,
-                                           ScrollingSnapPointsMode.Ignore));
+                new ScrollingScrollOptions(
+                    ScrollingAnimationMode.Enabled,
+                    ScrollingSnapPointsMode.Ignore));
         }
 
         // ─────────────────────────────────────────────────────────────────────
