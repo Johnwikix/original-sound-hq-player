@@ -191,6 +191,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _gradBrushDirty = true;  // IsDark 变化时重建
         private int _hoveredLineIndex = -1;
 
+        private CanvasRenderTarget?[] _blurredLineCache = [];
+        private string? _blurCacheKey = null;
+        private float _blurCacheAmount = -1f;
+        private CanvasRenderTarget?[] _clearLineCache = [];   // 清晰版缓存
+        private float[] _blurAlpha = [];                      // 每行当前模糊透明度 0=清晰 1=全糊
+        private const float BlurTransitionDuration = 1.0f;    // 秒
+
         // ─────────────────────────────────────────────────────────────────────
         // 构造 / 生命周期
         // ─────────────────────────────────────────────────────────────────────
@@ -218,6 +225,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerCanceled -= OnPointerReleased;
                 _canvas = null;
             }
+            foreach (var rt in _blurredLineCache) rt?.Dispose();
+            _blurredLineCache = [];
+            foreach (var rt in _clearLineCache) rt?.Dispose();
+            _clearLineCache = [];
+            _blurAlpha = [];
             _gradBrush?.Dispose();
             _gradBrush = null;
             DisposeFmtCache();
@@ -421,7 +433,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (d is not UnifiedLyricsCanvasControl c) return;
             c.UpdateColors((bool)e.NewValue);
-            c._gradBrushDirty = true;        // ← 改这里，不再用 _gradStopsValid
+            c._gradBrushDirty = true;
+            c._blurCacheAmount = -1f;
             c._canvas?.Invalidate();
         }
 
@@ -486,7 +499,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public static readonly DependencyProperty LyricsBlurAmountProperty =
             DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
-            typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(2.0,
+            typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(4.0,
             (d, _) => (d as UnifiedLyricsCanvasControl)?._canvas?.Invalidate()));
 
         public double LyricsBlurAmount
@@ -915,6 +928,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             EnsureSmoothedRevealXCapacity(_visualRowCount);
             RebuildAllRowCurves();
+            BakeBlurCache(creator, availableWidth);
             DisposeFmtCache();
             UpdateCurrentLineOffsetY();
 
@@ -924,6 +938,93 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 AutoScrollToCurrentLine();
                 _smoothedScrollY = _targetScrollY;
             }
+        }
+
+        private void BakeBlurCache(ICanvasResourceCreator creator, float canvasWidth)
+        {
+            float blurAmount = (float)LyricsBlurAmount;
+            string key = _cachedLayoutKey ?? "";
+
+            if (_blurCacheKey == key
+                && Math.Abs(_blurCacheAmount - blurAmount) < 0.05f
+                && _blurredLineCache.Length >= _lineLayoutCount)
+                return;
+
+            foreach (var rt in _blurredLineCache) rt?.Dispose();
+            foreach (var rt in _clearLineCache) rt?.Dispose();
+            _blurredLineCache = new CanvasRenderTarget?[_lineLayoutCount];
+            _clearLineCache = new CanvasRenderTarget?[_lineLayoutCount];
+
+            if (_blurAlpha.Length < _lineLayoutCount)
+                _blurAlpha = new float[_lineLayoutCount];
+
+            var lyricsFmt = GetLyricsFmt();
+            var transFmt = GetTransFmt();
+            float layoutWidth = Math.Max(1f, canvasWidth - RenderPaddingH * 2f);
+            var lyrics = UILyrics!;
+
+            for (int li = 0; li < _lineLayoutCount; li++)
+            {
+                ref readonly var ll = ref _lineLayouts[li];
+                var line = lyrics[li];
+
+                // ── 录制原始文字 ──────────────────────────────────────
+                using var cl = new CanvasCommandList(creator);
+                using (var clDs = cl.CreateDrawingSession())
+                {
+                    for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                    {
+                        ref readonly var wl = ref _wordLayouts[gi];
+                        if (wl.FullWidth <= 0) continue;
+                        clDs.DrawText(wl.Text,
+                            new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
+                            _dimColor, lyricsFmt);
+                    }
+                    if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
+                    {
+                        clDs.DrawText(line.TransLateText,
+                            new Rect(RenderPaddingH, ll.TranslateOffsetY, layoutWidth, 9999f),
+                            _translateColor, transFmt);
+                    }
+                }
+
+                float rtW = canvasWidth, rtH = ll.Height;
+
+                // ── 清晰版 ────────────────────────────────────────────
+                var clearRt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
+                using (var rtDs = clearRt.CreateDrawingSession())
+                {
+                    rtDs.Clear(Colors.Transparent);
+                    rtDs.DrawImage(cl, 0f, 0f);
+                }
+                _clearLineCache[li] = clearRt;
+
+                // ── 模糊版 ────────────────────────────────────────────
+                if (blurAmount > 0.1f)
+                {
+                    using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
+                    {
+                        Source = cl,
+                        BlurAmount = blurAmount,
+                        Optimization = Microsoft.Graphics.Canvas.Effects.EffectOptimization.Speed,
+                        BorderMode = Microsoft.Graphics.Canvas.Effects.EffectBorderMode.Soft,
+                    };
+                    var blurRt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
+                    using (var rtDs = blurRt.CreateDrawingSession())
+                    {
+                        rtDs.Clear(Colors.Transparent);
+                        rtDs.DrawImage(blur, 0f, 0f);
+                    }
+                    _blurredLineCache[li] = blurRt;
+                }
+                else
+                {
+                    _blurredLineCache[li] = null; // blurAmount=0 时不需要模糊版
+                }
+            }
+
+            _blurCacheKey = key;
+            _blurCacheAmount = blurAmount;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -1109,6 +1210,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _totalWordCount = 0;
             _visualRowCount = 0;
             _rowCurveCount = 0;
+            foreach (var rt in _blurredLineCache) rt?.Dispose();
+            _blurredLineCache = [];
+            _blurCacheKey = null;
+            _blurCacheAmount = -1f;
+            foreach (var rt in _clearLineCache) rt?.Dispose();
+            _clearLineCache = [];
+            _blurAlpha = [];
             ResetSmoothedRevealX();
             DisposeFmtCache();
         }
@@ -1232,6 +1340,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (_lineLayoutCount == 0) return;
             }
 
+            if (_lineLayoutCount > 0 &&
+                (Math.Abs(_blurCacheAmount - (float)LyricsBlurAmount) > 0.05f
+                 || _blurCacheKey != _cachedLayoutKey))
+            {
+                BakeBlurCache(sender, w);
+            }
+
             // ── 每帧滚动步进 ─────────────────────────────────────────────────
             const float dt = 0.016f;
 
@@ -1317,10 +1432,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (li == _hoveredLineIndex)
                 {
                     // 遮罩颜色随 IsDark 自适应
-                    byte alpha = 30; // 可调，越大越明显
+                    byte hoverAlpha = 30; // 可调，越大越明显
                     var overlayColor = IsDark
-                        ? Color.FromArgb(alpha, 255, 255, 255)
-                        : Color.FromArgb(alpha, 0, 0, 0);
+                        ? Color.FromArgb(hoverAlpha, 255, 255, 255)
+                        : Color.FromArgb(hoverAlpha, 0, 0, 0);
 
                     ds.FillRoundedRectangle(
                         new Rect(0, ll.OffsetY, w, ll.Height),
@@ -1328,45 +1443,53 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         overlayColor);
                 }
                 // ── 暗色底层（带可选模糊）────────────────────────────────────
-                float blurAmount = (float)LyricsBlurAmount;
-                bool shouldBlur = blurAmount > 0.1f && !isCurrent && li != _hoveredLineIndex;
+                bool wantsBlur = (float)LyricsBlurAmount > 0.1f
+                 && !isCurrent
+                 && li != _hoveredLineIndex;
 
-                if (shouldBlur)
+                // ── 每帧步进 blurAlpha ───────────────────────────────────────
+                if (li < _blurAlpha.Length)
                 {
-                    // 录制单行文字到 CommandList
-                    using var cl = new CanvasCommandList(sender);
-                    using (var clDs = cl.CreateDrawingSession())
+                    float target = wantsBlur ? 1f : 0f;
+                    float current = _blurAlpha[li];
+                    if (Math.Abs(target - current) > 0.005f)
                     {
-                        for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
-                        {
-                            ref readonly var wl = ref _wordLayouts[gi];
-                            if (wl.FullWidth <= 0) continue;
-                            clDs.DrawText(wl.Text,
-                                new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
-                                _dimColor, lyricsFmt);
-                        }
-                        // 翻译行也录进来
-                        if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
-                        {
-                            clDs.DrawText(line.TransLateText,
-                                new Rect(RenderPaddingH, ll.TranslateOffsetY, layoutWidth, 9999f),
-                                _translateColor, transFmt);
-                        }
+                        float step = dt / BlurTransitionDuration;
+                        _blurAlpha[li] = target > current
+                            ? Math.Min(current + step, target)
+                            : Math.Max(current - step, target);
+                        sender.Invalidate(); // 过渡期间持续重绘
                     }
-
-                    using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
+                    else
                     {
-                        Source = cl,
-                        BlurAmount = blurAmount,
-                        Optimization = Microsoft.Graphics.Canvas.Effects.EffectOptimization.Speed,
-                        BorderMode = Microsoft.Graphics.Canvas.Effects.EffectBorderMode.Soft,
-                    };
-                    // CommandList 坐标系原点在 (0,0)，需要偏移到当前行的 OffsetY
-                    ds.DrawImage(blur, 0f, ll.OffsetY + PaddingV);
+                        _blurAlpha[li] = target;
+                    }
+                }
+
+                float alpha = li < _blurAlpha.Length ? _blurAlpha[li] : (wantsBlur ? 1f : 0f);
+                bool hasClear = li < _clearLineCache.Length && _clearLineCache[li] is not null;
+                bool hasBlur = li < _blurredLineCache.Length && _blurredLineCache[li] is not null;
+
+                if (hasClear && (hasBlur || alpha < 0.01f))
+                {
+                    if (alpha < 0.99f)
+                    {
+                        // 清晰层（1-alpha）
+                        ds.DrawImage(_clearLineCache[li]!, 0f, ll.OffsetY,
+                            new Rect(0, 0, _clearLineCache[li]!.Size.Width, _clearLineCache[li]!.Size.Height),
+                            1f - alpha);
+                    }
+                    if (alpha > 0.01f && hasBlur)
+                    {
+                        // 模糊层（alpha）
+                        ds.DrawImage(_blurredLineCache[li]!, 0f, ll.OffsetY,
+                            new Rect(0, 0, _blurredLineCache[li]!.Size.Width, _blurredLineCache[li]!.Size.Height),
+                            alpha);
+                    }
                 }
                 else
                 {
-                    // 正常绘制（当前行 / 悬停行）
+                    // 缓存未就绪时的回退：直接绘制
                     for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
                     {
                         ref readonly var wl = ref _wordLayouts[gi];
