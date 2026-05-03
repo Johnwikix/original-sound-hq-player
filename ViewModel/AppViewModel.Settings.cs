@@ -594,21 +594,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 88200;
 
-        public bool IsWFWLyrics
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
-
         public float LyricsBlurAmount
         {
             get => field;

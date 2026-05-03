@@ -758,7 +758,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsDopEnabled = settings.IsDopEnabled;
                 AppViewModel.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
-                AppViewModel.IsWFWLyrics = settings.IsWFWLyrics;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
@@ -848,7 +847,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.DsdPcmFreq = AppViewModel.DsdPcmFreq;
             newSettings.IsPlayDetailBtnVisible = AppViewModel.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
-            newSettings.IsWFWLyrics = AppViewModel.IsWFWLyrics;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
             newSettings.EnableLightWave = AppViewModel.EnableLightWave;

@@ -72,20 +72,6 @@
         </Setter>
     </Style>
 
-    <Style TargetType="lyrics:AnimatedLyricsLineControl">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="lyrics:AnimatedLyricsLineControl">
-                    <canvas:CanvasControl
-                        xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
-                        x:Name="PART_Canvas"
-                        HorizontalAlignment="Stretch"
-                        ClearColor="Transparent" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style TargetType="lyrics:UnifiedLyricsCanvasControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="IsHitTestVisible" Value="True" />

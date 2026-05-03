@@ -45,7 +45,6 @@ namespace WinUIMusicPlayer.Model
         public string LyricsAlignment { get; set; } = "Left";
         public int LyricsMargin { get; set; } = 20;
         public string MusicCoverCache { get; set; } = string.Empty;
-        public bool IsWFWLyrics { get; set; } = true;
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
         public bool IsWin2dCoverImageControlEnable { get; set; } = false;
