@@ -61,9 +61,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (OperationCanceledException)
             {
-                // 这里返回空列表，LoadLyricsToUI 会因为 ID 不匹配或 Catch 块处理它
-                Debug.WriteLine($"[Lyrics] 防抖取消或切歌取消: {music.Title}");
-                return new List<LyricLine>();
+                return [];
             }
         }
 
@@ -77,12 +75,14 @@ namespace WinUIMusicPlayer.Services
                         music, cancellationToken);
                     if (!string.IsNullOrEmpty(krc))
                     {
-                        music.Krc = krc;
-                        music.TKrc = tkrc;                        
+                        App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                            music.Krc = krc;
+                            music.TKrc = tkrc;
+                        });                                              
                     }
                     music.IsKrcSearched = true;
                 }
-                catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
+                catch (OperationCanceledException) {}
             }
 
             var lyrics = new List<LyricLine>();
@@ -256,8 +256,10 @@ namespace WinUIMusicPlayer.Services
                         {
                             lrcContent = lyric;
                             transLrcStr = trans;
-                            music.Lyrics = lyric;
-                            music.TranslatedLyrics = trans;                           
+                            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                                music.Lyrics = lyric;
+                                music.TranslatedLyrics = trans;
+                            });                                                     
                         }
                         music.IsLrcSearched = true;
                     }
