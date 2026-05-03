@@ -186,8 +186,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private float _cachedTransFontSizeForFmt;
         private CanvasHorizontalAlignment _cachedTransAlignmentForFmt;
 
-        private readonly CanvasGradientStop[] _gradStops = new CanvasGradientStop[2];
-        private bool _gradStopsValid = false;
+        // 替换原来的 _gradStops 字段
+        private CanvasLinearGradientBrush? _gradBrush;
+        private bool _gradBrushDirty = true;  // IsDark 变化时重建
+        private int _hoveredLineIndex = -1;
 
         // ─────────────────────────────────────────────────────────────────────
         // 构造 / 生命周期
@@ -216,6 +218,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerCanceled -= OnPointerReleased;
                 _canvas = null;
             }
+            _gradBrush?.Dispose();
+            _gradBrush = null;
             DisposeFmtCache();
         }
 
@@ -232,6 +236,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerPressed -= OnPointerPressed;
                 _canvas.PointerMoved -= OnPointerMoved;
                 _canvas.PointerReleased -= OnPointerReleased;
+                _canvas.PointerExited -= OnPointerExited;
+                _canvas.PointerEntered -= OnPointerEntered; // 可选，移入时重新检测
                 _canvas.PointerCanceled -= OnPointerReleased;
             }
             _canvas = GetTemplateChild("PART_Canvas") as CanvasControl;
@@ -246,11 +252,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerMoved += OnPointerMoved;
                 _canvas.PointerReleased += OnPointerReleased;
                 _canvas.PointerCanceled += OnPointerReleased;
+                _canvas.PointerExited += OnPointerExited;
+                _canvas.PointerEntered += OnPointerEntered; // 可选，移入时重新检测
                 _canvas.ClearColor = Colors.Transparent;
                 _canvas.ManipulationMode = ManipulationModes.None; // 手势由 Pointer 事件手动处理
             }
             UpdateColors(IsDark);
             UpdateTimerState();
+        }
+        private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (_canvas is null) return;
+            UpdateHoveredLine((float)e.GetCurrentPoint(_canvas).Position.Y);
+        }
+
+        private void OnPointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            SetHovered(-1);
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -403,7 +421,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (d is not UnifiedLyricsCanvasControl c) return;
             c.UpdateColors((bool)e.NewValue);
-            c._gradStopsValid = false;
+            c._gradBrushDirty = true;        // ← 改这里，不再用 _gradStopsValid
             c._canvas?.Invalidate();
         }
 
@@ -466,6 +484,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             c.InvalidateLayoutCache();
         }
 
+        public static readonly DependencyProperty LyricsBlurAmountProperty =
+            DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
+            typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(2.0,
+            (d, _) => (d as UnifiedLyricsCanvasControl)?._canvas?.Invalidate()));
+
+        public double LyricsBlurAmount
+        {
+            get => (double)GetValue(LyricsBlurAmountProperty);
+            set => SetValue(LyricsBlurAmountProperty, Math.Max(0.0, value));
+        }
+
         // ═════════════════════════════════════════════════════════════════════
         // 输入：鼠标滚轮
         // ═════════════════════════════════════════════════════════════════════
@@ -503,13 +532,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (!_pointerCaptured || _canvas is null) return;
-            double y = e.GetCurrentPoint(_canvas).Position.Y;
-            double dy = _pointerLastY - y;   // 向下拖 → 负数 → 视图向下 = scrollY 减小
-            _pointerLastY = y;
-            _pointerVelocityY = dy;          // 粗略速度（px/frame），OnDraw 换算成 px/s
-            ApplyUserScroll(dy);
-            e.Handled = true;
+            if (_canvas is null) return;
+            var point = e.GetCurrentPoint(_canvas);
+
+            // ── 拖拽 Pan（原有逻辑）──────────────────────────────────────
+            if (_pointerCaptured)
+            {
+                double y = point.Position.Y;
+                double dy = _pointerLastY - y;
+                _pointerLastY = y;
+                _pointerVelocityY = dy;
+                ApplyUserScroll(dy);
+                e.Handled = true;
+            }
+
+            // ── Hover 命中测试（始终执行）────────────────────────────────
+            UpdateHoveredLine((float)point.Position.Y);
         }
 
         private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
@@ -523,6 +561,37 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             e.Handled = true;
         }
 
+
+        private void UpdateHoveredLine(float viewY)
+        {
+            if (_lineLayoutCount == 0 || _canvas is null)
+            {
+                SetHovered(-1);
+                return;
+            }
+            double viewH = _canvas.ActualHeight;
+            // 将视口坐标转换为歌词坐标系
+            float lyricsY = (float)(viewY - viewH / 2.0 + _smoothedScrollY);
+
+            int hit = -1;
+            for (int i = 0; i < _lineLayoutCount; i++)
+            {
+                ref readonly var ll = ref _lineLayouts[i];
+                if (lyricsY >= ll.OffsetY && lyricsY < ll.OffsetY + ll.Height)
+                {
+                    hit = i;
+                    break;
+                }
+            }
+            SetHovered(hit);
+        }
+
+        private void SetHovered(int idx)
+        {
+            if (_hoveredLineIndex == idx) return;
+            _hoveredLineIndex = idx;
+            _canvas?.Invalidate();
+        }
         // ─────────────────────────────────────────────────────────────────────
         // 公共：外部手动将某个歌词坐标 Y 滚到视口中央
         // ─────────────────────────────────────────────────────────────────────
@@ -1123,7 +1192,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _brightColor = Color.FromArgb(255, 0, 0, 0);
                 _translateColor = Color.FromArgb(155, 0, 0, 0);
             }
-            _gradStopsValid = false;
+            _gradBrushDirty = true;
         }
 
         private static string BuildLayoutKey(ObservableCollection<LyricLine> lyrics)
@@ -1245,26 +1314,83 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 bool isCurrent = (li == _currentLineIndex);
                 var line = lyrics[li];
-
-                // ── 暗色底层 ────────────────────────────────────────────────
-                for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                if (li == _hoveredLineIndex)
                 {
-                    ref readonly var wl = ref _wordLayouts[gi];
-                    if (wl.FullWidth <= 0) continue;
-                    ds.DrawText(wl.Text,
-                        new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
-                        _dimColor, lyricsFmt);
+                    // 遮罩颜色随 IsDark 自适应
+                    byte alpha = 30; // 可调，越大越明显
+                    var overlayColor = IsDark
+                        ? Color.FromArgb(alpha, 255, 255, 255)
+                        : Color.FromArgb(alpha, 0, 0, 0);
+
+                    ds.FillRoundedRectangle(
+                        new Rect(0, ll.OffsetY, w, ll.Height),
+                        6f, 6f,
+                        overlayColor);
+                }
+                // ── 暗色底层（带可选模糊）────────────────────────────────────
+                float blurAmount = (float)LyricsBlurAmount;
+                bool shouldBlur = blurAmount > 0.1f && !isCurrent && li != _hoveredLineIndex;
+
+                if (shouldBlur)
+                {
+                    // 录制单行文字到 CommandList
+                    using var cl = new CanvasCommandList(sender);
+                    using (var clDs = cl.CreateDrawingSession())
+                    {
+                        for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                        {
+                            ref readonly var wl = ref _wordLayouts[gi];
+                            if (wl.FullWidth <= 0) continue;
+                            clDs.DrawText(wl.Text,
+                                new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
+                                _dimColor, lyricsFmt);
+                        }
+                        // 翻译行也录进来
+                        if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
+                        {
+                            clDs.DrawText(line.TransLateText,
+                                new Rect(RenderPaddingH, ll.TranslateOffsetY, layoutWidth, 9999f),
+                                _translateColor, transFmt);
+                        }
+                    }
+
+                    using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
+                    {
+                        Source = cl,
+                        BlurAmount = blurAmount,
+                        Optimization = Microsoft.Graphics.Canvas.Effects.EffectOptimization.Speed,
+                        BorderMode = Microsoft.Graphics.Canvas.Effects.EffectBorderMode.Soft,
+                    };
+                    // CommandList 坐标系原点在 (0,0)，需要偏移到当前行的 OffsetY
+                    ds.DrawImage(blur, 0f, ll.OffsetY + PaddingV);
+                }
+                else
+                {
+                    // 正常绘制（当前行 / 悬停行）
+                    for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                    {
+                        ref readonly var wl = ref _wordLayouts[gi];
+                        if (wl.FullWidth <= 0) continue;
+                        ds.DrawText(wl.Text,
+                            new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
+                            _dimColor, lyricsFmt);
+                    }
+                    if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
+                    {
+                        ds.DrawText(line.TransLateText,
+                            new Rect(RenderPaddingH, ll.OffsetY + ll.TranslateOffsetY, layoutWidth, 9999f),
+                            _translateColor, transFmt);
+                    }
                 }
 
                 // ── 翻译行 ──────────────────────────────────────────────────
-                if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
-                {
-                    ds.DrawText(line.TransLateText,
-                        new Rect(RenderPaddingH, ll.OffsetY + ll.TranslateOffsetY, layoutWidth, 9999f),
-                        _translateColor, transFmt);
-                }
+                //if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
+                //{
+                //    ds.DrawText(line.TransLateText,
+                //        new Rect(RenderPaddingH, ll.OffsetY + ll.TranslateOffsetY, layoutWidth, 9999f),
+                //        _translateColor, transFmt);
+                //}
 
-                // ── 当前行逐字扫光 ──────────────────────────────────────────
                 if (isCurrent)
                 {
                     for (int ri = 0; ri < vrr.Count; ri++)
@@ -1307,55 +1433,46 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         float revealX = smoothed;
                         float drawY = vr.Y + ll.OffsetY + PaddingV;
                         float rowH = vr.H;
-                        float highlightWidth = revealX - minX;
+                        float highlight = revealX - minX;
+                        if (highlight <= 0f) continue;
 
-                        if (highlightWidth > 0f)
+                        float feather = (revealX < maxX) ? Math.Min(FeatherWidth, maxX - revealX) : 0f;
+
+                        if (feather > 0.5f)
                         {
-                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlightWidth, rowH)))
+                            // ── 有渐变：重建或更新 brush，单次 CreateLayer ────────────
+                            if (_gradBrush is null || _gradBrushDirty)
                             {
-                                for (int gi = fv; gi <= lv; gi++)
-                                {
-                                    ref readonly var wl = ref _wordLayouts[gi];
-                                    if (wl.FullWidth <= 0) continue;
-                                    ds.DrawText(wl.Text,
-                                        new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
-                                        _brightColor, lyricsFmt);
-                                }
+                                _gradBrush?.Dispose();
+                                _gradBrush = new CanvasLinearGradientBrush(ds,
+                                    [
+                                    new() { Color = _brightColor, Position = 0f },
+                                    new() { Color = Color.FromArgb(0, _brightColor.R,
+                                                                      _brightColor.G,
+                                                                      _brightColor.B),
+                                Position = 1f },
+                                    ]);
+                                _gradBrushDirty = false;
+                            }
+                            _gradBrush.StartPoint = new Vector2(revealX, 0f);
+                            _gradBrush.EndPoint = new Vector2(revealX + feather, 0f);
+
+                            // highlight 实色区 + feather 渐变区，合并为一次 CreateLayer
+                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
+                            {
+                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
+                            }
+                            using (ds.CreateLayer(_gradBrush, new Rect(revealX, drawY, feather, rowH)))
+                            {
+                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
                             }
                         }
-
-                        if (revealX > minX && revealX < maxX)
+                        else
                         {
-                            float feather = Math.Min(FeatherWidth, maxX - revealX);
-                            if (feather > 0.5f)
+                            // ── 无渐变（行末全亮）：单次 CreateLayer，不需要 brush ────
+                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
                             {
-                                if (!_gradStopsValid)
-                                {
-                                    _gradStops[0] = new CanvasGradientStop
-                                    { Color = _brightColor, Position = 0f };
-                                    _gradStops[1] = new CanvasGradientStop
-                                    {
-                                        Color = Color.FromArgb(0, _brightColor.R, _brightColor.G, _brightColor.B),
-                                        Position = 1f,
-                                    };
-                                    _gradStopsValid = true;
-                                }
-                                using var gradBrush = new CanvasLinearGradientBrush(ds, _gradStops)
-                                {
-                                    StartPoint = new Vector2(revealX, 0f),
-                                    EndPoint = new Vector2(revealX + feather, 0f),
-                                };
-                                using (ds.CreateLayer(gradBrush, new Rect(revealX, drawY, feather, rowH)))
-                                {
-                                    for (int gi = fv; gi <= lv; gi++)
-                                    {
-                                        ref readonly var wl = ref _wordLayouts[gi];
-                                        if (wl.FullWidth <= 0) continue;
-                                        ds.DrawText(wl.Text,
-                                            new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
-                                            _brightColor, lyricsFmt);
-                                    }
-                                }
+                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
                             }
                         }
                     }
@@ -1366,6 +1483,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             // Transform 复原（DrawingSession 销毁时也会自动复原，显式写出更清晰）
             ds.Transform = Matrix3x2.Identity;
+        }
+
+        private void DrawRowWords(CanvasDrawingSession ds,
+        int fv, int lv, in LineLayout ll, CanvasTextFormat fmt)
+        {
+            for (int gi = fv; gi <= lv; gi++)
+            {
+                ref readonly var wl = ref _wordLayouts[gi];
+                if (wl.FullWidth <= 0) continue;
+                ds.DrawText(wl.Text,
+                    new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
+                    _brightColor, fmt);
+            }
         }
 
         // ═════════════════════════════════════════════════════════════════════
