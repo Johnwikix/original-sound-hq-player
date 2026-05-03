@@ -70,9 +70,9 @@ namespace WinUIMusicPlayer.Utils
         {
             if (isGlobalFontSizeEnable)
             {
-                return Math.Max(globalFontSize - 4,18);
+                return Math.Max(globalFontSize - 6,18);
             }
-            return Math.Max(fontSize - 4, 18);
+            return Math.Max(fontSize - 6, 18);
         }
 
         public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)

@@ -153,6 +153,17 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(AnimationSmoothnessProperty, value);
         }
 
+        public static readonly DependencyProperty LyricsBlurAmountProperty =
+                DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(4.0,
+            (d, e) => ((LyricsControl)d).LyricsCanvas.LyricsBlurAmount = (double)e.NewValue));
+
+        public double LyricsBlurAmount
+        {
+            get => (double)GetValue(LyricsBlurAmountProperty);
+            set => SetValue(LyricsBlurAmountProperty, Math.Max(0.0, value));
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         // 构造
         // ─────────────────────────────────────────────────────────────────────
