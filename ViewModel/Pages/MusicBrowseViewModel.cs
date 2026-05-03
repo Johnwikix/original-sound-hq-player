@@ -405,6 +405,10 @@ namespace WinUIMusicPlayer.ViewModel
             if (AppViewModel.CurrentPlayingMusic is not null)
             {
                 _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    AppViewModel.UILyrics = [];
+                });
                 AppViewModel.LoadLyricsToUI(AppViewModel.CurrentPlayingMusic);                
             }
         }
@@ -698,8 +702,8 @@ namespace WinUIMusicPlayer.ViewModel
                 // 6. 其他 UI 同步/轻量操作
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.CurrentLyricsText = (music.Lyrics, music.TranslatedLyrics);
-                });
+                    AppViewModel.UILyrics = [];
+                });                
                 AppViewModel.LoadLyricsToUI(music);
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();

@@ -540,7 +540,7 @@
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
-                    AnimationSmoothness="0.65"
+                    AnimationSmoothness="1"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"

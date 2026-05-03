@@ -117,12 +117,12 @@ namespace WinUIMusicPlayer.WebService
                 {
                     var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lrc.Lyric ?? string.Empty, res?.Tlyric.Lyric ?? string.Empty);
+                    return (res?.Lrc.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric.Lyric ?? string.Empty : string.Empty));
                 }
                 else if (search is QQMusicSearchResult qQMusicSearchResult) {
                     var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lyric ?? string.Empty, res?.Trans ?? string.Empty);
+                    return (res?.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty));
                 }
                 return (string.Empty, string.Empty);
             }
@@ -152,7 +152,7 @@ namespace WinUIMusicPlayer.WebService
                 {
                     var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lyrics ?? string.Empty, res?.Trans ?? string.Empty);
+                    return (res?.Lyrics ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty));
                 }
                 return (string.Empty, string.Empty);
             }

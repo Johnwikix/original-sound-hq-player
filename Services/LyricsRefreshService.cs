@@ -120,13 +120,18 @@ namespace WinUIMusicPlayer.Services
 
             if (lyrics.Count == 0) return [];
 
-            // 解析KRC翻译（music.Tkrc为lrc格式）
             if (!string.IsNullOrWhiteSpace(music.TKrc))
             {
                 ParseLrcToLines(music.TKrc, (time, transText) =>
                 {
-                    var line = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
-                    line?.TransLateText = transText;
+                    // 方案：寻找时间差最小的那一行，而不是第一行
+                    var bestMatch = lyrics
+                        .Select(l => new { Line = l, Diff = Math.Abs((l.Time - time).TotalMilliseconds) })
+                        .Where(x => x.Diff <= 100) // 容差可以稍微放大，但后面用 OrderBy 兜底
+                        .OrderBy(x => x.Diff)      // 核心：按距离排序，取最接近的
+                        .FirstOrDefault();
+
+                    bestMatch?.Line.TransLateText = transText;
                 });
             }
             return lyrics;
@@ -364,39 +369,47 @@ namespace WinUIMusicPlayer.Services
         /// 核心解析逻辑：处理时间标签并提取文本
         /// </summary>
         private void ParseLrcToLines(string content, Action<TimeSpan, string> onLineParsed)
+{
+    if (string.IsNullOrEmpty(content)) return;
+
+    string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+    const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
+
+    foreach (string line in lines)
+    {
+        string trimmedLine = line.Trim();
+        if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
+            continue;
+
+        Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
+        if (timeMatch.Success)
         {
-            if (string.IsNullOrEmpty(content)) return;
+            // 提取时间戳后的文本内容
+            string text = trimmedLine[timeMatch.Length..].Trim();
 
-            string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
-
-            foreach (string line in lines)
+            // --- 新增：过滤逻辑 ---
+            // 1. 检查是否为空或仅为空白字符
+            // 2. 检查是否仅包含 "//"
+            if (string.IsNullOrWhiteSpace(text) || text.Equals("//"))
             {
-                string trimmedLine = line.Trim();
-                if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
-                    continue;
-
-                Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
-                if (timeMatch.Success)
-                {
-                    int minutes = int.Parse(timeMatch.Groups[1].Value);
-                    int seconds = int.Parse(timeMatch.Groups[2].Value);
-                    string millisecondStr = timeMatch.Groups[4].Value;
-
-                    int milliseconds = millisecondStr.Length == 2
-                        ? int.Parse(millisecondStr) * 10
-                        : int.Parse(millisecondStr);
-
-                    TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
-                    string text = trimmedLine.Substring(timeMatch.Length).Trim();
-
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        onLineParsed(time, text);
-                    }
-                }
+                continue; 
             }
+            // --------------------
+
+            int minutes = int.Parse(timeMatch.Groups[1].Value);
+            int seconds = int.Parse(timeMatch.Groups[2].Value);
+            string millisecondStr = timeMatch.Groups[4].Value;
+
+            int milliseconds = millisecondStr.Length == 2
+                ? int.Parse(millisecondStr) * 10
+                : int.Parse(millisecondStr);
+
+            TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
+            
+            onLineParsed(time, text);
         }
+    }
+}
 
         public void Dispose()
         {

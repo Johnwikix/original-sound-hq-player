@@ -154,7 +154,6 @@ namespace WinUIMusicPlayer.ViewModel
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public List<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
-        public (string, string) CurrentLyricsText { get; set => SetProperty(ref field, value); } = (string.Empty, string.Empty);
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
         //public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
@@ -432,6 +431,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void LoadLyricsToUI(Music music)
         {
+
             _loadingMusicId = music.Id;
             _ = Task.Run(async () =>
             {
