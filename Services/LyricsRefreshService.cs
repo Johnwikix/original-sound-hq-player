@@ -26,36 +26,44 @@ namespace WinUIMusicPlayer.Services
             _musicDatabaseService = musicDatabaseService;
         }
 
-        public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken cancellationToken = default)
+        public async Task<List<LyricLine>> SetLyrics(Music music)
         {
-            // 1. 先取消并重置 TokenSource
+            // 1. 立即取消之前的任务
             CancelPreviousLyricsTask();
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var ct = _lyricsCancellationTokenSource.Token;
 
             try
             {
-                // 优先尝试解析KRC（透传 ct）
+                // 2. 防抖：等待 500ms
+                // 如果在 500ms 内再次调用了 SetLyrics，上一个任务会被 CancelPreviousLyricsTask 取消
+                // 从而这里的 Task.Delay 会抛出 OperationCanceledException 直接中断任务
+                await Task.Delay(500, ct);
+
+                // 3. 执行真正的逻辑
+                // 优先尝试解析KRC精确歌词
                 var lyrics = await TryParseKrcLyrics(music, ct);
-                if (lyrics.Count > 0) return lyrics;
+                if (lyrics.Count > 0)
+                {
+                    return lyrics;
+                }
 
-                // 降级：走原有LRC流程
+                // 4. 降级：走原有LRC流程
                 var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
-
-                // 解析过程中也要支持取消
                 lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr, ct);
 
-                // 更新数据库（如果已取消，这里可以跳过以节省 IO）
+                // 检查一次取消，避免无效 IO
                 ct.ThrowIfCancellationRequested();
 
                 music.PlayCount++;
                 await _musicDatabaseService.UpdateMusicInfo(music);
-
                 return lyrics;
             }
             catch (OperationCanceledException)
             {
-                return [];
+                // 这里返回空列表，LoadLyricsToUI 会因为 ID 不匹配或 Catch 块处理它
+                Debug.WriteLine($"[Lyrics] 防抖取消或切歌取消: {music.Title}");
+                return new List<LyricLine>();
             }
         }
 
@@ -369,47 +377,47 @@ namespace WinUIMusicPlayer.Services
         /// 核心解析逻辑：处理时间标签并提取文本
         /// </summary>
         private void ParseLrcToLines(string content, Action<TimeSpan, string> onLineParsed)
-{
-    if (string.IsNullOrEmpty(content)) return;
-
-    string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-    const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
-
-    foreach (string line in lines)
-    {
-        string trimmedLine = line.Trim();
-        if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
-            continue;
-
-        Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
-        if (timeMatch.Success)
         {
-            // 提取时间戳后的文本内容
-            string text = trimmedLine[timeMatch.Length..].Trim();
+            if (string.IsNullOrEmpty(content)) return;
 
-            // --- 新增：过滤逻辑 ---
-            // 1. 检查是否为空或仅为空白字符
-            // 2. 检查是否仅包含 "//"
-            if (string.IsNullOrWhiteSpace(text) || text.Equals("//"))
+            string[] lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            const string TimeTagPattern = @"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]";
+
+            foreach (string line in lines)
             {
-                continue; 
-            }
-            // --------------------
+                string trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || !trimmedLine.StartsWith("["))
+                    continue;
 
-            int minutes = int.Parse(timeMatch.Groups[1].Value);
-            int seconds = int.Parse(timeMatch.Groups[2].Value);
-            string millisecondStr = timeMatch.Groups[4].Value;
+                Match timeMatch = Regex.Match(trimmedLine, TimeTagPattern);
+                if (timeMatch.Success)
+                {
+                    // 提取时间戳后的文本内容
+                    string text = trimmedLine[timeMatch.Length..].Trim();
 
-            int milliseconds = millisecondStr.Length == 2
-                ? int.Parse(millisecondStr) * 10
-                : int.Parse(millisecondStr);
+                    // --- 新增：过滤逻辑 ---
+                    // 1. 检查是否为空或仅为空白字符
+                    // 2. 检查是否仅包含 "//"
+                    if (string.IsNullOrWhiteSpace(text) || text.Equals("//"))
+                    {
+                        continue; 
+                    }
+                    // --------------------
 
-            TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
+                    int minutes = int.Parse(timeMatch.Groups[1].Value);
+                    int seconds = int.Parse(timeMatch.Groups[2].Value);
+                    string millisecondStr = timeMatch.Groups[4].Value;
+
+                    int milliseconds = millisecondStr.Length == 2
+                        ? int.Parse(millisecondStr) * 10
+                        : int.Parse(millisecondStr);
+
+                    TimeSpan time = new TimeSpan(0, 0, minutes, seconds, milliseconds);
             
-            onLineParsed(time, text);
+                    onLineParsed(time, text);
+                }
+            }
         }
-    }
-}
 
         public void Dispose()
         {
