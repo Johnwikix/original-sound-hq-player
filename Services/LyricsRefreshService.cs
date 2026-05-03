@@ -26,27 +26,56 @@ namespace WinUIMusicPlayer.Services
             _musicDatabaseService = musicDatabaseService;
         }
 
-        public async Task<List<LyricLine>> SetLyrics(Music music)
+        public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken cancellationToken = default)
         {
+            // 1. 先取消并重置 TokenSource
             CancelPreviousLyricsTask();
+            _lyricsCancellationTokenSource = new CancellationTokenSource();
+            var ct = _lyricsCancellationTokenSource.Token;
 
-            // 优先尝试解析KRC精确歌词
-            var lyrics = TryParseKrcLyrics(music);
-            if (lyrics.Count > 0)
+            try
             {
+                // 优先尝试解析KRC（透传 ct）
+                var lyrics = await TryParseKrcLyrics(music, ct);
+                if (lyrics.Count > 0) return lyrics;
+
+                // 降级：走原有LRC流程
+                var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
+
+                // 解析过程中也要支持取消
+                lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr, ct);
+
+                // 更新数据库（如果已取消，这里可以跳过以节省 IO）
+                ct.ThrowIfCancellationRequested();
+
+                music.PlayCount++;
+                await _musicDatabaseService.UpdateMusicInfo(music);
+
                 return lyrics;
             }
-
-            // 降级：走原有LRC流程
-            var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
-            lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr);
-            return lyrics;
+            catch (OperationCanceledException)
+            {
+                return [];
+            }
         }
 
-        private List<LyricLine> TryParseKrcLyrics(Music music)
+        private async Task<List<LyricLine>> TryParseKrcLyrics(Music music, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(music.Krc))
-                return [];
+            if (string.IsNullOrWhiteSpace(music.Krc) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched)
+            {
+                try
+                {
+                    var (krc, tkrc) = await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(
+                        music, cancellationToken);
+                    if (!string.IsNullOrEmpty(krc))
+                    {
+                        music.Krc = krc;
+                        music.TKrc = tkrc;                        
+                    }
+                    music.IsKrcSearched = true;
+                }
+                catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
+            }
 
             var lyrics = new List<LyricLine>();
 
@@ -56,7 +85,7 @@ namespace WinUIMusicPlayer.Services
             var wordPattern = new Regex(@"([^\x00-\x7F]|[\w\p{P}]+)\((\d+),(\d+)\)|([^\(（]+?)(?=\(|\[|$)");
 
             string[] lines = music.Krc.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var rawLine in lines)
             {
                 string trimmed = rawLine.Trim();
@@ -195,22 +224,16 @@ namespace WinUIMusicPlayer.Services
             return (lrcContent, transLrcStr);
         }
 
-        public async Task<List<LyricLine>> ParseLrcLyrics(Music music,string? lrcContent,string? transLrcStr = null)
+        public async Task<List<LyricLine>> ParseLrcLyrics(Music music,string? lrcContent,string? transLrcStr = null,CancellationToken cancellationToken = default)
         {
-            _lyricsCancellationTokenSource?.Cancel(); // 习惯性清理旧任务
-            _lyricsCancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = _lyricsCancellationTokenSource.Token;
-            List<LyricLine> lyrics = [];
-            // 1. 始终增加播放计数 (内存中)
-            music.PlayCount++;
-            // 2. 确定歌词内容
+            List<LyricLine> lyrics = [];           
             if (string.IsNullOrWhiteSpace(lrcContent))
             {
                 // 尝试从内存缓存获取
                 lrcContent = music.Lyrics;
                 transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? music.TranslatedLyrics:transLrcStr;
-                // 如果开启了自动歌词且缓存为空，则在线搜索
-                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled)
+                // 如果开启了自动歌词且缓存为空并且未搜索过，则在线搜索
+                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched)
                 {
                     try
                     {
@@ -221,17 +244,14 @@ namespace WinUIMusicPlayer.Services
                             lrcContent = lyric;
                             transLrcStr = trans;
                             music.Lyrics = lyric;
-                            music.TranslatedLyrics = trans;
+                            music.TranslatedLyrics = trans;                           
                         }
+                        music.IsLrcSearched = true;
                     }
                     catch (OperationCanceledException) { Debug.WriteLine("歌词任务取消"); }
                 }
             }
-
-            // 3. 统一执行一次数据库 IO
-            await _musicDatabaseService.UpdateMusicInfo(music);
-
-            // 4. 返回解析结果
+            cancellationToken.ThrowIfCancellationRequested();
             if (!string.IsNullOrWhiteSpace(lrcContent))
             {
                 return SpliteContent(lrcContent,transLrcStr,lyrics);

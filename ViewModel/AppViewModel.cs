@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AppViewModel : ObservableObject, IDisposable
     {
+        private int _loadingMusicId;
         public Music? CurrentArtistObj {
             get => field;
             set
@@ -431,7 +432,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void LoadLyricsToUI(Music music)
         {
-
+            _loadingMusicId = music.Id;
             _ = Task.Run(async () =>
             {
                 LastLyricIndex = -1;
@@ -439,7 +440,10 @@ namespace WinUIMusicPlayer.ViewModel
                 List<LyricLine> parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
                 // 解析歌词并添加到UI集合
                 App.MainWindow.DispatcherQueue.TryEnqueue(() => {
-                    UILyrics = parsedLyrics;
+                    if (_loadingMusicId == music.Id)
+                    {
+                        UILyrics = parsedLyrics;
+                    }
                 });
             });
             
