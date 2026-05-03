@@ -154,60 +154,22 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 自动滚动：监听 Canvas 的 CurrentLineOffsetYChanged
-        // ─────────────────────────────────────────────────────────────────────
-
-        private void OnCurrentLineOffsetYChanged(object? sender, double canvasOffsetY)
-        {
-            // canvasOffsetY = 目标行在 LyricsCanvas 内的垂直中心 Y
-            var transform = LyricsCanvas.TransformToVisual(LyricViewer.Content as UIElement ?? LyricsCanvas);
-            var canvasOrigin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
-
-            double scrollTarget = canvasOrigin.Y + canvasOffsetY - LyricViewer.ActualHeight / 2.0;
-            scrollTarget = Math.Max(0, scrollTarget);
-
-            LyricViewer.ScrollTo(
-                0, scrollTarget,
-                new ScrollingScrollOptions(
-                    ScrollingAnimationMode.Enabled,
-                    ScrollingSnapPointsMode.Ignore));
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
         // 构造
         // ─────────────────────────────────────────────────────────────────────
 
         public LyricsControl()
         {
             this.InitializeComponent();
-
             // Canvas 点击 → 透传 LyricInteracted
             LyricsCanvas.LyricLineClicked += OnCanvasLyricLineClicked;
-
-            // Canvas 行变化 → 自动滚动
-            LyricsCanvas.CurrentLineOffsetYChanged += OnCurrentLineOffsetYChanged;
-
             Unloaded += (_, _) =>
             {
                 LyricsCanvas.LyricLineClicked -= OnCanvasLyricLineClicked;
-                LyricsCanvas.CurrentLineOffsetYChanged -= OnCurrentLineOffsetYChanged;
             };
         }
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
             => LyricInteracted?.Invoke(this, ts);
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 鼠标滚轮
-        // ─────────────────────────────────────────────────────────────────────
-
-        private void MaskView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
-        {
-            var pointerPoint = e.GetCurrentPoint(LyricViewer);
-            double scrollAmount = -pointerPoint.Properties.MouseWheelDelta * 3;
-            LyricViewer.ScrollBy(0, scrollAmount,
-                new ScrollingScrollOptions(ScrollingAnimationMode.Enabled));
-            e.Handled = true;
-        }
     }
 }

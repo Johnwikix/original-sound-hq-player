@@ -4,16 +4,15 @@ using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -25,12 +24,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 公开事件
         // ─────────────────────────────────────────────────────────────────────
 
-        /// <summary>点击某行歌词时触发，携带该行起始时间戳，供外部跳转播放位置。</summary>
+        /// <summary>点击某行歌词时触发，携带该行起始时间戳。</summary>
         public event EventHandler<TimeSpan>? LyricLineClicked;
 
         /// <summary>
-        /// 当前播放行的 Y 偏移（相对 CanvasControl 顶部，单位 px）发生变化时触发。
-        /// 外部 ScrollView behavior 监听此值驱动自动滚动。
+        /// 当前播放行的 Y 偏移（相对歌词坐标系顶部，单位 px）发生变化时触发。
+        /// 外部如仍需监听可订阅此事件；内部自动滚动已内置，无需 ScrollView。
         /// </summary>
         public event EventHandler<double>? CurrentLineOffsetYChanged;
 
@@ -53,7 +52,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             public int WordStart;
             public int WordCount;
-            public float OffsetY;
+            public float OffsetY;   // 歌词坐标系 Y（不含上方 padding）
             public float Height;
             public float TranslateOffsetY;
             public bool HasTranslate;
@@ -80,7 +79,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private string? _cachedLayoutKey = null;
         private float _cachedLayoutWidth = 0f;
-        private float _totalCanvasHeight = 0f;
+        private float _totalCanvasHeight = 0f;  // 全部歌词行高度之和（不含 ViewPadding）
 
         // ─────────────────────────────────────────────────────────────────────
         // 速度曲线（Hermite Catmull-Rom）
@@ -104,14 +103,52 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private int _rowCurveCount = 0;
 
         // ─────────────────────────────────────────────────────────────────────
-        // 平滑追赶
+        // 逐字动画平滑追赶
         // ─────────────────────────────────────────────────────────────────────
         private float[] _smoothedRevealX = [];
         private const float SmoothLerpSpeed = 18f;
         private const float SmoothMaxPixelsPerSec = 2000f;
 
         // ─────────────────────────────────────────────────────────────────────
-        // 独立时钟（唯一计时器，同时驱动：行匹配 + 动画帧）
+        // 内置滚动状态
+        //
+        // 坐标约定（唯一，所有计算以此为准）：
+        //   _smoothedScrollY  = 当前"视口中心"在歌词坐标系中的 Y 值
+        //   渲染时：ds.Transform = Translate(0,  viewH/2 - _smoothedScrollY)
+        //   即：歌词坐标 Y=_smoothedScrollY 的点，恰好显示在视口纵向中央
+        //
+        // 可滚动范围：
+        //   min = -VScrollPadding          (第一行能滚到中央，再多留一点)
+        //   max = _totalCanvasHeight + VScrollPadding  (最后一行能滚到中央)
+        // ─────────────────────────────────────────────────────────────────────
+
+        // 上下固定 padding（px），与窗口高度无关
+        private const float VScrollPadding = 300f;
+
+        private double _targetScrollY = 0.0;
+        private double _smoothedScrollY = 0.0;
+        private bool _userScrolling = false;
+        private double _userScrollCooldownSec = 0.0;
+        private const double UserScrollCooldown = 2.5;
+
+        // ── 可调滚动速度 ──────────────────────────────────────────────────────
+        /// <summary>自动行追踪的弹簧速度（越大越快跟上，推荐 6~12）</summary>
+        public double AutoScrollSpeed = 4.0;
+        /// <summary>用户手势松手后回弹到当前行的弹簧速度（推荐 10~20）</summary>
+        public double UserScrollReturnSpeed = 12.0;
+        /// <summary>鼠标滚轮每格滚动的像素量（推荐 80~200）</summary>
+        public double WheelScrollPixels = 80.0;
+
+        // 触摸 / 鼠标 Pan
+        private bool _pointerCaptured = false;
+        private double _pointerLastY = 0.0;
+        private double _pointerVelocityY = 0.0;
+        private double _flingY = 0.0;
+        private const double FlingDecay = 0.92;
+        private const double FlingStopThreshold = 5.0;
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 独立时钟
         // ─────────────────────────────────────────────────────────────────────
         private DispatcherTimer? _timer;
         private DateTimeOffset _lastTickAt;
@@ -124,7 +161,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ─────────────────────────────────────────────────────────────────────
         private int _currentLineIndex = -1;
         private bool _isPlaying = false;
-        private double _currentLineOffsetY = 0.0;
+        private double _currentLineOffsetY = 0.0;   // 歌词坐标系中当前行中心 Y
 
         // ─────────────────────────────────────────────────────────────────────
         // 视觉常量
@@ -140,7 +177,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float TranslateGapV = 3f;
 
         // ─────────────────────────────────────────────────────────────────────
-        // CanvasTextFormat 跨帧复用
+        // CanvasTextFormat 缓存
         // ─────────────────────────────────────────────────────────────────────
         private CanvasTextFormat? _lyricsFmt;
         private CanvasTextFormat? _transFmt;
@@ -172,6 +209,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.SizeChanged -= OnCanvasSizeChanged;
                 _canvas.CreateResources -= OnCreateResources;
                 _canvas.Tapped -= OnCanvasTapped;
+                _canvas.PointerWheelChanged -= OnPointerWheelChanged;
+                _canvas.PointerPressed -= OnPointerPressed;
+                _canvas.PointerMoved -= OnPointerMoved;
+                _canvas.PointerReleased -= OnPointerReleased;
+                _canvas.PointerCanceled -= OnPointerReleased;
                 _canvas = null;
             }
             DisposeFmtCache();
@@ -186,6 +228,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.SizeChanged -= OnCanvasSizeChanged;
                 _canvas.CreateResources -= OnCreateResources;
                 _canvas.Tapped -= OnCanvasTapped;
+                _canvas.PointerWheelChanged -= OnPointerWheelChanged;
+                _canvas.PointerPressed -= OnPointerPressed;
+                _canvas.PointerMoved -= OnPointerMoved;
+                _canvas.PointerReleased -= OnPointerReleased;
+                _canvas.PointerCanceled -= OnPointerReleased;
             }
             _canvas = GetTemplateChild("PART_Canvas") as CanvasControl;
             if (_canvas is not null)
@@ -194,43 +241,47 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.SizeChanged += OnCanvasSizeChanged;
                 _canvas.CreateResources += OnCreateResources;
                 _canvas.Tapped += OnCanvasTapped;
+                _canvas.PointerWheelChanged += OnPointerWheelChanged;
+                _canvas.PointerPressed += OnPointerPressed;
+                _canvas.PointerMoved += OnPointerMoved;
+                _canvas.PointerReleased += OnPointerReleased;
+                _canvas.PointerCanceled += OnPointerReleased;
                 _canvas.ClearColor = Colors.Transparent;
+                _canvas.ManipulationMode = ManipulationModes.None; // 手势由 Pointer 事件手动处理
             }
             UpdateColors(IsDark);
             UpdateTimerState();
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // MeasureOverride
+        // MeasureOverride：Canvas 固定铺满父级，不再根据内容撑高
         // ─────────────────────────────────────────────────────────────────────
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            float w = double.IsInfinity(availableSize.Width) || availableSize.Width <= 0
-                ? 400f : (float)availableSize.Width;
-            try { EnsureLayout(CanvasDevice.GetSharedDevice(), w); }
-            catch { /* device not ready */ }
-            return new Size(availableSize.Width, _totalCanvasHeight > 0 ? _totalCanvasHeight : 100);
+            // 返回 (0,0)，让父级（Grid/Page 等）决定控件尺寸
+            // 布局计算仍在 OnDraw 首帧触发
+            return new Size(0, 0);
         }
 
         // ═════════════════════════════════════════════════════════════════════
         // 依赖属性
         // ═════════════════════════════════════════════════════════════════════
 
-        // ── UILyrics ──────────────────────────────────────────────────────────
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
                 typeof(ObservableCollection<LyricLine>), typeof(UnifiedLyricsCanvasControl),
                 new PropertyMetadata(null, (d, _) =>
                 {
                     if (d is not UnifiedLyricsCanvasControl c) return;
-                    // 切歌：完整重置，计时器先停（UpdateTimerState 会视 IsPlaying 重新决定是否启动）
                     c._currentLineIndex = -1;
                     c._currentTime = TimeSpan.Zero;
                     c._lastExternalTime = TimeSpan.Zero;
+                    c._targetScrollY = 0;
+                    c._smoothedScrollY = 0;
+                    c._flingY = 0;
                     c.DestroyTimer();
                     c.InvalidateLayoutCache();
-                    c.InvalidateMeasure();
                     c._canvas?.Invalidate();
                 }));
 
@@ -240,7 +291,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(UILyricsProperty, value);
         }
 
-        // ── CurrentPlayingTime ────────────────────────────────────────────────
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
             DependencyProperty.Register(nameof(CurrentPlayingTime),
                 typeof(TimeSpan), typeof(UnifiedLyricsCanvasControl),
@@ -261,14 +311,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             if (c._timer is null || !c._timer.IsEnabled)
             {
-                // 计时器未运行时直接同步时钟 + 做行匹配（处理暂停/seek后的单帧刷新）
                 c._currentTime = ext;
                 c.MatchLyricLine(ext);
                 c._canvas?.Invalidate();
                 return;
             }
 
-            // 漂移超阈值才硬同步，避免外部轮询抖动
             if (Math.Abs((ext - c._currentTime).TotalMilliseconds) > SyncThresholdMs)
             {
                 c._currentTime = ext;
@@ -279,7 +327,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        // ── IsPlaying ─────────────────────────────────────────────────────────
         public static readonly DependencyProperty IsPlayingProperty =
             DependencyProperty.Register(nameof(IsPlaying),
                 typeof(bool), typeof(UnifiedLyricsCanvasControl),
@@ -301,7 +348,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             c.UpdateTimerState();
         }
 
-        // ── LyricsFontSize / TranslateFontSize / FontFamilyName / LyricsTextAlignment ──
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(36.0, OnLayoutPropertyChanged));
@@ -343,7 +389,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(LyricsTextAlignmentProperty, value);
         }
 
-        // ── IsDark ────────────────────────────────────────────────────────────
         public static readonly DependencyProperty IsDarkProperty =
             DependencyProperty.Register(nameof(IsDark), typeof(bool),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(false, OnIsDarkChanged));
@@ -362,7 +407,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             c._canvas?.Invalidate();
         }
 
-        // ── AnimationSmoothness ───────────────────────────────────────────────
         public static readonly DependencyProperty AnimationSmoothnessProperty =
             DependencyProperty.Register(nameof(AnimationSmoothness), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.65, OnAnimationSmoothnessChanged));
@@ -382,7 +426,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             c._canvas?.Invalidate();
         }
 
-        // ── OffsetMs ──────────────────────────────────────────────────────────
         public static readonly DependencyProperty OffsetMsProperty =
             DependencyProperty.Register(nameof(OffsetMs), typeof(double),
                 typeof(UnifiedLyricsCanvasControl),
@@ -394,7 +437,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(OffsetMsProperty, value);
         }
 
-        // ── CurrentLineOffsetY（只读） ─────────────────────────────────────────
+        // 只读：歌词坐标系中当前行中心 Y
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
@@ -405,23 +448,116 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             private set => SetValue(CurrentLineOffsetYProperty, value);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
+        // ── 滚动灵敏度倍率（鼠标滚轮，默认 1.0）────────────────────────────
+        public static readonly DependencyProperty ScrollSensitivityProperty =
+            DependencyProperty.Register(nameof(ScrollSensitivity), typeof(double),
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(1.0));
+
+        public double ScrollSensitivity
+        {
+            get => (double)GetValue(ScrollSensitivityProperty);
+            set => SetValue(ScrollSensitivityProperty, Math.Clamp(value, 0.1, 10.0));
+        }
+
         private static void OnLayoutPropertyChanged(DependencyObject d,
             DependencyPropertyChangedEventArgs e)
         {
             if (d is not UnifiedLyricsCanvasControl c) return;
             c.InvalidateLayoutCache();
-            c.InvalidateMeasure();
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 歌词行匹配（原在 LyricsControl 的 33ms 计时器里，现合并到此）
+        // 输入：鼠标滚轮
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// 根据当前播放位置找到对应歌词行并更新 _currentLineIndex。
-        /// 每次计时器 tick 以及外部时间强制同步时调用。
-        /// </summary>
+        private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var pp = e.GetCurrentPoint(_canvas);
+            // MouseWheelDelta 通常为 ±120，归一化为 ±1 格后乘像素量
+            double delta = -(pp.Properties.MouseWheelDelta / 120.0) * WheelScrollPixels * ScrollSensitivity;
+            // 立即移动（_smoothedScrollY 同步），不走平滑追赶延迟
+            _targetScrollY = ClampScrollY(_targetScrollY + delta);
+            _smoothedScrollY = _targetScrollY;
+            _userScrolling = true;
+            _userScrollCooldownSec = UserScrollCooldown;
+            _canvas?.Invalidate();
+            e.Handled = true;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 输入：触摸 / 鼠标拖拽 Pan
+        // ─────────────────────────────────────────────────────────────────────
+
+        private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (_canvas is null) return;
+            _canvas.CapturePointer(e.Pointer);
+            _pointerCaptured = true;
+            _pointerLastY = e.GetCurrentPoint(_canvas).Position.Y;
+            _pointerVelocityY = 0;
+            _flingY = 0;
+            _userScrolling = true;
+            _userScrollCooldownSec = 0;
+            e.Handled = true;
+        }
+
+        private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_pointerCaptured || _canvas is null) return;
+            double y = e.GetCurrentPoint(_canvas).Position.Y;
+            double dy = _pointerLastY - y;   // 向下拖 → 负数 → 视图向下 = scrollY 减小
+            _pointerLastY = y;
+            _pointerVelocityY = dy;          // 粗略速度（px/frame），OnDraw 换算成 px/s
+            ApplyUserScroll(dy);
+            e.Handled = true;
+        }
+
+        private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_pointerCaptured || _canvas is null) return;
+            _canvas.ReleasePointerCapture(e.Pointer);
+            _pointerCaptured = false;
+            // 启动惯性：速度换算成 px/s（假设 60 fps → 16ms/frame）
+            _flingY = _pointerVelocityY * 60.0;
+            _userScrollCooldownSec = UserScrollCooldown;
+            e.Handled = true;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 公共：外部手动将某个歌词坐标 Y 滚到视口中央
+        // ─────────────────────────────────────────────────────────────────────
+        public void ScrollToLyricsY(double lyricsY, bool animate = true)
+        {
+            _targetScrollY = ClampScrollY(lyricsY);
+            if (!animate) _smoothedScrollY = _targetScrollY;
+            _canvas?.Invalidate();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 内部：用户手势写入滚动偏移
+        // ─────────────────────────────────────────────────────────────────────
+        private void ApplyUserScroll(double deltaY)
+        {
+            _targetScrollY = ClampScrollY(_targetScrollY + deltaY);
+            _userScrolling = true;
+            _userScrollCooldownSec = UserScrollCooldown;
+            _canvas?.Invalidate();
+        }
+
+        // _smoothedScrollY = 视口中心对应的歌词坐标 Y
+        // min：第一行中心可到视口中心（歌词 Y=0 处），再留 VScrollPadding
+        // max：最后一行中心可到视口中心，再留 VScrollPadding
+        private double ClampScrollY(double y)
+        {
+            double minY = -VScrollPadding;
+            double maxY = _totalCanvasHeight + VScrollPadding;
+            return Math.Clamp(y, minY, Math.Max(minY, maxY));
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // 歌词行匹配
+        // ═════════════════════════════════════════════════════════════════════
+
         private void MatchLyricLine(TimeSpan position)
         {
             var lyrics = UILyrics;
@@ -438,21 +574,32 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             _currentLineIndex = matched;
             ResetSmoothedRevealX();
-            UpdateTimerState();          // 行变化时检查计时器是否需要开/关
+            UpdateTimerState();
             UpdateCurrentLineOffsetY();
-            // 不在这里 Invalidate——调用方（OnTimerTick / OnCurrentPlayingTimeChanged）负责
+            // 自动滚动：仅在用户未手动滚动时触发
+            if (!_userScrolling) AutoScrollToCurrentLine();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 自动滚动：把目标行中心 Y 设为视口中心
+        // ─────────────────────────────────────────────────────────────────────
+        private void AutoScrollToCurrentLine()
+        {
+            if (_currentLineIndex < 0 || _currentLineIndex >= _lineLayoutCount) return;
+            ref readonly var ll = ref _lineLayouts[_currentLineIndex];
+            // 行中心 Y（歌词坐标系）直接就是 _targetScrollY
+            double lineCenter = ll.OffsetY + ll.Height / 2.0;
+            _targetScrollY = ClampScrollY(lineCenter);
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 时钟（唯一计时器）
+        // 时钟
         // ═════════════════════════════════════════════════════════════════════
 
         private void UpdateTimerState()
         {
             var lyrics = UILyrics;
-            // 有歌词 + 正在播放 → 保证计时器在跑；其他情况停掉
             bool shouldRun = _isPlaying && lyrics != null && lyrics.Count > 0;
-
             if (shouldRun)
             {
                 if (_timer is null) CreateTimer();
@@ -491,15 +638,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(16);
 
             _currentTime += delta;
-
-            // ── 行匹配（与动画帧完全同步，无另一个计时器的相位差）──
             MatchLyricLine(_currentTime);
-
             _canvas?.Invalidate();
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 设备重建 / 尺寸变化
+        // 设备 / 尺寸
         // ═════════════════════════════════════════════════════════════════════
 
         private void OnCreateResources(CanvasControl sender,
@@ -507,24 +651,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             DisposeFmtCache();
             InvalidateLayoutCache();
-            InvalidateMeasure();
         }
 
         private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
         {
             InvalidateLayoutCache();
-            InvalidateMeasure();
             _canvas?.Invalidate();
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 点击命中测试 → LyricLineClicked 事件
+        // 点击命中测试（坐标需加上 _smoothedScrollY）
         // ═════════════════════════════════════════════════════════════════════
 
         private void OnCanvasTapped(object sender, TappedRoutedEventArgs e)
         {
-            if (_lineLayoutCount == 0) return;
-            float tapY = (float)e.GetPosition(_canvas).Y;
+            if (_lineLayoutCount == 0 || _canvas is null) return;
+            double viewH = _canvas.ActualHeight;
+            float tapViewY = (float)e.GetPosition(_canvas).Y;
+            float tapY = (float)(tapViewY - viewH / 2.0 + _smoothedScrollY);
+
             for (int li = 0; li < _lineLayoutCount; li++)
             {
                 ref readonly var ll = ref _lineLayouts[li];
@@ -532,28 +677,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 {
                     var lyrics = UILyrics;
                     if (lyrics != null && li < lyrics.Count)
+                    {
+                        // 立即解除用户滚动锁，点击后自动滚动动画马上接管
+                        _userScrolling = false;
+                        _userScrollCooldownSec = 0;
+                        _flingY = 0;
                         LyricLineClicked?.Invoke(this, lyrics[li].Time);
+                    }
                     return;
                 }
             }
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // CurrentLineOffsetY 更新
+        // CurrentLineOffsetY
         // ═════════════════════════════════════════════════════════════════════
 
         private void UpdateCurrentLineOffsetY()
         {
-            double newY;
-            if (_currentLineIndex >= 0 && _currentLineIndex < _lineLayoutCount)
-            {
-                ref readonly var ll = ref _lineLayouts[_currentLineIndex];
-                newY = ll.OffsetY + ll.Height / 2.0;
-            }
-            else
-            {
-                newY = 0.0;
-            }
+            double newY = (_currentLineIndex >= 0 && _currentLineIndex < _lineLayoutCount)
+                ? _lineLayouts[_currentLineIndex].OffsetY + _lineLayouts[_currentLineIndex].Height / 2.0
+                : 0.0;
 
             if (Math.Abs(newY - _currentLineOffsetY) > 0.5)
             {
@@ -564,7 +708,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 布局计算：EnsureLayout
+        // 布局计算
         // ═════════════════════════════════════════════════════════════════════
 
         private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth)
@@ -582,7 +726,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 return;
 
             int lineCount = lyrics.Count;
-
             if (_lineLayouts.Length < lineCount) _lineLayouts = new LineLayout[lineCount + 4];
             if (_lineVisualRowRanges.Length < lineCount) _lineVisualRowRanges = new LineVisualRowRange[lineCount + 4];
 
@@ -670,7 +813,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         WordWrapping = CanvasWordWrapping.WholeWord,
                         HorizontalAlignment = CanvasHorizontalAlignment.Left,
                     };
-                    using var transLayout = new CanvasTextLayout(creator, line.TransLateText, transFmtTmp, layoutWidth, 9999f);
+                    using var transLayout = new CanvasTextLayout(
+                        creator, line.TransLateText, transFmtTmp, layoutWidth, 9999f);
                     translateH = (float)transLayout.LayoutBounds.Height + TranslateGapV;
                 }
 
@@ -704,6 +848,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             RebuildAllRowCurves();
             DisposeFmtCache();
             UpdateCurrentLineOffsetY();
+
+            // 布局重建后，如果当前行有效则立即定位（不动画跳转到位）
+            if (_currentLineIndex >= 0 && !_userScrolling)
+            {
+                AutoScrollToCurrentLine();
+                _smoothedScrollY = _targetScrollY;
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -754,7 +905,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // 速度曲线重建
+        // 速度曲线
         // ─────────────────────────────────────────────────────────────────────
 
         private void RebuildAllRowCurves()
@@ -774,7 +925,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 for (int ri = 0; ri < vrr.Count; ri++)
                 {
                     ref readonly var vr = ref _visualRows[vrr.Start + ri];
-
                     int fv = vr.WordStart, lv = vr.WordEnd;
                     while (fv <= lv && _wordLayouts[fv].FullWidth <= 0) fv++;
                     while (lv >= fv && _wordLayouts[lv].FullWidth <= 0) lv--;
@@ -789,7 +939,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     _rowCurves[_rowCurveCount] = (fv <= lv)
                         ? BuildSingleRowCurve(words, ll.WordStart, fv, lv, vr.MinX, vr.MaxX, smoothness)
                         : new RowCurve { Count = 0 };
-
                     _rowCurveCount++;
                 }
             }
@@ -994,7 +1143,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 主绘制：OnDraw
+        // OnDraw：虚拟化渲染 + 内置滚动步进
         // ═════════════════════════════════════════════════════════════════════
 
         private void OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -1004,17 +1153,66 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (lyrics is null || lyrics.Count == 0) return;
 
             float w = (float)sender.ActualWidth;
-            if (w <= 0) return;
+            float viewH = (float)sender.ActualHeight;
+            if (w <= 0 || viewH <= 0) return;
 
+            // ── 布局（懒加载）───────────────────────────────────────────────
             if (_lineLayoutCount == 0 || Math.Abs(w - _cachedLayoutWidth) >= 2f)
             {
-                float oldH = _totalCanvasHeight;
                 EnsureLayout(sender, w);
-                if (Math.Abs(_totalCanvasHeight - oldH) > 1f)
-                    DispatcherQueue.TryEnqueue(InvalidateMeasure);
+                if (_lineLayoutCount == 0) return;
             }
 
-            if (_lineLayoutCount == 0) return;
+            // ── 每帧滚动步进 ─────────────────────────────────────────────────
+            const float dt = 0.016f;
+
+            // 1. 用户冷却倒计时
+            if (_userScrolling && !_pointerCaptured)
+            {
+                _userScrollCooldownSec -= dt;
+                if (_userScrollCooldownSec <= 0)
+                {
+                    _userScrolling = false;
+                    _flingY = 0;
+                    // 冷却结束后立即回到当前行
+                    if (_currentLineIndex >= 0) AutoScrollToCurrentLine();
+                }
+            }
+
+            // 2. 惯性
+            if (!_pointerCaptured && Math.Abs(_flingY) > FlingStopThreshold)
+            {
+                double flingDelta = _flingY * dt;
+                _targetScrollY = ClampScrollY(_targetScrollY + flingDelta);
+                _flingY *= Math.Pow(FlingDecay, dt * 60.0);
+            }
+            else if (!_pointerCaptured)
+            {
+                _flingY = 0;
+            }
+
+            // 3. 平滑追赶 _smoothedScrollY → _targetScrollY
+            double scrollSpeed = _userScrolling ? UserScrollReturnSpeed : AutoScrollSpeed;
+            double scrollDiff = _targetScrollY - _smoothedScrollY;
+            if (Math.Abs(scrollDiff) > 0.5)
+            {
+                double lf = 1.0 - Math.Exp(-scrollSpeed * dt);
+                _smoothedScrollY += scrollDiff * lf;
+                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 0.5)
+                    _smoothedScrollY = _targetScrollY;
+                sender.Invalidate();
+            }
+            else
+            {
+                _smoothedScrollY = _targetScrollY;
+            }
+
+            // ── 坐标变换 ─────────────────────────────────────────────────────
+            // 约定：歌词坐标 Y = _smoothedScrollY 的点显示在视口纵向中央
+            //   视口 Y = 歌词坐标 Y - _smoothedScrollY + viewH/2
+            //   即 ds.Transform.dy = viewH/2 - _smoothedScrollY
+            float translateY = viewH / 2f - (float)_smoothedScrollY;
+            ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
 
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
@@ -1023,7 +1221,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var transFmt = GetTransFmt();
             float layoutWidth = Math.Max(1f, w - RenderPaddingH * 2f);
             var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
-            const float kDeltaSec = 0.016f;
+
+            // 视口在歌词坐标系中可见的 Y 范围
+            // 视口顶部 = _smoothedScrollY - viewH/2，底部 = _smoothedScrollY + viewH/2
+            float viewTop = (float)_smoothedScrollY - viewH / 2f;
+            float viewBot = (float)_smoothedScrollY + viewH / 2f;
 
             int globalVrIdx = 0;
 
@@ -1031,6 +1233,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 ref readonly var ll = ref _lineLayouts[li];
                 ref readonly var vrr = ref _lineVisualRowRanges[li];
+
+                // ── 视口裁剪 ────────────────────────────────────────────────
+                float lineTop = ll.OffsetY;
+                float lineBot = ll.OffsetY + ll.Height;
+                if (lineBot < viewTop || lineTop > viewBot)
+                {
+                    globalVrIdx += vrr.Count;
+                    continue;
+                }
+
                 bool isCurrent = (li == _currentLineIndex);
                 var line = lyrics[li];
 
@@ -1052,7 +1264,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         _translateColor, transFmt);
                 }
 
-                // ── 当前行：逐字扫光 ────────────────────────────────────────
+                // ── 当前行逐字扫光 ──────────────────────────────────────────
                 if (isCurrent)
                 {
                     for (int ri = 0; ri < vrr.Count; ri++)
@@ -1080,9 +1292,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         float diff = targetRevealX - smoothed;
                         if (Math.Abs(diff) > 0.5f)
                         {
-                            float lf = 1f - MathF.Exp(-SmoothLerpSpeed * kDeltaSec);
+                            float lf = 1f - MathF.Exp(-SmoothLerpSpeed * dt);
                             float step = diff * lf;
-                            float maxStep = SmoothMaxPixelsPerSec * kDeltaSec;
+                            float maxStep = SmoothMaxPixelsPerSec * dt;
                             if (Math.Abs(step) > maxStep) step = Math.Sign(step) * maxStep;
                             smoothed += step;
                             if (Math.Abs(targetRevealX - smoothed) < 0.5f) smoothed = targetRevealX;
@@ -1119,7 +1331,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             {
                                 if (!_gradStopsValid)
                                 {
-                                    _gradStops[0] = new CanvasGradientStop { Color = _brightColor, Position = 0f };
+                                    _gradStops[0] = new CanvasGradientStop
+                                    { Color = _brightColor, Position = 0f };
                                     _gradStops[1] = new CanvasGradientStop
                                     {
                                         Color = Color.FromArgb(0, _brightColor.R, _brightColor.G, _brightColor.B),
@@ -1150,6 +1363,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 globalVrIdx += vrr.Count;
             }
+
+            // Transform 复原（DrawingSession 销毁时也会自动复原，显式写出更清晰）
+            ds.Transform = Matrix3x2.Identity;
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -1199,7 +1415,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int firstLocal = globalFv - lineWordBase;
             int lastLocal = globalLv - lineWordBase;
             if (firstLocal < 0 || lastLocal >= words.Count) return minX;
-
             if (effectiveTime <= words[firstLocal].StartTime) return minX;
 
             float totalW = 0f;

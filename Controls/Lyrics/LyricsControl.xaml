@@ -20,8 +20,7 @@
         Margin="0"
         Padding="0"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch"
-        PointerWheelChanged="MaskView_PointerWheelChanged">
+        VerticalAlignment="Stretch">
         <controls:OpacityMaskView.OpacityMask>
             <Rectangle Stretch="UniformToFill">
                 <Rectangle.Fill>
@@ -40,25 +39,15 @@
                 </Rectangle.Fill>
             </Rectangle>
         </controls:OpacityMaskView.OpacityMask>
-        <ScrollView x:Name="LyricViewer" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <!--  上方占位，让第一行歌词能滚到屏幕中央  -->
-                <StackPanel x:Name="TopSpacer" Height="1080" />
-                <!--  单一画布控件，替换原 ListView  -->
-                <alc:UnifiedLyricsCanvasControl
-                    x:Name="LyricsCanvas"
-                    Margin="{x:Bind LyricsMargin, Mode=OneWay}"
-                    HorizontalAlignment="Stretch"
-                    AnimationSmoothness="{x:Bind AnimationSmoothness, Mode=OneWay}"
-                    FontFamilyName="{x:Bind FontFamilyName, Mode=OneWay}"
-                    IsDark="{x:Bind IsDark, Mode=OneWay}"
-                    LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
-                    LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
-                    TranslateFontSize="{x:Bind TranslateFontSize, Mode=OneWay}" />
-                <!--  下方占位  -->
-
-                <StackPanel Height="1080" />
-            </StackPanel>
-        </ScrollView>
+        <alc:UnifiedLyricsCanvasControl
+            x:Name="LyricsCanvas"
+            Margin="{x:Bind LyricsMargin, Mode=OneWay}"
+            HorizontalAlignment="Stretch"
+            AnimationSmoothness="{x:Bind AnimationSmoothness, Mode=OneWay}"
+            FontFamilyName="{x:Bind FontFamilyName, Mode=OneWay}"
+            IsDark="{x:Bind IsDark, Mode=OneWay}"
+            LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
+            LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
+            TranslateFontSize="{x:Bind TranslateFontSize, Mode=OneWay}" />
     </controls:OpacityMaskView>
 </UserControl>
