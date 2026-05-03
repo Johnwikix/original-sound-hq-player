@@ -1,6 +1,7 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -24,13 +25,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 公开事件
         // ─────────────────────────────────────────────────────────────────────
 
-        /// <summary>点击某行歌词时触发，携带该行起始时间戳。</summary>
         public event EventHandler<TimeSpan>? LyricLineClicked;
-
-        /// <summary>
-        /// 当前播放行的 Y 偏移（相对歌词坐标系顶部，单位 px）发生变化时触发。
-        /// 外部如仍需监听可订阅此事件；内部自动滚动已内置，无需 ScrollView。
-        /// </summary>
         public event EventHandler<double>? CurrentLineOffsetYChanged;
 
         // ─────────────────────────────────────────────────────────────────────
@@ -52,7 +47,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             public int WordStart;
             public int WordCount;
-            public float OffsetY;   // 歌词坐标系 Y（不含上方 padding）
+            public float OffsetY;
             public float Height;
             public float TranslateOffsetY;
             public bool HasTranslate;
@@ -79,7 +74,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private string? _cachedLayoutKey = null;
         private float _cachedLayoutWidth = 0f;
-        private float _totalCanvasHeight = 0f;  // 全部歌词行高度之和（不含 ViewPadding）
+        private float _totalCanvasHeight = 0f;
 
         // ─────────────────────────────────────────────────────────────────────
         // 速度曲线（Hermite Catmull-Rom）
@@ -111,18 +106,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         // ─────────────────────────────────────────────────────────────────────
         // 内置滚动状态
-        //
-        // 坐标约定（唯一，所有计算以此为准）：
-        //   _smoothedScrollY  = 当前"视口中心"在歌词坐标系中的 Y 值
-        //   渲染时：ds.Transform = Translate(0,  viewH/2 - _smoothedScrollY)
-        //   即：歌词坐标 Y=_smoothedScrollY 的点，恰好显示在视口纵向中央
-        //
-        // 可滚动范围：
-        //   min = -VScrollPadding          (第一行能滚到中央，再多留一点)
-        //   max = _totalCanvasHeight + VScrollPadding  (最后一行能滚到中央)
         // ─────────────────────────────────────────────────────────────────────
 
-        // 上下固定 padding（px），与窗口高度无关
         private const float VScrollPadding = 300f;
 
         private double _targetScrollY = 0.0;
@@ -131,15 +116,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _userScrollCooldownSec = 0.0;
         private const double UserScrollCooldown = 2.5;
 
-        // ── 可调滚动速度 ──────────────────────────────────────────────────────
-        /// <summary>自动行追踪的弹簧速度（越大越快跟上，推荐 6~12）</summary>
         public double AutoScrollSpeed = 4.0;
-        /// <summary>用户手势松手后回弹到当前行的弹簧速度（推荐 10~20）</summary>
         public double UserScrollReturnSpeed = 12.0;
-        /// <summary>鼠标滚轮每格滚动的像素量（推荐 80~200）</summary>
         public double WheelScrollPixels = 80.0;
 
-        // 触摸 / 鼠标 Pan
         private bool _pointerCaptured = false;
         private double _pointerLastY = 0.0;
         private double _pointerVelocityY = 0.0;
@@ -161,7 +141,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ─────────────────────────────────────────────────────────────────────
         private int _currentLineIndex = -1;
         private bool _isPlaying = false;
-        private double _currentLineOffsetY = 0.0;   // 歌词坐标系中当前行中心 Y
+        private double _currentLineOffsetY = 0.0;
 
         // ─────────────────────────────────────────────────────────────────────
         // 视觉常量
@@ -186,17 +166,40 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private float _cachedTransFontSizeForFmt;
         private CanvasHorizontalAlignment _cachedTransAlignmentForFmt;
 
-        // 替换原来的 _gradStops 字段
         private CanvasLinearGradientBrush? _gradBrush;
-        private bool _gradBrushDirty = true;  // IsDark 变化时重建
+        private bool _gradBrushDirty = true;
         private int _hoveredLineIndex = -1;
 
-        private CanvasRenderTarget?[] _blurredLineCache = [];
-        private string? _blurCacheKey = null;
-        private float _blurCacheAmount = -1f;
-        private CanvasRenderTarget?[] _clearLineCache = [];   // 清晰版缓存
-        private float[] _blurAlpha = [];                      // 每行当前模糊透明度 0=清晰 1=全糊
-        private const float BlurTransitionDuration = 1.0f;    // 秒
+        // ─────────────────────────────────────────────────────────────────────
+        // 【优化】RT 缓存：只保留清晰版，模糊实时计算；滑动窗口按需烘焙/释放
+        //
+        // 原来：
+        //   _blurredLineCache[全部行] + _clearLineCache[全部行]
+        //   全屏 2560px × 每行 ~80px × 200行 × 2张 × 4通道 ≈ 1 GB
+        //
+        // 现在：
+        //   _clearLineCache[全部行]（数组槽位，但只有窗口内的槽非 null）
+        //   窗口 ±BlurCacheWindow 行 × 1张清晰 RT
+        //   2560 × 80 × 17行 × 4 ≈ 14 MB（降低 ~98%）
+        //   模糊通过复用的 GaussianBlurEffect 实时计算，无额外 RT 开销
+        // ─────────────────────────────────────────────────────────────────────
+
+        // 只保留清晰版 RT 数组（槽数 = 行数，但大多数槽为 null）
+        private CanvasRenderTarget?[] _clearLineCache = [];
+
+        // 每行当前模糊透明度，0 = 清晰，1 = 全模糊
+        private float[] _blurAlpha = [];
+        private const float BlurTransitionDuration = 1.0f;
+
+        // 滑动窗口大小：当前行前后各保留多少行的 RT
+        private const int BlurCacheWindow = 8;
+
+        // 上一帧的窗口范围，用于判断是否需要更新
+        private int _cacheWindowLo = -1;
+        private int _cacheWindowHi = -1;
+
+        // 复用的 GaussianBlurEffect（避免每帧 new）
+        private GaussianBlurEffect? _reusableBlur;
 
         // ─────────────────────────────────────────────────────────────────────
         // 构造 / 生命周期
@@ -223,15 +226,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerMoved -= OnPointerMoved;
                 _canvas.PointerReleased -= OnPointerReleased;
                 _canvas.PointerCanceled -= OnPointerReleased;
+                _canvas.PointerExited -= OnPointerExited;
+                _canvas.PointerEntered -= OnPointerEntered;
                 _canvas = null;
             }
-            foreach (var rt in _blurredLineCache) rt?.Dispose();
-            _blurredLineCache = [];
-            foreach (var rt in _clearLineCache) rt?.Dispose();
-            _clearLineCache = [];
-            _blurAlpha = [];
+            DisposeAllClearCache();
             _gradBrush?.Dispose();
             _gradBrush = null;
+            _reusableBlur?.Dispose();
+            _reusableBlur = null;
             DisposeFmtCache();
         }
 
@@ -249,7 +252,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerMoved -= OnPointerMoved;
                 _canvas.PointerReleased -= OnPointerReleased;
                 _canvas.PointerExited -= OnPointerExited;
-                _canvas.PointerEntered -= OnPointerEntered; // 可选，移入时重新检测
+                _canvas.PointerEntered -= OnPointerEntered;
                 _canvas.PointerCanceled -= OnPointerReleased;
             }
             _canvas = GetTemplateChild("PART_Canvas") as CanvasControl;
@@ -265,13 +268,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerReleased += OnPointerReleased;
                 _canvas.PointerCanceled += OnPointerReleased;
                 _canvas.PointerExited += OnPointerExited;
-                _canvas.PointerEntered += OnPointerEntered; // 可选，移入时重新检测
+                _canvas.PointerEntered += OnPointerEntered;
                 _canvas.ClearColor = Colors.Transparent;
-                _canvas.ManipulationMode = ManipulationModes.None; // 手势由 Pointer 事件手动处理
+                _canvas.ManipulationMode = ManipulationModes.None;
             }
             UpdateColors(IsDark);
             UpdateTimerState();
         }
+
         private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (_canvas is null) return;
@@ -283,16 +287,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             SetHovered(-1);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // MeasureOverride：Canvas 固定铺满父级，不再根据内容撑高
-        // ─────────────────────────────────────────────────────────────────────
-
-        protected override Size MeasureOverride(Size availableSize)
-        {
-            // 返回 (0,0)，让父级（Grid/Page 等）决定控件尺寸
-            // 布局计算仍在 OnDraw 首帧触发
-            return new Size(0, 0);
-        }
+        protected override Size MeasureOverride(Size availableSize) => new Size(0, 0);
 
         // ═════════════════════════════════════════════════════════════════════
         // 依赖属性
@@ -434,7 +429,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (d is not UnifiedLyricsCanvasControl c) return;
             c.UpdateColors((bool)e.NewValue);
             c._gradBrushDirty = true;
-            c._blurCacheAmount = -1f;
+            // 清晰 RT 颜色已过时，重建槽位数组（保留行数，内容置 null）
+            foreach (var rt in c._clearLineCache) rt?.Dispose();
+            c._clearLineCache = c._lineLayoutCount > 0
+                ? new CanvasRenderTarget?[c._lineLayoutCount]
+                : [];
+            c._blurAlpha = c._lineLayoutCount > 0
+                ? new float[c._lineLayoutCount]
+                : [];
+            c._cacheWindowLo = -1;
+            c._cacheWindowHi = -1;
             c._canvas?.Invalidate();
         }
 
@@ -468,7 +472,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(OffsetMsProperty, value);
         }
 
-        // 只读：歌词坐标系中当前行中心 Y
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
@@ -479,7 +482,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             private set => SetValue(CurrentLineOffsetYProperty, value);
         }
 
-        // ── 滚动灵敏度倍率（鼠标滚轮，默认 1.0）────────────────────────────
         public static readonly DependencyProperty ScrollSensitivityProperty =
             DependencyProperty.Register(nameof(ScrollSensitivity), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(1.0));
@@ -515,9 +517,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             var pp = e.GetCurrentPoint(_canvas);
-            // MouseWheelDelta 通常为 ±120，归一化为 ±1 格后乘像素量
             double delta = -(pp.Properties.MouseWheelDelta / 120.0) * WheelScrollPixels * ScrollSensitivity;
-            // 立即移动（_smoothedScrollY 同步），不走平滑追赶延迟
             _targetScrollY = ClampScrollY(_targetScrollY + delta);
             _smoothedScrollY = _targetScrollY;
             _userScrolling = true;
@@ -548,7 +548,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_canvas is null) return;
             var point = e.GetCurrentPoint(_canvas);
 
-            // ── 拖拽 Pan（原有逻辑）──────────────────────────────────────
             if (_pointerCaptured)
             {
                 double y = point.Position.Y;
@@ -559,7 +558,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 e.Handled = true;
             }
 
-            // ── Hover 命中测试（始终执行）────────────────────────────────
             UpdateHoveredLine((float)point.Position.Y);
         }
 
@@ -568,33 +566,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (!_pointerCaptured || _canvas is null) return;
             _canvas.ReleasePointerCapture(e.Pointer);
             _pointerCaptured = false;
-            // 启动惯性：速度换算成 px/s（假设 60 fps → 16ms/frame）
             _flingY = _pointerVelocityY * 60.0;
             _userScrollCooldownSec = UserScrollCooldown;
             e.Handled = true;
         }
 
-
         private void UpdateHoveredLine(float viewY)
         {
-            if (_lineLayoutCount == 0 || _canvas is null)
-            {
-                SetHovered(-1);
-                return;
-            }
+            if (_lineLayoutCount == 0 || _canvas is null) { SetHovered(-1); return; }
             double viewH = _canvas.ActualHeight;
-            // 将视口坐标转换为歌词坐标系
             float lyricsY = (float)(viewY - viewH / 2.0 + _smoothedScrollY);
 
             int hit = -1;
             for (int i = 0; i < _lineLayoutCount; i++)
             {
                 ref readonly var ll = ref _lineLayouts[i];
-                if (lyricsY >= ll.OffsetY && lyricsY < ll.OffsetY + ll.Height)
-                {
-                    hit = i;
-                    break;
-                }
+                if (lyricsY >= ll.OffsetY && lyricsY < ll.OffsetY + ll.Height) { hit = i; break; }
             }
             SetHovered(hit);
         }
@@ -605,9 +592,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _hoveredLineIndex = idx;
             _canvas?.Invalidate();
         }
-        // ─────────────────────────────────────────────────────────────────────
-        // 公共：外部手动将某个歌词坐标 Y 滚到视口中央
-        // ─────────────────────────────────────────────────────────────────────
+
         public void ScrollToLyricsY(double lyricsY, bool animate = true)
         {
             _targetScrollY = ClampScrollY(lyricsY);
@@ -615,9 +600,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _canvas?.Invalidate();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 内部：用户手势写入滚动偏移
-        // ─────────────────────────────────────────────────────────────────────
         private void ApplyUserScroll(double deltaY)
         {
             _targetScrollY = ClampScrollY(_targetScrollY + deltaY);
@@ -626,9 +608,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _canvas?.Invalidate();
         }
 
-        // _smoothedScrollY = 视口中心对应的歌词坐标 Y
-        // min：第一行中心可到视口中心（歌词 Y=0 处），再留 VScrollPadding
-        // max：最后一行中心可到视口中心，再留 VScrollPadding
         private double ClampScrollY(double y)
         {
             double minY = -VScrollPadding;
@@ -658,18 +637,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             ResetSmoothedRevealX();
             UpdateTimerState();
             UpdateCurrentLineOffsetY();
-            // 自动滚动：仅在用户未手动滚动时触发
             if (!_userScrolling) AutoScrollToCurrentLine();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 自动滚动：把目标行中心 Y 设为视口中心
-        // ─────────────────────────────────────────────────────────────────────
         private void AutoScrollToCurrentLine()
         {
             if (_currentLineIndex < 0 || _currentLineIndex >= _lineLayoutCount) return;
             ref readonly var ll = ref _lineLayouts[_currentLineIndex];
-            // 行中心 Y（歌词坐标系）直接就是 _targetScrollY
             double lineCenter = ll.OffsetY + ll.Height / 2.0;
             _targetScrollY = ClampScrollY(lineCenter);
         }
@@ -731,6 +705,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
         {
+            _reusableBlur?.Dispose();
+            _reusableBlur = new GaussianBlurEffect
+            {
+                Optimization = EffectOptimization.Speed,
+                BorderMode = EffectBorderMode.Soft,
+            };
             DisposeFmtCache();
             InvalidateLayoutCache();
         }
@@ -742,7 +722,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 点击命中测试（坐标需加上 _smoothedScrollY）
+        // 点击命中测试
         // ═════════════════════════════════════════════════════════════════════
 
         private void OnCanvasTapped(object sender, TappedRoutedEventArgs e)
@@ -760,7 +740,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     var lyrics = UILyrics;
                     if (lyrics != null && li < lyrics.Count)
                     {
-                        // 立即解除用户滚动锁，点击后自动滚动动画马上接管
                         _userScrolling = false;
                         _userScrollCooldownSec = 0;
                         _flingY = 0;
@@ -817,7 +796,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             float layoutWidth = Math.Max(1f, availableWidth - RenderPaddingH * 2f);
             float fontSize = (float)LyricsFontSize;
-            var alignment = LyricsTextAlignment;
 
             using var lyricsFmtTmp = new CanvasTextFormat
             {
@@ -834,6 +812,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _rowCurveCount = 0;
 
             float cursorY = 0f;
+            var alignment = LyricsTextAlignment;
 
             for (int li = 0; li < lineCount; li++)
             {
@@ -926,13 +905,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedLayoutKey = key;
             _cachedLayoutWidth = availableWidth;
 
+            // 重新分配清晰 RT 槽（全部置 null，窗口内的在 OnDraw 里按需填充）
+            DisposeAllClearCache();
+            _clearLineCache = new CanvasRenderTarget?[lineCount];
+            _blurAlpha = new float[lineCount];
+            _cacheWindowLo = -1;
+            _cacheWindowHi = -1;
+
             EnsureSmoothedRevealXCapacity(_visualRowCount);
             RebuildAllRowCurves();
-            BakeBlurCache(creator, availableWidth);
             DisposeFmtCache();
             UpdateCurrentLineOffsetY();
 
-            // 布局重建后，如果当前行有效则立即定位（不动画跳转到位）
             if (_currentLineIndex >= 0 && !_userScrolling)
             {
                 AutoScrollToCurrentLine();
@@ -940,91 +924,89 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        private void BakeBlurCache(ICanvasResourceCreator creator, float canvasWidth)
+        // ─────────────────────────────────────────────────────────────────────
+        // 【优化】滑动窗口：按需烘焙/释放清晰版 RT
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 每帧调用：根据当前可见行范围 [visLo, visHi] 更新窗口，
+        /// 窗口 = [visLo - BlurCacheWindow, visHi + BlurCacheWindow]。
+        /// 窗口外的行释放 RT，窗口内未就绪的行立即烘焙。
+        /// </summary>
+        private void UpdateCacheWindow(ICanvasResourceCreator creator,
+            float canvasWidth, int visLo, int visHi)
         {
-            float blurAmount = (float)LyricsBlurAmount;
-            string key = _cachedLayoutKey ?? "";
+            int lo = Math.Max(0, visLo - BlurCacheWindow);
+            int hi = Math.Min(_lineLayoutCount - 1, visHi + BlurCacheWindow);
 
-            if (_blurCacheKey == key
-                && Math.Abs(_blurCacheAmount - blurAmount) < 0.05f
-                && _blurredLineCache.Length >= _lineLayoutCount)
-                return;
+            // 窗口没变化 → 跳过
+            if (lo == _cacheWindowLo && hi == _cacheWindowHi) return;
 
-            foreach (var rt in _blurredLineCache) rt?.Dispose();
-            foreach (var rt in _clearLineCache) rt?.Dispose();
-            _blurredLineCache = new CanvasRenderTarget?[_lineLayoutCount];
-            _clearLineCache = new CanvasRenderTarget?[_lineLayoutCount];
-
-            if (_blurAlpha.Length < _lineLayoutCount)
-                _blurAlpha = new float[_lineLayoutCount];
-
-            var lyricsFmt = GetLyricsFmt();
-            var transFmt = GetTransFmt();
-            float layoutWidth = Math.Max(1f, canvasWidth - RenderPaddingH * 2f);
-            var lyrics = UILyrics!;
-
-            for (int li = 0; li < _lineLayoutCount; li++)
+            // 1. 释放旧窗口中、新窗口外的行
+            if (_cacheWindowLo >= 0)
             {
-                ref readonly var ll = ref _lineLayouts[li];
-                var line = lyrics[li];
-
-                // ── 录制原始文字 ──────────────────────────────────────
-                using var cl = new CanvasCommandList(creator);
-                using (var clDs = cl.CreateDrawingSession())
+                for (int i = _cacheWindowLo; i <= _cacheWindowHi; i++)
                 {
-                    for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                    if (i < lo || i > hi)
                     {
-                        ref readonly var wl = ref _wordLayouts[gi];
-                        if (wl.FullWidth <= 0) continue;
-                        clDs.DrawText(wl.Text,
-                            new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
-                            _dimColor, lyricsFmt);
+                        _clearLineCache[i]?.Dispose();
+                        _clearLineCache[i] = null;
                     }
-                    if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
-                    {
-                        clDs.DrawText(line.TransLateText,
-                            new Rect(RenderPaddingH, ll.TranslateOffsetY, layoutWidth, 9999f),
-                            _translateColor, transFmt);
-                    }
-                }
-
-                float rtW = canvasWidth, rtH = ll.Height;
-
-                // ── 清晰版 ────────────────────────────────────────────
-                var clearRt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
-                using (var rtDs = clearRt.CreateDrawingSession())
-                {
-                    rtDs.Clear(Colors.Transparent);
-                    rtDs.DrawImage(cl, 0f, 0f);
-                }
-                _clearLineCache[li] = clearRt;
-
-                // ── 模糊版 ────────────────────────────────────────────
-                if (blurAmount > 0.1f)
-                {
-                    using var blur = new Microsoft.Graphics.Canvas.Effects.GaussianBlurEffect
-                    {
-                        Source = cl,
-                        BlurAmount = blurAmount,
-                        Optimization = Microsoft.Graphics.Canvas.Effects.EffectOptimization.Speed,
-                        BorderMode = Microsoft.Graphics.Canvas.Effects.EffectBorderMode.Soft,
-                    };
-                    var blurRt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
-                    using (var rtDs = blurRt.CreateDrawingSession())
-                    {
-                        rtDs.Clear(Colors.Transparent);
-                        rtDs.DrawImage(blur, 0f, 0f);
-                    }
-                    _blurredLineCache[li] = blurRt;
-                }
-                else
-                {
-                    _blurredLineCache[li] = null; // blurAmount=0 时不需要模糊版
                 }
             }
 
-            _blurCacheKey = key;
-            _blurCacheAmount = blurAmount;
+            // 2. 烘焙新窗口内尚未就绪的行
+            for (int i = lo; i <= hi; i++)
+            {
+                if (_clearLineCache[i] is null)
+                    BakeSingleLine(creator, canvasWidth, i);
+            }
+
+            _cacheWindowLo = lo;
+            _cacheWindowHi = hi;
+        }
+
+        /// <summary>烘焙单行的清晰版 RT（仅文字，背景透明）。</summary>
+        private void BakeSingleLine(ICanvasResourceCreator creator, float canvasWidth, int li)
+        {
+            if (li < 0 || li >= _lineLayoutCount) return;
+
+            ref readonly var ll = ref _lineLayouts[li];
+            var lyrics = UILyrics;
+            if (lyrics is null || li >= lyrics.Count) return;
+            var line = lyrics[li];
+
+            float layoutWidth = Math.Max(1f, canvasWidth - RenderPaddingH * 2f);
+            float rtW = canvasWidth;
+            float rtH = ll.Height;
+            if (rtW <= 0 || rtH <= 0) return;
+
+            var lyricsFmt = GetLyricsFmt();
+            var transFmt = GetTransFmt();
+
+            var rt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
+            using (var rtDs = rt.CreateDrawingSession())
+            {
+                rtDs.Clear(Colors.Transparent);
+
+                for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+                {
+                    ref readonly var wl = ref _wordLayouts[gi];
+                    if (wl.FullWidth <= 0) continue;
+                    rtDs.DrawText(wl.Text,
+                        new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
+                        _dimColor, lyricsFmt);
+                }
+
+                if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
+                {
+                    rtDs.DrawText(line.TransLateText,
+                        new Rect(RenderPaddingH, ll.TranslateOffsetY, layoutWidth, 9999f),
+                        _translateColor, transFmt);
+                }
+            }
+
+            _clearLineCache[li] = rt;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -1210,15 +1192,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _totalWordCount = 0;
             _visualRowCount = 0;
             _rowCurveCount = 0;
-            foreach (var rt in _blurredLineCache) rt?.Dispose();
-            _blurredLineCache = [];
-            _blurCacheKey = null;
-            _blurCacheAmount = -1f;
+            DisposeAllClearCache();
+            _cacheWindowLo = -1;
+            _cacheWindowHi = -1;
+            ResetSmoothedRevealX();
+            DisposeFmtCache();
+        }
+
+        private void DisposeAllClearCache()
+        {
             foreach (var rt in _clearLineCache) rt?.Dispose();
             _clearLineCache = [];
             _blurAlpha = [];
-            ResetSmoothedRevealX();
-            DisposeFmtCache();
         }
 
         private void ResetSmoothedRevealX()
@@ -1340,17 +1325,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (_lineLayoutCount == 0) return;
             }
 
-            if (_lineLayoutCount > 0 &&
-                (Math.Abs(_blurCacheAmount - (float)LyricsBlurAmount) > 0.05f
-                 || _blurCacheKey != _cachedLayoutKey))
-            {
-                BakeBlurCache(sender, w);
-            }
-
             // ── 每帧滚动步进 ─────────────────────────────────────────────────
             const float dt = 0.016f;
 
-            // 1. 用户冷却倒计时
             if (_userScrolling && !_pointerCaptured)
             {
                 _userScrollCooldownSec -= dt;
@@ -1358,12 +1335,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 {
                     _userScrolling = false;
                     _flingY = 0;
-                    // 冷却结束后立即回到当前行
                     if (_currentLineIndex >= 0) AutoScrollToCurrentLine();
                 }
             }
 
-            // 2. 惯性
             if (!_pointerCaptured && Math.Abs(_flingY) > FlingStopThreshold)
             {
                 double flingDelta = _flingY * dt;
@@ -1375,7 +1350,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _flingY = 0;
             }
 
-            // 3. 平滑追赶 _smoothedScrollY → _targetScrollY
             double scrollSpeed = _userScrolling ? UserScrollReturnSpeed : AutoScrollSpeed;
             double scrollDiff = _targetScrollY - _smoothedScrollY;
             if (Math.Abs(scrollDiff) > 0.5)
@@ -1391,13 +1365,31 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _smoothedScrollY = _targetScrollY;
             }
 
+            // ── 视口在歌词坐标系中的可见范围 ────────────────────────────────
+            float viewTop = (float)_smoothedScrollY - viewH / 2f;
+            float viewBot = (float)_smoothedScrollY + viewH / 2f;
+
+            // ── 找出可见行范围 [visLo, visHi] ────────────────────────────────
+            // 用于：1) 窗口更新  2) blurAlpha 只对可见行步进
+            int visLo = _lineLayoutCount;
+            int visHi = -1;
+            for (int li = 0; li < _lineLayoutCount; li++)
+            {
+                ref readonly var ll = ref _lineLayouts[li];
+                if (ll.OffsetY + ll.Height >= viewTop && ll.OffsetY <= viewBot)
+                {
+                    if (li < visLo) visLo = li;
+                    if (li > visHi) visHi = li;
+                }
+            }
+
+            // ── 【优化】更新滑动窗口（只烘焙/释放窗口内外的清晰 RT）──────────
+            if (visLo <= visHi)
+                UpdateCacheWindow(sender, w, visLo, visHi);
+
             // ── 坐标变换 ─────────────────────────────────────────────────────
-            // 约定：歌词坐标 Y = _smoothedScrollY 的点显示在视口纵向中央
-            //   视口 Y = 歌词坐标 Y - _smoothedScrollY + viewH/2
-            //   即 ds.Transform.dy = viewH/2 - _smoothedScrollY
             float translateY = viewH / 2f - (float)_smoothedScrollY;
             ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
-
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
 
@@ -1405,11 +1397,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var transFmt = GetTransFmt();
             float layoutWidth = Math.Max(1f, w - RenderPaddingH * 2f);
             var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
-
-            // 视口在歌词坐标系中可见的 Y 范围
-            // 视口顶部 = _smoothedScrollY - viewH/2，底部 = _smoothedScrollY + viewH/2
-            float viewTop = (float)_smoothedScrollY - viewH / 2f;
-            float viewBot = (float)_smoothedScrollY + viewH / 2f;
+            float blurAmount = (float)LyricsBlurAmount;
 
             int globalVrIdx = 0;
 
@@ -1418,46 +1406,50 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ref readonly var ll = ref _lineLayouts[li];
                 ref readonly var vrr = ref _lineVisualRowRanges[li];
 
-                // ── 视口裁剪 ────────────────────────────────────────────────
+                // ── 视口裁剪：跳过不可见行（绘制 + blurAlpha 步进都跳过）─────
                 float lineTop = ll.OffsetY;
                 float lineBot = ll.OffsetY + ll.Height;
-                if (lineBot < viewTop || lineTop > viewBot)
+                bool isVisible = lineBot >= viewTop && lineTop <= viewBot;
+
+                if (!isVisible)
                 {
+                    // 视口外：blurAlpha 直接跳变到目标值，不触发过渡动画
+                    // 这样当行滚回视口时已经是正确状态，无需额外重绘
+                    bool isCur = (li == _currentLineIndex);
+                    bool wantsBlurOOV = blurAmount > 0.1f && !isCur;
+                    if (li < _blurAlpha.Length)
+                        _blurAlpha[li] = wantsBlurOOV ? 1f : 0f;
+
                     globalVrIdx += vrr.Count;
                     continue;
                 }
 
                 bool isCurrent = (li == _currentLineIndex);
                 var line = lyrics[li];
+
+                // ── Hover 高亮 ────────────────────────────────────────────────
                 if (li == _hoveredLineIndex)
                 {
-                    // 遮罩颜色随 IsDark 自适应
-                    byte hoverAlpha = 30; // 可调，越大越明显
+                    byte hoverAlpha = 30;
                     var overlayColor = IsDark
                         ? Color.FromArgb(hoverAlpha, 255, 255, 255)
                         : Color.FromArgb(hoverAlpha, 0, 0, 0);
-
                     ds.FillRoundedRectangle(
-                        new Rect(0, ll.OffsetY, w, ll.Height),
-                        6f, 6f,
-                        overlayColor);
+                        new Rect(0, ll.OffsetY, w, ll.Height), 6f, 6f, overlayColor);
                 }
-                // ── 暗色底层（带可选模糊）────────────────────────────────────
-                bool wantsBlur = (float)LyricsBlurAmount > 0.1f
-                 && !isCurrent
-                 && li != _hoveredLineIndex;
 
-                // ── 每帧步进 blurAlpha ───────────────────────────────────────
+                // ── 【优化】blurAlpha 步进（只对可见行执行，视口外已直接跳变）─
+                bool wantsBlur = blurAmount > 0.1f && !isCurrent && li != _hoveredLineIndex;
                 if (li < _blurAlpha.Length)
                 {
                     float target = wantsBlur ? 1f : 0f;
-                    float current = _blurAlpha[li];
-                    if (Math.Abs(target - current) > 0.005f)
+                    float cur = _blurAlpha[li];
+                    if (Math.Abs(target - cur) > 0.005f)
                     {
                         float step = dt / BlurTransitionDuration;
-                        _blurAlpha[li] = target > current
-                            ? Math.Min(current + step, target)
-                            : Math.Max(current - step, target);
+                        _blurAlpha[li] = target > cur
+                            ? Math.Min(cur + step, target)
+                            : Math.Max(cur - step, target);
                         sender.Invalidate(); // 过渡期间持续重绘
                     }
                     else
@@ -1467,29 +1459,32 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
 
                 float alpha = li < _blurAlpha.Length ? _blurAlpha[li] : (wantsBlur ? 1f : 0f);
-                bool hasClear = li < _clearLineCache.Length && _clearLineCache[li] is not null;
-                bool hasBlur = li < _blurredLineCache.Length && _blurredLineCache[li] is not null;
+                var clearRt = (li < _clearLineCache.Length) ? _clearLineCache[li] : null;
+                var srcRect = clearRt is not null
+                    ? new Rect(0, 0, clearRt.Size.Width, clearRt.Size.Height)
+                    : Rect.Empty;
 
-                if (hasClear && (hasBlur || alpha < 0.01f))
+                if (clearRt is not null)
                 {
                     if (alpha < 0.99f)
                     {
-                        // 清晰层（1-alpha）
-                        ds.DrawImage(_clearLineCache[li]!, 0f, ll.OffsetY,
-                            new Rect(0, 0, _clearLineCache[li]!.Size.Width, _clearLineCache[li]!.Size.Height),
-                            1f - alpha);
+                        // 清晰层
+                        ds.DrawImage(clearRt, 0f, ll.OffsetY, srcRect, 1f - alpha);
                     }
-                    if (alpha > 0.01f && hasBlur)
+
+                    // 【优化】模糊：复用 _reusableBlur，实时作用于清晰 RT
+                    // 不额外占用任何显存，GPU 计算开销极低（视口内仅十几行）
+                    if (alpha > 0.01f && blurAmount > 0.1f && _reusableBlur is not null)
                     {
-                        // 模糊层（alpha）
-                        ds.DrawImage(_blurredLineCache[li]!, 0f, ll.OffsetY,
-                            new Rect(0, 0, _blurredLineCache[li]!.Size.Width, _blurredLineCache[li]!.Size.Height),
-                            alpha);
+                        _reusableBlur.Source = clearRt;
+                        _reusableBlur.BlurAmount = blurAmount;
+                        ds.DrawImage(_reusableBlur, 0f, ll.OffsetY, srcRect, alpha);
+                        _reusableBlur.Source = null; // 释放引用，避免意外持有
                     }
                 }
                 else
                 {
-                    // 缓存未就绪时的回退：直接绘制
+                    // RT 尚未烘焙（窗口刚滑入）时的回退：直接绘制文字
                     for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
                     {
                         ref readonly var wl = ref _wordLayouts[gi];
@@ -1506,14 +1501,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     }
                 }
 
-                // ── 翻译行 ──────────────────────────────────────────────────
-                //if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
-                //{
-                //    ds.DrawText(line.TransLateText,
-                //        new Rect(RenderPaddingH, ll.OffsetY + ll.TranslateOffsetY, layoutWidth, 9999f),
-                //        _translateColor, transFmt);
-                //}
-
+                // ── 当前行逐字高亮 ────────────────────────────────────────────
                 if (isCurrent)
                 {
                     for (int ri = 0; ri < vrr.Count; ri++)
@@ -1563,40 +1551,31 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                         if (feather > 0.5f)
                         {
-                            // ── 有渐变：重建或更新 brush，单次 CreateLayer ────────────
                             if (_gradBrush is null || _gradBrushDirty)
                             {
                                 _gradBrush?.Dispose();
                                 _gradBrush = new CanvasLinearGradientBrush(ds,
                                     [
-                                    new() { Color = _brightColor, Position = 0f },
-                                    new() { Color = Color.FromArgb(0, _brightColor.R,
-                                                                      _brightColor.G,
-                                                                      _brightColor.B),
-                                Position = 1f },
+                                        new() { Color = _brightColor, Position = 0f },
+                                        new() { Color = Color.FromArgb(0, _brightColor.R,
+                                                                          _brightColor.G,
+                                                                          _brightColor.B),
+                                            Position = 1f },
                                     ]);
                                 _gradBrushDirty = false;
                             }
                             _gradBrush.StartPoint = new Vector2(revealX, 0f);
                             _gradBrush.EndPoint = new Vector2(revealX + feather, 0f);
 
-                            // highlight 实色区 + feather 渐变区，合并为一次 CreateLayer
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
-                            {
                                 DrawRowWords(ds, fv, lv, ll, lyricsFmt);
-                            }
                             using (ds.CreateLayer(_gradBrush, new Rect(revealX, drawY, feather, rowH)))
-                            {
                                 DrawRowWords(ds, fv, lv, ll, lyricsFmt);
-                            }
                         }
                         else
                         {
-                            // ── 无渐变（行末全亮）：单次 CreateLayer，不需要 brush ────
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
-                            {
                                 DrawRowWords(ds, fv, lv, ll, lyricsFmt);
-                            }
                         }
                     }
                 }
@@ -1604,12 +1583,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 globalVrIdx += vrr.Count;
             }
 
-            // Transform 复原（DrawingSession 销毁时也会自动复原，显式写出更清晰）
             ds.Transform = Matrix3x2.Identity;
         }
 
         private void DrawRowWords(CanvasDrawingSession ds,
-        int fv, int lv, in LineLayout ll, CanvasTextFormat fmt)
+            int fv, int lv, in LineLayout ll, CanvasTextFormat fmt)
         {
             for (int gi = fv; gi <= lv; gi++)
             {
