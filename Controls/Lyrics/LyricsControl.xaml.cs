@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using Microsoft.UI.Xaml;
@@ -29,17 +30,17 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         // ── UILyrics ──────────────────────────────────────────────────────────
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
-                typeof(ObservableCollection<LyricLine>), typeof(LyricsControl),
+                typeof(IList<LyricLine>), typeof(LyricsControl),
                 new PropertyMetadata(null, (d, e) =>
                 {
                     if (d is not LyricsControl c) return;
                     // 直接透传，Canvas 内部会自行重置行索引 / 计时器
-                    c.LyricsCanvas.UILyrics = e.NewValue as ObservableCollection<LyricLine>;
+                    c.LyricsCanvas.UILyrics = e.NewValue as IList<LyricLine>;
                 }));
 
-        public ObservableCollection<LyricLine>? UILyrics
+        public IList<LyricLine>? UILyrics
         {
-            get => (ObservableCollection<LyricLine>?)GetValue(UILyricsProperty);
+            get => (IList<LyricLine>?)GetValue(UILyricsProperty);
             set => SetValue(UILyricsProperty, value);
         }
 

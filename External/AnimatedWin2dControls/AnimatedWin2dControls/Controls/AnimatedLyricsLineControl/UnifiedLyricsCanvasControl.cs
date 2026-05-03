@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using Windows.Foundation;
@@ -310,9 +311,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     c._canvas?.Invalidate();
                 }));
 
-        public ObservableCollection<LyricLine>? UILyrics
+        public IList<LyricLine>? UILyrics
         {
-            get => (ObservableCollection<LyricLine>?)GetValue(UILyricsProperty);
+            get => (IList<LyricLine>?)GetValue(UILyricsProperty);
             set => SetValue(UILyricsProperty, value);
         }
 
@@ -1287,8 +1288,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             _gradBrushDirty = true;
         }
-
-        private static string BuildLayoutKey(ObservableCollection<LyricLine> lyrics)
+                
+        private static string BuildLayoutKey(IList<LyricLine> lyrics)
         {
             var sb = new StringBuilder(lyrics.Count * 8);
             foreach (var line in lyrics)

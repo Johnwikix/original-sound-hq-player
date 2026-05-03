@@ -704,7 +704,6 @@ namespace WinUIMusicPlayer.ViewModel
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
-                App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();
             }
             catch (Exception ex)
             {

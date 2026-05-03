@@ -19,73 +19,34 @@ namespace WinUIMusicPlayer.Services
 {
     public class LyricsRefreshService: IDisposable
     {
-        public List<LyricLine> Lyrics
-        {
-            get => field;
-            set => field = value;
-        } = [];
         private CancellationTokenSource _lyricsCancellationTokenSource;
         private MusicDatabaseService _musicDatabaseService { get; }
-        private AppViewModel AppViewModel { get; }
         public LyricsRefreshService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
-            AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
         }
-        //public void UpdateLyrics(TimeSpan currentPosition)
-        //{
-        //    if (Lyrics.Count == 0)
-        //        return;
-        //    // 查找当前应显示的歌词
-        //    int currentIndex = -1;
-        //    for (int i = 0; i < Lyrics.Count; i++)
-        //    {
-        //        // 找到时间戳小于等于当前播放位置的最后一条歌词
-        //        if (Lyrics[i].Time <= currentPosition)
-        //        {
-        //            currentIndex = i;
-        //        }
-        //        else
-        //        {
-        //            break;
-        //        }
-        //    }
-        //    // 触发事件通知UI更新
-        //    if (currentIndex >= 0)
-        //    {
-        //        AppViewModel.UpdateLyricsToUI(currentIndex);
-        //    }
-        //}
 
-        public void ResetLyrics()
-        {
-            if (Lyrics.Count == 0)
-                return;
-            AppViewModel.UpdateLyricsToUI(0);
-        }
-
-        public async Task SetLyrics(Music music)
+        public async Task<List<LyricLine>> SetLyrics(Music music)
         {
             CancelPreviousLyricsTask();
-            Lyrics.Clear();
 
             // 优先尝试解析KRC精确歌词
-            if (TryParseKrcLyrics(music))
-                return;
+            var lyrics = TryParseKrcLyrics(music);
+            if (lyrics.Count > 0)
+            {
+                return lyrics;
+            }
 
             // 降级：走原有LRC流程
             var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
-            var lyricsContent = await ParseLrcLyrics(music, lrcContent, transLrcStr);
-            if (lyricsContent is not null)
-            {
-                Lyrics = lyricsContent;
-            }
+            lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr);
+            return lyrics;
         }
 
-        private bool TryParseKrcLyrics(Music music)
+        private List<LyricLine> TryParseKrcLyrics(Music music)
         {
             if (string.IsNullOrWhiteSpace(music.Krc))
-                return false;
+                return [];
 
             var lyrics = new List<LyricLine>();
 
@@ -128,7 +89,7 @@ namespace WinUIMusicPlayer.Services
                     lyrics.Add(lyricLine);
             }
 
-            if (lyrics.Count == 0) return false;
+            if (lyrics.Count == 0) return [];
 
             // 解析KRC翻译（music.Tkrc为lrc格式）
             if (!string.IsNullOrWhiteSpace(music.TKrc))
@@ -136,12 +97,10 @@ namespace WinUIMusicPlayer.Services
                 ParseLrcToLines(music.TKrc, (time, transText) =>
                 {
                     var line = lyrics.FirstOrDefault(l => Math.Abs((l.Time - time).TotalMilliseconds) <= 50);
-                    if (line != null) line.TransLateText = transText;
+                    line?.TransLateText = transText;
                 });
             }
-
-            Lyrics = lyrics.OrderBy(l => l.Time).ToList();
-            return true;
+            return lyrics;
         }
 
         private void ParseKrcWords(string content, long lineStartMs, LyricLine lyricLine)

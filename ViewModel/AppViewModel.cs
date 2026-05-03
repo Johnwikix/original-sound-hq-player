@@ -152,7 +152,7 @@ namespace WinUIMusicPlayer.ViewModel
         public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
-        public ObservableCollection<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
+        public List<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
         public (string, string) CurrentLyricsText { get; set => SetProperty(ref field, value); } = (string.Empty, string.Empty);
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
         //public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
@@ -435,18 +435,11 @@ namespace WinUIMusicPlayer.ViewModel
             _ = Task.Run(async () =>
             {
                 LastLyricIndex = -1;
-                
                 //设置播放服务中的歌词
-                await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
+                List<LyricLine> parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
                 // 解析歌词并添加到UI集合
-                List<LyricLine> parsedLyrics = App.Services.GetRequiredService<LyricsRefreshService>().Lyrics;
                 App.MainWindow.DispatcherQueue.TryEnqueue(() => {
-                    UILyrics = new(parsedLyrics);
-                    //UILyrics.Clear();
-                    //foreach (var lyric in parsedLyrics)
-                    //{
-                    //    UILyrics.Add(lyric);
-                    //}
+                    UILyrics = parsedLyrics;
                 });
             });
             
