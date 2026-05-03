@@ -77,12 +77,12 @@ namespace WinUIMusicPlayer.View
             var width = App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
             var (title, artist, info,lyrics) = width switch
             {
-                <= 1440 => (24, 22, 12, 32),
-                <= 1680 => (26, 24, 13, 34),
-                <= 1920 => (28, 26, 14, 36),
-                <= 2160 => (30, 28, 15, 38),
-                <= 2560 => (32, 30, 16, 40),
-                _ => (36, 34, 18, 44)
+                <= 1440 => (24, 22, 12, 36),
+                <= 1680 => (26, 24, 13, 40),
+                <= 1920 => (28, 26, 14, 44),
+                <= 2160 => (30, 28, 15, 48),
+                <= 2560 => (32, 30, 16, 52),
+                _ => (36, 34, 18, 60)
             };
             App.MainWindow.DispatcherQueue.TryEnqueue(() => {
                 ViewModel.TitleFontSize = title;
