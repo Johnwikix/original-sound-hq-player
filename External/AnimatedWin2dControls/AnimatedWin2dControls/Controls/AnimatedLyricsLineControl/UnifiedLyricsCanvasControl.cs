@@ -473,6 +473,33 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(OffsetMsProperty, value);
         }
 
+        public static readonly DependencyProperty ScreenDpiScaleProperty =
+            DependencyProperty.Register(nameof(ScreenDpiScale), typeof(double),
+            typeof(UnifiedLyricsCanvasControl),
+            new PropertyMetadata(1.0, OnScreenDpiScaleChanged));
+
+        public double ScreenDpiScale
+        {
+            get => (double)GetValue(ScreenDpiScaleProperty);
+            set => SetValue(ScreenDpiScaleProperty, Math.Clamp(value, 0.5, 4.0));
+        }
+
+        private static void OnScreenDpiScaleChanged(DependencyObject d,
+            DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not UnifiedLyricsCanvasControl c) return;
+            // DPI 变化后，所有已烘焙的 RT 分辨率已过时，全部丢弃重建
+            foreach (var rt in c._clearLineCache) rt?.Dispose();
+            if (c._lineLayoutCount > 0)
+            {
+                c._clearLineCache = new CanvasRenderTarget?[c._lineLayoutCount];
+                c._blurAlpha = new float[c._lineLayoutCount];
+            }
+            c._cacheWindowLo = -1;
+            c._cacheWindowHi = -1;
+            c._canvas?.Invalidate();
+        }
+
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
@@ -985,7 +1012,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lyricsFmt = GetLyricsFmt();
             var transFmt = GetTransFmt();
 
-            var rt = new CanvasRenderTarget(creator, rtW, rtH, 96f);
+            float dpi = 96f * (float)Math.Clamp(ScreenDpiScale, 0.5, 4.0);
+            var rt = new CanvasRenderTarget(creator, rtW, rtH, dpi);
             using (var rtDs = rt.CreateDrawingSession())
             {
                 rtDs.Clear(Colors.Transparent);
