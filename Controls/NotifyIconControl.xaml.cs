@@ -105,9 +105,12 @@ namespace WinUIMusicPlayer.Controls
         {
             if (WindowHelper.IsWindowVisible(AppData.HWnd))
             {
-                window.Restore();
-                window.Activate();
-                window.SetForegroundWindow();
+                if (window.AppWindow.Presenter.Kind != Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
+                {
+                    //window.Restore();
+                    window.Activate();
+                    window.SetForegroundWindow();
+                }                
             }
             else
             {
