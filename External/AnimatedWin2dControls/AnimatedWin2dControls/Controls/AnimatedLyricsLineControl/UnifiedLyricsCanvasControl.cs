@@ -1271,6 +1271,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     WordWrapping = CanvasWordWrapping.WholeWord,
                     HorizontalAlignment = CanvasHorizontalAlignment.Left,
                 };
+                _cachedFontFamily = fam;
                 _cachedLyricsFontSizeForFmt = sz;
             }
             return _lyricsFmt;
@@ -1516,8 +1517,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     {
                         _reusableBlur.Source = clearRt;
                         _reusableBlur.BlurAmount = blurAmount;
-                        ds.DrawImage(_reusableBlur, 0f, ll.OffsetY, srcRect, alpha);
-                        _reusableBlur.Source = null; // 释放引用，避免意外持有
+                        ds.DrawImage(_reusableBlur, 0f, ll.OffsetY, srcRect, alpha);                        
                     }
                 }
                 else
@@ -1592,18 +1592,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             if (_gradBrush is null || _gradBrushDirty)
                             {
                                 _gradBrush?.Dispose();
-                                _gradBrush = new CanvasLinearGradientBrush(ds,
+                                _gradBrush = new CanvasLinearGradientBrush(
+                                    ds,
                                     [
-                                        new() { Color = _brightColor, Position = 0f },
-                                        new() { Color = Color.FromArgb(0, _brightColor.R,
-                                                                          _brightColor.G,
-                                                                          _brightColor.B),
-                                            Position = 1f },
-                                    ]);
+                                        new CanvasGradientStop { Color = _brightColor, Position = 0f },
+                                        new CanvasGradientStop { Color = Color.FromArgb(0, _brightColor.R, _brightColor.G, _brightColor.B), Position = 1f },
+                                    ])
+                                {
+                                    StartPoint = Vector2.Zero,
+                                    EndPoint = new Vector2(1f, 0f),
+                                };
                                 _gradBrushDirty = false;
                             }
-                            _gradBrush.StartPoint = new Vector2(revealX, 0f);
-                            _gradBrush.EndPoint = new Vector2(revealX + feather, 0f);
+                            //_gradBrush.StartPoint = new Vector2(revealX, 0f);
+                            //_gradBrush.EndPoint = new Vector2(revealX + feather, 0f);
+                            _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f) * Matrix3x2.CreateTranslation(revealX, 0f);
 
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
                                 DrawRowWords(ds, fv, lv, ll, lyricsFmt);
@@ -1620,7 +1623,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 globalVrIdx += vrr.Count;
             }
-
+            _reusableBlur.Source = null; // 释放引用，避免意外持有
             ds.Transform = Matrix3x2.Identity;
         }
 

@@ -74,24 +74,39 @@ namespace WinUIMusicPlayer.View
 
         private void ChangeControlsFontSize()
         {
-            var width = App.MainWindow.AppWindow.Size.Width / AppData.AppDpiScale;
-            var (title, artist, info,lyrics) = width switch
+            // 1. 获取缩放后的逻辑宽高
+            var windowSize = App.MainWindow.AppWindow.Size;
+            double width = windowSize.Width / AppData.AppDpiScale;
+            double height = windowSize.Height / AppData.AppDpiScale;
+
+            // 2. 取宽高中的较小值（或加权平均值）作为判定基准
+            // 这样可以防止窗口高度过小时，字体依然按宽度显示得巨大
+            double effectiveSize = Math.Min(width, height * 1.77); // 1.77 是 16:9 的比例参考，可根据需求调整
+
+            // 3. 这里的阈值可以根据 effectiveSize 重新微调
+            var (title, artist, info, lyrics) = effectiveSize switch
             {
-                <= 1440 => (24, 22, 12, 32),
-                <= 1680 => (26, 24, 13, 36),
+                <= 720 => (22, 20, 11, 28), // 针对小窗口或窄高窗口的基准
+                <= 1080 => (24, 22, 12, 32),
+                <= 1440 => (26, 24, 13, 36),
                 <= 1920 => (28, 26, 14, 40),
-                <= 2160 => (30, 28, 15, 44),
-                <= 2560 => (32, 30, 16, 48),
+                <= 2160 => (32, 30, 16, 48),
                 _ => (36, 34, 18, 52)
             };
+
+            // 4. 应用变更
             App.MainWindow.DispatcherQueue.TryEnqueue(() => {
                 ViewModel.TitleFontSize = title;
                 ViewModel.ArtistAlbumFontSize = artist;
                 ViewModel.InfoFontSize = info;
                 ViewModel.AppViewModel.LyricsFontSize = lyrics;
-            });            
-            AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
-            AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
+
+                // 建议：UI 元素赋值也放入 DispatcherQueue 以确保线程安全
+                if (AnimatedPlayingDetailTitleTextBlock != null)
+                    AnimatedPlayingDetailTitleTextBlock.FontSize = title;
+                if (AnimatedPlayingDetailAlbumArtistTextBlock != null)
+                    AnimatedPlayingDetailAlbumArtistTextBlock.FontSize = artist;
+            });
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
