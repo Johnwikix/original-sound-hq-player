@@ -1460,7 +1460,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             int globalVrIdx = 0;
 
-            for (int li = visLo; li <= visHi; li++)
+            for (int li = 0; li < _lineLayoutCount; li++)
             {
                 ref readonly var ll = ref _lineLayouts[li];
                 ref readonly var vrr = ref _lineVisualRowRanges[li];
