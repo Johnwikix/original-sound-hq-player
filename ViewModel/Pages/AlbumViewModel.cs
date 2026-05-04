@@ -105,7 +105,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void Play() {
+        private async Task Play() {
             var albums = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album,StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber).ToList();
@@ -114,7 +114,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(albums);
-                    MusicBrowseViewModel.PlayMusic(music: albums[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: albums[0], IsChangeList: true);
                 }
             }
         }

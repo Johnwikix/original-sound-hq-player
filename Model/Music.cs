@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
@@ -48,7 +49,7 @@ namespace WinUIMusicPlayer.Model
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
         [RelayCommand]
-        public void Play(string page) 
+        public async Task Play(string page) 
         {
             switch (page) {
                 case "FavoriteSongsView":
@@ -70,7 +71,7 @@ namespace WinUIMusicPlayer.Model
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FolderSongs);
                     break;
             }
-            App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);
+            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);
         }
 
         [RelayCommand]

@@ -338,7 +338,7 @@
                 <controls:SettingsExpander x:Uid="AppStyle" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsUpdateBackDrop">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>

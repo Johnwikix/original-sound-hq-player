@@ -1,4 +1,5 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -43,17 +44,15 @@ namespace WinUIMusicPlayer.Services
                 // 3. 执行真正的逻辑
                 // 优先尝试解析KRC精确歌词
                 var lyrics = await TryParseKrcLyrics(music, ct);
-                if (lyrics.Count > 0)
+                if (lyrics.Count == 0)
                 {
-                    return lyrics;
-                }
+                    // 4. 降级：走原有LRC流程
+                    var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
+                    lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr, ct);
 
-                // 4. 降级：走原有LRC流程
-                var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
-                lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr, ct);
-
-                // 检查一次取消，避免无效 IO
-                ct.ThrowIfCancellationRequested();
+                    // 检查一次取消，避免无效 IO
+                    ct.ThrowIfCancellationRequested();
+                }                
 
                 music.PlayCount++;
                 await _musicDatabaseService.UpdateMusicInfo(music);
@@ -75,7 +74,7 @@ namespace WinUIMusicPlayer.Services
                         music, cancellationToken);
                     if (!string.IsNullOrEmpty(krc))
                     {
-                        App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                        await App.MainWindow.DispatcherQueue.EnqueueAsync(() => {
                             music.Krc = krc;
                             music.TKrc = tkrc;
                         });                                              
@@ -256,10 +255,10 @@ namespace WinUIMusicPlayer.Services
                         {
                             lrcContent = lyric;
                             transLrcStr = trans;
-                            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                            await App.MainWindow.DispatcherQueue.EnqueueAsync(() => {
                                 music.Lyrics = lyric;
                                 music.TranslatedLyrics = trans;
-                            });                                                     
+                            });                                                    
                         }
                         music.IsLrcSearched = true;
                     }

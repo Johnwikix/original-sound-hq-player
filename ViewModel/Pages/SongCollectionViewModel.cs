@@ -150,7 +150,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
-                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
         }        
 
@@ -233,14 +233,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void Play()
+        private async Task Play()
         {
             if (SelectedMusics.Count == 1)
             {
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
-                    MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
             if (SelectedMusics.Count > 1)
@@ -248,7 +248,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics);
-                    MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
         }
@@ -286,14 +286,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void OnPlayAll()
+        private async Task OnPlayAll()
         {
             if (MusicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
                 if (AppViewModel.SequentialPlayingList.Count > 0)
                 {
-                    MusicBrowseViewModel.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);
                 }
             }
         }

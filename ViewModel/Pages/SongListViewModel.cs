@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
-                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
         }
 
@@ -149,12 +149,12 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
-                MusicBrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
+                MusicBrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
             }
             else
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
-                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
         }
         [RelayCommand]
@@ -234,21 +234,21 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void Play()
+        private async Task Play()
         {
             if (SelectedMusics.Count == 1)
             {
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
-                    MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
             if (SelectedMusics.Count > 1) {
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics);
-                    MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
         }
@@ -285,12 +285,12 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void PlayMusic(Music music)
+        private async Task PlayMusic(Music music)
         {
             if (music is not null && MusicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
-                MusicBrowseViewModel.PlayMusic(music: music, IsChangeList: true);
+                await MusicBrowseViewModel.PlayMusic(music: music, IsChangeList: true);
             }
         }
 

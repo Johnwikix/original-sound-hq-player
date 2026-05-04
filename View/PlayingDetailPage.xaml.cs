@@ -189,7 +189,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
             if (selectedMusic is not null)
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: selectedMusic, IsChangeList: false);
+                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: selectedMusic, IsChangeList: false).Wait();
             }
         }
 
@@ -269,10 +269,12 @@ namespace WinUIMusicPlayer.View
 
         private void BackGround_ThemeResolved(object sender, bool isDark)
         {
+            App.Services.GetRequiredService<AppViewModel>().IsDarkMode = isDark;
             if (isDark)
             {
                 AppSettings.AppTheme = "Dark";
                 AppSettings.ElementTheme = ElementTheme.Dark;
+               
             }
             else
             {

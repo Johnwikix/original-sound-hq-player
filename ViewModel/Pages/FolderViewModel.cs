@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(folders);
-                    MusicBrowseViewModel.PlayMusic(music: folders[0], IsChangeList: true);
+                    MusicBrowseViewModel.PlayMusic(music: folders[0], IsChangeList: true).Wait();
                 }
             }
         }

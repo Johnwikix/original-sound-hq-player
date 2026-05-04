@@ -264,7 +264,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
             if (selectedMusic is not null)
             {
-                ViewModel.PlayMusic(music: selectedMusic, IsChangeList: false);
+                ViewModel.PlayMusic(music: selectedMusic, IsChangeList: false).Wait();
             }
         }
 

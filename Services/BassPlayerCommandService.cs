@@ -55,7 +55,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     AppViewModel.IsPlaying = bool.Parse(obj.Result);
                 });
-                AutoPlayNextTrack();
+                AutoPlayNextTrack().Wait();
             }
             if (obj.Type == MessageType.VolumeWriteBack)
             {
@@ -79,19 +79,19 @@ namespace WinUIMusicPlayer.Services
         {
             AppViewModel.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
         }
-        public void AutoPlayNextTrack()
+        public async Task AutoPlayNextTrack()
         {
             AppViewModel.StopProgressTimer();
             switch (AppViewModel.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
+                    await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
                     break;
                 case PlayMode.ListLoop:
                 case PlayMode.RandomLoop:
                     int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
                     int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                    MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
+                    await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();
@@ -99,12 +99,9 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void MusicBrowsePlayMusic(Music music)
+        private static async Task MusicBrowsePlayMusic(Music music)
         {
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music);
-            });
+            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music);
         }
 
         public void MusicEnd()

@@ -168,7 +168,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (SelectedMusic is not null && _musicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.PlayListSongs.Select(x => x.Music));
-                _musicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
+                _musicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true).Wait();
             }
         }        
 
@@ -183,12 +183,12 @@ namespace WinUIMusicPlayer.ViewModel
         }       
 
         [RelayCommand]
-        private void OnPlayAll()
+        private async Task OnPlayAll()
         {
             AppViewModel.SequentialPlayingList = new(AppViewModel.PlayListSongs.Select(x => x.Music));
             if (AppViewModel.SequentialPlayingList.Count > 0)
             {
-                _musicBrowseViewModel.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);
+                await _musicBrowseViewModel.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);
             }
         }
         [RelayCommand]
@@ -263,14 +263,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void Play()
+        private async Task Play()
         {
             if (SelectedMusics.Count == 1)
             {
                 if (_musicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(AppViewModel.PlayListSongs.Select(x => x.Music));
-                    _musicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
+                    await _musicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
                 }
             }
             if (SelectedMusics.Count > 1)
@@ -278,7 +278,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (_musicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics.Select(x => x.Music));
-                    _musicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
+                    await _musicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
                 }
             }
         }

@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -543,12 +544,11 @@ namespace WinUIMusicPlayer.ViewModel
                         ?.Index ?? -1;
             if (index > 0)
             {
-                PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
+                PlayMusic(AppViewModel.CurrentPlayingList[index - 1]).Wait();
             }
             else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
             {
-                PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
-
+                PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]).Wait();
             }
         }
 
@@ -684,7 +684,7 @@ namespace WinUIMusicPlayer.ViewModel
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
-        public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
+        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
             try
             {
@@ -692,18 +692,14 @@ namespace WinUIMusicPlayer.ViewModel
                 _musicUpdateCts?.Cancel();
                 _musicUpdateCts?.Dispose();
                 _musicUpdateCts = new CancellationTokenSource();
-                var token = _musicUpdateCts.Token;
-                // 2. 基础数据赋值
-                AppViewModel.CurrentPlayingMusic = music;
-                // 4. 立即启动音频播放（确保听感上的无延迟）
+                var token = _musicUpdateCts.Token;   
                 MusicPlaybackService.PlayMusic(music);
-                // 5. 启动异步 UI 更新，不阻塞当前方法
-                _ = UpdatePlayBar(music, token);
-                // 6. 其他 UI 同步/轻量操作
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
+                    AppViewModel.CurrentPlayingMusic = music;
                     AppViewModel.UILyrics = [];
-                });                
+                });
+                _ = UpdatePlayBar(music, token);
                 AppViewModel.LoadLyricsToUI(music);
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();

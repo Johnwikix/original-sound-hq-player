@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void Play()
+        private async Task Play()
         {
             var artists = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (_musicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(artists);
-                    _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
+                    await _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }
         }

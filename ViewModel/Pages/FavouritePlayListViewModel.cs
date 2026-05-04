@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (selectedMusic is not null && BrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                BrowseViewModel.PlayMusic(music: selectedMusic, IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: selectedMusic, IsChangeList: true).Wait();
             }
         }
 
@@ -160,12 +160,12 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
-                BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
             }
             else
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
         }       
 
@@ -245,7 +245,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (BrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true).Wait();
                 }
             }
             if (SelectedMusics.Count > 1)
@@ -253,7 +253,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (BrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics);
-                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
+                    BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true).Wait();
                 }
             }
         }
