@@ -704,6 +704,11 @@ namespace WinUIMusicPlayer.ViewModel
                 MusicBrowsePage.UpdateViewList();
                 MusicBrowsePage.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
+                _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
+                        AppViewModel.CurrentPlayMode,
+                        AppViewModel.CurrentPlayingMusic?.Id,
+                        (float)(AppViewModel.Volume),
+                        AppViewModel.SelectedSortOption.Tag.ToString());
             }
             catch (Exception ex)
             {

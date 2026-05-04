@@ -151,11 +151,6 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.Play(music.Path);
             AppViewModel.StartProgressTimer();
-            _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList], 
-                AppViewModel.CurrentPlayMode, 
-                AppViewModel.CurrentPlayingMusic?.Id, 
-                (float)(AppViewModel.Volume), 
-                AppViewModel.SelectedSortOption.Tag.ToString());
         }
 
         public void PlayButton()
