@@ -196,43 +196,49 @@ namespace WinUIMusicPlayer.Services
         }
 
 
-        private (string?,string?) GetLyricsContentFromLrc(Music music)
+        private static (string?, string?) GetLyricsContentFromLrc(Music music, string extension= ".lrc")
         {
             string? lrcContent = null;
             string? transLrcStr = null;
+
             if (!string.IsNullOrWhiteSpace(music.Path))
             {
+                // 读取主歌词文件（.lrc 或 .krc）
                 try
                 {
-                    string lyricFilePath = Path.ChangeExtension(music.Path, ".lrc");
+                    string lyricFilePath = Path.ChangeExtension(music.Path, extension);
                     if (File.Exists(lyricFilePath))
                     {
                         lrcContent = File.ReadAllText(lyricFilePath);
-                    }                        
+                    }
                 }
-                catch (Exception)
+                catch
                 {
                     lrcContent = null;
                 }
 
+                // 读取翻译歌词文件（原文件名_Translated.lrc 或 .krc）
                 try
                 {
                     string fileName = Path.GetFileNameWithoutExtension(music.Path);
-                    string transFileName = $"{fileName}_Translated.lrc";
+                    string transFileName = $"{fileName}_Translated{extension}";
                     string? directoryPath = Path.GetDirectoryName(music.Path);
+
                     if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
                     {
-                        string lrcFilePath = Path.Combine(directoryPath, transFileName);
-                        if (File.Exists(lrcFilePath))
+                        string transFilePath = Path.Combine(directoryPath, transFileName);
+                        if (File.Exists(transFilePath))
                         {
-                            transLrcStr = File.ReadAllText(lrcFilePath);
+                            transLrcStr = File.ReadAllText(transFilePath);
                         }
                     }
                 }
-                catch {
+                catch
+                {
                     transLrcStr = null;
-                }                
+                }
             }
+
             return (lrcContent, transLrcStr);
         }
 
