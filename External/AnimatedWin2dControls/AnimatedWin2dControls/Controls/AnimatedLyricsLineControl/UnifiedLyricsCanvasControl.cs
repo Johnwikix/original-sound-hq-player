@@ -1417,7 +1417,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     // 视口外：blurAlpha 直接跳变到目标值，不触发过渡动画
                     // 这样当行滚回视口时已经是正确状态，无需额外重绘
                     bool isCur = (li == _currentLineIndex);
-                    bool wantsBlurOOV = blurAmount > 0.1f && !isCur;
+                    bool wantsBlurOOV = blurAmount > 0.1f && !isCur && !_userScrolling;
                     if (li < _blurAlpha.Length)
                         _blurAlpha[li] = wantsBlurOOV ? 1f : 0f;
 
@@ -1443,15 +1443,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 bool wantsBlur = blurAmount > 0.1f && !isCurrent && li != _hoveredLineIndex;
                 if (li < _blurAlpha.Length)
                 {
-                    float target = wantsBlur ? 1f : 0f;
+                    // 用户手动滚动时强制清晰，直接跳变，不做过渡
+                    float target = (wantsBlur && !_userScrolling) ? 1f : 0f;
                     float cur = _blurAlpha[li];
                     if (Math.Abs(target - cur) > 0.005f)
                     {
-                        float step = dt / BlurTransitionDuration;
-                        _blurAlpha[li] = target > cur
-                            ? Math.Min(cur + step, target)
-                            : Math.Max(cur - step, target);
-                        sender.Invalidate(); // 过渡期间持续重绘
+                        if (_userScrolling)
+                        {
+                            // 滚动期间直接跳变，不触发持续重绘
+                            _blurAlpha[li] = target;
+                        }
+                        else
+                        {
+                            float step = dt / BlurTransitionDuration;
+                            _blurAlpha[li] = target > cur
+                                ? Math.Min(cur + step, target)
+                                : Math.Max(cur - step, target);
+                            sender.Invalidate();
+                        }
                     }
                     else
                     {
