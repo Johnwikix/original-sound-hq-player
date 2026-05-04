@@ -15,6 +15,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -201,6 +202,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         // 复用的 GaussianBlurEffect（避免每帧 new）
         private GaussianBlurEffect? _reusableBlur;
+
+        // 烘焙队列
+        private readonly Queue<int> _bakePendingLines = new();
+        private bool _bakeScheduled = false;
 
         // ─────────────────────────────────────────────────────────────────────
         // 构造 / 生命周期
@@ -966,33 +971,57 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             int lo = Math.Max(0, visLo - BlurCacheWindow);
             int hi = Math.Min(_lineLayoutCount - 1, visHi + BlurCacheWindow);
-
-            // 窗口没变化 → 跳过
             if (lo == _cacheWindowLo && hi == _cacheWindowHi) return;
 
-            // 1. 释放旧窗口中、新窗口外的行
+            // 释放旧窗口
             if (_cacheWindowLo >= 0)
-            {
                 for (int i = _cacheWindowLo; i <= _cacheWindowHi; i++)
-                {
-                    if (i < lo || i > hi)
-                    {
-                        _clearLineCache[i]?.Dispose();
-                        _clearLineCache[i] = null;
-                    }
-                }
-            }
+                    if (i < lo || i > hi) { _clearLineCache[i]?.Dispose(); _clearLineCache[i] = null; }
 
-            // 2. 烘焙新窗口内尚未就绪的行
+            // 优先级：可见行同步烘焙（数量少），窗口扩展行异步排队
             for (int i = lo; i <= hi; i++)
             {
-                if (_clearLineCache[i] is null)
-                    BakeSingleLine(creator, canvasWidth, i);
+                if (_clearLineCache[i] is not null) continue;
+                if (i >= visLo && i <= visHi)
+                    BakeSingleLine(creator, canvasWidth, i); // 可见行必须同帧完成
+                else
+                    _bakePendingLines.Enqueue(i);            // 缓冲行排队
             }
 
             _cacheWindowLo = lo;
             _cacheWindowHi = hi;
+
+            // 调度一个低优先级的后续烘焙（下帧或空闲时）
+            if (_bakePendingLines.Count > 0 && !_bakeScheduled)
+            {
+                _bakeScheduled = true;
+                _ = BakePendingAsync(canvasWidth);
+            }
         }
+
+        private async Task BakePendingAsync(float canvasWidth)
+        {
+            // 每帧最多烘焙 N 行，分散到多帧
+            const int MaxPerFrame = 3;
+            while (_bakePendingLines.Count > 0)
+            {
+                await Task.Yield(); // 让出当前帧
+                if (_canvas is null) break;
+                int baked = 0;
+                while (_bakePendingLines.Count > 0 && baked < MaxPerFrame)
+                {
+                    int i = _bakePendingLines.Dequeue();
+                    if (i < _lineLayoutCount && _clearLineCache[i] is null)
+                    {
+                        BakeSingleLine(_canvas, canvasWidth, i);
+                        baked++;
+                    }
+                }
+                _canvas.Invalidate();
+            }
+            _bakeScheduled = false;
+        }
+
 
         /// <summary>烘焙单行的清晰版 RT（仅文字，背景透明）。</summary>
         private void BakeSingleLine(ICanvasResourceCreator creator, float canvasWidth, int li)
@@ -1401,8 +1430,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             // ── 找出可见行范围 [visLo, visHi] ────────────────────────────────
             // 用于：1) 窗口更新  2) blurAlpha 只对可见行步进
-            int visLo = _lineLayoutCount;
-            int visHi = -1;
+            int visLo = FindFirstVisibleLine(viewTop);
+            int visHi = FindLastVisibleLine(viewBot, visLo);
             for (int li = 0; li < _lineLayoutCount; li++)
             {
                 ref readonly var ll = ref _lineLayouts[li];
@@ -1431,7 +1460,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             int globalVrIdx = 0;
 
-            for (int li = 0; li < _lineLayoutCount; li++)
+            for (int li = visLo; li <= visHi; li++)
             {
                 ref readonly var ll = ref _lineLayouts[li];
                 ref readonly var vrr = ref _lineVisualRowRanges[li];
@@ -1488,7 +1517,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             _blurAlpha[li] = target > cur
                                 ? Math.Min(cur + step, target)
                                 : Math.Max(cur - step, target);
-                            sender.Invalidate();
+                            //sender.Invalidate();
                         }
                     }
                     else
@@ -1625,6 +1654,26 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             _reusableBlur.Source = null; // 释放引用，避免意外持有
             ds.Transform = Matrix3x2.Identity;
+        }
+
+
+        private int FindFirstVisibleLine(float viewTop)
+        {
+            int lo = 0, hi = _lineLayoutCount - 1;
+            while (lo < hi)
+            {
+                int mid = (lo + hi) / 2;
+                if (_lineLayouts[mid].OffsetY + _lineLayouts[mid].Height < viewTop) lo = mid + 1;
+                else hi = mid;
+            }
+            return lo;
+        }
+
+        private int FindLastVisibleLine(float viewBot, int startFrom)
+        {
+            for (int i = startFrom; i < _lineLayoutCount; i++)
+                if (_lineLayouts[i].OffsetY > viewBot) return i - 1;
+            return _lineLayoutCount - 1;
         }
 
         private void DrawRowWords(CanvasDrawingSession ds,
