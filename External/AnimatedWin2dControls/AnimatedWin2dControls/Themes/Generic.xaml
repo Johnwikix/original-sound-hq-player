@@ -80,7 +80,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="lyrics:UnifiedLyricsCanvasControl">
                     <canvas:CanvasControl
-                        xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
                         x:Name="PART_Canvas"
                         ClearColor="Transparent"
                         IsHitTestVisible="True" />
