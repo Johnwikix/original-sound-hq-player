@@ -80,12 +80,22 @@ namespace WinUIMusicPlayer.View
             double effectiveSize = width * height; 
             var (title, artist, info, lyrics) = effectiveSize switch
             {
-                < 1024 * 768 => (24, 22, 12, 32), // 针对小窗口或窄高窗口的基准
-                < 1280 * 720 => (26, 24, 13, 38),
-                < 1920 * 1080 => (28, 26, 14, 42),
-                < 2560 * 1440 => (30, 28, 15, 48),
-                < 2880 * 1920 => (32, 30, 16, 52),
-                _ => (36, 34, 18, 56)
+                < 1024 * 768 => (26, 22, 13, 32), // 针对小窗口或窄高窗口的基准
+                < 1280 * 720 => (30, 26, 15, 38),
+                < 1920 * 1080 => (32, 28, 16, 42),
+                < 2560 * 1440 => (36, 32, 18, 48),
+                < 2880 * 1920 => (38, 34, 19, 52),
+                _ => (42, 38, 21, 56)
+            };
+
+            var (firstSize,secondSize,shapeSize) = width switch
+            {
+                <= 1024 => (20, 16, 26),
+                < 1280 => (22, 18, 28),
+                < 1920  => (28, 22, 40),
+                < 2560 => (36, 26, 60),
+                < 2880  => (40, 28, 66),
+                _ => (46, 32, 72)
             };
 
             // 4. 应用变更
@@ -94,6 +104,9 @@ namespace WinUIMusicPlayer.View
                 ViewModel.ArtistAlbumFontSize = artist;
                 ViewModel.InfoFontSize = info;
                 ViewModel.AppViewModel.LyricsFontSize = lyrics;
+                ViewModel.FirstControlSize = firstSize;
+                ViewModel.SecondControlSize = secondSize;
+                ViewModel.FirstShapeSize = shapeSize;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
                 AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
             });

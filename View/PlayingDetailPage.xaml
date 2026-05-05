@@ -110,7 +110,7 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="6*" />
+                    <RowDefinition Height="8*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -288,7 +288,7 @@
                 <StackPanel
                     Grid.Row="3"
                     Grid.Column="1"
-                    Margin="20,0,20,20">
+                    Margin="0,0,0,20">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -297,7 +297,7 @@
                         <Grid
                             x:Name="MusicInfoPanel"
                             Grid.Column="0"
-                            Margin="5,2,0,1"
+                            Margin="25,2,20,1"
                             HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -318,7 +318,7 @@
                         <TextBlock
                             x:Name="PlayTimeTextBlockPlayingDetail"
                             Grid.Column="1"
-                            Margin="10,0,0,5"
+                            Margin="10,0,20,5"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
@@ -334,7 +334,7 @@
                         <Slider
                             x:Name="ProgressSliderPlayingDetail"
                             Grid.Row="0"
-                            Margin="0"
+                            Margin="20,0"
                             VerticalAlignment="Center"
                             Loaded="ProgressSliderPlayingDetail_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
@@ -371,7 +371,10 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="EqualizerButton_Click">
-                                <FontIcon x:Name="EqualizerIconPlayingDetail" Glyph="&#xE9E9;" />
+                                <FontIcon
+                                    x:Name="EqualizerIconPlayingDetail"
+                                    FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                    Glyph="&#xE9E9;" />
                             </Button>
                             <Button
                                 x:Name="CurrentPlayListButtonPlayingDetail"
@@ -383,7 +386,10 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="CurrentPlayListButtonPlayingDetail_Click">
-                                <FontIcon x:Name="CurrentPlayListIconPlayingDetail" Glyph="&#xE90B;" />
+                                <FontIcon
+                                    x:Name="CurrentPlayListIconPlayingDetail"
+                                    FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                    Glyph="&#xE90B;" />
                             </Button>
                             <TeachingTip
                                 x:Name="CurrentPlayListTeachingTipPlayingDetail"
@@ -435,7 +441,7 @@
                             <Button
                                 x:Name="LastMusicButtonPlayingDetail"
                                 Grid.Column="2"
-                                Margin="5"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -445,14 +451,14 @@
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Up" />
                                 </Button.KeyboardAccelerators>
-                                <FontIcon FontSize="22" Glyph="&#xe892;" />
+                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xe892;" />
                             </Button>
 
                             <!--  播放按钮  -->
                             <Button
                                 x:Name="PlayPauseButtonPlayingDetail"
                                 Grid.Column="3"
-                                Margin="5"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -464,16 +470,16 @@
                                     <KeyboardAccelerator Key="Space" />
                                 </Button.KeyboardAccelerators>
                                 <FontIcon
-                                    Width="45"
-                                    Height="45"
-                                    FontSize="30"
+                                    Width="{x:Bind ViewModel.FirstShapeSize, Mode=OneWay}"
+                                    Height="{x:Bind ViewModel.FirstShapeSize, Mode=OneWay}"
+                                    FontSize="{x:Bind ViewModel.FirstControlSize, Mode=OneWay}"
                                     Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                             </Button>
 
                             <Button
                                 x:Name="NextMusicButtonPlayingDetail"
                                 Grid.Column="4"
-                                Margin="5"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -483,25 +489,28 @@
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Down" />
                                 </Button.KeyboardAccelerators>
-                                <FontIcon FontSize="22" Glyph="&#xe893;" />
+                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xe893;" />
                             </Button>
                             <!--  播放模式按钮  -->
                             <Button
                                 x:Name="PlayModeButtonPlayingDetail"
                                 Grid.Column="5"
-                                Margin="5"
+                                Margin="5,0,0,0"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
-                                <FontIcon x:Name="PlayModeIconPlayingDetail" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                                <FontIcon
+                                    x:Name="PlayModeIconPlayingDetail"
+                                    FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                    Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                             </Button>
                             <Button
                                 x:Name="VolumePlayingDetailBtn"
                                 Grid.Column="6"
-                                Margin="0,0,5,0"
+                                Margin="5,0,5,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -512,6 +521,7 @@
                                     Grid.Column="0"
                                     Margin="0"
                                     VerticalAlignment="Center"
+                                    FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
                                     Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                                 <Button.Flyout>
                                     <Flyout x:Name="VolumeFlyout" Placement="Right">
