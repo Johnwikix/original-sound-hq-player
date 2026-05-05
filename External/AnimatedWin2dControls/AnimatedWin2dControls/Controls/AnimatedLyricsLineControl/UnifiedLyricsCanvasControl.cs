@@ -1543,6 +1543,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 // ── 当前行逐字高亮 ────────────────────────────────────────────
                 if (isCurrent)
                 {
+                    float rowBaseY = MathF.Round(ll.OffsetY + PaddingV);
                     for (int ri = 0; ri < vrr.Count; ri++)
                     {
                         int gri = vrr.Start + ri;
@@ -1587,7 +1588,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         if (highlight <= 0f) continue;
 
                         float feather = (revealX < maxX) ? Math.Min(FeatherWidth, maxX - revealX) : 0f;
-
+                        
                         if (feather > 0.5f)
                         {
                             if (_gradBrush is null || _gradBrushDirty)
@@ -1605,19 +1606,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                                 };
                                 _gradBrushDirty = false;
                             }
-                            //_gradBrush.StartPoint = new Vector2(revealX, 0f);
-                            //_gradBrush.EndPoint = new Vector2(revealX + feather, 0f);
                             _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f) * Matrix3x2.CreateTranslation(revealX, 0f);
 
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
-                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
+                                DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                             using (ds.CreateLayer(_gradBrush, new Rect(revealX, drawY, feather, rowH)))
-                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
+                                DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                         }
                         else
                         {
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
-                                DrawRowWords(ds, fv, lv, ll, lyricsFmt);
+                                DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                         }
                     }
                 }
@@ -1649,14 +1648,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private void DrawRowWords(CanvasDrawingSession ds,
-            int fv, int lv, in LineLayout ll, CanvasTextFormat fmt)
+            int fv, int lv, float baseY, CanvasTextFormat fmt)
         {
             for (int gi = fv; gi <= lv; gi++)
             {
                 ref readonly var wl = ref _wordLayouts[gi];
                 if (wl.FullWidth <= 0) continue;
                 ds.DrawText(wl.Text,
-                    new Rect(wl.X, wl.Y + ll.OffsetY + PaddingV, wl.FullWidth, wl.Height),
+                    new Rect(wl.X, baseY + wl.Y, wl.FullWidth, wl.Height),
                     _brightColor, fmt);
             }
         }
