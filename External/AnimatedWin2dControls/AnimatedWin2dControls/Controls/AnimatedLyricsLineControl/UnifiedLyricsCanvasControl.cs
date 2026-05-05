@@ -669,7 +669,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void CreateTimer()
         {
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(12.5) };
             _timer.Tick += OnTimerTick;
             _lastTickAt = DateTimeOffset.UtcNow;
         }
