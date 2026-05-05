@@ -361,17 +361,25 @@ namespace WinUIMusicPlayer.Services
             for (int i = 0; i < sortedLyrics.Count; i++)
             {
                 var currentLine = sortedLyrics[i];
-                TimeSpan lineDuration = (i < sortedLyrics.Count - 1)
+
+                // 获取原始行间隔
+                TimeSpan rawDuration = (i < sortedLyrics.Count - 1)
                     ? sortedLyrics[i + 1].Time - currentLine.Time
                     : TimeSpan.FromSeconds(5);
+
+                // --- 修改点：减去 200ms，并确保时长不小于 0 ---
+                double reducedMs = Math.Max(0, rawDuration.TotalMilliseconds - 200);
+                TimeSpan lineDuration = TimeSpan.FromMilliseconds(reducedMs);
 
                 // 计算单词时间：平均分配
                 if (currentLine.Words.Count > 0)
                 {
+                    // 使用减去 200ms 后的时长进行平分
                     double perWordMs = lineDuration.TotalMilliseconds / currentLine.Words.Count;
+
                     for (int j = 0; j < currentLine.Words.Count; j++)
                     {
-                        // StartTime 必须是绝对时间：行开始时间 + 单词偏移
+                        // StartTime 保持绝对时间：行开始时间 + 单词偏移
                         currentLine.Words[j].StartTime = currentLine.Time + TimeSpan.FromMilliseconds(perWordMs * j);
                         currentLine.Words[j].Duration = TimeSpan.FromMilliseconds(perWordMs);
                     }
