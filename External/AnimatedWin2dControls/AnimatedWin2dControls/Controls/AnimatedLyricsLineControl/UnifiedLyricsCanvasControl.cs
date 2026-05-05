@@ -478,33 +478,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(OffsetMsProperty, value);
         }
 
-        public static readonly DependencyProperty ScreenDpiScaleProperty =
-            DependencyProperty.Register(nameof(ScreenDpiScale), typeof(double),
-            typeof(UnifiedLyricsCanvasControl),
-            new PropertyMetadata(1.0, OnScreenDpiScaleChanged));
-
-        public double ScreenDpiScale
-        {
-            get => (double)GetValue(ScreenDpiScaleProperty);
-            set => SetValue(ScreenDpiScaleProperty, Math.Clamp(value, 0.5, 4.0));
-        }
-
-        private static void OnScreenDpiScaleChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            // DPI 变化后，所有已烘焙的 RT 分辨率已过时，全部丢弃重建
-            foreach (var rt in c._clearLineCache) rt?.Dispose();
-            if (c._lineLayoutCount > 0)
-            {
-                c._clearLineCache = new CanvasRenderTarget?[c._lineLayoutCount];
-                c._blurAlpha = new float[c._lineLayoutCount];
-            }
-            c._cacheWindowLo = -1;
-            c._cacheWindowHi = -1;
-            c._canvas?.Invalidate();
-        }
-
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
@@ -967,7 +940,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// 窗口外的行释放 RT，窗口内未就绪的行立即烘焙。
         /// </summary>
         private void UpdateCacheWindow(ICanvasResourceCreator creator,
-            float canvasWidth, int visLo, int visHi)
+            float canvasWidth, int visLo, int visHi,float dpi)
         {
             int lo = Math.Max(0, visLo - BlurCacheWindow);
             int hi = Math.Min(_lineLayoutCount - 1, visHi + BlurCacheWindow);
@@ -983,7 +956,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 if (_clearLineCache[i] is not null) continue;
                 if (i >= visLo && i <= visHi)
-                    BakeSingleLine(creator, canvasWidth, i); // 可见行必须同帧完成
+                    BakeSingleLine(creator, canvasWidth, i, dpi); // 可见行必须同帧完成
                 else
                     _bakePendingLines.Enqueue(i);            // 缓冲行排队
             }
@@ -995,11 +968,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_bakePendingLines.Count > 0 && !_bakeScheduled)
             {
                 _bakeScheduled = true;
-                _ = BakePendingAsync(canvasWidth);
+                _ = BakePendingAsync(canvasWidth, dpi);
             }
         }
 
-        private async Task BakePendingAsync(float canvasWidth)
+        private async Task BakePendingAsync(float canvasWidth, float dpi)
         {
             // 每帧最多烘焙 N 行，分散到多帧
             const int MaxPerFrame = 3;
@@ -1013,7 +986,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     int i = _bakePendingLines.Dequeue();
                     if (i < _lineLayoutCount && _clearLineCache[i] is null)
                     {
-                        BakeSingleLine(_canvas, canvasWidth, i);
+                        BakeSingleLine(_canvas, canvasWidth, i, dpi);
                         baked++;
                     }
                 }
@@ -1024,7 +997,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
 
         /// <summary>烘焙单行的清晰版 RT（仅文字，背景透明）。</summary>
-        private void BakeSingleLine(ICanvasResourceCreator creator, float canvasWidth, int li)
+        private void BakeSingleLine(ICanvasResourceCreator creator, float canvasWidth, int li, float dpi)
         {
             if (li < 0 || li >= _lineLayoutCount) return;
 
@@ -1041,7 +1014,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lyricsFmt = GetLyricsFmt();
             var transFmt = GetTransFmt();
 
-            float dpi = 96f * (float)Math.Clamp(ScreenDpiScale, 0.5, 4.0);
             var rt = new CanvasRenderTarget(creator, rtW, rtH, dpi);
             using (var rtDs = rt.CreateDrawingSession())
             {
@@ -1444,7 +1416,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             // ── 【优化】更新滑动窗口（只烘焙/释放窗口内外的清晰 RT）──────────
             if (visLo <= visHi)
-                UpdateCacheWindow(sender, w, visLo, visHi);
+                UpdateCacheWindow(sender, w, visLo, visHi, ds.Dpi);
 
             // ── 坐标变换 ─────────────────────────────────────────────────────
             float translateY = viewH / 2f - (float)_smoothedScrollY;

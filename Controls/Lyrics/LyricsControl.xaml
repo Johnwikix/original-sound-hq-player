@@ -49,7 +49,6 @@
             LyricsBlurAmount="{x:Bind LyricsBlurAmount, Mode=OneWay}"
             LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
             LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
-            ScreenDpiScale="{x:Bind model:AppData.AppDpiScale, Mode=OneTime}"
             TranslateFontSize="{x:Bind TranslateFontSize, Mode=OneWay}" />
     </controls:OpacityMaskView>
 </UserControl>
