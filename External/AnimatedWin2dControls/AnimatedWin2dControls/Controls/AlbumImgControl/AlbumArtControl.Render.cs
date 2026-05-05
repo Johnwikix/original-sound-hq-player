@@ -34,7 +34,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!_decodeChannel.Reader.TryRead(out var item)) return;
 
             var (frame, req) = item;
-
+            _aspectRatio = (float)frame.W / frame.H;
+            _desiredSize = new Size(frame.W, frame.H);
+            _canvas?.DispatcherQueue.TryEnqueue(() =>
+            {
+                InvalidateMeasure();
+            });
             float cw = req.ContentW, ch = req.ContentH;
             if (cw <= 0 || ch <= 0)
             {

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Threading;
 using System.Threading.Channels;
+using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
 {
@@ -204,6 +205,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private static DecodedFrame? _cachedDefaultDark;
         private static DecodedFrame? _cachedDefaultLight;
         private static readonly SemaphoreSlim _defaultCacheLock = new(1, 1);
+        private Size _desiredSize = new Size(200, 200); // fallback
+        private float _aspectRatio = 1f; // W / H
 
         // ── 构造 / 模板 ───────────────────────────────────────────────────────
 
@@ -231,6 +234,26 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
             _canvas.SizeChanged += Canvas_SizeChanged;
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            double width = _desiredSize.Width;
+            double height = _desiredSize.Height;
+
+            if (!double.IsInfinity(availableSize.Width))
+            {
+                width = availableSize.Width;
+                height = width / _aspectRatio;
+            }
+
+            if (!double.IsInfinity(availableSize.Height))
+            {
+                height = Math.Min(height, availableSize.Height);
+                width = height * _aspectRatio;
+            }
+
+            return new Size(width, height);
         }
     }
 }
