@@ -95,17 +95,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(LyricsFontSizeProperty, value);
         }
 
-        public static readonly DependencyProperty TranslateFontSizeProperty =
-            DependencyProperty.Register(nameof(TranslateFontSize), typeof(double),
-                typeof(LyricsControl), new PropertyMetadata(24.0,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.TranslateFontSize = (double)e.NewValue));
-
-        public double TranslateFontSize
-        {
-            get => (double)GetValue(TranslateFontSizeProperty);
-            set => SetValue(TranslateFontSizeProperty, value);
-        }
-
         public static readonly DependencyProperty FontFamilyNameProperty =
             DependencyProperty.Register(nameof(FontFamilyName), typeof(string),
                 typeof(LyricsControl), new PropertyMetadata("Segoe UI",

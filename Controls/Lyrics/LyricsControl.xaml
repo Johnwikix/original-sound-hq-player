@@ -48,7 +48,6 @@
             IsDark="{x:Bind IsDark, Mode=OneWay}"
             LyricsBlurAmount="{x:Bind LyricsBlurAmount, Mode=OneWay}"
             LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
-            LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
-            TranslateFontSize="{x:Bind TranslateFontSize, Mode=OneWay}" />
+            LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"/>
     </controls:OpacityMaskView>
 </UserControl>

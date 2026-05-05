@@ -66,15 +66,6 @@ namespace WinUIMusicPlayer.Utils
             return fontSize;
         }
 
-        public static double TranslateLyricsFontSizeConverter(double fontSize, double globalFontSize, bool isGlobalFontSizeEnable)
-        {
-            if (isGlobalFontSizeEnable)
-            {
-                return Math.Max(globalFontSize * 0.8,18);
-            }
-            return Math.Max(fontSize * 0.8, 18);
-        }
-
         public static CanvasHorizontalAlignment ConvertStringToTextAlignment(string alignment)
         {
             return Enum.TryParse(alignment, true, out CanvasHorizontalAlignment result) ? result : CanvasHorizontalAlignment.Left;

@@ -389,16 +389,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(LyricsFontSizeProperty, value);
         }
 
-        public static readonly DependencyProperty TranslateFontSizeProperty =
-            DependencyProperty.Register(nameof(TranslateFontSize), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(24.0, OnLayoutPropertyChanged));
-
-        public double TranslateFontSize
-        {
-            get => (double)GetValue(TranslateFontSizeProperty);
-            set => SetValue(TranslateFontSizeProperty, value);
-        }
-
         public static readonly DependencyProperty FontFamilyNameProperty =
             DependencyProperty.Register(nameof(FontFamilyName), typeof(string),
                 typeof(UnifiedLyricsCanvasControl), new PropertyMetadata("Segoe UI", OnLayoutPropertyChanged));
@@ -875,7 +865,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     using var transFmtTmp = new CanvasTextFormat
                     {
                         FontFamily = FontFamilyName,
-                        FontSize = (float)TranslateFontSize,
+                        FontSize = (float)LyricsFontSize * 0.8f,
                         FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                         WordWrapping = CanvasWordWrapping.WholeWord,
                         HorizontalAlignment = CanvasHorizontalAlignment.Left,
@@ -1280,7 +1270,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private CanvasTextFormat GetTransFmt()
         {
-            float sz = (float)TranslateFontSize;
+            float sz = (float)LyricsFontSize * 0.8f;
             string fam = FontFamilyName;
             var align = LyricsTextAlignment;
             if (_transFmt is null || _cachedFontFamily != fam ||

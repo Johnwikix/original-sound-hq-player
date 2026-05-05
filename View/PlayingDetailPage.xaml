@@ -550,7 +550,6 @@
                     LyricsFontSize="{x:Bind tool:BindUtils.LyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
-                    TranslateFontSize="{x:Bind tool:BindUtils.TranslateLyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}" />
             </Grid>
         </Grid>
