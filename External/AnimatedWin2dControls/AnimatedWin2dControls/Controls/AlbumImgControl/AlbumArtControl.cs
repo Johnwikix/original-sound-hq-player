@@ -30,7 +30,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private const float Margin = 20f;
         private const float CornerRadius = 16f;
         private const float ShadowPad = 34f;
-        private const float HardMaxSize = 1536f;
+        private const float HardMaxSize = 1280f;
         private const float FadeSpeed = 4f;
         private const float ScaleSmall = 0.90f;
         private const int ResizeDebounceMs = 20;

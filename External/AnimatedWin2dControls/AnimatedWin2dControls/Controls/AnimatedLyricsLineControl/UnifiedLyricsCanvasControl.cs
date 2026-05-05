@@ -194,7 +194,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float BlurTransitionDuration = 1.0f;
 
         // 滑动窗口大小：当前行前后各保留多少行的 RT
-        private const int BlurCacheWindow = 8;
+        private const int BlurCacheWindow = 4;
 
         // 上一帧的窗口范围，用于判断是否需要更新
         private int _cacheWindowLo = -1;
@@ -990,15 +990,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void BakeSingleLine(ICanvasResourceCreator creator, float canvasWidth, int li, float dpi)
         {
             if (li < 0 || li >= _lineLayoutCount) return;
-
             ref readonly var ll = ref _lineLayouts[li];
             var lyrics = UILyrics;
             if (lyrics is null || li >= lyrics.Count) return;
             var line = lyrics[li];
 
             float layoutWidth = Math.Max(1f, canvasWidth - RenderPaddingH * 2f);
-            float rtW = canvasWidth;
             float rtH = ll.Height;
+
+            // ── 计算该行文字实际最大 X 范围，而非全画布宽 ──────────────────
+            float maxWordRight = RenderPaddingH;
+            for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
+            {
+                ref readonly var wl = ref _wordLayouts[gi];
+                if (wl.FullWidth <= 0) continue;
+                maxWordRight = Math.Max(maxWordRight, wl.X + wl.FullWidth);
+            }
+            // 译文可能更宽（居中/靠右对齐时用全宽）
+            float rtW = ll.HasTranslate
+                ? canvasWidth
+                : Math.Min(maxWordRight + RenderPaddingH, canvasWidth);
+
             if (rtW <= 0 || rtH <= 0) return;
 
             var lyricsFmt = GetLyricsFmt();
@@ -1008,7 +1020,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             using (var rtDs = rt.CreateDrawingSession())
             {
                 rtDs.Clear(Colors.Transparent);
-
                 for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
                 {
                     ref readonly var wl = ref _wordLayouts[gi];
@@ -1017,7 +1028,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         new Rect(wl.X, wl.Y + PaddingV, wl.FullWidth, wl.Height),
                         _dimColor, lyricsFmt);
                 }
-
                 if (ll.HasTranslate && !string.IsNullOrEmpty(line.TransLateText))
                 {
                     rtDs.DrawText(line.TransLateText,

@@ -237,7 +237,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         using var blur = new GaussianBlurEffect
                         {
                             Source     = scaledRt,
-                            BlurAmount = 8f,
+                            BlurAmount = 4f,
                             BorderMode = EffectBorderMode.Soft,
                         };
                         using var shadowEffect = new ColorMatrixEffect
@@ -245,7 +245,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                             Source      = blur,
                             ColorMatrix = new Microsoft.Graphics.Canvas.Effects.Matrix5x4 { M44 = 100f / 255f }
                         };
-                        ds.DrawImage(shadowEffect, new Vector2(pad + 2, pad + 3));
+                        ds.DrawImage(shadowEffect, new Vector2(pad + 1, pad + 2));
                     }
 
                     ds.DrawImage(scaledRt, new Vector2(pad, pad));
