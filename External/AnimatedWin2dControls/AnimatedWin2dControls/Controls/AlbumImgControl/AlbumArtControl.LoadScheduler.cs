@@ -83,7 +83,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
 
             Interlocked.Exchange(ref _pendingRequest,
-                new PendingRequest(bytes, cw, ch, IsShadowEnabled, (float)DpiScale, isResize, IsDark));
+                new PendingRequest(bytes, cw, ch, IsShadowEnabled, isResize, IsDark));
 
             TrySignalDecode();
         }

@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<MusicBrowseViewModel>().LoadPlayStateToMusicBrowsePage();
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
             App.MainWindow.ShowMainPage();
-            AppViewModel.DpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
+            AppData.AppDpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
             App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;            
         }
 

@@ -13,33 +13,33 @@ namespace WinUIMusicPlayer.Helper
         private static readonly Dictionary<IntPtr, (int minWidth, int minHeight, IntPtr oldWndProc, WndProcDelegate newWndProc)> _windowData
             = new Dictionary<IntPtr, (int, int, IntPtr, WndProcDelegate)>();
 
-        public static void SetMinimumSize(IntPtr hwnd, Window window, int minWidth, int minHeight)
-        {
-            //var hwnd = WindowNative.GetWindowHandle(window);
-            uint dpi = GetDpiForWindow(hwnd);
-            double scaleFactor = dpi / 96.0;
-            AppData.AppDpiScale = scaleFactor;
-            minWidth = (int)(minWidth * scaleFactor);
-            minHeight = (int)(minHeight * scaleFactor);
-            // 创建新的窗口过程
-            var newWndProc = new WndProcDelegate((hwnd, msg, wParam, lParam) =>
-                WndProc(hwnd, msg, wParam, lParam));
+        //public static void SetMinimumSize(IntPtr hwnd, Window window, int minWidth, int minHeight)
+        //{
+        //    //var hwnd = WindowNative.GetWindowHandle(window);
+        //    uint dpi = GetDpiForWindow(hwnd);
+        //    double scaleFactor = dpi / 96.0;
+        //    AppData.AppDpiScale = scaleFactor;
+        //    minWidth = (int)(minWidth * scaleFactor);
+        //    minHeight = (int)(minHeight * scaleFactor);
+        //    // 创建新的窗口过程
+        //    var newWndProc = new WndProcDelegate((hwnd, msg, wParam, lParam) =>
+        //        WndProc(hwnd, msg, wParam, lParam));
 
-            // 保存原始窗口过程
-            var oldWndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, newWndProc);
+        //    // 保存原始窗口过程
+        //    var oldWndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, newWndProc);
 
-            // 存储窗口数据
-            _windowData[hwnd] = (minWidth, minHeight, oldWndProc, newWndProc);
+        //    // 存储窗口数据
+        //    _windowData[hwnd] = (minWidth, minHeight, oldWndProc, newWndProc);
 
-            // 窗口关闭时清理
-            window.Closed += (sender, args) =>
-            {
-                if (_windowData.ContainsKey(hwnd))
-                {
-                    _windowData.Remove(hwnd);
-                }
-            };
-        }
+        //    // 窗口关闭时清理
+        //    window.Closed += (sender, args) =>
+        //    {
+        //        if (_windowData.ContainsKey(hwnd))
+        //        {
+        //            _windowData.Remove(hwnd);
+        //        }
+        //    };
+        //}
 
         private static IntPtr WndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
         {

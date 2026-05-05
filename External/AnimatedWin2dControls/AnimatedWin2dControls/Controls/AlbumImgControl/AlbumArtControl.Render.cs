@@ -16,7 +16,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            ConsumeDecodeChannel(sender);
+            ConsumeDecodeChannel(sender,e.DrawingSession.Dpi);
 
             if (_isFading)
                 TickAnimation();
@@ -29,7 +29,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 解码通道消费 ──────────────────────────────────────────────────────
 
-        private void ConsumeDecodeChannel(CanvasControl sender)
+        private void ConsumeDecodeChannel(CanvasControl sender,float dpi)
         {
             if (!_decodeChannel.Reader.TryRead(out var item)) return;
 
@@ -48,7 +48,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 return;
             }
 
-            var bmp = GpuBake(frame, cw, ch, req.Shadow, req.DpiScale, sender);
+            var bmp = GpuBake(frame, cw, ch, req.Shadow, dpi, sender);
             if (bmp == null)
             {
                 ReleaseAnimLockIfNeeded(req.IsResize);
@@ -174,14 +174,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private static CanvasBitmap? GpuBake(
             DecodedFrame frame,
             float contentW, float contentH,
-            bool shadow, float dpiScale,
+            bool shadow, float dpi,
             CanvasControl sender)
         {
             if (frame.W <= 0 || frame.H <= 0 || contentW <= 0 || contentH <= 0) return null;
 
             var   device = sender.Device;
-            float dpi    = 96f * dpiScale;
-
             using var srcBmp = CanvasBitmap.CreateFromBytes(
                 device, frame.Pixels, frame.W, frame.H,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,

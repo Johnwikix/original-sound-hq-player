@@ -181,15 +181,6 @@ namespace WinUIMusicPlayer.ViewModel
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
         // 带有复杂逻辑的属性重构
-        public float DpiScale 
-        { 
-            get => field; 
-            set {
-                if (SetProperty(ref field, value)) { 
-                    AppData.AppDpiScale = value;
-                }
-            } 
-        } = 1.0f;
         public bool UseImageDominantTheme
         {
             get => field; set

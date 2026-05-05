@@ -40,18 +40,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         /// <summary>动画锁持续时间（毫秒），与 FadeSpeed 联动。</summary>
         private static readonly int AnimLockMs = (int)(1000f * 2 / FadeSpeed);
 
-        // ── 依赖属性 ──────────────────────────────────────────────────────────
-
-        public static readonly DependencyProperty DpiScaleProperty =
-            DependencyProperty.Register(nameof(DpiScale), typeof(double),
-                typeof(AlbumArtControl), new PropertyMetadata(1.0, OnResizeTriggerChanged));
-
-        public double DpiScale
-        {
-            get => (double)GetValue(DpiScaleProperty);
-            set => SetValue(DpiScaleProperty, value);
-        }
-
         public static readonly DependencyProperty ImageBytesProperty =
             DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
                 typeof(AlbumArtControl), new PropertyMetadata(null, OnImageBytesChanged));
@@ -148,7 +136,6 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float ContentW,
             float ContentH,
             bool Shadow,
-            float DpiScale,
             bool IsResize,
             bool IsDark);
 
