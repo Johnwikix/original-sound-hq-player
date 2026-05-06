@@ -1611,9 +1611,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             }
                             _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f) * Matrix3x2.CreateTranslation(revealX, 0f);
 
-                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
+                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight+1, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
-                            using (ds.CreateLayer(_gradBrush, new Rect(revealX, drawY, feather, rowH)))
+                            using (ds.CreateLayer(_gradBrush, new Rect(revealX-1, drawY, feather, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                         }
                         else
