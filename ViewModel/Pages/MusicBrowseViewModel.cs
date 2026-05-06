@@ -698,10 +698,10 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.CurrentPlayingMusic = music;
                     AppViewModel.UILyrics = [];
+                    MusicBrowsePage.UpdateViewList();
                 });
                 _ = UpdatePlayBar(music, token);
-                AppViewModel.LoadLyricsToUI(music);
-                MusicBrowsePage.UpdateViewList();
+                AppViewModel.LoadLyricsToUI(music);                
                 MusicBrowsePage.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
                 _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
