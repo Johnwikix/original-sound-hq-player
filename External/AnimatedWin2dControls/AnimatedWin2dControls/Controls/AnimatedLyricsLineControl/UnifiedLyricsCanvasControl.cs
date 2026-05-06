@@ -1419,8 +1419,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 UpdateCacheWindow(sender, w, visLo, visHi, ds.Dpi);
 
             // ── 坐标变换 ─────────────────────────────────────────────────────
+            float dpi = sender.Dpi;
+            float scale = dpi / 96f;
             float translateY = viewH / 2f - (float)_smoothedScrollY;
-            ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
+            float translateYAligned = MathF.Round(translateY * scale) / scale;
+            ds.Transform = Matrix3x2.CreateTranslation(0f, translateYAligned);
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
 
@@ -1543,7 +1546,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 // ── 当前行逐字高亮 ────────────────────────────────────────────
                 if (isCurrent)
                 {
-                    float rowBaseY = MathF.Round(ll.OffsetY + PaddingV);
+                    float rowBaseY = ll.OffsetY + PaddingV;
                     for (int ri = 0; ri < vrr.Count; ri++)
                     {
                         int gri = vrr.Start + ri;
