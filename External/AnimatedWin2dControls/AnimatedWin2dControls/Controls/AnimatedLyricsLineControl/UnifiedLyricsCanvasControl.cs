@@ -1387,7 +1387,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 double lf = 1.0 - Math.Exp(-scrollSpeed * dt);
                 _smoothedScrollY += scrollDiff * lf;
-                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 0.5)
+                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 96f/args.DrawingSession.Dpi)
                     _smoothedScrollY = _targetScrollY;
                 sender.Invalidate();
             }
@@ -1422,8 +1422,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float dpi = sender.Dpi;
             float scale = dpi / 96f;
             float translateY = viewH / 2f - (float)_smoothedScrollY;
-            float translateYAligned = MathF.Round(translateY * scale) / scale;
-            ds.Transform = Matrix3x2.CreateTranslation(0f, translateYAligned);
+            ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
 
@@ -1611,7 +1610,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             }
                             _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f) * Matrix3x2.CreateTranslation(revealX, 0f);
 
-                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight+1, rowH)))
+                            using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                             using (ds.CreateLayer(_gradBrush, new Rect(revealX-1, drawY, feather, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
