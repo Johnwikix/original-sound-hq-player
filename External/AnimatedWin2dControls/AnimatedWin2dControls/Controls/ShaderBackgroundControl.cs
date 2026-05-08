@@ -165,7 +165,10 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
 
         if (_canvas is not null)
+        {
+            _canvas.TargetElapsedTime = TimeSpan.FromTicks(250000);
             AttachCanvasEvents(_canvas);
+        }
     }
 
     private void AttachCanvasEvents(CanvasAnimatedControl canvas)
