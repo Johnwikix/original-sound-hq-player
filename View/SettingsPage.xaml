@@ -241,7 +241,7 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsBlurAmount">
                             <Slider
-                                Maximum="3"
+                                Maximum="5"
                                 Minimum="0"
                                 SnapsTo="Ticks"
                                 TickFrequency="0.1"
