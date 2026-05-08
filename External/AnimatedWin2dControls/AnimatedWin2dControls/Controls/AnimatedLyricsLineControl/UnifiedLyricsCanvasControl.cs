@@ -1491,7 +1491,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                             _blurAlpha[li] = target > cur
                                 ? Math.Min(cur + step, target)
                                 : Math.Max(cur - step, target);
-                            //sender.Invalidate();
+                            if (Math.Abs(target - _blurAlpha[li]) > 0.01f)
+                                sender.Invalidate();
                         }
                     }
                     else
