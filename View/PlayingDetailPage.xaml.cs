@@ -79,7 +79,7 @@ namespace WinUIMusicPlayer.View
             double effectiveSize = windowSize.Width * windowSize.Height; 
             var lyrics = effectiveSize switch
             {
-                < 1024 * 720 => 32,
+                <= 1024 * 720 => 32,
                 < 1280 * 720 => 36,
                 < 1920 * 1080 => 48,
                 < 2560 * 1440 => 64,
