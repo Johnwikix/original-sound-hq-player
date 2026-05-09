@@ -76,26 +76,25 @@ namespace WinUIMusicPlayer.View
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             double width = windowSize.Width / AppData.AppDpiScale;
-            double height = windowSize.Height / AppData.AppDpiScale;
-            double effectiveSize = width * height; 
-            var (title, artist,lyrics) = effectiveSize switch
+            double effectiveSize = windowSize.Width * windowSize.Height; 
+            var lyrics = effectiveSize switch
             {
-                < 1024 * 768 => (26, 22, 32), // 针对小窗口或窄高窗口的基准
-                < 1280 * 720 => (30, 26, 38),
-                < 1920 * 1080 => (32, 28, 44),
-                < 2560 * 1440 => (36, 32, 52),
-                < 2880 * 1920 => (38, 34, 56),
-                _ => (42, 38, 60)
+                < 1024 * 720 => 32,
+                < 1280 * 720 => 36,
+                < 1920 * 1080 => 48,
+                < 2560 * 1440 => 64,
+                < 2880 * 1920 => 72,
+                _ => 96
             };
 
-            var (firstSize,secondSize,shapeSize, info) = width switch
+            var (title, artist, firstSize,secondSize,shapeSize, info) = width switch
             {
-                <= 1024 => (20, 16, 26, 12),
-                < 1280 => (22, 18, 28, 12),
-                < 1920  => (28, 22, 40,16),
-                < 2560 => (36, 26, 60,18),
-                < 2880  => (40, 28, 66,20),
-                _ => (46, 32, 72,22)
+                <= 1024 => (26, 22, 20, 16, 26, 12),
+                < 1280 => (30, 26, 22, 18, 28, 12),
+                < 1920  => (34, 30, 28, 22, 40,16),
+                < 2560 => (36, 32, 36, 26, 60,18),
+                < 2880  => (38, 34, 40, 28, 66,20),
+                _ => (42, 38, 46, 32, 72,22)
             };
 
             // 4. 应用变更

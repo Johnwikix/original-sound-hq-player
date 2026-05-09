@@ -768,7 +768,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 布局计算
         // ═════════════════════════════════════════════════════════════════════
 
-        private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth)
+        private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth,float dpiScale)
         {
             var lyrics = UILyrics;
             if (lyrics is null || lyrics.Count == 0)
@@ -791,7 +791,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_wordLayouts.Length < totalWords + 8) _wordLayouts = new WordLayout[totalWords + 32];
 
             float layoutWidth = Math.Max(1f, availableWidth - RenderPaddingH * 2f);
-            float fontSize = (float)LyricsFontSize;
+            float fontSize = (float)LyricsFontSize / dpiScale;
 
             using var lyricsFmtTmp = new CanvasTextFormat
             {
@@ -865,7 +865,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     using var transFmtTmp = new CanvasTextFormat
                     {
                         FontFamily = FontFamilyName,
-                        FontSize = (float)LyricsFontSize * 0.8f,
+                        FontSize = (float)LyricsFontSize / dpiScale * 0.8f,
                         FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                         WordWrapping = CanvasWordWrapping.WholeWord,
                         HorizontalAlignment = CanvasHorizontalAlignment.Left,
@@ -1013,8 +1013,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             if (rtW <= 0 || rtH <= 0) return;
 
-            var lyricsFmt = GetLyricsFmt();
-            var transFmt = GetTransFmt();
+            var lyricsFmt = GetLyricsFmt(dpi);
+            var transFmt = GetTransFmt(dpi);
 
             var rt = new CanvasRenderTarget(creator, rtW, rtH, dpi);
             using (var rtDs = rt.CreateDrawingSession())
@@ -1257,9 +1257,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedFontFamily = null;
         }
 
-        private CanvasTextFormat GetLyricsFmt()
+        private CanvasTextFormat GetLyricsFmt(float dpi)
         {
-            float sz = (float)LyricsFontSize;
+            float sz = (float)LyricsFontSize * 96f / dpi;
             string fam = FontFamilyName;
             if (_lyricsFmt is null || _cachedFontFamily != fam || _cachedLyricsFontSizeForFmt != sz)
             {
@@ -1278,9 +1278,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             return _lyricsFmt;
         }
 
-        private CanvasTextFormat GetTransFmt()
+        private CanvasTextFormat GetTransFmt(float dpi)
         {
-            float sz = (float)LyricsFontSize * 0.8f;
+            float sz = (float)LyricsFontSize * 0.8f * 96f / dpi;
             string fam = FontFamilyName;
             var align = LyricsTextAlignment;
             if (_transFmt is null || _cachedFontFamily != fam ||
@@ -1342,6 +1342,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnDraw(CanvasControl sender, CanvasDrawEventArgs args)
         {
             var ds = args.DrawingSession;
+            float dpi = ds.Dpi;
+            float scale = dpi / 96f;
             var lyrics = UILyrics;
             if (lyrics is null || lyrics.Count == 0) return;
 
@@ -1352,7 +1354,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // ── 布局（懒加载）───────────────────────────────────────────────
             if (_lineLayoutCount == 0 || Math.Abs(w - _cachedLayoutWidth) >= 2f)
             {
-                EnsureLayout(sender, w);
+                EnsureLayout(sender, w, scale);
                 if (_lineLayoutCount == 0) return;
             }
 
@@ -1387,7 +1389,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 double lf = 1.0 - Math.Exp(-scrollSpeed * dt);
                 _smoothedScrollY += scrollDiff * lf;
-                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 96f/args.DrawingSession.Dpi)
+                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 96f/ds.Dpi)
                     _smoothedScrollY = _targetScrollY;
                 sender.Invalidate();
             }
@@ -1416,18 +1418,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             // ── 【优化】更新滑动窗口（只烘焙/释放窗口内外的清晰 RT）──────────
             if (visLo <= visHi)
-                UpdateCacheWindow(sender, w, visLo, visHi, ds.Dpi);
+                UpdateCacheWindow(sender, w, visLo, visHi, dpi);
 
-            // ── 坐标变换 ─────────────────────────────────────────────────────
-            float dpi = sender.Dpi;
-            float scale = dpi / 96f;
+            // ── 坐标变换 ─────────────────────────────────────────────────────           
             float translateY = viewH / 2f - (float)_smoothedScrollY;
             ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
 
-            var lyricsFmt = GetLyricsFmt();
-            var transFmt = GetTransFmt();
+            var lyricsFmt = GetLyricsFmt(dpi);
+            var transFmt = GetTransFmt(dpi);
             float layoutWidth = Math.Max(1f, w - RenderPaddingH * 2f);
             var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
             float blurAmount = (float)LyricsBlurAmount;
