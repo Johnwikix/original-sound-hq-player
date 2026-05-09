@@ -136,7 +136,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private DateTimeOffset _lastTickAt;
         private TimeSpan _currentTime = TimeSpan.Zero;
         private TimeSpan _lastExternalTime = TimeSpan.Zero;
-        private const double SyncThresholdMs = 150.0;
+        private const double SyncThresholdMs = 200.0;
 
         // ─────────────────────────────────────────────────────────────────────
         // 渲染状态
@@ -687,7 +687,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var now = DateTimeOffset.UtcNow;
             var delta = now - _lastTickAt;
             _lastTickAt = now;
-            if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(16);
+            if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(25);
 
             _currentTime += delta;
             MatchLyricLine(_currentTime);
