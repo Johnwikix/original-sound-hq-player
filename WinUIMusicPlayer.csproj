@@ -24,6 +24,7 @@
     <None Remove="Controls\Lyrics\LyricsControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
+    <None Remove="Style\ColorStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
     <None Remove="Style\CustomFontStyle.xaml" />
     <None Remove="Style\GroupStyleHeader.xaml" />
@@ -172,6 +173,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Style\ColorStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\Lyrics\LyricsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

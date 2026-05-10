@@ -86,8 +86,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize), typeof(double),
-                typeof(LyricsControl), new PropertyMetadata(36.0,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.LyricsFontSize = (double)e.NewValue));
+                typeof(LyricsControl), new PropertyMetadata(36.0));
 
         public double LyricsFontSize
         {
@@ -95,10 +94,19 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(LyricsFontSizeProperty, value);
         }
 
+        public static readonly DependencyProperty LyricsOffsetMsProperty =
+            DependencyProperty.Register(nameof(LyricsOffsetMs), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(36.0));
+
+        public double LyricsOffsetMs
+        {
+            get => (double)GetValue(LyricsOffsetMsProperty);
+            set => SetValue(LyricsOffsetMsProperty, value);
+        }
+
         public static readonly DependencyProperty FontFamilyNameProperty =
             DependencyProperty.Register(nameof(FontFamilyName), typeof(string),
-                typeof(LyricsControl), new PropertyMetadata("Segoe UI",
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.FontFamilyName = (string)e.NewValue));
+                typeof(LyricsControl), new PropertyMetadata("Segoe UI"));
 
         public string FontFamilyName
         {
@@ -110,10 +118,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             DependencyProperty.Register(nameof(LyricsTextAlignment),
                 typeof(Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment),
                 typeof(LyricsControl),
-                new PropertyMetadata(
-                    Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.LyricsTextAlignment =
-                        (Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment)e.NewValue));
+                new PropertyMetadata(Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left));
 
         public Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment LyricsTextAlignment
         {
@@ -123,8 +128,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public static readonly DependencyProperty IsDarkProperty =
             DependencyProperty.Register(nameof(IsDark), typeof(bool),
-                typeof(LyricsControl), new PropertyMetadata(false,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.IsDark = (bool)e.NewValue));
+                typeof(LyricsControl), new PropertyMetadata(false));
 
         public bool IsDark
         {
@@ -134,8 +138,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public static readonly DependencyProperty AnimationSmoothnessProperty =
             DependencyProperty.Register(nameof(AnimationSmoothness), typeof(double),
-                typeof(LyricsControl), new PropertyMetadata(0.65,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.AnimationSmoothness = (double)e.NewValue));
+                typeof(LyricsControl), new PropertyMetadata(1.0));
 
         public double AnimationSmoothness
         {
@@ -145,8 +148,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public static readonly DependencyProperty LyricsBlurAmountProperty =
                 DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(4.0,
-            (d, e) => ((LyricsControl)d).LyricsCanvas.LyricsBlurAmount = (double)e.NewValue));
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(1.5));
 
         public double LyricsBlurAmount
         {

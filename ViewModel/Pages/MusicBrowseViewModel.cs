@@ -562,12 +562,12 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnFastForwardButton()
         {
-            AdjustPlaybackPosition(5);
+            AdjustPlaybackPosition(30);
         }
         [RelayCommand]
         private void OnFastBackwardButton()
         {
-            AdjustPlaybackPosition(-5);
+            AdjustPlaybackPosition(-10);
         }
         public async void AdjustPlaybackPosition(int seconds)
         {

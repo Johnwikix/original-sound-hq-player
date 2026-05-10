@@ -27,7 +27,6 @@ namespace WinUIMusicPlayer.Services
             IpcService = App.Services.GetRequiredService<IpcService>();
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
-            InitializingData();
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
 
@@ -75,10 +74,6 @@ namespace WinUIMusicPlayer.Services
             IpcService.UpdateSettings();
         }
 
-        private async void InitializingData()
-        {
-            AppViewModel.SequentialPlayingList = new(await _musicDatabaseService.LoadPlayList());
-        }
         public async Task AutoPlayNextTrack()
         {
             AppViewModel.StopProgressTimer();

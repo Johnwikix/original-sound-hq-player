@@ -56,7 +56,8 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Click="CancelPlayingDetailButton_Click">
+                    Click="CancelPlayingDetailButton_Click"
+                    Style="{StaticResource MenuButtonStyle}">
                     <FontIcon FontSize="16" Glyph="&#xE70D;" />
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Q" />
@@ -69,7 +70,8 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Command="{x:Bind ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}">
+                    Command="{x:Bind ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}"
+                    Style="{StaticResource MenuButtonStyle}">
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="F" />
                     </Button.KeyboardAccelerators>
@@ -88,7 +90,8 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Command="{x:Bind ViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}">
+                    Command="{x:Bind ViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}"
+                    Style="{StaticResource MenuButtonStyle}">
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="V" />
                     </Button.KeyboardAccelerators>
@@ -273,16 +276,47 @@
                         Grid.Row="0"
                         Grid.Column="1"
                         Margin="0"
-                        HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Background="Transparent"
                         BorderBrush="Transparent"
                         BorderThickness="0"
-                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
+                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
                         <Button.KeyboardAccelerators>
                             <KeyboardAccelerator Key="L" />
                         </Button.KeyboardAccelerators>
-                        <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                        <FontIcon
+                            FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                            Foreground="Red"
+                            Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                    </Button>
+                    <Button
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon
+                            Grid.Column="0"
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                            Glyph="&#xF182;" />
+                        <Button.Flyout>
+                            <Flyout Placement="Right">
+                                <NumberBox
+                                    Width="175"
+                                    LargeChange="1000"
+                                    Maximum="10000"
+                                    Minimum="-10000"
+                                    SmallChange="100"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
+                            </Flyout>
+                        </Button.Flyout>
                     </Button>
                 </Grid>
                 <StackPanel
@@ -370,7 +404,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Click="EqualizerButton_Click">
+                                Click="EqualizerButton_Click"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon
                                     x:Name="EqualizerIconPlayingDetail"
                                     FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
@@ -385,7 +420,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Click="CurrentPlayListButtonPlayingDetail_Click">
+                                Click="CurrentPlayListButtonPlayingDetail_Click"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon
                                     x:Name="CurrentPlayListIconPlayingDetail"
                                     FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
@@ -447,11 +483,12 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Up" />
                                 </Button.KeyboardAccelerators>
-                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xe892;" />
+                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AC;" />
                             </Button>
 
                             <!--  播放按钮  -->
@@ -465,7 +502,7 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
-                                Style="{StaticResource CircularHoverButtonStyle}">
+                                Style="{StaticResource PlayButtonStyle}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Space" />
                                 </Button.KeyboardAccelerators>
@@ -485,11 +522,12 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <Button.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="Down" />
                                 </Button.KeyboardAccelerators>
-                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xe893;" />
+                                <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AD;" />
                             </Button>
                             <!--  播放模式按钮  -->
                             <Button
@@ -501,7 +539,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
+                                Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon
                                     x:Name="PlayModeIconPlayingDetail"
                                     FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
@@ -515,7 +554,8 @@
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
-                                BorderThickness="0">
+                                BorderThickness="0"
+                                Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon
                                     x:Name="VolumeSliderIconPlayingDetail"
                                     Grid.Column="0"
@@ -558,6 +598,7 @@
                     LyricsBlurAmount="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=OneWay}"
                     LyricsFontSize="{x:Bind tool:BindUtils.LyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
+                    LyricsOffsetMs="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}" />
             </Grid>

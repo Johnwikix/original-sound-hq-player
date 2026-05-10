@@ -174,16 +174,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         // ─────────────────────────────────────────────────────────────────────
         // 【优化】RT 缓存：只保留清晰版，模糊实时计算；滑动窗口按需烘焙/释放
-        //
-        // 原来：
-        //   _blurredLineCache[全部行] + _clearLineCache[全部行]
-        //   全屏 2560px × 每行 ~80px × 200行 × 2张 × 4通道 ≈ 1 GB
-        //
-        // 现在：
-        //   _clearLineCache[全部行]（数组槽位，但只有窗口内的槽非 null）
-        //   窗口 ±BlurCacheWindow 行 × 1张清晰 RT
-        //   2560 × 80 × 17行 × 4 ≈ 14 MB（降低 ~98%）
-        //   模糊通过复用的 GaussianBlurEffect 实时计算，无额外 RT 开销
         // ─────────────────────────────────────────────────────────────────────
 
         // 只保留清晰版 RT 数组（槽数 = 行数，但大多数槽为 null）
@@ -619,11 +609,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             var lyrics = UILyrics;
             if (lyrics is null || lyrics.Count == 0) return;
-
+            var effectivePosition = position - TimeSpan.FromMilliseconds(OffsetMs);
             int matched = -1;
             for (int i = 0; i < lyrics.Count; i++)
             {
-                if (lyrics[i].Time <= position) matched = i;
+                if (lyrics[i].Time <= effectivePosition) matched = i;
                 else break;
             }
 
@@ -791,7 +781,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_wordLayouts.Length < totalWords + 8) _wordLayouts = new WordLayout[totalWords + 32];
 
             float layoutWidth = Math.Max(1f, availableWidth - RenderPaddingH * 2f);
-            float fontSize = (float)LyricsFontSize / dpiScale;
+            float fontSize = (float)Math.Round(LyricsFontSize / dpiScale);
 
             using var lyricsFmtTmp = new CanvasTextFormat
             {
@@ -865,7 +855,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     using var transFmtTmp = new CanvasTextFormat
                     {
                         FontFamily = FontFamilyName,
-                        FontSize = (float)LyricsFontSize / dpiScale * 0.8f,
+                        FontSize = (float)Math.Round(0.75f * LyricsFontSize / dpiScale),
                         FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                         WordWrapping = CanvasWordWrapping.WholeWord,
                         HorizontalAlignment = CanvasHorizontalAlignment.Left,
@@ -1259,7 +1249,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private CanvasTextFormat GetLyricsFmt(float dpi)
         {
-            float sz = (float)LyricsFontSize * 96f / dpi;
+            float sz = (float)Math.Round(LyricsFontSize * 96f / dpi);
             string fam = FontFamilyName;
             if (_lyricsFmt is null || _cachedFontFamily != fam || _cachedLyricsFontSizeForFmt != sz)
             {
@@ -1280,7 +1270,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private CanvasTextFormat GetTransFmt(float dpi)
         {
-            float sz = (float)LyricsFontSize * 0.8f * 96f / dpi;
+            float sz = (float)Math.Round(LyricsFontSize * 0.75f * 96f / dpi);
             string fam = FontFamilyName;
             var align = LyricsTextAlignment;
             if (_transFmt is null || _cachedFontFamily != fam ||

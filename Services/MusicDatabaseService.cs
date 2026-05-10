@@ -232,26 +232,24 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<Folder>().ToListAsync();
         }
 
-        public async Task<List<Music>> LoadPlayList()
+        public async Task<List<Music>> LoadPlayList(IEnumerable<Music> AllMusicList)
         {
             var playListState = await _dbConnection.Table<LastPlayListState>().FirstOrDefaultAsync();
             if (playListState is null)
             {
                 return [];
             }
-
             var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries).AsValueEnumerable()
                                                          .Select(int.Parse).ToList();
             var musicList = new List<Music>();
             foreach (var musicId in musicIds)
             {
-                var music = await _dbConnection.Table<Music>().Where(m => m.Id == musicId).FirstOrDefaultAsync();
+                var music = AllMusicList.FirstOrDefault(m => m.Id == musicId);
                 if (music is not null)
                 {
                     musicList.Add(music);
                 }
             }
-
             return musicList;
         }
 
@@ -584,7 +582,8 @@ namespace WinUIMusicPlayer.Services
         public async Task LoadMusicList() {
             await AppViewModel.SongsSource.AddRangeAsync(await GetMusicListAsync());
             await InitalPlayListAsync();
-            await GetPlayListMusic();            
+            await GetPlayListMusic();
+            AppViewModel.SequentialPlayingList = new(await LoadPlayList(AppViewModel.SongsSource));
         }
 
 

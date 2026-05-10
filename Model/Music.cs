@@ -39,6 +39,13 @@ namespace WinUIMusicPlayer.Model
         public string TranslatedLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Krc { get; set => SetProperty(ref field, value); } = string.Empty;
         public string TKrc { get; set => SetProperty(ref field, value); } = string.Empty;
+        public int LyricsOffsetMs { get; set { 
+                if (SetProperty(ref field, value)) 
+                { 
+                    Save();
+                } 
+            } 
+        } = 0;
         public int PlayCount { get; set; } = 0;
         public bool IsLrcSearched { get; set; } = false;
         public bool IsKrcSearched { get; set; } = false;
@@ -119,6 +126,11 @@ namespace WinUIMusicPlayer.Model
             App.Services.GetRequiredService<AppViewModel>().RemoveFromSongsSource(this);
             App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
             App.Services.GetRequiredService<AppViewModel>().RemoveFromPlayListSongs(this);
+        }
+
+        private async void Save() 
+        {
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(this);
         }
 
         public static implicit operator RelativePanel(Music v)

@@ -399,7 +399,8 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="L" />
                                     </Button.KeyboardAccelerators>
@@ -415,11 +416,12 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.FastBackwardButtonCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.FastBackwardButtonCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Left" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xeb9e;" />
+                                    <FontIcon FontSize="18" Glyph="&#xED3C;" />
                                 </Button>
 
                                 <Button
@@ -431,11 +433,12 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Up" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="22" Glyph="&#xe892;" />
+                                    <FontIcon FontSize="22" Glyph="&#xF8AC;" />
                                 </Button>
 
                                 <!--  播放按钮  -->
@@ -449,7 +452,7 @@
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
                                     Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource CircularHoverButtonStyle}">
+                                    Style="{StaticResource PlayButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Space" />
                                     </Button.KeyboardAccelerators>
@@ -469,11 +472,12 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Down" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="22" Glyph="&#xe893;" />
+                                    <FontIcon FontSize="22" Glyph="&#xF8AD;" />
                                 </Button>
 
                                 <Button
@@ -485,11 +489,12 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.FastForwardButtonCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.FastForwardButtonCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="Right" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xeb9d;" />
+                                    <FontIcon FontSize="18" Glyph="&#xED3D;" />
                                 </Button>
 
                                 <Button
@@ -501,11 +506,12 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.StopButtonChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.StopButtonChangedCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <Button.KeyboardAccelerators>
                                         <KeyboardAccelerator Key="End" />
                                     </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xe71a;" />
+                                    <FontIcon FontSize="18" Glyph="&#xEE95;" />
                                 </Button>
                             </Grid>
                             <StackPanel
@@ -548,7 +554,8 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Click="EqualizerButton_Click">
+                                    Click="EqualizerButton_Click"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;" />
                                 </Button>
                                 <Button
@@ -559,7 +566,8 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Click="CurrentPlayListButton_Click">
+                                    Click="CurrentPlayListButton_Click"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                                 </Button>
                                 <TeachingTip
@@ -619,7 +627,8 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                                 </Button>
                                 <Button
@@ -629,7 +638,8 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
+                                    Command="{x:Bind ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon
                                         x:Name="VolumeSliderIcon"
                                         Grid.Column="0"

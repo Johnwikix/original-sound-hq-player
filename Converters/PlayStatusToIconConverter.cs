@@ -12,11 +12,11 @@ namespace WinUIMusicPlayer.Converters
             {
                 if (IsPlaying)
                 {
-                    return "\uE769";
+                    return "\uF8AE";
                 }
                 else
                 {
-                    return "\uE768";
+                    return "\uF5B0";
                 }
             }
             return DependencyProperty.UnsetValue;
