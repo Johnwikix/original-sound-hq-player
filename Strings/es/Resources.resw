@@ -427,40 +427,40 @@
     <value>Procesando guardado, por favor espere...</value>
   </data>
   <data name="TitleTextBlock.Text" xml:space="preserve">
-    <value>Título:</value>
+    <value>Título</value>
   </data>
   <data name="AuthorTextBlock.Text" xml:space="preserve">
-    <value>Artista:</value>
+    <value>Artista</value>
   </data>
   <data name="AlbumTextBlock.Text" xml:space="preserve">
-    <value>Álbum:</value>
+    <value>Álbum</value>
   </data>
   <data name="YearTextBlock.Text" xml:space="preserve">
-    <value>Año:</value>
+    <value>Año</value>
   </data>
   <data name="TrackNumberBox.Text" xml:space="preserve">
-    <value>Número de pista:</value>
+    <value>Número de pista</value>
   </data>
   <data name="LyricsTextBox.Content" xml:space="preserve">
     <value>Emparejar letras en línea</value>
   </data>
   <data name="DurationTextBlock.Text" xml:space="preserve">
-    <value>Duración:</value>
+    <value>Duración</value>
   </data>
   <data name="BitDepthTextBlock.Text" xml:space="preserve">
-    <value>Profundidad de bits:</value>
+    <value>Profundidad de bits</value>
   </data>
   <data name="BitRateTextBlock.Text" xml:space="preserve">
-    <value>Tasa de bits:</value>
+    <value>Tasa de bits</value>
   </data>
   <data name="SampleRateTextBlock.Text" xml:space="preserve">
-    <value>Tasa de muestreo:</value>
+    <value>Tasa de muestreo</value>
   </data>
   <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
-    <value>Directorio último:</value>
+    <value>Directorio último</value>
   </data>
   <data name="PathTextBlock.Text" xml:space="preserve">
-    <value>Ruta:</value>
+    <value>Ruta</value>
   </data>
   <data name="Lyrics.Text" xml:space="preserve">
     <value>Letras:</value>
@@ -715,7 +715,7 @@
     <value>Escucha de carpetas de la Biblioteca de música</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
-    <value>Número de disco:</value>
+    <value>Número de disco</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Recuperar la metainformación del archivo</value>
@@ -739,7 +739,7 @@
     <value>El ancho y la altura se adaptarán en función del DPI de la pantalla</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>Tiempo de creación:</value>
+    <value>Tiempo de creación</value>
   </data>
   <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>Tiempo de creación ASC</value>
@@ -754,7 +754,7 @@
     <value>Modificar el orden descendente de la fecha</value>
   </data>
   <data name="UpdateTime.Text" xml:space="preserve">
-    <value>Tiempo de actualización:</value>
+    <value>Tiempo de actualización</value>
   </data>
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>Guardar en la base de datos</value>
@@ -935,5 +935,11 @@
   </data>
   <data name="KrcTranslation.Text" xml:space="preserve">
     <value>Traducción Krc</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>Desfase de tiempo de la letra</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>Desfase de tiempo de la letra</value>
   </data>
 </root>

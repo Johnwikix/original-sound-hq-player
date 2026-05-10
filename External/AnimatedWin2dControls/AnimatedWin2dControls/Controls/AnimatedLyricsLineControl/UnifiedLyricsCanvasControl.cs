@@ -524,8 +524,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _pointerLastY = e.GetCurrentPoint(_canvas).Position.Y;
             _pointerVelocityY = 0;
             _flingY = 0;
-            _userScrolling = true;
-            _userScrollCooldownSec = 0;
+            //_userScrolling = true;
+            //_userScrollCooldownSec = 0;
             e.Handled = true;
         }
 

@@ -427,40 +427,40 @@
     <value>Processing save, please wait...</value>
   </data>
   <data name="TitleTextBlock.Text" xml:space="preserve">
-    <value>Title:</value>
+    <value>Title</value>
   </data>
   <data name="AuthorTextBlock.Text" xml:space="preserve">
-    <value>Artist:</value>
+    <value>Artist</value>
   </data>
   <data name="AlbumTextBlock.Text" xml:space="preserve">
-    <value>Album:</value>
+    <value>Album</value>
   </data>
   <data name="YearTextBlock.Text" xml:space="preserve">
-    <value>Year:</value>
+    <value>Year</value>
   </data>
   <data name="TrackNumberBox.Text" xml:space="preserve">
-    <value>Track Number:</value>
+    <value>Track Number</value>
   </data>
   <data name="LyricsTextBox.Content" xml:space="preserve">
     <value>Match lyrics online</value>
   </data>
   <data name="DurationTextBlock.Text" xml:space="preserve">
-    <value>Duration:</value>
+    <value>Duration</value>
   </data>
   <data name="BitDepthTextBlock.Text" xml:space="preserve">
-    <value>Bit Depth:</value>
+    <value>Bit Depth</value>
   </data>
   <data name="BitRateTextBlock.Text" xml:space="preserve">
-    <value>Bit Rate:</value>
+    <value>Bit Rate</value>
   </data>
   <data name="SampleRateTextBlock.Text" xml:space="preserve">
-    <value>Sample Rate:</value>
+    <value>Sample Rate</value>
   </data>
   <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
-    <value>Last Folder Name:</value>
+    <value>Last Folder Name</value>
   </data>
   <data name="PathTextBlock.Text" xml:space="preserve">
-    <value>Path:</value>
+    <value>Path</value>
   </data>
   <data name="Lyrics.Text" xml:space="preserve">
     <value>Lyrics:</value>
@@ -715,7 +715,7 @@
     <value>Music library folder listening</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
-    <value>Disc number:</value>
+    <value>Disc number</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Retrieve metadata from the file</value>
@@ -739,7 +739,7 @@
     <value>The width and height will adapt according to the DPI of the screen</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>Create Time:</value>
+    <value>Create Time</value>
   </data>
   <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>Create time ASC</value>
@@ -754,7 +754,7 @@
     <value>Update time DESC</value>
   </data>
   <data name="UpdateTime.Text" xml:space="preserve">
-    <value>Update Time:</value>
+    <value>Update Time</value>
   </data>
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>Save To Database</value>
@@ -935,5 +935,11 @@
   </data>
   <data name="KrcTranslation.Text" xml:space="preserve">
     <value>Krc Translation</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>Lyric time offset</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>Lyric time offset</value>
   </data>
 </root>

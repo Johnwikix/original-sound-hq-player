@@ -546,9 +546,9 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 query = viewType switch
                 {
-                    SongViewType.Album => query.OrderBy(m => m.TrackNumber),
+                    SongViewType.Album => query.OrderBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
                     SongViewType.Artist or SongViewType.Folder =>
-                        query.OrderBy(m => m.Album).ThenBy(m => m.TrackNumber),
+                        query.OrderBy(m => m.Album).ThenBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
                     SongViewType.Favorite => query.OrderByDescending(m=>m.Order),
                     _ => query.OrderBy(m => m.Title)
                 };

@@ -317,6 +317,9 @@
                                     Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
                             </Flyout>
                         </Button.Flyout>
+                        <ToolTipService.ToolTip>
+                            <ToolTip x:Uid="LyricsTimeOffset" />
+                        </ToolTipService.ToolTip>
                     </Button>
                 </Grid>
                 <StackPanel

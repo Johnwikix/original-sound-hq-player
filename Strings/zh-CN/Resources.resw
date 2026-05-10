@@ -427,40 +427,40 @@
     <value>正在处理保存，请稍候...</value>
   </data>
   <data name="TitleTextBlock.Text" xml:space="preserve">
-    <value>标题：</value>
+    <value>标题</value>
   </data>
   <data name="AuthorTextBlock.Text" xml:space="preserve">
-    <value>艺术家：</value>
+    <value>艺术家</value>
   </data>
   <data name="AlbumTextBlock.Text" xml:space="preserve">
-    <value>专辑：</value>
+    <value>专辑</value>
   </data>
   <data name="YearTextBlock.Text" xml:space="preserve">
-    <value>年份：</value>
+    <value>年份</value>
   </data>
   <data name="TrackNumberBox.Text" xml:space="preserve">
-    <value>轨道编号：</value>
+    <value>轨道编号</value>
   </data>
   <data name="LyricsTextBox.Content" xml:space="preserve">
     <value>在线匹配歌词</value>
   </data>
   <data name="DurationTextBlock.Text" xml:space="preserve">
-    <value>时长：</value>
+    <value>时长</value>
   </data>
   <data name="BitDepthTextBlock.Text" xml:space="preserve">
-    <value>位深：</value>
+    <value>位深</value>
   </data>
   <data name="BitRateTextBlock.Text" xml:space="preserve">
-    <value>比特率：</value>
+    <value>比特率</value>
   </data>
   <data name="SampleRateTextBlock.Text" xml:space="preserve">
-    <value>采样率：</value>
+    <value>采样率</value>
   </data>
   <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
-    <value>最后目录：</value>
+    <value>最后目录</value>
   </data>
   <data name="PathTextBlock.Text" xml:space="preserve">
-    <value>路径：</value>
+    <value>路径</value>
   </data>
   <data name="Lyrics.Text" xml:space="preserve">
     <value>歌词：</value>
@@ -715,7 +715,7 @@
     <value>音乐库文件夹监听</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
-    <value>碟号：</value>
+    <value>碟号</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>从文件中重新获取元信息</value>
@@ -739,7 +739,7 @@
     <value>宽高会根据屏幕的dpi自适应</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>创建时间：</value>
+    <value>创建时间</value>
   </data>
   <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>创建时间升序</value>
@@ -754,7 +754,7 @@
     <value>修改日期降序</value>
   </data>
   <data name="UpdateTime.Text" xml:space="preserve">
-    <value>修改时间：</value>
+    <value>修改时间</value>
   </data>
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>保存到数据库</value>
@@ -935,5 +935,11 @@
   </data>
   <data name="KrcTranslation.Text" xml:space="preserve">
     <value>Krc翻译</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>歌词时间偏移</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>歌词时间偏移</value>
   </data>
 </root>

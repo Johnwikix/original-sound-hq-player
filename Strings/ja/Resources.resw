@@ -427,40 +427,40 @@
     <value>保存処理を行っています、しばらくお待ちください...</value>
   </data>
   <data name="TitleTextBlock.Text" xml:space="preserve">
-    <value>タイトル：</value>
+    <value>タイトル</value>
   </data>
   <data name="AuthorTextBlock.Text" xml:space="preserve">
-    <value>アーティスト：</value>
+    <value>アーティスト</value>
   </data>
   <data name="AlbumTextBlock.Text" xml:space="preserve">
-    <value>アルバム：</value>
+    <value>アルバム</value>
   </data>
   <data name="YearTextBlock.Text" xml:space="preserve">
-    <value>年：</value>
+    <value>年</value>
   </data>
   <data name="TrackNumberBox.Text" xml:space="preserve">
-    <value>トラック番号：</value>
+    <value>トラック番号</value>
   </data>
   <data name="LyricsTextBox.Content" xml:space="preserve">
     <value>オンラインで歌詞を照合</value>
   </data>
   <data name="DurationTextBlock.Text" xml:space="preserve">
-    <value>再生時間：</value>
+    <value>再生時間</value>
   </data>
   <data name="BitDepthTextBlock.Text" xml:space="preserve">
-    <value>ビット深度：</value>
+    <value>ビット深度</value>
   </data>
   <data name="BitRateTextBlock.Text" xml:space="preserve">
-    <value>ビットレート：</value>
+    <value>ビットレート</value>
   </data>
   <data name="SampleRateTextBlock.Text" xml:space="preserve">
-    <value>サンプルレート：</value>
+    <value>サンプルレート</value>
   </data>
   <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
-    <value>最後のディレクトリ：</value>
+    <value>最後のディレクトリ</value>
   </data>
   <data name="PathTextBlock.Text" xml:space="preserve">
-    <value>パス：</value>
+    <value>パス</value>
   </data>
   <data name="Lyrics.Text" xml:space="preserve">
     <value>歌詞：</value>
@@ -715,7 +715,7 @@
     <value>ライブラリフォルダの待ち受け</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
-    <value>ディスク番号：</value>
+    <value>ディスク番号</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>ファイルからメタ情報を再取得する</value>
@@ -739,7 +739,7 @@
     <value>アスペクトは画面のdpiに応じて適応します</value>
   </data>
   <data name="CreateTime.Text" xml:space="preserve">
-    <value>作成時間：</value>
+    <value>作成時間</value>
   </data>
   <data name="SortOrderCreateTimeASC" xml:space="preserve">
     <value>時間昇順の作成</value>
@@ -754,7 +754,7 @@
     <value>日付降順の変更</value>
   </data>
   <data name="UpdateTime.Text" xml:space="preserve">
-    <value>更新時間：</value>
+    <value>更新時間</value>
   </data>
   <data name="SaveToDataBase.Content" xml:space="preserve">
     <value>Сохранить в базу данных</value>
@@ -935,5 +935,11 @@
   </data>
   <data name="KrcTranslation.Text" xml:space="preserve">
     <value>Krc 翻訳</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>歌詞タイムオフセット</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>歌詞タイムオフセット</value>
   </data>
 </root>

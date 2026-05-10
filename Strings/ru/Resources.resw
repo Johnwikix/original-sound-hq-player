@@ -427,40 +427,40 @@
     <value>Сохранение данных, пожалуйста подождите...</value>
   </data>
   <data name="TitleTextBlock.Text" xml:space="preserve">
-    <value>Название:</value>
+    <value>Название</value>
   </data>
   <data name="AuthorTextBlock.Text" xml:space="preserve">
-    <value>Артист:</value>
+    <value>Артист</value>
   </data>
   <data name="AlbumTextBlock.Text" xml:space="preserve">
-    <value>Альбом:</value>
+    <value>Альбом</value>
   </data>
   <data name="YearTextBlock.Text" xml:space="preserve">
-    <value>Год:</value>
+    <value>Год</value>
   </data>
   <data name="TrackNumberBox.Text" xml:space="preserve">
-    <value>№ трека:</value>
+    <value>№ трека</value>
   </data>
   <data name="LyricsTextBox.Content" xml:space="preserve">
     <value>Автоматическое сопоставлениеrics онлайн</value>
   </data>
   <data name="DurationTextBlock.Text" xml:space="preserve">
-    <value>Продолжительность:</value>
+    <value>Продолжительность</value>
   </data>
   <data name="BitDepthTextBlock.Text" xml:space="preserve">
-    <value>Глубина бита:</value>
+    <value>Глубина бита</value>
   </data>
   <data name="BitRateTextBlock.Text" xml:space="preserve">
-    <value>Битрейт:</value>
+    <value>Битрейт</value>
   </data>
   <data name="SampleRateTextBlock.Text" xml:space="preserve">
-    <value>Частота дискретизации:</value>
+    <value>Частота дискретизации</value>
   </data>
   <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
-    <value>Последняя папка:</value>
+    <value>Последняя папка</value>
   </data>
   <data name="PathTextBlock.Text" xml:space="preserve">
-    <value>Путь:</value>
+    <value>Путь</value>
   </data>
   <data name="Lyrics.Text" xml:space="preserve">
     <value>Слова песни:</value>
@@ -715,7 +715,7 @@
     <value>Прослушивание папок библиотеки</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
-    <value>Диск:</value>
+    <value>Диск</value>
   </data>
   <data name="ReadLyricsFromFile.Content" xml:space="preserve">
     <value>Получение метаинформации из файла</value>
@@ -935,5 +935,11 @@
   </data>
   <data name="KrcTranslation.Text" xml:space="preserve">
     <value>Перевод Krc</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>Смещение времени текста песни</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>Смещение времени текста песни</value>
   </data>
 </root>

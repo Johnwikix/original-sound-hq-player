@@ -13,7 +13,7 @@
                 <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
                 <ResourceDictionary Source="/Style/SilderDictionary.xaml" />
                 <ResourceDictionary Source="/Style/ComboBoxNMenuFlyoutStyle.xaml" />
-                <ResourceDictionary Source="ms-appx:///Style/ColorStyle.xaml" />
+                <ResourceDictionary Source="/Style/ColorStyle.xaml" />
                 <ResourceDictionary Source="ms-appx:///DevWinUI.Controls/Themes/Generic.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
