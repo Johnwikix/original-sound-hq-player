@@ -194,7 +194,6 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
-                //App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
             }
             catch (Exception ex)
             {
@@ -286,6 +285,27 @@ namespace WinUIMusicPlayer.View.SubView
             string sanitizedFileName = Path.GetFileNameWithoutExtension(MusicDetail.Path);
             string? targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
             if (targetBasePath is null) { return; }
+            if (!string.IsNullOrEmpty(MusicDetail.Krc))
+            {
+                _ = Task.Run(() =>
+                {
+                    string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
+                    string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
+                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Krc));
+                    ToolUtils.OpenFileInExplorer(lrcFilePath);
+                });
+                if (!string.IsNullOrEmpty(MusicDetail.TKrc))
+                {
+                    _ = Task.Run(() =>
+                    {
+                        string newFileName = $"{sanitizedFileName}_Translated.lrc";
+                        string lrcFilePath = Path.Combine(targetBasePath, newFileName);
+                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TKrc));
+                        ToolUtils.OpenFileInExplorer(lrcFilePath);
+                    });
+                }
+                return;
+            }
             if (!string.IsNullOrEmpty(MusicDetail.Lyrics)) {
                 _ = Task.Run(() =>
                 {
@@ -294,16 +314,17 @@ namespace WinUIMusicPlayer.View.SubView
                     System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Lyrics));
                     ToolUtils.OpenFileInExplorer(lrcFilePath);
                 });
-            }
-            if (!string.IsNullOrEmpty(MusicDetail.TranslatedLyrics)) {
-                _ = Task.Run(() =>
+                if (!string.IsNullOrEmpty(MusicDetail.TranslatedLyrics))
                 {
-                    string newFileName = $"{sanitizedFileName}_Translated.lrc";
-                    string lrcFilePath = Path.Combine(targetBasePath, newFileName);
-                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TranslatedLyrics));
-                    ToolUtils.OpenFileInExplorer(lrcFilePath);
-                });
-            }
+                    _ = Task.Run(() =>
+                    {
+                        string newFileName = $"{sanitizedFileName}_Translated.lrc";
+                        string lrcFilePath = Path.Combine(targetBasePath, newFileName);
+                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TranslatedLyrics));
+                        ToolUtils.OpenFileInExplorer(lrcFilePath);
+                    });
+                }
+            }            
         }
 
         private async void OpenFile_Click(object sender, RoutedEventArgs e)

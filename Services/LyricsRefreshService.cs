@@ -37,8 +37,8 @@ namespace WinUIMusicPlayer.Services
 
             try
             {
-                // 2. 防抖：等待 500ms
-                await Task.Delay(500, ct);
+                // 2. 防抖：等待 750ms
+                await Task.Delay(750, ct);
 
                 // 3. 優先嘗試讀取本地歌詞文件（.krc / .qrc / .lrc）
                 var localLyrics = TryParseLocalLyricsFile(music, ct);
@@ -58,9 +58,8 @@ namespace WinUIMusicPlayer.Services
                     return krcLyrics;
                 }
 
-                // 5. 再降級：走原有 LRC 流程（music.Lyrics 緩存或在線搜索）
-                var (lrcContent, transLrcStr) = GetLyricsContentFromLrc(music);
-                var lyrics = await ParseLrcLyrics(music, lrcContent, transLrcStr, ct);
+                // 5. 再降級：走 LRC 流程（music.Lyrics 緩存或在線搜索，本地文件已在步驟3處理過）
+                var lyrics = await ParseLrcLyrics(music, null, null, ct);
 
                 ct.ThrowIfCancellationRequested();
                 music.PlayCount++;
@@ -474,46 +473,12 @@ namespace WinUIMusicPlayer.Services
         //  LRC 解析
         // ──────────────────────────────────────────────────────────────
 
-        private static (string?, string?) GetLyricsContentFromLrc(Music music, string extension = ".lrc")
-        {
-            string? lrcContent = null;
-            string? transLrcStr = null;
-
-            if (!string.IsNullOrWhiteSpace(music.Path))
-            {
-                // 讀取主歌詞文件
-                try
-                {
-                    string lyricFilePath = Path.ChangeExtension(music.Path, extension);
-                    if (File.Exists(lyricFilePath))
-                        lrcContent = File.ReadAllText(lyricFilePath);
-                }
-                catch { lrcContent = null; }
-
-                // 讀取翻譯歌詞文件
-                try
-                {
-                    string fileName = Path.GetFileNameWithoutExtension(music.Path);
-                    string transFileName = $"{fileName}_Translated{extension}";
-                    string? directoryPath = Path.GetDirectoryName(music.Path);
-
-                    if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
-                    {
-                        string transFilePath = Path.Combine(directoryPath, transFileName);
-                        if (File.Exists(transFilePath))
-                            transLrcStr = File.ReadAllText(transFilePath);
-                    }
-                }
-                catch { transLrcStr = null; }
-            }
-
-            return (lrcContent, transLrcStr);
-        }
-
+        /// <summary>
+        /// 從 music.Lyrics 緩存或在線搜索獲取內容，並自動判斷格式（LRC/KRC/QRC）解析。
+        /// 本地文件已由 TryParseLocalLyricsFile 處理，此處不再讀取本地文件。
+        /// </summary>
         public async Task<List<LyricLine>> ParseLrcLyrics(Music music, string? lrcContent, string? transLrcStr = null, CancellationToken cancellationToken = default)
         {
-            List<LyricLine> lyrics = [];
-
             if (string.IsNullOrWhiteSpace(lrcContent))
             {
                 // 嘗試從內存緩存獲取
@@ -546,15 +511,15 @@ namespace WinUIMusicPlayer.Services
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!string.IsNullOrWhiteSpace(lrcContent))
-                return SpliteContent(lrcContent, transLrcStr, lyrics);
+            {
+                // 統一走格式判斷，在線返回的內容也可能是 KRC/QRC
+                var parsed = ParseByFormat(lrcContent, transLrcStr, cancellationToken);
+                if (parsed is { Count: > 0 })
+                    return parsed;
+            }
 
             // 無歌詞時的默認佔位
-            lyrics.Add(new LyricLine
-            {
-                Time = TimeSpan.Zero,
-                IsCurrent = true
-            });
-            return lyrics;
+            return [new LyricLine { Time = TimeSpan.Zero, IsCurrent = true }];
         }
 
         // ──────────────────────────────────────────────────────────────
