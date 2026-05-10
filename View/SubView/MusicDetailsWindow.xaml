@@ -154,7 +154,7 @@
                             Minimum="0"
                             SmallChange="1"
                             SpinButtonPlacementMode="Inline"
-                            Text="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
+                            Value="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
 
                         <TextBlock
                             x:Uid="DiskNumberBox"
@@ -174,7 +174,7 @@
                             Minimum="0"
                             SmallChange="1"
                             SpinButtonPlacementMode="Inline"
-                            Text="{x:Bind MusicDetail.DiskNumber, Mode=TwoWay}" />
+                            Value="{x:Bind MusicDetail.DiskNumber, Mode=TwoWay}" />
 
                         <TextBlock
                             x:Uid="TrackNumberBox"
@@ -194,19 +194,22 @@
                             Minimum="0"
                             SmallChange="1"
                             SpinButtonPlacementMode="Inline"
-                            Text="{x:Bind MusicDetail.TrackNumber, Mode=TwoWay}" />
+                            Value="{x:Bind MusicDetail.TrackNumber, Mode=TwoWay}" />
                         <TextBlock
                             x:Uid="LyricsTimeOffsetTag"
                             Grid.Row="6"
                             Grid.Column="0"
                             Margin="5,5,5,0"
                             HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
                             FontWeight="Bold"
                             TextWrapping="Wrap" />
                         <NumberBox
                             Grid.Row="6"
                             Grid.Column="1"
                             Margin="5,5,5,0"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
                             LargeChange="1000"
                             Maximum="10000"
                             Minimum="-10000"
@@ -416,7 +419,7 @@
                             x:Uid="LastFolderNameTextBlock"
                             Grid.Row="12"
                             Grid.Column="0"
-                            Margin="5"
+                            Margin="5,5,5,0"
                             HorizontalAlignment="Right"
                             FontWeight="Bold"
                             TextWrapping="Wrap" />
