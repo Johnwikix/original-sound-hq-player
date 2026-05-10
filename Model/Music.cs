@@ -39,10 +39,14 @@ namespace WinUIMusicPlayer.Model
         public string TranslatedLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Krc { get; set => SetProperty(ref field, value); } = string.Empty;
         public string TKrc { get; set => SetProperty(ref field, value); } = string.Empty;
-        public int LyricsOffsetMs { get; set { 
+        public int LyricsOffsetMs { 
+            get; 
+            set { 
                 if (SetProperty(ref field, value)) 
-                { 
-                    Save();
+                {
+                    if (App.Services.GetRequiredService<AppViewModel>().IsInitialized) {
+                        Save();
+                    }                    
                 } 
             } 
         } = 0;
