@@ -194,7 +194,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const float BlurTransitionDuration = 1.0f;
 
         // 滑动窗口大小：当前行前后各保留多少行的 RT
-        private const int BlurCacheWindow = 4;
+        private const int BlurCacheWindow = 2;
 
         // 上一帧的窗口范围，用于判断是否需要更新
         private int _cacheWindowLo = -1;
@@ -1389,7 +1389,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 double lf = 1.0 - Math.Exp(-scrollSpeed * dt);
                 _smoothedScrollY += scrollDiff * lf;
-                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 96f/ds.Dpi)
+                if (Math.Abs(_targetScrollY - _smoothedScrollY) < 96f / ds.Dpi)
                     _smoothedScrollY = _targetScrollY;
                 sender.Invalidate();
             }
@@ -1402,25 +1402,41 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             float viewTop = (float)_smoothedScrollY - viewH / 2f;
             float viewBot = (float)_smoothedScrollY + viewH / 2f;
 
-            // ── 找出可见行范围 [visLo, visHi] ────────────────────────────────
-            // 用于：1) 窗口更新  2) blurAlpha 只对可见行步进
+            // ── 精确确定可见行范围 [visLo, visHi] ────────────────────────────
             int visLo = FindFirstVisibleLine(viewTop);
             int visHi = FindLastVisibleLine(viewBot, visLo);
-            for (int li = 0; li < _lineLayoutCount; li++)
-            {
-                ref readonly var ll = ref _lineLayouts[li];
-                if (ll.OffsetY + ll.Height >= viewTop && ll.OffsetY <= viewBot)
-                {
-                    if (li < visLo) visLo = li;
-                    if (li > visHi) visHi = li;
-                }
-            }
 
-            // ── 【优化】更新滑动窗口（只烘焙/释放窗口内外的清晰 RT）──────────
+            // ── 【优化】更新滑动窗口 ─────────────────────────────────────────
             if (visLo <= visHi)
                 UpdateCacheWindow(sender, w, visLo, visHi, dpi);
+            float blurAmount = (float)LyricsBlurAmount;
+            // ── 窗口外行的 blurAlpha 直接跳变，不进绘制循环 ──────────────────
+            for (int li = 0; li < visLo; li++)
+            {
+                if (li >= _blurAlpha.Length) break;
+                bool isCurOOV = li == _currentLineIndex;
+                _blurAlpha[li] = (blurAmount > 0.1f && !isCurOOV && !_userScrolling) ? 1f : 0f;
+            }
+            for (int li = visHi + 1; li < _lineLayoutCount; li++)
+            {
+                if (li >= _blurAlpha.Length) break;
+                bool isCurOOV = li == _currentLineIndex;
+                _blurAlpha[li] = (blurAmount > 0.1f && !isCurOOV && !_userScrolling) ? 1f : 0f;
+            }
 
-            // ── 坐标变换 ─────────────────────────────────────────────────────           
+            // ── 提前 return：没有可见行 ──────────────────────────────────────
+            if (visLo > visHi)
+            {
+                _reusableBlur?.Source = null;
+                return;
+            }
+
+            // ── 计算 visLo 之前所有行的 globalVrIdx 偏移 ─────────────────────
+            int globalVrIdx = 0;
+            for (int li = 0; li < visLo; li++)
+                globalVrIdx += _lineVisualRowRanges[li].Count;
+
+            // ── 坐标变换 ─────────────────────────────────────────────────────
             float translateY = viewH / 2f - (float)_smoothedScrollY;
             ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
@@ -1430,32 +1446,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var transFmt = GetTransFmt(dpi);
             float layoutWidth = Math.Max(1f, w - RenderPaddingH * 2f);
             var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
-            float blurAmount = (float)LyricsBlurAmount;
 
-            int globalVrIdx = 0;
-
-            for (int li = 0; li < _lineLayoutCount; li++)
+            // ── 只循环可见行 [visLo, visHi] ──────────────────────────────────
+            for (int li = visLo; li <= visHi; li++)
             {
                 ref readonly var ll = ref _lineLayouts[li];
                 ref readonly var vrr = ref _lineVisualRowRanges[li];
-
-                // ── 视口裁剪：跳过不可见行（绘制 + blurAlpha 步进都跳过）─────
-                float lineTop = ll.OffsetY;
-                float lineBot = ll.OffsetY + ll.Height;
-                bool isVisible = lineBot >= viewTop && lineTop <= viewBot;
-
-                if (!isVisible)
-                {
-                    // 视口外：blurAlpha 直接跳变到目标值，不触发过渡动画
-                    // 这样当行滚回视口时已经是正确状态，无需额外重绘
-                    bool isCur = (li == _currentLineIndex);
-                    bool wantsBlurOOV = blurAmount > 0.1f && !isCur && !_userScrolling;
-                    if (li < _blurAlpha.Length)
-                        _blurAlpha[li] = wantsBlurOOV ? 1f : 0f;
-
-                    globalVrIdx += vrr.Count;
-                    continue;
-                }
 
                 bool isCurrent = (li == _currentLineIndex);
                 var line = lyrics[li];
@@ -1471,18 +1467,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         new Rect(0, ll.OffsetY, w, ll.Height), 6f, 6f, overlayColor);
                 }
 
-                // ── 【优化】blurAlpha 步进（只对可见行执行，视口外已直接跳变）─
+                // ── blurAlpha 步进 ────────────────────────────────────────────
                 bool wantsBlur = blurAmount > 0.1f && !isCurrent && li != _hoveredLineIndex;
                 if (li < _blurAlpha.Length)
                 {
-                    // 用户手动滚动时强制清晰，直接跳变，不做过渡
                     float target = (wantsBlur && !_userScrolling) ? 1f : 0f;
                     float cur = _blurAlpha[li];
                     if (Math.Abs(target - cur) > 0.005f)
                     {
                         if (_userScrolling)
                         {
-                            // 滚动期间直接跳变，不触发持续重绘
                             _blurAlpha[li] = target;
                         }
                         else
@@ -1510,23 +1504,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (clearRt is not null)
                 {
                     if (alpha < 0.99f)
-                    {
-                        // 清晰层
                         ds.DrawImage(clearRt, 0f, ll.OffsetY, srcRect, 1f - alpha);
-                    }
 
-                    // 【优化】模糊：复用 _reusableBlur，实时作用于清晰 RT
-                    // 不额外占用任何显存，GPU 计算开销极低（视口内仅十几行）
                     if (alpha > 0.01f && blurAmount > 0.1f && _reusableBlur is not null)
                     {
                         _reusableBlur.Source = clearRt;
                         _reusableBlur.BlurAmount = blurAmount;
-                        ds.DrawImage(_reusableBlur, 0f, ll.OffsetY, srcRect, alpha);                        
+                        ds.DrawImage(_reusableBlur, 0f, ll.OffsetY, srcRect, alpha);
                     }
                 }
                 else
                 {
-                    // RT 尚未烘焙（窗口刚滑入）时的回退：直接绘制文字
+                    // RT 尚未烘焙时的回退：直接绘制文字
                     for (int gi = ll.WordStart; gi < ll.WordStart + ll.WordCount; gi++)
                     {
                         ref readonly var wl = ref _wordLayouts[gi];
@@ -1591,7 +1580,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         if (highlight <= 0f) continue;
 
                         float feather = (revealX < maxX) ? Math.Min(FeatherWidth, maxX - revealX) : 0f;
-                        
+
                         if (feather > 0.5f)
                         {
                             if (_gradBrush is null || _gradBrushDirty)
@@ -1601,7 +1590,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                                     ds,
                                     [
                                         new CanvasGradientStop { Color = _brightColor, Position = 0f },
-                                        new CanvasGradientStop { Color = Color.FromArgb(0, _brightColor.R, _brightColor.G, _brightColor.B), Position = 1f },
+                                new CanvasGradientStop { Color = Color.FromArgb(0, _brightColor.R, _brightColor.G, _brightColor.B), Position = 1f },
                                     ])
                                 {
                                     StartPoint = Vector2.Zero,
@@ -1609,11 +1598,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                                 };
                                 _gradBrushDirty = false;
                             }
-                            _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f) * Matrix3x2.CreateTranslation(revealX, 0f);
+                            _gradBrush.Transform = Matrix3x2.CreateScale(feather, 1f)
+                                                 * Matrix3x2.CreateTranslation(revealX, 0f);
 
                             using (ds.CreateLayer(1f, new Rect(minX, drawY, highlight, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
-                            using (ds.CreateLayer(_gradBrush, new Rect(revealX-1, drawY, feather, rowH)))
+                            using (ds.CreateLayer(_gradBrush, new Rect(revealX - 1, drawY, feather, rowH)))
                                 DrawRowWords(ds, fv, lv, rowBaseY, lyricsFmt);
                         }
                         else
@@ -1626,7 +1616,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 globalVrIdx += vrr.Count;
             }
-            _reusableBlur.Source = null; // 释放引用，避免意外持有
+
+            if (_reusableBlur is not null) _reusableBlur.Source = null;
             ds.Transform = Matrix3x2.Identity;
         }
 
