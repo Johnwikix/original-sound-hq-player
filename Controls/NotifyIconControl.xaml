@@ -51,7 +51,7 @@
                     x:Uid="IconLastSong"
                     Click="LastSong_Click">
                     <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE892;" />
+                        <FontIcon Glyph="&#xF8AC;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
@@ -68,7 +68,7 @@
                     x:Uid="IconNextSong"
                     Click="NextSong_Click">
                     <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE893;" />
+                        <FontIcon Glyph="&#xF8AD;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutSubItem
