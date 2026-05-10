@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.Storage.Pickers;
@@ -9,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TagLib;
 using Windows.Storage;
+using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
@@ -74,7 +77,10 @@ namespace WinUIMusicPlayer.View.SubView
         public MusicDetailsWindow(Music music)
         {
             this.InitializeComponent();
-            ExtendsContentIntoTitleBar = true;
+            AppWindow.TitleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
+            AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
+            this.SetTitleBarBackgroundColors(Colors.Transparent);
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
             InitalizeData(music);
