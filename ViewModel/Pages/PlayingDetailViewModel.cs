@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         public double FirstControlSize { get; set => SetProperty(ref field, value); } = 26; 
         public double SecondControlSize { get; set => SetProperty(ref field, value); } = 26;
         public double FirstShapeSize { get; set => SetProperty(ref field, value); } = 40;
+        public Thickness ControlMargin { get; set => SetProperty(ref field, value); } = new Thickness(5, 0, 5, 0);
         public PlayingDetailViewModel(AppViewModel appViewModel)
         {
             AppViewModel = appViewModel;

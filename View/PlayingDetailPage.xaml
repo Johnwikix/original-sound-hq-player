@@ -401,7 +401,7 @@
                             <Button
                                 x:Name="EqualizerButtonPlayingDetail"
                                 Grid.Column="0"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -417,7 +417,7 @@
                             <Button
                                 x:Name="CurrentPlayListButtonPlayingDetail"
                                 Grid.Column="1"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -480,7 +480,7 @@
                             <Button
                                 x:Name="LastMusicButtonPlayingDetail"
                                 Grid.Column="2"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -498,7 +498,7 @@
                             <Button
                                 x:Name="PlayPauseButtonPlayingDetail"
                                 Grid.Column="3"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -519,7 +519,7 @@
                             <Button
                                 x:Name="NextMusicButtonPlayingDetail"
                                 Grid.Column="4"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -536,7 +536,7 @@
                             <Button
                                 x:Name="PlayModeButtonPlayingDetail"
                                 Grid.Column="5"
-                                Margin="5,0,0,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
@@ -552,7 +552,7 @@
                             <Button
                                 x:Name="VolumePlayingDetailBtn"
                                 Grid.Column="6"
-                                Margin="5,0,5,0"
+                                Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
