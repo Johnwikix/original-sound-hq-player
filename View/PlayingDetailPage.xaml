@@ -159,8 +159,8 @@
                             </Image>-->
                             <uc:ImageSwitcher
                                 CornerRadiusAmount="12"
+                                ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                                 ShadowAmount="16"
-                                Source="{x:Bind ViewModel.AppViewModel.AlbumArtBitmapImage, Mode=OneWay}"
                                 SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
                             <!--<Grid
                                     HorizontalAlignment="Stretch"
