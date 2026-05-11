@@ -122,7 +122,7 @@
                 <Grid Grid.Row="1" Grid.Column="1">
                     <Grid
                         x:Name="PlayingDetailAlbumCoverImageGrid"
-                        Margin="20"
+                        Padding="20"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}"
