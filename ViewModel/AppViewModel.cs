@@ -179,6 +179,7 @@ namespace WinUIMusicPlayer.ViewModel
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
         private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);        
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
+        public BitmapImage? AlbumArtBitmapImage { get; set => SetProperty(ref field, value); }
 
         // 带有复杂逻辑的属性重构
         public bool UseImageDominantTheme

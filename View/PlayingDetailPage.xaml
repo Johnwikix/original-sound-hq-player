@@ -19,6 +19,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:uc="using:WinUIMusicPlayer.Controls"
     mc:Ignorable="d">
 
     <Grid>
@@ -108,7 +109,7 @@
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="18*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -121,12 +122,13 @@
                 <Grid Grid.Row="1" Grid.Column="1">
                     <Grid
                         x:Name="PlayingDetailAlbumCoverImageGrid"
-                        Margin="20"
+                        Margin="0"
+                        Padding="100,20,100,20"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}"
                         CornerRadius="10">
-                        <Image x:Name="AlbumCover" Canvas.ZIndex="1">
+                        <!--<Image x:Name="AlbumCover" Canvas.ZIndex="1">
                             <interactivity:Interaction.Behaviors>
                                 <behaviors:FadeImageBehavior
                                     x:Name="AlbumCoverBehavior"
@@ -134,8 +136,13 @@
                                     ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                                     Duration="00:00:1" />
                             </interactivity:Interaction.Behaviors>
-                        </Image>
-                        <Grid
+                        </Image>-->
+                        <uc:ImageSwitcher
+                            CornerRadiusAmount="12"
+                            ShadowAmount="16"
+                            Source="{x:Bind ViewModel.AppViewModel.AlbumArtBitmapImage, Mode=OneWay}"
+                            SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
+                        <!--<Grid
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
@@ -146,7 +153,9 @@
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"
                                     Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                    <!--  图标层  -->
+                        -->
+                        <!--  图标层  -->
+                        <!--
                                     <FontIcon
                                         Width="200"
                                         Height="200"
@@ -158,10 +167,11 @@
                                         Glyph="&#xE93C;" />
                                 </Border>
                             </Viewbox>
-                        </Grid>
+                        </Grid>-->
                     </Grid>
                     <aic:AlbumArtControl
                         x:Name="AlbumArtControl"
+                        Margin="80,0,80,0"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
                         ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                         IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
@@ -172,7 +182,7 @@
                     x:Name="AnimatedTextBlock"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="25,0,20,0">
+                    Margin="100,0,100,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -325,7 +335,7 @@
                 <StackPanel
                     Grid.Row="3"
                     Grid.Column="1"
-                    Margin="0,0,0,20">
+                    Margin="100,0,100,20">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -334,7 +344,7 @@
                         <Grid
                             x:Name="MusicInfoPanel"
                             Grid.Column="0"
-                            Margin="25,2,20,1"
+                            Margin="0,2,0,1"
                             HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -355,7 +365,7 @@
                         <TextBlock
                             x:Name="PlayTimeTextBlockPlayingDetail"
                             Grid.Column="1"
-                            Margin="10,0,20,5"
+                            Margin="0,0,0,5"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
@@ -371,7 +381,7 @@
                         <Slider
                             x:Name="ProgressSliderPlayingDetail"
                             Grid.Row="0"
-                            Margin="20,0"
+                            Margin="0"
                             VerticalAlignment="Center"
                             Loaded="ProgressSliderPlayingDetail_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
@@ -382,7 +392,7 @@
                             Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                         <Grid
                             Grid.Row="1"
-                            Margin="0,0,0,0"
+                            Margin="0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>

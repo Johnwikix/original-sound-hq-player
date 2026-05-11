@@ -15,6 +15,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -426,7 +427,7 @@ namespace WinUIMusicPlayer.ViewModel
                     token.ThrowIfCancellationRequested();
                     return await GetRawImage(music);
                 }, token);
-
+                var bitmapImage = await DecodeToBitmapAsync(picData, 0, token);
                 // --- 阶段 B: 检查有效性 ---
                 if (token.IsCancellationRequested) return;
 
@@ -437,6 +438,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (!token.IsCancellationRequested)
                     {
                         AppViewModel.LyricPageBackgroundData = picData;
+                        AppViewModel.AlbumArtBitmapImage = bitmapImage;
                         AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     }
                 });
@@ -466,6 +468,31 @@ namespace WinUIMusicPlayer.ViewModel
                 // 记录其他可能的异常
                 System.Diagnostics.Debug.WriteLine($"UpdatePlayBar 出错: {ex.Message}");
             }
+        }
+
+        private async Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, int decodeWidth = 0, CancellationToken token = default)
+        {
+            if (bytes == null || bytes.Length == 0) return null;
+
+            try
+            {
+                using var stream = new InMemoryRandomAccessStream();
+                await stream.WriteAsync(bytes.AsBuffer());
+                stream.Seek(0);
+
+                if (token.IsCancellationRequested) return null;
+
+                var bitmap = new BitmapImage
+                {
+                    DecodePixelType = DecodePixelType.Logical
+                };
+                if (decodeWidth > 0)
+                    bitmap.DecodePixelWidth = decodeWidth;
+
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
+            }
+            catch { return null; }
         }
 
         public async void ThemeChangedUpdateCover()

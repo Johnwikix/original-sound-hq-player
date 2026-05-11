@@ -300,21 +300,6 @@ namespace WinUIMusicPlayer.View
             App.MainWindow?.SetAppTheme();
         }
 
-        private void LyricsControl_LyricInteracted(object sender, TimeSpan e)
-        {
-            Task.Run(() =>
-            {
-                LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= e);
-                ViewModel.AppViewModel.IsManualSelect = true;
-                if (lyricLine is not null) {
-                    int index = ViewModel.AppViewModel.UILyrics.IndexOf(lyricLine);
-                    ViewModel.UpdateLyricsToUI(index);
-                } 
-                App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(e);
-                ViewModel.AppViewModel.IsManualSelect = false;
-            });
-        }
-
         private void LyricsView_LyricInteracted(object sender, TimeSpan e)
         {
             Task.Run(() =>

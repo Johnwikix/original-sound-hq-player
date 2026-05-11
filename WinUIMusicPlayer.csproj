@@ -20,9 +20,11 @@
     <None Remove="Assets\next.ico" />
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
+    <None Remove="Controls\ImageSwitcher.xaml" />
     <None Remove="Controls\LyricsLineControl.xaml" />
     <None Remove="Controls\Lyrics\LyricsControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
+    <None Remove="Controls\ShadowImage.xaml" />
     <None Remove="Style\BtnStyle.xaml" />
     <None Remove="Style\ColorStyle.xaml" />
     <None Remove="Style\ConverterDictionary.xaml" />
@@ -173,6 +175,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="Controls\ImageSwitcher.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\ShadowImage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\ColorStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
