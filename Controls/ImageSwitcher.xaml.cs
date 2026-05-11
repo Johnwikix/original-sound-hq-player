@@ -201,7 +201,6 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdateImageSource(ImageSource? source)
         {
-            // DispatcherQueue 确保在 UI 线程执行
             DispatcherQueue.TryEnqueue(() =>
             {
                 switch (SwitchType)
@@ -209,8 +208,13 @@ namespace WinUIMusicPlayer.Controls
                     case ImageSwitchType.Crossfade:
                         UpdateSourceCrossfade(source);
                         break;
+
                     case ImageSwitchType.Slide:
                         UpdateSourceSlide(source);
+                        break;
+
+                    case ImageSwitchType.ScaleInOut:
+                        UpdateSourceScaleInOut(source);
                         break;
                 }
             });
@@ -261,11 +265,56 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.Translation = new(-(float)ActualWidth, 0, 0);
             AlbumArtImage.Translation = new();
         }
+        private void UpdateSourceScaleInOut(ImageSource? source)
+        {
+            LastAlbumArtImage.Source = AlbumArtImage.Source;
+            LastAlbumArtImage.ScaleTransition = null;
+            LastAlbumArtImage.OpacityTransition = null;
+            AlbumArtImage.ScaleTransition = null;
+            AlbumArtImage.OpacityTransition = null;
+            LastAlbumArtImage.CenterPoint = new(
+                (float)(ActualWidth / 2),
+                (float)(ActualHeight / 2),
+                0);
+            AlbumArtImage.CenterPoint = new(
+                (float)(ActualWidth / 2),
+                (float)(ActualHeight / 2),
+                0);
+            LastAlbumArtImage.Scale = new(1f, 1f, 1f);
+            LastAlbumArtImage.Opacity = 1f;
+
+            AlbumArtImage.Source = source;
+            AlbumArtImage.Scale = new(0.85f, 0.85f, 1f);
+            AlbumArtImage.Opacity = 0f;
+            var duration = Constants.Time.AnimationDuration;
+            LastAlbumArtImage.ScaleTransition = new Vector3Transition
+            {
+                Duration = duration
+            };
+            LastAlbumArtImage.OpacityTransition = new ScalarTransition
+            {
+                Duration = duration
+            };
+            AlbumArtImage.ScaleTransition = new Vector3Transition
+            {
+                Duration = duration
+            };
+            AlbumArtImage.OpacityTransition = new ScalarTransition
+            {
+                Duration = duration
+            };
+            LastAlbumArtImage.Scale = new(0.8f, 0.8f, 1f);
+            LastAlbumArtImage.Opacity = 0f;
+
+            AlbumArtImage.Scale = new(1f, 1f, 1f);
+            AlbumArtImage.Opacity = 1f;
+        }
     }
 
     public enum ImageSwitchType : byte
     {
         Crossfade,
-        Slide
+        Slide,
+        ScaleInOut
     }
 }

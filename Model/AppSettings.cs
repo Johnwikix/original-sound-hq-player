@@ -72,7 +72,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsUpdateBackDrop { get; set; } = false;
         //public static CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
-        public static ImageSwitchType ImageSwitchType = ImageSwitchType.Slide;
+        public static ImageSwitchType ImageSwitchType = ImageSwitchType.ScaleInOut;
 
     }
 }

@@ -109,7 +109,7 @@
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="4*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -142,8 +142,7 @@
                     <Grid>
                         <Grid
                             x:Name="PlayingDetailAlbumCoverImageGrid"
-                            Margin="0"
-                            Padding="50,20,50,20"
+                            Margin="20"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}"
@@ -157,7 +156,7 @@
                         </Grid>
                         <aic:AlbumArtControl
                             x:Name="AlbumArtControl"
-                            Margin="30,0,30,0"
+                            Margin="0"
                             x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
                             ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                             IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
@@ -169,7 +168,7 @@
                     x:Name="AnimatedTextBlock"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="50,0,50,0">
+                    Margin="20,0,20,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -323,7 +322,7 @@
                     Grid.Row="3"
                     Grid.Column="1"
                     Margin="20,0,20,20">
-                    <Grid Margin="30,0">
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -368,7 +367,7 @@
                         <Slider
                             x:Name="ProgressSliderPlayingDetail"
                             Grid.Row="0"
-                            Margin="30,0"
+                            Margin="0"
                             VerticalAlignment="Center"
                             Loaded="ProgressSliderPlayingDetail_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
