@@ -37,6 +37,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         /// <summary>哨兵值：表示"从未初始化"，区别于"上次为 null（-1）"。</summary>
         private const long NeverInitialized = long.MinValue;
+        private float _lastDpi = 0f;
 
         /// <summary>动画锁持续时间（毫秒），与 FadeSpeed 联动。</summary>
         private static readonly int AnimLockMs = (int)(1000f * 2 / FadeSpeed);
@@ -230,10 +231,20 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
             if (_canvas == null) return;
+            // 取消旧的 XamlRoot 监听
+            XamlRoot?.Changed -= XamlRoot_Changed;
 
             _canvas.CreateResources += Canvas_CreateResources;
             _canvas.Draw += Canvas_Draw;
             _canvas.SizeChanged += Canvas_SizeChanged;
+            XamlRoot?.Changed += XamlRoot_Changed;
+        }
+
+        private void XamlRoot_Changed(XamlRoot sender, XamlRootChangedEventArgs args)
+        {
+            float newScale = (float)sender.RasterizationScale * 96f;
+            if (MathF.Abs(newScale - _lastDpi) < 1f) return; // 非DPI变化（如尺寸变化）忽略
+            _lastDpi = newScale;
         }
 
         protected override Size MeasureOverride(Size availableSize)

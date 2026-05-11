@@ -110,6 +110,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _currentBmp?.Dispose();
             _nextBmp?.Dispose();
+            XamlRoot?.Changed -= XamlRoot_Changed;
         }
     }
 }

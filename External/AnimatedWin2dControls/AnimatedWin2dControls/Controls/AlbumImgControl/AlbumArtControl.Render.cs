@@ -16,7 +16,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            ConsumeDecodeChannel(sender,e.DrawingSession.Dpi);
+            if (_lastDpi == 0f) {
+                _lastDpi = e.DrawingSession.Dpi;
+            }
+            ConsumeDecodeChannel(sender, _lastDpi);
 
             if (_isFading)
                 TickAnimation();
