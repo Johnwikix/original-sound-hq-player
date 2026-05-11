@@ -109,7 +109,7 @@
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="14*" />
+                    <ColumnDefinition Width="5*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -132,8 +132,8 @@
                             <Rectangle.Fill>
                                 <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Offset="0" Color="#00000000" />
-                                    <GradientStop Offset="0.1" Color="#FFFFFFFF" />
-                                    <GradientStop Offset="0.9" Color="#FFFFFFFF" />
+                                    <GradientStop Offset="0.05" Color="#FFFFFFFF" />
+                                    <GradientStop Offset="0.95" Color="#FFFFFFFF" />
                                     <GradientStop Offset="1" Color="#00000000" />
                                 </LinearGradientBrush>
                             </Rectangle.Fill>
@@ -143,55 +143,21 @@
                         <Grid
                             x:Name="PlayingDetailAlbumCoverImageGrid"
                             Margin="0"
-                            Padding="70,20,70,20"
+                            Padding="50,20,50,20"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}"
                             CornerRadius="10">
-                            <!--<Image x:Name="AlbumCover" Canvas.ZIndex="1">
-                                <interactivity:Interaction.Behaviors>
-                                    <behaviors:FadeImageBehavior
-                                        x:Name="AlbumCoverBehavior"
-                                        Enable="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}"
-                                        ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
-                                        Duration="00:00:1" />
-                                </interactivity:Interaction.Behaviors>
-                            </Image>-->
                             <uc:ImageSwitcher
                                 CornerRadiusAmount="12"
                                 ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                                IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                                 ShadowAmount="16"
                                 SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
-                            <!--<Grid
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"
-                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                    Canvas.ZIndex="0"
-                                    Visibility="{x:Bind AlbumCoverBehavior.ImageVisibility, Mode=OneWay}">
-                                    <Viewbox Stretch="Uniform">
-                                        <Border
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch"
-                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                            -->
-                            <!--  图标层  -->
-                            <!--
-                                            <FontIcon
-                                                Width="200"
-                                                Height="200"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Canvas.ZIndex="1"
-                                                FontSize="100"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                Glyph="&#xE93C;" />
-                                        </Border>
-                                    </Viewbox>
-                                </Grid>-->
                         </Grid>
                         <aic:AlbumArtControl
                             x:Name="AlbumArtControl"
-                            Margin="50,0,50,0"
+                            Margin="30,0,30,0"
                             x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
                             ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                             IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
@@ -203,7 +169,7 @@
                     x:Name="AnimatedTextBlock"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="70,0,70,0">
+                    Margin="50,0,50,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -356,8 +322,8 @@
                 <StackPanel
                     Grid.Row="3"
                     Grid.Column="1"
-                    Margin="70,0,70,20">
-                    <Grid>
+                    Margin="20,0,20,20">
+                    <Grid Margin="30,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -365,7 +331,7 @@
                         <Grid
                             x:Name="MusicInfoPanel"
                             Grid.Column="0"
-                            Margin="0,2,0,1"
+                            Margin="0,5,0,0"
                             HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -386,7 +352,7 @@
                         <TextBlock
                             x:Name="PlayTimeTextBlockPlayingDetail"
                             Grid.Column="1"
-                            Margin="0,0,0,5"
+                            Margin="0,5,0,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
@@ -402,7 +368,7 @@
                         <Slider
                             x:Name="ProgressSliderPlayingDetail"
                             Grid.Row="0"
-                            Margin="0"
+                            Margin="30,0"
                             VerticalAlignment="Center"
                             Loaded="ProgressSliderPlayingDetail_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"

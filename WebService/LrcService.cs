@@ -111,7 +111,7 @@ namespace WinUIMusicPlayer.WebService
                     Artists = [music.Author],
                     DurationMs = (int)music.Duration.TotalMilliseconds,
                     Title = music.Title,
-                }, searchers, CompareHelper.MatchType.Medium);
+                }, searchers, CompareHelper.MatchType.Low);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (search is NeteaseSearchResult neteaseSearch)
                 {
