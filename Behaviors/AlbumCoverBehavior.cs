@@ -16,8 +16,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using TagLib;
-using TagLib.Flac;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -178,30 +176,6 @@ public class AlbumCoverBehavior : Behavior<Image>
                 // ── 从标签读取原始图片 ────────────────────────────────────
                 byte[]? picture =  await ToolUtils.GetRawImage(music);
                 return await DecodePictureAsync(picture, music, bitmap, coverSize);
-                //if (music.Extension.Equals("dff", StringComparison.CurrentCultureIgnoreCase))
-                //{
-                //    var res = DffId3v2Parser.ReadId3v2TagsFromDff(music.Path);
-                //    picture = res?.Pictures?.AsValueEnumerable().Count() > 0
-                //        ? res.Pictures[0]?.ImageData : null;
-                //}
-                //else
-                //{
-                //    picture = AudioCoverReader.ReadCover(music.Path);
-                //    if (picture is null || picture.Length == 0)
-                //    {
-                //        using var file = TagLib.File.Create(music.Path, ReadStyle.None);
-                //        picture = file.Tag.Pictures.AsValueEnumerable().FirstOrDefault()?.Data.Data;
-                //    }
-                //}
-
-                //if (picture is { Length: > 0 })
-                //{
-                //    var result = await DecodePictureAsync(picture, music, bitmap, coverSize);
-                //    if (result != null) return result;
-                //    return await FetchFromNetAsync(picture, music, bitmap, coverSize);
-                //}
-
-                //return await FetchFromNetAsync(null, music, bitmap, coverSize);
             }
             catch (Exception)
             {

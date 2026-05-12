@@ -5,19 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using TagLib.Ape;
-using Windows.Devices.Usb;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using ZLinq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace WinUIMusicPlayer.ViewModel
 {

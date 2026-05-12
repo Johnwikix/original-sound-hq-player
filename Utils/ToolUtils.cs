@@ -1053,28 +1053,21 @@ namespace WinUIMusicPlayer.Utils
                 string title = "未知标题";
                 string artist = "未知艺术家";
                 string album = "未知专辑";
-                int trackNumber = 0;
-                int diskNumber = 0;
-                int sampleRate = 0;
-                int bitDepth = 0;
-                int bitRate = 0;
-                int year = 0;
-                int channelCount = 0;
                 string lyrics = string.Empty;
                 string klyrics = string.Empty;
                 TimeSpan duration = TimeSpan.Zero;
-                trackNumber = track.TrackNumber ?? 0;
-                diskNumber = track.DiscNumber ?? 0;
+                int trackNumber = track.TrackNumber ?? 0;
+                int diskNumber = track.DiscNumber ?? 0;
                 title = !string.IsNullOrWhiteSpace(track.Title) ?
                    track.Title : Path.GetFileNameWithoutExtension(file.Name);
-                artist = track.Artist ?? "未知艺术家";
-                album = track.Album ?? "未知专辑";
-                sampleRate = (int)track.SampleRate;
-                bitDepth = track.BitDepth <= 0 ? await GetBitDepth(file) : track.BitDepth;
-                bitRate = track.Bitrate == 0 ? await GetBitRate(file) : track.Bitrate;
-                year = track.Year ?? 0;
+                if (!string.IsNullOrWhiteSpace(track.Artist)) artist = track.Artist;
+                if (!string.IsNullOrWhiteSpace(track.Album)) album = track.Album;
+                int sampleRate = (int)track.SampleRate;
+                int bitDepth = track.BitDepth <= 0 ? await GetBitDepth(file) : track.BitDepth;
+                int bitRate = track.Bitrate == 0 ? await GetBitRate(file) : track.Bitrate;
+                int year = track.Year ?? 0;
                 duration = TimeSpan.FromMicroseconds(track.DurationMs);
-                channelCount = track.ChannelsArrangement.NbChannels;
+                int channelCount = track.ChannelsArrangement.NbChannels;
                 LyricsInfo? lyricsInfo = track.Lyrics.FirstOrDefault();
                 if (lyricsInfo is not null)
                 {

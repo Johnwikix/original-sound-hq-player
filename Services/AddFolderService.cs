@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ATL;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -23,35 +24,31 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                using (TagLib.File audioFile = TagLib.File.Create(file.Path,ReadStyle.PictureLazy))
-                {
-                    Tag tag = audioFile.Tag;
-                    string title = "未知标题";
-                    string artist = "未知艺术家";
-                    string album = "未知专辑";
-                    title = !string.IsNullOrWhiteSpace(tag.Title) ?
-                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
+                Track track = new(file.Path);
+                string title = "未知标题";
+                string artist = "未知艺术家";
+                string album = "未知专辑";
+                title = !string.IsNullOrWhiteSpace(track.Title) ?
+                   track.Title : Path.GetFileNameWithoutExtension(file.Name);
 
-                    string[] artists = audioFile.Tag.Performers;
-                    if (artists.Length > 0)
-                    {
-                        artist = artists[0]; // 取第一个艺术家
-                    }
-                    if (!string.IsNullOrWhiteSpace(tag.Album))
-                    {
-                        album = tag.Album;
-                    }
-                    var music = new UsbDeviceMusic
-                    {
-                        Path = file.Path,
-                        Title = title,
-                        Author = artist,
-                        Album = album,
-                        Extension = file.FileType.TrimStart('.').ToUpper(),
-                        UniqueDeviceId = uniqueDeviceId
-                    };
-                    return music;
+                if (!string.IsNullOrWhiteSpace(track.Artist))
+                {
+                    artist = track.Artist;
                 }
+                if (!string.IsNullOrWhiteSpace(track.Album))
+                {
+                    album = track.Album;
+                }
+                var music = new UsbDeviceMusic
+                {
+                    Path = file.Path,
+                    Title = title,
+                    Author = artist,
+                    Album = album,
+                    Extension = file.FileType.TrimStart('.').ToUpper(),
+                    UniqueDeviceId = uniqueDeviceId
+                };
+                return music;
             }
             catch (Exception)
             {
