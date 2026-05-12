@@ -1,5 +1,6 @@
 ﻿using ATL;
 using DffTagReader;
+using Lyricify.Lyrics.Providers.Web.SodaMusic;
 using ManagedBass;
 using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,9 +17,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Formats.Tar;
 using System.Globalization;
 using System.IO;
 using System.IO.Hashing;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -385,13 +388,14 @@ namespace WinUIMusicPlayer.Utils
                         _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                     }
                 }
-                else {
+                else
+                {
                     if (string.IsNullOrEmpty(music.ImageHash))
                     {
                         music.ImageHash = string.Empty;
                         _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                     }
-                }               
+                }
                 return picture;
             }
             catch
@@ -402,7 +406,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch
                 {
-                   return [];
+                    return [];
                 }
             }
         }
@@ -436,11 +440,11 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
                 }
                 else
-                {                    
+                {
                     stream = Bass.CreateStream(file.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
                     Bass.ChannelGetInfo(stream, out ChannelInfo info);
                     Track track = new(file.Path);
-                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path): track.Title;
+                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title;
                     fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
                     fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist;
                     fileInfo.Duration = (track?.Duration ?? 0) != 0
@@ -463,7 +467,8 @@ namespace WinUIMusicPlayer.Utils
                 fileInfo.Title = Path.GetFileNameWithoutExtension(file.Path);
                 return fileInfo;
             }
-            finally {                 
+            finally
+            {
                 if (stream != 0)
                 {
                     Bass.StreamFree(stream);
@@ -898,9 +903,10 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return picture;
             }
-            catch {
+            catch
+            {
                 return null;
-            }            
+            }
         }
 
         /// <summary>
@@ -1000,7 +1006,7 @@ namespace WinUIMusicPlayer.Utils
         //    }, ct);
         //}
 
-        public static async Task<(string,string)> GetLyricsFromNet(Music musicDetail)
+        public static async Task<(string, string)> GetLyricsFromNet(Music musicDetail)
         {
             //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
             return await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
@@ -1043,82 +1049,75 @@ namespace WinUIMusicPlayer.Utils
             string lastLevelFolderPath = directoryInfo.Name;
             try
             {
-                using (TagLib.File audioFile = TagLib.File.Create(file.Path,ReadStyle.PictureLazy))
+                Track track = new(file.Path);
+                string title = "未知标题";
+                string artist = "未知艺术家";
+                string album = "未知专辑";
+                int trackNumber = 0;
+                int diskNumber = 0;
+                int sampleRate = 0;
+                int bitDepth = 0;
+                int bitRate = 0;
+                int year = 0;
+                int channelCount = 0;
+                string lyrics = string.Empty;
+                string klyrics = string.Empty;
+                TimeSpan duration = TimeSpan.Zero;
+                trackNumber = track.TrackNumber ?? 0;
+                diskNumber = track.DiscNumber ?? 0;
+                title = !string.IsNullOrWhiteSpace(track.Title) ?
+                   track.Title : Path.GetFileNameWithoutExtension(file.Name);
+                artist = track.Artist ?? "未知艺术家";
+                album = track.Album ?? "未知专辑";
+                sampleRate = (int)track.SampleRate;
+                bitDepth = track.BitDepth <= 0 ? await GetBitDepth(file) : track.BitDepth;
+                bitRate = track.Bitrate == 0 ? await GetBitRate(file) : track.Bitrate;
+                year = track.Year ?? 0;
+                duration = TimeSpan.FromMicroseconds(track.DurationMs);
+                channelCount = track.ChannelsArrangement.NbChannels;
+                LyricsInfo? lyricsInfo = track.Lyrics.FirstOrDefault();
+                if (lyricsInfo is not null)
                 {
-                    Tag tag = audioFile.Tag;
-                    string title = "未知标题";
-                    string artist = "未知艺术家";
-                    string album = "未知专辑";
-                    int trackNumber = 0;
-                    int diskNumber = 0;
-                    int sampleRate = 0;
-                    int bitDepth = 0;
-                    int bitRate = 0;
-                    int year = 0;
-                    int channelCount = 0;
-                    string lyrics = string.Empty;
-                    TimeSpan duration = TimeSpan.Zero;
-                    Properties audioProperties = audioFile.Properties;
-                    trackNumber = (int)tag.Track;
-                    diskNumber = (int)tag.Disc;
-                    title = !string.IsNullOrWhiteSpace(tag.Title) ?
-                       tag.Title : Path.GetFileNameWithoutExtension(file.Name);
-
-                    string[] artists = audioFile.Tag.Performers;
-                    if (artists.Length > 0)
+                    foreach (LyricsInfo.LyricsPhrase phrase in lyricsInfo.SynchronizedLyrics)
                     {
-                        artist = artists[0]; // 取第一个艺术家
-                        Console.WriteLine("艺术家: " + string.Join(", ", artists));
+                        lyrics += "[" + EncodeTimecode_ms(phrase.TimestampStart) + "] " + phrase.Text + "\n";
                     }
-                    if (!string.IsNullOrWhiteSpace(tag.Album))
-                    {
-                        album = tag.Album;
-                    }
-                    sampleRate = audioProperties.AudioSampleRate;
-                    bitDepth = audioProperties.BitsPerSample <= 0 ? await GetBitDepth(file) : audioProperties.BitsPerSample;
-                    bitRate = audioProperties.AudioBitrate == 0 ? await GetBitRate(file) : audioProperties.AudioBitrate;
-                    year = (int)tag.Year;
-                    duration = audioProperties.Duration;
-                    channelCount = audioProperties.AudioChannels;
-                    lyrics = tag.Lyrics;
-                    if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
-                    {
-                        title = GarbledTextFixer.FixGbkToIso88591(title);
-                    }
-                    if (GarbledTextFixer.IsGbkToIso88591Garbled(artist))
-                    {
-                        artist = GarbledTextFixer.FixGbkToIso88591(artist);
-                    }
-                    if (GarbledTextFixer.IsGbkToIso88591Garbled(album))
-                    {
-                        album = GarbledTextFixer.FixGbkToIso88591(album);
-                    }
-
-
-                    var music = new Music
-                    {
-                        Path = file.Path,
-                        Title = title,
-                        Author = artist,
-                        Album = album,
-                        Duration = duration,
-                        FolderPath = lastLevelDirectory,
-                        Order = 0,
-                        LastLevelFolderPath = lastLevelFolderPath,
-                        Extension = file.FileType.TrimStart('.').ToUpper(),
-                        BitDepth = bitDepth,
-                        BitRate = bitRate,
-                        SampleRate = sampleRate,
-                        Channel = channelCount,
-                        TrackNumber = trackNumber,
-                        DiskNumber = diskNumber,
-                        Year = year,
-                        Lyrics = lyrics,
-                        CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
-                        UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
-                    };
-                    return music;
                 }
+                if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
+                {
+                    title = GarbledTextFixer.FixGbkToIso88591(title);
+                }
+                if (GarbledTextFixer.IsGbkToIso88591Garbled(artist))
+                {
+                    artist = GarbledTextFixer.FixGbkToIso88591(artist);
+                }
+                if (GarbledTextFixer.IsGbkToIso88591Garbled(album))
+                {
+                    album = GarbledTextFixer.FixGbkToIso88591(album);
+                }
+                var music = new Music
+                {
+                    Path = file.Path,
+                    Title = title,
+                    Author = artist,
+                    Album = album,
+                    Duration = duration,
+                    FolderPath = lastLevelDirectory,
+                    Order = 0,
+                    LastLevelFolderPath = lastLevelFolderPath,
+                    Extension = file.FileType.TrimStart('.').ToUpper(),
+                    BitDepth = bitDepth,
+                    BitRate = bitRate,
+                    SampleRate = sampleRate,
+                    Channel = channelCount,
+                    TrackNumber = trackNumber,
+                    DiskNumber = diskNumber,
+                    Year = year,
+                    Lyrics = lyrics,
+                    CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
+                    UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
+                };
+                return music;
             }
             catch (Exception)
             {
@@ -1215,7 +1214,8 @@ namespace WinUIMusicPlayer.Utils
             picker.FileTypeFilter.Add(".m3u8");
             // 显示文件选择器并获取结果
             var filesPickerResult = await picker.PickMultipleFilesAsync();
-            foreach (var filePickerResult in filesPickerResult) {
+            foreach (var filePickerResult in filesPickerResult)
+            {
                 var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
                 if (file is not null)
                 {
@@ -1244,7 +1244,7 @@ namespace WinUIMusicPlayer.Utils
                     {
                     }
                 }
-            }            
+            }
             return playLists;
         }
 
