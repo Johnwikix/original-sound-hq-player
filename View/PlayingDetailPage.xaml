@@ -568,7 +568,7 @@
                     x:Name="LyricsView"
                     AnimationSmoothness="1"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
-                    FontFamilyName="{x:Bind model:AppSettings.GlobalFont.Source, Mode=OneWay}"
+                    FontFamilyName="{x:Bind ViewModel.AppViewModel.FontFamily.FontFamily.Source, Mode=OneWay}"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
                     LyricInteracted="LyricsView_LyricInteracted"

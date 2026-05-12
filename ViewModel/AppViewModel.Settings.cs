@@ -408,7 +408,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.GlobalFont = value.FontFamily;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
