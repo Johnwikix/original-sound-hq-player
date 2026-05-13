@@ -88,8 +88,8 @@ namespace WinUIMusicPlayer.View
 
             var (title, artist, firstSize,secondSize,shapeSize, info, margin) = width switch
             {
-                < 1280 => (30, 26, 22, 16, 28, 12,new Thickness(2,0,2,0)),
-                < 1920  => (34, 30, 28, 22, 40,16,new Thickness(5,0,5,0)),
+                < 1280 => (26, 22, 22, 16, 28, 12,new Thickness(2,0,2,0)),
+                < 1920  => (32, 28, 28, 22, 40,16,new Thickness(5,0,5,0)),
                 < 2560 => (36, 32, 36, 26, 60,18,new Thickness(10,0,10,0)),
                 < 2880  => (38, 34, 40, 28, 66,20,new Thickness(12,0,12,0)),
                 _ => (42, 38, 46, 32, 72,22,new Thickness(15,0,15,0))
