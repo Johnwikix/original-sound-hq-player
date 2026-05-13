@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.Services
             {
                 // 即使提取元数据失败，也尝试添加基本信息
                 try
-                {
+                {_logger.LogError(ex, "
                     var music = new UsbDeviceMusic
                     {
                         Path = file.Path,
