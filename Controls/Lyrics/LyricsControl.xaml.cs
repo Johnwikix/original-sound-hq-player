@@ -9,32 +9,18 @@ using Windows.Foundation;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
-    /// <summary>
-    /// 歌词外壳控件。
-    /// 职责：布局（ScrollView + OpacityMask + 上下占位）、属性透传、滚动响应、鼠标滚轮。
-    /// 行匹配、动画帧推进、时钟全部由 UnifiedLyricsCanvasControl 的单一计时器负责。
-    /// </summary>
     public sealed partial class LyricsControl : UserControl
     {
-        // ─────────────────────────────────────────────────────────────────────
-        // 公开事件
-        // ─────────────────────────────────────────────────────────────────────
-
-        /// <summary>用户点击某行歌词时触发，携带该行起始时间戳。</summary>
         public event EventHandler<TimeSpan>? LyricInteracted;
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 依赖属性
-        // ─────────────────────────────────────────────────────────────────────
+        #region Dependency Properties
 
-        // ── UILyrics ──────────────────────────────────────────────────────────
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
                 typeof(IList<LyricLine>), typeof(LyricsControl),
                 new PropertyMetadata(null, (d, e) =>
                 {
                     if (d is not LyricsControl c) return;
-                    // 直接透传，Canvas 内部会自行重置行索引 / 计时器
                     c.LyricsCanvas.UILyrics = e.NewValue as IList<LyricLine>;
                 }));
 
@@ -44,7 +30,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(UILyricsProperty, value);
         }
 
-        // ── LyricsMargin ──────────────────────────────────────────────────────
         public static readonly DependencyProperty LyricsMarginProperty =
             DependencyProperty.Register(nameof(LyricsMargin),
                 typeof(Thickness), typeof(LyricsControl),
@@ -56,7 +41,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(LyricsMarginProperty, value);
         }
 
-        // ── CurrentPlayingTime ────────────────────────────────────────────────
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
             DependencyProperty.Register(nameof(CurrentPlayingTime),
                 typeof(TimeSpan), typeof(LyricsControl),
@@ -69,7 +53,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(CurrentPlayingTimeProperty, value);
         }
 
-        // ── IsPlaying ─────────────────────────────────────────────────────────
         public static readonly DependencyProperty IsPlayingProperty =
             DependencyProperty.Register(nameof(IsPlaying),
                 typeof(bool), typeof(LyricsControl),
@@ -81,8 +64,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             get => (bool)GetValue(IsPlayingProperty);
             set => SetValue(IsPlayingProperty, value);
         }
-
-        // ── 画布视觉属性（透传）──────────────────────────────────────────────
 
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize), typeof(double),
@@ -96,7 +77,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public static readonly DependencyProperty LyricsOffsetMsProperty =
             DependencyProperty.Register(nameof(LyricsOffsetMs), typeof(double),
-                typeof(LyricsControl), new PropertyMetadata(36.0));
+                typeof(LyricsControl), new PropertyMetadata(0.0));
 
         public double LyricsOffsetMs
         {
@@ -136,19 +117,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(IsDarkProperty, value);
         }
 
-        public static readonly DependencyProperty AnimationSmoothnessProperty =
-            DependencyProperty.Register(nameof(AnimationSmoothness), typeof(double),
-                typeof(LyricsControl), new PropertyMetadata(1.0));
-
-        public double AnimationSmoothness
-        {
-            get => (double)GetValue(AnimationSmoothnessProperty);
-            set => SetValue(AnimationSmoothnessProperty, value);
-        }
-
         public static readonly DependencyProperty LyricsBlurAmountProperty =
-                DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(1.5));
+            DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(4.0));
 
         public double LyricsBlurAmount
         {
@@ -156,14 +127,51 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(LyricsBlurAmountProperty, Math.Max(0.0, value));
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 构造
-        // ─────────────────────────────────────────────────────────────────────
+        public static readonly DependencyProperty GlowAmountProperty =
+            DependencyProperty.Register(nameof(GlowAmount), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.0));
+
+        public double GlowAmount
+        {
+            get => (double)GetValue(GlowAmountProperty);
+            set => SetValue(GlowAmountProperty, value);
+        }
+
+        public static readonly DependencyProperty CharFloatAmountProperty =
+            DependencyProperty.Register(nameof(CharFloatAmount), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.0));
+
+        public double CharFloatAmount
+        {
+            get => (double)GetValue(CharFloatAmountProperty);
+            set => SetValue(CharFloatAmountProperty, value);
+        }
+
+        public static readonly DependencyProperty CharScaleAmountProperty =
+            DependencyProperty.Register(nameof(CharScaleAmount), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.0));
+
+        public double CharScaleAmount
+        {
+            get => (double)GetValue(CharScaleAmountProperty);
+            set => SetValue(CharScaleAmountProperty, value);
+        }
+
+        public static readonly DependencyProperty LongSyllableThresholdProperty =
+            DependencyProperty.Register(nameof(LongSyllableThreshold), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(500.0));
+
+        public double LongSyllableThreshold
+        {
+            get => (double)GetValue(LongSyllableThresholdProperty);
+            set => SetValue(LongSyllableThresholdProperty, value);
+        }
+
+        #endregion
 
         public LyricsControl()
         {
             this.InitializeComponent();
-            // Canvas 点击 → 透传 LyricInteracted
             LyricsCanvas.LyricLineClicked += OnCanvasLyricLineClicked;
             Unloaded += (_, _) =>
             {
@@ -173,6 +181,5 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
             => LyricInteracted?.Invoke(this, ts);
-
     }
 }

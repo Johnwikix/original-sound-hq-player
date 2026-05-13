@@ -1,0 +1,26 @@
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
+using System;
+using Windows.Graphics.Effects;
+using Windows.UI;
+
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+{
+    public static class CanvasHelper
+    {
+        public static ShadowEffect CreateForegroundShadowEffect(CanvasCommandList foregroundFontEffect, IGraphicsEffectSource mask, Color shadowColor, double shadowAmount)
+        {
+            return new ShadowEffect
+            {
+                Source = new AlphaMaskEffect
+                {
+                    Source = foregroundFontEffect,
+                    AlphaMask = mask,
+                },
+                ShadowColor = shadowColor,
+                BlurAmount = (float)Math.Clamp(shadowAmount, 0, 100),
+                Optimization = EffectOptimization.Speed,
+            };
+        }
+    }
+}

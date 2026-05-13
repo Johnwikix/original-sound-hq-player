@@ -5,7 +5,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:alc="using:AnimatedWin2dControls.Controls.AnimatedLyricsLineControl"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
-    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
@@ -15,40 +14,18 @@
     xmlns:utils="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
 
-    <controls:OpacityMaskView
-        x:Name="MaskView"
-        Margin="0"
-        Padding="0"
+    <alc:UnifiedLyricsCanvasControlV2
+        x:Name="LyricsCanvas"
+        Margin="{x:Bind LyricsMargin, Mode=OneWay}"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
-        <controls:OpacityMaskView.OpacityMask>
-            <Rectangle Stretch="UniformToFill">
-                <Rectangle.Fill>
-                    <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Offset="0" Color="#0000FFFF" />
-                        <GradientStop Offset="0.05" Color="#00FFFFFF" />
-                        <GradientStop Offset="0.15" Color="#0FFFFFFF" />
-                        <GradientStop Offset="0.25" Color="#5FFFFFFF" />
-                        <GradientStop Offset="0.35" Color="#FFFFFFFF" />
-                        <GradientStop Offset="0.65" Color="#FFFFFFFF" />
-                        <GradientStop Offset="0.75" Color="#5FFFFFFF" />
-                        <GradientStop Offset="0.85" Color="#0FFFFFFF" />
-                        <GradientStop Offset="0.95" Color="#00FFFFFF" />
-                        <GradientStop Offset="1" Color="#0000FFFF" />
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
-        </controls:OpacityMaskView.OpacityMask>
-        <alc:UnifiedLyricsCanvasControl
-            x:Name="LyricsCanvas"
-            Margin="{x:Bind LyricsMargin, Mode=OneWay}"
-            HorizontalAlignment="Stretch"
-            AnimationSmoothness="{x:Bind AnimationSmoothness, Mode=OneWay}"
-            FontFamilyName="{x:Bind FontFamilyName, Mode=OneWay}"
-            IsDark="{x:Bind IsDark, Mode=OneWay}"
-            LyricsBlurAmount="{x:Bind LyricsBlurAmount, Mode=OneWay}"
-            LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
-            LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
-            OffsetMs="{x:Bind LyricsOffsetMs, Mode=OneWay}" />
-    </controls:OpacityMaskView>
+        CharFloatAmount="{x:Bind CharFloatAmount, Mode=OneWay}"
+        CharScaleAmount="{x:Bind CharScaleAmount, Mode=OneWay}"
+        FontFamilyName="{x:Bind FontFamilyName, Mode=OneWay}"
+        GlowAmount="{x:Bind GlowAmount, Mode=OneWay}"
+        IsDark="{x:Bind IsDark, Mode=OneWay}"
+        LongSyllableThreshold="{x:Bind LongSyllableThreshold, Mode=OneWay}"
+        LyricsBlurAmount="{x:Bind LyricsBlurAmount, Mode=OneWay}"
+        LyricsFontSize="{x:Bind LyricsFontSize, Mode=OneWay}"
+        LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
+        OffsetMs="{x:Bind LyricsOffsetMs, Mode=OneWay}" />
 </UserControl>
