@@ -33,6 +33,10 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
+        public static ILogger<T> GetLogger<T>()
+        {
+            return Services.GetRequiredService<ILogger<T>>();
+        }
         private static readonly IHost _host = Host.CreateDefaultBuilder()
             .ConfigureLogging((context, logging) =>
             {

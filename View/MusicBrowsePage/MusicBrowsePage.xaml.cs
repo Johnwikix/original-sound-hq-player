@@ -1,5 +1,6 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
@@ -49,6 +50,7 @@ namespace WinUIMusicPlayer.View
             this.Focus(FocusState.Programmatic);
             this.Loaded += OnPageLoaded;
             this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            _logger.LogInformation("test");
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -294,26 +296,7 @@ namespace WinUIMusicPlayer.View
             {
                 playListSongPage?.UpdateMusicListView();
             }
-        }
-
-        //public void PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
-        //{
-        //    try
-        //    {
-        //        ViewModel.AppViewModel.CurrentPlayingMusic = music;                
-        //        ViewModel.UpdatePlayBar(ViewModel.AppViewModel.CurrentPlayingMusic);
-        //        ViewModel.AppViewModel.LoadLyricsToUI();
-        //        UpdateViewList();
-        //        UpdateCurrentPlayList();
-        //        ViewModel.MusicPlaybackService.PlayMusic(music);
-        //        ViewModel.AppViewModel.UpdateProgressTimerUI();
-        //        App.Services.GetRequiredService<LyricsRefreshService>().ResetLyrics();                
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-        //    }
-        //}       
+        }  
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
