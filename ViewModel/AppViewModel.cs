@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Lyricify.Lyrics.Providers.Web.Netease;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
@@ -148,14 +149,12 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
         ];
         public string MusicInfo { get; set => SetProperty(ref field, value); }
-        //public BitmapImage MusicDetailCover { get; set => SetProperty(ref field, value); }
         public bool IsMuted { get; set => SetProperty(ref field, value); } = false;
         public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public List<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
-        //public ImageSource? LyricPageBackgroundSource { get; set => SetProperty(ref field, value); } = null;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
         public bool IsInitialized { get; set => SetProperty(ref field, value); } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
@@ -305,7 +304,6 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppData.IsPlaying = value;
                     UpdatePlayPauseButtonIcon();
-                    //App.Services.GetRequiredService<PlayingDetailPage>().BeginOrPauseLyricImgAnimation(value);
                 }
             }
         } = false;
@@ -317,11 +315,13 @@ namespace WinUIMusicPlayer.ViewModel
         } = false;
 
         private MusicDatabaseService _musicDatabaseService { get; }
+        private ILogger<AppViewModel> _logger;
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService,SystemMediaControlsService systemMediaControlsService)
+        public AppViewModel(MusicDatabaseService musicDatabaseService,SystemMediaControlsService systemMediaControlsService,ILogger<AppViewModel> logger)
         {
             _musicDatabaseService = musicDatabaseService;  
             SystemMediaControlsService = systemMediaControlsService;
+            _logger = logger;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             SongsSource.CollectionChanged += SongsSource_CollectionChanged;
             ProgressTimer = new System.Timers.Timer(200);
@@ -370,8 +370,9 @@ namespace WinUIMusicPlayer.ViewModel
                     UpdateProgressTimerUI();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex,ex.Message);
             }
         }
 
@@ -410,13 +411,13 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 });
-                //App.Services.GetRequiredService<LyricsRefreshService>().UpdateLyrics(CurrentTime);
                 _ = Task.Run(() => {
                     SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
                 } );
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, ex.Message);
             }
         }
 
@@ -645,7 +646,9 @@ namespace WinUIMusicPlayer.ViewModel
                     source.Source = groups;
                 });
             }
-            catch { }
+            catch (Exception ex){
+                _logger.LogError(ex, ex.Message);
+            }
         }
 
         public void AddMusicToCurrentPlayList(Music music)

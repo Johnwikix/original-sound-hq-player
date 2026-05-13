@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -26,9 +27,11 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         public double SecondControlSize { get; set => SetProperty(ref field, value); } = 26;
         public double FirstShapeSize { get; set => SetProperty(ref field, value); } = 40;
         public Thickness ControlMargin { get; set => SetProperty(ref field, value); } = new Thickness(5, 0, 5, 0);
-        public PlayingDetailViewModel(AppViewModel appViewModel)
+        private ILogger<PlayingDetailViewModel> _logger;
+        public PlayingDetailViewModel(AppViewModel appViewModel,ILogger<PlayingDetailViewModel> logger)
         {
             AppViewModel = appViewModel;
+            _logger = logger;
             AppViewModel.UpdateCover();
         }
 
@@ -135,7 +138,6 @@ namespace WinUIMusicPlayer.ViewModel.Pages
             else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
             {
                 App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[^1]).Wait();
-
             }
         }
 
@@ -166,7 +168,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"更新歌词失败: {ex.Message}");
+                    _logger.LogError(ex, $"更新歌词失败: {ex.Message}");
                 }
             });
         }

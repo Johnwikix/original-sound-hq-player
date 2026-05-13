@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -64,15 +65,16 @@ namespace WinUIMusicPlayer.ViewModel
         private CancellationTokenSource? _musicUpdateCts;
         private CancellationTokenSource _scanCts;
         private readonly Lock _scanCtsLock = new();
-
+        private ILogger<MusicBrowseViewModel> _logger;
         public AppViewModel AppViewModel { get;}
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand,SystemMediaControlsService systemMediaControlsService,AppViewModel appViewModel,MusicDatabaseService musicDatabaseService,AudioConverterService converterService)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand,SystemMediaControlsService systemMediaControlsService,AppViewModel appViewModel,MusicDatabaseService musicDatabaseService,AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
         {
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             ConverterService = converterService;
             MusicPlaybackService = bassPlayerCommand;
+            _logger = logger;
             ProgressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
             ProgressDialog.Title = ToolUtils.GetString("Processing");
             ConverterService.updateProgress += OnConverterProgressUpdated;
@@ -202,7 +204,8 @@ namespace WinUIMusicPlayer.ViewModel
                 // 启动设备监视器
                 DeviceWatcher.Start();
             }
-            catch {
+            catch(Exception ex) {
+                _logger.LogError(ex, $"启动设备监视器失败:{ex.Message}");
             }
         }
 
@@ -267,7 +270,7 @@ namespace WinUIMusicPlayer.ViewModel
                 });
                 AppData.MusicOnUsbDevice.Clear();
                 ClearAllUsbStatus();
-                System.Diagnostics.Debug.WriteLine($"读取USB设备失败: {ex.Message}");
+                _logger.LogError(ex, $"读取USB设备失败:{ex.Message}");
             }
         }
 
@@ -330,7 +333,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                _logger.LogError(ex, $"启动文件夹监视失败:{ex.Message}");
             }
         }
 
@@ -482,13 +485,10 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (OperationCanceledException)
             {
-                // 任务被正常取消，不作为异常处理
-                System.Diagnostics.Debug.WriteLine($"UpdatePlayBar 取消: {music.Title}");
             }
             catch (Exception ex)
             {
-                // 记录其他可能的异常
-                System.Diagnostics.Debug.WriteLine($"UpdatePlayBar 出错: {ex.Message}");
+                _logger.LogError(ex, $"更新播放栏失败: {ex.Message}");
             }
         }
 
@@ -736,8 +736,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                App.Services.GetRequiredService<NotificationService>()
-                   .SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                _logger.LogError(ex, $"播放音乐失败: {ex.Message}");
             }
         }
 

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using ManagedBass.Asio;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.Storage.Pickers;
 using System;
@@ -316,8 +317,9 @@ namespace WinUIMusicPlayer.ViewModel
                             _ = _musicDatabaseService.SaveSettingAsync();
                         }
                     }
-                    catch
+                    catch(Exception ex)
                     {
+                        _logger.LogError(ex, ex.Message);
                     }
                 }
             }
@@ -343,36 +345,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = new EffectComboBoxItem { DisplayName= ToolUtils.GetString("TextDefaultEffect"), Value= AnimatedTextEffect.TextDefaultEffect };
-
-        //public int SlideAnimationTime
-        //{
-        //    get => field;
-        //    set
-        //    {
-        //        if (SetProperty(ref field, value))
-        //        {
-        //            if (IsInitialized)
-        //            {
-        //                _ = _musicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //} = 400;
-
-        //public int DrillInAnimationTime
-        //{
-        //    get => field;
-        //    set
-        //    {
-        //        if (SetProperty(ref field, value))
-        //        {
-        //            if (IsInitialized)
-        //            {
-        //                _ = _musicDatabaseService.SaveSettingAsync();
-        //            }
-        //        }
-        //    }
-        //} = 400;
 
         public string Version
         {
@@ -754,7 +726,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error setting backdrop type: {ex.Message}");
+                _logger.LogError(ex, ex.Message);
             }
         }
         [RelayCommand]

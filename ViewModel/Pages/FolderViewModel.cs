@@ -110,7 +110,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             await AppViewModel.RescanFolder(SelectedItem);
             App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
-            //App.MainWindow?.UpdateMusicList();
         }
 
         [RelayCommand]
