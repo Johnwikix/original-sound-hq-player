@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Windows.Devices.Enumeration;
 using Windows.Storage;
+using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using ZLinq;
 
@@ -12,6 +14,8 @@ namespace WinUIMusicPlayer.Reader
 {
     public class UsbStorageDeviceReader
     {
+        private static ILogger<UsbStorageDeviceReader> _logger = App.GetLogger<UsbStorageDeviceReader>();
+
         public static async Task<List<UsbStorageDevice>> GetUsbStorageDevicesAsync()
         {
             var usbDevices = new List<UsbStorageDevice>();
@@ -47,7 +51,7 @@ namespace WinUIMusicPlayer.Reader
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"在获取 USB 存储设备时发生错误: {ex.Message}");
+                _logger.LogError(ex, $"GetUsbStorageDevicesAsync 获取USB存储设备失败: {ex.Message}");
             }
             return usbDevices;
         }
@@ -136,13 +140,13 @@ namespace WinUIMusicPlayer.Reader
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"使用Windows.Storage API获取设备ID时出错: {ex.Message}");
+                        _logger.LogError(ex, $"GetDeviceUniqueIdAsync Windows.Storage API获取设备ID失败: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取设备唯一ID时发生错误: {ex.Message}");
+                _logger.LogError(ex, $"GetDeviceUniqueIdAsync 获取设备唯一ID失败: {ex.Message}");
             }
 
             // 如果所有方法都失败，使用驱动器路径和卷标签作为最后的备选
@@ -153,9 +157,10 @@ namespace WinUIMusicPlayer.Reader
                     DriveInfo drive = new DriveInfo(drivePath);
                     uniqueId = $"{drive.Name}_{drive.VolumeLabel}_{drive.TotalSize}";
                 }
-                catch
+                catch (Exception ex)
                 {
-                    uniqueId = Guid.NewGuid().ToString(); // 最坏情况下使用随机GUID
+                    _logger.LogError(ex, $"GetDeviceUniqueIdAsync 备用方法获取设备ID失败: {ex.Message}");
+                    uniqueId = Guid.NewGuid().ToString();
                 }
             }
             return uniqueId;

@@ -10,7 +10,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -93,8 +92,9 @@ namespace WinUIMusicPlayer.Services
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"InitalizeDbPath 初始化数据库路径失败: {ex.Message}");
                 DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
             }
         }
@@ -272,9 +272,7 @@ namespace WinUIMusicPlayer.Services
                 var list = await _dbConnection.Table<PlayList>().ToListAsync();
                 await AppViewModel.AllPlayList.AddRangeAsync(list);
             }
-            catch
-            {
-            }
+            catch (Exception ex) { _logger.LogError(ex, $"InitalPlayListAsync 初始化播放列表失败: {ex.Message}"); }
         }
 
         public async Task UpdateMusicInfo(Music music)
@@ -338,7 +336,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"批量更新播放列表音乐排序时出错: {ex.Message}");
+                _logger.LogError(ex, $"UpdatePlayListMusicOrderBatch 批量更新播放列表音乐排序时出错: {ex.Message}");
             }
         }
 
@@ -546,7 +544,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"写入设置文件时出错: {ex.Message}");
+                _logger.LogError(ex, $"WriteSettingsToJson 写入设置文件时出错: {ex.Message}");
             }
         }
 
@@ -884,7 +882,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"删除音乐时出错: {e.Message}");
+                _logger.LogError(e, $"RemoveMusic 删除音乐时出错: {e.Message}");
             }
         }
 
@@ -926,7 +924,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"保存播放状态时出错: {ex.Message}");
+                _logger.LogError(ex, $"SavePlayState 保存播放状态时出错: {ex.Message}");
             }
         }
 
@@ -981,7 +979,6 @@ namespace WinUIMusicPlayer.Services
                     .ToListAsync();
                 foreach (var subfolder in subfoldersToRemove)
                 {
-                    Debug.WriteLine($"删除子文件夹: {subfolder.Path},{subfolder.FolderId}");
                     await _dbConnection.DeleteAsync(subfolder);
                 }
 
@@ -1056,7 +1053,7 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex)
             {
                 // 处理异常，例如权限不足等情况
-                System.Diagnostics.Debug.WriteLine($"获取文件时出错: {ex.Message}");
+                _logger.LogError(ex, $"GetAllFilesInFolderAndSubfolders 获取文件时出错: {ex.Message}");
             }
 
             return allFiles;
@@ -1104,7 +1101,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"重新扫描文件夹时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolder 重新扫描文件夹时出错: {ex.Message}");
                 }
             }
         }
@@ -1145,7 +1142,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderByPath 添加文件路径时出错: {ex.Message}");
                 }
                 finally
                 {
@@ -1187,7 +1184,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderByPath 删除音乐文件时出错: {ex.Message}");
                 }
                 finally
                 {
@@ -1214,7 +1211,6 @@ namespace WinUIMusicPlayer.Services
             if (validResults.Count != 0)
             {
                 await _dbConnection.UpdateAllAsync(validResults);
-                Debug.WriteLine($"批量更新完成，共 {validResults.Count} 条记录");
             }
 
             //完全批量处理
@@ -1234,7 +1230,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderByPath 添加新音乐文件时出错: {ex.Message}");
                     return null;
                 }
                 finally
@@ -1289,7 +1285,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderWithOutUpdateAll 添加文件路径时出错: {ex.Message}");
                 }
                 finally
                 {
@@ -1330,7 +1326,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderWithOutUpdateAll 删除音乐文件时出错: {ex.Message}");
                 }
                 finally
                 {
@@ -1357,7 +1353,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanFolderWithOutUpdateAll 添加新音乐文件时出错: {ex.Message}");
                     return null;
                 }
                 finally
@@ -1386,7 +1382,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加新音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"AddMusicList 添加新音乐文件时出错: {ex.Message}");
                     return null;
                 }
                 finally
@@ -1422,7 +1418,6 @@ namespace WinUIMusicPlayer.Services
             if (validResults.Count != 0)
             {
                 await _dbConnection.UpdateAllAsync(validResults);
-                Debug.WriteLine($"批量更新完成，共 {validResults.Count} 条记录");
             }
         }
 
@@ -1438,7 +1433,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"删除音乐文件时出错: {ex.Message}");
+                    _logger.LogError(ex, $"DeletedMusicList 删除音乐文件时出错: {ex.Message}");
                 }
                 finally
                 {
@@ -1484,7 +1479,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"添加文件路径时出错: {ex.Message}");
+                    _logger.LogError(ex, $"RescanUsbDeviceFolderByPath 添加文件路径时出错: {ex.Message}");
                 }
             }
 

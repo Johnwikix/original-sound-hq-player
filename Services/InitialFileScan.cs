@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +14,8 @@ namespace WinUIMusicPlayer.Services
 {
     public class InitialFileScan
     {
+        private static ILogger<InitialFileScan> _logger = App.GetLogger<InitialFileScan>();
+
         public static async Task InitialScan()
         {
             List<Music> MusicsToUpdate = [];
@@ -41,8 +44,6 @@ namespace WinUIMusicPlayer.Services
             }
 
             totalSw.Stop();
-            Debug.WriteLine($"[Total Scan] Finished in: {totalSw.ElapsedMilliseconds} ms");
-            Debug.WriteLine($"Scan Complete. Add: {MusicsToAdd.Count}, Update: {MusicsToUpdate.Count}, Delete: {MusicsToDelete.Count}");
             await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicList(MusicsToAdd);
             await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicList(MusicsToUpdate);
             await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(MusicsToDelete);
@@ -64,7 +65,6 @@ namespace WinUIMusicPlayer.Services
         {
             if (!Directory.Exists(rootDirectory))
             {
-                Debug.WriteLine($"Directory not found: {rootDirectory}");
                 return;
             }
 
@@ -122,22 +122,21 @@ namespace WinUIMusicPlayer.Services
                         }
                         catch (UnauthorizedAccessException ex)
                         {
-                            Debug.WriteLine($"Access Denied for file: {filePath}. Error: {ex.Message}");
+                            _logger.LogWarning(ex, $"ScanSingleFolder 访问被拒绝: {filePath}");
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine($"Error processing file: {filePath}. Error: {ex.Message}");
+                            _logger.LogError(ex, $"ScanSingleFolder 处理文件错误: {filePath}");
                         }
                     }
 
                     sw.Stop();
-                    Debug.WriteLine($"[Scan Folder] {rootDirectory} finished in: {sw.ElapsedMilliseconds} ms");
 
                 });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An unexpected error occurred in ScanSingleFolder: {ex.Message}");
+                _logger.LogError(ex, $"ScanSingleFolder 意外错误: {ex.Message}");
             }
         }
     }

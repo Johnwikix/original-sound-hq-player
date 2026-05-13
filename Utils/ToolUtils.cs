@@ -29,10 +29,26 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using ATL;
+using DffTagReader;
+using Lyricify.Lyrics.Providers.Web.SodaMusic;
+using ManagedBass;
+using ManagedBass.Dsd;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Graphics.Canvas.Text;
+using Microsoft.International.Converters.PinYinConverter;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.VisualBasic.FileIO;
+using Microsoft.Win32;
+using Microsoft.Windows.ApplicationModel.Resources;
 using TagLib;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Manager;
@@ -49,6 +65,8 @@ namespace WinUIMusicPlayer.Utils
 {
     public class ToolUtils
     {
+        private static ILogger<ToolUtils> _logger = App.GetLogger<ToolUtils>();
+
         public static readonly Dictionary<string, float> FrequencyMap = new Dictionary<string, float>
         {
             ["32Hz"] = 32f,
@@ -101,8 +119,9 @@ namespace WinUIMusicPlayer.Utils
             {
                 return new ResourceLoader().GetString(key);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetString 获取资源字符串失败: {ex.Message}");
                 return key;
             }
         }
@@ -206,7 +225,7 @@ namespace WinUIMusicPlayer.Utils
                 }
             });
             return await tcs.Task;
-        }
+        }        
 
         private static bool IsValidImageData(byte[] data)
         {
@@ -310,8 +329,9 @@ namespace WinUIMusicPlayer.Utils
                     return bitmapImage;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"ConvertByteArrayToBitmapImage 转换失败: {ex.Message}");
                 return null;
             }
         }
@@ -398,14 +418,16 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return picture;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetRawImage 获取原始图片失败: {ex.Message}");
                 try
                 {
                     return await GetPicByteFromNet(music, isManual) ?? [];
                 }
-                catch
+                catch (Exception innerEx)
                 {
+                    _logger.LogError(innerEx, $"GetRawImage 网络获取图片也失败: {innerEx.Message}");
                     return [];
                 }
             }
@@ -462,8 +484,9 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return fileInfo;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetAudioInfo 获取音频信息失败: {ex.Message}");
                 fileInfo.Title = Path.GetFileNameWithoutExtension(file.Path);
                 return fileInfo;
             }
@@ -524,7 +547,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"序列化时出错: {ex.Message}");
+                _logger.LogError(ex, $"ConvertToJson 序列化失败: {ex.Message}");
                 throw;
             }
         }
@@ -560,7 +583,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"反序列化时出错: {ex.Message}");
+                _logger.LogError(ex, $"ConvertToDictionary 反序列化失败: {ex.Message}");
                 return new Dictionary<string, double>
                {
                    {"32Hz", 0},
@@ -617,8 +640,9 @@ namespace WinUIMusicPlayer.Utils
             {
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"DeleteFileFromDisk 删除文件失败: {ex.Message}");
                 return false;
             }
         }
@@ -673,7 +697,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"拼音转换失败: {ex.Message}");
+                    _logger.LogError(ex, $"GetFirstLetterAdvanced 拼音转换失败: {ex.Message}");
                     return CharStringCache.GetZhongChar();
                 }
             }
@@ -727,12 +751,11 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                    _logger.LogError(ex, $"OpenFileInExplorer 打开资源管理器失败: {ex.Message}");
                 }
             }
             else
             {
-                Debug.WriteLine($"文件不存在: {filePath}");
             }
         }
 
@@ -903,8 +926,9 @@ namespace WinUIMusicPlayer.Utils
                 }
                 return picture;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetPicByteFromNet 网络获取图片失败: {ex.Message}");
                 return null;
             }
         }
@@ -1024,8 +1048,9 @@ namespace WinUIMusicPlayer.Utils
             {
                 return System.IO.File.GetCreationTime(filePath);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetSafeFileCreateTime 获取创建时间失败: {ex.Message}");
                 return DateTime.Now;
             }
         }
@@ -1036,8 +1061,9 @@ namespace WinUIMusicPlayer.Utils
             {
                 return System.IO.File.GetLastWriteTime(filePath);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetSafeFileUpdateTime 获取修改时间失败: {ex.Message}");
                 return DateTime.Now;
             }
         }
@@ -1112,8 +1138,9 @@ namespace WinUIMusicPlayer.Utils
                 };
                 return music;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetMusicInfo 读取音乐信息失败: {ex.Message}");
                 AudioFileInfo wavFileInfo = await ToolUtils.GetAudioInfo(file);
                 try
                 {
@@ -1143,7 +1170,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 catch (Exception innerEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");
+                    _logger.LogError(innerEx, $"GetMusicInfo 创建基本音乐条目失败: {file.Path}, {innerEx.Message}");
                 }
 
             }
@@ -1168,9 +1195,8 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                // 处理异常
                 bitDepth = 16;
-                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+                _logger.LogError(ex, $"GetBitDepth 获取音频位深度失败: {ex.Message}");
             }
             return bitDepth;
         }
@@ -1180,7 +1206,6 @@ namespace WinUIMusicPlayer.Utils
             var bitRate = 0;
             try
             {
-                // 其余代码保持不变...
                 var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
                                 "System.Audio.EncodingBitrate"
                              });
@@ -1192,9 +1217,8 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
-                // 处理异常
                 bitRate = 0;
-                System.Diagnostics.Debug.WriteLine($"获取音频属性时出错: {ex.Message}");
+                _logger.LogError(ex, $"GetBitRate 获取音频比特率失败: {ex.Message}");
             }
             return bitRate;
         }
@@ -1233,8 +1257,9 @@ namespace WinUIMusicPlayer.Utils
                         }
                         playLists.Add(playList);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogError(ex, $"OpenM3u8File 处理播放列表文件失败: {ex.Message}");
                     }
                 }
             }
@@ -1259,7 +1284,6 @@ namespace WinUIMusicPlayer.Utils
                 // 处理歌曲路径行（非注释行）
                 if (!line.StartsWith("#"))
                 {
-                    Debug.WriteLine(Path.GetFileName(line));
                     Music? music = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
                     if (music is not null)
                     {
@@ -1310,14 +1334,16 @@ namespace WinUIMusicPlayer.Utils
                             }
                         );
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        _logger.LogError(ex, $"GetSystemFontsInternal 处理字体失败: {ex.Message}");
                     }
                 }
                 return [.. list.AsValueEnumerable().OrderBy(f => f.Name)];
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetSystemFontsInternal 获取系统字体失败: {ex.Message}");
                 return new List<FontInfo>();
             }
         }
@@ -1346,8 +1372,9 @@ namespace WinUIMusicPlayer.Utils
                     await System.IO.File.WriteAllTextAsync(file.Path, m3u8Content);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"ExportPlayList 导出播放列表失败: {ex.Message}");
             }
         }
 
@@ -1364,10 +1391,10 @@ namespace WinUIMusicPlayer.Utils
                 foreach (var file in Directory.EnumerateFiles(cacheFolder, "*.png"))
                 {
                     if (!validFiles.Contains(file))
-                        try { System.IO.File.Delete(file); } catch { }
+                        try { System.IO.File.Delete(file); } catch (Exception ex) { _logger.LogError(ex, $"CleanupStaleCacheFiles 清理缓存文件失败: {ex.Message}"); }
                 }
             }
-            catch { }
+            catch (Exception ex) { _logger.LogError(ex, $"CleanupStaleCacheFiles 清理过期缓存失败: {ex.Message}"); }
         }
 
         public static string PlayModeToString(PlayMode playMode)

@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
 using Windows.Foundation;
 
@@ -19,13 +19,15 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
         // volatile 保证多线程可见性；Show/Dismiss 用 Interlocked.CompareExchange 做互斥
         private volatile int _isAnimating = 0; // 0 = idle, 1 = busy
+        private ILogger<NavigationService> _logger;
 
         public Frame ContentFrame { get; set; }
         public bool CanGoBack => ContentFrame?.CanGoBack ?? false;
 
-        public NavigationService(IServiceProvider serviceProvider)
+        public NavigationService(IServiceProvider serviceProvider, ILogger<NavigationService> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
             _easingOutFunction = new ExponentialEase
             {
                 EasingMode = EasingMode.EaseOut,
@@ -100,7 +102,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[NavigationService] AnimatePageTransition error: {ex.Message}");
+                _logger.LogError(ex, $"AnimatePageTransition 动画错误: {ex.Message}");
             }
         }
 
@@ -348,7 +350,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[NavigationService] Show error: {ex.Message}");
+                _logger.LogError(ex, $"Show 滑入错误: {ex.Message}");
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
         }
@@ -395,7 +397,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[NavigationService] Dismiss error: {ex.Message}");
+                _logger.LogError(ex, $"Dismiss 滑出错误: {ex.Message}");
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
         }

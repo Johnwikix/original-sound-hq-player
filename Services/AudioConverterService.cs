@@ -1,4 +1,5 @@
 ﻿using ManagedBass.Dsd;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -13,9 +14,11 @@ namespace WinUIMusicPlayer.Services
         public EventHandler<double>? updateProgress { get; set; }
         private BassAudioConverter bassAudioConverter;
         private AppViewModel AppViewModel { get; }
-        public AudioConverterService(AppViewModel appViewModel)
+        private ILogger<AudioConverterService> _logger;
+        public AudioConverterService(AppViewModel appViewModel, ILogger<AudioConverterService> logger)
         {
             AppViewModel = appViewModel;
+            _logger = logger;
             bassAudioConverter = new BassAudioConverter();
             bassAudioConverter.progressEvent += (sender, progress) =>
             {
@@ -81,8 +84,9 @@ namespace WinUIMusicPlayer.Services
                         break;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"ConvertAudio2Wav 音频转换失败: {ex.Message}");
                 OnProgressChanged(100);
             }
         }

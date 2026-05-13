@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -11,6 +11,8 @@ namespace WinUIMusicPlayer.Services
 {
     public class UsbDeviceSubFolderRescan
     {
+        private static ILogger<UsbDeviceSubFolderRescan> _logger = App.GetLogger<UsbDeviceSubFolderRescan>();
+
         public List<UsbDeviceSubFolder> RecordInitialFolderTimes(string folder, string uniqueDeviceId)
         {
             // 创建本地列表，而不是使用类成员变量
@@ -34,7 +36,6 @@ namespace WinUIMusicPlayer.Services
                     UniqueDeviceId = uniqueDeviceId
                 };
                 folderList.Add(folderItem);
-                Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.UniqueDeviceId}");
 
                 // 递归获取子文件夹
                 string[] subFolders = Directory.GetDirectories(folder);
@@ -45,8 +46,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                // 安全处理可能的异常（如权限问题或文件夹不存在）
-                Debug.WriteLine($"文件夹扫描错误 {folder}: {ex.Message}");
+                _logger.LogError(ex, $"CollectFolderInfo 文件夹扫描错误 {folder}: {ex.Message}");
             }
         }
 
@@ -69,7 +69,6 @@ namespace WinUIMusicPlayer.Services
                         {
                             await App.Services.GetRequiredService<MusicDatabaseService>().AddUsbDeviceSubFolder(subFolder);
                             await App.Services.GetRequiredService<MusicDatabaseService>().RescanUsbDeviceFolderByPath(usbDeviceMusics, uniqueDeviceId, subFolder.Path, true);
-                            Debug.WriteLine($"Added new subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.UniqueDeviceId}");
                             changeCount++;
                         }
                         else
@@ -80,7 +79,6 @@ namespace WinUIMusicPlayer.Services
                                 dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
                                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateUsbDeviceSubFolder(dbSubFolder);
                                 await App.Services.GetRequiredService<MusicDatabaseService>().RescanUsbDeviceFolderByPath(usbDeviceMusics, uniqueDeviceId, subFolder.Path, true);
-                                Debug.WriteLine($"Updated subfolder: {subFolder.Path},time:{subFolder.LastModifiedTime},folderId:{subFolder.UniqueDeviceId}");
                                 changeCount++;
                             }
                         }
@@ -93,7 +91,6 @@ namespace WinUIMusicPlayer.Services
                         {
                             await App.Services.GetRequiredService<MusicDatabaseService>().DeleteUsbDeviceSubFolder(dbSubFolder);
                             await App.Services.GetRequiredService<MusicDatabaseService>().DeleteUsbDeviceSubFolderByPath(dbSubFolder.Path, uniqueDeviceId);
-                            Debug.WriteLine($"Deleted subfolder: {dbSubFolder.Path},time:{dbSubFolder.LastModifiedTime},folderId:{dbSubFolder.UniqueDeviceId}");
                         }
                     }
                 }
@@ -105,7 +102,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error: {ex.Message}");
+                _logger.LogError(ex, $"UsbDeviceSubFolderAutoScan 错误: {ex.Message}");
             }
         }
     }

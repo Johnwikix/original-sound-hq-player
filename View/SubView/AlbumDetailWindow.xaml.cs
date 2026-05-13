@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -31,6 +32,7 @@ namespace WinUIMusicPlayer.View.SubView
     /// </summary>
     public sealed partial class AlbumDetailWindow : WinUIEx.WindowEx, INotifyPropertyChanged
     {
+        private static ILogger<AlbumDetailWindow> _logger = App.GetLogger<AlbumDetailWindow>();
         public Music MusicDetail
         {
             get;
@@ -153,6 +155,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"SaveToDataBaseButton_Click æ›´æ–°ä¸“è¾‘ä¿¡æ¯å¤±è´¥: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -167,7 +170,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
-            // ±ÜÃâÖØ¸´Ğ´Èë±êÖ¾Î»
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½Ğ´ï¿½ï¿½ï¿½Ö¾Î»
             bool isResultAssigned = false;
             foreach (var music in AlbumMusics)
             {
@@ -213,6 +216,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"ConfirmButton_Click æ›´æ–°ä¸“è¾‘æ–‡ä»¶å¤±è´¥: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -244,12 +248,12 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 var openPicker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);
-                // Ìí¼Óm3u8ÎÄ¼şÉ¸Ñ¡Æ÷
+                // ï¿½ï¿½ï¿½ï¿½m3u8ï¿½Ä¼ï¿½É¸Ñ¡ï¿½ï¿½
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
                 openPicker.FileTypeFilter.Add(".png");
                 openPicker.ViewMode = PickerViewMode.List;
-                // ÏÔÊ¾ÎÄ¼şÑ¡ÔñÆ÷²¢»ñÈ¡½á¹û
+                // ï¿½ï¿½Ê¾ï¿½Ä¼ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½
                 var filePickerResult = await openPicker.PickSingleFileAsync();
                 var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
 
@@ -261,6 +265,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"SelectCoverImageButton_Click é€‰æ‹©å°é¢å›¾ç‰‡å¤±è´¥: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -282,6 +287,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, $"SaveImageButton_Click ä¿å­˜ä¸“è¾‘å°é¢å¤±è´¥: {ex.Message}");
                     NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }

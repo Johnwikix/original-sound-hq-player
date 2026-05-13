@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -29,13 +30,15 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         public MusicBrowseViewModel MusicBrowseViewModel { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        private SongCollectionPage _currentPage{ get; set; }        
+        private SongCollectionPage _currentPage{ get; set; }
+        private ILogger<SongCollectionViewModel> _logger;
        
-        public SongCollectionViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public SongCollectionViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongCollectionViewModel> logger)
         {
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             MusicBrowseViewModel = musicBrowseViewModel;
+            _logger = logger;
             InitalizeOption();
         }
         private void InitalizeOption()
@@ -141,7 +144,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"滚动音乐失败: {ex.Message}");
+                _logger.LogError(ex, $"UpdateMusicListView 滚动音乐失败: {ex.Message}");
             }
         }
 
@@ -207,12 +210,8 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                        _logger.LogError(ex, $"OpenInExplorer 打开资源管理器时出错: {ex.Message}");
                     }
-                }
-                else
-                {
-                    Debug.WriteLine($"文件不存在: {filePath}");
                 }
             }
         }

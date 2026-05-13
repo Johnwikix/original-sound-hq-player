@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,12 +22,14 @@ namespace WinUIMusicPlayer.Services
         public AppViewModel AppViewModel { get; }
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
+        private ILogger<BassPlayerCommandService> _logger;
 
-        public BassPlayerCommandService(AppViewModel appViewModel,MusicDatabaseService musicDatabaseService)
+        public BassPlayerCommandService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<BassPlayerCommandService> logger)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            _logger = logger;
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
 
@@ -118,9 +121,7 @@ namespace WinUIMusicPlayer.Services
                 int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
                 MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
             }
-            catch
-            {
-            }
+            catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack 操作失败: {ex.Message}"); }
         }
 
         public void ToggleEqualizer()
@@ -177,7 +178,7 @@ namespace WinUIMusicPlayer.Services
             {
                 return await IpcService.GetCurrentPostion();
             }
-            catch {
+            catch (Exception ex) { _logger.LogError(ex, $"GetCurrentPosition 操作失败: {ex.Message}");
                 return 0;
             }            
         }
@@ -188,7 +189,7 @@ namespace WinUIMusicPlayer.Services
             {
                 return await IpcService.GetDuration();
             }
-            catch {
+            catch (Exception ex) { _logger.LogError(ex, $"GetTotalPosition 操作失败: {ex.Message}");
                 return 0;
             }            
         }
@@ -199,7 +200,7 @@ namespace WinUIMusicPlayer.Services
             {
                 return await IpcService.AdjustPlaybackPosition(seconds);
             }
-            catch { 
+            catch (Exception ex) { _logger.LogError(ex, $"AdjustPlaybackPosition 操作失败: {ex.Message}");
                 return 0;
             }            
         }

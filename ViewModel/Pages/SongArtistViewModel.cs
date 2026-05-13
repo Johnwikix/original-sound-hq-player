@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -30,12 +31,14 @@ namespace WinUIMusicPlayer.ViewModel
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private SongArtistListPage _currentPage { get; set; }
+        private ILogger<SongArtistViewModel> _logger;
 
-        public SongArtistViewModel(MusicBrowseViewModel musicBrowseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public SongArtistViewModel(MusicBrowseViewModel musicBrowseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongArtistViewModel> logger)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            _logger = logger;
             InitalizeOption();
         }
 
@@ -150,7 +153,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"滚动音乐失败: {ex.Message}");
+                _logger.LogError(ex, $"UpdateMusicListView 滚动音乐失败: {ex.Message}");
             }
         }
 
@@ -216,12 +219,8 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                        _logger.LogError(ex, $"OpenInExplorer 打开资源管理器时出错: {ex.Message}");
                     }
-                }
-                else
-                {
-                    Debug.WriteLine($"文件不存在: {filePath}");
                 }
             }
         }

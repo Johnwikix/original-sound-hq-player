@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -14,6 +15,8 @@ namespace WinUIMusicPlayer.Controls
 {
     public sealed partial class ImageSwitcher : UserControl
     {
+        private static ILogger<ImageSwitcher> _logger = WinUIMusicPlayer.App.GetLogger<ImageSwitcher>();
+
         // ── 现有依赖属性保持不变 ──────────────────────────────────────────
 
         public int CornerRadiusAmount
@@ -165,8 +168,9 @@ namespace WinUIMusicPlayer.Controls
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"DecodeToBitmapAsync 操作失败: {ex.Message}");
                 return null;
             }
         }
@@ -191,8 +195,9 @@ namespace WinUIMusicPlayer.Controls
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"LoadDefaultCoverAsync 操作失败: {ex.Message}");
                 return null;
             }
         }

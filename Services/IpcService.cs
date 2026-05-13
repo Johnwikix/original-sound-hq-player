@@ -1,7 +1,7 @@
 ﻿using ATL;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Text;
@@ -40,12 +40,14 @@ namespace WinUIMusicPlayer.Services
 
         private CancellationTokenSource _notificationCts;
         private Task _notificationListenerTask;
+        private ILogger<IpcService> _logger;
         private AppViewModel AppViewModel { get; }
         // 新增：通知事件，外部可订阅
         public event Action<ResponseMessage> NotificationReceived;
-        public IpcService(AppViewModel appViewModel)
+        public IpcService(AppViewModel appViewModel, ILogger<IpcService> logger)
         {
             AppViewModel = appViewModel;
+            _logger = logger;
         }
 
         public void Initializing()
@@ -91,7 +93,6 @@ namespace WinUIMusicPlayer.Services
 
         private async Task ListenForNotificationsAsync(CancellationToken cancellationToken)
         {
-            Debug.WriteLine("Notification listener started...");
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
@@ -143,7 +144,6 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (SemaphoreFullException)
                 {
-                    Debug.WriteLine("Warning: Request semaphore was already signaled.");
                 }
 
                 // 3. 等待 Response 信号量
@@ -161,7 +161,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Shared Memory Error: {ex.Message}");
+                _logger.LogError(ex, $"SendCommandAsync 通讯错误: {ex.Message}");
                 return new ResponseMessage { Type = 0, Message = $"Communication error: {ex.Message}" };
             }
             finally
@@ -182,7 +182,7 @@ namespace WinUIMusicPlayer.Services
                 length = MaxMessageSize - sizeof(int);
                 bytes = Encoding.UTF8.GetBytes(json[..((MaxMessageSize - sizeof(int)) / 3)]);
                 length = bytes.Length;
-                Debug.WriteLine("Warning: Client message truncated due to size limit.");
+
             }
 
             _accessor.Write(offset, length);
@@ -206,7 +206,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error reading from MMF: {ex.Message}");
+                _logger.LogError(ex, $"ReadFromSharedMemory 读取错误: {ex.Message}");
                 return string.Empty;
             }
         }

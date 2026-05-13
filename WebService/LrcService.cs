@@ -3,7 +3,7 @@ using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Searchers;
 using Lyricify.Lyrics.Searchers.Helpers;
 using System;
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -20,7 +20,9 @@ namespace WinUIMusicPlayer.WebService
     {
         private HttpClient _httpClient;
         private readonly HttpClientHandler _clientHandler;
-        public LrcService() {
+        private ILogger<LrcService> _logger;
+        public LrcService(ILogger<LrcService> logger) {
+            _logger = logger;
             _clientHandler = new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.None,
@@ -43,8 +45,9 @@ namespace WinUIMusicPlayer.WebService
             {
                 return null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetMixedCoverImageAsync 歌词获取失败: {ex.Message}");
                 return null;
             }
         }
@@ -72,8 +75,9 @@ namespace WinUIMusicPlayer.WebService
             {
                 return null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetCoverImageAsync 歌词获取失败: {ex.Message}");
                 return null;
             }
         }
@@ -95,8 +99,9 @@ namespace WinUIMusicPlayer.WebService
             {
                 return (string.Empty, string.Empty);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetMixedLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty);
             }
         }
@@ -130,8 +135,9 @@ namespace WinUIMusicPlayer.WebService
             {
                 return (string.Empty, string.Empty);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty);
             }
         }
@@ -160,8 +166,9 @@ namespace WinUIMusicPlayer.WebService
             {
                 return (string.Empty, string.Empty);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetKrcLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty);
             }
         }
@@ -186,6 +193,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetSongAlbumPicData 歌词获取失败: {ex.Message}");
                 return null;
             }
         }
@@ -211,6 +219,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"GetSongAlbumPicDataFromQQ 歌词获取失败: {ex.Message}");
                 return null;
             }
         }

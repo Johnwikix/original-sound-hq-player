@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -9,7 +10,6 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
@@ -28,12 +28,14 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowseViewModel? MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
+        private ILogger<FolderViewModel> _logger;
 
-        public FolderViewModel(MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public FolderViewModel(MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FolderViewModel> logger)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            _logger = logger;
             InitalizeOption();
         }
 
@@ -99,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine(ex.Message);
+                        _logger.LogError(ex, $"FolderGridView_ItemClick 导航失败: {ex.Message}");
                     }
                 }
             }

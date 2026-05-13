@@ -2,6 +2,7 @@
 using CommunityToolkit.WinUI;
 using DffTagReader;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -29,6 +30,8 @@ namespace WinUIMusicPlayer.Behaviors;
 
 public class AlbumCoverBehavior : Behavior<Image>
 {
+    private static ILogger<AlbumCoverBehavior> _logger = WinUIMusicPlayer.App.GetLogger<AlbumCoverBehavior>();
+
     // ── 静态共享状态 ──────────────────────────────────────────────────────
 
     private static readonly ConcurrentDictionary<string, ImageSource> _coverCache = new();
@@ -122,7 +125,7 @@ public class AlbumCoverBehavior : Behavior<Image>
             FadeIn();
         }
         catch (OperationCanceledException) { }
-        catch { }
+        catch (Exception ex) { _logger.LogError(ex, $"WaitAndApplyAsync 操作失败: {ex.Message}"); }
     }
 
     // ── 加载核心（静态，供多实例共用） ────────────────────────────────────
@@ -134,8 +137,9 @@ public class AlbumCoverBehavior : Behavior<Image>
         {
             return await LoadImageAsync(music, bitmap, coverSize);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, $"LoadCoreAsync 操作失败: {ex.Message}");
             return null;
         }
         finally
@@ -168,7 +172,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                         }
                         else
                         {
-                            try { System.IO.File.Delete(cachePath); } catch { }
+                            try { System.IO.File.Delete(cachePath); } catch (Exception ex) { _logger.LogError(ex, $"LoadImageAsync 操作失败: {ex.Message}"); }
                         }
                     }
                 }
@@ -177,8 +181,9 @@ public class AlbumCoverBehavior : Behavior<Image>
                 byte[]? picture =  await ToolUtils.GetRawImage(music);
                 return await DecodePictureAsync(picture, music, bitmap, coverSize);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"LoadImageAsync 操作失败: {ex.Message}");
                 return null;
             }
         });
@@ -242,7 +247,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                         await outputStream.AsStream().CopyToAsync(fs);
                         // fs 在此 using 块结束时 Flush+Close，outputStream 不受影响
                     }
-                    catch { }
+                    catch (Exception ex) { _logger.LogError(ex, $"DecodePictureAsync 操作失败: {ex.Message}"); }
                 }
 
                 outputStream.Seek(0);
@@ -270,7 +275,7 @@ public class AlbumCoverBehavior : Behavior<Image>
 
                 return result;
             }
-            catch { return null; }
+            catch (Exception ex) { _logger.LogError(ex, $"DecodePictureAsync 操作失败: {ex.Message}"); return null; }
             finally
             {
                 softwareBitmap?.Dispose();
@@ -310,44 +315,8 @@ public class AlbumCoverBehavior : Behavior<Image>
 
             return result;
         }
-        catch { return null; }
+        catch (Exception ex) { _logger.LogError(ex, $"LoadFromFilePathAsync 操作失败: {ex.Message}"); return null; }
     }
-
-    // ── 网络获取 ──────────────────────────────────────────────────────────
-
-    //private static async Task<ImageSource?> FetchFromNetAsync(
-    //    byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
-    //{
-    //    try
-    //    {
-    //        if (!Directory.Exists(AppSettings.MusicCoverCache))
-    //            Directory.CreateDirectory(AppSettings.MusicCoverCache);
-
-    //        string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-    //        string invalidChars = new string(Path.GetInvalidFileNameChars())
-    //                            + new string(Path.GetInvalidPathChars());
-    //        fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-    //        string filePath = Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
-
-    //        if (System.IO.File.Exists(filePath))
-    //        {
-    //            picture = System.IO.File.ReadAllBytes(filePath);
-    //        }
-    //        else if (AppSettings.IsAutoLyricsEnabled)
-    //        {
-    //            picture = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music);
-
-    //            if (picture is { Length: > 0 })
-    //                System.IO.File.WriteAllBytes(filePath, picture);
-    //        }
-
-    //        if (picture is { Length: > 0 })
-    //            return await DecodePictureAsync(picture, music, bitmap, coverSize);
-    //    }
-    //    catch { }
-
-    //    return null;
-    //}
 
     // ── 缓存管理 ──────────────────────────────────────────────────────────
 

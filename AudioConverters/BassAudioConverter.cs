@@ -2,9 +2,10 @@
 using ManagedBass;
 using ManagedBass.Enc;
 using System;
-using System.Diagnostics;
 using System.IO;
+using Microsoft.Extensions.Logging;
 
+using WinUIMusicPlayer;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
 
@@ -12,6 +13,8 @@ namespace WinUIMusicPlayer.AudioConverters
 {
     public class BassAudioConverter
     {
+        private static ILogger<BassAudioConverter> _logger = App.GetLogger<BassAudioConverter>();
+
         public EventHandler<double>? progressEvent;
         public BassAudioConverter()
         {
@@ -97,7 +100,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"发生错误：{ex.Message}");
+                _logger.LogError(ex, $"ConvertToMp3 转换失败: {ex.Message}");
             }
             finally
             {
@@ -146,7 +149,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"发生错误：{ex.Message}");
+                _logger.LogError(ex, $"ConvertToFlac 转换失败: {ex.Message}");
             }
             finally
             {
@@ -189,7 +192,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"发生错误：{ex.Message}");
+                _logger.LogError(ex, $"ConvertToOgg 转换失败: {ex.Message}");
             }
             finally
             {
@@ -232,7 +235,7 @@ namespace WinUIMusicPlayer.AudioConverters
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"发生错误：{ex.Message}");
+                _logger.LogError(ex, $"ConvertToOpus 转换失败: {ex.Message}");
             }
             finally
             {
@@ -260,8 +263,9 @@ namespace WinUIMusicPlayer.AudioConverters
                 };
                 newFile.Save();
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"SaveMetaData 保存元数据失败: {ex.Message}");
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -18,6 +19,8 @@ namespace WinUIMusicPlayer.Behaviors
 {
     public class FadeImageBehaviorWin2d : Behavior<Image>
     {
+        private static ILogger<FadeImageBehaviorWin2d> _logger = WinUIMusicPlayer.App.GetLogger<FadeImageBehaviorWin2d>();
+
         private Storyboard? _currentTransitionStoryboard;
         private Image? _tempOverlayImage;
         private CancellationTokenSource? _cts;
@@ -263,12 +266,12 @@ namespace WinUIMusicPlayer.Behaviors
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // 设备丢失时重置，下次调用自动恢复
                 if (_canvasDevice?.IsDeviceLost(ex.HResult) == true)
                 {
                     _canvasDevice.Dispose();
                     _canvasDevice = null;
                 }
+                _logger.LogError(ex, $"DecodeWithWin2DAsync 操作失败: {ex.Message}");
                 return null;
             }
         }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Windows.Media;
@@ -18,8 +19,10 @@ namespace WinUIMusicPlayer.Services
         public event EventHandler PauseRequested;
         public event EventHandler NextTrackRequested;
         public event EventHandler PreviousTrackRequested;
-        public SystemMediaControlsService()
+        private ILogger<SystemMediaControlsService> _logger;
+        public SystemMediaControlsService(ILogger<SystemMediaControlsService> logger)
         {
+            _logger = logger;
             InitializeSystemMediaTransportControls();            
         }
 
@@ -51,7 +54,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"初始化 SMTC 失败: {ex.Message}");
+                _logger.LogError(ex, $"InitializeSystemMediaTransportControls 初始化 SMTC 失败: {ex.Message}");
             }
         }
 
@@ -102,7 +105,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"设置专辑封面失败: {ex.Message}");
+                    _logger.LogError(ex, $"UpdateMediaInfo 设置专辑封面失败: {ex.Message}");
                 }
             }
             else
@@ -123,11 +126,10 @@ namespace WinUIMusicPlayer.Services
                 _timelineProperties.MinSeekTime = TimeSpan.Zero;
                 _timelineProperties.MaxSeekTime = totalDuration;
                 SystemMediaControls.UpdateTimelineProperties(_timelineProperties);
-                //System.Diagnostics.Debug.WriteLine($"更新SMTC时间轴,当前时间:{currentPosition}，总时间：{totalDuration}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"更新时间轴失败: {ex.Message}");
+                _logger.LogError(ex, $"UpdateTimelineProperties 更新时间轴失败: {ex.Message}");
             }
         }
 
@@ -138,7 +140,7 @@ namespace WinUIMusicPlayer.Services
                 // 空值检查
                 if (imageBytes is null || imageBytes.Length == 0)
                 {
-                    Console.WriteLine("输入的字节数组为空或null");
+                    App.GetLogger<SystemMediaControlsService>().LogWarning("ByteArrayToRandomAccessStreamReferenceAsync 输入的字节数组为空或null");
                     return null;
                 }
                 // 创建内存流
@@ -156,7 +158,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"转换过程中出现错误: {ex.Message}");
+                App.GetLogger<SystemMediaControlsService>().LogError(ex, "ByteArrayToRandomAccessStreamReferenceAsync 转换过程中出现错误: {ex.Message}");
                 return null;
             }
         }

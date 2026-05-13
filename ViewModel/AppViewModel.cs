@@ -10,7 +10,6 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -407,7 +406,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine(ex.Message);
+                            _logger.LogError(ex, $"UpdateProgressTimerUI 更新进度条UI失败: {ex.Message}");
                         }
                     }
                 });
@@ -472,7 +471,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"更新歌词失败: {ex.Message}");
+                    _logger.LogError(ex, $"UpdateLyricsToUI 更新歌词失败: {ex.Message}");
                 }
             });
         }
@@ -948,7 +947,9 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-            catch {
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"RescanFolder 重新扫描文件夹失败: {ex.Message}");
             }
         }
 

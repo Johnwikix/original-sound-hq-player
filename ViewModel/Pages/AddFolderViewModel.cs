@@ -5,7 +5,6 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
@@ -40,7 +39,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var folderList = await _musicDatabaseService.GetFolders();
                 FolderList.Clear();
-                Debug.WriteLine(AppViewModel.SongsSource.AsValueEnumerable().Count());
                 foreach (var folder in folderList)
                 {
                     folder.SongCount = AppViewModel.SongsSource.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
@@ -99,7 +97,6 @@ namespace WinUIMusicPlayer.ViewModel
             foreach (var item in folders)
             {
                 string folderPath = item.Path;
-                Debug.WriteLine($"路径: {folderPath}");
                 StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
                 await AddFolderMusic(folder);
             }

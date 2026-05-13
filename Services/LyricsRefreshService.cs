@@ -1,9 +1,9 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -60,10 +60,12 @@ namespace WinUIMusicPlayer.Services
 
         private CancellationTokenSource? _lyricsCancellationTokenSource;
         private MusicDatabaseService _musicDatabaseService { get; }
+        private ILogger<LyricsRefreshService> _logger;
 
-        public LyricsRefreshService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public LyricsRefreshService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<LyricsRefreshService> logger)
         {
             _musicDatabaseService = musicDatabaseService;
+            _logger = logger;
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -143,7 +145,7 @@ namespace WinUIMusicPlayer.Services
                         return lyrics;
                 }
                 catch (OperationCanceledException) { throw; }
-                catch { /* 讀取失敗，繼續嘗試下一個格式 */ }
+                catch (Exception ex) { _logger.LogWarning(ex, $"TryParseLocalLyricsFile 读取本地歌词文件失败，继续尝试下一个格式: {ex.Message}"); }
             }
 
             return null;
@@ -152,7 +154,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// 讀取翻譯文件：原文件名_Translated{ext}，使用 string.Concat 避免插值分配
         /// </summary>
-        private static string? TryReadTranslationFile(string musicPath, string ext)
+        private string? TryReadTranslationFile(string musicPath, string ext)
         {
             try
             {
@@ -163,7 +165,7 @@ namespace WinUIMusicPlayer.Services
                 string transPath = Path.Combine(dir, string.Concat(fileName, "_Translated", ext));
                 return File.Exists(transPath) ? File.ReadAllText(transPath) : null;
             }
-            catch { return null; }
+            catch (Exception ex) { _logger.LogWarning(ex, $"TryReadTranslationFile 读取翻译文件失败: {ex.Message}"); return null; }
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -545,7 +547,7 @@ namespace WinUIMusicPlayer.Services
                         }
                         music.IsLrcSearched = true;
                     }
-                    catch (OperationCanceledException) { Debug.WriteLine("歌詞任務取消"); }
+                    catch (OperationCanceledException) { }
                 }
             }
 

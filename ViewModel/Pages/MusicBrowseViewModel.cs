@@ -13,7 +13,6 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -225,8 +224,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
             // 设备枚举完成时触发
-            System.Diagnostics.Debug.WriteLine("设备枚举已完成");
-        }
+                    }
 
         public void UpdateInfoBar(string message)
         {
@@ -276,8 +274,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
         {
-            Debug.WriteLine($"USB设备已选择: {usbStorageDevice.UniqueId}");
-            AppData.UsbStorageDevice = usbStorageDevice;
+                        AppData.UsbStorageDevice = usbStorageDevice;
             List<UsbDeviceMusic> usbDeviceMusics = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
             if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
             {
@@ -285,10 +282,8 @@ namespace WinUIMusicPlayer.ViewModel
                 DateTime startTime = DateTime.Now;
                 UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                 await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
-                Debug.WriteLine($"UsbDeviceSubFolderAutoScan完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-                Debug.WriteLine($"USB设备扫描完成,耗时:{(DateTime.Now - startTime).TotalSeconds}秒");
-            }
+                                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+                            }
             else
             {
                 // 读取USB设备中的音乐文件

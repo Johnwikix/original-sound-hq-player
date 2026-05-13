@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -25,11 +26,13 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
-        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        private ILogger<FavouritePlayListViewModel> _logger;
+        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FavouritePlayListViewModel> logger)
         {
             BrowseViewModel = browseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
+            _logger = logger;
             InitalizeOption();
         }
 
@@ -116,7 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"滚动音乐失败: {ex.Message}");
+                _logger.LogError(ex, $"UpdateMusicListView 滚动音乐失败: {ex.Message}");
             }
         }
 
@@ -207,12 +210,8 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"打开资源管理器时出错: {ex.Message}");
+                        _logger.LogError(ex, $"OpenInExplorer 打开资源管理器时出错: {ex.Message}");
                     }
-                }
-                else
-                {
-                    Debug.WriteLine($"文件不存在: {filePath}");
                 }
             }
         }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -20,6 +21,7 @@ namespace WinUIMusicPlayer.View
     /// </summary>
     public sealed partial class AddFolderPage : Page
     {
+        private static ILogger<AddFolderPage> _logger = App.GetLogger<AddFolderPage>();
         private NotificationService notificationService;
         public AddFolderViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -98,7 +100,7 @@ namespace WinUIMusicPlayer.View
 
         private void Grid_DragOver(object sender, DragEventArgs e)
         {
-            // ¼ì²éÍÏ×§µÄÊý¾ÝÊÇ·ñ°üº¬ÎÄ¼þ
+            // ï¿½ï¿½ï¿½ï¿½ï¿½×§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 e.AcceptedOperation = DataPackageOperation.Link;
@@ -116,7 +118,7 @@ namespace WinUIMusicPlayer.View
                 try
                 {
                     var items = await e.DataView.GetStorageItemsAsync();
-                    // É¸Ñ¡³öÎÄ¼þ¼Ð
+                    // ç­›é€‰å‡ºæ–‡ä»¶å¤¹
                     var folders = items.AsValueEnumerable().Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
 
                     if (folders.Any())
@@ -134,6 +136,7 @@ namespace WinUIMusicPlayer.View
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, $"Grid_Drop æ‹–æ”¾æ–‡ä»¶å¤¹å¤±è´¥: {ex.Message}");
                     notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }

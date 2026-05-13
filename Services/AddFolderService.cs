@@ -1,7 +1,7 @@
 ﻿using ATL;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.Services
     public class AddFolderService
     {
         private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(8, 8);
+        private static ILogger<AddFolderService> _logger = App.GetLogger<AddFolderService>();
         public AddFolderService()
         {
         }
@@ -50,11 +51,11 @@ namespace WinUIMusicPlayer.Services
                 };
                 return music;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // 即使提取元数据失败，也尝试添加基本信息
+                _logger.LogError(ex, $"GetUsbDeviceMusicInfo 读取元数据失败: {file.Path}");
                 try
-                {_logger.LogError(ex, "
+                {
                     var music = new UsbDeviceMusic
                     {
                         Path = file.Path,
@@ -68,7 +69,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception innerEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"创建基本音乐条目时出错: {file.Path}, 错误: {innerEx.Message}");
+                    _logger.LogError(innerEx, $"GetUsbDeviceMusicInfo 创建基本音乐条目时出错: {file.Path}");
                 }
             }
             return null;
@@ -93,8 +94,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 catch (Exception ex)
                 {
-                    // 记录错误但不中断整个过程
-                    System.Diagnostics.Debug.WriteLine($"处理文件 {file.Name} 时出错: {ex.Message}");
+                    _logger.LogError(ex, $"GetMusicFilesRecursive 处理文件出错: {file.Name}");
                     return null;
                 }
                 finally

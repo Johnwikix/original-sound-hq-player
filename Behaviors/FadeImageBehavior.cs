@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -15,6 +16,8 @@ namespace WinUIMusicPlayer.Behaviors
 {
     public class FadeImageBehavior : Behavior<Image>
     {
+        private static ILogger<FadeImageBehavior> _logger = WinUIMusicPlayer.App.GetLogger<FadeImageBehavior>();
+
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
         private CancellationTokenSource _cts;
@@ -190,7 +193,7 @@ namespace WinUIMusicPlayer.Behaviors
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;
             }
-            catch { return null; }
+            catch (Exception ex) { _logger.LogError(ex, $"DecodeToBitmapAsync 操作失败: {ex.Message}"); return null; }
         }
 
         // ── 生命周期 ───────────────────────────────────────────────────

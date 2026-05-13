@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -31,6 +32,7 @@ namespace WinUIMusicPlayer.View.SubView
     /// </summary>
     public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx,INotifyPropertyChanged
     {
+        private static ILogger<MusicDetailsWindow> _logger = App.GetLogger<MusicDetailsWindow>();
         private Music MusicDetail
         {
             get;
@@ -203,6 +205,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"SaveToDataBaseButton_Click 更新音乐信息失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -251,6 +254,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"ConfirmButton_Click 更新文件失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -390,6 +394,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"SelectCoverImageButton_Click 选择封面图片失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -407,10 +412,11 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     await System.IO.File.WriteAllBytesAsync(file.Path, AlbumCoverData);
                 }
-                catch (Exception ex)
-                {
-                    NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"SaveImageButton_Click 保存封面图片失败: {ex.Message}");
+                        NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                    }
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +14,7 @@ namespace WinUIMusicPlayer.Services
     public class AutoRescanService
     {
         private static Dictionary<string, SubFolder> _subFoldersDict = new Dictionary<string, SubFolder>(1024);
+        private static ILogger<AutoRescanService> _logger = App.GetLogger<AutoRescanService>();
 
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
         {
@@ -33,7 +34,6 @@ namespace WinUIMusicPlayer.Services
                     FolderId = folderId
                 };
                 folderList.Add(folderItem);
-                Debug.WriteLine($"Folder: {folderItem.Path}, Last Modified Time: {folderItem.LastModifiedTime}，FolderId:{folderItem.FolderId}");
 
                 // 递归获取子文件夹
                 string[] subFolders = Directory.GetDirectories(folder);
@@ -44,8 +44,7 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                // 安全处理可能的异常（如权限问题或文件夹不存在）
-                Debug.WriteLine($"文件夹扫描错误 {folder}: {ex.Message}");
+                _logger.LogError(ex, $"CollectFolderInfo 文件夹扫描错误 {folder}: {ex.Message}");
             }
         }
 
@@ -133,11 +132,10 @@ namespace WinUIMusicPlayer.Services
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("AutoScan cancelled.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error: {ex.Message}");
+                _logger.LogError(ex, $"AutoScan 错误: {ex.Message}");
             }
         }
     }
