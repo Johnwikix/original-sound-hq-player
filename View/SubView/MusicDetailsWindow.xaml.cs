@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
             }
         }       
-        public BitmapImage AlbumCoverBitmap
+        public BitmapImage? AlbumCoverBitmap
         {
             get;
             set
@@ -235,7 +235,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             MusicDetail.UpdateTime = updateTime;
             await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
-            if (AppData.albumCoverCache.ContainsKey(MusicDetail.Album))
+            if (AppData.albumCoverCache.ContainsKey(MusicDetail.Album) && AlbumCoverBitmap is not null)
             {
                 AppData.albumCoverCache[MusicDetail.Album] = AlbumCoverBitmap;
             }

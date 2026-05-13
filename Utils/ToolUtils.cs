@@ -292,7 +292,7 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<BitmapImage> ConvertByteArrayToBitmapImage(byte[] imageData, int maxSize = 0)
+        public static async Task<BitmapImage?> ConvertByteArrayToBitmapImage(byte[] imageData, int maxSize = 0)
         {
             try
             {
