@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
@@ -48,87 +49,91 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task AutoScan()
+        public static async Task AutoScan(CancellationToken cancellationToken = default)
         {
             try
             {
-                var folders = await App.Services.GetRequiredService<MusicDatabaseService>().GetFolders();
+                var dbService = App.Services.GetRequiredService<MusicDatabaseService>();
+                var folders = await dbService.GetFolders();
                 int changeCount = 0;
 
                 foreach (var folder in folders)
                 {
-                    _subFoldersDict.Clear(); // 重用Dictionary
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    var subFolders = await Task.Run(() =>
-                    {
-                        return RecordInitialFolderTimes(folder.Path, folder.Id);
-                    });
+                    _subFoldersDict.Clear();
+
+                    var subFolders = await Task.Run(
+                        () => RecordInitialFolderTimes(folder.Path, folder.Id),
+                        cancellationToken);
 
                     foreach (var subFolder in subFolders)
-                    {
                         _subFoldersDict[subFolder.Path] = subFolder;
-                    }
 
-                    var subFoldersInDb = await App.Services.GetRequiredService<MusicDatabaseService>().GetSubFolders(folder.Id);
+                    var subFoldersInDb = await dbService.GetSubFolders(folder.Id);
+
                     if (subFoldersInDb?.Count > 0)
                     {
                         var dbPaths = new HashSet<string>(subFoldersInDb.Count);
                         foreach (var dbSubFolder in subFoldersInDb)
-                        {
                             dbPaths.Add(dbSubFolder.Path);
-                        }
 
                         // 处理新增和更新
                         foreach (var kvp in _subFoldersDict)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
+
                             var path = kvp.Key;
                             var subFolder = kvp.Value;
 
                             if (!dbPaths.Contains(path))
                             {
-                                await App.Services.GetRequiredService<MusicDatabaseService>().AddSubFolder(subFolder);
-                                await App.Services.GetRequiredService<MusicDatabaseService>().RescanFolderWithOutUpdateAll(path, true);
+                                await dbService.AddSubFolder(subFolder);
+                                await dbService.RescanFolderWithOutUpdateAll(path, true);
                                 changeCount++;
                             }
                             else
                             {
-                                SubFolder dbSubFolder = subFoldersInDb.AsValueEnumerable().First(dbSubFolder => dbSubFolder.Path == subFolder.Path);
+                                var dbSubFolder = subFoldersInDb.AsValueEnumerable()
+                                    .First(f => f.Path == subFolder.Path);
+
                                 if (dbSubFolder.LastModifiedTime != subFolder.LastModifiedTime)
                                 {
                                     dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
-                                    await App.Services.GetRequiredService<MusicDatabaseService>().UpdateSubFolder(dbSubFolder);
-                                    await App.Services.GetRequiredService<MusicDatabaseService>().RescanFolderWithOutUpdateAll(subFolder.Path, true);
+                                    await dbService.UpdateSubFolder(dbSubFolder);
+                                    await dbService.RescanFolderWithOutUpdateAll(subFolder.Path, true);
                                     changeCount++;
                                 }
                             }
                         }
 
+                        // 处理删除
                         var currentPaths = _subFoldersDict.Keys.AsValueEnumerable().ToHashSet();
                         foreach (var dbSubFolder in subFoldersInDb)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
+
                             if (!currentPaths.Contains(dbSubFolder.Path))
                             {
-                                await App.Services.GetRequiredService<MusicDatabaseService>().DeleteSubFolder(dbSubFolder);
-                                await App.Services.GetRequiredService<MusicDatabaseService>().DeleteSubFolderByPath(dbSubFolder.Path);
+                                await dbService.DeleteSubFolder(dbSubFolder);
+                                await dbService.DeleteSubFolderByPath(dbSubFolder.Path);
                                 changeCount++;
                             }
                         }
                     }
                     else
                     {
-                        await App.Services.GetRequiredService<MusicDatabaseService>().InsertSubFolders(subFolders);
+                        await dbService.InsertSubFolders(subFolders);
                         changeCount++;
                     }
                 }
 
                 if (changeCount > 0)
-                {
-                    //App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-                    //{
-                    //    App.MainWindow.UpdateMusicList();
-                    //});
                     App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("AutoScan cancelled.");
             }
             catch (Exception ex)
             {

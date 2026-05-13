@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             await Task.Run(() =>
                             {
-                                bassAudioConverter.ConvertToWav(music.Path, outputPath);
+                                bassAudioConverter.ConvertToWav(music, outputPath);
                             });
                         }
                         break;
@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             await Task.Run(() =>
                             {
-                                bassAudioConverter.ConvertToFlac(music.Path, outputPath);
+                                bassAudioConverter.ConvertToFlac(music, outputPath);
                             });
                         }
                         break;
@@ -57,7 +57,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             await Task.Run(() =>
                             {
-                                bassAudioConverter.ConvertToMp3(music.Path, outputPath);
+                                bassAudioConverter.ConvertToMp3(music, outputPath);
                             });
                         }
                         break;
@@ -66,7 +66,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             await Task.Run(() =>
                             {
-                                bassAudioConverter.ConvertToOgg(music.Path, outputPath);
+                                bassAudioConverter.ConvertToOgg(music, outputPath);
                             });
                         }
                         break;
@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.Services
                         {
                             await Task.Run(() =>
                             {
-                                bassAudioConverter.ConvertToOpus(music.Path, outputPath);
+                                bassAudioConverter.ConvertToOpus(music, outputPath);
                             });
                         }
                         break;

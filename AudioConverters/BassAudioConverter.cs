@@ -1,10 +1,12 @@
-﻿using ManagedBass;
+﻿using ATL;
+using ManagedBass;
 using ManagedBass.Enc;
 using System;
 using System.Diagnostics;
 using System.IO;
 
 using WinUIMusicPlayer.Manager;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -19,13 +21,13 @@ namespace WinUIMusicPlayer.AudioConverters
         /// <summary>
         /// 将任意音频文件转换为WAV格式
         /// </summary>
-        public void ConvertToWav(string inputPath, string outputPath)
+        public void ConvertToWav(Music music, string outputPath)
         {
             int stream = 0;
             try
             {
                 // 创建音频流
-                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
+                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
@@ -36,7 +38,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit | EncodeFlags.PCM;
                 }
-                else if ((originalResolution == 0 || originalResolution == 16) && !(Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff"))
+                else if ((originalResolution == 0 || originalResolution == 16) && !(Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff"))
                 {
                     flags = EncodeFlags.ConvertFloatTo16BitInt | EncodeFlags.PCM;
                 }
@@ -60,18 +62,18 @@ namespace WinUIMusicPlayer.AudioConverters
             finally
             {
                 if (stream != 0) Bass.StreamFree(stream);
-                SaveMetaData(inputPath, outputPath);
+                SaveMetaData(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        public void ConvertToMp3(string inputPath, string outputPath)
+        public void ConvertToMp3(Music music, string outputPath)
         {
             int stream = 0;
             try
             {
                 // 创建音频流
-                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
+                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
@@ -103,25 +105,25 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     Bass.StreamFree(stream);
                 }
-                SaveMetaData(inputPath, outputPath);
+                SaveMetaData(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        public void ConvertToFlac(string inputPath, string outputPath)
+        public void ConvertToFlac(Music music, string outputPath)
         {
             int stream = 0;
             try
             {
                 // 创建音频流
-                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
+                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
                 }
                 EncodeFlags flags = EncodeFlags.Default;
                 var originalResolution = Bass.ChannelGetInfo(stream).OriginalResolution;
-                if (originalResolution >= 24 || Path.GetExtension(inputPath) == ".dsf" || Path.GetExtension(inputPath) == ".dff")
+                if (originalResolution >= 24 || Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff")
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit;
                 }
@@ -152,18 +154,18 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     Bass.StreamFree(stream);
                 }
-                SaveMetaData(inputPath, outputPath);
+                SaveMetaData(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        public void ConvertToOgg(string inputPath, string outputPath)
+        public void ConvertToOgg(Music music, string outputPath)
         {
             int stream = 0;
             try
             {
                 // 创建音频流
-                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
+                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
@@ -195,18 +197,18 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     Bass.StreamFree(stream);
                 }
-                SaveMetaData(inputPath, outputPath);
+                SaveMetaData(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        public void ConvertToOpus(string inputPath, string outputPath)
+        public void ConvertToOpus(Music music, string outputPath)
         {
             int stream = 0;
             try
             {
                 // 创建音频流
-                stream = Bass.CreateStream(inputPath, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
+                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
                 if (stream == 0)
                 {
                     throw new Exception($"无法打开音频文件: {Bass.LastError}");
@@ -238,37 +240,28 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     Bass.StreamFree(stream);
                 }
-                SaveMetaData(inputPath, outputPath);
+                SaveMetaData(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        private void SaveMetaData(string inputFile, string outputPath)
+        private void SaveMetaData(Music music, string outputPath)
         {
             try
             {
-                using (var originalFile = TagLib.File.Create(inputFile))
+                Track newFile = new Track(outputPath)
                 {
-                    using (var newFile = TagLib.File.Create(outputPath))
-                    {
-                        newFile.Tag.Title = originalFile.Tag.Title;
-                        newFile.Tag.Performers = originalFile.Tag.Performers;
-                        newFile.Tag.Album = originalFile.Tag.Album;
-                        newFile.Tag.Year = originalFile.Tag.Year;
-                        newFile.Tag.Track = originalFile.Tag.Track;
-                        if (originalFile.Tag.Pictures.Length > 0)
-                        {
-                            var picture = originalFile.Tag.Pictures[0];
-                            newFile.Tag.Pictures = new[] { picture };
-                        }
-
-                        newFile.Save();
-                    }
-                }
+                    Title = music.Title,
+                    Artist = music.Author,
+                    Album = music.Album,
+                    Year = music.Year,
+                    TrackNumber = music.TrackNumber,
+                    DiscNumber = music.DiskNumber
+                };
+                newFile.Save();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"写入元信息和封面时出错: {ex.Message}");
             }
         }
     }

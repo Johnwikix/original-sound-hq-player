@@ -115,7 +115,6 @@ namespace WinUIMusicPlayer.Services
             var subfolderTasks = subfolders.AsValueEnumerable().Select(subfolder =>
                 GetMusicFilesRecursive(subfolder, musicFiles));
             await Task.WhenAll(subfolderTasks.ToList());
-            Debug.WriteLine($"扫描文件夹 {folder.Path} 完成，耗时: {(DateTime.Now - startTime).TotalSeconds} 秒");
         }
     }
 }

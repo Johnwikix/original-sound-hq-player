@@ -62,6 +62,8 @@ namespace WinUIMusicPlayer.ViewModel
         private List<FileSystemWatcher> Watchers { get; set; } = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
         private CancellationTokenSource? _musicUpdateCts;
+        private CancellationTokenSource _scanCts;
+        private readonly Lock _scanCtsLock = new();
 
         public AppViewModel AppViewModel { get;}
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -334,21 +336,44 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (!await scanSemaphore.WaitAsync(0) || !AppViewModel.IsFolderWatchEnabled)
+            if (!AppViewModel.IsFolderWatchEnabled) return;
+
+            // 取消上一次未执行的扫描，重新计时
+            CancellationTokenSource cts;
+            lock (_scanCtsLock)
             {
-                return;
+                _scanCts?.Cancel();
+                _scanCts?.Dispose();
+                _scanCts = new CancellationTokenSource();
+                cts = _scanCts;
             }
+
+            try
+            {
+                await Task.Delay(1000, cts.Token); // 防抖：等待 1000ms
+            }
+            catch (OperationCanceledException)
+            {
+                return; // 被新事件取消，退出
+            }
+
+            // 防抖通过，尝试获取信号量
+            if (!await scanSemaphore.WaitAsync(0)) return;
+
             try
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.ProcessRingVisibility = Visibility.Visible;
-                });
-                await AutoRescanService.AutoScan();
+                    AppViewModel.ProcessRingVisibility = Visibility.Visible);
+
+                await AutoRescanService.AutoScan(cts.Token);
+
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
-                });
+                    AppViewModel.ProcessRingVisibility = Visibility.Collapsed);
+            }
+            catch (OperationCanceledException)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    AppViewModel.ProcessRingVisibility = Visibility.Collapsed);
             }
             finally
             {
