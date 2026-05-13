@@ -50,7 +50,6 @@ namespace WinUIMusicPlayer.View
             this.Focus(FocusState.Programmatic);
             this.Loaded += OnPageLoaded;
             this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
-            _logger.LogInformation("test");
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
