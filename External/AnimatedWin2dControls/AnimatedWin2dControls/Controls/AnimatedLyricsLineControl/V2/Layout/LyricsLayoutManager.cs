@@ -64,7 +64,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
                 if (line.PrimaryTextLayout != null)
                 {
-                    currentY += line.PrimaryTextLayout.LayoutBounds.Height * 0.5;
+                    currentY += 20;
                 }
 
                 actualWidth = Math.Min(actualWidth, lyricsWidth);
