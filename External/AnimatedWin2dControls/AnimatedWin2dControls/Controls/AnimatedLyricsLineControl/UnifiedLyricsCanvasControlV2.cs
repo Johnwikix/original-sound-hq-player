@@ -137,6 +137,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerExited += OnCanvasPointerExited;
                 _canvas.PointerEntered += OnCanvasPointerEntered;
                 _canvas.Tapped += OnCanvasTapped;
+                _canvas.TargetElapsedTime = TimeSpan.FromTicks(83333);
             }
 
             OnIsDarkChanged();
