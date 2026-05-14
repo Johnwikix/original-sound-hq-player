@@ -80,10 +80,10 @@ namespace WinUIMusicPlayer.View
             var lyrics = effectiveSize switch
             {
                 < 1280 * 720 => 36,
-                < 1920 * 1080 => 48,
-                < 2560 * 1440 => 64,
-                < 2880 * 1920 => 72,
-                _ => 96
+                < 1920 * 1080 => 38,
+                < 2560 * 1440 => 48,
+                < 2880 * 1920 => 52,
+                _ => 60
             };
 
             var (title, artist, firstSize,secondSize,shapeSize, info, margin) = width switch
@@ -304,7 +304,7 @@ namespace WinUIMusicPlayer.View
         {
             Task.Run(() =>
             {
-                LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.Time >= e);
+                LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
                 ViewModel.AppViewModel.IsManualSelect = true;
                 if (lyricLine is not null)
                 {

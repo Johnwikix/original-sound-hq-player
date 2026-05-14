@@ -564,7 +564,7 @@
                 Grid.Column="1"
                 Margin="0,40,0,40">
                 <!--  添加歌词显示列表  -->
-                    <lyrics:LyricsControl
+                <lyrics:LyricsControl
                     x:Name="LyricsView"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     FontFamilyName="{x:Bind ViewModel.AppViewModel.FontFamily.FontFamily.Source, Mode=OneWay}"
@@ -576,7 +576,9 @@
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     LyricsOffsetMs="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
-                    UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}" />
+                    TranslatedOpacity="0.8"
+                    UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}"
+                    UnplayedOpacity="0.6" />
             </Grid>
         </Grid>
     </Grid>

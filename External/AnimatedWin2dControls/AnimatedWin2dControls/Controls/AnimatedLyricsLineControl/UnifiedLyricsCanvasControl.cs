@@ -613,7 +613,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int matched = -1;
             for (int i = 0; i < lyrics.Count; i++)
             {
-                if (lyrics[i].Time <= effectivePosition) matched = i;
+                if (TimeSpan.FromMilliseconds(lyrics[i].StartMs) <= effectivePosition) matched = i;
                 else break;
             }
 
@@ -729,7 +729,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         _userScrolling = false;
                         _userScrollCooldownSec = 0;
                         _flingY = 0;
-                        LyricLineClicked?.Invoke(this, lyrics[li].Time);
+                        LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(lyrics[li].StartMs));
                     }
                     return;
                 }
@@ -1134,12 +1134,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 int local = gi - lineWordBase;
                 localIndices[n] = local;
                 pxWidths[n] = wl.FullWidth;
-                durMs[n] = Math.Max(words[local].Duration.TotalMilliseconds, 1.0);
+                durMs[n] = Math.Max(words[local].DurationMs, 1.0);
                 n++;
             }
 
             if (n == 0)
-                return new RowCurve { Origin = words[globalFv - lineWordBase].StartTime, Count = 0 };
+                return new RowCurve { Origin = TimeSpan.FromMilliseconds(words[globalFv - lineWordBase].StartMs), Count = 0 };
 
             Span<double> natVel = n <= 64 ? stackalloc double[n] : new double[n];
             for (int k = 0; k < n; k++) natVel[k] = pxWidths[k] / durMs[k];
@@ -1169,13 +1169,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 finalVel[k] = natVel[k] + smoothness * (catmullVel[k] - natVel[k]);
 
             const double timeBias = 0.08;
-            var lineOrigin = words[localIndices[0]].StartTime;
+            var lineOrigin = TimeSpan.FromMilliseconds(words[localIndices[0]].StartMs);
             var points = new CurvePoint[n + 1];
 
             for (int k = 0; k < n; k++)
             {
                 int local = localIndices[k];
-                double origTMs = (words[local].StartTime - lineOrigin).TotalMilliseconds;
+                double origTMs = words[local].StartMs - lineOrigin.TotalMilliseconds;
                 double adjustedTMs = origTMs - smoothness * timeBias * durMs[k];
                 double minTMs = k == 0 ? 0.0 : points[k - 1].TimeMs + 1.0;
                 adjustedTMs = Math.Max(adjustedTMs, minTMs);
@@ -1186,7 +1186,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             {
                 int lastLocal = localIndices[n - 1];
-                double endMs = (words[lastLocal].StartTime + words[lastLocal].Duration - lineOrigin).TotalMilliseconds;
+                double endMs = words[lastLocal].StartMs + words[lastLocal].DurationMs - lineOrigin.TotalMilliseconds;
                 endMs = Math.Max(endMs, points[n - 1].TimeMs + 1.0);
                 points[n] = new CurvePoint
                 {
@@ -1691,13 +1691,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int firstLocal = globalFv - lineWordBase;
             int lastLocal = globalLv - lineWordBase;
             if (firstLocal < 0 || lastLocal >= words.Count) return minX;
-            if (effectiveTime <= words[firstLocal].StartTime) return minX;
+            if (effectiveTime <= TimeSpan.FromMilliseconds(words[firstLocal].StartMs)) return minX;
 
             float totalW = 0f;
             for (int gi = globalFv; gi <= globalLv; gi++)
                 totalW += _wordLayouts[gi].FullWidth;
 
-            if (effectiveTime >= words[lastLocal].StartTime + words[lastLocal].Duration)
+            if (effectiveTime >= TimeSpan.FromMilliseconds(words[lastLocal].StartMs + words[lastLocal].DurationMs))
                 return minX + totalW;
 
             float accX = minX;
@@ -1707,16 +1707,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ref readonly var wl = ref _wordLayouts[gi];
                 if (wl.FullWidth <= 0) continue;
                 var word = words[local];
-                var wordEnd = word.StartTime + word.Duration;
+                var wordEnd = TimeSpan.FromMilliseconds(word.StartMs + word.DurationMs);
                 if (effectiveTime >= wordEnd)
                 {
                     accX += wl.FullWidth;
                 }
-                else if (effectiveTime >= word.StartTime)
+                else if (effectiveTime >= TimeSpan.FromMilliseconds(word.StartMs))
                 {
-                    float t = word.Duration > TimeSpan.Zero
-                        ? Math.Clamp((float)((effectiveTime - word.StartTime).TotalMilliseconds
-                                             / word.Duration.TotalMilliseconds), 0f, 1f)
+                    float t = word.DurationMs > 0
+                        ? Math.Clamp((float)((effectiveTime.TotalMilliseconds - word.StartMs)
+                                             / word.DurationMs), 0f, 1f)
                         : 1f;
                     float t2 = t * t;
                     accX += wl.FullWidth * (t2 * (3f - 2f * t));

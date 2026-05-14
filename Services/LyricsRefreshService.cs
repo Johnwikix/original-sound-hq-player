@@ -271,7 +271,7 @@ namespace WinUIMusicPlayer.Services
 
                 var lyricLine = new LyricLine
                 {
-                    Time = TimeSpan.FromMilliseconds(lineStartMs),
+                    StartMs = lineStartMs,
                     IsCurrent = false
                 };
 
@@ -280,6 +280,9 @@ namespace WinUIMusicPlayer.Services
                 if (lyricLine.Words.Count > 0)
                     lyrics.Add(lyricLine);
             }
+
+            for (int i = 0; i < lyrics.Count; i++)
+                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : lyrics[i].StartMs + 10000;
 
             return lyrics;
         }
@@ -305,8 +308,8 @@ namespace WinUIMusicPlayer.Services
                             lyricLine.Words.Add(new LyricWord
                             {
                                 Word = ch,
-                                StartTime = TimeSpan.FromMilliseconds(lineStartMs),
-                                Duration = TimeSpan.Zero
+                                StartMs = lineStartMs,
+                                DurationMs = 0
                             });
                         }
                     }
@@ -340,8 +343,8 @@ namespace WinUIMusicPlayer.Services
                         lyricLine.Words.Add(new LyricWord
                         {
                             Word = subWords[k],
-                            StartTime = TimeSpan.FromMilliseconds(offsetMs + perMs * k),
-                            Duration = TimeSpan.FromMilliseconds(perMs)
+                            StartMs = offsetMs + perMs * k,
+                            DurationMs = perMs
                         });
                     }
                 }
@@ -395,7 +398,7 @@ namespace WinUIMusicPlayer.Services
 
                 var lyricLine = new LyricLine
                 {
-                    Time = TimeSpan.FromMilliseconds(lineStartMs),
+                    StartMs = lineStartMs,
                     IsCurrent = false
                 };
 
@@ -404,6 +407,9 @@ namespace WinUIMusicPlayer.Services
                 if (lyricLine.Words.Count > 0)
                     lyrics.Add(lyricLine);
             }
+
+            for (int i = 0; i < lyrics.Count; i++)
+                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : lyrics[i].StartMs + 10000;
 
             return lyrics;
         }
@@ -414,7 +420,6 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         private void ParseQrcWords(string line, int contentStart, int contentLength, long lineStartMs, LyricLine lyricLine)
         {
-            // contentStr 是必要的一次分配（Regex 暫不支援純 Span）
             string contentStr = line.AsSpan(contentStart, contentLength).ToString();
             var tagMatches = s_qrcWordPattern.Matches(contentStr);
 
@@ -428,8 +433,8 @@ namespace WinUIMusicPlayer.Services
                         lyricLine.Words.Add(new LyricWord
                         {
                             Word = ch,
-                            StartTime = TimeSpan.FromMilliseconds(lineStartMs),
-                            Duration = TimeSpan.Zero
+                            StartMs = lineStartMs,
+                            DurationMs = 0
                         });
                     }
                 }
@@ -450,7 +455,6 @@ namespace WinUIMusicPlayer.Services
                 var textSpan = contentStr.AsSpan(textStart, textEnd - textStart);
                 if (textSpan.IsEmpty) continue;
 
-                // 直接讀取下一個標籤時間，無需二次查表
                 long segEndMs = (i + 1 < count)
                     ? ParseQrcTimeToMs(
                         contentStr.AsSpan(tagMatches[i + 1].Groups[1].Index, tagMatches[i + 1].Groups[1].Length),
@@ -469,8 +473,8 @@ namespace WinUIMusicPlayer.Services
                     lyricLine.Words.Add(new LyricWord
                     {
                         Word = subWords[k],
-                        StartTime = TimeSpan.FromMilliseconds(segStartMs + perMs * k),
-                        Duration = TimeSpan.FromMilliseconds(perMs)
+                        StartMs = segStartMs + perMs * k,
+                        DurationMs = perMs
                     });
                 }
             }
@@ -496,13 +500,13 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         private void MergeTranslation(List<LyricLine> lyrics, string transContent)
         {
-            ParseLrcToLines(transContent, (time, transText) =>
+            ParseLrcToLines(transContent, (timeMs, transText) =>
             {
-                double bestDiff = 101.0; // 容差 100ms
+                double bestDiff = 101.0;
                 LyricLine? bestLine = null;
                 for (int i = 0; i < lyrics.Count; i++)
                 {
-                    double diff = Math.Abs((lyrics[i].Time - time).TotalMilliseconds);
+                    double diff = Math.Abs(lyrics[i].StartMs - timeMs);
                     if (diff < bestDiff)
                     {
                         bestDiff = diff;
@@ -560,7 +564,7 @@ namespace WinUIMusicPlayer.Services
                     return parsed;
             }
 
-            return [new LyricLine { Time = TimeSpan.Zero, IsCurrent = true }];
+            return [new LyricLine { StartMs = 0, IsCurrent = true }];
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -593,22 +597,21 @@ namespace WinUIMusicPlayer.Services
             lyrics.Clear();
 
             // 1. 解析原文
-            ParseLrcToLines(lrcContent, (time, text) =>
+            ParseLrcToLines(lrcContent, (timeMs, text) =>
             {
-                var line = new LyricLine { Time = time, IsCurrent = false };
+                var line = new LyricLine { StartMs = timeMs, IsCurrent = false };
                 foreach (var w in SplitEverything(text))
                     line.Words.Add(new LyricWord { Word = w });
                 lyrics.Add(line);
             });
 
-            // 2. 解析翻譯：手動 for loop 替代 FirstOrDefault lambda
             if (!string.IsNullOrEmpty(transLrc))
             {
-                ParseLrcToLines(transLrc, (time, transText) =>
+                ParseLrcToLines(transLrc, (timeMs, transText) =>
                 {
                     for (int i = 0; i < lyrics.Count; i++)
                     {
-                        if (Math.Abs((lyrics[i].Time - time).TotalMilliseconds) <= 50)
+                        if (Math.Abs(lyrics[i].StartMs - timeMs) <= 50)
                         {
                             lyrics[i].TransLateText = transText;
                             break;
@@ -617,30 +620,29 @@ namespace WinUIMusicPlayer.Services
                 });
             }
 
-            // 3. 排序（歌詞通常已有序，Sort 替代 OrderBy+ToList，原地排序無額外 List 分配）
-            lyrics.Sort(static (a, b) => a.Time.CompareTo(b.Time));
+            lyrics.Sort(static (a, b) => a.StartMs.CompareTo(b.StartMs));
 
-            // 4. 計算行時長及單詞時長
             int lyricCount = lyrics.Count;
             for (int i = 0; i < lyricCount; i++)
             {
                 var currentLine = lyrics[i];
 
-                double rawMs = (i < lyricCount - 1)
-                    ? (lyrics[i + 1].Time - currentLine.Time).TotalMilliseconds
-                    : 5000.0;
+                currentLine.EndMs = (i < lyricCount - 1)
+                    ? lyrics[i + 1].StartMs
+                    : currentLine.StartMs + 5000.0;
 
+                double rawMs = currentLine.EndMs - currentLine.StartMs;
                 double reducedMs = Math.Max(0, rawMs - 200);
                 int wordCount = currentLine.Words.Count;
 
                 if (wordCount > 0)
                 {
                     double perWordMs = reducedMs / wordCount;
-                    var lineTime = currentLine.Time;
+                    var lineMs = currentLine.StartMs;
                     for (int j = 0; j < wordCount; j++)
                     {
-                        currentLine.Words[j].StartTime = lineTime + TimeSpan.FromMilliseconds(perWordMs * j);
-                        currentLine.Words[j].Duration = TimeSpan.FromMilliseconds(perWordMs);
+                        currentLine.Words[j].StartMs = lineMs + perWordMs * j;
+                        currentLine.Words[j].DurationMs = perWordMs;
                     }
                 }
             }
@@ -651,7 +653,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// LRC 時間行解析：Span 行迭代 + ValueSpan 直接解析，避免 Split string[] 和 Group.Value substring 分配
         /// </summary>
-        private void ParseLrcToLines(string content, Action<TimeSpan, string> onLineParsed)
+        private void ParseLrcToLines(string content, Action<double, string> onLineParsed)
         {
             if (string.IsNullOrEmpty(content)) return;
 
@@ -682,7 +684,7 @@ namespace WinUIMusicPlayer.Services
                 if (!int.TryParse(msSpan, out int msRaw)) continue;
                 int milliseconds = msSpan.Length == 2 ? msRaw * 10 : msRaw;
 
-                onLineParsed(new TimeSpan(0, 0, minutes, seconds, milliseconds), textSpan.ToString());
+                onLineParsed((minutes * 60 + seconds) * 1000.0 + milliseconds, textSpan.ToString());
             }
         }
 

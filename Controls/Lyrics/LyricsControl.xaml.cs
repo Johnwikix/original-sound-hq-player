@@ -167,6 +167,56 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(LongSyllableThresholdProperty, value);
         }
 
+        public static readonly DependencyProperty IsFadeOutEnabledProperty =
+            DependencyProperty.Register(nameof(IsFadeOutEnabled), typeof(bool),
+                typeof(LyricsControl), new PropertyMetadata(true));
+
+        public bool IsFadeOutEnabled
+        {
+            get => (bool)GetValue(IsFadeOutEnabledProperty);
+            set => SetValue(IsFadeOutEnabledProperty, value);
+        }
+
+        public static readonly DependencyProperty IsOutOfSightEnabledProperty =
+            DependencyProperty.Register(nameof(IsOutOfSightEnabled), typeof(bool),
+                typeof(LyricsControl), new PropertyMetadata(true));
+
+        public bool IsOutOfSightEnabled
+        {
+            get => (bool)GetValue(IsOutOfSightEnabledProperty);
+            set => SetValue(IsOutOfSightEnabledProperty, value);
+        }
+
+        public static readonly DependencyProperty UnplayedOpacityProperty =
+            DependencyProperty.Register(nameof(UnplayedOpacity), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.5));
+
+        public double UnplayedOpacity
+        {
+            get => (double)GetValue(UnplayedOpacityProperty);
+            set => SetValue(UnplayedOpacityProperty, value);
+        }
+
+        public static readonly DependencyProperty TranslatedOpacityProperty =
+            DependencyProperty.Register(nameof(TranslatedOpacity), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.6));
+
+        public double TranslatedOpacity
+        {
+            get => (double)GetValue(TranslatedOpacityProperty);
+            set => SetValue(TranslatedOpacityProperty, value);
+        }
+
+        public static readonly DependencyProperty StrokeWidthProperty =
+            DependencyProperty.Register(nameof(StrokeWidth), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.0));
+
+        public double StrokeWidth
+        {
+            get => (double)GetValue(StrokeWidthProperty);
+            set => SetValue(StrokeWidthProperty, value);
+        }
+
         #endregion
 
         public LyricsControl()

@@ -22,6 +22,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
 
+        public ValueTransition<double> PrimaryXOffsetTransition { get; set; }
+        public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
+
         public ValueTransition<double> YOffsetTransition { get; set; }
 
         public CanvasTextLayout? PrimaryTextLayout { get; private set; }
@@ -35,6 +38,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public Vector2 BottomRightPosition { get; set; }
 
         public CanvasGeometry? PrimaryCanvasGeometry { get; private set; }
+        public CanvasGeometry? SecondaryCanvasGeometry { get; private set; }
 
         public string PrimaryText { get; set; } = "";
         public string SecondaryText { get; set; } = "";
@@ -62,6 +66,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             PlayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             UnplayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             SecondaryOpacityTransition = new(0, interpolator, 0.3);
+            PrimaryXOffsetTransition = new(0, interpolator, 0.3);
+            SecondaryXOffsetTransition = new(0, interpolator, 0.3);
             YOffsetTransition = new(0, interpolator, 0.3);
         }
 
@@ -73,26 +79,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             PrimaryText = joinedText;
             SecondaryText = lyricLine.TransLateText ?? "";
 
-            StartMs = lyricLine.Time.TotalMilliseconds;
+            StartMs = lyricLine.StartMs;
             EndMs = nextLineStartMs;
 
             int charIndex = 0;
-            int syllableIndex = 0;
             foreach (var word in lyricLine.Words)
             {
                 var syllable = new RenderLyricsSyllable
                 {
                     Text = word.Word,
-                    StartMs = word.StartTime.TotalMilliseconds,
+                    StartMs = word.StartMs,
                     StartIndex = charIndex,
                 };
-                syllable.EndMs = syllable.StartMs + word.Duration.TotalMilliseconds;
+                syllable.EndMs = syllable.StartMs + word.DurationMs;
                 PrimaryRenderSyllables.Add(syllable);
                 charIndex += word.Word.Length;
-                syllableIndex++;
             }
 
-            IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && lyricLine.Words.Any(w => w.Duration.TotalMilliseconds > 0);
+            IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && lyricLine.Words.Any(w => w.DurationMs > 0);
         }
 
         public void DisposeTextLayout()
@@ -146,13 +150,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             PrimaryCanvasGeometry?.Dispose();
             PrimaryCanvasGeometry = null;
+
+            SecondaryCanvasGeometry?.Dispose();
+            SecondaryCanvasGeometry = null;
         }
 
         public void RecreateTextGeometry()
         {
             DisposeTextGeometry();
+
             if (PrimaryTextLayout != null)
                 PrimaryCanvasGeometry = CanvasGeometry.CreateText(PrimaryTextLayout);
+
+            if (SecondaryTextLayout != null)
+                SecondaryCanvasGeometry = CanvasGeometry.CreateText(SecondaryTextLayout);
         }
 
         public void RecreateRenderChars(int strokeWidth)
@@ -219,6 +230,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 using var ds = CachedStroke.CreateDrawingSession();
                 if (PrimaryCanvasGeometry != null)
                     ds.DrawGeometry(PrimaryCanvasGeometry, PrimaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
+                if (SecondaryCanvasGeometry != null)
+                    ds.DrawGeometry(SecondaryCanvasGeometry, SecondaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
             }
 
             UnplayedFillTint = new TintEffect { Source = CachedFill, Color = Microsoft.UI.Colors.White };
@@ -283,6 +296,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             UnplayedPrimaryOpacityTransition.Update(elapsedTime);
             SecondaryOpacityTransition.Update(elapsedTime);
 
+            PrimaryXOffsetTransition.Update(elapsedTime);
+            SecondaryXOffsetTransition.Update(elapsedTime);
             YOffsetTransition.Update(elapsedTime);
         }
     }

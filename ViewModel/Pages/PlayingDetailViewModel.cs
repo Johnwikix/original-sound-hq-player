@@ -151,8 +151,8 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                 int nextIndex = index + 1;
                 if (nextIndex < AppViewModel.UILyrics.Count)
                 {
-                    TimeSpan currentTime = AppViewModel.UILyrics[index].Time;
-                    TimeSpan nextTime = AppViewModel.UILyrics[nextIndex].Time;
+                    TimeSpan currentTime = TimeSpan.FromMilliseconds(AppViewModel.UILyrics[index].StartMs);
+                    TimeSpan nextTime = TimeSpan.FromMilliseconds(AppViewModel.UILyrics[nextIndex].StartMs);
                     AppViewModel.LyricsDurationTime = nextTime.Subtract(currentTime);
                 }
             }

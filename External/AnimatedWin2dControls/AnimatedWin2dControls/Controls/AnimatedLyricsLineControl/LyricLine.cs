@@ -21,9 +21,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetProperty(ref field, value);
         } = false;
 
-        public TimeSpan Time { 
+        public double StartMs
+        {
             get => field;
             set => SetProperty(ref field, value);
-        } = TimeSpan.Zero;
+        } = 0;
+
+        public double EndMs
+        {
+            get => field;
+            set => SetProperty(ref field, value);
+        } = 0;
     }
 }

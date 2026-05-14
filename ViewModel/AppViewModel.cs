@@ -450,7 +450,7 @@ namespace WinUIMusicPlayer.ViewModel
                 int nextIndex = index + 1;
                 if (nextIndex < UILyrics.Count)
                 {
-                    LyricsDurationTime = UILyrics[nextIndex].Time - UILyrics[index].Time;
+                    LyricsDurationTime = TimeSpan.FromMilliseconds(UILyrics[nextIndex].StartMs - UILyrics[index].StartMs);
                 }
             }
 

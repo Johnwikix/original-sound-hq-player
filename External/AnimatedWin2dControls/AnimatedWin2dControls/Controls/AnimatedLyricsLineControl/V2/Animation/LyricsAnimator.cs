@@ -13,37 +13,36 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             int startIndex,
             int endIndex,
             int primaryPlayingLineIndex,
+            double lyricsWidth,
             double lyricsHeight,
             double targetYScrollOffset,
             double playingLineTopOffsetFactor,
             bool isLyricsBlurEffectEnabled,
             bool isLyricsOutOfSightEffectEnabled,
-            bool isLyricsGlowEffectEnabled,
-            double lyricsGlowEffectLongSyllableDuration,
-            double lyricsGlowEffectAmount,
-            bool isLyricsFloatAnimationEnabled,
-            double lyricsFloatAnimationDuration,
-            double lyricsFloatAnimationAmount,
-            bool isLyricsScaleEffectEnabled,
-            double lyricsScaleEffectLongSyllableDuration,
-            double lyricsScaleEffectAmount,
-            double blurAmountMax,
+            bool isLyricsFadeOutEffectEnabled,
             double unplayedPrimaryOpacity,
             double playedPrimaryOpacity,
             double secondaryOpacity,
+            bool isLyricsGlowEffectEnabled,
+            double lyricsGlowEffectAmount,
+            double lyricsGlowEffectLongSyllableDuration,
+            bool isLyricsFloatAnimationEnabled,
+            double lyricsFloatAnimationAmount,
+            double lyricsFloatAnimationDuration,
+            bool isLyricsScaleEffectEnabled,
+            double lyricsScaleEffectAmount,
+            double lyricsScaleEffectLongSyllableDuration,
+            double blurAmountMax,
             ValueTransition<double> canvasYScrollTransition,
             TimeSpan elapsedTime,
             bool isMouseScrolling,
+            bool isMouseScrollingChanged,
             bool isLayoutChanged,
             bool isPrimaryPlayingLineChanged,
             double currentPositionMs)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
-
-            bool isFloatEnabled = isLyricsFloatAnimationEnabled;
-            bool isGlowEnabled = isLyricsGlowEffectEnabled;
-            bool isScaleEnabled = isLyricsScaleEffectEnabled;
 
             var primaryPlayingLine = lines[primaryPlayingLineIndex];
 
@@ -52,21 +51,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             double canvasTransDuration = canvasYScrollTransition.DurationSeconds;
 
+            bool isBlurEnabled = isLyricsBlurEffectEnabled;
+            bool isOutOfSightEnabled = isLyricsOutOfSightEffectEnabled;
+            bool isGlowEnabled = isLyricsGlowEffectEnabled;
+            bool isFloatEnabled = isLyricsFloatAnimationEnabled;
+            bool isScaleEnabled = isLyricsScaleEffectEnabled;
+
             int safeStart = Math.Max(0, startIndex);
             int safeEnd = Math.Min(lines.Count - 1, endIndex + 1);
 
             for (int i = safeStart; i <= safeEnd; i++)
             {
                 var line = lines[i];
-                if (line.PrimaryTextLayout == null) continue;
-
-                double lineHeight = line.PrimaryLineHeight ?? line.PrimaryTextLayout.LayoutBounds.Height;
-                if (lineHeight <= 0) continue;
+                var lineHeight = line.PrimaryLineHeight;
+                if (lineHeight == null || lineHeight <= 0) continue;
 
                 bool isWordAnimationEnabled = line.IsPrimaryHasRealSyllableInfo;
 
-                double targetCharFloat = lyricsFloatAnimationAmount > 0 ? lyricsFloatAnimationAmount : lineHeight * 0.1;
-                double targetCharGlow = lyricsGlowEffectAmount > 0 ? lyricsGlowEffectAmount : lineHeight * 0.2;
+                double targetCharFloat = lyricsFloatAnimationAmount > 0 ? lyricsFloatAnimationAmount : lineHeight.Value * 0.1;
+                double targetCharGlow = lyricsGlowEffectAmount > 0 ? lyricsGlowEffectAmount : lineHeight.Value * 0.2;
                 double targetCharScale = lyricsScaleEffectAmount > 0 ? lyricsScaleEffectAmount : 1.15;
 
                 var maxAnimationDurationMs = Math.Max(line.EndMs ?? 0 - currentPositionMs, 0);
@@ -75,7 +78,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 bool isSecondaryLinePlayingChanged = line.IsPlayingLastFrame != isSecondaryLinePlaying;
                 line.IsPlayingLastFrame = isSecondaryLinePlaying;
 
-                if (isLayoutChanged || isPrimaryPlayingLineChanged || isSecondaryLinePlayingChanged)
+                var playProgress = line.GetPlayProgress(currentPositionMs);
+
+                if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged)
                 {
                     int lineCountDelta = i - primaryPlayingLineIndex;
                     double distanceFromPlayingLine = Math.Abs(line.TopLeftPosition.Y - primaryPlayingLine.TopLeftPosition.Y);
@@ -89,22 +94,41 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     double yScrollDuration = canvasTransDuration + distanceFactor * (0.5 - canvasTransDuration);
 
                     line.BlurAmountTransition.SetDuration(yScrollDuration);
-                    line.BlurAmountTransition.Start(!isSecondaryLinePlaying && isLyricsBlurEffectEnabled && !isMouseScrolling
-                        ? (blurAmountMax * distanceFactor)
-                        : 0);
+                    line.BlurAmountTransition.Start(
+                        (isMouseScrolling || isSecondaryLinePlaying) ? 0 :
+                        (isBlurEnabled ? (blurAmountMax * distanceFactor) : 0));
 
                     line.ScaleTransition.SetDuration(yScrollDuration);
-                    line.ScaleTransition.Start(isSecondaryLinePlaying ? _highlightedScale :
-                        (isLyricsOutOfSightEffectEnabled ? (_highlightedScale - distanceFactor * (_highlightedScale - _defaultScale)) : _highlightedScale));
+                    line.ScaleTransition.Start(
+                        isSecondaryLinePlaying ? _highlightedScale :
+                        (isOutOfSightEnabled ?
+                        (_highlightedScale - distanceFactor * (_highlightedScale - _defaultScale)) :
+                        _highlightedScale));
 
                     line.PlayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.PlayedPrimaryOpacityTransition.Start(isSecondaryLinePlaying ? playedPrimaryOpacity : playedPrimaryOpacity);
+                    line.PlayedPrimaryOpacityTransition.Start(
+                        isSecondaryLinePlaying ? 1.0 :
+                        CalculateTargetOpacity(unplayedPrimaryOpacity, 1.0, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
 
                     line.UnplayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.UnplayedPrimaryOpacityTransition.Start(isSecondaryLinePlaying ? unplayedPrimaryOpacity : unplayedPrimaryOpacity);
+                    line.UnplayedPrimaryOpacityTransition.Start(
+                        isSecondaryLinePlaying ? unplayedPrimaryOpacity :
+                        CalculateTargetOpacity(unplayedPrimaryOpacity, unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
 
                     line.SecondaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.SecondaryOpacityTransition.Start(isSecondaryLinePlaying ? secondaryOpacity : secondaryOpacity);
+                    line.SecondaryOpacityTransition.Start(
+                        isSecondaryLinePlaying ? secondaryOpacity :
+                        CalculateTargetOpacity(secondaryOpacity, secondaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+
+                    if (isLayoutChanged || isPrimaryPlayingLineChanged)
+                    {
+                        line.YOffsetTransition.SetInterpolator(canvasYScrollTransition.Interpolator);
+                        line.YOffsetTransition.SetDuration(yScrollDuration);
+                        if (isLayoutChanged)
+                            line.YOffsetTransition.JumpTo(targetYScrollOffset);
+                        else
+                            line.YOffsetTransition.Start(targetYScrollOffset);
+                    }
                 }
 
                 if (isWordAnimationEnabled)
@@ -200,6 +224,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
                 line.Update(elapsedTime);
             }
+        }
+
+        private static double CalculateTargetOpacity(double baseOpacity, double baseOpacityWhenZeroDistanceFactor,
+            double distanceFactor, bool isMouseScrolling, bool isFadeOutEnabled)
+        {
+            if (distanceFactor == 0)
+                return baseOpacityWhenZeroDistanceFactor;
+
+            if (isMouseScrolling)
+                return baseOpacity;
+
+            if (isFadeOutEnabled)
+                return (1 - distanceFactor) * baseOpacity;
+
+            return baseOpacity;
         }
 
         private static (double InDuration, double OutDuration) CalculateSegmentDuration(double desiredDuration, double maxDuration)
