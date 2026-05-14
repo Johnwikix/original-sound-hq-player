@@ -149,13 +149,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 StartPoint = new Vector2((float)subLineRect.X, (float)subLineRect.Y),
                 EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
             };
-            var fillGradientLayer = new CanvasCommandList(resourceCreator);
-            using (var gds = fillGradientLayer.CreateDrawingSession())
+            region.PrevFillLayer?.Dispose();
+            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
+            using (var gds = region.PrevFillLayer.CreateDrawingSession())
             {
                 gds.FillRectangle(subLineRect, fillGradientBrush);
             }
 
-            region.FinalFillEffect.Source = fillGradientLayer;
+            region.FinalFillEffect.Source = region.PrevFillLayer;
             ICanvasImage finalOutputImage = region.FinalFillEffect;
 
             bool hasStroke = Line.CachedStroke != null && region.FinalStrokeEffect != null && region.CombinedEffect != null;
@@ -168,13 +169,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
                 };
 
-                var strokeGradientLayer = new CanvasCommandList(resourceCreator);
-                using (var gds = strokeGradientLayer.CreateDrawingSession())
+                region.PrevStrokeLayer?.Dispose();
+                region.PrevStrokeLayer = new CanvasCommandList(resourceCreator);
+                using (var gds = region.PrevStrokeLayer.CreateDrawingSession())
                 {
                     gds.FillRectangle(subLineRect, strokeGradientBrush);
                 }
 
-                region.FinalStrokeEffect!.Source = strokeGradientLayer;
+                region.FinalStrokeEffect!.Source = region.PrevStrokeLayer;
                 finalOutputImage = region.CombinedEffect!;
             }
 

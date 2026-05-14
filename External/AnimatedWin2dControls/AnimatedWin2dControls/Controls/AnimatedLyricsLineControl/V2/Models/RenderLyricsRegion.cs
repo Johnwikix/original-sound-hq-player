@@ -14,6 +14,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public AlphaMaskEffect? FinalStrokeEffect { get; }
         public CompositeEffect? CombinedEffect { get; }
 
+        public CanvasCommandList? PrevFillLayer;
+        public CanvasCommandList? PrevStrokeLayer;
+
         public RenderLyricsRegion(ICanvasImage cachedFill, ICanvasImage? cachedStroke)
         {
             FinalFillEffect = new AlphaMaskEffect { AlphaMask = cachedFill };
@@ -31,6 +34,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
         public void Dispose()
         {
+            PrevFillLayer?.Dispose();
+            PrevStrokeLayer?.Dispose();
+            PrevFillLayer = null;
+            PrevStrokeLayer = null;
             FinalFillEffect?.Dispose();
             FinalStrokeEffect?.Dispose();
             CombinedEffect?.Dispose();
