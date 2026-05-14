@@ -138,6 +138,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerEntered += OnCanvasPointerEntered;
                 _canvas.Tapped += OnCanvasTapped;
             }
+
+            OnIsDarkChanged();
         }
 
         #region Dependency Properties

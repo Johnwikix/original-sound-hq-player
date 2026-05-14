@@ -566,8 +566,11 @@
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
+                    CharFloatAmount="5"
+                    CharScaleAmount="105"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     FontFamilyName="{x:Bind ViewModel.AppViewModel.FontFamily.FontFamily.Source, Mode=OneWay}"
+                    GlowAmount="1"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
                     LyricInteracted="LyricsView_LyricInteracted"
