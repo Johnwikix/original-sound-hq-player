@@ -89,6 +89,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     music.PlayCount++;
                     await _musicDatabaseService.UpdateMusicInfo(music);
+                    FixEndMs(localLyrics, music.Duration.TotalMilliseconds);
                     return localLyrics;
                 }
 
@@ -98,6 +99,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     music.PlayCount++;
                     await _musicDatabaseService.UpdateMusicInfo(music);
+                    FixEndMs(krcLyrics, music.Duration.TotalMilliseconds);
                     return krcLyrics;
                 }
 
@@ -107,12 +109,21 @@ namespace WinUIMusicPlayer.Services
                 ct.ThrowIfCancellationRequested();
                 music.PlayCount++;
                 await _musicDatabaseService.UpdateMusicInfo(music);
+                FixEndMs(lyrics, music.Duration.TotalMilliseconds);
                 return lyrics;
             }
             catch (OperationCanceledException)
             {
                 return [];
             }
+        }
+
+        private static void FixEndMs(List<LyricLine> lyrics, double songDurationMs)
+        {
+            if (lyrics.Count == 0) return;
+            double fallbackMs = songDurationMs > 0 ? songDurationMs + 2000 : 10500;
+            for (int i = 0; i < lyrics.Count; i++)
+                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : fallbackMs;
         }
 
         // ──────────────────────────────────────────────────────────────

@@ -24,9 +24,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             if (lines == null || resourceCreator == null) return;
 
-            double currentX = 12;
+            const float horizontalPadding = 5f;
+            double currentX = horizontalPadding;
             double currentY = 0;
-            double layoutWidth = lyricsWidth - 12 - 12;
+            double layoutWidth = lyricsWidth - horizontalPadding * 2;
 
             foreach (var line in lines)
             {
@@ -63,47 +64,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
                 line.BottomRightPosition = new Vector2((float)currentX + (float)actualWidth, (float)currentY);
 
-                if (line.PrimaryTextLayout != null)
-                {
-                    currentY += 20;
-                }
-
-                actualWidth = Math.Min(actualWidth, lyricsWidth);
-
                 line.TopLeftPosition = horizontalAlignment switch
                 {
                     CanvasHorizontalAlignment.Left => line.TopLeftPosition,
-                    CanvasHorizontalAlignment.Center => line.TopLeftPosition.AddX((float)((lyricsWidth - actualWidth) / 2)),
-                    CanvasHorizontalAlignment.Right => line.TopLeftPosition.AddX((float)(lyricsWidth - actualWidth)),
+                    CanvasHorizontalAlignment.Center => line.TopLeftPosition.AddX((float)((layoutWidth - actualWidth) / 2)),
+                    CanvasHorizontalAlignment.Right => line.TopLeftPosition.AddX((float)(layoutWidth - actualWidth)),
                     _ => line.TopLeftPosition
                 };
 
                 line.BottomRightPosition = horizontalAlignment switch
                 {
                     CanvasHorizontalAlignment.Left => line.BottomRightPosition,
-                    CanvasHorizontalAlignment.Center => line.BottomRightPosition.AddX((float)((lyricsWidth - actualWidth) / 2)),
-                    CanvasHorizontalAlignment.Right => line.BottomRightPosition.AddX((float)(lyricsWidth - actualWidth)),
+                    CanvasHorizontalAlignment.Center => line.BottomRightPosition.AddX((float)((layoutWidth - actualWidth) / 2)),
+                    CanvasHorizontalAlignment.Right => line.BottomRightPosition.AddX((float)(layoutWidth - actualWidth)),
                     _ => line.BottomRightPosition
                 };
-
-                line.PrimaryPosition = horizontalAlignment switch
-                {
-                    CanvasHorizontalAlignment.Left => line.PrimaryPosition,
-                    CanvasHorizontalAlignment.Center => line.PrimaryPosition.AddX((float)((lyricsWidth - actualWidth) / 2)),
-                    CanvasHorizontalAlignment.Right => line.PrimaryPosition.AddX((float)(lyricsWidth - actualWidth)),
-                    _ => line.PrimaryPosition
-                };
-
-                if (line.SecondaryTextLayout != null)
-                {
-                    line.SecondaryPosition = horizontalAlignment switch
-                    {
-                        CanvasHorizontalAlignment.Left => line.SecondaryPosition,
-                        CanvasHorizontalAlignment.Center => line.SecondaryPosition.AddX((float)((lyricsWidth - actualWidth) / 2)),
-                        CanvasHorizontalAlignment.Right => line.SecondaryPosition.AddX((float)(lyricsWidth - actualWidth)),
-                        _ => line.SecondaryPosition
-                    };
-                }
 
                 double centerY = (line.TopLeftPosition.Y + line.BottomRightPosition.Y) / 2;
                 line.CenterPosition = horizontalAlignment switch
@@ -113,6 +88,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     CanvasHorizontalAlignment.Right => new Vector2((float)(lyricsWidth), (float)centerY),
                     _ => new Vector2(0, (float)centerY),
                 };
+
+                currentY += 15;
 
                 line.RecreateRenderChars(strokeWidth);
             }

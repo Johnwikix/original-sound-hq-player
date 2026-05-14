@@ -376,12 +376,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (isDark)
             {
                 _playedColor = Colors.White;
-                _unplayedColor = Color.FromArgb(80, 255, 255, 255);
+                _unplayedColor = Colors.White;
             }
             else
             {
                 _playedColor = Color.FromArgb(255, 0, 0, 0);
-                _unplayedColor = Color.FromArgb(80, 0, 0, 0);
+                _unplayedColor = Color.FromArgb(255, 0, 0, 0);
             }
 
             _canvas?.Invalidate();
@@ -434,8 +434,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     if (targetScroll.HasValue)
                     {
                         _canvasYScrollTransition.JumpTo(targetScroll.Value);
-            _mouseYScrollTransition.JumpTo(0);
-            _pendingMouseScrollY = 0;
+                        _mouseYScrollTransition.JumpTo(0);
+                        _pendingMouseScrollY = 0;
                         _targetScrollY = targetScroll.Value;
                         _smoothedScrollY = targetScroll.Value;
                     }
@@ -476,7 +476,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             _lastExternalTimeMs = externalTimeMs;
 
-            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
+            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
             if (_matchLyricLineNextFrame)
             {
@@ -612,10 +612,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private static readonly CanvasGradientStop[] s_edgeFadeStops = new CanvasGradientStop[]
         {
             new() { Position = 0.00f, Color = Microsoft.UI.Colors.Transparent },
-            new() { Position = 0.05f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.15f, Color = Microsoft.UI.Colors.White },
             new() { Position = 0.35f, Color = Microsoft.UI.Colors.White },
             new() { Position = 0.65f, Color = Microsoft.UI.Colors.White },
-            new() { Position = 0.95f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.85f, Color = Microsoft.UI.Colors.White },
             new() { Position = 1.00f, Color = Microsoft.UI.Colors.Transparent },
         };
 
@@ -655,11 +655,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
                 lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor);
 
-            int startIdx = Math.Max(0, visibleRange.Start);
-            int endIdx = Math.Min(lines.Count - 1, visibleRange.End + 1);
+            int startIdx = Math.Max(0, visibleRange.Start - 3);
+            int endIdx = Math.Min(lines.Count - 1, visibleRange.End + 3);
 
             double yOffsetBase = canvasHeight * playingLineTopOffsetFactor + combinedScroll;
-            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
+            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
             for (int i = startIdx; i <= endIdx; i++)
             {
@@ -689,7 +689,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _playedColor;
                 _lineRenderer.UnplayedFillColor = _unplayedColor;
-                _lineRenderer.StrokeWidth = (int)_cachedStrokeWidth;
                 _lineRenderer.IsGlowEnabled = _cachedGlowAmount > 0;
                 _lineRenderer.IsScaleEnabled = _cachedCharScaleAmount > 0;
                 _lineRenderer.IsFloatEnabled = _cachedCharFloatAmount > 0;
@@ -700,10 +699,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (i == _hoveredLineIndex)
                 {
                     var hoverRect = new Rect(
-                        line.TopLeftPosition.X,
+                        line.TopLeftPosition.X - 4,
                         yOffset + line.TopLeftPosition.Y - 4,
-                        line.BottomRightPosition.X - line.TopLeftPosition.X + 6,
+                        line.BottomRightPosition.X - line.TopLeftPosition.X + 8,
                         line.BottomRightPosition.Y - line.TopLeftPosition.Y + 8);
+
+                    double cw = sender.Size.Width;
+                    if (hoverRect.X < 0) { hoverRect.Width += hoverRect.X; hoverRect.X = 0; }
+                    if (hoverRect.X + hoverRect.Width > cw) hoverRect.Width = cw - hoverRect.X;
+                    if (hoverRect.Width <= 0) continue;
 
                     ds.FillRoundedRectangle(hoverRect, 6, 6,
                         Color.FromArgb(30, 255, 255, 255));
@@ -828,8 +832,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     _userScrollCooldownSec = 0;
                     _flingY = 0;
                 }
-
-                LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(line.StartMs));
+                var time = line.StartMs + _cachedOffsetMs;
+                if(time<0) time = 0;
+                LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(time));
             }
         }
 

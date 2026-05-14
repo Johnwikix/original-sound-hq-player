@@ -106,19 +106,34 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                         _highlightedScale));
 
                     line.PlayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.PlayedPrimaryOpacityTransition.Start(
-                        isSecondaryLinePlaying ? 1.0 :
-                        CalculateTargetOpacity(unplayedPrimaryOpacity, 1.0, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    if (isLayoutChanged)
+                        line.PlayedPrimaryOpacityTransition.JumpTo(
+                            isSecondaryLinePlaying ? 1.0 :
+                            CalculateTargetOpacity(unplayedPrimaryOpacity, 1.0, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    else
+                        line.PlayedPrimaryOpacityTransition.Start(
+                            isSecondaryLinePlaying ? 1.0 :
+                            CalculateTargetOpacity(unplayedPrimaryOpacity, 1.0, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
 
                     line.UnplayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.UnplayedPrimaryOpacityTransition.Start(
-                        isSecondaryLinePlaying ? unplayedPrimaryOpacity :
-                        CalculateTargetOpacity(unplayedPrimaryOpacity, unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    if (isLayoutChanged)
+                        line.UnplayedPrimaryOpacityTransition.JumpTo(
+                            isSecondaryLinePlaying ? unplayedPrimaryOpacity :
+                            CalculateTargetOpacity(unplayedPrimaryOpacity, unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    else
+                        line.UnplayedPrimaryOpacityTransition.Start(
+                            isSecondaryLinePlaying ? unplayedPrimaryOpacity :
+                            CalculateTargetOpacity(unplayedPrimaryOpacity, unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
 
                     line.SecondaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.SecondaryOpacityTransition.Start(
-                        isSecondaryLinePlaying ? secondaryOpacity :
-                        CalculateTargetOpacity(secondaryOpacity, secondaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    if (isLayoutChanged)
+                        line.SecondaryOpacityTransition.JumpTo(
+                            isSecondaryLinePlaying ? secondaryOpacity :
+                            CalculateTargetOpacity(secondaryOpacity, secondaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
+                    else
+                        line.SecondaryOpacityTransition.Start(
+                            isSecondaryLinePlaying ? secondaryOpacity :
+                            CalculateTargetOpacity(secondaryOpacity, secondaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled));
 
                     if (isLayoutChanged || isPrimaryPlayingLineChanged)
                     {
