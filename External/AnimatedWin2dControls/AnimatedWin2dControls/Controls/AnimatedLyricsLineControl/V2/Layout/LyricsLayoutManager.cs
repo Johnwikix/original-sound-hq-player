@@ -24,8 +24,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             if (lines == null || resourceCreator == null) return;
 
-            double currentX = 0;
+            double currentX = 12;
             double currentY = 0;
+            double layoutWidth = lyricsWidth - 12 - 12;
 
             foreach (var line in lines)
             {
@@ -37,7 +38,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     resourceCreator,
                     originalFontSize, translatedFontSize,
                     fontFamily,
-                    lyricsWidth, lyricsHeight,
+                    layoutWidth, lyricsHeight,
                     horizontalAlignment);
 
                 line.RecreateTextGeometry();
