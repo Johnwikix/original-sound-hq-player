@@ -547,8 +547,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int animStart = _userScrolling ? 0 : visibleRange.Start;
             int animEnd = _userScrolling ? lines.Count - 1 : visibleRange.End;
 
-            System.Diagnostics.Debug.WriteLine($"[SCROLL-UPDATE] smooth={_smoothedScrollY:F1} mouse={_mouseYScrollTransition.Value:F1} combined={combinedScroll:F1} vis=[{visibleRange.Start},{visibleRange.End}] anim=[{animStart},{animEnd}] userScroll={_userScrolling} count={lines.Count}");
-
             _animator.UpdateLines(
                 lines,
                 animStart,
@@ -593,7 +591,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
-            var oldHovered = _previousHoveredLineIndex;
             _previousHoveredLineIndex = _hoveredLineIndex;
 
             if (_isMouseInLyricsArea)
@@ -607,17 +604,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 _hoveredLineIndex = -1;
             }
-
-            if (_hoveredLineIndex != oldHovered)
-            {
-                if (_hoveredLineIndex >= 0 && _hoveredLineIndex < lines.Count)
-                {
-                    var newLine = lines[_hoveredLineIndex];
-                    newLine.BlurAmountTransition.SetDuration(0.2);
-                    newLine.BlurAmountTransition.Start(0);
-                }
-            }
         }
+
+        private static readonly CanvasGradientStop[] s_edgeFadeStops = new CanvasGradientStop[]
+        {
+            new() { Position = 0.00f, Color = Microsoft.UI.Colors.Transparent },
+            new() { Position = 0.05f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.35f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.65f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.95f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 1.00f, Color = Microsoft.UI.Colors.Transparent },
+        };
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
@@ -629,17 +626,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             double canvasHeight = (float)sender.Size.Height;
             double canvasWidth = (float)sender.Size.Width;
 
-            var stops = new CanvasGradientStop[]
-            {
-                new() { Position = 0.00f, Color = Microsoft.UI.Colors.Transparent },
-                new() { Position = 0.05f, Color = Microsoft.UI.Colors.White },
-                new() { Position = 0.35f, Color = Microsoft.UI.Colors.White },
-                new() { Position = 0.65f, Color = Microsoft.UI.Colors.White },
-                new() { Position = 0.95f, Color = Microsoft.UI.Colors.White },
-                new() { Position = 1.00f, Color = Microsoft.UI.Colors.Transparent },
-            };
-
-            _edgeFadeMask.Update(sender, new Rect(0, 0, canvasWidth, canvasHeight), stops, true);
+            _edgeFadeMask.Update(sender, new Rect(0, 0, canvasWidth, canvasHeight), s_edgeFadeStops, true);
 
             if (_edgeFadeMask.Brush != null)
             {
@@ -668,31 +655,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int startIdx = Math.Max(0, visibleRange.Start);
             int endIdx = Math.Min(lines.Count - 1, visibleRange.End + 1);
 
-            System.Diagnostics.Debug.WriteLine($"[SCROLL-DRAW] combined={combinedScroll:F1} vis=[{visibleRange.Start},{visibleRange.End}] draw=[{startIdx},{endIdx}] count={lines.Count}");
-
             double yOffsetBase = canvasHeight * playingLineTopOffsetFactor + combinedScroll;
             double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
-
-            var skippedLines = new System.Text.StringBuilder("[SCROLL-SKIP] ");
-            var drawnLines = new System.Text.StringBuilder("[SCROLL-DRAWN] ");
-            bool anySkipped = false, anyDrawn = false;
 
             for (int i = startIdx; i <= endIdx; i++)
             {
                 var line = lines[i];
-                if (line == null) { skippedLines.Append($"L{i}=null "); anySkipped = true; continue; }
-                if (line.PrimaryTextLayout == null) { skippedLines.Append($"L{i}=noPTL "); anySkipped = true; continue; }
-                if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) { skippedLines.Append($"L{i}=w0 "); anySkipped = true; continue; }
+                if (line == null || line.PrimaryTextLayout == null) continue;
+                if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) continue;
 
                 double yOffset = yOffsetBase;
 
                 bool isPlayingLine = line.GetIsPlaying(currentTimeMs);
 
                 line.EnsureCaches(sender, _cachedStrokeWidth);
-                if (line.CachedFill == null) { skippedLines.Append($"L{i}=noFill "); anySkipped = true; continue; }
-                if (line.UnplayedComposite == null) { skippedLines.Append($"L{i}=noComp "); anySkipped = true; continue; }
-
-                drawnLines.Append($"L{i}(Y={line.TopLeftPosition.Y:F0}) "); anyDrawn = true;
+                if (line.CachedFill == null) continue;
+                if (line.UnplayedComposite == null) continue;
 
                 if (line.UnplayedFillTint != null)
                     line.UnplayedFillTint.Color = _unplayedColor;
@@ -728,8 +706,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         Color.FromArgb(30, 255, 255, 255));
                 }
             }
-            if (anySkipped) System.Diagnostics.Debug.WriteLine(skippedLines.ToString());
-            if (anyDrawn) System.Diagnostics.Debug.WriteLine(drawnLines.ToString());
         }
 
         private void DisposeRenderLines()
@@ -764,7 +740,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _pendingMouseScrollY += delta;
             _mouseYScrollTransition.Start(_pendingMouseScrollY);
             _isUserScrollingChanged = !_userScrolling;
-            System.Diagnostics.Debug.WriteLine($"[SCROLL-WHEEL] delta={delta:F1} pending={_pendingMouseScrollY:F1} changed={_isUserScrollingChanged}");
             _userScrolling = true;
             _userScrollCooldownSec = UserScrollCooldown;
             _flingY = 0;
@@ -796,7 +771,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 double dy = pos.Y - _pointerLastY;
                 _pendingMouseScrollY += dy;
                 _mouseYScrollTransition.Start(_pendingMouseScrollY);
-                System.Diagnostics.Debug.WriteLine($"[SCROLL-DRAG] dy={dy:F1} pending={_pendingMouseScrollY:F1}");
                 _pointerLastY = pos.Y;
                 _flingY = dy;
                 _canvas.Invalidate();
