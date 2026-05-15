@@ -36,6 +36,7 @@
         ScrollEasingType="{x:Bind ScrollEasingType, Mode=OneWay}"
         ScrollEasingMode="{x:Bind ScrollEasingMode, Mode=OneWay}"
         PlayingLineTopOffset="{x:Bind PlayingLineTopOffset, Mode=OneWay}"
+        TargetFrameRate="{x:Bind TargetFrameRate, Mode=OneWay}"
         TranslatedOpacity="{x:Bind TranslatedOpacity, Mode=OneWay}"
         UnplayedOpacity="{x:Bind UnplayedOpacity, Mode=OneWay}" />
 </UserControl>

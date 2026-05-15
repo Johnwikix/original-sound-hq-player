@@ -93,6 +93,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private EasingType _cachedScrollEasingType = EasingType.Sine;
         private EaseMode _cachedScrollEasingMode = EaseMode.Out;
         private double _cachedPlayingLineTopOffset = 0.35;
+        private double _cachedTargetFrameRate = 60.0;
 
         public UnifiedLyricsCanvasControlV2()
         {
@@ -146,7 +147,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerExited += OnCanvasPointerExited;
                 _canvas.PointerEntered += OnCanvasPointerEntered;
                 _canvas.Tapped += OnCanvasTapped;
-                _canvas.TargetElapsedTime = TimeSpan.FromTicks(83333);
+                _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _cachedTargetFrameRate);
             }
 
             OnIsDarkChanged();
@@ -241,6 +242,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public static readonly DependencyProperty PlayingLineTopOffsetProperty =
             DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
                 new PropertyMetadata(0.35, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedPlayingLineTopOffset = (double)e.NewValue));
+
+        public static readonly DependencyProperty TargetFrameRateProperty =
+            DependencyProperty.Register(nameof(TargetFrameRate), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
+                new PropertyMetadata(60.0, (d, e) =>
+                {
+                    var c = (UnifiedLyricsCanvasControlV2)d;
+                    c._cachedTargetFrameRate = (double)e.NewValue;
+                    if (c._canvas != null)
+                        c._canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / c._cachedTargetFrameRate);
+                }));
 
         public IList<LyricLine>? UILyrics
         {
@@ -372,6 +383,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             get => _cachedPlayingLineTopOffset;
             set => SetValue(PlayingLineTopOffsetProperty, value);
+        }
+
+        public double TargetFrameRate
+        {
+            get => _cachedTargetFrameRate;
+            set => SetValue(TargetFrameRateProperty, value);
         }
 
         #endregion
@@ -515,7 +532,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
                 _lastExternalTimeMs = externalTimeMs;
 
-                currentTimeMs = _internalTimeMs + _cachedOffsetMs;
+                currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
                 if (_matchLyricLineNextFrame)
                 {
@@ -719,7 +736,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int endIdx = Math.Min(lines.Count - 1, _cachedVisibleEnd + 3);
 
             double yOffsetBase = canvasHeight * playingLineTopOffsetFactor + combinedScroll;
-            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
+            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
             for (int i = startIdx; i <= endIdx; i++)
             {

@@ -248,6 +248,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             set => SetValue(PlayingLineTopOffsetProperty, value);
         }
 
+        public static readonly DependencyProperty TargetFrameRateProperty =
+            DependencyProperty.Register(nameof(TargetFrameRate), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(60.0));
+
+        public double TargetFrameRate
+        {
+            get => (double)GetValue(TargetFrameRateProperty);
+            set => SetValue(TargetFrameRateProperty, value);
+        }
+
         #endregion
 
         public LyricsControl()

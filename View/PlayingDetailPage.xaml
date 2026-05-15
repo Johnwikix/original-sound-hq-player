@@ -580,6 +580,7 @@
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     LyricsOffsetMs="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
+                    TargetFrameRate="160"
                     TranslatedOpacity="0.8"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}"
                     UnplayedOpacity="0.6" />

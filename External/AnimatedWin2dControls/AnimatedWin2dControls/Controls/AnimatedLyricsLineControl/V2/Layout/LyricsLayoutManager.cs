@@ -99,7 +99,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     _ => new Vector2(0, (float)centerY),
                 };
 
-                currentY += 15;
+                currentY += originalFontSize * 0.75;
 
                 line.RecreateRenderChars(strokeWidth);
             }
