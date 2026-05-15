@@ -667,10 +667,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private static readonly CanvasGradientStop[] s_edgeFadeStops = new CanvasGradientStop[]
         {
             new() { Position = 0.00f, Color = Microsoft.UI.Colors.Transparent },
-            new() { Position = 0.15f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.05f, Color = Microsoft.UI.Colors.White },
             new() { Position = 0.35f, Color = Microsoft.UI.Colors.White },
             new() { Position = 0.65f, Color = Microsoft.UI.Colors.White },
-            new() { Position = 0.85f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 0.95f, Color = Microsoft.UI.Colors.White },
             new() { Position = 1.00f, Color = Microsoft.UI.Colors.Transparent },
         };
 
