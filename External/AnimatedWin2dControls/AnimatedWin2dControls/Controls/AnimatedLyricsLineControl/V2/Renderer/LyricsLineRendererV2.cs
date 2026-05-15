@@ -44,11 +44,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 bounds.Y + Line.SecondaryPosition.Y - CropPadding,
                 bounds.Width + CropPadding * 2, bounds.Height + CropPadding * 2);
 
-            using var crop = new CropEffect { Source = Line.UnplayedComposite, BorderMode = EffectBorderMode.Soft, SourceRectangle = srcRect };
-            using var blurFx = new GaussianBlurEffect { BlurAmount = (float)blur, Source = crop, BorderMode = EffectBorderMode.Soft };
-            using var opacityFx = new OpacityEffect { Source = blurFx, Opacity = (float)opacity };
-
-            ds.DrawImage(opacityFx, srcRect, srcRect);
+            if (Line.CachedCropEffect is {} crop && Line.CachedBlurEffect is {} blurFx && Line.CachedOpacityEffect is {} opacityFx)
+            {
+                crop.SourceRectangle = srcRect;
+                blurFx.BlurAmount = (float)blur;
+                opacityFx.Opacity = (float)opacity;
+                ds.DrawImage(opacityFx, srcRect, srcRect);
+            }
         }
 
         private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
@@ -69,18 +71,63 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 if (double.IsNaN(opacity) || opacity <= 0) return;
 
                 var blur = Line.BlurAmountTransition.Value;
-                using var crop = new CropEffect { Source = Line.UnplayedComposite, BorderMode = EffectBorderMode.Soft, SourceRectangle = srcRect };
-                using var blurFx = new GaussianBlurEffect { BlurAmount = (float)blur, Source = crop, BorderMode = EffectBorderMode.Soft };
-                using var opacityFx = new OpacityEffect { Source = blurFx, Opacity = (float)opacity };
-
-                ds.DrawImage(opacityFx, srcRect, srcRect);
+                if (Line.CachedCropEffect is {} crop && Line.CachedBlurEffect is {} blurFx && Line.CachedOpacityEffect is {} opacityFx)
+                {
+                    crop.SourceRectangle = srcRect;
+                    blurFx.BlurAmount = (float)blur;
+                    opacityFx.Opacity = (float)opacity;
+                    ds.DrawImage(opacityFx, srcRect, srcRect);
+                }
                 return;
             }
 
-            for (int i = 0; i < Line.PrimaryTextRegions.Length; i++)
+            if (!Line.IsPrimaryHasRealSyllableInfo)
             {
-                DrawSubLineRegion(resourceCreator, ds, i);
+                DrawFullLineRegion(resourceCreator, ds);
             }
+            else
+            {
+                for (int i = 0; i < Line.PrimaryTextRegions.Length; i++)
+                {
+                    DrawSubLineRegion(resourceCreator, ds, i);
+                }
+            }
+        }
+
+        private void DrawFullLineRegion(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
+        {
+            if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
+
+            var bounds = Line.PrimaryTextLayout!.LayoutBounds;
+            Rect fullRect = new(
+                bounds.X + Line.PrimaryPosition.X,
+                bounds.Y + Line.PrimaryPosition.Y,
+                bounds.Width, bounds.Height);
+
+            var playedOpacity = Line.PlayedPrimaryOpacityTransition.Value;
+            var unplayedOpacity = Line.UnplayedPrimaryOpacityTransition.Value;
+
+            float progress = Math.Clamp((float)Line.GetPlayProgress(CurrentProgressMs), 0f, 1f);
+
+            var region = Line.RenderLyricsRegions[0];
+            var stops = region.FillStops;
+            stops[0].Position = 0; stops[0].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
+            stops[1].Position = progress; stops[1].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
+            stops[2].Position = progress + 0.05f; stops[2].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
+            stops[3].Position = 1; stops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
+
+            using var brush = new CanvasLinearGradientBrush(resourceCreator, stops)
+            {
+                StartPoint = new Vector2((float)fullRect.X, (float)fullRect.Y),
+                EndPoint = new Vector2((float)(fullRect.X + fullRect.Width), (float)fullRect.Y)
+            };
+            region.PrevFillLayer?.Dispose();
+            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
+            using (var gds = region.PrevFillLayer.CreateDrawingSession())
+                gds.FillRectangle(fullRect, brush);
+
+            region.FinalFillEffect.Source = region.PrevFillLayer;
+            ds.DrawImage(region.FinalFillEffect);
         }
 
         private void DrawSubLineRegion(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds, int regionIndex)
@@ -146,13 +193,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 StartPoint = new Vector2((float)subLineRect.X, (float)subLineRect.Y),
                 EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
             };
-            using var fillGradientLayer = new CanvasCommandList(resourceCreator);
-            using (var gds = fillGradientLayer.CreateDrawingSession())
+            region.PrevFillLayer?.Dispose();
+            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
+            using (var gds = region.PrevFillLayer.CreateDrawingSession())
             {
                 gds.FillRectangle(subLineRect, fillGradientBrush);
             }
 
-            region.FinalFillEffect.Source = fillGradientLayer;
+            region.FinalFillEffect.Source = region.PrevFillLayer;
             ICanvasImage finalOutputImage = region.FinalFillEffect;
 
             if (!IsFloatEnabled && !IsGlowEnabled && !IsScaleEnabled)

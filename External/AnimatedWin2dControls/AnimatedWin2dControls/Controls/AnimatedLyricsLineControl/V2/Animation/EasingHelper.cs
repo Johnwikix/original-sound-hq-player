@@ -5,7 +5,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 {
     public static class EasingHelper
     {
+        private static readonly System.Collections.Generic.Dictionary<(EasingType, EaseMode), Func<double, double, double, double>> s_cachedInterpolators = new();
+
         public static Func<T, T, double, T> GetInterpolatorByEasingType<T>(EasingType type, EaseMode easingMode = EaseMode.Out)
+            where T : INumber<T>, IFloatingPointIeee754<T>
+        {
+            if (typeof(T) == typeof(double))
+            {
+                if (!s_cachedInterpolators.TryGetValue((type, easingMode), out var cached))
+                {
+                    cached = MakeInterpolator<double>(type, easingMode);
+                    s_cachedInterpolators[(type, easingMode)] = cached;
+                }
+                return (Func<T, T, double, T>)(object)cached;
+            }
+            return MakeInterpolator<T>(type, easingMode);
+        }
+
+        private static Func<T, T, double, T> MakeInterpolator<T>(EasingType type, EaseMode easingMode)
             where T : INumber<T>, IFloatingPointIeee754<T>
         {
             return (start, end, progress) =>

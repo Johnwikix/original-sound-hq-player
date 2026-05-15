@@ -602,8 +602,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedVisibleStart = visibleRange.Start;
             _cachedVisibleEnd = visibleRange.End;
 
-            int animStart = _userScrolling ? 0 : Math.Max(0, visibleRange.Start - 3);
-            int animEnd = _userScrolling ? lines.Count - 1 : Math.Min(lines.Count - 1, visibleRange.End + 3);
+            int animStart = _userScrolling ? 0 : visibleRange.Start;
+            int animEnd = _userScrolling ? lines.Count - 1 : visibleRange.End;
 
             _animator.UpdateLines(
                 lines,

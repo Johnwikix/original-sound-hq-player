@@ -53,9 +53,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public CanvasTextLayoutRegion[]? PrimaryTextRegions { get; private set; }
         public RenderLyricsRegion[]? RenderLyricsRegions { get; private set; }
 
-        public double? PrimaryLineHeight => PrimaryRenderChars.FirstOrDefault().LayoutRect.Height;
+        public double? PrimaryLineHeight => _cachedPrimaryLineHeight;
+        private double _cachedPrimaryLineHeight;
 
         public bool IsPrimaryHasRealSyllableInfo { get; set; }
+
+        public CropEffect? CachedCropEffect { get; private set; }
+        public GaussianBlurEffect? CachedBlurEffect { get; private set; }
+        public OpacityEffect? CachedOpacityEffect { get; private set; }
 
         public RenderLyricsLine()
         {
@@ -204,6 +209,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 syllable.ChildrenRenderLyricsChars.Add(renderChar);
                 PrimaryRenderChars.Add(renderChar);
             }
+            _cachedPrimaryLineHeight = PrimaryRenderChars.Count > 0 ? PrimaryRenderChars[0].LayoutRect.Height : 0;
         }
 
         public void EnsureCaches(ICanvasResourceCreator resourceCreator, double strokeWidth)
@@ -243,6 +249,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 Mode = CanvasComposite.SourceOver
             };
 
+            CachedCropEffect ??= new CropEffect { Source = UnplayedComposite, BorderMode = EffectBorderMode.Soft };
+            CachedBlurEffect ??= new GaussianBlurEffect { Source = CachedCropEffect, BorderMode = EffectBorderMode.Soft };
+            CachedOpacityEffect ??= new OpacityEffect { Source = CachedBlurEffect };
+
             if (PrimaryTextRegions != null && (RenderLyricsRegions == null || RenderLyricsRegions.Length != PrimaryTextRegions.Length))
             {
                 DisposeRenderLyricsRegions();
@@ -261,12 +271,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             UnplayedFillTint?.Dispose();
             CachedStroke?.Dispose();
             CachedFill?.Dispose();
+            CachedCropEffect?.Dispose();
+            CachedBlurEffect?.Dispose();
+            CachedOpacityEffect?.Dispose();
 
             UnplayedComposite = null;
             UnplayedStrokeTint = null;
             UnplayedFillTint = null;
             CachedStroke = null;
             CachedFill = null;
+            CachedCropEffect = null;
+            CachedBlurEffect = null;
+            CachedOpacityEffect = null;
 
             DisposeRenderLyricsRegions();
             DisposePrimaryRenderCharsEffects();
