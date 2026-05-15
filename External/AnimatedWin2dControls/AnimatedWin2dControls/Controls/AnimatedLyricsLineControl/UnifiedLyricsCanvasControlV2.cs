@@ -496,53 +496,57 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             double externalTimeMs = _cachedCurrentPlayingTime.TotalMilliseconds;
 
-            if (!_cachedIsPlaying)
+            bool isPrimaryPlayingLineChanged = false;
+            double currentTimeMs = 0;
+
+            if (_cachedIsPlaying)
+            {
+                if (Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
+                {
+                    _internalTimeMs = externalTimeMs;
+                    _matchLyricLineNextFrame = true;
+                }
+                else
+                {
+                    _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
+                }
+                _lastExternalTimeMs = externalTimeMs;
+
+                currentTimeMs = _internalTimeMs + _cachedOffsetMs;
+
+                if (_matchLyricLineNextFrame)
+                {
+                    _matchLyricLineNextFrame = false;
+                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
+                    _lastCurrentLineIndex = _currentLineIndex;
+                    if (newIndex != _currentLineIndex)
+                        _currentLineIndex = newIndex;
+                }
+                else
+                {
+                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
+                    _lastCurrentLineIndex = _currentLineIndex;
+                    _currentLineIndex = newIndex;
+                }
+
+                isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
+
+                if (isPrimaryPlayingLineChanged || _layoutDirty)
+                {
+                    _canvasYScrollTransition.SetInterpolator(
+                        EasingHelper.GetInterpolatorByEasingType<double>(_cachedScrollEasingType, _cachedScrollEasingMode));
+                }
+            }
+            else
             {
                 _internalTimeMs = externalTimeMs;
                 _lastExternalTimeMs = externalTimeMs;
                 _matchLyricLineNextFrame = true;
-                return;
-            }
-
-            if (Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
-            {
-                _internalTimeMs = externalTimeMs;
-                _matchLyricLineNextFrame = true;
-            }
-            else
-            {
-                _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
-            }
-            _lastExternalTimeMs = externalTimeMs;
-
-            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
-
-            if (_matchLyricLineNextFrame)
-            {
-                _matchLyricLineNextFrame = false;
-                int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
-                _lastCurrentLineIndex = _currentLineIndex;
-                if (newIndex != _currentLineIndex)
-                    _currentLineIndex = newIndex;
-            }
-            else
-            {
-                int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
-                _lastCurrentLineIndex = _currentLineIndex;
-                _currentLineIndex = newIndex;
-            }
-
-            bool isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
-
-            if (isPrimaryPlayingLineChanged || _layoutDirty)
-            {
-                _canvasYScrollTransition.SetInterpolator(
-                    EasingHelper.GetInterpolatorByEasingType<double>(_cachedScrollEasingType, _cachedScrollEasingMode));
             }
 
             double dt = args.Timing.ElapsedTime.TotalSeconds;
 
-            if (!_userScrolling && _currentLineIndex >= 0 && _currentLineIndex < lines.Count)
+            if (!_userScrolling && _cachedIsPlaying && _currentLineIndex >= 0 && _currentLineIndex < lines.Count)
             {
                 var targetScroll = LyricsLayoutManager.CalculateTargetScrollOffset(lines, _currentLineIndex);
                 if (targetScroll.HasValue)
