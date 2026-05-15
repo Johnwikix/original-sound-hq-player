@@ -80,7 +80,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
-                if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged)
+                if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
+                    || line.UnplayedPrimaryOpacityTransition.Value == 0)
                 {
                     int lineCountDelta = i - primaryPlayingLineIndex;
                     double distanceFromPlayingLine = Math.Abs(line.TopLeftPosition.Y - primaryPlayingLine.TopLeftPosition.Y);
