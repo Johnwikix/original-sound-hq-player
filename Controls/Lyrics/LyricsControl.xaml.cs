@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -215,6 +216,36 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             get => (double)GetValue(StrokeWidthProperty);
             set => SetValue(StrokeWidthProperty, value);
+        }
+
+        public static readonly DependencyProperty ScrollEasingTypeProperty =
+            DependencyProperty.Register(nameof(ScrollEasingType), typeof(EasingType),
+                typeof(LyricsControl), new PropertyMetadata(EasingType.Sine));
+
+        public EasingType ScrollEasingType
+        {
+            get => (EasingType)GetValue(ScrollEasingTypeProperty);
+            set => SetValue(ScrollEasingTypeProperty, value);
+        }
+
+        public static readonly DependencyProperty ScrollEasingModeProperty =
+            DependencyProperty.Register(nameof(ScrollEasingMode), typeof(EaseMode),
+                typeof(LyricsControl), new PropertyMetadata(EaseMode.Out));
+
+        public EaseMode ScrollEasingMode
+        {
+            get => (EaseMode)GetValue(ScrollEasingModeProperty);
+            set => SetValue(ScrollEasingModeProperty, value);
+        }
+
+        public static readonly DependencyProperty PlayingLineTopOffsetProperty =
+            DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double),
+                typeof(LyricsControl), new PropertyMetadata(0.4));
+
+        public double PlayingLineTopOffset
+        {
+            get => (double)GetValue(PlayingLineTopOffsetProperty);
+            set => SetValue(PlayingLineTopOffsetProperty, value);
         }
 
         #endregion

@@ -573,6 +573,7 @@
                     GlowAmount="3"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
+                    LongSyllableThreshold="700"
                     LyricInteracted="LyricsView_LyricInteracted"
                     LyricsBlurAmount="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=OneWay}"
                     LyricsFontSize="{x:Bind tool:BindUtils.LyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"

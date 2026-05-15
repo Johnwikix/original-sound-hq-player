@@ -33,6 +33,9 @@
         LyricsTextAlignment="{x:Bind LyricsTextAlignment, Mode=OneWay}"
         OffsetMs="{x:Bind LyricsOffsetMs, Mode=OneWay}"
         StrokeWidth="{x:Bind StrokeWidth, Mode=OneWay}"
+        ScrollEasingType="{x:Bind ScrollEasingType, Mode=OneWay}"
+        ScrollEasingMode="{x:Bind ScrollEasingMode, Mode=OneWay}"
+        PlayingLineTopOffset="{x:Bind PlayingLineTopOffset, Mode=OneWay}"
         TranslatedOpacity="{x:Bind TranslatedOpacity, Mode=OneWay}"
         UnplayedOpacity="{x:Bind UnplayedOpacity, Mode=OneWay}" />
 </UserControl>

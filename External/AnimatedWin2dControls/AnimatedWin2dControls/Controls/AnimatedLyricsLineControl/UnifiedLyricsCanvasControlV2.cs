@@ -62,6 +62,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private int _previousHoveredLineIndex = -1;
         private bool _isMouseInLyricsArea;
         private Point _lastMousePos;
+        private bool _hoverDirty;
+
+        private int _cachedVisibleStart;
+        private int _cachedVisibleEnd;
+        private double _cachedEdgeFadeWidth;
+        private double _cachedEdgeFadeHeight;
 
         private Color _playedColor = Colors.White;
         private Color _unplayedColor = Color.FromArgb(80, 255, 255, 255);
@@ -84,6 +90,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
         private double _cachedStrokeWidth;
+        private EasingType _cachedScrollEasingType = EasingType.Sine;
+        private EaseMode _cachedScrollEasingMode = EaseMode.Out;
+        private double _cachedPlayingLineTopOffset = 0.35;
 
         public UnifiedLyricsCanvasControlV2()
         {
@@ -221,6 +230,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DependencyProperty.Register(nameof(StrokeWidth), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
                 new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedStrokeWidth = (double)e.NewValue));
 
+        public static readonly DependencyProperty ScrollEasingTypeProperty =
+            DependencyProperty.Register(nameof(ScrollEasingType), typeof(EasingType), typeof(UnifiedLyricsCanvasControlV2),
+                new PropertyMetadata(EasingType.Sine, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedScrollEasingType = (EasingType)e.NewValue));
+
+        public static readonly DependencyProperty ScrollEasingModeProperty =
+            DependencyProperty.Register(nameof(ScrollEasingMode), typeof(EaseMode), typeof(UnifiedLyricsCanvasControlV2),
+                new PropertyMetadata(EaseMode.Out, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedScrollEasingMode = (EaseMode)e.NewValue));
+
+        public static readonly DependencyProperty PlayingLineTopOffsetProperty =
+            DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
+                new PropertyMetadata(0.35, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedPlayingLineTopOffset = (double)e.NewValue));
+
         public IList<LyricLine>? UILyrics
         {
             get => (IList<LyricLine>?)GetValue(UILyricsProperty);
@@ -333,6 +354,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             get => _cachedStrokeWidth;
             set => SetValue(StrokeWidthProperty, value);
+        }
+
+        public EasingType ScrollEasingType
+        {
+            get => _cachedScrollEasingType;
+            set => SetValue(ScrollEasingTypeProperty, value);
+        }
+
+        public EaseMode ScrollEasingMode
+        {
+            get => _cachedScrollEasingMode;
+            set => SetValue(ScrollEasingModeProperty, value);
+        }
+
+        public double PlayingLineTopOffset
+        {
+            get => _cachedPlayingLineTopOffset;
+            set => SetValue(PlayingLineTopOffsetProperty, value);
         }
 
         #endregion
@@ -476,7 +515,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             _lastExternalTimeMs = externalTimeMs;
 
-            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
+            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
 
             if (_matchLyricLineNextFrame)
             {
@@ -494,6 +533,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             bool isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
+
+            if (isPrimaryPlayingLineChanged || _layoutDirty)
+            {
+                _canvasYScrollTransition.SetInterpolator(
+                    EasingHelper.GetInterpolatorByEasingType<double>(_cachedScrollEasingType, _cachedScrollEasingMode));
+            }
 
             double dt = args.Timing.ElapsedTime.TotalSeconds;
 
@@ -542,10 +587,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
 
             double canvasHeight = _canvas?.Size.Height ?? 400;
-            double playingLineTopOffsetFactor = 0.35;
+            double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
 
             var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
                 lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor);
+
+            _cachedVisibleStart = visibleRange.Start;
+            _cachedVisibleEnd = visibleRange.End;
 
             int animStart = _userScrolling ? 0 : visibleRange.Start;
             int animEnd = _userScrolling ? lines.Count - 1 : visibleRange.End;
@@ -591,6 +639,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void HandleHoverUpdates(double combinedScroll, double canvasHeight, double playingLineTopOffsetFactor)
         {
+            if (!_hoverDirty) return;
+            _hoverDirty = false;
+
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
@@ -629,7 +680,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             double canvasHeight = (float)sender.Size.Height;
             double canvasWidth = (float)sender.Size.Width;
 
-            _edgeFadeMask.Update(sender, new Rect(0, 0, canvasWidth, canvasHeight), s_edgeFadeStops, true);
+            if (Math.Abs(_cachedEdgeFadeWidth - canvasWidth) > 0.5f || Math.Abs(_cachedEdgeFadeHeight - canvasHeight) > 0.5f)
+            {
+                _cachedEdgeFadeWidth = canvasWidth;
+                _cachedEdgeFadeHeight = canvasHeight;
+                _edgeFadeMask.Update(sender, new Rect(0, 0, canvasWidth, canvasHeight), s_edgeFadeStops, true);
+            }
 
             if (_edgeFadeMask.Brush != null)
             {
@@ -649,17 +705,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
-            double playingLineTopOffsetFactor = 0.35;
+            double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
 
-            var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
-                lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor);
-
-            int startIdx = Math.Max(0, visibleRange.Start - 3);
-            int endIdx = Math.Min(lines.Count - 1, visibleRange.End + 3);
+            int startIdx = Math.Max(0, _cachedVisibleStart - 3);
+            int endIdx = Math.Min(lines.Count - 1, _cachedVisibleEnd + 3);
 
             double yOffsetBase = canvasHeight * playingLineTopOffsetFactor + combinedScroll;
-            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
+            double currentTimeMs = _internalTimeMs + _cachedOffsetMs;
 
             for (int i = startIdx; i <= endIdx; i++)
             {
@@ -772,6 +825,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_canvas == null) return;
             var pos = e.GetCurrentPoint(_canvas).Position;
             _lastMousePos = pos;
+            _hoverDirty = true;
 
             if (_pointerCaptured)
             {
@@ -800,18 +854,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCanvasPointerExited(object sender, PointerRoutedEventArgs e)
         {
             _isMouseInLyricsArea = false;
+            _hoverDirty = true;
         }
 
         private void OnCanvasPointerEntered(object sender, PointerRoutedEventArgs e)
         {
             _isMouseInLyricsArea = true;
+            _hoverDirty = true;
         }
 
         private void OnCanvasTapped(object sender, TappedRoutedEventArgs e)
         {
             if (_renderLines.Count == 0) return;
 
-            double playingLineTopOffsetFactor = 0.35;
+            double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
             int hovered = LyricsLayoutManager.FindMouseHoverLineIndex(
                 _renderLines, true, _lastMousePos, combinedScroll,

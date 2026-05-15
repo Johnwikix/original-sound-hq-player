@@ -29,6 +29,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             double currentY = 0;
             double layoutWidth = lyricsWidth - horizontalPadding * 2;
 
+            var shareFormat = new CanvasTextFormat
+            {
+                FontFamily = fontFamily,
+                FontWeight = new Windows.UI.Text.FontWeight(700),
+                VerticalAlignment = CanvasVerticalAlignment.Top,
+                WordWrapping = CanvasWordWrapping.WholeWord,
+            };
+
             foreach (var line in lines)
             {
                 if (line == null) continue;
@@ -40,9 +48,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     originalFontSize, translatedFontSize,
                     fontFamily,
                     layoutWidth, lyricsHeight,
-                    horizontalAlignment);
+                    horizontalAlignment,
+                    shareFormat);
 
-                line.RecreateTextGeometry();
+                if (strokeWidth > 0)
+                    line.RecreateTextGeometry();
                 line.DisposeCaches();
 
                 line.TopLeftPosition = new Vector2((float)currentX, (float)currentY);
@@ -93,6 +103,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
                 line.RecreateRenderChars(strokeWidth);
             }
+            shareFormat.Dispose();
         }
 
         public static double? CalculateTargetScrollOffset(IList<RenderLyricsLine>? lines, int playingLineIndex)
