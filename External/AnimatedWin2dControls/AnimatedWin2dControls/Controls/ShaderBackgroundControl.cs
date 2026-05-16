@@ -166,7 +166,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
         if (_canvas is not null)
         {
-            _canvas.TargetElapsedTime = TimeSpan.FromTicks(250000);
             AttachCanvasEvents(_canvas);
         }
     }
