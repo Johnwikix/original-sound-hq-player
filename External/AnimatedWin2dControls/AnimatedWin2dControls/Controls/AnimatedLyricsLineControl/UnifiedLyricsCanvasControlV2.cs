@@ -560,7 +560,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 _internalTimeMs = externalTimeMs;
                 _lastExternalTimeMs = externalTimeMs;
+                currentTimeMs = _internalTimeMs - _cachedOffsetMs;
+
+                if (_matchLyricLineNextFrame && !_layoutDirty)
+                {
+                    _matchLyricLineNextFrame = false;
+                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
+                    _lastCurrentLineIndex = _currentLineIndex;
+                    if (newIndex != _currentLineIndex)
+                        _currentLineIndex = newIndex;
+                }
+
                 _matchLyricLineNextFrame = true;
+                isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
             }
 
             double dt = args.Timing.ElapsedTime.TotalSeconds;
