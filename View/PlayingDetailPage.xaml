@@ -284,8 +284,8 @@
                                 <NumberBox
                                     Width="175"
                                     LargeChange="1000"
-                                    Maximum="10000"
-                                    Minimum="-10000"
+                                    Maximum="100000"
+                                    Minimum="-100000"
                                     SmallChange="100"
                                     SpinButtonPlacementMode="Inline"
                                     Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
@@ -580,6 +580,7 @@
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     LyricsOffsetMs="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
+                    PlayingLineTopOffset="0.4"
                     TargetFrameRate="160"
                     TranslatedOpacity="0.8"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}"

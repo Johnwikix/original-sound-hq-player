@@ -59,7 +59,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private const double FlingStopThreshold = 5.0;
 
         private int _hoveredLineIndex = -1;
-        private int _previousHoveredLineIndex = -1;
         private bool _isMouseInLyricsArea;
         private Point _lastMousePos;
         private bool _hoverDirty;
@@ -668,8 +667,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             var lines = _renderLines;
             if (lines.Count == 0) return;
-
-            _previousHoveredLineIndex = _hoveredLineIndex;
 
             if (_isMouseInLyricsArea)
             {
