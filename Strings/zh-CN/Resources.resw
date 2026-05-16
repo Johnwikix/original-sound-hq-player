@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>界面设置</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>封面设置</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>封面歌词设置</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>歌词设置</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>封面服务LrcAPI源</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大封面预载数量</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>自动封面匹配</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>自动封面歌词匹配</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>是否要移除文件夹</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>封面背景</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>流体背景</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>重新获取歌词</value>
@@ -887,6 +896,30 @@
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>歌词模糊程度</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>字符浮动幅度</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>字符缩放幅度</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>发光效果强度</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>长音节阈值(ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>未播放歌词透明度</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>翻译歌词透明度</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>当前行位置偏移</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>歌词刷新率</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>效果预览，并非真正的逐字歌词</value>

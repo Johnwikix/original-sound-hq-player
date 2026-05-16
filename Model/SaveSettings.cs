@@ -21,10 +21,11 @@ namespace WinUIMusicPlayer.Model
         public byte CustomColorGreen { get; set; } = 128;
         public byte CustomColorBlue { get; set; } = 128;
         public string AppTheme { get; set; } = "Default";
-        public float LyricsBlurAmount { get; set; } = 1.5f;
+        public float LyricsBlurAmount { get; set; } = 5f;
         public int MaxCoverCacheCount { get; set; } = 1000;
         public bool IsRunningBackend { get; set; } = true;
         public bool IsAutoLyricsEnabled { get; set; } = true;
+        public bool IsAutoCoverEnabled { get; set; } = true;
         public bool IsDopEnabled { get; set; } = false;
         public int DsdGain { get; set; } = 6;
         public int DsdPcmFreq { get; set; } = 88200;        
@@ -33,7 +34,7 @@ namespace WinUIMusicPlayer.Model
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
         //public int SlideAnimationTime { get; set; } = 400;
         //public int DrillInAnimationTime { get; set; } = 400;
-        public bool IsBackgroundCoverEnabled { get; set; } = true;
+        public bool IsFluidBackgroundEnabled { get; set; } = true;
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;
         public int AppWidth { get; set; } = 1280;
@@ -49,5 +50,13 @@ namespace WinUIMusicPlayer.Model
         public bool EnableLightWave { get; set; } = true;
         public bool IsWin2dCoverImageControlEnable { get; set; } = false;
         public bool IsWin2dAnimatedText { get; set; } = false;
+        public double CharFloatAmount { get; set; } = 5.0;
+        public double CharScaleAmount { get; set; } = 100.0;
+        public double GlowAmount { get; set; } = 5.0;
+        public double LongSyllableThreshold { get; set; } = 700.0;
+        public double PlayingLineTopOffsetPercent { get; set; } = 40.0;
+        public double TranslatedOpacityPercent { get; set; } = 60.0;
+        public double UnplayedOpacityPercent { get; set; } = 50.0;
+        public double TargetFrameRate { get; set; } = 60.0;
     }
 }

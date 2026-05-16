@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>Interface Settings</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>Cover Settings</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Cover lyrics settings</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>Lyrics Settings</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>Cover Service LrcAPI Source</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Maximum number of pre loaded covers</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>Auto Cover Matching</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Auto Cover Lyric Matching</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Do you want to remove the folder</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>Cover Background</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>Fluid Background</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Retrieve lyrics</value>
@@ -887,6 +896,30 @@
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>Lyrics Blur Amount</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>Char Float Amount</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>Char Scale Amount</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>Glow Amount</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>Long Syllable Threshold (ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>Unplayed Lyric Opacity</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>Translated Lyric Opacity</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>Playing Line Top Offset</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>Lyrics Frame Rate</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Effect preview, not actual word for word lyrics</value>

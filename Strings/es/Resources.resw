@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>Configuración de interfaz</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>Configuración de portada</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Configuración de portada y letras</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>Configuración de letras</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>Origen de API Lrc para el servicio de portadas</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Número máximo de portadas pre cargadas</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>Coincidencia automática de portada</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Automatic Cover Lyrics Matching</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>¿Eliminar la carpeta?</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>Fondo de la portada</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>Fondo fluido</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Obtener nuevamente la letra de la canción</value>
@@ -887,6 +896,30 @@
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>Cantidad de borrosidad de la letra</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>Desplazamiento de caracteres</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>Escala de caracteres</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>Intensidad de brillo</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>Umbral de sílaba larga (ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>Opacidad de letra no reproducida</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>Opacidad de letra traducida</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>Desplazamiento de línea activa</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>Frecuencia de letras</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Vista previa del efecto, no es una traducción literal de la letra de la canción.</value>

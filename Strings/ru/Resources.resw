@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>Настройки интерфейса</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>Настройки обложки</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Настройки обложки иrics</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>Настройки текстов песен</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>Источник CoverServiceLrcAPI</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Макс. количество 미리 загруженных обложек</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>Автоматическое сопоставление обложек</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Автоматическое совпадение текста на обложке</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>Фон обложки</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>Жидкий фон</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Повторно получить текст песни</value>
@@ -886,7 +895,31 @@
     <value>Эффект дословного текста</value>
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
-    <value>Степень двусмысленности текста</value>
+    <value>Степень размытия текста</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>Смещение символов</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>Масштаб символов</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>Интенсивность свечения</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>Порог длинного слога (мс)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>Прозрачность непроигранного текста</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>Прозрачность перевода</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>Смещение активной строки</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>Частота обновления текстов</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Предварительный просмотр эффектов, а не буквальный текст</value>

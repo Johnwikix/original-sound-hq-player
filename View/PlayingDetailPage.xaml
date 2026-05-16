@@ -30,7 +30,7 @@
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
             ThemeResolved="BackGround_ThemeResolved"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+            Visibility="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
             Grid.Row="2"
@@ -566,25 +566,25 @@
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
-                    CharFloatAmount="5"
-                    CharScaleAmount="105"
+                    CharFloatAmount="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=OneWay}"
+                    CharScaleAmount="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=OneWay}"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
                     FontFamilyName="{x:Bind ViewModel.AppViewModel.FontFamily.FontFamily.Source, Mode=OneWay}"
-                    GlowAmount="3"
+                    GlowAmount="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=OneWay}"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                     IsPlaying="{x:Bind ViewModel.AppViewModel.IsPlaying, Mode=OneWay}"
-                    LongSyllableThreshold="700"
+                    LongSyllableThreshold="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=OneWay}"
                     LyricInteracted="LyricsView_LyricInteracted"
                     LyricsBlurAmount="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=OneWay}"
                     LyricsFontSize="{x:Bind tool:BindUtils.LyricsFontSizeConverter(ViewModel.AppViewModel.LyricsFontSize, ViewModel.AppViewModel.GlobalFontSize, ViewModel.AppViewModel.IsGlobalFontSizeEnabled), Mode=OneWay}"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
                     LyricsOffsetMs="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=OneWay}"
                     LyricsTextAlignment="{x:Bind tool:BindUtils.ConvertStringToTextAlignment(ViewModel.AppViewModel.LyricsAlignment), Mode=OneWay}"
-                    PlayingLineTopOffset="0.4"
-                    TargetFrameRate="160"
-                    TranslatedOpacity="0.8"
+                    PlayingLineTopOffset="{x:Bind tool:BindUtils.PercentToDouble(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}"
+                    TargetFrameRate="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=OneWay}"
+                    TranslatedOpacity="{x:Bind tool:BindUtils.PercentToDouble(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}"
                     UILyrics="{x:Bind ViewModel.AppViewModel.UILyrics, Mode=OneWay}"
-                    UnplayedOpacity="0.6" />
+                    UnplayedOpacity="{x:Bind tool:BindUtils.PercentToDouble(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
             </Grid>
         </Grid>
     </Grid>

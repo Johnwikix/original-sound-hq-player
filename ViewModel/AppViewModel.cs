@@ -209,7 +209,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 1000;
 
-        public bool IsBackgroundCoverEnabled
+        public bool IsFluidBackgroundEnabled
         {
             get => field;
             set

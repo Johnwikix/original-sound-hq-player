@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>インターフェイス設定</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>ジャケット設定</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>ジャケット・歌詞設定</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>歌詞設定</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>ジャケットサービスLrcAPIソース</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大ジャケットプリロード数</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>自動ジャケットマッチング</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>自動カバー歌詞マッチング</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>フォルダを削除しますか</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>表紙の背景</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>流体背景</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>歌詞を再取得する</value>
@@ -887,6 +896,30 @@
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>歌詞の曖昧さ</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>文字浮動量</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>文字スケール量</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>グロー効果強度</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>長音節閾値(ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>未再生歌詞透明度</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>翻訳歌詞透明度</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>現在行オフセット</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>歌詞リフレッシュレート</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>効果のプレビュー、本当の逐語歌詞ではありません</value>

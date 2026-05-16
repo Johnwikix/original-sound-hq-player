@@ -728,13 +728,14 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.MaxCoverCacheCount = settings.MaxCoverCacheCount;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
+                AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
                 AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 //AppViewModel.EntranceAnimationTime = settings.EntranceAnimationTime;
                 //AppViewModel.SlideAnimationTime = settings.SlideAnimationTime;
                 //AppViewModel.DrillInAnimationTime = settings.DrillInAnimationTime;
-                AppViewModel.IsBackgroundCoverEnabled = settings.IsBackgroundCoverEnabled;
+                AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
                 AppViewModel.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppViewModel.IsCustomAppSize = settings.IsCustomAppSize;
                 AppViewModel.AppWidth = settings.AppWidth;
@@ -761,6 +762,14 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsWin2dCoverImageControlEnable = settings.IsWin2dCoverImageControlEnable;
                 AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
                 AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t=>t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
+                AppViewModel.CharFloatAmount = settings.CharFloatAmount;
+                AppViewModel.CharScaleAmount = settings.CharScaleAmount;
+                AppViewModel.GlowAmount = settings.GlowAmount;
+                AppViewModel.LongSyllableThreshold = settings.LongSyllableThreshold;
+                AppViewModel.PlayingLineTopOffsetPercent = settings.PlayingLineTopOffsetPercent;
+                AppViewModel.TranslatedOpacityPercent = settings.TranslatedOpacityPercent;
+                AppViewModel.UnplayedOpacityPercent = settings.UnplayedOpacityPercent;
+                AppViewModel.TargetFrameRate = settings.TargetFrameRate;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -818,12 +827,13 @@ namespace WinUIMusicPlayer.Services
             newSettings.MaxCoverCacheCount = AppViewModel.MaxCoverCacheCount;
             newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
+            newSettings.IsAutoCoverEnabled = AppViewModel.IsAutoCoverEnabled;
             newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
             //newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
             //newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
-            newSettings.IsBackgroundCoverEnabled = AppViewModel.IsBackgroundCoverEnabled;
+            newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
             newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
             newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
             newSettings.AppHeight = AppViewModel.AppHeight;
@@ -849,6 +859,14 @@ namespace WinUIMusicPlayer.Services
             newSettings.EnableLightWave = AppViewModel.EnableLightWave;
             newSettings.IsWin2dAnimatedText = AppViewModel.IsWin2dAnimatedText;
             newSettings.IsWin2dCoverImageControlEnable = AppViewModel.IsWin2dCoverImageControlEnable;
+            newSettings.CharFloatAmount = AppViewModel.CharFloatAmount;
+            newSettings.CharScaleAmount = AppViewModel.CharScaleAmount;
+            newSettings.GlowAmount = AppViewModel.GlowAmount;
+            newSettings.LongSyllableThreshold = AppViewModel.LongSyllableThreshold;
+            newSettings.PlayingLineTopOffsetPercent = AppViewModel.PlayingLineTopOffsetPercent;
+            newSettings.TranslatedOpacityPercent = AppViewModel.TranslatedOpacityPercent;
+            newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
+            newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
             return newSettings;
         }
 

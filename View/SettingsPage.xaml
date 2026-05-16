@@ -146,8 +146,8 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <!--  封面歌词设置  -->
-                <controls:SettingsExpander x:Uid="SettingCoverLyrics" Margin="10,0,10,0">
+                <!--  封面设置  -->
+                <controls:SettingsExpander x:Uid="SettingCover" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="CoverSize" Description="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}">
                             <NumberBox
@@ -203,11 +203,14 @@
                                 Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
                             <!--<ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />-->
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="BackgroundCover">
-                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=TwoWay}" />
+                        <controls:SettingsCard x:Uid="AutoCoverMatching">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="FluidBackground">
+                            <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="EnableLightWave">
-                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
+                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="Win2dCover" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
@@ -236,17 +239,14 @@
                                 </ComboBox>
                             </Grid>
                         </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <!--  歌词设置  -->
+                <controls:SettingsExpander x:Uid="SettingLyrics" Margin="10,0,10,0">
+                    <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="AutoLyricMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="LyricsBlurAmount">
-                            <Slider
-                                Maximum="5"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="LyricsFontFamily">
                             <ComboBox
@@ -298,6 +298,181 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsBlurAmount">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="20"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="CharFloatAmount">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="CharScaleAmount">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="150"
+                                    Minimum="50"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="GlowAmount">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LongSyllableThreshold">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="1000"
+                                    Minimum="400"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="10"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="UnplayedOpacity">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.UnplayedOpacityPercent, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="TranslatedOpacity">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.TranslatedOpacityPercent, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="PlayingLineTopOffset">
+                            <Grid Width="300">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="TargetFrameRate">
+                            <ComboBox
+                                Width="300"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.TargetFrameRateOptions}"
+                                SelectedItem="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="x:Double">
+                                        <TextBlock>
+                                            <Run Text="{x:Bind Mode=OneWay}" />
+                                            <Run Text=" hz" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
@@ -338,7 +513,7 @@
                 <controls:SettingsExpander x:Uid="AppStyle" Margin="10,10,10,0">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="IsUpdateBackDrop">
-                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsBackgroundCoverEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                            <ToggleSwitch IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel>

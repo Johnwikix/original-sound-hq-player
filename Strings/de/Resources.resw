@@ -243,8 +243,14 @@
   <data name="SettingInterface.Header" xml:space="preserve">
     <value>Oberfläche</value>
   </data>
+  <data name="SettingCover.Header" xml:space="preserve">
+    <value>Cover-Einstellungen</value>
+  </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Cover &amp; Songtexte</value>
+  </data>
+  <data name="SettingLyrics.Header" xml:space="preserve">
+    <value>Songtext-Einstellungen</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
     <value>LrcAPI-Quelle</value>
@@ -260,6 +266,9 @@
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Max. Anzahl vorab geladener Cover</value>
+  </data>
+  <data name="AutoCoverMatching.Header" xml:space="preserve">
+    <value>Automatischer Cover-Abgleich</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
     <value>Automatischer Cover/Songtext-Abgleich</value>
@@ -681,8 +690,8 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Ordner wirklich entfernen?</value>
   </data>
-  <data name="BackgroundCover.Header" xml:space="preserve">
-    <value>Cover-Hintergrund</value>
+  <data name="FluidBackground.Header" xml:space="preserve">
+    <value>Flüssiger Hintergrund</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Songtext erneut abrufen</value>
@@ -887,6 +896,30 @@
   </data>
   <data name="LyricsBlurAmount.Header" xml:space="preserve">
     <value>Unschärfegrad (Songtext)</value>
+  </data>
+  <data name="CharFloatAmount.Header" xml:space="preserve">
+    <value>Zeichen-Verschiebung</value>
+  </data>
+  <data name="CharScaleAmount.Header" xml:space="preserve">
+    <value>Zeichen-Skalierung</value>
+  </data>
+  <data name="GlowAmount.Header" xml:space="preserve">
+    <value>Leuchteffekt-Stärke</value>
+  </data>
+  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+    <value>Lange Silben-Schwelle (ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Header" xml:space="preserve">
+    <value>Deckkraft ungespielter Texte</value>
+  </data>
+  <data name="TranslatedOpacity.Header" xml:space="preserve">
+    <value>Deckkraft übersetzter Texte</value>
+  </data>
+  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+    <value>Aktive Zeilenposition</value>
+  </data>
+  <data name="TargetFrameRate.Header" xml:space="preserve">
+    <value>Songtext-Bildrate</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
     <value>Vorschau-Effekt, keine echten Wort-für-Wort Songtexte</value>

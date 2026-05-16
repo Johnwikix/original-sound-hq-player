@@ -900,7 +900,7 @@ namespace WinUIMusicPlayer.Utils
             try
             {
                 byte[] picture = null;
-                if (AppSettings.IsAutoLyricsEnabled && !isManual)
+                if (AppSettings.IsAutoCoverEnabled && !isManual)
                 {
                     var cancellationToken = new CancellationTokenSource();
                     if (!Directory.Exists(AppSettings.MusicCoverCache))

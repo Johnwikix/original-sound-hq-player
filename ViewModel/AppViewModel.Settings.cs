@@ -117,6 +117,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        public bool IsAutoCoverEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsAutoCoverEnabled = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = true;
+
         public bool IsRunningBackend
         {
             get => field;
@@ -578,7 +594,129 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = 1.5f;
+        } = 5f;
+
+        public double CharFloatAmount
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 5.0;
+
+        public double CharScaleAmount
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 100.0;
+
+        public double GlowAmount
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 5.0;
+
+        public double LongSyllableThreshold
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 700.0;
+
+        public double PlayingLineTopOffsetPercent
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 40.0;
+
+        public double TranslatedOpacityPercent
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 60.0;
+
+        public double UnplayedOpacityPercent
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 50.0;
+
+        public double TargetFrameRate
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = 60.0;
+
+        public List<double> TargetFrameRateOptions { get; } = [30, 60, 120, 144, 160, 165, 180, 240];
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =
         [        
