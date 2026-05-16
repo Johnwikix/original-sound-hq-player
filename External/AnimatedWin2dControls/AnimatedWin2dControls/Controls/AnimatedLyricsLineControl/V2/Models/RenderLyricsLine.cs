@@ -258,7 +258,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 Mode = CanvasComposite.SourceOver
             };
 
-            CachedCropEffect ??= new CropEffect { Source = UnplayedComposite, BorderMode = EffectBorderMode.Soft };
+            CachedCropEffect ??= new CropEffect { Source = UnplayedComposite, BorderMode = EffectBorderMode.Hard };
             CachedBlurEffect ??= new GaussianBlurEffect { Source = CachedCropEffect, BorderMode = EffectBorderMode.Soft };
             CachedOpacityEffect ??= new OpacityEffect { Source = CachedBlurEffect };
 

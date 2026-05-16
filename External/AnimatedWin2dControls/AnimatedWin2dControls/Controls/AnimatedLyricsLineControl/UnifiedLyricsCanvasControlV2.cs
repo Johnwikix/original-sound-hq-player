@@ -785,10 +785,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (i == _hoveredLineIndex)
                 {
                     var hoverRect = new Rect(
-                        line.TopLeftPosition.X - 4,
-                        yOffset + line.TopLeftPosition.Y - 4,
-                        line.BottomRightPosition.X - line.TopLeftPosition.X + 8,
-                        line.BottomRightPosition.Y - line.TopLeftPosition.Y + 8);
+                        line.TopLeftPosition.X - 20,
+                        yOffset + line.TopLeftPosition.Y - 20,
+                        line.BottomRightPosition.X - line.TopLeftPosition.X + 40,
+                        line.BottomRightPosition.Y - line.TopLeftPosition.Y + 40);
 
                     double cw = sender.Size.Width;
                     if (hoverRect.X < 0) { hoverRect.Width += hoverRect.X; hoverRect.X = 0; }

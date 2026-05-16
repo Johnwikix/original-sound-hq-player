@@ -24,7 +24,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             if (lines == null || resourceCreator == null) return;
 
-            const float horizontalPadding = 5f;
+            const float horizontalPadding = 20f;
             double currentX = horizontalPadding;
             double currentY = 0;
             double layoutWidth = lyricsWidth - horizontalPadding * 2;

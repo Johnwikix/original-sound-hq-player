@@ -310,7 +310,7 @@
                                     Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
                                 <Slider
                                     Grid.Column="1"
-                                    Maximum="20"
+                                    Maximum="10"
                                     Minimum="0"
                                     SnapsTo="Ticks"
                                     TickFrequency="0.1"
