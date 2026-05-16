@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -80,14 +81,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             PrimaryRenderSyllables.Clear();
 
-            string joinedText = string.Join("", lyricLine.Words.Select(w => w.Word));
-            PrimaryText = joinedText;
+            var sb = new StringBuilder();
+            foreach (var w in lyricLine.Words)
+                sb.Append(w.Word);
+            PrimaryText = sb.ToString();
             SecondaryText = lyricLine.TransLateText ?? "";
 
             StartMs = lyricLine.StartMs;
             EndMs = nextLineStartMs;
 
             int charIndex = 0;
+            bool hasRealSyllable = false;
             foreach (var word in lyricLine.Words)
             {
                 var syllable = new RenderLyricsSyllable
@@ -99,9 +103,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 syllable.EndMs = syllable.StartMs + word.DurationMs;
                 PrimaryRenderSyllables.Add(syllable);
                 charIndex += word.Word.Length;
-            }
 
-            IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && lyricLine.Words.Any(w => w.DurationMs > 0);
+                if (word.DurationMs > 0)
+                    hasRealSyllable = true;
+            }
+            IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && hasRealSyllable;
         }
 
         public void DisposeTextLayout()
@@ -181,18 +187,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             if (PrimaryTextLayout == null) return;
 
             var textLength = PrimaryText.Length;
+            int syllableIdx = 0;
+            var syllables = PrimaryRenderSyllables;
 
             for (int startCharIndex = 0; startCharIndex < textLength; startCharIndex++)
             {
-                var region = PrimaryTextLayout.GetCharacterRegions(startCharIndex, 1).FirstOrDefault();
+                var region = PrimaryTextLayout.GetCharacterRegions(startCharIndex, 1)[0];
                 var bounds = region.LayoutBounds.Extend(
                     startCharIndex == 0 ? strokeWidth : strokeWidth / 4f,
                     strokeWidth / 2f,
                     startCharIndex == textLength - 1 ? strokeWidth : strokeWidth / 4f,
                     strokeWidth / 2f);
 
-                var syllable = PrimaryRenderSyllables.FirstOrDefault(x => x.StartIndex <= startCharIndex && startCharIndex <= x.EndIndex);
-                if (syllable == null) continue;
+                while (syllableIdx < syllables.Count && startCharIndex > syllables[syllableIdx].EndIndex)
+                    syllableIdx++;
+                if (syllableIdx >= syllables.Count) break;
+                var syllable = syllables[syllableIdx];
 
                 var avgCharDuration = syllable.DurationMs / syllable.Length;
                 var charStartMs = syllable.StartMs + (startCharIndex - syllable.StartIndex) * avgCharDuration;
@@ -203,7 +213,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     StartMs = charStartMs,
                     EndMs = charEndMs,
                     StartIndex = startCharIndex,
-                    Text = PrimaryText[startCharIndex].ToString(),
                 };
 
                 syllable.ChildrenRenderLyricsChars.Add(renderChar);

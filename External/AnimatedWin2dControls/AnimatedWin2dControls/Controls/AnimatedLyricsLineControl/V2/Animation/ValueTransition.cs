@@ -64,36 +64,72 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             _progress = 0;
         }
 
-        public void Start(params Keyframe<T>[] keyframes)
+        public void Start(T value)
         {
-            if (keyframes == null || keyframes.Length == 0) return;
+            if (value.Equals(_currentValue) && _configuredDelaySeconds <= 0) return;
             PrepareStart();
-
             if (_configuredDelaySeconds > 0)
                 _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            _keyframeQueue.Enqueue(new Keyframe<T>(value, _totalDurationForAutoSplit));
+            MoveToNextSegment(true);
+        }
 
-            foreach (var kf in keyframes)
-                _keyframeQueue.Enqueue(kf);
-
+        public void Start(T v1, T v2)
+        {
+            PrepareStart();
+            if (_configuredDelaySeconds > 0)
+                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            double autoStepDuration = _totalDurationForAutoSplit / 2;
+            _keyframeQueue.Enqueue(new Keyframe<T>(v1, autoStepDuration));
+            _keyframeQueue.Enqueue(new Keyframe<T>(v2, autoStepDuration));
             MoveToNextSegment(true);
         }
 
         public void Start(params T[] values)
         {
             if (values == null || values.Length == 0) return;
-
-            if (values.Length == 1 && values[0].Equals(_currentValue) && _configuredDelaySeconds <= 0) return;
+            if (values.Length == 1) { Start(values[0]); return; }
+            if (values.Length == 2) { Start(values[0], values[1]); return; }
 
             PrepareStart();
-
             if (_configuredDelaySeconds > 0)
                 _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
-
             double autoStepDuration = _totalDurationForAutoSplit / values.Length;
-
             foreach (var val in values)
                 _keyframeQueue.Enqueue(new Keyframe<T>(val, autoStepDuration));
+            MoveToNextSegment(true);
+        }
 
+        public void Start(Keyframe<T> kf)
+        {
+            PrepareStart();
+            if (_configuredDelaySeconds > 0)
+                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            _keyframeQueue.Enqueue(kf);
+            MoveToNextSegment(true);
+        }
+
+        public void Start(Keyframe<T> kf1, Keyframe<T> kf2)
+        {
+            PrepareStart();
+            if (_configuredDelaySeconds > 0)
+                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            _keyframeQueue.Enqueue(kf1);
+            _keyframeQueue.Enqueue(kf2);
+            MoveToNextSegment(true);
+        }
+
+        public void Start(params Keyframe<T>[] keyframes)
+        {
+            if (keyframes == null || keyframes.Length == 0) return;
+            if (keyframes.Length == 1) { Start(keyframes[0]); return; }
+            if (keyframes.Length == 2) { Start(keyframes[0], keyframes[1]); return; }
+
+            PrepareStart();
+            if (_configuredDelaySeconds > 0)
+                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            foreach (var kf in keyframes)
+                _keyframeQueue.Enqueue(kf);
             MoveToNextSegment(true);
         }
 
