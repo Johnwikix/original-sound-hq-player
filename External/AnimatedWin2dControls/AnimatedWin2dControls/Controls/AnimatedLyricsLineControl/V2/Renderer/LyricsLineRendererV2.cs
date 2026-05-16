@@ -28,7 +28,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             DrawPrimaryText(resourceCreator, ds);
         }
 
-        private static readonly float CropPadding = 10f;
+        private static readonly float CropHorizonPadding = 10f;
+        private static readonly float CropVerticalPadding = 5f;
 
         private void DrawSecondaryText(CanvasDrawingSession ds)
         {
@@ -40,9 +41,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             var bounds = Line.SecondaryTextLayout.LayoutBounds;
             var srcRect = new Rect(
-                bounds.X + Line.SecondaryPosition.X - CropPadding,
-                bounds.Y + Line.SecondaryPosition.Y - CropPadding,
-                bounds.Width + CropPadding * 2, bounds.Height + CropPadding * 2);
+                bounds.X + Line.SecondaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.SecondaryPosition.Y - CropVerticalPadding,
+                bounds.Width + CropHorizonPadding * 2, bounds.Height + CropVerticalPadding * 2);
 
             if (Line.CachedCropEffect is {} crop && Line.CachedBlurEffect is {} blurFx && Line.CachedOpacityEffect is {} opacityFx)
             {
@@ -60,9 +61,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             var bounds = Line.PrimaryTextLayout.LayoutBounds;
             var srcRect = new Rect(
-                bounds.X + Line.PrimaryPosition.X - CropPadding,
-                bounds.Y + Line.PrimaryPosition.Y - CropPadding,
-                bounds.Width + CropPadding * 2, bounds.Height + CropPadding * 2);
+                bounds.X + Line.PrimaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.PrimaryPosition.Y - CropHorizonPadding,
+                bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
 
             if (!IsPlaying)
             {
@@ -100,9 +101,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             var bounds = Line.PrimaryTextLayout!.LayoutBounds;
             Rect fullRect = new(
-                bounds.X + Line.PrimaryPosition.X - CropPadding,
-                bounds.Y + Line.PrimaryPosition.Y - CropPadding,
-                bounds.Width + CropPadding * 2, bounds.Height + 2 * CropPadding);
+                bounds.X + Line.PrimaryPosition.X,
+                bounds.Y + Line.PrimaryPosition.Y,
+                bounds.Width, bounds.Height);
 
             var playedOpacity = Line.PlayedPrimaryOpacityTransition.Value;
             var unplayedOpacity = Line.UnplayedPrimaryOpacityTransition.Value;
@@ -142,9 +143,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             var subRect = subLineRegion.LayoutBounds;
             Rect subLineRect = new(
-                subRect.X + Line.PrimaryPosition.X - CropPadding,
-                subRect.Y + Line.PrimaryPosition.Y - CropPadding,
-                subRect.Width + CropPadding * 2, subRect.Height + CropPadding * 2);
+                subRect.X + Line.PrimaryPosition.X,
+                subRect.Y + Line.PrimaryPosition.Y,
+                subRect.Width, subRect.Height);
 
             double playedWidth = 0;
             if (!Line.IsPrimaryHasRealSyllableInfo)
