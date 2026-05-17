@@ -144,6 +144,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private int _currentLineIndex = -1;
         private bool _isPlaying = false;
         private bool _shutdown;
+        private double _cachedPlayingLineTopOffset = 0.5;
         private double _currentLineOffsetY = 0.0;
 
         // ─────────────────────────────────────────────────────────────────────
@@ -505,6 +506,55 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetValue(LyricsBlurAmountProperty, Math.Max(0.0, value));
         }
 
+        public static readonly DependencyProperty TranslatedOpacityProperty =
+            DependencyProperty.Register(nameof(TranslatedOpacity), typeof(double),
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.6, OnOpacityPropertyChanged));
+
+        public double TranslatedOpacity
+        {
+            get => (double)GetValue(TranslatedOpacityProperty);
+            set => SetValue(TranslatedOpacityProperty, Math.Clamp(value, 0.0, 1.0));
+        }
+
+        public static readonly DependencyProperty UnplayedOpacityProperty =
+            DependencyProperty.Register(nameof(UnplayedOpacity), typeof(double),
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.5, OnOpacityPropertyChanged));
+
+        public double UnplayedOpacity
+        {
+            get => (double)GetValue(UnplayedOpacityProperty);
+            set => SetValue(UnplayedOpacityProperty, Math.Clamp(value, 0.0, 1.0));
+        }
+
+        public static readonly DependencyProperty PlayingLineTopOffsetProperty =
+            DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double),
+                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.5, OnPlayingLineTopOffsetChanged));
+
+        public double PlayingLineTopOffset
+        {
+            get => (double)GetValue(PlayingLineTopOffsetProperty);
+            set => SetValue(PlayingLineTopOffsetProperty, Math.Clamp(value, 0.0, 1.0));
+        }
+
+        private static void OnOpacityPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is UnifiedLyricsCanvasControl c)
+            {
+                c.UpdateColors((bool)c.GetValue(IsDarkProperty));
+                c._canvas?.Invalidate();
+            }
+        }
+
+        private static void OnPlayingLineTopOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is UnifiedLyricsCanvasControl c)
+            {
+                c._cachedPlayingLineTopOffset = (double)e.NewValue;
+                c.AutoScrollToCurrentLine();
+                c._canvas?.Invalidate();
+            }
+        }
+
         // ═════════════════════════════════════════════════════════════════════
         // 输入：鼠标滚轮
         // ═════════════════════════════════════════════════════════════════════
@@ -570,7 +620,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (_lineLayoutCount == 0 || _canvas is null) { SetHovered(-1); return; }
             double viewH = _canvas.ActualHeight;
-            float lyricsY = (float)(viewY - viewH / 2.0 + _smoothedScrollY);
+            float lyricsY = (float)(viewY - viewH * _cachedPlayingLineTopOffset + _smoothedScrollY);
 
             int hit = -1;
             for (int i = 0; i < _lineLayoutCount; i++)
@@ -725,7 +775,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_lineLayoutCount == 0 || _canvas is null) return;
             double viewH = _canvas.ActualHeight;
             float tapViewY = (float)e.GetPosition(_canvas).Y;
-            float tapY = (float)(tapViewY - viewH / 2.0 + _smoothedScrollY);
+            float tapY = (float)(tapViewY - viewH * _cachedPlayingLineTopOffset + _smoothedScrollY);
 
             for (int li = 0; li < _lineLayoutCount; li++)
             {
@@ -1303,17 +1353,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void UpdateColors(bool isDark)
         {
+            byte unplayedAlpha = (byte)(UnplayedOpacity * 255);
+            byte translateAlpha = (byte)(TranslatedOpacity * 255);
             if (isDark)
             {
-                _dimColor = Color.FromArgb(128, 255, 255, 255);
+                _dimColor = Color.FromArgb(unplayedAlpha, 255, 255, 255);
                 _brightColor = Color.FromArgb(255, 255, 255, 255);
-                _translateColor = Color.FromArgb(155, 255, 255, 255);
+                _translateColor = Color.FromArgb(translateAlpha, 255, 255, 255);
             }
             else
             {
-                _dimColor = Color.FromArgb(100, 0, 0, 0);
+                _dimColor = Color.FromArgb(unplayedAlpha, 0, 0, 0);
                 _brightColor = Color.FromArgb(255, 0, 0, 0);
-                _translateColor = Color.FromArgb(155, 0, 0, 0);
+                _translateColor = Color.FromArgb(translateAlpha, 0, 0, 0);
             }
             _gradBrushDirty = true;
         }
@@ -1398,8 +1450,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             // ── 视口在歌词坐标系中的可见范围 ────────────────────────────────
-            float viewTop = (float)_smoothedScrollY - viewH / 2f;
-            float viewBot = (float)_smoothedScrollY + viewH / 2f;
+            float topOffset = (float)(viewH * _cachedPlayingLineTopOffset);
+            float viewTop = (float)_smoothedScrollY - topOffset;
+            float viewBot = (float)_smoothedScrollY + (viewH - topOffset);
 
             // ── 精确确定可见行范围 [visLo, visHi] ────────────────────────────
             int visLo = FindFirstVisibleLine(viewTop);
@@ -1436,7 +1489,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 globalVrIdx += _lineVisualRowRanges[li].Count;
 
             // ── 坐标变换 ─────────────────────────────────────────────────────
-            float translateY = viewH / 2f - (float)_smoothedScrollY;
+            float translateY = (float)(viewH * _cachedPlayingLineTopOffset) - (float)_smoothedScrollY;
             ds.Transform = Matrix3x2.CreateTranslation(0f, translateY);
             ds.Antialiasing = CanvasAntialiasing.Antialiased;
             ds.TextAntialiasing = CanvasTextAntialiasing.Auto;
