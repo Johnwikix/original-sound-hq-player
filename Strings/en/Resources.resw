@@ -271,7 +271,7 @@
     <value>Auto Cover Matching</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Auto Cover Lyric Matching</value>
+    <value>Auto Lyric Matching</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Need to configure LrcAPI service</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Lyric time offset</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>Enable Advanced Lyrics Effects (Higher CPU and GPU Overhead)</value>
   </data>
 </root>

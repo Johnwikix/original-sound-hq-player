@@ -271,7 +271,7 @@
     <value>自动封面匹配</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>自动封面歌词匹配</value>
+    <value>自动歌词匹配</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>需要配置LrcAPI服务</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>歌词时间偏移</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>启用高级歌词特效（更高的 CPU 和 GPU 开销）</value>
   </data>
 </root>

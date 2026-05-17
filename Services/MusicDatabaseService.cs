@@ -770,6 +770,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.TranslatedOpacityPercent = settings.TranslatedOpacityPercent;
                 AppViewModel.UnplayedOpacityPercent = settings.UnplayedOpacityPercent;
                 AppViewModel.TargetFrameRate = settings.TargetFrameRate;
+                AppViewModel.EnableAdvancedLyricsEffect = settings.EnableAdvancedLyricsEffect;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -831,8 +832,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
-            //newSettings.EntranceAnimationTime = AppViewModel.EntranceAnimationTime;
-            //newSettings.SlideAnimationTime = AppViewModel.SlideAnimationTime;
             newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
             newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
             newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
@@ -867,6 +866,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.TranslatedOpacityPercent = AppViewModel.TranslatedOpacityPercent;
             newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
             newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
+            newSettings.EnableAdvancedLyricsEffect = AppViewModel.EnableAdvancedLyricsEffect;
             return newSettings;
         }
 

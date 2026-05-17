@@ -32,8 +32,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsPlayDetailBtnVisible { get; set; } = true;       
         public int CoverSize { get; set; } = 150;      
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
-        //public int SlideAnimationTime { get; set; } = 400;
-        //public int DrillInAnimationTime { get; set; } = 400;
         public bool IsFluidBackgroundEnabled { get; set; } = true;
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;
@@ -58,5 +56,6 @@ namespace WinUIMusicPlayer.Model
         public double TranslatedOpacityPercent { get; set; } = 60.0;
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 60.0;
+        public bool EnableAdvancedLyricsEffect { get; set; } = true;
     }
 }

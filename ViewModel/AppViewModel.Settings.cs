@@ -716,6 +716,20 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 60.0;
 
+        public bool EnableAdvancedLyricsEffect
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = true;
         public List<double> TargetFrameRateOptions { get; } = [30, 60, 120, 144, 160, 165, 180, 240];
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =

@@ -271,7 +271,7 @@
     <value>Coincidencia automática de portada</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Automatic Cover Lyrics Matching</value>
+    <value>Automatic Lyrics Matching</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Se necesita configurar el servicio de API Lrc</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Desfase de tiempo de la letra</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>Habilitar efectos avanzados de letra (mayor consumo de CPU y GPU)</value>
   </data>
 </root>

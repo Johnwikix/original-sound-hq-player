@@ -271,7 +271,7 @@
     <value>自動ジャケットマッチング</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>自動カバー歌詞マッチング</value>
+    <value>自動歌詞マッチング</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>LrcAPIサービスを設定が必要です</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>歌詞タイムオフセット</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>高度な歌詞エフェクトを有効にする（CPU・GPU 負荷が増加します）</value>
   </data>
 </root>

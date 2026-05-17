@@ -271,7 +271,7 @@
     <value>Automatischer Cover-Abgleich</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Automatischer Cover/Songtext-Abgleich</value>
+    <value>Automatischer Songtext-Abgleich</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>LrcAPI-Dienst muss konfiguriert werden</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Liedtext-Zeitverschiebung</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>Erweiterte Liedtexteffekte aktivieren (höhere CPU‑ und GPU‑Auslastung)</value>
   </data>
 </root>

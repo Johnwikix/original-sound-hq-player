@@ -271,7 +271,7 @@
     <value>Автоматическое сопоставление обложек</value>
   </data>
   <data name="AutoLyricMatching.Header" xml:space="preserve">
-    <value>Автоматическое совпадение текста на обложке</value>
+    <value>Автоподбор текстов песен</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Необходимо настроить службуLrcAPI</value>
@@ -974,5 +974,8 @@
   </data>
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Смещение времени текста песни</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+    <value>Включить расширенные эффекты текста песни (повышенная нагрузка на ЦП и ГП)</value>
   </data>
 </root>
