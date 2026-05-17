@@ -333,8 +333,8 @@
                                     Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
                                 <Slider
                                     Grid.Column="1"
-                                    Maximum="100"
-                                    Minimum="0"
+                                    Maximum="70"
+                                    Minimum="30"
                                     SnapsTo="Ticks"
                                     TickFrequency="1"
                                     TickPlacement="Outside"
