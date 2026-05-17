@@ -25,6 +25,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private List<RenderLyricsLine> _renderLines = [];
         private List<RenderLyricsLine>? _pendingDisposeLines;
         private bool _layoutDirty = true;
+        private bool _shutdown;
         private int _currentLineIndex = -1;
         private int _lastCurrentLineIndex = -1;
 
@@ -104,8 +105,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _mouseYScrollTransition = new(0, EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine), 0.3);
         }
 
-        private void OnControlUnloaded(object sender, RoutedEventArgs e)
+        public void PrepareForShutdown()
         {
+            if (_shutdown) return;
+            _shutdown = true;
+
+            if (_canvas != null)
+            {
+                _canvas.Paused = true;
+                _canvas.Update -= OnCanvasUpdate;
+                _canvas.Draw -= OnCanvasDraw;
+                _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
+                _canvas.PointerPressed -= OnCanvasPointerPressed;
+                _canvas.PointerMoved -= OnCanvasPointerMoved;
+                _canvas.PointerReleased -= OnCanvasPointerReleased;
+                _canvas.PointerCanceled -= OnCanvasPointerCanceled;
+                _canvas.PointerExited -= OnCanvasPointerExited;
+                _canvas.PointerEntered -= OnCanvasPointerEntered;
+                _canvas.Tapped -= OnCanvasTapped;
+                _canvas = null;
+            }
+
             DisposeRenderLines();
             if (_pendingDisposeLines != null)
             {
@@ -114,6 +134,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _pendingDisposeLines = null;
             }
             _edgeFadeMask.Dispose();
+        }
+
+        private void OnControlUnloaded(object sender, RoutedEventArgs e)
+        {
+            PrepareForShutdown();
         }
 
         protected override void OnApplyTemplate()

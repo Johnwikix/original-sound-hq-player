@@ -278,6 +278,7 @@ namespace WinUIMusicPlayer.View
         {
             if (dispose) {
                 App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
+                LyricsView?.ShutdownLyricsCanvas();
                 AlbumArtControl?.Dispose();
                 BackGround?.Dispose();
             }

@@ -272,5 +272,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
             => LyricInteracted?.Invoke(this, ts);
+
+        public void ShutdownLyricsCanvas()
+        {
+            LyricsCanvas.PrepareForShutdown();
+        }
     }
 }
