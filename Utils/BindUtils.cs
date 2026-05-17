@@ -80,6 +80,11 @@ namespace WinUIMusicPlayer.Utils
             return !value;
         }
 
+        public static double HalfConverter(double value)
+        {
+            return value / 2.0;
+        }
+
         public static string MusicToInfo(Music music)
         {
             if (music is null) return string.Empty;

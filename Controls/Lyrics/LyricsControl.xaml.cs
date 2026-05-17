@@ -14,16 +14,22 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     {
         public event EventHandler<TimeSpan>? LyricInteracted;
 
+        public static readonly DependencyProperty EnableAdvancedLyricsProperty =
+            DependencyProperty.Register(nameof(EnableAdvancedLyrics), typeof(bool),
+                typeof(LyricsControl), new PropertyMetadata(true));
+
+        public bool EnableAdvancedLyrics
+        {
+            get => (bool)GetValue(EnableAdvancedLyricsProperty);
+            set => SetValue(EnableAdvancedLyricsProperty, value);
+        }
+
         #region Dependency Properties
 
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
                 typeof(IList<LyricLine>), typeof(LyricsControl),
-                new PropertyMetadata(null, (d, e) =>
-                {
-                    if (d is not LyricsControl c) return;
-                    c.LyricsCanvas.UILyrics = e.NewValue as IList<LyricLine>;
-                }));
+                new PropertyMetadata(null));
 
         public IList<LyricLine>? UILyrics
         {
@@ -45,8 +51,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public static readonly DependencyProperty CurrentPlayingTimeProperty =
             DependencyProperty.Register(nameof(CurrentPlayingTime),
                 typeof(TimeSpan), typeof(LyricsControl),
-                new PropertyMetadata(TimeSpan.Zero,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.CurrentPlayingTime = (TimeSpan)e.NewValue));
+                new PropertyMetadata(TimeSpan.Zero));
 
         public TimeSpan CurrentPlayingTime
         {
@@ -57,8 +62,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public static readonly DependencyProperty IsPlayingProperty =
             DependencyProperty.Register(nameof(IsPlaying),
                 typeof(bool), typeof(LyricsControl),
-                new PropertyMetadata(false,
-                    (d, e) => ((LyricsControl)d).LyricsCanvas.IsPlaying = (bool)e.NewValue));
+                new PropertyMetadata(false));
 
         public bool IsPlaying
         {
@@ -263,11 +267,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public LyricsControl()
         {
             this.InitializeComponent();
-            LyricsCanvas.LyricLineClicked += OnCanvasLyricLineClicked;
+            Loaded += OnControlLoaded;
             Unloaded += (_, _) =>
             {
-                LyricsCanvas.LyricLineClicked -= OnCanvasLyricLineClicked;
+                LyricsCanvasV1?.LyricLineClicked -= OnCanvasLyricLineClicked;
+                LyricsCanvas?.LyricLineClicked -= OnCanvasLyricLineClicked;
             };
+        }
+
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            LyricsCanvasV1?.LyricLineClicked += OnCanvasLyricLineClicked;
+            LyricsCanvas?.LyricLineClicked += OnCanvasLyricLineClicked;
         }
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
@@ -275,7 +286,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public void ShutdownLyricsCanvas()
         {
-            LyricsCanvas.PrepareForShutdown();
+            LyricsCanvasV1?.PrepareForShutdown();
+            LyricsCanvas?.PrepareForShutdown();
         }
     }
 }

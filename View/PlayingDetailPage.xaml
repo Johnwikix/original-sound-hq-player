@@ -569,6 +569,7 @@
                     CharFloatAmount="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=OneWay}"
                     CharScaleAmount="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=OneWay}"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"
+                    EnableAdvancedLyrics="False"
                     FontFamilyName="{x:Bind ViewModel.AppViewModel.FontFamily.FontFamily.Source, Mode=OneWay}"
                     GlowAmount="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=OneWay}"
                     IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"

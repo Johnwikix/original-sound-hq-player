@@ -143,6 +143,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ─────────────────────────────────────────────────────────────────────
         private int _currentLineIndex = -1;
         private bool _isPlaying = false;
+        private bool _shutdown;
         private double _currentLineOffsetY = 0.0;
 
         // ─────────────────────────────────────────────────────────────────────
@@ -208,8 +209,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             Unloaded += OnUnloaded;
         }
 
-        private void OnUnloaded(object sender, RoutedEventArgs e)
+        public void PrepareForShutdown()
         {
+            if (_shutdown) return;
+            _shutdown = true;
+
             DestroyTimer();
             if (_canvas is not null)
             {
@@ -232,6 +236,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _reusableBlur?.Dispose();
             _reusableBlur = null;
             DisposeFmtCache();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            PrepareForShutdown();
         }
 
         protected override void OnApplyTemplate()
@@ -291,7 +300,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public static readonly DependencyProperty UILyricsProperty =
             DependencyProperty.Register(nameof(UILyrics),
-                typeof(ObservableCollection<LyricLine>), typeof(UnifiedLyricsCanvasControl),
+                typeof(IList<LyricLine>), typeof(UnifiedLyricsCanvasControl),
                 new PropertyMetadata(null, (d, _) =>
                 {
                     if (d is not UnifiedLyricsCanvasControl c) return;
