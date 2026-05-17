@@ -85,6 +85,10 @@ namespace WinUIMusicPlayer.Utils
             return value / 2.0;
         }
 
+        public static double ValueAmplifierConverter(double value,double scale = 1.0) {
+            return value * scale;
+        }
+
         public static string MusicToInfo(Music music)
         {
             if (music is null) return string.Empty;
