@@ -2,6 +2,7 @@ using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
 using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -46,6 +47,7 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
+        private ILogger<MainWindow> _logger;
         public MainWindow()
         {
             InitializeComponent();
@@ -55,6 +57,7 @@ namespace WinUIMusicPlayer
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
             this.SetTitleBarBackgroundColors(Colors.Transparent);
+            _logger = App.GetLogger<MainWindow>();
             this.Activated += MainWindow_Activated;            
             themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
@@ -69,7 +72,7 @@ namespace WinUIMusicPlayer
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
-            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -103,7 +106,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"保存窗口句柄失败: {ex.Message}");
+                _logger.LogError($"保存窗口句柄失败: {ex.Message}");
             }
         }
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
@@ -142,8 +145,9 @@ namespace WinUIMusicPlayer
                 // 调用默认窗口过程处理其他消息
                 return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex,"处理窗口消息时发生错误");
                 return IntPtr.Zero;
             }
         }
@@ -167,14 +171,11 @@ namespace WinUIMusicPlayer
             try
             {
                 themeStyleHelper.SetAppStyle();
-                themeStyleHelper.SetAppTheme();               
-                //ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
-                //App.Services.GetRequiredService<PlayingDetailPage>();
-                //LoadingGrid.Visibility = Visibility.Collapsed;             
-                //App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
+                themeStyleHelper.SetAppTheme();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "应用主题初始化失败，可能是因为系统主题设置不受支持。");
             }
         }
 
@@ -218,7 +219,11 @@ namespace WinUIMusicPlayer
             {
                 if (_taskbarHelper is null)
                 {
-                    _taskbarHelper = new TaskbarHelper(AppData.HWnd);
+                    _taskbarHelper = new TaskbarHelper(AppData.HWnd,App.Services.GetRequiredService<MusicBrowseViewModel>());
+                    _taskbarHelper.ErrorOccurred += (_, e) =>
+                    {
+                        _logger.LogError(e.Exception, "任务栏助手发生错误");
+                    };
                     _taskbarHelper.InitializeThumbButtons();
                 }
                 else
@@ -228,7 +233,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"初始化任务栏助手出错: {ex.Message}");
+                _logger.LogError(ex, "初始化任务栏助手失败");
             }
         }
         public void Dispose()
