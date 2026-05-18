@@ -117,15 +117,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             stops[2].Position = progress + 0.05f; stops[2].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
             stops[3].Position = 1; stops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
 
+            float targetW = (float)(fullRect.X + fullRect.Width + 1);
+            float targetH = (float)(fullRect.Y + fullRect.Height + 1);
+
+            if (region.PrevFillLayer == null || region.CachedTargetWidth != targetW || region.CachedTargetHeight != targetH)
+            {
+                region.PrevFillLayer?.Dispose();
+                region.PrevFillLayer = new CanvasRenderTarget((Microsoft.Graphics.Canvas.ICanvasResourceCreatorWithDpi)resourceCreator, targetW, targetH);
+                region.CachedTargetWidth = targetW;
+                region.CachedTargetHeight = targetH;
+            }
+
             using var brush = new CanvasLinearGradientBrush(resourceCreator, stops)
             {
                 StartPoint = new Vector2((float)fullRect.X, (float)fullRect.Y),
                 EndPoint = new Vector2((float)(fullRect.X + fullRect.Width), (float)fullRect.Y)
             };
-            region.PrevFillLayer?.Dispose();
-            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
             using (var gds = region.PrevFillLayer.CreateDrawingSession())
+            {
+                gds.Clear(Microsoft.UI.Colors.Transparent);
                 gds.FillRectangle(fullRect, brush);
+            }
 
             region.FinalFillEffect.Source = region.PrevFillLayer;
             ds.DrawImage(region.FinalFillEffect);
@@ -189,15 +201,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             region.FillStops[3].Position = 1 + fadeInRegion;
             region.FillStops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
 
+            float targetW = (float)(subLineRect.X + subLineRect.Width + 1);
+            float targetH = (float)(subLineRect.Y + subLineRect.Height + 1);
+
+            if (region.PrevFillLayer == null || region.CachedTargetWidth != targetW || region.CachedTargetHeight != targetH)
+            {
+                region.PrevFillLayer?.Dispose();
+                region.PrevFillLayer = new CanvasRenderTarget((Microsoft.Graphics.Canvas.ICanvasResourceCreatorWithDpi)resourceCreator, targetW, targetH);
+                region.CachedTargetWidth = targetW;
+                region.CachedTargetHeight = targetH;
+            }
+
             using var fillGradientBrush = new CanvasLinearGradientBrush(resourceCreator, region.FillStops)
             {
                 StartPoint = new Vector2((float)subLineRect.X, (float)subLineRect.Y),
                 EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
             };
-            region.PrevFillLayer?.Dispose();
-            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
             using (var gds = region.PrevFillLayer.CreateDrawingSession())
             {
+                gds.Clear(Microsoft.UI.Colors.Transparent);
                 gds.FillRectangle(subLineRect, fillGradientBrush);
             }
 

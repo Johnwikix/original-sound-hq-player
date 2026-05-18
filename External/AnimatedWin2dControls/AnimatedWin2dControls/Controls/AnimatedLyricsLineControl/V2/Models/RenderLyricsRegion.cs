@@ -14,8 +14,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public AlphaMaskEffect? FinalStrokeEffect { get; }
         public CompositeEffect? CombinedEffect { get; }
 
-        public CanvasCommandList? PrevFillLayer;
+        public CanvasRenderTarget? PrevFillLayer;
         public CanvasCommandList? PrevStrokeLayer;
+
+        internal float CachedTargetWidth;
+        internal float CachedTargetHeight;
 
         public RenderLyricsRegion(ICanvasImage cachedFill, ICanvasImage? cachedStroke)
         {
