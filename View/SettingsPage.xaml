@@ -159,7 +159,7 @@
                                 SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="CoverDiskCache">
+                        <controls:SettingsCard x:Uid="CoverDiskCache" Description="{x:Bind tool:ToolUtils.GetString('RebootToApply')}">
                             <Grid Width="300">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -201,7 +201,6 @@
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
-                            <!--<ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsCoverCacheEnabled, Mode=TwoWay}" />-->
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="AutoCoverMatching">
                             <ToggleSwitch IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />

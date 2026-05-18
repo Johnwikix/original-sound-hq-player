@@ -1,5 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
-using ATL;
+﻿
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -15,7 +14,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Playlists;
 using Windows.Storage;
 using Windows.UI;
 using WinUIMusicPlayer.Helper;
@@ -54,7 +52,6 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<Music>();
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SavePlayState>();
-                //await _dbConnection.CreateTableAsync<SaveSettings>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
