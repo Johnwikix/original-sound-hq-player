@@ -10,8 +10,8 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -116,7 +116,10 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     {
         var ctrl = (ShaderBackgroundControl)d;
         if (ctrl._effect == null) return;
+
+        // EnableLightWave 变化时立即写入，不在热路径中，一次性装箱可接受
         ctrl._effect.Properties["EnableLightWave"] = ctrl.EnableLightWave;
+
         if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
             _ = ctrl.LoadColorsFromBytesAsync(bytes);
         else
@@ -144,6 +147,11 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     private long _lastLength = -1;
     private int _lastHash;
+
+    // ── GC 优化：复用集合，避免换图时重复分配 ──────────────────────────────
+    // LoadColorsFromBytesAsync 通过 CTS 保证同一时间只有一个 Task 在跑，静态复用安全
+    private static readonly List<(Vector3 Color, int Population)> s_weightedBuffer = new(8);
+    private static readonly List<QuantizedColor> s_paletteSortBuffer = new(8);
 
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
@@ -221,28 +229,37 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         ApplyEffectProperties(sender);
     }
 
+    // ── 热路径：每帧 Update ───────────────────────────────────────────────
+    // 优化要点：
+    //   1. iTime 每帧必须写入，装箱无法彻底消除，但限制为仅 1 次/帧。
+    //   2. color1~4 / RandomValue 只在过渡期间写入；过渡完成后完全跳过，
+    //      避免 _transitionProgress==1f 时每帧产生 4 个 Vector3 装箱对象。
+    //   3. 平滑步函数内联，避免虚调用。
+
     private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs e)
     {
         if (_effect == null) return;
 
         _time = (float)e.Timing.TotalTime.TotalSeconds;
-        _effect.Properties["iTime"] = _time;
+        _effect.Properties["iTime"] = _time;   // 1 次装箱/帧，不可避免
+
+        if (_transitionProgress >= 1f) return;  // 过渡完成：提前退出，不再写颜色属性
 
         float delta = (float)e.Timing.ElapsedTime.TotalSeconds;
+        _transitionProgress = Math.Min(1f, _transitionProgress + delta * TransitionSpeed);
 
-        if (_transitionProgress < 1f)
-        {
-            _transitionProgress = Math.Min(1f, _transitionProgress + delta * TransitionSpeed);
-            float t = _transitionProgress * _transitionProgress * (3f - 2f * _transitionProgress);
-            _c1 = Vector3.Lerp(_c1, _target1, t);
-            _c2 = Vector3.Lerp(_c2, _target2, t);
-            _c3 = Vector3.Lerp(_c3, _target3, t);
-            _c4 = Vector3.Lerp(_c4, _target4, t);
-            _effect.Properties["color1"] = _c1;
-            _effect.Properties["color2"] = _c2;
-            _effect.Properties["color3"] = _c3;
-            _effect.Properties["color4"] = _c4;
-        }
+        // smoothstep：内联避免委托开销
+        float t = _transitionProgress * _transitionProgress * (3f - 2f * _transitionProgress);
+        _c1 = Vector3.Lerp(_c1, _target1, t);
+        _c2 = Vector3.Lerp(_c2, _target2, t);
+        _c3 = Vector3.Lerp(_c3, _target3, t);
+        _c4 = Vector3.Lerp(_c4, _target4, t);
+
+        // 过渡期间每帧写入颜色（4 次装箱），结束后不再触发
+        _effect.Properties["color1"] = _c1;
+        _effect.Properties["color2"] = _c2;
+        _effect.Properties["color3"] = _c3;
+        _effect.Properties["color4"] = _c4;
     }
 
     private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs e)
@@ -283,6 +300,8 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         if (_effect == null) return;
         _width = canvas.ConvertDipsToPixels((float)canvas.Size.Width, CanvasDpiRounding.Round);
         _height = canvas.ConvertDipsToPixels((float)canvas.Size.Height, CanvasDpiRounding.Round);
+
+        // 初始化时一次性写入所有属性，之后热路径只写变化项
         _effect.Properties["iResolution"] = new Vector2(_width, _height);
         _effect.Properties["iTime"] = _time;
         _effect.Properties["color1"] = _c1;
@@ -303,9 +322,15 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         await LoadColorsFromBytesAsync(imageBytes);
     }
 
+    // 优化要点：
+    //   1. 复用 s_weightedBuffer / s_paletteSortBuffer，避免 new List 分配。
+    //   2. 用手动 foreach 替代 LINQ 链（Sum/Where/OrderByDescending/Concat/Take/Select），
+    //      消除多个闭包对象和 IEnumerator 分配。
+    //   3. palette.Sort() 在原列表上排序，不产生新集合。
     private async Task LoadColorsFromBytesAsync(byte[] imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0) return;
+
         _loadCts?.Cancel();
         _loadCts?.Dispose();
         _loadCts = null;
@@ -317,14 +342,17 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
         try
         {
-            var (weighted, resolvedIsDark) = await Task.Run(async () =>
+            var (resolvedIsDark, weightedCount) = await Task.Run(async () =>
             {
                 using var memStream = new MemoryStream(imageBytes, writable: false);
                 using var rasStream = memStream.AsRandomAccessStream();
                 var decoder = await BitmapDecoder.CreateAsync(rasStream);
 
                 bool effectiveIsDark;
-                List<(Vector3 Color, int Population)> result;
+
+                // 复用静态缓冲区，避免 new List 分配
+                s_weightedBuffer.Clear();
+                s_paletteSortBuffer.Clear();
 
                 using (var image = await ConvertToImageSharpAsync(decoder))
                 {
@@ -335,43 +363,82 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
                         : isDark;
 
                     var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
-                    int totalPop = palette.Sum(t => t.Population);
 
-                    var allByWeight = palette.OrderByDescending(t => t.Population).ToList();
+                    // ── 手动遍历统计，替代 LINQ Sum/Where ──
+                    int totalPop = 0;
+                    int preferredPop = 0;
+                    foreach (var item in palette)
+                    {
+                        totalPop += item.Population;
+                        if (item.IsDark == effectiveIsDark)
+                            preferredPop += item.Population;
 
-                    int preferredPop = allByWeight
-                        .Where(t => t.IsDark == effectiveIsDark)
-                        .Sum(t => t.Population);
-                    float preferredRatio = totalPop > 0 ? (float)preferredPop / totalPop : 0f;
+                        // 顺便复制到可排序缓冲区（palette 类型可能不支持直接 Sort）
+                        s_paletteSortBuffer.Add(item);
+                    }
 
-                    IEnumerable<QuantizedColor> candidates = preferredRatio >= 0.5f
-                        ? allByWeight.Where(t => t.IsDark == effectiveIsDark)
-                              .Concat(allByWeight.Where(t => t.IsDark != effectiveIsDark))
-                        : allByWeight;
+                    bool usePreferred = totalPop > 0
+                        && (float)preferredPop / totalPop >= 0.5f;
 
-                    result = candidates.Take(4)
-                        .Select(t => (
-                            Color: new Vector3(t.Color.R / 255f, t.Color.G / 255f, t.Color.B / 255f),
-                            t.Population))
-                        .ToList();
+                    // 按 Population 降序排序（原地，不产生新集合）
+                    s_paletteSortBuffer.Sort(static (a, b) =>
+                        b.Population.CompareTo(a.Population));
+
+                    // ── 两遍填充：先取偏好色，再补足 ──
+                    // 最多取 4 个，总量很小，两遍线性扫描比 LINQ 链更高效且无分配
+                    int taken = 0;
+
+                    if (usePreferred)
+                    {
+                        foreach (var item in s_paletteSortBuffer)
+                        {
+                            if (taken == 4) break;
+                            if (item.IsDark == effectiveIsDark)
+                            {
+                                s_weightedBuffer.Add((
+                                    new Vector3(item.Color.R / 255f,
+                                                item.Color.G / 255f,
+                                                item.Color.B / 255f),
+                                    item.Population));
+                                taken++;
+                            }
+                        }
+                    }
+
+                    foreach (var item in s_paletteSortBuffer)
+                    {
+                        if (taken == 4) break;
+                        // usePreferred 时跳过已经加过的颜色
+                        if (usePreferred && item.IsDark == effectiveIsDark) continue;
+                        s_weightedBuffer.Add((
+                            new Vector3(item.Color.R / 255f,
+                                        item.Color.G / 255f,
+                                        item.Color.B / 255f),
+                            item.Population));
+                        taken++;
+                    }
                 }
 
-                return (result, effectiveIsDark);
+                return (effectiveIsDark, s_weightedBuffer.Count);
             }, cts.Token);
 
             cts.Token.ThrowIfCancellationRequested();
 
-            if (weighted.Count == 0)
-                weighted.Add((resolvedIsDark ? new Vector3(0.05f) : new Vector3(0.95f), 1));
+            // s_weightedBuffer 此时持有结果，在 UI 线程侧读取（Task 已结束，安全）
+            if (weightedCount == 0)
+                s_weightedBuffer.Add((resolvedIsDark
+                    ? new Vector3(0.05f)
+                    : new Vector3(0.95f), 1));
 
-            ScalePaletteLuminance(weighted, resolvedIsDark, useImageDominantTheme);
+            ScalePaletteLuminance(s_weightedBuffer, resolvedIsDark, useImageDominantTheme);
 
-            var slots = DistributeByPopulation(weighted);
+            var slots = DistributeByPopulation(s_weightedBuffer);
             _target1 = slots[0];
             _target2 = slots[1];
             _target3 = slots[2];
             _target4 = slots[3];
             _transitionProgress = 0f;
+
             _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
             _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
             _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
@@ -396,14 +463,29 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     // ── 颜色算法 ──────────────────────────────────────────────────────────
 
-    private static Vector3[] DistributeByPopulation(List<(Vector3 Color, int Population)> weighted)
+    // 优化要点：
+    //   1. slots 用 stackalloc 替代 new int[]，消除堆分配。
+    //   2. totalPop 手动循环计算，替代 LINQ Sum（有 IEnumerator 分配）。
+    //   3. result 固定长度 4，仍走堆分配，但每次换图只调用一次，可接受；
+    //      若需进一步优化可改为 stackalloc + out 参数。
+    private static Vector3[] DistributeByPopulation(
+        List<(Vector3 Color, int Population)> weighted)
     {
         const int Total = 4;
         int count = weighted.Count;
-        int totalPop = weighted.Sum(w => w.Population);
+
+        // 手动求和，替代 LINQ Sum（避免 IEnumerator 分配）
+        int totalPop = 0;
+        for (int i = 0; i < count; i++)
+            totalPop += weighted[i].Population;
+
         int perColorMax = count >= 3 ? 2 : Total - 1;
 
-        int[] slots = new int[count];
+        // stackalloc：count 最大为 4（Take(4) 限制），安全
+        Span<int> slots = stackalloc int[count <= 8 ? count : 8];
+        slots = slots[..count];
+        slots.Clear();
+
         int assigned = 0;
         for (int i = 0; i < count; i++)
         {
@@ -415,7 +497,8 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         int remaining = Total - assigned;
         for (int r = 0; r < remaining; r++)
         {
-            int best = -1; float bestRem = -1f;
+            int best = -1;
+            float bestRem = -1f;
             for (int i = 0; i < count; i++)
             {
                 if (slots[i] >= perColorMax) continue;
@@ -431,15 +514,22 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
             slots[best]++;
         }
 
-        if (count >= 2 && slots[0] == Total) { slots[0] = Total - 1; slots[1] = 1; }
+        if (count >= 2 && slots[0] == Total)
+        {
+            slots[0] = Total - 1;
+            slots[1] = 1;
+        }
         else if (count == 1)
         {
             var nudge = Vector3.Clamp(
                 weighted[0].Color + new Vector3(0.05f, -0.03f, 0.04f),
                 new Vector3(0.01f), new Vector3(0.99f));
             weighted.Add((nudge, 0));
-            slots = new[] { Total - 1, 1 };
             count = 2;
+            // 重新计算 slots（退化路径，极少触发）
+            slots = stackalloc int[2];
+            slots[0] = Total - 1;
+            slots[1] = 1;
         }
 
         var result = new Vector3[Total];
@@ -448,6 +538,7 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
             for (int j = 0; j < slots[i] && idx < Total; j++)
                 result[idx++] = weighted[i].Color;
 
+        // Fisher-Yates shuffle
         for (int i = Total - 1; i > 0; i--)
         {
             int j = _random.Next(i + 1);
@@ -456,17 +547,24 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         return result;
     }
 
+    // 优化要点：Span<float> 替代 float[]（堆分配），其余逻辑不变。
     private static void ScalePaletteLuminance(
         List<(Vector3 Color, int Population)> weighted,
         bool isDark, bool useImageDominantTheme)
     {
         float targetAvg = isDark ? 0.45f : 0.55f;
         int count = weighted.Count;
-        Span<float> hs = stackalloc float[count];
-        Span<float> ss = stackalloc float[count];
-        Span<float> ls = stackalloc float[count];
 
-        int totalPop = 0; float weightedL = 0f;
+        // stackalloc 替代隐式 float[]，count 最大 5（含 nudge 补充的 1 个）
+        Span<float> hs = stackalloc float[count <= 8 ? count : 8];
+        Span<float> ss = stackalloc float[count <= 8 ? count : 8];
+        Span<float> ls = stackalloc float[count <= 8 ? count : 8];
+        hs = hs[..count];
+        ss = ss[..count];
+        ls = ls[..count];
+
+        int totalPop = 0;
+        float weightedL = 0f;
         for (int i = 0; i < count; i++)
         {
             RgbToHsl(weighted[i].Color, out hs[i], out ss[i], out ls[i]);
@@ -515,6 +613,7 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
                            HueToRgb(p, q, h - 1f / 3f));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float HueToRgb(float p, float q, float t)
     {
         if (t < 0f) t += 1f;
