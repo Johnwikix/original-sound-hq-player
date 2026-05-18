@@ -16,6 +16,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
         public CanvasCommandList? PrevFillLayer;
         public CanvasCommandList? PrevStrokeLayer;
+        public CropEffect? FillCrop;
 
         public RenderLyricsRegion(ICanvasImage cachedFill, ICanvasImage? cachedStroke)
         {
@@ -35,9 +36,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public void Dispose()
         {
             PrevFillLayer?.Dispose();
-            PrevStrokeLayer?.Dispose();
             PrevFillLayer = null;
+            PrevStrokeLayer?.Dispose();
             PrevStrokeLayer = null;
+            FillCrop?.Dispose();
+            FillCrop = null;
             FinalFillEffect?.Dispose();
             FinalStrokeEffect?.Dispose();
             CombinedEffect?.Dispose();

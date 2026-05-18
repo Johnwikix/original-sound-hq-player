@@ -3,6 +3,7 @@ using System.Numerics;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI;
 using Windows.Foundation;
 using Windows.UI;
@@ -22,10 +23,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public bool IsScaleEnabled { get; set; }
         public bool IsFloatEnabled { get; set; }
 
+        private CanvasCommandList? _sharedFillCommandList;
+
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
             DrawSecondaryText(ds);
             DrawPrimaryText(resourceCreator, ds);
+        }
+
+        public void ClearSharedResources()
+        {
+            _sharedFillCommandList?.Dispose();
+            _sharedFillCommandList = null;
         }
 
         private static readonly float CropHorizonPadding = 10f;
@@ -88,10 +97,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             }
             else
             {
-                for (int i = 0; i < Line.PrimaryTextRegions.Length; i++)
-                {
-                    DrawSubLineRegion(resourceCreator, ds, i);
-                }
+                DrawSubLineRegionsWithSharedCL(resourceCreator, ds);
             }
         }
 
@@ -131,12 +137,36 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             ds.DrawImage(region.FinalFillEffect);
         }
 
-        private void DrawSubLineRegion(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds, int regionIndex)
+        private void DrawSubLineRegionsWithSharedCL(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
-            if (Line?.PrimaryTextRegions == null) return;
-            if (Line.RenderLyricsRegions == null || regionIndex >= Line.RenderLyricsRegions.Length) return;
+            if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
+
+            var regions = Line.PrimaryTextRegions;
+            var renderRegions = Line.RenderLyricsRegions;
+            int regionCount = regions.Length;
+
+            _sharedFillCommandList?.Dispose();
+            _sharedFillCommandList = new CanvasCommandList(resourceCreator);
+            using (var gds = _sharedFillCommandList.CreateDrawingSession())
+            {
+                for (int i = 0; i < regionCount; i++)
+                {
+                    RecordRegionGradient(resourceCreator, gds, i);
+                }
+            }
+
+            for (int i = 0; i < regionCount; i++)
+            {
+                DrawRegionFromSharedCL(ds, i);
+            }
+        }
+
+        private void RecordRegionGradient(ICanvasResourceCreator resourceCreator, CanvasDrawingSession gds, int regionIndex)
+        {
+            if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
 
             var subLineRegion = Line.PrimaryTextRegions[regionIndex];
+            var renderRegion = Line.RenderLyricsRegions[regionIndex];
 
             var playedOpacity = Line.PlayedPrimaryOpacityTransition.Value;
             var unplayedOpacity = Line.UnplayedPrimaryOpacityTransition.Value;
@@ -147,62 +177,76 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 subRect.Y + Line.PrimaryPosition.Y,
                 subRect.Width, subRect.Height);
 
-            double playedWidth = 0;
-            if (!Line.IsPrimaryHasRealSyllableInfo)
-            {
-                playedWidth = subRect.Width;
-            }
-            else
-            {
-                for (int ci = subLineRegion.CharacterIndex;
-                    ci < subLineRegion.CharacterIndex + subLineRegion.CharacterCount; ci++)
-                {
-                    if (ci >= Line.PrimaryRenderChars.Count) return;
-                    var ch = Line.PrimaryRenderChars[ci];
-                    if (ch.IsPlayingLastFrame)
-                    {
-                        playedWidth += ch.LayoutRect.Width * ch.GetPlayProgress(CurrentProgressMs);
-                        break;
-                    }
-                    if (ch.GetPlayProgress(CurrentProgressMs) >= 1)
-                        playedWidth += ch.LayoutRect.Width;
-                    else
-                        break;
-                }
-            }
-
+            double playedWidth = ComputeRegionPlayedWidth(subLineRegion);
             float progressInRegion = Math.Clamp((float)(playedWidth / subRect.Width), 0f, 1f);
             float fadeInRegion = 1f / subLineRegion.CharacterCount * 0.5f;
 
-            if (subLineRegion.CharacterIndex >= Line.PrimaryRenderChars.Count) return;
-            float firstCharProgress = Math.Clamp(
-                (float)Line.PrimaryRenderChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
+            float firstCharProgress = 1f;
+            if (subLineRegion.CharacterIndex < Line.PrimaryRenderChars.Count)
+                firstCharProgress = Math.Clamp(
+                    (float)Line.PrimaryRenderChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
 
-            var region = Line.RenderLyricsRegions[regionIndex];
+            renderRegion.FillStops[0].Position = 0;
+            renderRegion.FillStops[0].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
+            renderRegion.FillStops[1].Position = progressInRegion;
+            renderRegion.FillStops[1].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
+            renderRegion.FillStops[2].Position = progressInRegion + fadeInRegion * firstCharProgress;
+            renderRegion.FillStops[2].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
+            renderRegion.FillStops[3].Position = 1 + fadeInRegion;
+            renderRegion.FillStops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
 
-            region.FillStops[0].Position = 0;
-            region.FillStops[0].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
-            region.FillStops[1].Position = progressInRegion;
-            region.FillStops[1].Color = PlayedFillColor.WithAlpha((byte)(255 * playedOpacity));
-            region.FillStops[2].Position = progressInRegion + fadeInRegion * firstCharProgress;
-            region.FillStops[2].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
-            region.FillStops[3].Position = 1 + fadeInRegion;
-            region.FillStops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
-
-            using var fillGradientBrush = new CanvasLinearGradientBrush(resourceCreator, region.FillStops)
+            using var fillGradientBrush = new CanvasLinearGradientBrush(resourceCreator, renderRegion.FillStops)
             {
                 StartPoint = new Vector2((float)subLineRect.X, (float)subLineRect.Y),
                 EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
             };
-            region.PrevFillLayer?.Dispose();
-            region.PrevFillLayer = new CanvasCommandList(resourceCreator);
-            using (var gds = region.PrevFillLayer.CreateDrawingSession())
-            {
-                gds.FillRectangle(subLineRect, fillGradientBrush);
-            }
 
-            region.FinalFillEffect.Source = region.PrevFillLayer;
-            ICanvasImage finalOutputImage = region.FinalFillEffect;
+            gds.FillRectangle(subLineRect, fillGradientBrush);
+        }
+
+        private double ComputeRegionPlayedWidth(CanvasTextLayoutRegion subLineRegion)
+        {
+            if (Line == null) return 0;
+
+            double playedWidth = 0;
+            for (int ci = subLineRegion.CharacterIndex;
+                ci < subLineRegion.CharacterIndex + subLineRegion.CharacterCount; ci++)
+            {
+                if (ci >= Line.PrimaryRenderChars.Count) break;
+                var ch = Line.PrimaryRenderChars[ci];
+                if (ch.IsPlayingLastFrame)
+                {
+                    playedWidth += ch.LayoutRect.Width * ch.GetPlayProgress(CurrentProgressMs);
+                    break;
+                }
+                if (ch.GetPlayProgress(CurrentProgressMs) >= 1)
+                    playedWidth += ch.LayoutRect.Width;
+                else
+                    break;
+            }
+            return playedWidth;
+        }
+
+        private void DrawRegionFromSharedCL(CanvasDrawingSession ds, int regionIndex)
+        {
+            if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
+            if (_sharedFillCommandList == null) return;
+
+            var subLineRegion = Line.PrimaryTextRegions[regionIndex];
+            var renderRegion = Line.RenderLyricsRegions[regionIndex];
+
+            var subRect = subLineRegion.LayoutBounds;
+            Rect subLineRect = new(
+                subRect.X + Line.PrimaryPosition.X,
+                subRect.Y + Line.PrimaryPosition.Y,
+                subRect.Width, subRect.Height);
+
+            renderRegion.FillCrop ??= new CropEffect { BorderMode = EffectBorderMode.Hard };
+            renderRegion.FillCrop.Source = _sharedFillCommandList;
+            renderRegion.FillCrop.SourceRectangle = subLineRect;
+            renderRegion.FinalFillEffect.Source = renderRegion.FillCrop;
+
+            ICanvasImage finalOutputImage = renderRegion.FinalFillEffect;
 
             if (!IsFloatEnabled && !IsGlowEnabled && !IsScaleEnabled)
             {

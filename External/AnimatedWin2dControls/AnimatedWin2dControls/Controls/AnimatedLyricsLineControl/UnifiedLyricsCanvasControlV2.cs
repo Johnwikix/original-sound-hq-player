@@ -760,6 +760,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void DrawLyricsContent(ICanvasAnimatedControl sender, CanvasDrawingSession ds, double canvasHeight)
         {
+            _lineRenderer.ClearSharedResources();
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
