@@ -98,6 +98,7 @@ namespace WinUIMusicPlayer.Utils
         public static double PercentToDouble(double percent) => percent / 100.0;
 
         public static string FormatF1(double value) => $"{value:F1}";
+        public static string FormatF1(float value) => $"{value:F1}";
         public static string FormatF0(double value) => $"{value:F0}";
         public static string FormatMs(double value) => $"{value:F0} ms";
         public static string FormatPercent(double value) => $"{value:F0}%";
