@@ -3,6 +3,7 @@ using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -33,6 +34,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayingDetailPage : Page,IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
+        private ILogger<PlayingDetailPage> _logger;
 
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
@@ -40,6 +42,7 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             DataContext = this;
             Loaded += PlayingDetailPage_Loaded;
+            _logger = App.GetLogger<PlayingDetailPage>();
         }
 
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
@@ -315,6 +318,11 @@ namespace WinUIMusicPlayer.View
                 App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(e);
                 ViewModel.AppViewModel.IsManualSelect = false;
             });
+        }
+
+        private void LyricsView_ExceptionInteracted(object sender, Exception e)
+        {
+            _logger.LogError(e,"歌词渲染错误");
         }
     }
 }

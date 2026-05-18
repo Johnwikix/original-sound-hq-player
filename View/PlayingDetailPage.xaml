@@ -566,6 +566,7 @@
                 <!--  添加歌词显示列表  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
+                    ExceptionInteracted="LyricsView_ExceptionInteracted"
                     CharFloatAmount="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=OneWay}"
                     CharScaleAmount="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=OneWay}"
                     CurrentPlayingTime="{x:Bind ViewModel.AppViewModel.CurrentPlayingTime, Mode=OneWay}"

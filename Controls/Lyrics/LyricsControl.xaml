@@ -62,6 +62,7 @@
 
         <alc:UnifiedLyricsCanvasControlV2
             x:Name="LyricsCanvas"
+            RenderError="LyricsCanvas_RenderError"
             Margin="{x:Bind LyricsMargin, Mode=OneWay}"
             HorizontalAlignment="Stretch"
             x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneTime}"

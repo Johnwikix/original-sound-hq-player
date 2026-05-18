@@ -13,6 +13,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     public sealed partial class LyricsControl : UserControl
     {
         public event EventHandler<TimeSpan>? LyricInteracted;
+        public event EventHandler<Exception>? ExceptionInteracted;
 
         public static readonly DependencyProperty EnableAdvancedLyricsProperty =
             DependencyProperty.Register(nameof(EnableAdvancedLyrics), typeof(bool),
@@ -288,6 +289,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             LyricsCanvasV1?.PrepareForShutdown();
             LyricsCanvas?.PrepareForShutdown();
+        }
+
+        private void LyricsCanvas_RenderError(object sender, Exception e)
+        {
+            ExceptionInteracted?.Invoke(this,e);
         }
     }
 }

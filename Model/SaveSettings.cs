@@ -56,6 +56,6 @@ namespace WinUIMusicPlayer.Model
         public double TranslatedOpacityPercent { get; set; } = 60.0;
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 60.0;
-        public bool EnableAdvancedLyricsEffect { get; set; } = true;
+        public bool EnableAdvancedLyricsEffect { get; set; } = false;
     }
 }
