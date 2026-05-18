@@ -1,7 +1,5 @@
 ﻿using ATL;
 using CommunityToolkit.WinUI;
-using DffTagReader;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,9 +10,7 @@ using Microsoft.Xaml.Interactivity;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -23,21 +19,25 @@ using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.WebService;
-using ZLinq;
 
 namespace WinUIMusicPlayer.Behaviors;
 
 public class AlbumCoverBehavior : Behavior<Image>
 {
-    private static ILogger<AlbumCoverBehavior> _logger = WinUIMusicPlayer.App.GetLogger<AlbumCoverBehavior>();
+    private static readonly ILogger<AlbumCoverBehavior> _logger =
+        WinUIMusicPlayer.App.GetLogger<AlbumCoverBehavior>();
 
     // ── 静态共享状态 ──────────────────────────────────────────────────────
 
     private static readonly ConcurrentDictionary<string, ImageSource> _coverCache = new();
     private static readonly ConcurrentQueue<string> _cacheQueue = new();
-    // key = imageHash 优先，无 hash 时 = "id:{musicId}"
     private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _loadingTasks = new();
+
+    // ── 磁盘缓存目录缓存（避免每次 Path.Combine） ─────────────────────────
+    // 懒加载，AppSettings.MusicCoverCache 启动后不变
+    private static string? _diskCacheFolder;
+    private static string DiskCacheFolder =>
+        _diskCacheFolder ??= Path.Combine(AppSettings.MusicCoverCache, "Cache");
 
     // ── 依赖属性 ──────────────────────────────────────────────────────────
 
@@ -51,15 +51,14 @@ public class AlbumCoverBehavior : Behavior<Image>
         set => SetValue(MusicProperty, value);
     }
 
-    public static int CoverSize { get; set; } = 150; // 专辑封面大小，单位为像素
+    public static int CoverSize { get; set; } = 150;
+    public static int MaxCacheSize { get; set; } = 1000;
 
     private static void OnMusicChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is AlbumCoverBehavior b)
             b.Load(e.NewValue as Music);
     }
-
-    public static int MaxCacheSize { get; set; } = 1000;   // 0 = 禁用缓存，< 0 = 无限制，> 0 = 最多保留 N 张
 
     // ── 实例字段 ──────────────────────────────────────────────────────────
 
@@ -91,7 +90,6 @@ public class AlbumCoverBehavior : Behavior<Image>
 
         if (music == null || AssociatedObject == null) return;
 
-        // 内存缓存命中：直接显示，不淡入（滚动回来时已有图）
         var cacheKey = CacheKey(music);
         if (_coverCache.TryGetValue(cacheKey, out var cached))
         {
@@ -103,14 +101,19 @@ public class AlbumCoverBehavior : Behavior<Image>
         AssociatedObject.Opacity = 0;
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
-        var coverSize = CoverSize; // 捕获当前值，避免闭包竞态
+        var coverSize = CoverSize;
 
-        // 复用或新建加载任务
-        var task = _loadingTasks.GetOrAdd(cacheKey, _ =>
+        // ── 优化：用 TryGetValue + TryAdd 替换 GetOrAdd(key, factory)
+        //    GetOrAdd 即使 key 存在也会创建 factory 闭包（捕获 music/coverSize/cacheKey）
+        //    TryGetValue 命中时零分配
+        if (!_loadingTasks.TryGetValue(cacheKey, out var task))
         {
             var bitmap = new BitmapImage { DecodePixelWidth = coverSize };
-            return LoadCoreAsync(music, cacheKey, bitmap, coverSize);
-        });
+            var newTask = LoadCoreAsync(music, cacheKey, bitmap, coverSize);
+            // 若两线程同时到达，只有一个能 TryAdd 成功；失败方复用已有 task
+            task = _loadingTasks.TryAdd(cacheKey, newTask) ? newTask
+                   : _loadingTasks.GetOrAdd(cacheKey, newTask); // 极小竞争窗口，此时 factory 是已有对象
+        }
 
         _ = WaitAndApplyAsync(task, token);
     }
@@ -125,10 +128,10 @@ public class AlbumCoverBehavior : Behavior<Image>
             FadeIn();
         }
         catch (OperationCanceledException) { }
-        catch (Exception ex) { _logger.LogError(ex, $"WaitAndApplyAsync 操作失败: {ex.Message}"); }
+        catch (Exception ex) { _logger.LogError(ex, "WaitAndApplyAsync 操作失败"); }
     }
 
-    // ── 加载核心（静态，供多实例共用） ────────────────────────────────────
+    // ── 加载核心 ──────────────────────────────────────────────────────────
 
     private static async Task<ImageSource?> LoadCoreAsync(
         Music music, string cacheKey, BitmapImage bitmap, int coverSize)
@@ -139,7 +142,7 @@ public class AlbumCoverBehavior : Behavior<Image>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"LoadCoreAsync 操作失败: {ex.Message}");
+            _logger.LogError(ex, "LoadCoreAsync 操作失败");
             return null;
         }
         finally
@@ -148,154 +151,142 @@ public class AlbumCoverBehavior : Behavior<Image>
         }
     }
 
-    // ── 图片加载 ──────────────────────────────────────────────────────────
+    // ── 图片加载（去掉双层 Task.Run，合并为单层） ─────────────────────────
 
-    private static async Task<ImageSource?> LoadImageAsync(Music music, BitmapImage bitmap, int coverSize)
+    private static async Task<ImageSource?> LoadImageAsync(
+        Music music, BitmapImage bitmap, int coverSize)
     {
+        // 只在这里 Task.Run 一次，DecodePictureAsync 内不再嵌套 Task.Run
         return await Task.Run(async () =>
         {
             try
             {
-                // ── 磁盘缓存读取（方案三：直接文件流，不拷贝到内存） ──────
                 if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
                     && !string.IsNullOrEmpty(music.ImageHash))
                 {
                     var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
-
-                    if (System.IO.File.Exists(cachePath))
+                    if (File.Exists(cachePath))
                     {
-                        if (System.IO.File.GetLastWriteTime(cachePath) > System.IO.File.GetLastWriteTime(music.Path))
+                        if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(music.Path))
                         {
-                            // 直接用 StorageFile 流，零拷贝进内存
                             var result = await LoadFromFilePathAsync(cachePath, music, bitmap);
                             if (result != null) return result;
                         }
                         else
                         {
-                            try { System.IO.File.Delete(cachePath); } catch (Exception ex) { _logger.LogError(ex, $"LoadImageAsync 操作失败: {ex.Message}"); }
+                            try { File.Delete(cachePath); }
+                            catch (Exception ex) { _logger.LogError(ex, "删除旧磁盘缓存失败"); }
                         }
                     }
                 }
 
-                // ── 从标签读取原始图片 ────────────────────────────────────
-                byte[]? picture =  await ToolUtils.GetRawImage(music);
+                byte[]? picture = await ToolUtils.GetRawImage(music);
+                // 直接 await，不再 Task.Run 嵌套
                 return await DecodePictureAsync(picture, music, bitmap, coverSize);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"LoadImageAsync 操作失败: {ex.Message}");
+                _logger.LogError(ex, "LoadImageAsync 操作失败");
                 return null;
             }
         });
     }
 
-    // ── 解码并写缓存 ──────────────────────────────────────────────────────
+    // ── 解码并写缓存（不再自身 Task.Run，由调用方的 Task.Run 覆盖 CPU 部分）──
 
     private static async Task<ImageSource?> DecodePictureAsync(
         byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
     {
         if (picture is not { Length: > 0 })
+            return null;
+
+        SoftwareBitmap? softwareBitmap = null;
+        InMemoryRandomAccessStream? outputStream = null;
+        try
         {
+            using var inputStream = new InMemoryRandomAccessStream();
+            await inputStream.WriteAsync(picture.AsBuffer());
+            inputStream.Seek(0);
+
+            var decoder = await BitmapDecoder.CreateAsync(inputStream);
+            double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
+            uint newW = (uint)coverSize;
+            uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
+
+            softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Premultiplied,
+                new BitmapTransform
+                {
+                    ScaledWidth = newW,
+                    ScaledHeight = newH,
+                    InterpolationMode = BitmapInterpolationMode.Fant
+                },
+                ExifOrientationMode.RespectExifOrientation,
+                ColorManagementMode.DoNotColorManage);
+
+            outputStream = new InMemoryRandomAccessStream();
+            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outputStream);
+            encoder.SetSoftwareBitmap(softwareBitmap);
+            await encoder.FlushAsync();
+
+            // ── 写磁盘缓存（流式，不分配额外 byte[]） ─────────────────────
+            if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
+            {
+                try
+                {
+                    var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
+                    Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                    outputStream.Seek(0);
+                    await using var fs = new FileStream(
+                        cachePath, FileMode.Create, FileAccess.Write,
+                        FileShare.None, bufferSize: 81920, useAsync: true);
+                    await outputStream.AsStream().CopyToAsync(fs);
+                }
+                catch (Exception ex) { _logger.LogError(ex, "写磁盘缓存失败"); }
+            }
+
+            outputStream.Seek(0);
+
+            // ── 回 UI 线程：SetSource ───────────────────────────────────
+            ImageSource? result = null;
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+            {
+                try
+                {
+                    await bitmap.SetSourceAsync(outputStream);
+                    AddToCache(CacheKey(music), bitmap, MaxCacheSize);
+                    result = bitmap;
+                }
+                finally
+                {
+                    outputStream?.Dispose();
+                    outputStream = null;
+                }
+            });
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DecodePictureAsync 操作失败");
             return null;
         }
-        return await Task.Run(async () =>
+        finally
         {
-            SoftwareBitmap? softwareBitmap = null;
-            InMemoryRandomAccessStream? outputStream = null;
-            try
-            {
-
-
-                using var inputStream = new InMemoryRandomAccessStream();
-                await inputStream.WriteAsync(picture.AsBuffer());
-                inputStream.Seek(0);
-
-                var decoder = await BitmapDecoder.CreateAsync(inputStream);
-                double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
-                uint newW = (uint)coverSize;
-                uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
-
-                softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                    BitmapPixelFormat.Bgra8,
-                    BitmapAlphaMode.Premultiplied,
-                    new BitmapTransform
-                    {
-                        ScaledWidth = newW,
-                        ScaledHeight = newH,
-                        InterpolationMode = BitmapInterpolationMode.Fant
-                    },
-                    ExifOrientationMode.RespectExifOrientation,
-                    ColorManagementMode.DoNotColorManage);
-
-                outputStream = new InMemoryRandomAccessStream();
-                var encoder = await BitmapEncoder.CreateAsync(
-                    BitmapEncoder.PngEncoderId, outputStream);
-                encoder.SetSoftwareBitmap(softwareBitmap);
-                await encoder.FlushAsync();
-
-                // ── 方案四：流式写磁盘，不分配额外 byte[] ─────────────────
-                if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
-                {
-                    try
-                    {
-                        var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
-                        Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                        outputStream.Seek(0);
-                        using var fs = new FileStream(
-                            cachePath, FileMode.Create, FileAccess.Write,
-                            FileShare.None, bufferSize: 81920, useAsync: true);
-                        await outputStream.AsStream().CopyToAsync(fs);
-                        // fs 在此 using 块结束时 Flush+Close，outputStream 不受影响
-                    }
-                    catch (Exception ex) { _logger.LogError(ex, $"DecodePictureAsync 操作失败: {ex.Message}"); }
-                }
-
-                outputStream.Seek(0);
-
-                // ── 回到 UI 线程：SetSource 完成后写内存缓存并返回 ────────
-                ImageSource? result = null;
-                await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
-                {
-                    try
-                    {
-                        await bitmap.SetSourceAsync(outputStream);
-
-                        var cacheKey = CacheKey(music);
-                        AddToCache(cacheKey, bitmap, MaxCacheSize);
-
-
-                        result = bitmap;
-                    }
-                    finally
-                    {
-                        outputStream?.Dispose();
-                        outputStream = null;
-                    }
-                });
-
-                return result;
-            }
-            catch (Exception ex) { _logger.LogError(ex, $"DecodePictureAsync 操作失败: {ex.Message}"); return null; }
-            finally
-            {
-                softwareBitmap?.Dispose();
-                outputStream?.Dispose();
-            }
-        });
+            softwareBitmap?.Dispose();
+            outputStream?.Dispose();
+        }
     }
 
-    // ── 从文件路径加载（磁盘缓存命中路径，方案三：零拷贝） ───────────────
-    // 原 LoadFromBytesAsync：byte[] → InMemoryRandomAccessStream → BitmapImage（两份拷贝）
-    // 现在：StorageFile → FileStream → BitmapImage（零拷贝，不分配中间 byte[]）
+    // ── 磁盘缓存命中路径 ──────────────────────────────────────────────────
 
     private static async Task<ImageSource?> LoadFromFilePathAsync(
         string cachePath, Music music, BitmapImage bitmap)
     {
         try
         {
-            // GetFileFromPathAsync 要求绝对路径，在后台线程获取 StorageFile
             var storageFile = await StorageFile.GetFileFromPathAsync(cachePath);
-
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
@@ -304,7 +295,7 @@ public class AlbumCoverBehavior : Behavior<Image>
                 {
                     stream = await storageFile.OpenReadAsync();
                     await bitmap.SetSourceAsync(stream);
-                    AddToCache(music.ImageHash, bitmap, MaxCacheSize);
+                    AddToCache(CacheKey(music), bitmap, MaxCacheSize);
                     result = bitmap;
                 }
                 finally
@@ -312,10 +303,9 @@ public class AlbumCoverBehavior : Behavior<Image>
                     stream?.Dispose();
                 }
             });
-
             return result;
         }
-        catch (Exception ex) { _logger.LogError(ex, $"LoadFromFilePathAsync 操作失败: {ex.Message}"); return null; }
+        catch (Exception ex) { _logger.LogError(ex, "LoadFromFilePathAsync 操作失败"); return null; }
     }
 
     // ── 缓存管理 ──────────────────────────────────────────────────────────
@@ -323,20 +313,13 @@ public class AlbumCoverBehavior : Behavior<Image>
     private static void AddToCache(string key, ImageSource source, int maxSize)
     {
         if (maxSize == 0) return;
-
-        if (!_coverCache.TryAdd(key, source))
-            return;   // key 已存在，跳过
+        if (!_coverCache.TryAdd(key, source)) return;
 
         _cacheQueue.Enqueue(key);
+        if (maxSize < 0) return;
 
-        if (maxSize < 0)
-            return;   // 无限制模式
-
-        // 超限时持续弹出最旧的项，直到满足上限
         while (_coverCache.Count > maxSize && _cacheQueue.TryDequeue(out var oldestKey))
-        {
             _coverCache.TryRemove(oldestKey, out _);
-        }
     }
 
     // ── 淡入动画 ──────────────────────────────────────────────────────────
@@ -360,17 +343,36 @@ public class AlbumCoverBehavior : Behavior<Image>
 
     // ── 工具 ──────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 缓存 key 包含 coverSize，不同尺寸的同一张封面视为不同缓存项。
-    /// </summary>
     private static string CacheKey(Music music) =>
         string.IsNullOrEmpty(music.ImageHash)
-            ? $"id:{music.Id}"
-            : music.ImageHash;
+            ? string.Intern($"id:{music.Id}")   // Id 有限，Intern 复用字符串对象
+            : music.ImageHash;                   // ImageHash 本身已是 interned/复用字符串
 
     private static string GetDiskCachePath(string imageHash, int coverSize)
     {
-        var cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
-        return Path.Combine(cacheFolder, $"{imageHash}_{coverSize}.png");
+        // DiskCacheFolder 已缓存，只剩一次插值
+        // ── 进一步优化：用 string.Create 避免两次 Path.Combine 的中间串 ──
+        var fileName = string.Create(
+            imageHash.Length + 1 + GetDigitCount(coverSize) + 4, // +4 = ".png"
+            (imageHash, coverSize),
+            static (span, state) =>
+            {
+                state.imageHash.AsSpan().CopyTo(span);
+                int pos = state.imageHash.Length;
+                span[pos++] = '_';
+                state.coverSize.TryFormat(span[pos..], out int written);
+                pos += written;
+                ".png".AsSpan().CopyTo(span[pos..]);
+            });
+        return Path.Combine(DiskCacheFolder, fileName);
+    }
+
+    // ── 辅助：计算整数位数（避免 ToString 分配） ─────────────────────────
+    private static int GetDigitCount(int n)
+    {
+        if (n < 10) return 1;
+        if (n < 100) return 2;
+        if (n < 1000) return 3;
+        return 4; // coverSize 不会超过 9999
     }
 }
