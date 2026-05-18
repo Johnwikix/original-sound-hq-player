@@ -309,6 +309,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
                                 <Slider
@@ -329,6 +330,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
                                 <Slider
@@ -349,6 +351,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
                                 <Slider
@@ -369,6 +372,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
                                 <Slider
@@ -389,6 +393,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
                                 <Slider
@@ -409,6 +414,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
                                 <Slider
@@ -429,6 +435,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
                                 <Slider
@@ -449,6 +456,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     Grid.Column="0"
+                                    Margin="5,0"
                                     VerticalAlignment="Center"
                                     Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
                                 <Slider
