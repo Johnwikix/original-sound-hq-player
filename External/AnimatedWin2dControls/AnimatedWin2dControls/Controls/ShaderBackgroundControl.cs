@@ -443,14 +443,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
             _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
             _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
 
-            // 随机值也只在颜色更新时写入一次，不在热路径
-            if (_effect != null)
-            {
-                _effect.Properties["RandomValue1"] = _rnd1;
-                _effect.Properties["RandomValue2"] = _rnd2;
-                _effect.Properties["RandomValue3"] = _rnd3;
-            }
-
             if (UseImageDominantTheme)
                 ThemeResolved?.Invoke(this, resolvedIsDark);
         }
@@ -697,14 +689,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
         _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
         _transitionProgress = 0f;
-
-        // 随机值随 shuffle 一起写入，不在热路径
-        if (_effect != null)
-        {
-            _effect.Properties["RandomValue1"] = _rnd1;
-            _effect.Properties["RandomValue2"] = _rnd2;
-            _effect.Properties["RandomValue3"] = _rnd3;
-        }
     }
 
     // ── 释放 ──────────────────────────────────────────────────────────────
