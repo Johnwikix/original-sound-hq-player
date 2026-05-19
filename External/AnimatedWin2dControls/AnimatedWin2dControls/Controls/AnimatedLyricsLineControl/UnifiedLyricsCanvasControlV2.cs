@@ -534,10 +534,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
-            try
-            {
-                EnsureLayout(sender);
-
+            EnsureLayout(sender);
                 var lines = _renderLines;
             if (lines.Count == 0) return;
 
@@ -698,11 +695,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _isUserScrollingChanged = false;
 
             HandleHoverUpdates(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
-            }
-            catch (Exception ex)
-            {
-                RenderError?.Invoke(this, ex);
-            }
         }
 
         private void HandleHoverUpdates(double combinedScroll, double canvasHeight, double playingLineTopOffsetFactor)
@@ -738,8 +730,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
-            try
-            {
             var ds = args.DrawingSession;
             ds.Clear(Microsoft.UI.Colors.Transparent);
 
@@ -765,11 +755,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             else
             {
                 DrawLyricsContent(sender, ds, canvasHeight);
-            }
-            }
-            catch (Exception ex)
-            {
-                RenderError?.Invoke(this, ex);
             }
         }
 

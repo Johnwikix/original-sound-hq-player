@@ -281,8 +281,11 @@ namespace WinUIMusicPlayer.View
         {
             if (dispose) {
                 App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
+                LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
+                LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
                 AlbumArtControl?.Dispose();
+                BackGround?.ExceptionOccurred -= BackGround_ExceptionOccurred;
                 BackGround?.Dispose();
             }
         }
@@ -304,7 +307,7 @@ namespace WinUIMusicPlayer.View
             App.MainWindow?.SetAppTheme();
         }
 
-        private void LyricsView_LyricInteracted(object sender, TimeSpan e)
+        private void LyricsView_LyricInteracted(object? sender, TimeSpan e)
         {
             Task.Run(() =>
             {
@@ -320,9 +323,14 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        private void LyricsView_ExceptionInteracted(object sender, Exception e)
+        private void LyricsView_ExceptionInteracted(object? sender, Exception e)
         {
             _logger.LogError(e,"歌词渲染错误");
+        }
+
+        private void BackGround_ExceptionOccurred(object? sender, Exception e)
+        {
+            _logger.LogError(e, "背景渲染错误");
         }
     }
 }

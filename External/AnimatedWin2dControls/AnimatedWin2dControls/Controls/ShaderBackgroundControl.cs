@@ -89,41 +89,52 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     /// <summary>当 UseImageDominantTheme=true 时，图片亮/暗主题解析完成后触发。</summary>
     public event EventHandler<bool>? ThemeResolved;
 
+    /// <summary>
+    /// 控件内部发生非预期异常时触发，可用于外部日志/诊断。
+    /// 注意：热路径（OnCanvasUpdate / OnCanvasDraw）不捕获异常，不会触发此事件。
+    /// </summary>
+    public event EventHandler<Exception>? ExceptionOccurred;
+
     // ── 依赖属性回调 ──────────────────────────────────────────────────────
 
     private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
-        if (ctrl._effect == null) { ctrl.ApplyDefaultColors(); return; }
+        try
+        {
+            if (ctrl._effect == null) { ctrl.ApplyDefaultColors(); return; }
 
-        if (e.NewValue is byte[] bytes && bytes.Length > 0)
-        {
-            if (ctrl.IsDuplicateAndUpdate(bytes))
+            if (e.NewValue is byte[] bytes && bytes.Length > 0)
             {
-                ctrl.ShuffleCurrentColors();
-                return;
+                if (ctrl.IsDuplicateAndUpdate(bytes))
+                {
+                    ctrl.ShuffleCurrentColors();
+                    return;
+                }
+                _ = ctrl.LoadColorsFromBytesAsync(bytes);
             }
-            _ = ctrl.LoadColorsFromBytesAsync(bytes);
+            else
+            {
+                ctrl.IsDuplicateAndUpdate(null);
+                ctrl.ApplyDefaultColors();
+            }
         }
-        else
-        {
-            ctrl.IsDuplicateAndUpdate(null);
-            ctrl.ApplyDefaultColors();
-        }
+        catch (Exception ex) { ctrl.RaiseException(ex); }
     }
 
     private static void OnColorParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
-        if (ctrl._effect == null) return;
-
-        // EnableLightWave 变化时立即写入，不在热路径中，一次性装箱可接受
-        ctrl._effect.Properties["EnableLightWave"] = ctrl.EnableLightWave;
-
-        if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
-            _ = ctrl.LoadColorsFromBytesAsync(bytes);
-        else
-            ctrl.ApplyDefaultColors();
+        try
+        {
+            if (ctrl._effect == null) return;
+            ctrl._effect.Properties["EnableLightWave"] = ctrl.EnableLightWave;
+            if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
+                _ = ctrl.LoadColorsFromBytesAsync(bytes);
+            else
+                ctrl.ApplyDefaultColors();
+        }
+        catch (Exception ex) { ctrl.RaiseException(ex); }
     }
 
     // ── 私有字段 ──────────────────────────────────────────────────────────
@@ -165,17 +176,15 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     protected override void OnApplyTemplate()
     {
-        base.OnApplyTemplate();
-
-        // 卸载旧 canvas 的事件（模板可能被重新应用）
-        DetachCanvasEvents();
-
-        _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
-
-        if (_canvas is not null)
+        try
         {
-            AttachCanvasEvents(_canvas);
+            base.OnApplyTemplate();
+            DetachCanvasEvents();
+            _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
+            if (_canvas is not null)
+                AttachCanvasEvents(_canvas);
         }
+        catch (Exception ex) { RaiseException(ex); }
     }
 
     private void AttachCanvasEvents(CanvasAnimatedControl canvas)
@@ -207,26 +216,30 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     private async Task LoadResourcesAsync(CanvasAnimatedControl sender)
     {
-        var filePath = Path.Combine(AppContext.BaseDirectory, "Shaders", "effect.bin");
-        byte[] shaderBytes;
-        using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
-                                       FileShare.Read, 4096, useAsync: true))
+        try
         {
-            shaderBytes = new byte[fs.Length];
-            await fs.ReadExactlyAsync(shaderBytes);
+            var filePath = Path.Combine(AppContext.BaseDirectory, "Shaders", "effect.bin");
+            byte[] shaderBytes;
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                                           FileShare.Read, 4096, useAsync: true))
+            {
+                shaderBytes = new byte[fs.Length];
+                await fs.ReadExactlyAsync(shaderBytes);
+            }
+
+            _effect = new PixelShaderEffect(shaderBytes);
+
+            if (ImageBytes is { Length: > 0 } bytes)
+                await LoadColorsFromBytesAsync(bytes);
+            else
+                ApplyDefaultColors();
+
+            _c1 = _target1; _c2 = _target2;
+            _c3 = _target3; _c4 = _target4;
+            _transitionProgress = 1f;
+            ApplyEffectProperties(sender);
         }
-
-        _effect = new PixelShaderEffect(shaderBytes);
-
-        if (ImageBytes is { Length: > 0 } bytes)
-            await LoadColorsFromBytesAsync(bytes);
-        else
-            ApplyDefaultColors();
-
-        _c1 = _target1; _c2 = _target2;
-        _c3 = _target3; _c4 = _target4;
-        _transitionProgress = 1f;
-        ApplyEffectProperties(sender);
+        catch (Exception ex) { RaiseException(ex); }
     }
 
     // ── 热路径：每帧 Update ───────────────────────────────────────────────
@@ -277,10 +290,14 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (_canvas is null || _effect is null) return;
-        _width = _canvas.ConvertDipsToPixels((float)e.NewSize.Width, CanvasDpiRounding.Round);
-        _height = _canvas.ConvertDipsToPixels((float)e.NewSize.Height, CanvasDpiRounding.Round);
-        _effect.Properties["iResolution"] = new Vector2(_width, _height);
+        try
+        {
+            if (_canvas is null || _effect is null) return;
+            _width = _canvas.ConvertDipsToPixels((float)e.NewSize.Width, CanvasDpiRounding.Round);
+            _height = _canvas.ConvertDipsToPixels((float)e.NewSize.Height, CanvasDpiRounding.Round);
+            _effect.Properties["iResolution"] = new Vector2(_width, _height);
+        }
+        catch (Exception ex) { RaiseException(ex); }
     }
 
     // ── 颜色 ──────────────────────────────────────────────────────────────
@@ -319,7 +336,11 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     public async Task LoadImageAsync(byte[] imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0) return;
-        await LoadColorsFromBytesAsync(imageBytes);
+        try
+        {
+            await LoadColorsFromBytesAsync(imageBytes);
+        }
+        catch (Exception ex) { RaiseException(ex); }
     }
 
     // 优化要点：
@@ -447,9 +468,10 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
                 ThemeResolved?.Invoke(this, resolvedIsDark);
         }
         catch (OperationCanceledException) { }
-        catch
+        catch (Exception ex)
         {
             ApplyDefaultColors();
+            RaiseException(ex);
         }
         finally
         {
@@ -709,5 +731,21 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         _effect?.Dispose();
         _effect = null;
         ThemeResolved = null;
+        ExceptionOccurred = null;
+    }
+
+    // ── 异常上报 ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 在 UI 线程上安全触发 <see cref="ExceptionOccurred"/>。
+    /// 若订阅者自身抛出异常，不再递归上报，直接吞掉以防无限循环。
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void RaiseException(Exception ex)
+    {
+        try { 
+            ExceptionOccurred?.Invoke(this, ex); 
+        }
+        catch { /* 订阅者异常不再递归上报 */ }
     }
 }
