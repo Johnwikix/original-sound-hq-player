@@ -103,8 +103,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 逐字动画平滑追赶
         // ─────────────────────────────────────────────────────────────────────
         private float[] _smoothedRevealX = [];
-        private const float SmoothLerpSpeed = 18f;
-        private const float SmoothMaxPixelsPerSec = 2000f;
+        private const float SmoothLerpSpeed = 12f;
+        private const float SmoothMaxPixelsPerSec = 500f;
 
         // ─────────────────────────────────────────────────────────────────────
         // 内置滚动状态
@@ -118,8 +118,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _userScrollCooldownSec = 0.0;
         private const double UserScrollCooldown = 2.5;
 
-        public double AutoScrollSpeed = 4.0;
-        public double UserScrollReturnSpeed = 12.0;
+        public double AutoScrollSpeed = 2.0;
+        public double UserScrollReturnSpeed = 8.0;
         public double WheelScrollPixels = 80.0;
 
         private bool _pointerCaptured = false;
