@@ -116,6 +116,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.Paused = true;
                 _canvas.Update -= OnCanvasUpdate;
                 _canvas.Draw -= OnCanvasDraw;
+                _canvas.CreateResources -= OnCanvasCreateResources;
                 _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
                 _canvas.PointerPressed -= OnCanvasPointerPressed;
                 _canvas.PointerMoved -= OnCanvasPointerMoved;
@@ -148,6 +149,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 _canvas.Update -= OnCanvasUpdate;
                 _canvas.Draw -= OnCanvasDraw;
+                _canvas.CreateResources -= OnCanvasCreateResources;
                 _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
                 _canvas.PointerPressed -= OnCanvasPointerPressed;
                 _canvas.PointerMoved -= OnCanvasPointerMoved;
@@ -164,6 +166,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 _canvas.Update += OnCanvasUpdate;
                 _canvas.Draw += OnCanvasDraw;
+                _canvas.CreateResources += OnCanvasCreateResources;
                 _canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
                 _canvas.PointerPressed += OnCanvasPointerPressed;
                 _canvas.PointerMoved += OnCanvasPointerMoved;
@@ -176,6 +179,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             OnIsDarkChanged();
+        }
+
+        private void OnCanvasCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
+        {
+            if (_shutdown) return;
+            _layoutDirty = true;
+            _cachedEdgeFadeWidth = -1;
+            _cachedEdgeFadeHeight = -1;
         }
 
         #region Dependency Properties

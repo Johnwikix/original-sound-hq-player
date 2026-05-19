@@ -756,6 +756,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 Optimization = EffectOptimization.Speed,
                 BorderMode = EffectBorderMode.Soft,
             };
+            _gradBrush?.Dispose();
+            _gradBrush = null;
+            _gradBrushDirty = true;
+            DisposeAllClearCache();
             DisposeFmtCache();
             InvalidateLayoutCache();
         }

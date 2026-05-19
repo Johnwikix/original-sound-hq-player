@@ -78,13 +78,21 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── Dispose ───────────────────────────────────────────────────────────
 
+        private void DetachCanvasEvents()
+        {
+            if (_canvas is null) return;
+            _canvas.CreateResources -= Canvas_CreateResources;
+            _canvas.Draw -= Canvas_Draw;
+            _canvas.SizeChanged -= Canvas_SizeChanged;
+        }
+
         public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
 
         private void Dispose(bool disposing)
         {
             if (!disposing || _disposed) return;
             _disposed           = true;
-            _isResourcesCreated = false; // 防止 dispose 后回调进入逻辑
+            _isResourcesCreated = false;
 
             var pCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());
             pCts.Cancel();
@@ -100,13 +108,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             rCts.Cancel();
             rCts.Dispose();
 
-            if (_canvas != null)
-            {
-                _canvas.CreateResources -= Canvas_CreateResources;
-                _canvas.Draw            -= Canvas_Draw;
-                _canvas.SizeChanged     -= Canvas_SizeChanged;
-                _canvas = null;
-            }
+            DetachCanvasEvents();
+            _canvas = null;
 
             _currentBmp?.Dispose();
             _nextBmp?.Dispose();

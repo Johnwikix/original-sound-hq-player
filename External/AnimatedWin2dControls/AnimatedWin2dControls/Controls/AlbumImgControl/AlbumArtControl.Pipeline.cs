@@ -16,13 +16,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Canvas_CreateResources(CanvasControl sender,
             Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs e)
         {
-            // 取消旧 pipeline，重置 contentRect 缓存（设备/DPI 可能已变）
             var oldCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());
             oldCts.Cancel();
             oldCts.Dispose();
 
             _cachedContentW = -1f;
             _cachedContentH = -1f;
+
+            _currentBmp?.Dispose();
+            _currentBmp = null;
+            _nextBmp?.Dispose();
+            _nextBmp = null;
 
             _isResourcesCreated = true;
             Task.Run(() => DecodeLoopAsync(_pipelineCts.Token));

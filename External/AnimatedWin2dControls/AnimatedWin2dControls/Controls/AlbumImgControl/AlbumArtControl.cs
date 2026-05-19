@@ -221,17 +221,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             base.OnApplyTemplate();
 
-            if (_canvas != null)
-            {
-                _canvas.CreateResources -= Canvas_CreateResources;
-                _canvas.Draw -= Canvas_Draw;
-                _canvas.SizeChanged -= Canvas_SizeChanged;
-                _canvas = null;
-            }
+            DetachCanvasEvents();
+            _canvas = null;
 
             _canvas = GetTemplateChild(PartCanvas) as CanvasControl;
             if (_canvas == null) return;
-            // 取消旧的 XamlRoot 监听
             XamlRoot?.Changed -= XamlRoot_Changed;
 
             _canvas.CreateResources += Canvas_CreateResources;
