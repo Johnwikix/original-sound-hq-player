@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer.View
                 EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
                 {
                     int feq = ToolUtils.FrequencyIndexMap[frequency];
-                    ViewModel.PlayerCommandService.SetEqualizerGain(feq, (float)AppSettings.Equalizer[frequency]);
+                    ViewModel.PlayerCommandService.SetEqualizerGain((byte)feq, (float)AppSettings.Equalizer[frequency]);
                 };
                 EqualizerDialog.ClearEqualizer += (s, e) =>
                 {

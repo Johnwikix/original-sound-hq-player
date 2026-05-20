@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using BassPlayerIpc.Shared;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
@@ -33,40 +33,42 @@ namespace WinUIMusicPlayer.Services
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
 
-        private void IpcService_NotificationReceived(ResponseMessage obj)
+        private void IpcService_NotificationReceived(MessageTypeId typeId, ReadOnlyMemory<byte> payload)
         {
-            if (obj.Type == MessageType.PlayState)
+            if (typeId == MessageTypeId.PlayState)
             {
+                var state = BinarySerializer.ReadPlayStateResponse(payload.Span);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = bool.Parse(obj.Result);
+                    AppViewModel.IsPlaying = state.IsPlaying;
                 });
-                if (bool.Parse(obj.Result))
-                {
+                if (state.IsPlaying)
                     AppViewModel.StartProgressTimer();
-                }
                 else
-                {
                     AppViewModel.StopProgressTimer();
-                }                
             }
-            if (obj.Type == MessageType.PlayEnded)
+            else if (typeId == MessageTypeId.PlayEnded)
             {
-
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.IsPlaying = bool.Parse(obj.Result);
+                    AppViewModel.IsPlaying = false;
                 });
                 AutoPlayNextTrack().Wait();
             }
-            if (obj.Type == MessageType.VolumeWriteBack)
+            else if (typeId == MessageTypeId.VolumeWriteBack)
             {
+                var vol = BinarySerializer.ReadVolumeResponse(payload.Span);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppViewModel.Volume = double.Parse(obj.Result);
+                    AppViewModel.Volume = vol.Volume;
                 });
             }
+            else if (typeId == MessageTypeId.NotificationDropped)
+            {
+                _logger.LogWarning("Notification dropped by server - client may miss state updates");
+            }
         }
+
         public async void EqUpdate()
         {
             await IpcService.UpdateEq();
@@ -121,7 +123,7 @@ namespace WinUIMusicPlayer.Services
                 int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
                 MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
             }
-            catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack 操作失败: {ex.Message}"); }
+            catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }
 
         public void ToggleEqualizer()
@@ -129,7 +131,7 @@ namespace WinUIMusicPlayer.Services
             IpcService.ToggleEqualizer();
         }
 
-        public void SetEqualizerGain(int bandIndex, float gain)
+        public void SetEqualizerGain(byte bandIndex, float gain)
         {
             IpcService.SetEqualizerGain(bandIndex, gain);
         }
@@ -143,6 +145,7 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.ClearEqualizer();
         }
+
         public void PlayMusic(Music music)
         {
             IpcService.Play(music.Path);
@@ -176,11 +179,13 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                return await IpcService.GetCurrentPostion();
+                return await IpcService.GetCurrentPosition();
             }
-            catch (Exception ex) { _logger.LogError(ex, $"GetCurrentPosition 操作失败: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetCurrentPosition failed: {ex.Message}");
                 return 0;
-            }            
+            }
         }
 
         public async Task<double> GetTotalPosition()
@@ -189,9 +194,11 @@ namespace WinUIMusicPlayer.Services
             {
                 return await IpcService.GetDuration();
             }
-            catch (Exception ex) { _logger.LogError(ex, $"GetTotalPosition 操作失败: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetTotalPosition failed: {ex.Message}");
                 return 0;
-            }            
+            }
         }
 
         public async Task<double> AdjustPlaybackPosition(int seconds)
@@ -200,9 +207,11 @@ namespace WinUIMusicPlayer.Services
             {
                 return await IpcService.AdjustPlaybackPosition(seconds);
             }
-            catch (Exception ex) { _logger.LogError(ex, $"AdjustPlaybackPosition 操作失败: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"AdjustPlaybackPosition failed: {ex.Message}");
                 return 0;
-            }            
+            }
         }
 
         public void ChangingSetting()

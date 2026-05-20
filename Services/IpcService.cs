@@ -1,13 +1,12 @@
-﻿using ATL;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
+﻿using System;
+using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
-using System.Text;
-using System.Text.Json;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using BassPlayerIpc.Shared;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -15,35 +14,33 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class IpcService: IDisposable
+    public class IpcService : IDisposable
     {
-        private const string MmfName = "BassPlayerSharp_SharedMemory";
-        private const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
-        private const string ResponseSemaphoreName = "BassPlayerSharp_ResponseReady";
-        private const string NotificationSemaphoreName = "BassPlayerSharp_NotificationReady";
-        private const int MaxMessageSize = 4096;
-        private const int MaxResponseSize = 1024;
-        private static readonly long MmfSize = MaxMessageSize + MaxResponseSize * 2;
+        private readonly long MmfSize = IpcConstants.MmfSize;
+        private const long RequestBufferOffset = IpcConstants.RequestBufferOffset;
+        private static readonly long ResponseBufferOffset = IpcConstants.ResponseBufferOffset;
+        private static readonly long NotificationBufferOffset = IpcConstants.NotificationBufferOffset;
 
-        private const long RequestBufferOffset = 0;
-        private static readonly long ResponseBufferOffset = MaxMessageSize;
-        private static readonly long NotificationBufferOffset = MaxMessageSize + MaxResponseSize;
-        // 共享内存和同步对象
-        private MemoryMappedFile _mmf;
-        private MemoryMappedViewAccessor _accessor;
-        private Semaphore _requestReadySemaphore;
-        private Semaphore _responseReadySemaphore;
-        private Semaphore _notificationReadySemaphore;
+        private MemoryMappedFile? _mmf;
+        private MemoryMappedViewAccessor? _accessor;
+        private Semaphore? _requestReadySemaphore;
+        private Semaphore? _responseReadySemaphore;
+        private Semaphore? _notificationReadySemaphore;
 
-        private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _sendLock = new(1, 1);
         private bool _isConnected = false;
 
-        private CancellationTokenSource _notificationCts;
-        private Task _notificationListenerTask;
-        private ILogger<IpcService> _logger;
+        private CancellationTokenSource? _notificationCts;
+        private Task? _notificationListenerTask;
+        private readonly ILogger<IpcService> _logger;
         private AppViewModel AppViewModel { get; }
-        // 新增：通知事件，外部可订阅
-        public event Action<ResponseMessage> NotificationReceived;
+
+        private readonly byte[] _requestBuffer = new byte[IpcConstants.MaxRequestSize];
+        private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
+        private readonly byte[] _notificationBuffer = new byte[IpcConstants.MaxNotificationSize];
+
+        public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
+
         public IpcService(AppViewModel appViewModel, ILogger<IpcService> logger)
         {
             AppViewModel = appViewModel;
@@ -54,21 +51,13 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                _mmf = MemoryMappedFile.OpenExisting(MmfName);
+                _mmf = MemoryMappedFile.OpenExisting(IpcConstants.MmfName);
                 _accessor = _mmf.CreateViewAccessor(0, MmfSize);
-                _requestReadySemaphore = Semaphore.OpenExisting(RequestSemaphoreName);
-                _responseReadySemaphore = Semaphore.OpenExisting(ResponseSemaphoreName);
-                _notificationReadySemaphore = Semaphore.OpenExisting(NotificationSemaphoreName);
+                _requestReadySemaphore = Semaphore.OpenExisting(IpcConstants.RequestSemaphoreName);
+                _responseReadySemaphore = Semaphore.OpenExisting(IpcConstants.ResponseSemaphoreName);
+                _notificationReadySemaphore = Semaphore.OpenExisting(IpcConstants.NotificationSemaphoreName);
                 _isConnected = true;
                 StartNotificationListener();
-            }
-            catch (FileNotFoundException)
-            {
-                _isConnected = false;
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                _isConnected = false;
             }
             catch (Exception)
             {
@@ -76,11 +65,10 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task InitializeMusic(Music music)
+        public async Task InitializeMusic(Music? music)
         {
-            if (music is not null) {
+            if (music is not null)
                 await SetMusicUrl(music.Path);
-            }            
             await UpdateEq();
             UpdateSettings();
         }
@@ -98,71 +86,63 @@ namespace WinUIMusicPlayer.Services
                 try
                 {
                     bool hasNotification = await Task.Run(() =>
-                        _notificationReadySemaphore.WaitOne(1000), cancellationToken);
+                        _notificationReadySemaphore!.WaitOne(1000), cancellationToken);
                     if (cancellationToken.IsCancellationRequested) break;
+                    if (!hasNotification) continue;
 
-                    if (hasNotification)
+                    var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, NotificationBufferOffset);
+                    int payloadLen = IpcEnvelope.ReadPayload(
+                        _accessor!, NotificationBufferOffset,
+                        _notificationBuffer,
+                        IpcConstants.MaxNotificationSize - IpcConstants.EnvelopeHeaderSize);
+
+                    if (payloadLen > 0)
                     {
-                        string notificationJson = ReadFromSharedMemory(NotificationBufferOffset);
-                        if (!string.IsNullOrEmpty(notificationJson))
-                        {
-                            var notification = JsonSerializer.Deserialize(
-                                notificationJson,
-                                PlayerJsonContext.Default.ResponseMessage);
-                            NotificationReceived?.Invoke(notification);
-                        }
+                        var mem = new ReadOnlyMemory<byte>(_notificationBuffer, 0, payloadLen);
+                        NotificationReceived?.Invoke(typeId, mem);
+                    }
+                    else
+                    {
+                        NotificationReceived?.Invoke(typeId, ReadOnlyMemory<byte>.Empty);
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch (Exception)
-                {
-                    await Task.Delay(500, cancellationToken); // 出错后短暂等待
-                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception) { await Task.Delay(500, cancellationToken); }
             }
         }
 
-        public async Task<ResponseMessage> SendCommandAsync(string command, string data)
+        public async Task<MessageTypeId> SendCommandAsync(CommandId commandId, ReadOnlyMemory<byte> payload)
         {
             if (!_isConnected)
             {
-                return new ResponseMessage { Type = 0, Message = "Connection failed. Server not ready." };
+                _logger.LogWarning("IPC not connected");
+                return MessageTypeId.Failed;
             }
 
-            // 使用本地锁确保同一时间只有一个请求在 MMF 上进行，防止数据竞争
             await _sendLock.WaitAsync();
             try
             {
-                var request = new RequestMessage { Command = command, Data = data };
-                string requestJson = JsonSerializer.Serialize(request, PlayerJsonContext.Default.RequestMessage);
-                WriteToSharedMemory(RequestBufferOffset, requestJson);
-                try
-                {
-                    _requestReadySemaphore.Release();
-                }
-                catch (SemaphoreFullException)
-                {
-                }
+                IpcEnvelope.WriteCommand(_accessor!, RequestBufferOffset, commandId, payload.Span);
+                try { _requestReadySemaphore!.Release(); }
+                catch (SemaphoreFullException) { }
 
-                // 3. 等待 Response 信号量
-                bool responded = await Task.Run(() => _responseReadySemaphore.WaitOne(1000));
-                if (!responded)
-                {
-                    return new ResponseMessage { Type = MessageType.Failed, Message = "Server response timeout (1s)." };
-                }
-                string responseJson = ReadFromSharedMemory(ResponseBufferOffset);
-                if (string.IsNullOrEmpty(responseJson))
-                {
-                    return new ResponseMessage { Type = MessageType.Failed, Message = "Received empty response from server." };
-                }
-                return JsonSerializer.Deserialize(responseJson, PlayerJsonContext.Default.ResponseMessage);
+                bool responded = await Task.Run(() => _responseReadySemaphore!.WaitOne(1000));
+                if (!responded) return MessageTypeId.Failed;
+
+                var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, ResponseBufferOffset);
+                int respLen = IpcEnvelope.ReadPayload(
+                    _accessor!, ResponseBufferOffset,
+                    _responseBuffer,
+                    IpcConstants.MaxResponseSize - IpcConstants.EnvelopeHeaderSize);
+
+                if (respLen > 0)
+                    _responseBuffer.AsSpan(0, respLen).CopyTo(_requestBuffer);
+                return typeId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SendCommandAsync 通讯错误: {ex.Message}");
-                return new ResponseMessage { Type = 0, Message = $"Communication error: {ex.Message}" };
+                _logger.LogError(ex, "SendCommandAsync error");
+                return MessageTypeId.Failed;
             }
             finally
             {
@@ -170,58 +150,23 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        // 将字符串写入 MMF
-        private void WriteToSharedMemory(long offset, string json)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(json);
-            int length = bytes.Length;
-
-            if (length > MaxMessageSize - sizeof(int))
-            {
-                // 截断
-                length = MaxMessageSize - sizeof(int);
-                bytes = Encoding.UTF8.GetBytes(json[..((MaxMessageSize - sizeof(int)) / 3)]);
-                length = bytes.Length;
-
-            }
-
-            _accessor.Write(offset, length);
-            _accessor.WriteArray(offset + sizeof(int), bytes, 0, length);
-        }
-
-        //从 MMF 读取字符串 
-        private string ReadFromSharedMemory(long offset)
-        {
-            try
-            {
-                int length = _accessor.ReadInt32(offset);
-                if (length <= 0 || length > MaxMessageSize - sizeof(int))
-                {
-                    return string.Empty; // 无效长度
-                }
-                byte[] buffer = new byte[length];
-                _accessor.ReadArray(offset + sizeof(int), buffer, 0, length);
-                _accessor.Write(offset, 0);
-                return Encoding.UTF8.GetString(buffer);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ReadFromSharedMemory 读取错误: {ex.Message}");
-                return string.Empty;
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetResponsePayload() => _requestBuffer.AsSpan(0, IpcConstants.MaxRequestSize);
 
         public void Play(string musicUrl)
         {
-            _ = SendCommandAsync("Play", musicUrl);
+            var req = new PlayRequest { Url = musicUrl };
+            byte[] payload = new byte[BinarySerializer.PlayRequestSize];
+            int len = BinarySerializer.WritePlayRequest(payload, req);
+            _ = SendCommandAsync(CommandId.Play, new ReadOnlyMemory<byte>(payload, 0, len));
         }
 
         public void PlayButton()
         {
-            _ = SendCommandAsync("PlayButton", "");
+            _ = SendCommandAsync(CommandId.PlayButton, ReadOnlyMemory<byte>.Empty);
         }
 
-        public void UpdateSettings(bool IsSettingChanged = false)
+        public void UpdateSettings(bool isSettingChanged = false)
         {
             var settings = new IpcSetting
             {
@@ -230,120 +175,146 @@ namespace WinUIMusicPlayer.Services
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
                 Latency = AppViewModel.Latency,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
-                dsdGain = AppViewModel.DsdGain,
-                dsdPcmFreq = AppViewModel.DsdPcmFreq,
+                DsdGain = AppViewModel.DsdGain,
+                DsdPcmFreq = AppViewModel.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
-                Volume = App.Services.GetRequiredService<AppViewModel>().Volume / 100,
-                IsSettingChanged = IsSettingChanged,
+                Volume = (float)(App.Services.GetRequiredService<AppViewModel>().Volume / 100.0),
+                IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
-            _ = SendCommandAsync("UpdateSettings", JsonSerializer.Serialize(settings, IpcJsonContext.Default.IpcSetting));
+            byte[] payload = new byte[BinarySerializer.IpcSettingSize];
+            int len = BinarySerializer.WriteIpcSetting(payload, settings);
+            _ = SendCommandAsync(CommandId.UpdateSettings, new ReadOnlyMemory<byte>(payload, 0, len));
         }
 
         public async Task UpdateEq()
         {
-            await SendCommandAsync("UpdateEq", AppSettings.EqualizerStr);
+            var eq = ConvertDictToUpdateEqRequest(AppSettings.Equalizer);
+            byte[] payload = new byte[BinarySerializer.UpdateEqRequestSize];
+            BinarySerializer.WriteUpdateEqRequest(payload, eq);
+            await SendCommandAsync(CommandId.UpdateEq, new ReadOnlyMemory<byte>(payload));
+        }
+
+        private static UpdateEqRequest ConvertDictToUpdateEqRequest(Dictionary<string, double> dict)
+        {
+            return new UpdateEqRequest
+            {
+                Band0 = (float)(dict.TryGetValue("32Hz", out var v) ? v : 0),
+                Band1 = (float)(dict.TryGetValue("64Hz", out v) ? v : 0),
+                Band2 = (float)(dict.TryGetValue("125Hz", out v) ? v : 0),
+                Band3 = (float)(dict.TryGetValue("250Hz", out v) ? v : 0),
+                Band4 = (float)(dict.TryGetValue("500Hz", out v) ? v : 0),
+                Band5 = (float)(dict.TryGetValue("1kHz", out v) ? v : 0),
+                Band6 = (float)(dict.TryGetValue("2kHz", out v) ? v : 0),
+                Band7 = (float)(dict.TryGetValue("4kHz", out v) ? v : 0),
+                Band8 = (float)(dict.TryGetValue("8kHz", out v) ? v : 0),
+                Band9 = (float)(dict.TryGetValue("16kHz", out v) ? v : 0),
+            };
         }
 
         public async Task SetMusicUrl(string musicUrl)
         {
-            await SendCommandAsync("SetMusicUrl", musicUrl);
+            var req = new SetMusicUrlRequest { Url = musicUrl };
+            byte[] payload = new byte[BinarySerializer.SetMusicUrlRequestSize];
+            int len = BinarySerializer.WriteSetMusicUrlRequest(payload, req);
+            await SendCommandAsync(CommandId.SetMusicUrl, new ReadOnlyMemory<byte>(payload, 0, len));
         }
 
-        public async Task<double> GetCurrentPostion()
+        public async Task<double> GetCurrentPosition()
         {
-            var res = await SendCommandAsync("GetProgress", "");
-            if (res.Type == 20)
+            var resType = await SendCommandAsync(CommandId.GetProgress, ReadOnlyMemory<byte>.Empty);
+            if (resType == MessageTypeId.CurrentTime)
             {
-                return double.Parse(res.Result);
+                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                return r.PositionSeconds;
             }
             return 0;
         }
 
         public async Task<double> GetDuration()
         {
-            var res = await SendCommandAsync("GetDuration", "");
-            if (res.Type == 21)
+            var resType = await SendCommandAsync(CommandId.GetDuration, ReadOnlyMemory<byte>.Empty);
+            if (resType == MessageTypeId.TotalTime)
             {
-                return double.Parse(res.Result);
+                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                return r.PositionSeconds;
             }
             return 0;
         }
 
         public void SetPosition(double position)
         {
-            _ = SendCommandAsync("ChangePosition", position.ToString());
+            var req = new ChangePositionRequest { PositionSeconds = position };
+            byte[] payload = new byte[BinarySerializer.ChangePositionRequestSize];
+            BinarySerializer.WriteChangePositionRequest(payload, req);
+            _ = SendCommandAsync(CommandId.ChangePosition, new ReadOnlyMemory<byte>(payload));
         }
 
         public void ChangeVolume(double volume)
         {
-            _ = SendCommandAsync("ChangeVolume", volume.ToString());
+            var req = new ChangeVolumeRequest { Volume = volume };
+            byte[] payload = new byte[BinarySerializer.ChangeVolumeRequestSize];
+            BinarySerializer.WriteChangeVolumeRequest(payload, req);
+            _ = SendCommandAsync(CommandId.ChangeVolume, new ReadOnlyMemory<byte>(payload));
         }
 
         public async Task<double> AdjustPlaybackPosition(int seconds)
         {
-            var res = await SendCommandAsync("AdjustPlaybackPosition", seconds.ToString());
-            if (res.Type == 22)
+            var req = new AdjustPlaybackPositionRequest { Seconds = seconds };
+            byte[] payload = new byte[BinarySerializer.AdjustPlaybackPositionRequestSize];
+            BinarySerializer.WriteAdjustPlaybackPositionRequest(payload, req);
+            var resType = await SendCommandAsync(CommandId.AdjustPlaybackPosition, new ReadOnlyMemory<byte>(payload));
+            if (resType == MessageTypeId.PositionAdjusted)
             {
-                return double.Parse(res.Result);
+                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                return r.PositionSeconds;
             }
             return 0;
         }
 
         public void MusicEnd()
         {
-            _ = SendCommandAsync("MusicEnd", string.Empty);
+            _ = SendCommandAsync(CommandId.MusicEnd, ReadOnlyMemory<byte>.Empty);
         }
+
         public void ToggleEqualizer()
         {
-            _ = SendCommandAsync("ToggleEqualizer", string.Empty);
+            _ = SendCommandAsync(CommandId.ToggleEqualizer, ReadOnlyMemory<byte>.Empty);
         }
 
-        public void SetEqualizerGain(int bandIndex, float gain)
+        public void SetEqualizerGain(byte bandIndex, float gain)
         {
-            var ipcEqGain = new IpcEqualizerGain
-            {
-                bandIndex = bandIndex,
-                gain = gain
-            };
-            _ = SendCommandAsync("SetEqualizerGain", JsonSerializer.Serialize(ipcEqGain, IpcEqualizerGainJsonContext.Default.IpcEqualizerGain));
+            var req = new SetEqualizerGainRequest { BandIndex = bandIndex, Gain = gain };
+            byte[] payload = new byte[BinarySerializer.SetEqualizerGainRequestSize];
+            BinarySerializer.WriteSetEqualizerGainRequest(payload, req);
+            _ = SendCommandAsync(CommandId.SetEqualizerGain, new ReadOnlyMemory<byte>(payload));
         }
-
 
         public void SetEqualizer()
         {
-            _ = SendCommandAsync("SetEqualizer", string.Empty);
+            _ = SendCommandAsync(CommandId.SetEqualizer, ReadOnlyMemory<byte>.Empty);
         }
 
         public void ClearEqualizer()
         {
-            _ = SendCommandAsync("ClearEqualizer", string.Empty);
+            _ = SendCommandAsync(CommandId.ClearEqualizer, ReadOnlyMemory<byte>.Empty);
         }
 
         public void FadeOut()
         {
-            _ = SendCommandAsync("FadeOut", string.Empty);
+            _ = SendCommandAsync(CommandId.FadeOut, ReadOnlyMemory<byte>.Empty);
         }
 
         public void Dispose()
         {
-            Dispose(true);
+            _notificationCts?.Cancel();
+            _accessor?.Dispose();
+            _mmf?.Dispose();
+            _requestReadySemaphore?.Dispose();
+            _responseReadySemaphore?.Dispose();
+            _sendLock?.Dispose();
+            _isConnected = false;
             GC.SuppressFinalize(this);
         }
-
-        private void Dispose(bool dispose)
-        {
-            if (dispose)
-            {
-                //_ = SendCommandAsync("MusicEnd", string.Empty);
-                _accessor?.Dispose();
-                _mmf?.Dispose();
-                _requestReadySemaphore?.Dispose();
-                _responseReadySemaphore?.Dispose();
-                _sendLock?.Dispose();
-                _isConnected = false;
-            }
-        }
-
     }
 }

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsMediaController", "E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnimatedWin2dControls", "External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj", "{90305F5C-547C-4E3B-AB9A-8DB561094D1E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BassPlayerIpc.Shared", "External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj", "{C3F5F0DC-6A9A-10B7-B63F-CDC9EB72B8C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,10 @@ Global
 		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Debug|x64.Build.0 = Debug|Any CPU
 		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Release|x64.ActiveCfg = Release|Any CPU
 		{90305F5C-547C-4E3B-AB9A-8DB561094D1E}.Release|x64.Build.0 = Release|Any CPU
+		{C3F5F0DC-6A9A-10B7-B63F-CDC9EB72B8C4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3F5F0DC-6A9A-10B7-B63F-CDC9EB72B8C4}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3F5F0DC-6A9A-10B7-B63F-CDC9EB72B8C4}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3F5F0DC-6A9A-10B7-B63F-CDC9EB72B8C4}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

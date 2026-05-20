@@ -294,7 +294,7 @@
     <SelfContained>true</SelfContained>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">True</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
 	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -363,6 +363,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj" />
+    <ProjectReference Include="External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
     <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
   </ItemGroup>
 </Project>
