@@ -758,7 +758,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsColorPickerVisible = true;
             }
             AppViewModel.Version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}.{Windows.ApplicationModel.Package.Current.Id.Version.Revision}";
-            AppViewModel.InitializeWasapiDevice();
+            AppViewModel.GetWasapiDevice();
         }
 
         public async Task SaveSettingAsync()

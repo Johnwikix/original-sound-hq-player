@@ -745,9 +745,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         ];
 
-    public void InitializeWasapiDevice()
+    public void GetWasapiDevice()
         {
             BassOutputDevices.Clear();
+            //默认设备
             BassOutputDevices.Add(new BassOutputDevice
             {
                 Name = "DefaultDevice",
@@ -776,7 +777,8 @@ namespace WinUIMusicPlayer.ViewModel
                 Id = -1,
                 OutputMode = "WasapiExclusiveEvent"
             });
-            InitializeAsioDevice();
+            //获取ASIO设备列表
+            GetAsioDevice();
             int n = BassWasapi.DeviceCount;
             for (int i = 0; i < n; i++)
             {
@@ -824,7 +826,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void InitializeAsioDevice()
+        public void GetAsioDevice()
         {
             int n = BassAsio.DeviceCount;
             for (int i = 0; i < n; i++)
