@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
@@ -111,6 +112,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        // ──────────────── Core send ────────────────
+
         public async Task<MessageTypeId> SendCommandAsync(CommandId commandId, ReadOnlyMemory<byte> payload)
         {
             if (!_isConnected)
@@ -150,20 +153,43 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        /// <summary>Fire-and-forget: sends command, returns rented buffer to pool after completion.</summary>
+        private async void FireCommand(CommandId commandId, byte[] pooledBuf, int len)
+        {
+            try
+            {
+                await SendCommandAsync(commandId, new ReadOnlyMemory<byte>(pooledBuf, 0, len));
+            }
+            finally
+            {
+                if (pooledBuf.Length > 0)
+                    ArrayPool<byte>.Shared.Return(pooledBuf);
+            }
+        }
+
+        private void FireCommand(CommandId commandId)
+        {
+            _ = SendCommandAsync(commandId, ReadOnlyMemory<byte>.Empty);
+        }
+
+        // ──────────────── Response helpers ────────────────
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> GetResponsePayload() => _requestBuffer.AsSpan(0, IpcConstants.MaxRequestSize);
+
+        // ──────────────── Public API ────────────────
 
         public void Play(string musicUrl)
         {
             var req = new PlayRequest { Url = musicUrl };
-            byte[] payload = new byte[BinarySerializer.PlayRequestSize];
-            int len = BinarySerializer.WritePlayRequest(payload, req);
-            _ = SendCommandAsync(CommandId.Play, new ReadOnlyMemory<byte>(payload, 0, len));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.PlayRequestSize);
+            int len = BinarySerializer.WritePlayRequest(buf, req);
+            FireCommand(CommandId.Play, buf, len);
         }
 
         public void PlayButton()
         {
-            _ = SendCommandAsync(CommandId.PlayButton, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.PlayButton);
         }
 
         public void UpdateSettings(bool isSettingChanged = false)
@@ -182,17 +208,21 @@ namespace WinUIMusicPlayer.Services
                 IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
-            byte[] payload = new byte[BinarySerializer.IpcSettingSize];
-            int len = BinarySerializer.WriteIpcSetting(payload, settings);
-            _ = SendCommandAsync(CommandId.UpdateSettings, new ReadOnlyMemory<byte>(payload, 0, len));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.IpcSettingSize);
+            int len = BinarySerializer.WriteIpcSetting(buf, settings);
+            FireCommand(CommandId.UpdateSettings, buf, len);
         }
 
         public async Task UpdateEq()
         {
             var eq = ConvertDictToUpdateEqRequest(AppSettings.Equalizer);
-            byte[] payload = new byte[BinarySerializer.UpdateEqRequestSize];
-            BinarySerializer.WriteUpdateEqRequest(payload, eq);
-            await SendCommandAsync(CommandId.UpdateEq, new ReadOnlyMemory<byte>(payload));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.UpdateEqRequestSize);
+            try
+            {
+                BinarySerializer.WriteUpdateEqRequest(buf, eq);
+                await SendCommandAsync(CommandId.UpdateEq, new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.UpdateEqRequestSize));
+            }
+            finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
         private static UpdateEqRequest ConvertDictToUpdateEqRequest(Dictionary<string, double> dict)
@@ -215,9 +245,13 @@ namespace WinUIMusicPlayer.Services
         public async Task SetMusicUrl(string musicUrl)
         {
             var req = new SetMusicUrlRequest { Url = musicUrl };
-            byte[] payload = new byte[BinarySerializer.SetMusicUrlRequestSize];
-            int len = BinarySerializer.WriteSetMusicUrlRequest(payload, req);
-            await SendCommandAsync(CommandId.SetMusicUrl, new ReadOnlyMemory<byte>(payload, 0, len));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.SetMusicUrlRequestSize);
+            try
+            {
+                int len = BinarySerializer.WriteSetMusicUrlRequest(buf, req);
+                await SendCommandAsync(CommandId.SetMusicUrl, new ReadOnlyMemory<byte>(buf, 0, len));
+            }
+            finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
         public async Task<double> GetCurrentPosition()
@@ -245,64 +279,68 @@ namespace WinUIMusicPlayer.Services
         public void SetPosition(double position)
         {
             var req = new ChangePositionRequest { PositionSeconds = position };
-            byte[] payload = new byte[BinarySerializer.ChangePositionRequestSize];
-            BinarySerializer.WriteChangePositionRequest(payload, req);
-            _ = SendCommandAsync(CommandId.ChangePosition, new ReadOnlyMemory<byte>(payload));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangePositionRequestSize);
+            BinarySerializer.WriteChangePositionRequest(buf, req);
+            FireCommand(CommandId.ChangePosition, buf, BinarySerializer.ChangePositionRequestSize);
         }
 
         public void ChangeVolume(double volume)
         {
             var req = new ChangeVolumeRequest { Volume = volume };
-            byte[] payload = new byte[BinarySerializer.ChangeVolumeRequestSize];
-            BinarySerializer.WriteChangeVolumeRequest(payload, req);
-            _ = SendCommandAsync(CommandId.ChangeVolume, new ReadOnlyMemory<byte>(payload));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangeVolumeRequestSize);
+            BinarySerializer.WriteChangeVolumeRequest(buf, req);
+            FireCommand(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
         }
 
         public async Task<double> AdjustPlaybackPosition(int seconds)
         {
             var req = new AdjustPlaybackPositionRequest { Seconds = seconds };
-            byte[] payload = new byte[BinarySerializer.AdjustPlaybackPositionRequestSize];
-            BinarySerializer.WriteAdjustPlaybackPositionRequest(payload, req);
-            var resType = await SendCommandAsync(CommandId.AdjustPlaybackPosition, new ReadOnlyMemory<byte>(payload));
-            if (resType == MessageTypeId.PositionAdjusted)
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.AdjustPlaybackPositionRequestSize);
+            try
             {
-                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
-                return r.PositionSeconds;
+                BinarySerializer.WriteAdjustPlaybackPositionRequest(buf, req);
+                var resType = await SendCommandAsync(CommandId.AdjustPlaybackPosition, new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.AdjustPlaybackPositionRequestSize));
+                if (resType == MessageTypeId.PositionAdjusted)
+                {
+                    var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                    return r.PositionSeconds;
+                }
+                return 0;
             }
-            return 0;
+            finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
         public void MusicEnd()
         {
-            _ = SendCommandAsync(CommandId.MusicEnd, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.MusicEnd);
         }
 
         public void ToggleEqualizer()
         {
-            _ = SendCommandAsync(CommandId.ToggleEqualizer, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.ToggleEqualizer);
         }
 
         public void SetEqualizerGain(byte bandIndex, float gain)
         {
             var req = new SetEqualizerGainRequest { BandIndex = bandIndex, Gain = gain };
-            byte[] payload = new byte[BinarySerializer.SetEqualizerGainRequestSize];
-            BinarySerializer.WriteSetEqualizerGainRequest(payload, req);
-            _ = SendCommandAsync(CommandId.SetEqualizerGain, new ReadOnlyMemory<byte>(payload));
+            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.SetEqualizerGainRequestSize);
+            BinarySerializer.WriteSetEqualizerGainRequest(buf, req);
+            FireCommand(CommandId.SetEqualizerGain, buf, BinarySerializer.SetEqualizerGainRequestSize);
         }
 
         public void SetEqualizer()
         {
-            _ = SendCommandAsync(CommandId.SetEqualizer, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.SetEqualizer);
         }
 
         public void ClearEqualizer()
         {
-            _ = SendCommandAsync(CommandId.ClearEqualizer, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.ClearEqualizer);
         }
 
         public void FadeOut()
         {
-            _ = SendCommandAsync(CommandId.FadeOut, ReadOnlyMemory<byte>.Empty);
+            FireCommand(CommandId.FadeOut);
         }
 
         public void Dispose()
