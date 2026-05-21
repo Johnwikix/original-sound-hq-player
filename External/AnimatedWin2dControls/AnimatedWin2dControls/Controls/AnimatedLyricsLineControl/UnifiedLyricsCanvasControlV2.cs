@@ -201,7 +201,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public static readonly DependencyProperty IsPlayingProperty =
             DependencyProperty.Register(nameof(IsPlaying), typeof(bool), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(false, (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedIsPlaying = (bool)e.NewValue; c._matchLyricLineNextFrame = true; }));
+                new PropertyMetadata(false, (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedIsPlaying = (bool)e.NewValue; }));
 
         public static readonly DependencyProperty LyricsFontSizeProperty =
             DependencyProperty.Register(nameof(LyricsFontSize), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
@@ -429,8 +429,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         #endregion
 
-        private bool _matchLyricLineNextFrame;
-
         private void OnUILyricsChanged(IList<LyricLine>? newLyrics)
         {
             _pendingDisposeLines = _renderLines;
@@ -450,18 +448,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             _renderLines = newLines;
 
-            _canvasYScrollTransition.JumpTo(0);
-            _mouseYScrollTransition.JumpTo(0);
-            _pendingMouseScrollY = 0;
-            _targetScrollY = 0;
-            _smoothedScrollY = 0;
-            _userScrolling = false;
-            _userScrollCooldownSec = 0;
             _layoutDirty = true;
-            _synchronizer.Reset();
-            _currentLineIndex = 0;
-            _lastCurrentLineIndex = 0;
-            _matchLyricLineNextFrame = false;
             _canvas?.Invalidate();
         }
 
@@ -559,7 +546,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
                 {
                     _internalTimeMs = externalTimeMs;
-                    _matchLyricLineNextFrame = true;
                 }
                 else
                 {
@@ -569,20 +555,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
-                if (_matchLyricLineNextFrame)
-                {
-                    _matchLyricLineNextFrame = false;
-                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
-                    _lastCurrentLineIndex = _currentLineIndex;
-                    if (newIndex != _currentLineIndex)
-                        _currentLineIndex = newIndex;
-                }
-                else if (!_layoutDirty)
-                {
-                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
-                    _lastCurrentLineIndex = _currentLineIndex;
+                int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
+                _lastCurrentLineIndex = _currentLineIndex;
+                if (newIndex != _currentLineIndex)
                     _currentLineIndex = newIndex;
-                }
 
                 isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
 
@@ -598,16 +574,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lastExternalTimeMs = externalTimeMs;
                 currentTimeMs = _internalTimeMs - _cachedOffsetMs;
 
-                if (_matchLyricLineNextFrame && !_layoutDirty)
-                {
-                    _matchLyricLineNextFrame = false;
-                    int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
-                    _lastCurrentLineIndex = _currentLineIndex;
-                    if (newIndex != _currentLineIndex)
-                        _currentLineIndex = newIndex;
-                }
+                int newIndex = _synchronizer.GetCurrentLineIndex(currentTimeMs, lines);
+                _lastCurrentLineIndex = _currentLineIndex;
+                if (newIndex != _currentLineIndex)
+                    _currentLineIndex = newIndex;
 
-                _matchLyricLineNextFrame = true;
                 isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
             }
 
