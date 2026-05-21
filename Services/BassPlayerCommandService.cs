@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -223,5 +224,11 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.FadeOut();
         }
+
+        public Task<List<(int id, string name)>> GetWasapiDevices()
+            => IpcService.GetWasapiDevices();
+
+        public Task<List<(int id, string name)>> GetAsioDevices()
+            => IpcService.GetAsioDevices();
     }
 }

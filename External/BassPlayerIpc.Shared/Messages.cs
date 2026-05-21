@@ -81,3 +81,16 @@ public struct VolumeResponse
 {
     public float Volume;
 }
+
+// Device paging
+
+public struct GetDevicesRequest
+{
+    public byte Page;
+}
+
+public struct DeviceEntry
+{
+    public int Id;
+    public string? Name;
+}

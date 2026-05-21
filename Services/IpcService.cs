@@ -343,6 +343,46 @@ namespace WinUIMusicPlayer.Services
             FireCommand(CommandId.FadeOut);
         }
 
+        // ──────────────── Device enumeration ────────────────
+
+        private async Task<List<(int id, string name)>> GetDevicesPaged(CommandId commandId, MessageTypeId expectedResponse)
+        {
+            var result = new List<(int, string)>();
+            byte page = 0;
+            while (true)
+            {
+                var reqBuf = ArrayPool<byte>.Shared.Rent(BinarySerializer.GetDevicesRequestSize);
+                try
+                {
+                    var req = new GetDevicesRequest { Page = page };
+                    BinarySerializer.WriteGetDevicesRequest(reqBuf, req);
+                    var resType = await SendCommandAsync(commandId, new ReadOnlyMemory<byte>(reqBuf, 0, BinarySerializer.GetDevicesRequestSize));
+                    if (resType != expectedResponse) break;
+                }
+                finally { ArrayPool<byte>.Shared.Return(reqBuf); }
+
+                var resp = GetResponsePayload();
+                var (rPage, totalPages, count) = BinarySerializer.ReadDeviceListPageHeader(resp);
+                int off = BinarySerializer.DeviceListPageHeaderSize;
+                for (int i = 0; i < count; i++)
+                {
+                    var (id, name, bytesRead) = BinarySerializer.ReadDeviceEntry(resp[off..]);
+                    if (bytesRead <= 0) break;
+                    result.Add((id, name));
+                    off += bytesRead;
+                }
+                page++;
+                if (page >= totalPages) break;
+            }
+            return result;
+        }
+
+        public Task<List<(int id, string name)>> GetWasapiDevices()
+            => GetDevicesPaged(CommandId.GetWasapiDevices, MessageTypeId.WasapiDevices);
+
+        public Task<List<(int id, string name)>> GetAsioDevices()
+            => GetDevicesPaged(CommandId.GetAsioDevices, MessageTypeId.AsioDevices);
+
         public void Dispose()
         {
             _notificationCts?.Cancel();

@@ -25,6 +25,10 @@ public enum CommandId : short
     ClearEqualizer = 14,
     SetEqualizerGain = 15,
     UpdateEq = 16,
+
+    // Devices
+    GetWasapiDevices = 17,
+    GetAsioDevices = 18,
 }
 
 public enum MessageTypeId : short
@@ -40,6 +44,8 @@ public enum MessageTypeId : short
     VolumeWriteBack = 8,
     Exit = 9,
     NotificationDropped = 10,
+    WasapiDevices = 11,
+    AsioDevices = 12,
 }
 
 public enum ErrorCode : short

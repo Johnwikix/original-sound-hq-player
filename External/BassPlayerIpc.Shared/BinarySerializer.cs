@@ -228,4 +228,72 @@ public static class BinarySerializer
     {
         return new() { Volume = BinaryPrimitives.ReadSingleLittleEndian(src) };
     }
+
+    // ──────────────────────── Device paging ────────────────────────
+
+    public const int GetDevicesRequestSize = 1;
+    public const int DeviceEntryBaseSize = 4 + 2; // int Id + ushort NameLen
+    public const int DeviceListPageHeaderSize = 3; // byte Page + byte TotalPages + byte Count
+    public const int MaxDevicesPerPage = 16;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteGetDevicesRequest(Span<byte> dest, GetDevicesRequest req)
+    {
+        dest[0] = req.Page;
+        return 1;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GetDevicesRequest ReadGetDevicesRequest(ReadOnlySpan<byte> src)
+    {
+        return new() { Page = src.Length > 0 ? src[0] : (byte)0 };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteDeviceListPageHeader(Span<byte> dest, byte page, byte totalPages, byte count)
+    {
+        dest[0] = page;
+        dest[1] = totalPages;
+        dest[2] = count;
+        return DeviceListPageHeaderSize;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (byte page, byte totalPages, byte count) ReadDeviceListPageHeader(ReadOnlySpan<byte> src)
+    {
+        return (src[0], src[1], src[2]);
+    }
+
+    /// <summary>Writes one device entry. Returns bytes written.</summary>
+    public static int WriteDeviceEntry(Span<byte> dest, int id, string? name)
+    {
+        BinaryPrimitives.WriteInt32LittleEndian(dest, id);
+        int nameBytes;
+        if (string.IsNullOrEmpty(name))
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian(dest[4..], 0);
+            return 6;
+        }
+        int maxName = Math.Min(dest.Length - 6, MaxStringBytes);
+        nameBytes = Encoding.UTF8.GetBytes(name.AsSpan(), dest[6..]);
+        if (nameBytes > maxName) nameBytes = maxName;
+        BinaryPrimitives.WriteUInt16LittleEndian(dest[4..], (ushort)nameBytes);
+        return 6 + nameBytes;
+    }
+
+    /// <summary>Reads one device entry from src. Returns (id, name, bytesRead).</summary>
+    public static (int id, string name, int bytesRead) ReadDeviceEntry(ReadOnlySpan<byte> src)
+    {
+        if (src.Length < 6) return (0, string.Empty, 0);
+        int id = BinaryPrimitives.ReadInt32LittleEndian(src);
+        ushort nameLen = BinaryPrimitives.ReadUInt16LittleEndian(src[4..]);
+        if (nameLen == 0) return (id, string.Empty, 6);
+        int readLen = Math.Min(nameLen, src.Length - 6);
+        var name = Encoding.UTF8.GetString(src.Slice(6, readLen));
+        return (id, name, 6 + nameLen);
+    }
+
+    /// <summary>Estimates max bytes for one device entry.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int MaxDeviceEntrySize(int maxNameBytes) => DeviceEntryBaseSize + maxNameBytes;
 }
