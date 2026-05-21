@@ -2,7 +2,7 @@
 
 这是一款采用 WinUI 构建的现代化多功能音乐播放器应用，旨在为 Windows 系统提供流畅愉悦的音乐聆听体验。该应用支持用户浏览音乐库、管理播放列表、发现新音乐，并能实现高品质音频播放。它依托依赖注入、日志记录和 MVVM 架构等现代.NET 技术，打造出可维护且具备可扩展性的代码库。
 
-[点击此处访问产品介绍页]([Original HQ Sound Player](https://johnwikix.github.io/original-sound-player-page))
+[点击此处访问产品主页](https://johnwikix.github.io/original-sound-player-page)
 
 ## 🚀 核心功能
 
@@ -24,12 +24,6 @@
 - **DSD 输出**：支持 DSD DoP（封装为 PCM 帧）和 DSD Native（通过 ASIO 原始输出）两种方式。
 - **ASIO 支持**：原生支持 ASIO 输出，适配专业音频设备。
 
-## 🔊 独立音频核心模块
-
-原音 HQ 播放器的音频播放功能由独立模块 **BassPlayerSharp** 提供支持，该模块基于 `un4seen bass` 音频库构建，专注于实现高性能、低延迟的音频处理能力。
-
-仓库地址：[https://github.com/Johnwikix/BassPlayerSharp](https://github.com/Johnwikix/BassPlayerSharp)
-
 ## 📦 下载与安装
 
 **原音 HQ 播放器** 已上架 Microsoft Store，推荐通过官方商店获取，以确保最佳的安装和更新体验。
@@ -42,14 +36,16 @@
 
 ## 🛠️ 第三方库
 
-| Library                                                                                                  | Description                    | License            |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------ |
-| [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon)                                            | 系统托盘图标                   | MIT                |
-| [WinUIEx](https://github.com/dotMorten/WinUIEx)                                                          | 扩展 WinUI 窗口功能            | MIT                |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                      | MVVM 框架                      | MIT                |
-| [TagLibSharp](https://github.com/mono/taglib-sharp)和[atldotnet](https://github.com/Zeugma440/atldotnet) | 读取并处理多种音频格式的元数据 | LGPL-2.1/MIT       |
-| [BASS](https://www.un4seen.com/)和[ManagedBass](https://github.com/ManagedBass/ManagedBass)              | 用于音乐播放的音频库           | non-commercial use |
-| ...                                                                                                      | ...                            | ...                |
+| Library                                                                                                  | Description                          | License            |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------ |
+| [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon)                                            | 系统托盘图标                         | MIT                |
+| [WinUIEx](https://github.com/dotMorten/WinUIEx)                                                          | 扩展 WinUI 窗口功能                   | MIT                |
+| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                      | MVVM 框架                            | MIT                |
+| [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI 扩展组件                       | MIT                |
+| [TagLibSharp](https://github.com/mono/taglib-sharp)和[atldotnet](https://github.com/Zeugma440/atldotnet) | 读取并处理多种音频格式的元数据        | LGPL-2.1/MIT       |
+| [BASS](https://www.un4seen.com/)和[ManagedBass](https://github.com/ManagedBass/ManagedBass)              | 用于音乐播放的音频库                 | non-commercial use |
+| [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | 歌词搜索与解析                       | MIT                |
+| [Isolation](https://github.com/Storyteller-Studios/Isolation) | 着色器流体背景 | MIT |
 
 ## 代码参考
 
@@ -62,16 +58,16 @@
 
 ### 前置条件
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)（.NET 9 软件开发工具包）
-- Windows 10 1809 版本或更高版本（需适配系统要求）
-- Visual Studio 2022 或更高版本（需安装 WinUI 工作负载）
+- [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)（.NET 10 软件开发工具包）
+- Windows 10 19041 版本或更高版本（需适配系统要求）
+- Visual Studio 2026 或更高版本（需安装 WinUI 工作负载）
 
 ### 安装步骤
 
 1. 克隆代码仓库：
 
    ```bash
-   git clone https://github.com/Johnwikix/BassPlayerSharp.git
+   git clone https://github.com/Johnwikix/original-sound-hq-player.git
    ```
 
 2. 还原 NuGet 包：
