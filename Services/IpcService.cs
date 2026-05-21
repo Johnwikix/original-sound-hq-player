@@ -48,22 +48,28 @@ namespace WinUIMusicPlayer.Services
             _logger = logger;
         }
 
-        public void Initializing()
+        public async Task InitializingAsync()
         {
-            try
+            for (int i = 0; i < 50; i++)
             {
-                _mmf = MemoryMappedFile.OpenExisting(IpcConstants.MmfName);
-                _accessor = _mmf.CreateViewAccessor(0, MmfSize);
-                _requestReadySemaphore = Semaphore.OpenExisting(IpcConstants.RequestSemaphoreName);
-                _responseReadySemaphore = Semaphore.OpenExisting(IpcConstants.ResponseSemaphoreName);
-                _notificationReadySemaphore = Semaphore.OpenExisting(IpcConstants.NotificationSemaphoreName);
-                _isConnected = true;
-                StartNotificationListener();
+                try
+                {
+                    _mmf = MemoryMappedFile.OpenExisting(IpcConstants.MmfName);
+                    _accessor = _mmf.CreateViewAccessor(0, MmfSize);
+                    _requestReadySemaphore = Semaphore.OpenExisting(IpcConstants.RequestSemaphoreName);
+                    _responseReadySemaphore = Semaphore.OpenExisting(IpcConstants.ResponseSemaphoreName);
+                    _notificationReadySemaphore = Semaphore.OpenExisting(IpcConstants.NotificationSemaphoreName);
+                    _isConnected = true;
+                    StartNotificationListener();
+                    return;
+                }
+                catch
+                {
+                    await Task.Delay(100);
+                }
             }
-            catch (Exception)
-            {
-                _isConnected = false;
-            }
+            _logger.LogError("IPC connection failed after retries");
+            _isConnected = false;
         }
 
         public async Task InitializeMusic(Music? music)

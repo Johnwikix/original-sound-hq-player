@@ -23,22 +23,20 @@ namespace WinUIMusicPlayer.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             await MusicDatabaseService.Initialize();
-            var tasks = new Task[] {                 
+            await App.Services.GetRequiredService<IpcService>().InitializingAsync();
+            var tasks = new Task[] {
                  MusicDatabaseService.GetEqualizerSettingsAsync(),
-                 MusicDatabaseService.GetSettingsAsync()                 
+                 MusicDatabaseService.GetSettingsAsync()
             };
             await Task.WhenAll(tasks);
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
-            App.MainWindow.Activate();            
+            App.MainWindow.Activate();
             var longOpsTask = Task.Run(async () =>
             {
                 await InitialFileScan.InitialScan();
                 await MusicDatabaseService.LoadMusicList();
-                await MusicDatabaseService.GetPlayStateAsync();                
-            }, cancellationToken);            
-            await Task.Delay(500, cancellationToken);
-            App.Services.GetRequiredService<IpcService>().Initializing();
-            await Task.Delay(500, cancellationToken);
+                await MusicDatabaseService.GetPlayStateAsync();
+            }, cancellationToken);
             await Task.WhenAll(longOpsTask);
             ToolUtils.CleanupStaleCacheFiles();
             await App.Services.GetRequiredService<MusicBrowseViewModel>().LoadPlayStateToMusicBrowsePage();
