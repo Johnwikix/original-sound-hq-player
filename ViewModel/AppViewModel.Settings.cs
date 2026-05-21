@@ -781,31 +781,7 @@ namespace WinUIMusicPlayer.ViewModel
                 OutputMode = "WasapiExclusiveEvent"
             });
 
-            var cmd = App.Services.GetRequiredService<BassPlayerCommandService>();
-
-            // WASAPI devices from server
-            var wasapiDevices = await cmd.GetWasapiDevices();
-            foreach (var (id, name) in wasapiDevices)
-            {
-                if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == name))
-                {
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name, Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
-                        Id = id, OutputMode = "WasapiShared"
-                    });
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name, Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
-                        Id = id, OutputMode = "WasapiExclusivePush"
-                    });
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name, Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
-                        Id = id, OutputMode = "WasapiExclusiveEvent"
-                    });
-                }
-            }
+            var cmd = App.Services.GetRequiredService<BassPlayerCommandService>();          
 
             // ASIO devices from server
             var asioDevices = await cmd.GetAsioDevices();
@@ -816,6 +792,36 @@ namespace WinUIMusicPlayer.ViewModel
                     Name = name, Tag = name + " [ASIO]",
                     AsioId = id, OutputMode = "ASIO"
                 });
+            }
+
+            // WASAPI devices from server
+            var wasapiDevices = await cmd.GetWasapiDevices();
+            foreach (var (id, name) in wasapiDevices)
+            {
+                if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == name))
+                {
+                    BassOutputDevices.Add(new BassOutputDevice
+                    {
+                        Name = name,
+                        Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
+                        Id = id,
+                        OutputMode = "WasapiShared"
+                    });
+                    BassOutputDevices.Add(new BassOutputDevice
+                    {
+                        Name = name,
+                        Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
+                        Id = id,
+                        OutputMode = "WasapiExclusivePush"
+                    });
+                    BassOutputDevices.Add(new BassOutputDevice
+                    {
+                        Name = name,
+                        Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
+                        Id = id,
+                        OutputMode = "WasapiExclusiveEvent"
+                    });
+                }
             }
 
             var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
