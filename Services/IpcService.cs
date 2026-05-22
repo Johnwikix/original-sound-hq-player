@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BassPlayerIpc.Shared;
@@ -36,8 +35,8 @@ namespace WinUIMusicPlayer.Services
         private readonly ILogger<IpcService> _logger;
         private AppViewModel AppViewModel { get; }
 
-        private readonly byte[] _requestBuffer = new byte[IpcConstants.MaxRequestSize];
         private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
+        private readonly byte[] _posBuf = new byte[BinarySerializer.PositionResponseSize];
         private readonly byte[] _notificationBuffer = new byte[IpcConstants.MaxNotificationSize];
 
         public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
@@ -122,10 +121,16 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<MessageTypeId> SendCommandAsync(CommandId commandId, ReadOnlyMemory<byte> payload)
         {
+            return (await SendWithResponseAsync(commandId, payload, Array.Empty<byte>())).Type;
+        }
+
+        public async Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
+            CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer)
+        {
             if (!_isConnected)
             {
                 _logger.LogWarning("IPC not connected");
-                return MessageTypeId.Failed;
+                return (MessageTypeId.Failed, 0);
             }
 
             await _sendLock.WaitAsync();
@@ -136,7 +141,7 @@ namespace WinUIMusicPlayer.Services
                 catch (SemaphoreFullException) { }
 
                 bool responded = await Task.Run(() => _responseReadySemaphore!.WaitOne(1000));
-                if (!responded) return MessageTypeId.Failed;
+                if (!responded) return (MessageTypeId.Failed, 0);
 
                 var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, ResponseBufferOffset);
                 int respLen = IpcEnvelope.ReadPayload(
@@ -144,14 +149,14 @@ namespace WinUIMusicPlayer.Services
                     _responseBuffer,
                     IpcConstants.MaxResponseSize - IpcConstants.EnvelopeHeaderSize);
 
-                if (respLen > 0)
-                    _responseBuffer.AsSpan(0, respLen).CopyTo(_requestBuffer);
-                return typeId;
+                if (respLen > 0 && responseBuffer.Length >= respLen)
+                    _responseBuffer.AsSpan(0, respLen).CopyTo(responseBuffer);
+                return (typeId, respLen);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "SendCommandAsync error");
-                return MessageTypeId.Failed;
+                return (MessageTypeId.Failed, 0);
             }
             finally
             {
@@ -177,11 +182,6 @@ namespace WinUIMusicPlayer.Services
         {
             _ = SendCommandAsync(commandId, ReadOnlyMemory<byte>.Empty);
         }
-
-        // ──────────────── Response helpers ────────────────
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<byte> GetResponsePayload() => _requestBuffer.AsSpan(0, IpcConstants.MaxRequestSize);
 
         // ──────────────── Public API ────────────────
 
@@ -262,10 +262,10 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<double> GetCurrentPosition()
         {
-            var resType = await SendCommandAsync(CommandId.GetProgress, ReadOnlyMemory<byte>.Empty);
+            var (resType, _) = await SendWithResponseAsync(CommandId.GetProgress, ReadOnlyMemory<byte>.Empty, _posBuf);
             if (resType == MessageTypeId.CurrentTime)
             {
-                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                var r = BinarySerializer.ReadPositionResponse(_posBuf);
                 return r.PositionSeconds;
             }
             return 0;
@@ -273,10 +273,10 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<double> GetDuration()
         {
-            var resType = await SendCommandAsync(CommandId.GetDuration, ReadOnlyMemory<byte>.Empty);
+            var (resType, _) = await SendWithResponseAsync(CommandId.GetDuration, ReadOnlyMemory<byte>.Empty, _posBuf);
             if (resType == MessageTypeId.TotalTime)
             {
-                var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                var r = BinarySerializer.ReadPositionResponse(_posBuf);
                 return r.PositionSeconds;
             }
             return 0;
@@ -305,10 +305,12 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 BinarySerializer.WriteAdjustPlaybackPositionRequest(buf, req);
-                var resType = await SendCommandAsync(CommandId.AdjustPlaybackPosition, new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.AdjustPlaybackPositionRequestSize));
+                var (resType, _) = await SendWithResponseAsync(CommandId.AdjustPlaybackPosition,
+                    new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.AdjustPlaybackPositionRequestSize),
+                    _posBuf);
                 if (resType == MessageTypeId.PositionAdjusted)
                 {
-                    var r = BinarySerializer.ReadPositionResponse(GetResponsePayload());
+                    var r = BinarySerializer.ReadPositionResponse(_posBuf);
                     return r.PositionSeconds;
                 }
                 return 0;
@@ -355,31 +357,38 @@ namespace WinUIMusicPlayer.Services
         {
             var result = new List<(int, string)>();
             byte page = 0;
-            while (true)
+            var respBuf = ArrayPool<byte>.Shared.Rent(IpcConstants.MaxResponseSize);
+            try
             {
-                var reqBuf = ArrayPool<byte>.Shared.Rent(BinarySerializer.GetDevicesRequestSize);
-                try
+                while (true)
                 {
-                    var req = new GetDevicesRequest { Page = page };
-                    BinarySerializer.WriteGetDevicesRequest(reqBuf, req);
-                    var resType = await SendCommandAsync(commandId, new ReadOnlyMemory<byte>(reqBuf, 0, BinarySerializer.GetDevicesRequestSize));
-                    if (resType != expectedResponse) break;
-                }
-                finally { ArrayPool<byte>.Shared.Return(reqBuf); }
+                    var reqBuf = ArrayPool<byte>.Shared.Rent(BinarySerializer.GetDevicesRequestSize);
+                    try
+                    {
+                        var req = new GetDevicesRequest { Page = page };
+                        BinarySerializer.WriteGetDevicesRequest(reqBuf, req);
+                        var (resType, respLen) = await SendWithResponseAsync(commandId,
+                            new ReadOnlyMemory<byte>(reqBuf, 0, BinarySerializer.GetDevicesRequestSize),
+                            respBuf);
+                        if (resType != expectedResponse) break;
 
-                var resp = GetResponsePayload();
-                var (rPage, totalPages, count) = BinarySerializer.ReadDeviceListPageHeader(resp);
-                int off = BinarySerializer.DeviceListPageHeaderSize;
-                for (int i = 0; i < count; i++)
-                {
-                    var (id, name, bytesRead) = BinarySerializer.ReadDeviceEntry(resp[off..]);
-                    if (bytesRead <= 0) break;
-                    result.Add((id, name));
-                    off += bytesRead;
+                        var resp = respBuf.AsSpan(0, respLen);
+                        var (rPage, totalPages, count) = BinarySerializer.ReadDeviceListPageHeader(resp);
+                        int off = BinarySerializer.DeviceListPageHeaderSize;
+                        for (int i = 0; i < count; i++)
+                        {
+                            var (id, name, bytesRead) = BinarySerializer.ReadDeviceEntry(resp[off..]);
+                            if (bytesRead <= 0) break;
+                            result.Add((id, name));
+                            off += bytesRead;
+                        }
+                        page++;
+                        if (page >= totalPages) break;
+                    }
+                    finally { ArrayPool<byte>.Shared.Return(reqBuf); }
                 }
-                page++;
-                if (page >= totalPages) break;
             }
+            finally { ArrayPool<byte>.Shared.Return(respBuf); }
             return result;
         }
 
