@@ -1092,7 +1092,7 @@ namespace WinUIMusicPlayer.Utils
                 int bitDepth = track.BitDepth <= 0 ? await GetBitDepth(file) : track.BitDepth;
                 int bitRate = track.Bitrate == 0 ? await GetBitRate(file) : track.Bitrate;
                 int year = track.Year ?? 0;
-                duration = TimeSpan.FromMicroseconds(track.DurationMs);
+                duration = TimeSpan.FromMilliseconds(track.DurationMs);
                 int channelCount = track.ChannelsArrangement.NbChannels;
                 LyricsInfo? lyricsInfo = track.Lyrics.FirstOrDefault();
                 if (lyricsInfo is not null)
