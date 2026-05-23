@@ -24,22 +24,6 @@ namespace WinUIMusicPlayer.Services
         //  靜態 Regex：編譯一次，全生命週期復用，避免每次解析重複構建
         // ──────────────────────────────────────────────────────────────
 
-        // KRC：行 [startMs,durationMs]內容
-        private static readonly Regex s_krcLinePattern =
-            new(@"^\[(\d+),(\d+)\](.*)$", RegexOptions.Compiled);
-
-        // QRC：行 [mm:ss.xx]內容
-        private static readonly Regex s_qrcLinePattern =
-            new(@"^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)$", RegexOptions.Compiled);
-
-        // QRC：字級標籤 <mm:ss.xx>
-        private static readonly Regex s_qrcWordPattern =
-            new(@"<(\d{2}):(\d{2})\.(\d{2,3})>", RegexOptions.Compiled);
-
-        // LRC：時間標籤 [mm:ss.xx]
-        private static readonly Regex s_lrcTimePattern =
-            new(@"\[(\d{2}):(\d{2})([.:])(\d{2,3})\]", RegexOptions.Compiled);
-
         // 格式探測：QRC 特徵
         private static readonly Regex s_qrcDetect =
             new(@"<\d{2}:\d{2}\.\d{2,3}>", RegexOptions.Compiled);
@@ -48,13 +32,11 @@ namespace WinUIMusicPlayer.Services
         private static readonly Regex s_krcDetect =
             new(@"^\[\d+,\d+\]", RegexOptions.Compiled | RegexOptions.Multiline);
 
-        // SplitEverything 分詞
-        private static readonly Regex s_splitPattern =
-            new(@"[\u4e00-\u9fa5]|[\u3040-\u30ff]|[\p{L}\p{N}]+|\s+|.",
-                RegexOptions.Compiled);
-
         // 本地文件擴展名候選（靜態，避免每次調用分配 array）
         private static readonly string[] s_lyricExtensions = [".krc", ".qrc", ".lrc"];
+
+        // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
+        internal static double LineEndOffsetMs = 400;
 
         // ──────────────────────────────────────────────────────────────
 
@@ -123,7 +105,38 @@ namespace WinUIMusicPlayer.Services
             if (lyrics.Count == 0) return;
             double fallbackMs = songDurationMs > 0 ? songDurationMs + 2000 : 10500;
             for (int i = 0; i < lyrics.Count; i++)
-                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : fallbackMs;
+            {
+                var line = lyrics[i];
+                line.EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : fallbackMs;
+
+                double reducedMs = Math.Max(0, line.EndMs - line.StartMs - LineEndOffsetMs);
+                int wc = line.Words.Count;
+                if (wc > 0)
+                {
+                    // 按原始詞時間等比縮放到 reducedMs；LRC（無原始時間）走均分降級
+                    var lastWord = line.Words[wc - 1];
+                    double originalSpan = lastWord.StartMs + lastWord.DurationMs - line.StartMs;
+                    if (originalSpan > 0)
+                    {
+                        double scale = reducedMs / originalSpan;
+                        for (int j = 0; j < wc; j++)
+                        {
+                            double offset = line.Words[j].StartMs - line.StartMs;
+                            line.Words[j].StartMs = line.StartMs + offset * scale;
+                            line.Words[j].DurationMs *= scale;
+                        }
+                    }
+                    else
+                    {
+                        double perMs = reducedMs / wc;
+                        for (int j = 0; j < wc; j++)
+                        {
+                            line.Words[j].StartMs = line.StartMs + perMs * j;
+                            line.Words[j].DurationMs = perMs;
+                        }
+                    }
+                }
+            }
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -244,7 +257,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// 解析 KRC 格式：Span 行迭代避免 Split string[]
+        /// 解析 KRC 格式：完全 Span 解析，零 string 分配
         /// </summary>
         private List<LyricLine> ParseKrcLyrics(string krc, CancellationToken cancellationToken = default)
         {
@@ -261,7 +274,6 @@ namespace WinUIMusicPlayer.Services
                 var trimmed = lineSpan.Trim();
                 if (trimmed.IsEmpty || trimmed[0] != '[') continue;
 
-                // Span.StartsWith 無分配
                 if (trimmed.StartsWith("[ti:", StringComparison.Ordinal) ||
                     trimmed.StartsWith("[ar:", StringComparison.Ordinal) ||
                     trimmed.StartsWith("[al:", StringComparison.Ordinal) ||
@@ -270,48 +282,42 @@ namespace WinUIMusicPlayer.Services
                     trimmed.StartsWith("[kana:", StringComparison.Ordinal))
                     continue;
 
-                string lineStr = trimmed.ToString();
-                var lineMatch = s_krcLinePattern.Match(lineStr);
-                if (!lineMatch.Success) continue;
+                // 手動解析 [startMs,durationMs] 避免 regex + ToString()
+                int bracketClose = trimmed.IndexOf(']');
+                if (bracketClose < 1) continue;
+                int comma = trimmed.Slice(1, bracketClose - 1).IndexOf(',');
+                if (comma < 0) continue;
+                comma++; // relative to trimmed
 
-                if (!long.TryParse(lineMatch.Groups[1].ValueSpan, out long lineStartMs)) continue;
+                if (!long.TryParse(trimmed.Slice(1, comma - 1), out long lineStartMs)) continue;
 
-                var contentGroup = lineMatch.Groups[3];
-                if (contentGroup.Length == 0) continue;
-                if (lineStr.AsSpan(contentGroup.Index, contentGroup.Length).IsWhiteSpace()) continue;
+                var content = trimmed.Slice(bracketClose + 1);
+                if (content.IsEmpty || content.IsWhiteSpace()) continue;
 
-                var lyricLine = new LyricLine
-                {
-                    StartMs = lineStartMs,
-                    IsCurrent = false
-                };
-
-                ParseKrcWords(lineStr, contentGroup.Index, contentGroup.Length, lineStartMs, lyricLine);
+                var lyricLine = new LyricLine { StartMs = lineStartMs, IsCurrent = false };
+                ParseKrcWords(content, lineStartMs, lyricLine);
 
                 if (lyricLine.Words.Count > 0)
                     lyrics.Add(lyricLine);
             }
 
-            for (int i = 0; i < lyrics.Count; i++)
-                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : lyrics[i].StartMs + 10000;
-
             return lyrics;
         }
 
         /// <summary>
-        /// KRC 字級解析：Span 手動找逗號替代 Split(',')，零中間字符串分配
+        /// KRC 字级解析：直接 Span 操作，字词直接加入为 LyricWord，免 SplitSpan 分配
         /// </summary>
-        private void ParseKrcWords(string line, int contentStart, int contentLength, long lineStartMs, LyricLine lyricLine)
+        private static void ParseKrcWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
         {
-            int end = contentStart + contentLength;
-            int i = contentStart;
+            int i = 0;
+            int end = content.Length;
 
             while (i < end)
             {
-                int parenOpen = line.IndexOf('(', i, end - i);
+                int parenOpen = content.Slice(i).IndexOf('(');
                 if (parenOpen == -1)
                 {
-                    var remaining = line.AsSpan(i, end - i);
+                    var remaining = content.Slice(i);
                     if (!remaining.IsWhiteSpace())
                     {
                         foreach (var ch in SplitSpan(remaining))
@@ -327,13 +333,14 @@ namespace WinUIMusicPlayer.Services
                     break;
                 }
 
-                var wordSpan = line.AsSpan(i, parenOpen - i);
+                parenOpen += i;
+                var wordSpan = content.Slice(i, parenOpen - i);
 
-                int parenClose = line.IndexOf(')', parenOpen + 1, end - parenOpen - 1);
+                int parenClose = content.Slice(parenOpen + 1).IndexOf(')');
                 if (parenClose == -1) break;
+                parenClose += parenOpen + 1;
 
-                // 手動 Span 找逗號，替代 timeStr.Split(',')
-                var timeSpan = line.AsSpan(parenOpen + 1, parenClose - parenOpen - 1);
+                var timeSpan = content.Slice(parenOpen + 1, parenClose - parenOpen - 1);
                 int commaIdx = timeSpan.IndexOf(',');
                 if (commaIdx < 0) { i = parenClose + 1; continue; }
 
@@ -381,7 +388,7 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 解析 QRC 格式：Span 行迭代 + ParseQrcTimeToMs 接收 Span，全程無中間字符串分配
+        /// 解析 QRC 格式：完全 Span 解析，零 string 分配
         /// </summary>
         private List<LyricLine> ParseQrcLyrics(string qrc, CancellationToken cancellationToken = default)
         {
@@ -406,101 +413,128 @@ namespace WinUIMusicPlayer.Services
                     trimmed.StartsWith("[kana:", StringComparison.Ordinal))
                     continue;
 
-                string lineStr = trimmed.ToString();
-                var lineMatch = s_qrcLinePattern.Match(lineStr);
-                if (!lineMatch.Success) continue;
+                // 手動解析 [mm:ss.xx] 避免 regex + ToString()
+                int bracketClose = trimmed.IndexOf(']');
+                if (bracketClose < 1) continue;
+                var timePart = trimmed.Slice(1, bracketClose - 1);
+                int colon = timePart.IndexOf(':');
+                if (colon < 0) continue;
+                int dotRel = timePart.Slice(colon + 1).IndexOf('.');
+                if (dotRel < 0) continue;
+                int dot = colon + 1 + dotRel;
 
                 long lineStartMs = ParseQrcTimeToMs(
-                    lineStr.AsSpan(lineMatch.Groups[1].Index, lineMatch.Groups[1].Length),
-                    lineStr.AsSpan(lineMatch.Groups[2].Index, lineMatch.Groups[2].Length),
-                    lineStr.AsSpan(lineMatch.Groups[3].Index, lineMatch.Groups[3].Length));
+                    timePart.Slice(0, colon),
+                    timePart.Slice(colon + 1, dot - colon - 1),
+                    timePart.Slice(dot + 1));
 
-                var contentGroup = lineMatch.Groups[4];
-                if (contentGroup.Length == 0) continue;
-                if (lineStr.AsSpan(contentGroup.Index, contentGroup.Length).IsWhiteSpace()) continue;
+                var content = trimmed.Slice(bracketClose + 1);
+                if (content.IsEmpty || content.IsWhiteSpace()) continue;
 
-                var lyricLine = new LyricLine
-                {
-                    StartMs = lineStartMs,
-                    IsCurrent = false
-                };
-
-                ParseQrcWords(lineStr, contentGroup.Index, contentGroup.Length, lineStartMs, lyricLine);
+                var lyricLine = new LyricLine { StartMs = lineStartMs, IsCurrent = false };
+                ParseQrcWords(content, lineStartMs, lyricLine);
 
                 if (lyricLine.Words.Count > 0)
                     lyrics.Add(lyricLine);
             }
 
-            for (int i = 0; i < lyrics.Count; i++)
-                lyrics[i].EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : lyrics[i].StartMs + 10000;
-
             return lyrics;
         }
 
         /// <summary>
-        /// QRC 字級解析：雙指針直接掃描，省去中間 List&lt;(long,string)&gt; 分配；
-        /// 下一個標籤時間在同一趟循環中讀取，無重複工作
+        /// QRC 字级解析：手动 Span 扫描 &lt;mm:ss.xx&gt; 标签，免 string + regex 分配
         /// </summary>
-        private void ParseQrcWords(string line, int contentStart, int contentLength, long lineStartMs, LyricLine lyricLine)
+        private static void ParseQrcWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
         {
-            string contentStr = line.AsSpan(contentStart, contentLength).ToString();
-            var tagMatches = s_qrcWordPattern.Matches(contentStr);
-
-            if (tagMatches.Count == 0)
+            int i = 0;
+            while (i < content.Length)
             {
-                var stripped = s_qrcWordPattern.Replace(contentStr, "").AsSpan().Trim();
-                if (!stripped.IsEmpty)
+                int tagStart = content.Slice(i).IndexOf('<');
+                if (tagStart < 0)
                 {
-                    foreach (var ch in SplitSpan(stripped))
+                    var remaining = content.Slice(i);
+                    if (!remaining.IsEmpty && !remaining.IsWhiteSpace())
                     {
-                        lyricLine.Words.Add(new LyricWord
+                        foreach (var ch in SplitSpan(remaining))
                         {
-                            Word = ch,
-                            StartMs = lineStartMs,
-                            DurationMs = 0
-                        });
+                            lyricLine.Words.Add(new LyricWord
+                            {
+                                Word = ch,
+                                StartMs = lineStartMs,
+                                DurationMs = 0
+                            });
+                        }
+                    }
+                    break;
+                }
+
+                tagStart += i;
+                int tagEnd = content.Slice(tagStart).IndexOf('>');
+                if (tagEnd < 0) break;
+                tagEnd += tagStart;
+
+                if (!TryParseQrcTagTime(content.Slice(tagStart + 1, tagEnd - tagStart - 1), out long segStartMs))
+                {
+                    i = tagEnd + 1;
+                    continue;
+                }
+
+                // 文字在 > 之後到下一個 < 或結尾
+                int textStart = tagEnd + 1;
+                int nextTag = content.Slice(textStart).IndexOf('<');
+                int textEnd = nextTag >= 0 ? textStart + nextTag : content.Length;
+
+                long segEndMs = segStartMs;
+                if (nextTag >= 0)
+                {
+                    int nextTagStart = textEnd;
+                    int nextTagEnd = content.Slice(nextTagStart).IndexOf('>');
+                    if (nextTagEnd >= 0)
+                    {
+                        _ = TryParseQrcTagTime(
+                            content.Slice(nextTagStart + 1, nextTagEnd - 1),
+                            out segEndMs);
                     }
                 }
-                return;
-            }
 
-            int count = tagMatches.Count;
-            for (int i = 0; i < count; i++)
-            {
-                var match = tagMatches[i];
-                long segStartMs = ParseQrcTimeToMs(
-                    contentStr.AsSpan(match.Groups[1].Index, match.Groups[1].Length),
-                    contentStr.AsSpan(match.Groups[2].Index, match.Groups[2].Length),
-                    contentStr.AsSpan(match.Groups[3].Index, match.Groups[3].Length));
-
-                int textStart = match.Index + match.Length;
-                int textEnd = (i + 1 < count) ? tagMatches[i + 1].Index : contentStr.Length;
-                var textSpan = contentStr.AsSpan(textStart, textEnd - textStart);
-                if (textSpan.IsEmpty) continue;
-
-                long segEndMs = (i + 1 < count)
-                    ? ParseQrcTimeToMs(
-                        contentStr.AsSpan(tagMatches[i + 1].Groups[1].Index, tagMatches[i + 1].Groups[1].Length),
-                        contentStr.AsSpan(tagMatches[i + 1].Groups[2].Index, tagMatches[i + 1].Groups[2].Length),
-                        contentStr.AsSpan(tagMatches[i + 1].Groups[3].Index, tagMatches[i + 1].Groups[3].Length))
-                    : segStartMs;
-
-                long segDurationMs = Math.Max(0, segEndMs - segStartMs);
-                var subWords = SplitSpan(textSpan);
-                int wordCount = subWords.Count;
-                if (wordCount == 0) continue;
-
-                double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
-                for (int k = 0; k < wordCount; k++)
+                var textSpan = content.Slice(textStart, textEnd - textStart);
+                if (!textSpan.IsEmpty)
                 {
-                    lyricLine.Words.Add(new LyricWord
+                    long segDurationMs = Math.Max(0, segEndMs - segStartMs);
+                    var subWords = SplitSpan(textSpan);
+                    int wordCount = subWords.Count;
+                    if (wordCount > 0)
                     {
-                        Word = subWords[k],
-                        StartMs = segStartMs + perMs * k,
-                        DurationMs = perMs
-                    });
+                        double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
+                        for (int k = 0; k < wordCount; k++)
+                        {
+                            lyricLine.Words.Add(new LyricWord
+                            {
+                                Word = subWords[k],
+                                StartMs = segStartMs + perMs * k,
+                                DurationMs = perMs
+                            });
+                        }
+                    }
                 }
+
+                i = textEnd;
             }
+        }
+
+        private static bool TryParseQrcTagTime(ReadOnlySpan<char> tagSpan, out long ms)
+        {
+            ms = 0;
+            int colon = tagSpan.IndexOf(':');
+            if (colon < 0) return false;
+            int dotRel = tagSpan.Slice(colon + 1).IndexOf('.');
+            if (dotRel < 0) return false;
+            int dot = colon + 1 + dotRel;
+            ms = ParseQrcTimeToMs(
+                tagSpan.Slice(0, colon),
+                tagSpan.Slice(colon + 1, dot - colon - 1),
+                tagSpan.Slice(dot + 1));
+            return true;
         }
 
         /// <summary>
@@ -595,24 +629,71 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 分詞：靜態預編譯 Regex，直接填 List 避免 LINQ + boxing。
+        /// 零分配分詞：手動 Span 掃描，替換 Regex
         /// </summary>
         public static List<string> SplitEverything(string input)
         {
             if (string.IsNullOrEmpty(input)) return [];
             var result = new List<string>();
-            foreach (Match m in s_splitPattern.Matches(input))
-                result.Add(m.Value);
+            var span = input.AsSpan();
+            int i = 0;
+            int end = span.Length;
+
+            while (i < end)
+            {
+                char c = span[i];
+                if (IsCjkLetter(c)) { result.Add(span.Slice(i++, 1).ToString()); continue; }
+                if (char.IsLetterOrDigit(c))
+                {
+                    int start = i;
+                    i++;
+                    while (i < end && char.IsLetterOrDigit(span[i]) && !IsCjkLetter(span[i])) i++;
+                    result.Add(span.Slice(start, i - start).ToString());
+                    continue;
+                }
+                if (char.IsWhiteSpace(c))
+                {
+                    int start = i;
+                    i++;
+                    while (i < end && char.IsWhiteSpace(span[i])) i++;
+                    result.Add(span.Slice(start, i - start).ToString());
+                    continue;
+                }
+                result.Add(span.Slice(i++, 1).ToString());
+            }
             return result;
         }
 
-        /// <summary>
-        /// 從 ReadOnlySpan 分詞，中間過程無額外分配（Regex 需要 string 時做一次 ToString）
-        /// </summary>
         private static List<string> SplitSpan(ReadOnlySpan<char> input)
         {
             if (input.IsEmpty) return [];
-            return SplitEverything(input.ToString());
+            var result = new List<string>();
+            int i = 0;
+            int end = input.Length;
+
+            while (i < end)
+            {
+                char c = input[i];
+                if (IsCjkLetter(c)) { result.Add(input.Slice(i++, 1).ToString()); continue; }
+                if (char.IsLetterOrDigit(c))
+                {
+                    int start = i;
+                    i++;
+                    while (i < end && char.IsLetterOrDigit(input[i]) && !IsCjkLetter(input[i])) i++;
+                    result.Add(input.Slice(start, i - start).ToString());
+                    continue;
+                }
+                if (char.IsWhiteSpace(c))
+                {
+                    int start = i;
+                    i++;
+                    while (i < end && char.IsWhiteSpace(input[i])) i++;
+                    result.Add(input.Slice(start, i - start).ToString());
+                    continue;
+                }
+                result.Add(input.Slice(i++, 1).ToString());
+            }
+            return result;
         }
 
         private static bool IsCjkLetter(char c) =>
@@ -650,36 +731,11 @@ namespace WinUIMusicPlayer.Services
 
             lyrics.Sort(static (a, b) => a.StartMs.CompareTo(b.StartMs));
 
-            int lyricCount = lyrics.Count;
-            for (int i = 0; i < lyricCount; i++)
-            {
-                var currentLine = lyrics[i];
-
-                currentLine.EndMs = (i < lyricCount - 1)
-                    ? lyrics[i + 1].StartMs
-                    : currentLine.StartMs + 5000.0;
-
-                double rawMs = currentLine.EndMs - currentLine.StartMs;
-                double reducedMs = Math.Max(0, rawMs - 200);
-                int wordCount = currentLine.Words.Count;
-
-                if (wordCount > 0)
-                {
-                    double perWordMs = reducedMs / wordCount;
-                    var lineMs = currentLine.StartMs;
-                    for (int j = 0; j < wordCount; j++)
-                    {
-                        currentLine.Words[j].StartMs = lineMs + perWordMs * j;
-                        currentLine.Words[j].DurationMs = perWordMs;
-                    }
-                }
-            }
-
             return lyrics;
         }
 
         /// <summary>
-        /// LRC 時間行解析：Span 行迭代 + ValueSpan 直接解析，避免 Split string[] 和 Group.Value substring 分配
+        /// LRC 時間行解析：手動 Span 掃描 [mm:ss.xx]，零 Regex 分配
         /// </summary>
         private void ParseLrcToLines(string content, Action<double, string> onLineParsed)
         {
@@ -695,22 +751,26 @@ namespace WinUIMusicPlayer.Services
                 var trimmed = lineSpan.Trim();
                 if (trimmed.IsEmpty || trimmed[0] != '[') continue;
 
-                string lineStr = trimmed.ToString();
-                var timeMatch = s_lrcTimePattern.Match(lineStr);
-                if (!timeMatch.Success) continue;
+                int bracketClose = trimmed.IndexOf(']');
+                if (bracketClose < 2) continue;
+                var timePart = trimmed.Slice(1, bracketClose - 1);
 
-                var textSpan = lineStr.AsSpan(timeMatch.Length).Trim();
-                // 過濾空行和僅含 "//" 的行
-                if (textSpan.IsEmpty) continue;
-                if (textSpan.Length == 2 && textSpan[0] == '/' && textSpan[1] == '/') continue;
+                int colon = timePart.IndexOf(':');
+                if (colon < 0) continue;
+                if (!int.TryParse(timePart.Slice(0, colon), out int minutes)) continue;
 
-                // ValueSpan 直接解析，無 substring 分配
-                if (!int.TryParse(timeMatch.Groups[1].ValueSpan, out int minutes)) continue;
-                if (!int.TryParse(timeMatch.Groups[2].ValueSpan, out int seconds)) continue;
+                var afterMin = timePart.Slice(colon + 1);
+                int sep = afterMin.IndexOfAny('.', ':');
+                if (sep < 0) continue;
+                if (!int.TryParse(afterMin.Slice(0, sep), out int seconds)) continue;
 
-                var msSpan = timeMatch.Groups[4].ValueSpan;
+                var msSpan = afterMin.Slice(sep + 1);
                 if (!int.TryParse(msSpan, out int msRaw)) continue;
                 int milliseconds = msSpan.Length == 2 ? msRaw * 10 : msRaw;
+
+                var textSpan = trimmed.Slice(bracketClose + 1).Trim();
+                if (textSpan.IsEmpty) continue;
+                if (textSpan.Length == 2 && textSpan[0] == '/' && textSpan[1] == '/') continue;
 
                 onLineParsed((minutes * 60 + seconds) * 1000.0 + milliseconds, textSpan.ToString());
             }
