@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer
             _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+            //AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             _logger.LogInformation("应用程序初始化开始");
             var systemLanguages = GlobalizationPreferences.Languages;
