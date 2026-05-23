@@ -344,19 +344,31 @@ namespace WinUIMusicPlayer.Services
                     continue;
                 }
 
-                if (!wordSpan.IsEmpty && !wordSpan.IsWhiteSpace())
+                if (!wordSpan.IsEmpty)
                 {
-                    var subWords = SplitSpan(wordSpan);
-                    int wCount = subWords.Count;
-                    double perMs = wCount > 0 ? (double)durationMs / wCount : durationMs;
-                    for (int k = 0; k < wCount; k++)
+                    if (wordSpan.IsWhiteSpace())
                     {
-                        lyricLine.Words.Add(new LyricWord
+                        if (lyricLine.Words.Count > 0)
                         {
-                            Word = subWords[k],
-                            StartMs = offsetMs + perMs * k,
-                            DurationMs = perMs
-                        });
+                            var last = lyricLine.Words[^1];
+                            if (last.Word.Length > 0 && char.IsLetter(last.Word[^1]))
+                                last.Word += " ";
+                        }
+                    }
+                    else
+                    {
+                        var subWords = SplitSpan(wordSpan);
+                        int wCount = subWords.Count;
+                        double perMs = wCount > 0 ? (double)durationMs / wCount : durationMs;
+                        for (int k = 0; k < wCount; k++)
+                        {
+                            lyricLine.Words.Add(new LyricWord
+                            {
+                                Word = subWords[k],
+                                StartMs = offsetMs + perMs * k,
+                                DurationMs = perMs
+                            });
+                        }
                     }
                 }
 
