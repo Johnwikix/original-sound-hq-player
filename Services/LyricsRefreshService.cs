@@ -109,15 +109,14 @@ namespace WinUIMusicPlayer.Services
                 var line = lyrics[i];
                 line.EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : fallbackMs;
 
-                double reducedMs = Math.Max(0, line.EndMs - line.StartMs - LineEndOffsetMs);
                 int wc = line.Words.Count;
                 if (wc > 0)
                 {
-                    // 按原始詞時間等比縮放到 reducedMs；LRC（無原始時間）走均分降級
                     var lastWord = line.Words[wc - 1];
                     double originalSpan = lastWord.StartMs + lastWord.DurationMs - line.StartMs;
                     if (originalSpan > 0)
                     {
+                        double reducedMs = Math.Max(0, originalSpan - LineEndOffsetMs);
                         double scale = reducedMs / originalSpan;
                         for (int j = 0; j < wc; j++)
                         {
@@ -128,6 +127,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     else
                     {
+                        double reducedMs = Math.Max(0, line.EndMs - line.StartMs - LineEndOffsetMs);
                         double perMs = reducedMs / wc;
                         for (int j = 0; j < wc; j++)
                         {
