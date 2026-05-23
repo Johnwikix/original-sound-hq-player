@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsWin2dCoverImageControlEnable { get; set; } = false;
         public bool IsWin2dAnimatedText { get; set; } = false;
         public double CharFloatAmount { get; set; } = 5.0;
-        public double CharScaleAmount { get; set; } = 100.0;
+        public double CharScaleAmount { get; set; } = 110.0;
         public double GlowAmount { get; set; } = 5.0;
         public double LongSyllableThreshold { get; set; } = 700.0;
         public double PlayingLineTopOffsetPercent { get; set; } = 40.0;

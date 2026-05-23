@@ -623,7 +623,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = 100.0;
+        } = 110.0;
 
         public double GlowAmount
         {
