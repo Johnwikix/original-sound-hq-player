@@ -351,7 +351,7 @@ namespace WinUIMusicPlayer.Services
                         if (lyricLine.Words.Count > 0)
                         {
                             var last = lyricLine.Words[^1];
-                            if (last.Word.Length > 0 && char.IsLetter(last.Word[^1]))
+                            if (last.Word.Length > 0 && char.IsLetter(last.Word[^1]) && !IsCjkLetter(last.Word[^1]))
                                 last.Word += " ";
                         }
                     }
@@ -614,6 +614,11 @@ namespace WinUIMusicPlayer.Services
             if (input.IsEmpty) return [];
             return SplitEverything(input.ToString());
         }
+
+        private static bool IsCjkLetter(char c) =>
+            (c >= '\u4E00' && c <= '\u9FFF') ||   // CJK Unified Ideographs
+            (c >= '\u3040' && c <= '\u30FF') ||   // Hiragana + Katakana
+            (c >= '\uAC00' && c <= '\uD7AF');     // Hangul Syllables
 
         private List<LyricLine> SpliteContent(string lrcContent, string? transLrc, List<LyricLine> lyrics)
         {
