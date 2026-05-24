@@ -22,7 +22,6 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AddFolderPage : Page
     {
         private static ILogger<AddFolderPage> _logger = App.GetLogger<AddFolderPage>();
-        private NotificationService notificationService;
         public AddFolderViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         public AddFolderPage()
@@ -30,7 +29,6 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
             DataContext = this;
-            notificationService = App.Services.GetRequiredService<NotificationService>();
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
@@ -100,7 +98,6 @@ namespace WinUIMusicPlayer.View
 
         private void Grid_DragOver(object sender, DragEventArgs e)
         {
-            // �����ק�������Ƿ�����ļ�
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 e.AcceptedOperation = DataPackageOperation.Link;
@@ -129,15 +126,10 @@ namespace WinUIMusicPlayer.View
                         LoadingGrid.Visibility = Visibility.Collapsed;
                         AddFolderGrid.Visibility = Visibility.Visible;
                     }
-                    else
-                    {
-                        notificationService.SendNotification(ToolUtils.GetString("Warning"), ToolUtils.GetString("PleaseDragFolder"));
-                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Grid_Drop 拖放文件夹失败: {ex.Message}");
-                    notificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }
         }
