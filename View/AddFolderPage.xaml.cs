@@ -27,12 +27,12 @@ namespace WinUIMusicPlayer.View
         private MusicDatabaseService _musicDatabaseService { get; }
         public AddFolderPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
             DataContext = this;
-            this.notificationService = App.Services.GetRequiredService<NotificationService>();
+            notificationService = App.Services.GetRequiredService<NotificationService>();
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
-            this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
