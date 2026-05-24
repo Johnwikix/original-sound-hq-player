@@ -1,5 +1,7 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using Lyricify.Lyrics.Providers.Web.Netease;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -303,6 +305,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppData.IsPlaying = value;
                     UpdatePlayPauseButtonIcon();
+                    WeakReferenceMessenger.Default.Send(new IsPlayingMessage(value));
                 }
             }
         } = false;
@@ -379,12 +382,15 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                TotalTime = TimeSpan.FromSeconds(await App.Services.GetRequiredService<BassPlayerCommandService>().GetTotalPosition());
-                CurrentTime = TimeSpan.FromSeconds(await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition());
+                double totalSeconds = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTotalPosition();
+                double currentSeconds = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
+                TotalTime = TimeSpan.FromSeconds(totalSeconds);
+                CurrentTime = TimeSpan.FromSeconds(currentSeconds);
                 TimeStringBuilder.Clear();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     CurrentPlayingTime = CurrentTime;
+                    WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(currentSeconds * 1000.0));
                     if (!IsManualSelect)
                     {
                         try

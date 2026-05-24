@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
+using AnimatedWin2dControls.Messages;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -13,7 +16,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Windows.Foundation;
 using Windows.UI;
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
@@ -100,6 +102,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             DefaultStyleKey = typeof(UnifiedLyricsCanvasControlV2);
             SizeChanged += OnControlSizeChanged;
+            Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
 
             _canvasYScrollTransition = new(0, EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine), 0.3);
@@ -138,8 +141,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _edgeFadeMask.Dispose();
         }
 
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            WeakReferenceMessenger.Default.Register<CurrentPlayingTimeMessage>(this, (r, m) =>
+            {
+                _cachedCurrentPlayingTime = TimeSpan.FromMilliseconds(m.TotalMilliseconds);
+            });
+            WeakReferenceMessenger.Default.Register<IsPlayingMessage>(this, (r, m) =>
+            {
+                _cachedIsPlaying = m.Value;
+            });
+        }
+
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
+            WeakReferenceMessenger.Default.Unregister<CurrentPlayingTimeMessage>(this);
+            WeakReferenceMessenger.Default.Unregister<IsPlayingMessage>(this);
             PrepareForShutdown();
         }
 
